@@ -212,5 +212,7 @@ def setup():
     
 
 if '__main__'==__name__ or urwid.web_display.is_web_request():
+    if urwid.VERSION[0] < 1:
+      print "This program requires urwid 1.0 or greater."
     setup()
 

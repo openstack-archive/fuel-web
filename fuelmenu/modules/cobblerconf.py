@@ -48,7 +48,7 @@ YAMLTREE = "cobbler_common"
 
 
 
-class cobbler(urwid.WidgetWrap):
+class cobblerconf(urwid.WidgetWrap):
   def __init__(self, parent):
     self.name="Cobbler"
     self.priority=20

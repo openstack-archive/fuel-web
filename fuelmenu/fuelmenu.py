@@ -66,7 +66,7 @@ class FuelSetup():
             button = urwid.Button(c)
             urwid.connect_signal(button, 'click', self.menu_chosen, c)
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
-        return urwid.ListBox(urwid.SimpleListWalker(body))
+        return urwid.ListBox(urwid.SimpleFocusListWalker(body))
     
     def menu_chosen(self, button, choice):
         size = self.screen.get_cols_rows()
@@ -212,7 +212,7 @@ def setup():
     
 
 if '__main__'==__name__ or urwid.web_display.is_web_request():
-    if urwid.VERSION[0] < 1:
-      print "This program requires urwid 1.0 or greater."
+    if urwid.VERSION < (1,1,0):
+      print "This program requires urwid 1.1.0 or greater."
     setup()
 

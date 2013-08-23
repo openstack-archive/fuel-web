@@ -103,6 +103,10 @@ class FuelSetup():
                 ], 3)
         self.listwalker[:] = [self.cols]
 
+    def refreshScreen(self):
+        size = self.screen.get_cols_rows()
+        self.screen.draw_screen(size, self.frame.render(size))
+
     def refreshChildScreen(self, name):
         child = self.children[int(self.choices.index(name))]
         #Refresh child listwalker

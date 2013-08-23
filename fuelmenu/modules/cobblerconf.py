@@ -11,7 +11,7 @@ import socket, struct
 import netaddr
 sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
 from settings import *
-from common import network, puppet
+from common import network, puppet, services
 from urwidwrapper import *
 log = logging.getLogger('fuelmenu.mirrors')
 log.info("test")
@@ -54,6 +54,7 @@ class cobblerconf(urwid.WidgetWrap):
     self.priority=20
     self.visible=True
     self.netsettings = dict()
+    self.deployment="post"
     self.getNetwork()
     self.gateway=self.get_default_gateway_linux()
     self.activeiface = sorted(self.netsettings.keys())[0]
@@ -189,7 +190,28 @@ class cobblerconf(urwid.WidgetWrap):
         self.log.error("%s" % (responses))
         return False
 
-  def save(self, args):
+    #Need to decide if we are pre-deployment or post-deployment
+    #Always save even if "post"
+    self.save()
+    if self.deployment == "post":
+      self.updateCobbler(responses)
+      services.restart("cobbler")
+  
+  def updateCobbler(self, params):  
+    patterns={
+      'cblr_server'      : '^server: .*',
+      'cblr_next_server' : '^next_server: .*',
+      'mgmt_if'     : '^interface=.*',
+      'domain'      : '^domain=.*',
+      'server'      : '^server=.*',
+      'dhcp-range'  : '^dhcp-range=',
+      'dhcp-option' : '^dhcp-option=',
+      'pxe-service' : '^pxe-service=(^,)',
+      'dhcp-boot'   : '^dhcp-boot=([^,],{3}),'
+
+
+
+  def save(self):
     # set up logging
     import logging
     log = logging.getLogger('fuelmenu.cobbler')
@@ -244,6 +266,8 @@ class cobblerconf(urwid.WidgetWrap):
         #Interface is down, so mark it onboot=no
         self.netsettings.update({iface: {"addr": "", "netmask": "",
                                          "onboot": "no"}})
+      self.netsettings[iface]['mac'] = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
+
       #We can try to get bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
       try:
         with open("/etc/sysconfig/network-scripts/ifcfg-%s" % iface) as fh:
@@ -312,23 +336,36 @@ class cobblerconf(urwid.WidgetWrap):
     return 
 
   def setNetworkDetails(self):
-    self.net_text1.set_text("Current network settings for %s" % self.activeiface)
-    self.net_text2.set_text("IP address:       %s" % self.netsettings[self.activeiface]['addr'])
-    self.net_text3.set_text("Netmask:          %s" % self.netsettings[self.activeiface]['netmask'])
-    self.net_text4.set_text("Default gateway:  %s" % (self.gateway))
+    #condensed mode:
+    self.net_text1.set_text("Interface: %s" % self.activeiface)
+    self.net_text2.set_text("IP:      %-15s  MAC: %s" % (self.netsettings[self.activeiface]['addr'],
+                                              self.netsettings[self.activeiface]['mac']))
+    self.net_text3.set_text("Netmask: %-15s  Gateway: %s" % 
+                            (self.netsettings[self.activeiface]['netmask'],
+                            self.gateway))
 
+    self.net_text4.set_text("")
+    self.net_text5.set_text("")
+    #spread out mode
+#    self.net_text1.set_text("Current network settings for %s" % self.activeiface)
+#    self.net_text2.set_text("MAC address:      %s" % self.netsettings[self.activeiface]['mac'])
+#    self.net_text3.set_text("IP address:       %s" % self.netsettings[self.activeiface]['addr'])
+#    self.net_text4.set_text("Netmask:          %s" % self.netsettings[self.activeiface]['netmask'])
+#    self.net_text5.set_text("Default gateway:  %s" % (self.gateway))
+#
   def setExtIfaceFields(self, enabled=True):
     ###TODO: Define ext iface fields as disabled and then toggle
     pass
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
-    text1 = urwid.Text("Master node network settings")
+    text1 = urwid.Text("Enter configuration necessary for Cobbler setup.")
 
     #Current network settings
     self.net_text1 = TextLabel("")
     self.net_text2 = TextLabel("")
     self.net_text3 = TextLabel("")
     self.net_text4 = TextLabel("")
+    self.net_text5 = TextLabel("")
     self.setNetworkDetails()
     self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()), fn=self.radioSelectIface)
 
@@ -361,7 +398,8 @@ class cobblerconf(urwid.WidgetWrap):
 
     self.listbox_content = [text1, blank, blank]
     self.listbox_content.extend([self.net_text1, self.net_text2, self.net_text3, 
-                                 self.net_text4, self.net_choices,blank])
+                                 #self.net_text4, self.net_text5, 
+                                 self.net_choices,blank])
     self.listbox_content.extend(self.edits)
     self.listbox_content.append(blank)   
     self.listbox_content.append(check_col)   

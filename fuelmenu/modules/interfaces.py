@@ -65,7 +65,7 @@ class interfaces(urwid.WidgetWrap):
     """Validates that all fields have valid values and some sanity checks"""
     #Get field information
     responses=dict()
-
+    self.parent.footer.set_text("Checking data...")
     for index, fieldname in enumerate(fields):
       if fieldname == "blank" or fieldname == "ifname":
         pass
@@ -134,9 +134,11 @@ IP address")
     responses = self.check(args)
     if responses is False:
         self.log.error("Check failed. Not applying")
+        self.parent.footer.set_text("Check failed. Not applying.")
         self.log.error("%s" % (responses))
         return False
 
+    self.parent.footer.set_text("Applying changes...")
     puppetclass="l23network::l3::ifconfig"
     if responses["onboot"].lower() == "no":
         params={"ipaddr": "none"}
@@ -148,12 +150,19 @@ IP address")
     if len(responses["gateway"]) > 1:
         params["gateway"]=responses["gateway"]
     self.log.info("Puppet data: %s %s %s" % (puppetclass, self.activeiface, params))    
-    #try:
-    puppet.puppetApply(puppetclass,self.activeiface, params)
-    #except Exception, e:
-    #    self.log.error(e)
-    #    self.parent.footer.set_text("Error applying changes. Check logs for details.")
-    #    return False
+    try:
+        self.parent.refreshScreen()
+        puppet.puppetApply(puppetclass,self.activeiface, params)
+    except Exception, e:
+        self.log.error(e)
+        self.parent.footer.set_text("Error applying changes. Check logs for details.")
+        self.getNetwork()
+        self.setNetworkDetails()
+        return False
+    self.parent.footer.set_text("Changes successfully applied.")
+    self.getNetwork()
+    self.setNetworkDetails()
+
     return True
 
   #leftover from network. we let puppet save everything
@@ -184,13 +193,18 @@ IP address")
         #Interface is down, so mark it onboot=no
         self.netsettings.update({iface: {"addr": "", "netmask": "", 
                                          "onboot": "no"}})
+
+      self.netsettings[iface]['mac'] = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
       #We can try to get bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
+      #default to static
+      self.netsettings[iface]['bootproto']="none"
       try:
         with open("/etc/sysconfig/network-scripts/ifcfg-%s" % iface) as fh:
           for line in fh:
             if re.match("^BOOTPROTO=", line):
               self.netsettings[iface]['bootproto']=line.split('=').strip()
               break
+           
       except:
       #Let's try checking for dhclient process running for this interface
         if self.getDHCP(iface):
@@ -257,11 +271,20 @@ IP address")
     return 
 
   def setNetworkDetails(self):
-    self.net_text1.set_text("Current network settings for %s" % self.activeiface)
-    self.net_text2.set_text("IP address:       %s" % self.netsettings[self.activeiface]['addr'])
-    self.net_text3.set_text("Netmask:          %s" % self.netsettings[self.activeiface]['netmask'])
-    self.net_text4.set_text("Default gateway:  %s" % (self.gateway))
-
+    #condensed mode:
+    self.net_text1.set_text("Interface: %s" % self.activeiface)
+    self.net_text2.set_text("IP:      %-15s  MAC: %s" % (self.netsettings[self.activeiface]['addr'],
+                                              self.netsettings[self.activeiface]['mac']))
+    self.net_text3.set_text("Netmask: %-15s  Gateway: %s" %
+                            (self.netsettings[self.activeiface]['netmask'],
+                            self.gateway))
+#    #Old spread out method
+#    self.net_text1.set_text("Current network settings for %s" % self.activeiface)
+#    self.net_text2.set_text("MAC address:      %s" % self.netsettings[self.activeiface]['mac'])
+#    self.net_text3.set_text("IP address:       %s" % self.netsettings[self.activeiface]['addr'])
+#    self.net_text4.set_text("Netmask:          %s" % self.netsettings[self.activeiface]['netmask'])
+#    self.net_text5.set_text("Default gateway:  %s" % (self.gateway))
+#
     #Set text fields to current netsettings
     for index, fieldname in enumerate(fields):
       if fieldname == "ifname":
@@ -308,6 +331,7 @@ IP address")
     self.net_text2 = TextLabel("")
     self.net_text3 = TextLabel("")
     self.net_text4 = TextLabel("")
+    self.net_text5 = TextLabel("")
     self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()), fn=self.radioSelectIface)
 
     self.edits = []
@@ -348,7 +372,9 @@ IP address")
 
     self.listbox_content = [text1, blank, blank]
     self.listbox_content.extend([self.net_text1, self.net_text2, self.net_text3, 
-                                 self.net_text4, blank, self.net_choices,blank])
+#                                 self.net_text4, self.net_text5, blank, 
+#                                 blank,
+                                 self.net_choices,blank])
     self.listbox_content.extend(self.edits)
     self.listbox_content.append(blank)   
     self.listbox_content.append(check_col)   

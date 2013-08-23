@@ -1,4 +1,5 @@
 import yaml
+import collections
 try:
   from collections import OrderedDict
 except:
@@ -58,15 +59,15 @@ class Settings():
   def __init__(self):
      pass
   def read(self, yamlfile):
-     infile = file('astute.yaml', 'r')
+     infile = file(yamlfile, 'r')
      settings = yaml.load(infile)
      return settings
 
-  def write(self, newvalues, tree=None, defaultsfile='config.yaml', outfn='mysettings.yaml'):
+  def write(self, newvalues, tree=None, defaultsfile='settings.yaml', outfn='mysettings.yaml'):
      infile = file(defaultsfile, 'r')
      outfile = file(outfn, 'w')
      settings = yaml.load(infile)
-     #settings.update(newvalues)
+     settings.update(newvalues)
      yaml.dump(settings, outfile, default_flow_style=False)
      return True
 
@@ -83,7 +84,7 @@ if __name__ == '__main__':
         b: no
         c: null
     """
-    infile = file('config.yaml', 'r')
+    infile = file('settings.yaml', 'r')
     data = yaml.load(infile)
     #data = yaml.load(infile, OrderedDictYAMLLoader)
     #data = yaml.load(textwrap.dedent(sample), OrderedDictYAMLLoader)

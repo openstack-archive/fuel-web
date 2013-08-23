@@ -20,6 +20,7 @@ class Loader:
         self.children = []
         self.childpage = None
         self.parent = parent
+
     def load_modules(self, module_dir):
         if not module_dir in sys.path:
             sys.path.append(module_dir)
@@ -49,7 +50,7 @@ class Loader:
         return (self.modlist,self.choices)
 
 
-version="3.1"
+version="3.2"
 #choices= u"Status,Networking,OpenStack Setup,Terminal,Save & Quit".split(',')
 class FuelSetup():
 
@@ -57,6 +58,7 @@ class FuelSetup():
         self.footer = None
         self.frame = None
         self.screen = None
+        self.settingsfile = "settings.yaml"
         self.main()
         self.choices = []
 
@@ -102,6 +104,10 @@ class FuelSetup():
                     urwid.Divider(" ")]))
                 ], 3)
         self.listwalker[:] = [self.cols]
+
+    def refreshScreen(self):
+        size = self.screen.get_cols_rows()
+        self.screen.draw_screen(size, self.frame.render(size))
 
     def refreshChildScreen(self, name):
         child = self.children[int(self.choices.index(name))]

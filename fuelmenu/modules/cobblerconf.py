@@ -11,7 +11,7 @@ import socket, struct
 import netaddr
 sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
 from settings import *
-from common import network, puppet, services
+from common import network, puppet
 from urwidwrapper import *
 log = logging.getLogger('fuelmenu.mirrors')
 log.info("test")
@@ -208,7 +208,7 @@ class cobblerconf(urwid.WidgetWrap):
       'dhcp-option' : '^dhcp-option=',
       'pxe-service' : '^pxe-service=(^,)',
       'dhcp-boot'   : '^dhcp-boot=([^,],{3}),'
-
+      }
 
 
   def save(self):

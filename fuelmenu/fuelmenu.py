@@ -116,8 +116,8 @@ class FuelSetup():
         
         #reassign childpage top level objects
         self.childpage = urwid.ListBox(child.listwalker)
-        self.childfill = urwid.Filler(self.childpage, 'middle', 20)
-        self.childbox = urwid.BoxAdapter(self.childfill, 20)
+        self.childfill = urwid.Filler(self.childpage, 'middle', 22)
+        self.childbox = urwid.BoxAdapter(self.childfill, 22)
         self.cols = urwid.Columns([
                 ('fixed', 20, urwid.Pile([
                     urwid.AttrMap(self.menubox, 'bright'),
@@ -155,8 +155,8 @@ class FuelSetup():
 
         child = self.children[0]
         self.childpage = child.screenUI()
-        self.childfill = urwid.Filler(self.childpage, 'top', 20)
-        self.childbox = urwid.BoxAdapter(self.childfill, 20)
+        self.childfill = urwid.Filler(self.childpage, 'top', 22)
+        self.childbox = urwid.BoxAdapter(self.childfill, 22)
         self.cols = urwid.Columns([
                 ('fixed', 20, urwid.Pile([
                     urwid.AttrMap(self.menubox, 'bright'),
@@ -189,6 +189,9 @@ class FuelSetup():
             ('bright','dark gray','light gray', ('bold','standout')),
             ('buttn','black','dark cyan'),
             ('buttnf','white','dark blue','bold'),
+            ('light gray','white', 'light gray','bold'),
+            ('red','dark red','light gray','bold'),
+            ('black','black','black','bold'),
             ]
     
     
@@ -202,8 +205,9 @@ class FuelSetup():
             if key == 'f8':
                 raise urwid.ExitMainLoop()
     
-        urwid.MainLoop(self.frame, palette, self.screen,
-            unhandled_input=unhandled).run()
+        self.mainloop= urwid.MainLoop(self.frame, palette, self.screen,
+            unhandled_input=unhandled)
+        self.mainloop.run()
     
     def exit_program(self, button):
         raise urwid.ExitMainLoop()

@@ -1,0 +1,13 @@
+HOSTNAME: "nailgun"
+DNS_DOMAIN: "example.com"
+DNS_SEARCH: "example.com"
+DNS_UPSTREAM: "8.8.8.8"
+
+ADMIN_NETWORK:
+  interface: "eth0"
+  cidr: "10.20.0.0/24"
+  netmask: "255.255.255.0"
+  size: "256"
+  first: "10.20.0.129"
+  last: "10.20.0.254"
+

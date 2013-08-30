@@ -24,15 +24,21 @@ from nailgun.test.base import reverse
 
 class TestFuelKeyHandler(BaseTestCase):
 
-    @patch('nailgun.api.handlers.version.settings.PRODUCT_VERSION', '0.1b')
-    @patch('nailgun.api.handlers.version.settings.COMMIT_SHA', '12345')
-    @patch('nailgun.api.handlers.version.settings.FUEL_KEY', 'uuid')
+    @patch('nailgun.api.handlers.version.settings.VERSION', {
+        'release': '0.1b',
+        'nailgun_sha': '12345',
+        'fuel_key': 'uuid'
+    })
     def test_version_handler(self):
         resp = self.app.get(
             reverse('FuelKeyHandler'),
             headers=self.default_headers
         )
-        key_data = {"release": "0.1b", "sha": "12345", "uuid": "uuid"}
+        key_data = {
+            "sha": "12345",
+            "release": "0.1b",
+            "uuid": "uuid"
+        }
         signature = base64.b64encode(json.dumps(key_data))
         key_data["signature"] = signature
 

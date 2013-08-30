@@ -2,10 +2,14 @@ LISTEN_ADDRESS: "0.0.0.0"
 LISTEN_PORT: "8000"
 DEVELOPMENT: 1
 
-COMMIT_SHA: "Unknown build"
-FUEL_COMMIT_SHA: "Unknown build"
-PRODUCT_VERSION: "3.0"
-FUEL_KEY: "Unknown"
+VERSION:
+  release: "3.0"
+  fuel_key: "Unknown"
+  nailgun_sha: "Unknown build"
+  astute_sha: "Unknown build"
+  fuellib_sha: "Unknown build"
+  ostf_tests_sha: "Unknown build"
+  ostf_plugin_sha: "Unknown build"
 
 FIXTURES_TO_UPLOAD:
   - "openstack.json"

@@ -314,10 +314,16 @@ class NodeAgent
     @os[:dmi][:system][:serial_number].strip rescue nil
   end
 
+  def _uuid
+  # for kvm virtual node will contain virsh UUID
+    @os[:dmi][:system][:uuid].strip rescue nil
+  end
+
   def _system_info
     {
       :manufacturer => _manufacturer,
       :serial => _serial,
+      :uuid => _uuid,
       :product => _product_name,
       :family => (@os[:dmi][:system][:family].strip rescue nil),
       :version => (@os[:dmi][:system][:version].strip rescue nil),

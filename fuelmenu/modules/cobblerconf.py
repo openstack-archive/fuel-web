@@ -23,6 +23,22 @@ blank = urwid.Divider()
 fields = ["HOSTNAME", "DNS_DOMAIN", "DNS_SEARCH","DNS_UPSTREAM",
           "ADMIN_NETWORK/interface", "ADMIN_NETWORK/first",
           "ADMIN_NETWORK/last"]
+facter_translate = {
+  "ADMIN_NETWORK/interface"    : "internal_interface",
+  "ADMIN_NETWORK/interface"    : "internal_ipaddress",
+  "ADMIN_NETWORK/first"        : "dhcp_pool_start",
+  "ADMIN_NETWORK/last"         : "dhcp_pool_end",
+  "ADMIN_NETWORK/static_start" : "dhcp_static_pool_start",
+  "ADMIN_NETWORK/static_end"   : "dhcp_static_pool_end",
+}
+mnbs_internal_ipaddress=10.20.0.2
+mnbs_internal_netmask=255.255.255.0
+mnbs_static_pool_start=10.20.0.130
+mnbs_static_pool_end=10.20.0.250
+mnbs_dhcp_pool_start=10.20.0.10
+mnbs_dhcp_pool_end=10.20.0.120
+mnbs_internal_interface=eth1
+
 DEFAULTS = {
   "ADMIN_NETWORK/interface" : { "label"  : "Management Interface",
                    "tooltip": "This is the INTERNAL network for provisioning",
@@ -260,20 +276,13 @@ class cobblerconf(urwid.WidgetWrap):
     log.debug(str(newsettings))
     Settings().write(newsettings,defaultsfile=self.parent.settingsfile,
                      outfn="newsettings.yaml")
-
+    #Write naily.facts
+    factsettings=dict()
+    for key, value in newsettings:
+      factsettings[sh
+    n=nailyfacterfacts.NailyFacterFacts()
+    
        
-#  def getNetwork(self):
-#    """Uses netifaces module to get addr, broadcast, netmask about
-#       network interfaces"""
-#    import netifaces
-#    for iface in netifaces.interfaces():
-#      if 'lo' in iface or 'vir' in iface:
-#      #if 'lo' in iface or 'vir' in iface or 'vbox' in iface:
-#        continue
-#      #print netifaces.ifaddresses(iface)
-#      #print iface, netifaces.ifaddresses(iface)[netifaces.AF_INET][0]
-#      self.netsettings.update({iface: netifaces.ifaddresses(iface)[netifaces.AF_INET][0]})
-#    
   def getNetwork(self):
     """Uses netifaces module to get addr, broadcast, netmask about
        network interfaces"""

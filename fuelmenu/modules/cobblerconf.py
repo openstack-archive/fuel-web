@@ -31,13 +31,13 @@ facter_translate = {
   "ADMIN_NETWORK/static_start" : "dhcp_static_pool_start",
   "ADMIN_NETWORK/static_end"   : "dhcp_static_pool_end",
 }
-mnbs_internal_ipaddress=10.20.0.2
-mnbs_internal_netmask=255.255.255.0
-mnbs_static_pool_start=10.20.0.130
-mnbs_static_pool_end=10.20.0.250
-mnbs_dhcp_pool_start=10.20.0.10
-mnbs_dhcp_pool_end=10.20.0.120
-mnbs_internal_interface=eth1
+mnbs_internal_ipaddress="10.20.0.2"
+mnbs_internal_netmask="255.255.255.0"
+mnbs_static_pool_start="10.20.0.130"
+mnbs_static_pool_end="10.20.0.250"
+mnbs_dhcp_pool_start="10.20.0.10"
+mnbs_dhcp_pool_end="10.20.0.120"
+mnbs_internal_interface="eth1"
 
 DEFAULTS = {
   "ADMIN_NETWORK/interface" : { "label"  : "Management Interface",
@@ -132,8 +132,7 @@ class cobblerconf(urwid.WidgetWrap):
       ###Ensure pool start and end are on the same subnet as mgmt_if
       #Ensure mgmt_if has an IP first
       if len(self.netsettings[responses["ADMIN_NETWORK/interface"]]["addr"]) == 0:
-        errors.append("Management interface isn't configured. Go to Interfaces\
-  to configure this interface first.")
+        errors.append("Go to Interfaces to configure management interface first.")
       else:
          #Ensure ADMIN_NETWORK/interface is not running DHCP
          if self.netsettings[responses["ADMIN_NETWORK/interface"]]["bootproto"] == "dhcp":
@@ -169,7 +168,7 @@ class cobblerconf(urwid.WidgetWrap):
          mgmt_if_ipaddr=self.netsettings[responses["ADMIN_NETWORK/interface"]]["addr"]
          if network.inSameSubnet(responses["ADMIN_NETWORK/first"],mgmt_if_ipaddr,
                                  netmask) is False:
-           errors.append("DHCP Pool start is not in the same subnet as management interface.")
+           errors.append("DHCP Pool start does not match management network.")
          if network.inSameSubnet(responses["ADMIN_NETWORK/last"],mgmt_if_ipaddr,
                                  netmask) is False:
            errors.append("DHCP Pool end is not in the same subnet as management interface.")
@@ -279,9 +278,9 @@ class cobblerconf(urwid.WidgetWrap):
     #Write naily.facts
     factsettings=dict()
     for key, value in newsettings:
-      factsettings[sh
-    n=nailyfacterfacts.NailyFacterFacts()
-    
+      factsettings[key]=value
+    n=nailyfactersettings.NailyFacterSettings()
+    n.write(factsettings)
        
   def getNetwork(self):
     """Uses netifaces module to get addr, broadcast, netmask about

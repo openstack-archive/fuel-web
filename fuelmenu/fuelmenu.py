@@ -8,7 +8,8 @@ import sys
 
 # set up logging
 import logging
-logging.basicConfig(filename='./fuelmenu.log',level=logging.DEBUG)
+logging.basicConfig(filename='./fuelmenu.log')
+#logging.basicConfig(filename='./fuelmenu.log',level=logging.DEBUG)
 log = logging.getLogger('fuelmenu.loader')
 
 class Loader:

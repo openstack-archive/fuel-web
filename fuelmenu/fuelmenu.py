@@ -8,8 +8,9 @@ import sys
 
 # set up logging
 import logging
-logging.basicConfig(filename='./fuelmenu.log')
-#logging.basicConfig(filename='./fuelmenu.log',level=logging.DEBUG)
+#logging.basicConfig(filename='./fuelmenu.log')
+#logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(filename='./fuelmenu.log',level=logging.DEBUG)
 log = logging.getLogger('fuelmenu.loader')
 
 class Loader:
@@ -69,22 +70,34 @@ class FuelSetup():
             button = urwid.Button(c)
             urwid.connect_signal(button, 'click', self.menu_chosen, c)
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
-        return urwid.ListBox(urwid.SimpleFocusListWalker(body))
+        return urwid.ListBox(urwid.SimpleListWalker(body))
+        #return urwid.ListBox(urwid.SimpleFocusListWalker(body))
     
     def menu_chosen(self, button, choice):
         size = self.screen.get_cols_rows()
         self.screen.draw_screen(size, self.frame.render(size))
-
-        self.footer.set_text([u'You chose ', choice, u''])
-        #self.child = self.children[self.choices.index(choice)]
-        #self.childpage = self.child.screenUI()
-        self.setChildScreen(name=choice)
-        response = urwid.Text([u'You chose ', choice, u'\n'])
-        done = urwid.Button(u'Ok')
-        urwid.connect_signal(done, 'click', self.exit_program)
-        self.frame.original_widget = urwid.Filler(urwid.Pile([response,
-            urwid.AttrMap(done, None, focus_map='reversed')]))
+        
     
+        #Highlight menu item
+        #menulist=self.menuitems.original_widget
+        #log.info("%s" % self.menuitems)
+        #log.info("%s" % self.menuitems.contents())
+        for item in self.menuitems.body.contents:
+            try:
+              log.info("inside loop %s" % item.original_widget.get_label())
+              #self.footer.set_text("inside loop %s" % item.original_widget.get_label())
+              if item.original_widget.get_label() == choice:
+                self.footer.set_text("Found choice %s" % choice)
+                item.set_attr_map({ None: 'header'})
+              else:
+                item.set_attr_map({ None: None})
+            except Exception, e:
+              self.footer.set_text("%s" % item)
+              log.info("%s" % item)
+              log.error("%s" % e)
+              #continue
+        self.setChildScreen(name=choice)
+
 
     def setChildScreen(self, name=None):
         if name is None:
@@ -150,7 +163,8 @@ class FuelSetup():
           sys.exit(1)
 
         #End prep
-        menufill = urwid.Filler(self.menu(u'Menu', self.choices), 'top', 40)
+        self.menuitems=self.menu(u'Menu', self.choices)
+        menufill = urwid.Filler(self.menuitems, 'top', 40)
         self.menubox = urwid.BoxAdapter(menufill, 40)
 
 

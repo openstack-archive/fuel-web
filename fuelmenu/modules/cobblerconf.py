@@ -21,7 +21,8 @@ blank = urwid.Divider()
 #fields = ["hostname", "domain", "mgmt_if","dhcp_start","dhcp_end",
 #          "blank","ext_if","ext_dns"]
 fields = ["HOSTNAME", "DNS_DOMAIN", "DNS_SEARCH","DNS_UPSTREAM",
-          "ADMIN_NETWORK/interface", "ADMIN_NETWORK/first",
+          "ADMIN_NETWORK/interface", "ADMIN_NETWORK/static_start",
+          "ADMIN_NETWORK/static_end", "ADMIN_NETWORK/first",
           "ADMIN_NETWORK/last"]
 facter_translate = {
   "ADMIN_NETWORK/interface"    : "internal_interface",
@@ -46,13 +47,16 @@ DEFAULTS = {
 
   "ADMIN_NETWORK/first"     : { "label"  : "DHCP Pool Start",
                    "tooltip": "Used for defining IPs for hosts and instance public addresses",
-                   "value"  : "10.0.0.201"},
+                   "value"  : "10.0.0.130"},
   "ADMIN_NETWORK/last"   : { "label"  : "DHCP Pool End",
                    "tooltip": "Used for defining IPs for hosts and instance public addresses",
                    "value"  : "10.0.0.254"},
-#  "ext_if"     : { "label"  : "External Interface",
-#                   "tooltip": "This is the EXTERNAL network for Internet access",
-#                   "value"  : "eth1"},
+  "ADMIN_NETWORK/static_start" : { "label"  : "Static Pool Start",
+                   "tooltip": "Fixed public IP addresses ",
+                   "value"  : "10.0.0.10"},
+  "ADMIN_NETWORK/static_end": { "label"  : "Static Pool End",
+                   "tooltip": "Fixed public IP addresses",
+                   "value"  : "10.0.0.120"},
   "DNS_UPSTREAM" : { "label"  : "External DNS",
                    "tooltip": "DNS server(s) (comma separated) to handle DNS\
  requests (example 8.8.8.8)",
@@ -233,6 +237,12 @@ class cobblerconf(urwid.WidgetWrap):
       'pxe-service' : '^pxe-service=(^,)',
       'dhcp-boot'   : '^dhcp-boot=([^,],{3}),'
       }
+  def cancel(self, button):
+    for index, fieldname in enumerate(fields):
+      if fieldname == "blank":
+        pass
+      else:
+        self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
 
   def load(self):
     #Read in yaml
@@ -281,7 +291,13 @@ class cobblerconf(urwid.WidgetWrap):
       factsettings[key]=value
     n=nailyfactersettings.NailyFacterSettings()
     n.write(factsettings)
-       
+    
+    #Set oldsettings to reflect new settings
+    self.oldsettings = newsettings
+    #Update DEFAULTS
+    for index, fieldname in enumerate(fields):
+      DEFAULTS[fieldname]['value']= newsettings[fieldname]
+    
   def getNetwork(self):
     """Uses netifaces module to get addr, broadcast, netmask about
        network interfaces"""
@@ -295,10 +311,21 @@ class cobblerconf(urwid.WidgetWrap):
         self.netsettings.update({iface: netifaces.ifaddresses(iface)[netifaces.AF_INET][0]})
         self.netsettings[iface]["onboot"]="Yes"
       except:
-        #Interface is down, so mark it onboot=no
         self.netsettings.update({iface: {"addr": "", "netmask": "",
                                          "onboot": "no"}})
       self.netsettings[iface]['mac'] = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
+
+      #Set link state
+      try:
+        with open("/sys/class/net/%s/operstate" % iface) as f:
+          content = f.readlines()
+          self.netsettings[iface]["link"]=content[0].strip()
+      except:
+        self.netsettings[iface]["link"]="unknown"
+      #Change unknown link state to up if interface has an IP
+      if self.netsettings[iface]["link"] == "unknown":
+        if self.netsettings[iface]["addr"] != "":
+          self.netsettings[iface]["link"]="up"
 
       #We can try to get bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
       try:
@@ -369,7 +396,7 @@ class cobblerconf(urwid.WidgetWrap):
 
   def setNetworkDetails(self):
     #condensed mode:
-    self.net_text1.set_text("Interface: %s" % self.activeiface)
+    self.net_text1.set_text("Interface: %-13s  Link: %s" % (self.activeiface, self.netsettings[self.activeiface]['link'].upper()))
     self.net_text2.set_text("IP:      %-15s  MAC: %s" % (self.netsettings[self.activeiface]['addr'],
                                               self.netsettings[self.activeiface]['mac']))
     self.net_text3.set_text("Netmask: %-15s  Gateway: %s" % 
@@ -390,7 +417,7 @@ class cobblerconf(urwid.WidgetWrap):
     pass
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
-    text1 = urwid.Text("Enter configuration necessary for Cobbler setup.")
+    text1 = urwid.Text("Parameters for Fuel Managed Network")
 
     #Current network settings
     self.net_text1 = TextLabel("")
@@ -422,16 +449,21 @@ class cobblerconf(urwid.WidgetWrap):
 
     #Button to check
     button_check = Button("Check", self.check)
+    #Button to revert to previously saved settings
+    button_cancel = Button("Cancel", self.cancel)
     #Button to apply (and check again)
     button_apply = Button("Apply", self.apply)
 
     #Wrap buttons into Columns so it doesn't expand and look ugly
-    check_col = Columns([button_check, button_apply,('weight',3,blank)])
+    check_col = Columns([button_check, button_cancel,
+                         button_apply,('weight',2,blank)])
 
-    self.listbox_content = [text1, blank, blank]
-    self.listbox_content.extend([self.net_text1, self.net_text2, self.net_text3, 
+    self.listbox_content = [text1, blank]
+    self.listbox_content.extend([self.net_choices, self.net_text1, 
+                                 self.net_text2, self.net_text3, 
                                  #self.net_text4, self.net_text5, 
-                                 self.net_choices,blank])
+                                 #self.net_choices,blank])
+                                 blank])
     self.listbox_content.extend(self.edits)
     self.listbox_content.append(blank)   
     self.listbox_content.append(check_col)   

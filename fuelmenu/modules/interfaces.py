@@ -195,6 +195,20 @@ IP address")
                                          "onboot": "no"}})
 
       self.netsettings[iface]['mac'] = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
+
+      #Set link state
+      try:
+        with open("/sys/class/net/%s/operstate" % iface) as f:
+          content = f.readlines()
+          self.netsettings[iface]["link"]=content[0].strip()
+      except:
+        self.netsettings[iface]["link"]="unknown"
+      #Change unknown link state to up if interface has an IP
+      if self.netsettings[iface]["link"] == "unknown":
+        if self.netsettings[iface]["addr"] != "":
+          self.netsettings[iface]["link"]="up"
+
+
       #We can try to get bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
       #default to static
       self.netsettings[iface]['bootproto']="none"
@@ -272,7 +286,8 @@ IP address")
 
   def setNetworkDetails(self):
     #condensed mode:
-    self.net_text1.set_text("Interface: %s" % self.activeiface)
+    self.net_text1.set_text("Interface: %-13s  Link: %s" % (self.activeiface, self.netsettings[self.activeiface]['link'].upper()))
+
     self.net_text2.set_text("IP:      %-15s  MAC: %s" % (self.netsettings[self.activeiface]['addr'],
                                               self.netsettings[self.activeiface]['mac']))
     self.net_text3.set_text("Netmask: %-15s  Gateway: %s" %
@@ -370,11 +385,10 @@ IP address")
     #Wrap buttons into Columns so it doesn't expand and look ugly
     check_col = Columns([button_check, button_apply,('weight',3,blank)])
 
-    self.listbox_content = [text1, blank, blank]
-    self.listbox_content.extend([self.net_text1, self.net_text2, self.net_text3, 
-#                                 self.net_text4, self.net_text5, blank, 
-#                                 blank,
-                                 self.net_choices,blank])
+    self.listbox_content = [text1, blank]
+    self.listbox_content.extend([self.net_choices, self.net_text1, 
+                                 self.net_text2, self.net_text3,
+                                 blank])
     self.listbox_content.extend(self.edits)
     self.listbox_content.append(blank)   
     self.listbox_content.append(check_col)   

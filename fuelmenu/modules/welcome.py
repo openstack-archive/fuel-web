@@ -3,7 +3,7 @@
 import urwid
 import urwid.raw_display
 import urwid.web_display
-from urwidwrapper import *
+from common.urwidwrapper import *
 
 
 blank = urwid.Divider()
@@ -13,7 +13,7 @@ class welcome():
   def __init__(self, parent):
     self.name="Welcome"
     self.priority=1
-    self.visible=True
+    self.visible=False
     self.screen = self.screenUI()
 
   def check(self):

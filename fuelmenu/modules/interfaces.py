@@ -11,31 +11,31 @@ import re
 import netaddr
 sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
 from settings import *
-from common import network, puppet
-from urwidwrapper import *
+from common import network, puppet, replace
+from common.urwidwrapper import *
 blank = urwid.Divider()
 
 #Need to define fields in order so it will render correctly
 fields = ["blank", "ifname", "onboot", "bootproto", "ipaddr", "netmask", "gateway"]
 
 DEFAULTS = {
-  "ifname"     : { "label"  : "Interface name",
+  "ifname"     : { "label"  : "Interface name:",
                    "tooltip": "Interface system identifier",
                    "value"  : "locked"},
-  "onboot"     : { "label"  : "Enabled?",
+  "onboot"     : { "label"  : "Enabled on boot:",
                    "tooltip": "",
                    "value"  : "radio"},
-  "bootproto"  : { "label"  : "DHCP or Static configuration",
+  "bootproto"  : { "label"  : "Configuration via DHCP:",
                    "tooltip": "",
                    "value"  : "radio",
                    "choices": ["DHCP", "Static"]},
-  "ipaddr"     : { "label"  : "IP address",
+  "ipaddr"     : { "label"  : "IP address:",
                    "tooltip": "Manual IP address (example 192.168.1.2)",
                    "value"  : ""},
-  "netmask"    : { "label"  : "Netmask",
+  "netmask"    : { "label"  : "Netmask:",
                    "tooltip": "Manual netmask (example 255.255.255.0)",
                    "value"  : "255.255.255.0"},
-  "gateway"    : { "label"  : "Gateway",
+  "gateway"    : { "label"  : "Default Gateway:",
                    "tooltip": "Manual gateway to access Internet (example 192.168.1.1)",
                    "value"  : ""},
 }
@@ -46,8 +46,8 @@ YAMLTREE = "cobbler_common"
 class interfaces(urwid.WidgetWrap):
   def __init__(self, parent):
 
-    self.name="Interfaces"
-    self.priority=30
+    self.name="Network Setup"
+    self.priority=5
     self.visible=True
     self.netsettings = dict()
     logging.basicConfig(filename='./fuelmenu.log',level=logging.DEBUG)
@@ -195,6 +195,20 @@ IP address")
                                          "onboot": "no"}})
 
       self.netsettings[iface]['mac'] = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
+
+      #Set link state
+      try:
+        with open("/sys/class/net/%s/operstate" % iface) as f:
+          content = f.readlines()
+          self.netsettings[iface]["link"]=content[0].strip()
+      except:
+        self.netsettings[iface]["link"]="unknown"
+      #Change unknown link state to up if interface has an IP
+      if self.netsettings[iface]["link"] == "unknown":
+        if self.netsettings[iface]["addr"] != "":
+          self.netsettings[iface]["link"]="up"
+
+
       #We can try to get bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
       #default to static
       self.netsettings[iface]['bootproto']="none"
@@ -272,7 +286,8 @@ IP address")
 
   def setNetworkDetails(self):
     #condensed mode:
-    self.net_text1.set_text("Interface: %s" % self.activeiface)
+    self.net_text1.set_text("Interface: %-13s  Link: %s" % (self.activeiface, self.netsettings[self.activeiface]['link'].upper()))
+
     self.net_text2.set_text("IP:      %-15s  MAC: %s" % (self.netsettings[self.activeiface]['addr'],
                                               self.netsettings[self.activeiface]['mac']))
     self.net_text3.set_text("Netmask: %-15s  Gateway: %s" %
@@ -324,21 +339,18 @@ IP address")
     pass
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
-    text1 = TextLabel("Network settings")
+    text1 = TextLabel("Network interface setup")
 
     #Current network settings
     self.net_text1 = TextLabel("")
     self.net_text2 = TextLabel("")
     self.net_text3 = TextLabel("")
-    self.net_text4 = TextLabel("")
-    self.net_text5 = TextLabel("")
     self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()), fn=self.radioSelectIface)
 
     self.edits = []
     toolbar = self.parent.footer
     for key in fields:
-    #for key, values in DEFAULTS.items():
-       #Example: key = hostname, label = Hostname, value = fuel-pm
+       #Example: key = hostname, label = Hostname, value = fuel
        if key == "blank":
          self.edits.append(blank)
        elif DEFAULTS[key]["value"] == "radio":
@@ -370,11 +382,10 @@ IP address")
     #Wrap buttons into Columns so it doesn't expand and look ugly
     check_col = Columns([button_check, button_apply,('weight',3,blank)])
 
-    self.listbox_content = [text1, blank, blank]
-    self.listbox_content.extend([self.net_text1, self.net_text2, self.net_text3, 
-#                                 self.net_text4, self.net_text5, blank, 
-#                                 blank,
-                                 self.net_choices,blank])
+    self.listbox_content = [text1, blank]
+    self.listbox_content.extend([self.net_choices, self.net_text1, 
+                                 self.net_text2, self.net_text3,
+                                 blank])
     self.listbox_content.extend(self.edits)
     self.listbox_content.append(blank)   
     self.listbox_content.append(check_col)   

@@ -8,7 +8,7 @@ import sys
 import copy
 sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
 from settings import *
-from urwidwrapper import *
+from common.urwidwrapper import *
 log = logging.getLogger('fuelmenu.mirrors')
 log.info("test")
 blank = urwid.Divider()
@@ -23,7 +23,7 @@ class mirrors(urwid.WidgetWrap):
   def __init__(self, parent):
     self.name="Repo Mirrors"
     self.priority=25
-    self.visible=True
+    self.visible=False
     self.parent = parent
     self.listbox_content = []
     self.settings = copy.deepcopy(DEFAULTS)

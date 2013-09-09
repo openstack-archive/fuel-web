@@ -15,21 +15,14 @@ class NailyFacterSettings():
      config = OrderedDict()
      fd=open(infile, 'r')
      lines = fd.readlines()
-     print "asdf"
-     print lines
      for line in lines:
        key = line.split('=')[0]
        value = line.split('=')[1]
        config[key]=value
-       print key,value
-     print infile,config
      fd.close()
      return config
 
   def write(self, newvalues, prefix='mnbs_', defaultsfile='naily.facts.default', outfn='naily.facts'):
-     print outfn
-     print os.path.isfile(outfn)
-     print defaultsfile
      #Read outfn if it exists
      if os.path.isfile(outfn):
        config=self.read(outfn)
@@ -46,5 +39,4 @@ class NailyFacterSettings():
      for key in config.keys():
        outfile.write("%s=%s" % (key, config[key]))
      outfile.close()
-     print config
      return True

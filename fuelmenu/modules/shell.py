@@ -15,7 +15,7 @@ class shell():
     self.priority=99
     self.visible=True
     self.parent=parent
-    self.screen = self.screenUI()
+    #self.screen = self.screenUI()
   def check(self):
     #TODO: Ensure all params are filled out and sensible
     return True

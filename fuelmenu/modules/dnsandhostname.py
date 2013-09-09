@@ -11,7 +11,7 @@ import socket, struct
 import netaddr
 sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
 from settings import *
-from common import network, puppet, replace, nailyfactersettings
+from common import network, puppet, replace, nailyfactersettings, dialog
 from common.urwidwrapper import *
 log = logging.getLogger('fuelmenu.mirrors')
 blank = urwid.Divider()
@@ -56,10 +56,12 @@ class dnsandhostname(urwid.WidgetWrap):
     self.extdhcp=True
     self.parent = parent
     self.oldsettings= self.load()
-    self.screen = self.screenUI()
+    #self.screen = self.screenUI()
      
   def check(self, args):
     """Validates that all fields have valid values and some sanity checks"""
+    self.parent.footer.set_text("Checking data...")
+    self.parent.refreshScreen()
     #Get field information
     responses=dict()
 
@@ -97,8 +99,14 @@ class dnsandhostname(urwid.WidgetWrap):
       errors.append("Domain must contain only alphanumeric, period and hyphen.")
     #ensure external DNS is valid
     if len(responses["DNS_UPSTREAM"]) == 0:
-      #We will allow empty if user doesn't need it
-      pass
+      #We will allow empty if user doesn't need external networking
+      #and present a strongly worded warning
+      msg="If you continue without DNS, you may not be able to access \
+external data necessary for installation needed for some OpenStack \
+Releases."
+
+      diag=dialog.display_dialog(self,TextLabel(msg), "Empty DNS Warning")
+      
     else:
       #external DNS must contain only numbers, periods, and commas
       #TODO: More serious ip address checking
@@ -120,7 +128,8 @@ class dnsandhostname(urwid.WidgetWrap):
         #Therefore, we should call dig externally to be sure.
         import subprocess
         noout=open('/dev/null','w')
-        dns_works = subprocess.call(["dig","+short",responses["TEST_DNS"],
+        dns_works = subprocess.call(["dig","+short","+time=3",
+                        "+retries=1",responses["TEST_DNS"],
                        "@%s" % DNS_UPSTREAM],stdout=noout, stderr=noout)
         if dns_works != 0:
             errors.append("Domain Name server %s unable to resolve host."
@@ -152,12 +161,10 @@ class dnsandhostname(urwid.WidgetWrap):
     self.save(responses)
     #Apply hostname
     expr='HOSTNAME=.*'
-    #replace.replaceInFile("/etc/sysconfig/network",expr,"HOSTNAME=%s" 
-    replace.replaceInFile("network",expr,"HOSTNAME=%s" 
+    replace.replaceInFile("/etc/sysconfig/network",expr,"HOSTNAME=%s" 
                           % (responses["HOSTNAME"]))
     #Write dnsmasq upstream server 
-    #with open('/etc/dnsmasq.upstream','a') as f:
-    with open('dnsmasq.upstream','a') as f:
+    with open('/etc/dnsmasq.upstream','a') as f:
       nameservers=responses['DNS_UPSTREAM'].replace(',',' ')
       f.write("nameserver %s\n" % nameservers)
     f.close() 
@@ -189,11 +196,11 @@ class dnsandhostname(urwid.WidgetWrap):
 
   def load(self):
     #Read in yaml
+    defaultsettings=Settings().read(self.parent.defaultsettingsfile)
+    oldsettings=defaultsettings
+    oldsettings.update(Settings().read(self.parent.settingsfile))
+
     oldsettings=Settings().read(self.parent.settingsfile)
-    #log.debug("Old settings %s" % oldsettings)
-    #log.debug(oldsettings.items())
-    #log.debug(oldsettings.keys())
-    #log.debug(oldsettings.values())
     for setting in DEFAULTS.keys():
         try:
           if "/" in setting:
@@ -320,24 +327,6 @@ class dnsandhostname(urwid.WidgetWrap):
     self.gateway=self.get_default_gateway_linux()
     self.getNetwork()
     self.setNetworkDetails()
-    return 
-
-  def radioSelectExtIf(self, current, state, user_data=None):
-    """Update network details and display information"""
-    ### This makes no sense, but urwid returns the previous object.
-    ### The previous object has True state, which is wrong.. 
-    ### Somewhere in current.group a RadioButton is set to True.
-    ### Our quest is to find it.
-    for rb in current.group:
-       if rb.get_label() == current.get_label():
-         continue
-       if rb.base_widget.state == True:
-         if rb.base_widget.get_label() == "Yes":
-           self.extdhcp=True
-         else:
-           self.extdhcp=False
-         break
-    self.setExtIfaceFields(self.extdhcp)
     return 
 
   def screenUI(self):

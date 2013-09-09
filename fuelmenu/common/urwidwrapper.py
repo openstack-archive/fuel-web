@@ -27,8 +27,9 @@ def ChoicesGroup(self, choices, default_value=None, fn=None):
         #else:
         #   is_default = True if txt == default_value else False
         is_default = True if txt == default_value else False
-        radio_button = urwid.AttrWrap(urwid.RadioButton(rb_group,
-                txt, on_state_change=fn, user_data=txt), 'buttn','buttnf')
+        radio_button = urwid.AttrWrap(urwid.RadioButton(rb_group, txt,
+                is_default, on_state_change=fn, user_data=txt), 
+                'buttn','buttnf')
                 #txt, is_default, on_state_change=self.radioSelect, user_data=txt), 'buttn','buttnf')
     wrapped_choices = urwid.GridFlow(rb_group, 13, 3, 0, 'left')
     #Bundle rb_group so we can use it later easily

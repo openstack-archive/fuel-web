@@ -13,24 +13,23 @@ sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
 from settings import *
 from common import network, puppet, replace, nailyfactersettings
 from common.urwidwrapper import *
-log = logging.getLogger('fuelmenu.mirrors')
-log.info("test")
+log = logging.getLogger('fuelmenu.pxe_setup')
 blank = urwid.Divider()
 
 #Need to define fields in order so it will render correctly
 #fields = ["hostname", "domain", "mgmt_if","dhcp_start","dhcp_end",
 #          "blank","ext_if","ext_dns"]
-fields = ["blank", "static_label", 
+fields = ["static_label", 
           "ADMIN_NETWORK/static_start", "ADMIN_NETWORK/static_end", 
           "blank", "dynamic_label", "ADMIN_NETWORK/first",
           "ADMIN_NETWORK/last"]
 facter_translate = {
   "ADMIN_NETWORK/interface"    : "internal_interface",
-  "ADMIN_NETWORK/interface"    : "internal_ipaddress",
+  #"ADMIN_NETWORK/ipaddr"       : "internal_ipaddress",
   "ADMIN_NETWORK/first"        : "dhcp_pool_start",
   "ADMIN_NETWORK/last"         : "dhcp_pool_end",
-  "ADMIN_NETWORK/static_start" : "dhcp_static_pool_start",
-  "ADMIN_NETWORK/static_end"   : "dhcp_static_pool_end",
+  "ADMIN_NETWORK/static_start" : "static_pool_start",
+  "ADMIN_NETWORK/static_end"   : "static_pool_end",
 }
 mnbs_internal_ipaddress="10.20.0.2"
 mnbs_internal_netmask="255.255.255.0"
@@ -83,7 +82,7 @@ class cobblerconf(urwid.WidgetWrap):
     self.extdhcp=True
     self.parent = parent
     self.oldsettings= self.load()
-    self.screen = self.screenUI()
+    #self.screen = self.screenUI()
      
   def check(self, args):
     """Validates that all fields have valid values and some sanity checks"""
@@ -91,11 +90,11 @@ class cobblerconf(urwid.WidgetWrap):
     responses=dict()
 
     for index, fieldname in enumerate(fields):
-      if fieldname == "blank":
+      if fieldname == "blank" or "label" in fieldname:
         pass
       else:
         responses[fieldname]=self.edits[index].get_edit_text()
-
+    responses["ADMIN_NETWORK/interface"]=self.activeiface
     ###Validate each field
     errors=[]
     
@@ -110,10 +109,28 @@ class cobblerconf(urwid.WidgetWrap):
       else:
          #Ensure ADMIN_NETWORK/interface is not running DHCP
          if self.netsettings[responses["ADMIN_NETWORK/interface"]]["bootproto"] == "dhcp":
-           errors.append("Management interface is configured for DHCP. Go to Interfaces\
-  to configure this interface to be static first.")
+           errors.append("%s is running DHCP. Change it to static first."
+                         % self.activeiface)
   
-         #Ensure DHCP Pool Start and DHCP Pool are valid IPs
+         #Ensure Static Pool Start and Static Pool are valid IPs
+         try:
+           if netaddr.valid_ipv4(responses["ADMIN_NETWORK/static_start"]):
+             static_start=netaddr.IPAddress(responses["ADMIN_NETWORK/static_start"])
+           else:
+             raise Exception("")
+         except Exception, e:
+           errors.append("Not a valid IP address for Static Pool Start: %s" 
+                         % e)
+                         #% responses["ADMIN_NETWORK/first"])
+         try:
+           if netaddr.valid_ipv4(responses["ADMIN_NETWORK/static_end"]):
+             static_end=netaddr.IPAddress(responses["ADMIN_NETWORK/static_end"])
+           else:
+             raise Exception("")
+         except:
+           errors.append("Not a valid IP address for Static Pool end: %s" 
+                         % responses["ADMIN_NETWORK/static_end"])
+          #Ensure DHCP Pool Start and DHCP Pool are valid IPs
          try:
            if netaddr.valid_ipv4(responses["ADMIN_NETWORK/first"]):
              dhcp_start=netaddr.IPAddress(responses["ADMIN_NETWORK/first"])
@@ -186,14 +203,13 @@ class cobblerconf(urwid.WidgetWrap):
         pass
       else:
         self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
-
+    self.setNetworkDetails()
   def load(self):
     #Read in yaml
-    oldsettings=Settings().read(self.parent.settingsfile)
+    defaultsettings=Settings().read(self.parent.defaultsettingsfile)
+    oldsettings=defaultsettings
+    oldsettings.update(Settings().read(self.parent.settingsfile))
     log.debug("Old settings %s" % oldsettings)
-    log.debug(oldsettings.items())
-    log.debug(oldsettings.keys())
-    log.debug(oldsettings.values())
     for setting in DEFAULTS.keys():
         if "label" in setting:
            continue
@@ -202,6 +218,9 @@ class cobblerconf(urwid.WidgetWrap):
            DEFAULTS[setting]["value"] = oldsettings[part1][part2]
         else:
            DEFAULTS[setting]["value"] = oldsettings[setting]
+    if oldsettings["ADMIN_NETWORK"]["interface"] in self.netsettings.keys():
+      self.activeiface=oldsettings["ADMIN_NETWORK"]["interface"]
+
     return oldsettings 
   def save(self, responses):
     ## Generic settings start ##
@@ -232,16 +251,23 @@ class cobblerconf(urwid.WidgetWrap):
                      outfn="newsettings.yaml")
     #Write naily.facts
     factsettings=dict()
-    for key in newsettings.keys():
-      factsettings[key]=newsettings[key]
+    #for key in newsettings.keys():
+    log.debug(str(facter_translate))
+    log.debug(str(newsettings))
+    for key in facter_translate.keys():
+      factsettings[facter_translate[key]]=responses[key]
     n=nailyfactersettings.NailyFacterSettings()
+    log.debug("Facts to write: %s" % factsettings)
     n.write(factsettings)
     
     #Set oldsettings to reflect new settings
     self.oldsettings = newsettings
     #Update DEFAULTS
     for index, fieldname in enumerate(fields):
-      DEFAULTS[fieldname]['value']= newsettings[fieldname]
+      if fieldname != "blank" and "label" not in fieldname:
+        DEFAULTS[fieldname]['value']= responses[fieldname]
+
+    self.parent.footer.set_text("Changes saved successfully.")
     
   def getNetwork(self):
     """Uses netifaces module to get addr, broadcast, netmask about
@@ -292,6 +318,10 @@ class cobblerconf(urwid.WidgetWrap):
     noout=open('/dev/null','w')
     dhclient_running = subprocess.call(["pgrep","-f","dhclient.*%s" % (iface)],
                            stdout=noout, stderr=noout)
+    if dhclient_running == 0:
+      return True
+    else:
+      return False
 
   
   def get_default_gateway_linux(self):
@@ -347,17 +377,52 @@ class cobblerconf(urwid.WidgetWrap):
     self.net_text3.set_text("Netmask: %-15s  Gateway: %s" % 
                             (self.netsettings[self.activeiface]['netmask'],
                             self.gateway))
+    log.debug("bootproto for %s: %s" % (self.netsettings[self.activeiface],
+                           self.netsettings[self.activeiface]['bootproto']))
     if self.netsettings[self.activeiface]['link'].upper() == "UP":
-       if self.getDHCP(self.activeiface):
-         self.net_text4.set_text("WARNING: Cannot run on interface with DHCP.")
+       if self.netsettings[self.activeiface]['bootproto'] == "dhcp":
+         self.net_text4.set_text("WARNING: Cannot use interface running DHCP.\n\
+Reconfigure as static in Network Setup screen.")
        else:
          self.net_text4.set_text("")
     else:
       self.net_text4.set_text("WARNING: This interface is DOWN. Configure it first.")
+  
+    #Calculate and set Static/DHCP pool fields
+    #Max IPs = net size - 2 (master node + bcast)
+    net_ip_list = network.getNetwork(self.netsettings[self.activeiface]['addr'],
+                                  self.netsettings[self.activeiface]['netmask'])
+    try:
+      half = int(len(net_ip_list)/2)
+      static_pool = list(net_ip_list[:half])
+      dhcp_pool = list(net_ip_list[half:])
+      static_start = str(static_pool[0])
+      static_end = str(static_pool[-1])
+      dynamic_start = str(dhcp_pool[0])
+      dynamic_end = str(dhcp_pool[-1])
+      if self.net_text4.get_text() == "":
+        self.net_text4.set_text("This network configuration can support %s \
+nodes." % len(dhcp_pool))
+    except:
+      #We don't have valid values, so mark all fields empty
+      static_start = ""
+      static_end = ""
+      dynamic_start = ""
+      dynamic_end = ""
+    for index, key in enumerate(fields):
+      if key == "ADMIN_NETWORK/static_start":
+        self.edits[index].set_edit_text(static_start)
+      elif key == "ADMIN_NETWORK/static_end":
+        self.edits[index].set_edit_text(static_end)
+      elif key == "ADMIN_NETWORK/first":
+        self.edits[index].set_edit_text(dynamic_start)
+      elif key == "ADMIN_NETWORK/last":
+        self.edits[index].set_edit_text(dynamic_end)
+   
 
-  def setExtIfaceFields(self, enabled=True):
-    ###TODO: Define ext iface fields as disabled and then toggle
-    pass
+  #def setExtIfaceFields(self, enabled=True):
+  #  ###TODO: Define ext iface fields as disabled and then toggle
+  #  pass
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
     text1 = urwid.Text("Settings for PXE booting of slave nodes.")
@@ -367,8 +432,10 @@ class cobblerconf(urwid.WidgetWrap):
     self.net_text2 = TextLabel("")
     self.net_text3 = TextLabel("")
     self.net_text4 = TextLabel("")
-    self.setNetworkDetails()
-    self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()), fn=self.radioSelectIface)
+    log.debug("Default iface %s" % self.activeiface)
+    self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()),
+                                    default_value=self.activeiface, 
+                                    fn=self.radioSelectIface)
 
     self.edits = []
     toolbar = self.parent.footer
@@ -415,6 +482,7 @@ class cobblerconf(urwid.WidgetWrap):
     #Build all of these into a list
     #self.listbox_content = [ text1, blank, blank, edit1, edit2, \
     #                    edit3, edit4, edit5, edit6, button_check ]
+    self.setNetworkDetails()
    
     #Add everything into a ListBox and return it
     self.listwalker=urwid.SimpleListWalker(self.listbox_content)

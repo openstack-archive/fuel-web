@@ -22,3 +22,17 @@ def getCidrSize(cidr):
    except:
      return False
 
+def getNetwork(ip, netmask):
+   #Return a list excluding ip and broadcast IPs
+   try:
+     ipn = netaddr.IPNetwork("%s/%s" % (ip, netmask))
+     ipn_list = list(ipn)
+     #Drop broadcast and network ip
+     ipn_list = ipn_list[1:-1]
+     #Drop ip
+     ipn_list[:] = [value for value in ipn_list if str(value) != ip]
+     
+     return ipn_list
+   except:
+     return False
+

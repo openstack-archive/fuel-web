@@ -11,9 +11,10 @@ import re
 import netaddr
 sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
 from settings import *
-from common import network, puppet, replace
+from common import network, puppet, replace, dialog
 from common.urwidwrapper import *
 blank = urwid.Divider()
+
 
 #Need to define fields in order so it will render correctly
 fields = ["blank", "ifname", "onboot", "bootproto", "ipaddr", "netmask", "gateway"]
@@ -59,10 +60,19 @@ class interfaces(urwid.WidgetWrap):
     self.activeiface = sorted(self.netsettings.keys())[0]
     self.extdhcp=True
     self.parent = parent
-    #self.screen = self.screenUI()
-     
+    self.screen = None
+
   def check(self, args):
     """Validates that all fields have valid values and some sanity checks"""
+    #self.popup(msg="Test",buttons=None)
+    #self.popup(msg="Test",buttons=None)
+    #diag=dialog.display_dialog(self,TextLabel("Test"), "Test")
+    #Test pop up
+    #dd = popupdialog.PopUpDialog(self.screen)
+    #dd = dialogdisplay.PopUp(self.screen,"Test")
+    #dd.open_pop_up()
+    #dd = dialogdisplay.PopUpDialog("Test")
+ 
     #Get field information
     responses=dict()
     self.parent.footer.set_text("Checking data...")
@@ -90,6 +100,7 @@ class interfaces(urwid.WidgetWrap):
     if responses["onboot"] == "no":
        return responses
     #No checks yet for DHCP, just return
+   
     if responses["bootproto"] == "dhcp":
        return responses
     #Check ipaddr, netmask, gateway only if static
@@ -345,7 +356,8 @@ IP address")
     self.net_text1 = TextLabel("")
     self.net_text2 = TextLabel("")
     self.net_text3 = TextLabel("")
-    self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()), fn=self.radioSelectIface)
+    self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()),
+               default_value=self.activeiface, fn=self.radioSelectIface)
 
     self.edits = []
     toolbar = self.parent.footer
@@ -361,7 +373,7 @@ IP address")
            choices_list = ["Yes", "No"]
          choices = ChoicesGroup(self,choices_list,
                      default_value="Yes", fn=self.radioSelectExtIf)
-         columns=Columns([label,choices])
+         columns=Columns([('weight',2,label),('weight',3,choices)])
          #Attach choices rb_group so we can use it later
          columns.rb_group = choices.rb_group
          self.edits.append(columns)
@@ -400,5 +412,6 @@ IP address")
     self.listwalker=urwid.SimpleListWalker(self.listbox_content)
     screen = urwid.ListBox(self.listwalker)
     self.setNetworkDetails()
+    self.screen = screen
     return screen
     

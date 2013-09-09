@@ -53,9 +53,9 @@ def puppetApply(classname, name=None, params=None):
     log.error(traceback.print_exc())
     log.error(e)
     log.debug(output)
-    log.debug(e.message)
+    log.debug(e)
     if "err:" in output:
-      log.error(e.message)
+      log.error(e)
     return False
   else:
     log.debug(output)

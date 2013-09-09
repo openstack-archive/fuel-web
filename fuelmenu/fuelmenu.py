@@ -31,13 +31,13 @@ class Loader:
                    if f.endswith('.py')]
         
         for module in modules:
-            log.info('loading module %s', module)
+            log.info('loading module %s' % module)
             try:
                 imported = __import__(module)
                 pass
                 #imported = process(module)
             except ImportError as e:
-                log.error('module could not be imported: %s', e)
+                log.error('module could not be imported: %s' % e)
                 continue
 
             clsobj = getattr(imported, module, None)
@@ -104,7 +104,6 @@ class FuelSetup():
         if name is None:
             child = self.children[0]
         else:
-            log.info(name, self.choices.index(name))
             child = self.children[int(self.choices.index(name))]
         self.childpage = child.screenUI()
         self.childfill = urwid.Filler(self.childpage, 'top', 40)

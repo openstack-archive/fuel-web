@@ -14,7 +14,6 @@ from settings import *
 from common import network, puppet, replace, nailyfactersettings
 from common.urwidwrapper import *
 log = logging.getLogger('fuelmenu.mirrors')
-log.info("test")
 blank = urwid.Divider()
 
 #Need to define fields in order so it will render correctly
@@ -191,10 +190,10 @@ class dnsandhostname(urwid.WidgetWrap):
   def load(self):
     #Read in yaml
     oldsettings=Settings().read(self.parent.settingsfile)
-    log.debug("Old settings %s" % oldsettings)
-    log.debug(oldsettings.items())
-    log.debug(oldsettings.keys())
-    log.debug(oldsettings.values())
+    #log.debug("Old settings %s" % oldsettings)
+    #log.debug(oldsettings.items())
+    #log.debug(oldsettings.keys())
+    #log.debug(oldsettings.values())
     for setting in DEFAULTS.keys():
         try:
           if "/" in setting:
@@ -226,12 +225,12 @@ class dnsandhostname(urwid.WidgetWrap):
         newsettings[setting] = responses[setting]
     ## Generic settings end ##
 
-    log.debug(str(newsettings))
+    #log.debug(str(newsettings))
     Settings().write(newsettings,defaultsfile=self.parent.settingsfile,
                      outfn="newsettings.yaml")
     #Write naily.facts
     factsettings=dict()
-    log.debug(newsettings)
+    #log.debug(newsettings)
     for key in newsettings.keys():
       if key != "blank":
         factsettings[key]=newsettings[key]

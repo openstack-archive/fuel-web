@@ -292,6 +292,10 @@ class cobblerconf(urwid.WidgetWrap):
     noout=open('/dev/null','w')
     dhclient_running = subprocess.call(["pgrep","-f","dhclient.*%s" % (iface)],
                            stdout=noout, stderr=noout)
+    if dhclient_running == 0:
+      return True
+    else:
+      return False
 
   
   def get_default_gateway_linux(self):
@@ -348,7 +352,7 @@ class cobblerconf(urwid.WidgetWrap):
                             (self.netsettings[self.activeiface]['netmask'],
                             self.gateway))
     if self.netsettings[self.activeiface]['link'].upper() == "UP":
-       if self.getDHCP(self.activeiface):
+       if self.netsettings[self.activeiface]['bootproto'] == "dhcp":
          self.net_text4.set_text("WARNING: Cannot run on interface with DHCP.")
        else:
          self.net_text4.set_text("")

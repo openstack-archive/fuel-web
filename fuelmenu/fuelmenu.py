@@ -37,7 +37,7 @@ class Loader:
                 pass
                 #imported = process(module)
             except ImportError as e:
-                log.error('module could not be imported: %s', e)
+                log.error('module could not be imported: %s' % e)
                 continue
 
             clsobj = getattr(imported, module, None)

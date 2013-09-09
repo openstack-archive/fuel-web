@@ -20,66 +20,40 @@ blank = urwid.Divider()
 #Need to define fields in order so it will render correctly
 #fields = ["hostname", "domain", "mgmt_if","dhcp_start","dhcp_end",
 #          "blank","ext_if","ext_dns"]
-fields = ["blank", "static_label", 
-          "ADMIN_NETWORK/static_start", "ADMIN_NETWORK/static_end", 
-          "blank", "dynamic_label", "ADMIN_NETWORK/first",
-          "ADMIN_NETWORK/last"]
-facter_translate = {
-  "ADMIN_NETWORK/interface"    : "internal_interface",
-  "ADMIN_NETWORK/interface"    : "internal_ipaddress",
-  "ADMIN_NETWORK/first"        : "dhcp_pool_start",
-  "ADMIN_NETWORK/last"         : "dhcp_pool_end",
-  "ADMIN_NETWORK/static_start" : "dhcp_static_pool_start",
-  "ADMIN_NETWORK/static_end"   : "dhcp_static_pool_end",
-}
-mnbs_internal_ipaddress="10.20.0.2"
-mnbs_internal_netmask="255.255.255.0"
-mnbs_static_pool_start="10.20.0.130"
-mnbs_static_pool_end="10.20.0.250"
-mnbs_dhcp_pool_start="10.20.0.10"
-mnbs_dhcp_pool_end="10.20.0.120"
-mnbs_internal_interface="eth1"
+fields = ["HOSTNAME", "DNS_DOMAIN", "DNS_SEARCH","DNS_UPSTREAM","blank", "TEST_DNS"]
 
 DEFAULTS = {
-  #"ADMIN_NETWORK/interface" : { "label"  : "Management Interface",
-  #                 "tooltip": "This is the INTERNAL network for provisioning",
-  #                 "value"  : "eth0"},
-  "ADMIN_NETWORK/first"     : { "label"  : "DHCP Pool Start",
-                   "tooltip": "Used for defining IPs for hosts and instance public addresses",
-                   "value"  : "10.0.0.130"},
-  "ADMIN_NETWORK/last"   : { "label"  : "DHCP Pool End",
-                   "tooltip": "Used for defining IPs for hosts and instance public addresses",
-                   "value"  : "10.0.0.254"},
-  "static_label"            : { "label"  : "Static pool for installed nodes:",
-                   "tooltip" : "",
-                   "value"  : "label"},
-  "ADMIN_NETWORK/static_start" : { "label"  : "Static Pool Start",
-                   "tooltip": "Static pool for installed nodes",
-                   "value"  : "10.0.0.10"},
-  "ADMIN_NETWORK/static_end": { "label"  : "Static Pool End",
-                   "tooltip": "Static pool for installed nodes",
-                   "value"  : "10.0.0.120"},
-  "dynamic_label"            : { "label"  : "DHCP pool for node discovery:",
-                   "tooltip" : "",
-                   "value"  : "label"},
-  #"ADMIN_NETWORK/dynamic_start" : { "label"  : "Static Pool Start",
-  #                 "tooltip": "DHCP pool for node discovery",
-  #                 "value"  : "10.0.0.10"},
-  #"ADMIN_NETWORK/dynamic_end": { "label"  : "Static Pool End",
-  #                 "tooltip": "DHCP pool for node discovery",
-  #                 "value"  : "10.0.0.120"},
+  "HOSTNAME"     : { "label"  : "Hostname",
+                   "tooltip": "Hostname to use for Fuel master node",
+                   "value"  : "fuel"},
+  "DNS_UPSTREAM" : { "label"  : "External DNS",
+                   "tooltip": "DNS server(s) (comma separated) to handle DNS\
+ requests (example 8.8.8.8)",
+                   "value"  : "8.8.8.8"},
+  "DNS_DOMAIN"   : { "label"  : "Domain",
+                   "tooltip": "Domain suffix to user for all nodes in your cluster",
+                   "value"  : "example.com"},
+  "DNS_SEARCH"   : { "label"  : "Search Domain",
+                   "tooltip": "Domains to search when looking up DNS\
+ (space separated)",
+                   "value"  : "example.com"},
+  "TEST_DNS"     : { "label" : "Hostname to test DNS:",
+                       "value" : "www.google.com",
+                       "tooltip": "DNS record to resolve to see if DNS is \
+accessible",}
 }
 
-class cobblerconf(urwid.WidgetWrap):
+
+
+class dnsandhostname(urwid.WidgetWrap):
   def __init__(self, parent):
-    self.name="PXE Setup"
-    self.priority=20
+    self.name="DNS & Hostname"
+    self.priority=15
     self.visible=True
     self.netsettings = dict()
     self.deployment="pre"
     self.getNetwork()
     self.gateway=self.get_default_gateway_linux()
-    self.activeiface = sorted(self.netsettings.keys())[0]
     self.extdhcp=True
     self.parent = parent
     self.oldsettings= self.load()
@@ -99,54 +73,69 @@ class cobblerconf(urwid.WidgetWrap):
     ###Validate each field
     errors=[]
     
-    #ensure management interface is valid
-    if responses["ADMIN_NETWORK/interface"] not in self.netsettings.keys():
-      errors.append("Management interface not valid")
-    else:
-      ###Ensure pool start and end are on the same subnet as mgmt_if
-      #Ensure mgmt_if has an IP first
-      if len(self.netsettings[responses["ADMIN_NETWORK/interface"]]["addr"]) == 0:
-        errors.append("Go to Interfaces to configure management interface first.")
-      else:
-         #Ensure ADMIN_NETWORK/interface is not running DHCP
-         if self.netsettings[responses["ADMIN_NETWORK/interface"]]["bootproto"] == "dhcp":
-           errors.append("Management interface is configured for DHCP. Go to Interfaces\
-  to configure this interface to be static first.")
-  
-         #Ensure DHCP Pool Start and DHCP Pool are valid IPs
-         try:
-           if netaddr.valid_ipv4(responses["ADMIN_NETWORK/first"]):
-             dhcp_start=netaddr.IPAddress(responses["ADMIN_NETWORK/first"])
-           else:
-             raise Exception("")
-         except Exception, e:
-           errors.append("Not a valid IP address for DHCP Pool Start: %s" 
-                         % e)
-                         #% responses["ADMIN_NETWORK/first"])
-         try:
-           if netaddr.valid_ipv4(responses["ADMIN_NETWORK/last"]):
-             dhcp_end=netaddr.IPAddress(responses["ADMIN_NETWORK/last"])
-           else:
-             raise Exception("")
-         except:
-           errors.append("Not a valid IP address for DHCP Pool end: %s" 
-                         % responses["ADMIN_NETWORK/last"])
-  
-         #Ensure pool start and end are in the same subnet of each other
-         netmask=self.netsettings[responses["ADMIN_NETWORK/interface"]]["netmask"]
-         if network.inSameSubnet(responses["ADMIN_NETWORK/first"],responses["ADMIN_NETWORK/last"],
-                                 netmask) is False:
-           errors.append("DHCP Pool start and end are not in the same subnet.")
-  
-         #Ensure pool start and end are in the netmask of ADMIN_NETWORK/interface
-         mgmt_if_ipaddr=self.netsettings[responses["ADMIN_NETWORK/interface"]]["addr"]
-         if network.inSameSubnet(responses["ADMIN_NETWORK/first"],mgmt_if_ipaddr,
-                                 netmask) is False:
-           errors.append("DHCP Pool start does not match management network.")
-         if network.inSameSubnet(responses["ADMIN_NETWORK/last"],mgmt_if_ipaddr,
-                                 netmask) is False:
-           errors.append("DHCP Pool end is not in the same subnet as management interface.")
+    #hostname must be under 60 chars
+    if len(responses["HOSTNAME"]) >= 60:
+       errors.append("Hostname must be under 60 chars.")
+    
+    #hostname must not be empty
+    if len(responses["HOSTNAME"]) == 0:
+       errors.append("Hostname must not be empty.")
 
+    #hostname needs to have valid chars
+    if not re.match('[a-z0-9-]',responses["HOSTNAME"]):
+      errors.append("Hostname must contain only alphanumeric and hyphen.")
+
+    #domain must be under 180 chars
+    if len(responses["DNS_DOMAIN"]) >= 180:
+       errors.append("Domain must be under 180 chars.")
+    
+    #domain must not be empty
+    if len(responses["DNS_DOMAIN"]) == 0:
+       errors.append("Domain must not be empty.")
+
+    #domain needs to have valid chars
+    if not re.match('[a-z0-9-.]',responses["DNS_DOMAIN"]):
+      errors.append("Domain must contain only alphanumeric, period and hyphen.")
+    #ensure external DNS is valid
+    if len(responses["DNS_UPSTREAM"]) == 0:
+      #We will allow empty if user doesn't need it
+      pass
+    else:
+      #external DNS must contain only numbers, periods, and commas
+      #TODO: More serious ip address checking
+      if not re.match('[0-9.,]',responses["DNS_UPSTREAM"]):
+        errors.append("External DNS must contain only IP addresses and commas.")
+      #ensure test DNS name isn't empty
+      if len(responses["TEST_DNS"]) == 0:
+         errors.append("Test DNS must not be empty.")
+      #Validate first IP address
+      try:
+        if netaddr.valid_ipv4(responses["DNS_UPSTREAM"].split(",")[0]):
+          DNS_UPSTREAM=responses["DNS_UPSTREAM"].split(",")[0]
+        else:
+          errors.append("Not a valid IP address for External DNS: %s" 
+          % responses["DNS_UPSTREAM"])
+
+        #Try to resolve with first address
+        #Note: Python's internal resolver caches negative answers.
+        #Therefore, we should call dig externally to be sure.
+        import subprocess
+        noout=open('/dev/null','w')
+        dns_works = subprocess.call(["dig","+short",responses["TEST_DNS"],
+                       "@%s" % DNS_UPSTREAM],stdout=noout, stderr=noout)
+        if dns_works != 0:
+            errors.append("Domain Name server %s unable to resolve host."
+                          % DNS_UPSTREAM)
+        #from twisted.names import client
+        #for nameserver in responses["ext_dns"].split(","):
+        #   resolver = client.createResolver(servers=[(nameserver,53))
+        #   if resolver.getHostByName('wikipedia.org')
+      except Exception, e:
+ 
+        errors.append(e)
+        errors.append("Not a valid IP address for External DNS: %s" 
+                       % responses["DNS_UPSTREAM"])
+    
     if len(errors) > 0:
       self.parent.footer.set_text("Errors: %s First error: %s" % (len(errors), errors[0]))
       return False
@@ -161,28 +150,40 @@ class cobblerconf(urwid.WidgetWrap):
         log.error("%s" % (responses))
         return False
 
-    #Always save even if "post"
     self.save(responses)
+    #Apply hostname
+    expr='HOSTNAME=.*'
+    #replace.replaceInFile("/etc/sysconfig/network",expr,"HOSTNAME=%s" 
+    replace.replaceInFile("network",expr,"HOSTNAME=%s" 
+                          % (responses["HOSTNAME"]))
+    #Write dnsmasq upstream server 
+    #with open('/etc/dnsmasq.upstream','a') as f:
+    with open('dnsmasq.upstream','a') as f:
+      nameservers=responses['DNS_UPSTREAM'].replace(',',' ')
+      f.write("nameserver %s\n" % nameservers)
+    f.close() 
+    
+    ###Future feature to apply post-deployment
     #Need to decide if we are pre-deployment or post-deployment
-    if self.deployment == "post":
-      self.updateCobbler(responses)
-      services.restart("cobbler")
+    #if self.deployment == "post":
+    #  self.updateCobbler(responses)
+    #  services.restart("cobbler")
   
-  def updateCobbler(self, params):  
-    patterns={
-      'cblr_server'      : '^server: .*',
-      'cblr_next_server' : '^next_server: .*',
-      'mgmt_if'     : '^interface=.*',
-      'domain'      : '^domain=.*',
-      'server'      : '^server=.*',
-      'dhcp-range'  : '^dhcp-range=',
-      'dhcp-option' : '^dhcp-option=',
-      'pxe-service' : '^pxe-service=(^,)',
-      'dhcp-boot'   : '^dhcp-boot=([^,],{3}),'
-      }
+#  def updateCobbler(self, params):  
+#    patterns={
+#      'cblr_server'      : '^server: .*',
+#      'cblr_next_server' : '^next_server: .*',
+#      'mgmt_if'     : '^interface=.*',
+#      'domain'      : '^domain=.*',
+#      'server'      : '^server=.*',
+#      'dhcp-range'  : '^dhcp-range=',
+#      'dhcp-option' : '^dhcp-option=',
+#      'pxe-service' : '^pxe-service=(^,)',
+#      'dhcp-boot'   : '^dhcp-boot=([^,],{3}),'
+#      }
   def cancel(self, button):
     for index, fieldname in enumerate(fields):
-      if fieldname == "blank" or "label" in fieldname:
+      if fieldname == "blank":
         pass
       else:
         self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
@@ -195,13 +196,21 @@ class cobblerconf(urwid.WidgetWrap):
     log.debug(oldsettings.keys())
     log.debug(oldsettings.values())
     for setting in DEFAULTS.keys():
-        if "label" in setting:
-           continue
-        elif "/" in setting:
-           part1, part2 = setting.split("/")
-           DEFAULTS[setting]["value"] = oldsettings[part1][part2]
-        else:
-           DEFAULTS[setting]["value"] = oldsettings[setting]
+        try:
+          if "/" in setting:
+             part1, part2 = setting.split("/")
+             DEFAULTS[setting]["value"] = oldsettings[part1][part2]
+          else:
+             DEFAULTS[setting]["value"] = oldsettings[setting]
+        except:
+          log.warning("No setting named %s found." % setting)
+          continue
+    #Read hostname if it's already set
+    try:
+      import os
+      oldsettings["HOSTNAME"]=os.uname()[1]
+    except:
+      log.warning("Unable to look up system hostname")
     return oldsettings 
   def save(self, responses):
     ## Generic settings start ##
@@ -217,23 +226,15 @@ class cobblerconf(urwid.WidgetWrap):
         newsettings[setting] = responses[setting]
     ## Generic settings end ##
 
-    ## Need to calculate and set cidr, netmask, size
-    newsettings['ADMIN_NETWORK']['netmask'] = \
-        self.netsettings[newsettings['ADMIN_NETWORK']['interface']]["netmask"]
-    newsettings['ADMIN_NETWORK']['cidr'] = network.getCidr(
-        self.netsettings[newsettings['ADMIN_NETWORK']['interface']]["addr"],
-        newsettings['ADMIN_NETWORK']['netmask'])
-    newsettings['ADMIN_NETWORK']['size']=network.getCidrSize(
-        newsettings['ADMIN_NETWORK']['cidr'])
-    
-
     log.debug(str(newsettings))
     Settings().write(newsettings,defaultsfile=self.parent.settingsfile,
                      outfn="newsettings.yaml")
     #Write naily.facts
     factsettings=dict()
+    log.debug(newsettings)
     for key in newsettings.keys():
-      factsettings[key]=newsettings[key]
+      if key != "blank":
+        factsettings[key]=newsettings[key]
     n=nailyfactersettings.NailyFacterSettings()
     n.write(factsettings)
     
@@ -241,7 +242,8 @@ class cobblerconf(urwid.WidgetWrap):
     self.oldsettings = newsettings
     #Update DEFAULTS
     for index, fieldname in enumerate(fields):
-      DEFAULTS[fieldname]['value']= newsettings[fieldname]
+      if fieldname != "blank":
+        DEFAULTS[fieldname]['value']= newsettings[fieldname]
     
   def getNetwork(self):
     """Uses netifaces module to get addr, broadcast, netmask about
@@ -339,36 +341,11 @@ class cobblerconf(urwid.WidgetWrap):
     self.setExtIfaceFields(self.extdhcp)
     return 
 
-  def setNetworkDetails(self):
-    #condensed mode:
-    self.net_text1.set_text("Interface: %-13s  Link: %s" % (self.activeiface, self.netsettings[self.activeiface]['link'].upper()))
-    self.net_text2.set_text("IP:      %-15s  MAC: %s" % (self.netsettings[self.activeiface]['addr'],
-                                              self.netsettings[self.activeiface]['mac']))
-    self.net_text3.set_text("Netmask: %-15s  Gateway: %s" % 
-                            (self.netsettings[self.activeiface]['netmask'],
-                            self.gateway))
-    if self.netsettings[self.activeiface]['link'].upper() == "UP":
-       if self.getDHCP(self.activeiface):
-         self.net_text4.set_text("WARNING: Cannot run on interface with DHCP.")
-       else:
-         self.net_text4.set_text("")
-    else:
-      self.net_text4.set_text("WARNING: This interface is DOWN. Configure it first.")
-
-  def setExtIfaceFields(self, enabled=True):
-    ###TODO: Define ext iface fields as disabled and then toggle
-    pass
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
-    text1 = urwid.Text("Settings for PXE booting of slave nodes.")
-    text2 = urwid.Text("Select the interface where PXE will run:")
-    #Current network settings
-    self.net_text1 = TextLabel("")
-    self.net_text2 = TextLabel("")
-    self.net_text3 = TextLabel("")
-    self.net_text4 = TextLabel("")
-    self.setNetworkDetails()
-    self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()), fn=self.radioSelectIface)
+    text1 = urwid.Text("DNS and hostname setup")
+    text2 = urwid.Text("Note: Leave External DNS blank if you do not have"\
+                       " Internet access.")
 
     self.edits = []
     toolbar = self.parent.footer
@@ -382,14 +359,11 @@ class cobblerconf(urwid.WidgetWrap):
          choices = ChoicesGroup(self,["Yes", "No"],
                     default_value="Yes", fn=self.radioSelectExtIf)
          self.edits.append(Columns([label,choices]))
-       elif DEFAULTS[key]["value"] == "label":
-         self.edits.append(TextLabel(DEFAULTS[key]["label"]))
        else:
          caption = DEFAULTS[key]["label"]
          default = DEFAULTS[key]["value"]
          tooltip = DEFAULTS[key]["tooltip"]
          self.edits.append(TextField(key, caption, 23, default, tooltip, toolbar))
-
 
     #Button to check
     button_check = Button("Check", self.check)
@@ -402,10 +376,7 @@ class cobblerconf(urwid.WidgetWrap):
     check_col = Columns([button_check, button_cancel,
                          button_apply,('weight',2,blank)])
 
-    self.listbox_content = [text1, blank, text2]
-    self.listbox_content.extend([self.net_choices, self.net_text1, 
-                                 self.net_text2, self.net_text3, 
-                                 self.net_text4, blank])
+    self.listbox_content = [text1,blank,text2, blank]
     self.listbox_content.extend(self.edits)
     self.listbox_content.append(blank)   
     self.listbox_content.append(check_col)   

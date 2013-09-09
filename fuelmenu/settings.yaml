@@ -1,4 +1,4 @@
-HOSTNAME: "nailgun"
+HOSTNAME: "fuel"
 DNS_DOMAIN: "example.com"
 DNS_SEARCH: "example.com"
 DNS_UPSTREAM: "8.8.8.8"

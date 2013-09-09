@@ -44,7 +44,8 @@ class Loader:
             modobj = clsobj(self.parent)
 
             # add the module to the list
-            self.modlist.append(modobj)
+            if modobj.visible:
+                self.modlist.append(modobj)
         # sort modules
         self.modlist.sort(key=operator.attrgetter('priority'))
         for module in self.modlist:
@@ -116,7 +117,7 @@ class FuelSetup():
                     urwid.Divider(" "),
                     self.childbox,
                     urwid.Divider(" ")]))
-                ], 3)
+                ], 1)
         self.listwalker[:] = [self.cols]
 
     def refreshScreen(self):
@@ -140,7 +141,7 @@ class FuelSetup():
                     urwid.Divider(" "),
                     self.childbox,
                     urwid.Divider(" ")]))
-                ], 3)
+                ], 1)
         #Refresh top level listwalker
         #self.listwalker[:] = [self.cols]
 
@@ -180,7 +181,7 @@ class FuelSetup():
                     urwid.Divider(" "),
                     self.childbox,
                     urwid.Divider(" ")]))
-                ], 3)
+                ], 1)
     
         self.header = urwid.AttrWrap(urwid.Text(text_header), 'header')
         self.footer = urwid.AttrWrap(urwid.Text(text_footer), 'footer')

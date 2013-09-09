@@ -31,7 +31,7 @@ class Loader:
                    if f.endswith('.py')]
         
         for module in modules:
-            log.info('loading module %s', module)
+            log.info('loading module %s' % module)
             try:
                 imported = __import__(module)
                 pass

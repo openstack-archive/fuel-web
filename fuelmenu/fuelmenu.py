@@ -104,7 +104,6 @@ class FuelSetup():
         if name is None:
             child = self.children[0]
         else:
-            log.info(name, self.choices.index(name))
             child = self.children[int(self.choices.index(name))]
         self.childpage = child.screenUI()
         self.childfill = urwid.Filler(self.childpage, 'top', 40)

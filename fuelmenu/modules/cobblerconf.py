@@ -20,7 +20,7 @@ blank = urwid.Divider()
 #Need to define fields in order so it will render correctly
 #fields = ["hostname", "domain", "mgmt_if","dhcp_start","dhcp_end",
 #          "blank","ext_if","ext_dns"]
-fields = ["blank", "static_label", 
+fields = ["static_label", 
           "ADMIN_NETWORK/static_start", "ADMIN_NETWORK/static_end", 
           "blank", "dynamic_label", "ADMIN_NETWORK/first",
           "ADMIN_NETWORK/last"]
@@ -91,7 +91,7 @@ class cobblerconf(urwid.WidgetWrap):
     responses=dict()
 
     for index, fieldname in enumerate(fields):
-      if fieldname == "blank":
+      if fieldname == "blank" or "label" in fieldname:
         pass
       else:
         responses[fieldname]=self.edits[index].get_edit_text()
@@ -358,10 +358,42 @@ class cobblerconf(urwid.WidgetWrap):
          self.net_text4.set_text("")
     else:
       self.net_text4.set_text("WARNING: This interface is DOWN. Configure it first.")
+  
+    #Calculate and set Static/DHCP pool fields
+    #Max IPs = net size - 2 (master node + bcast)
+    net_ip_list = network.getNetwork(self.netsettings[self.activeiface]['addr'],
+                                  self.netsettings[self.activeiface]['netmask'])
+    log.debug(net_ip_list)
+    try:
+      half = int(len(net_ip_list)/2)
+      static_pool = list(net_ip_list[:half])
+      dhcp_pool = list(net_ip_list[half+1:])
+      static_start = str(static_pool[0])
+      static_end = str(static_pool[-1])
+      dynamic_start = str(dhcp_pool[0])
+      dynamic_end = str(dhcp_pool[-1])
+      self.net_text4.set_text("This network configuration can support %s \
+nodes." % len(dhcp_pool))
+    except:
+      #We don't have valid values, so mark all fields empty
+      static_start = ""
+      static_end = ""
+      dynamic_start = ""
+      dynamic_end = ""
+    for index, key in enumerate(fields):
+      if key == "ADMIN_NETWORK/static_start":
+        self.edits[index].set_edit_text(static_start)
+      elif key == "ADMIN_NETWORK/static_end":
+        self.edits[index].set_edit_text(static_end)
+      elif key == "ADMIN_NETWORK/first":
+        self.edits[index].set_edit_text(dynamic_start)
+      elif key == "ADMIN_NETWORK/last":
+        self.edits[index].set_edit_text(dynamic_end)
+   
 
-  def setExtIfaceFields(self, enabled=True):
-    ###TODO: Define ext iface fields as disabled and then toggle
-    pass
+  #def setExtIfaceFields(self, enabled=True):
+  #  ###TODO: Define ext iface fields as disabled and then toggle
+  #  pass
   def screenUI(self):
     #Define your text labels, text fields, and buttons first
     text1 = urwid.Text("Settings for PXE booting of slave nodes.")
@@ -371,7 +403,6 @@ class cobblerconf(urwid.WidgetWrap):
     self.net_text2 = TextLabel("")
     self.net_text3 = TextLabel("")
     self.net_text4 = TextLabel("")
-    self.setNetworkDetails()
     self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()), fn=self.radioSelectIface)
 
     self.edits = []
@@ -419,6 +450,7 @@ class cobblerconf(urwid.WidgetWrap):
     #Build all of these into a list
     #self.listbox_content = [ text1, blank, blank, edit1, edit2, \
     #                    edit3, edit4, edit5, edit6, button_check ]
+    self.setNetworkDetails()
    
     #Add everything into a ListBox and return it
     self.listwalker=urwid.SimpleListWalker(self.listbox_content)

@@ -125,7 +125,7 @@ fail."))
           dhcp_info.append(TextLabel("MAC address: %-10s" % dhcp_server['mac']))
           dhcp_info.append(TextLabel(""))
 
-        dialog.display_dialog(urwid.Pile(dhcp_info),"DHCP Servers Found on %s" \
+        dialog.display_dialog(self,urwid.Pile(dhcp_info),"DHCP Servers Found on %s" \
 % self.activeiface)
       ###Ensure pool start and end are on the same subnet as mgmt_if
       #Ensure mgmt_if has an IP first

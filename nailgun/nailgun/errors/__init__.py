@@ -42,7 +42,7 @@ default_messages = {
 
     # network errors
     "AdminNetworkNotFound": "Admin network info not found",
-    "InvalidNetworkAccess": "Invalid network access",
+    "InvalidNetworkPool": "Invalid network pool",
     "AssignIPError": "Failed to assign IP to node",
     "NetworkCheckError": "Network checking failed",
     "OutOfVLANs": "Not enough available VLAN IDs",

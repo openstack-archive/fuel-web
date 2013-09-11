@@ -426,23 +426,25 @@
             "networks_metadata": [
                 {
                     "name": "floating",
-                    "cidr": "172.16.0.0/12"
+                    "pool": ["172.16.0.0/12"],
+                    "use_public_vlan": true
                 },
                 {
                     "name": "public",
-                    "cidr": "172.16.0.0/12"
+                    "pool": ["172.16.0.0/12"],
+                    "use_public_vlan": true
                 },
                 {
                     "name": "management",
-                    "cidr": "192.168.0.0/16"
+                    "pool": ["192.168.0.0/16"]
                 },
                 {
                     "name": "storage",
-                    "cidr": "192.168.0.0/16"
+                    "pool": ["192.168.0.0/16"]
                 },
                 {
                     "name": "fixed",
-                    "cidr": "10.0.0.0/8"
+                    "pool": ["10.0.0.0/8"]
                 }
             ],
             "volumes_metadata": {

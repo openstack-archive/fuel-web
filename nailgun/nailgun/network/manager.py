@@ -165,7 +165,7 @@ class NetworkManager(object):
             logger.debug("Found free vlan: %s", vlan_start)
             pool = network.get('pool')
             if not pool:
-                raise errors.InvalidNetworkAccess(
+                raise errors.InvalidNetworkPool(
                     u"Invalid pool '{0}' for network '{1}'".format(
                         pool,
                         network['name']

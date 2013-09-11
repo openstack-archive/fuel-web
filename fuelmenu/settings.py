@@ -59,15 +59,20 @@ class Settings():
   def __init__(self):
      pass
   def read(self, yamlfile):
-     infile = file(yamlfile, 'r')
-     settings = yaml.load(infile)
-     return settings
+     try:
+       infile = file(yamlfile, 'r')
+       settings = yaml.load(infile)
+       return settings
+     except:
+       import logging
+       logging.error("Unable to read YAML: %s" % yamlfile)
+       return OrderedDict()
 
   def write(self, newvalues, tree=None, defaultsfile='settings.yaml', outfn='mysettings.yaml'):
-     infile = file(defaultsfile, 'r')
-     outfile = file(outfn, 'w')
-     settings = yaml.load(infile)
+     settings = self.read(defaultsfile)
+     settings.update(self.read(outfn))
      settings.update(newvalues)
+     outfile = file(outfn, 'w')
      yaml.dump(settings, outfile, default_flow_style=False)
      return True
 

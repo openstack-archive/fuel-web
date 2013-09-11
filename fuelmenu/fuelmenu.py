@@ -61,7 +61,8 @@ class FuelSetup():
         self.footer = None
         self.frame = None
         self.screen = None
-        self.settingsfile = "settings.yaml"
+        self.defaultsettingsfile = "settings.yaml"
+        self.settingsfile = "newsettings.yaml"
         self.main()
         self.choices = []
 
@@ -155,6 +156,10 @@ class FuelSetup():
     
         blank = urwid.Divider()
 
+        #Top and bottom lines of frame
+        self.header = urwid.AttrWrap(urwid.Text(text_header), 'header')
+        self.footer = urwid.AttrWrap(urwid.Text(text_footer), 'footer')
+
         #Prepare submodules
         loader = Loader(self)
         self.children, self.choices = loader.load_modules(module_dir="./modules")
@@ -162,7 +167,6 @@ class FuelSetup():
           import sys
           sys.exit(1)
 
-        #End prep
         self.menuitems=self.menu(u'Menu', self.choices)
         menufill = urwid.Filler(self.menuitems, 'top', 40)
         self.menubox = urwid.BoxAdapter(menufill, 40)
@@ -182,8 +186,6 @@ class FuelSetup():
                     urwid.Divider(" ")]))
                 ], 1)
     
-        self.header = urwid.AttrWrap(urwid.Text(text_header), 'header')
-        self.footer = urwid.AttrWrap(urwid.Text(text_footer), 'footer')
         self.listwalker = urwid.SimpleListWalker([self.cols])
         #self.listwalker = urwid.TreeWalker([self.cols])
         self.listbox = urwid.ListBox(self.listwalker)
@@ -217,8 +219,12 @@ class FuelSetup():
             self.screen = urwid.raw_display.Screen()
     
         def unhandled(key):
+            log.debug(key)
             if key == 'f8':
                 raise urwid.ExitMainLoop()
+            if key == 'enter' and type(self.mainloop.widget) == urwid.Overlay:
+                log.debug("overlay enter key")
+                self.mainloop.widget = self.frame
     
         self.mainloop= urwid.MainLoop(self.frame, palette, self.screen,
             unhandled_input=unhandled)

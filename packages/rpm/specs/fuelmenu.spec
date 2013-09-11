@@ -15,6 +15,11 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Prefix: %{_prefix}
 BuildArch: noarch
 Vendor: Matthew Mosesohn <mmosesohn@mirantis.com>
+Requires: nailgun-net-check
+Requires: python-netaddr
+Requires: python-netifaces
+Requires: python-urwid >= 1.1.0
+
 
 %description
 UNKNOWN

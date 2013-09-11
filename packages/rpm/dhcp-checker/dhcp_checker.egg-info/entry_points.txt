@@ -1,0 +1,8 @@
+[console_scripts]
+dhcpcheck = dhcp_checker.cli:main
+
+[dhcp.check]
+vlans = dhcp_checker.commands:DhcpWithVlansCheck
+request = dhcp_checker.commands:ListDhcpAssignment
+discover = dhcp_checker.commands:ListDhcpServers
+

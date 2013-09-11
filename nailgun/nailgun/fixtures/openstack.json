@@ -30,11 +30,28 @@
                 }
             },
             "networks_metadata": [
-                {"name": "floating", "access": "public"},
-                {"name": "public", "access": "public"},
-                {"name": "management", "access": "private192"},
-                {"name": "storage", "access": "private192"},
-                {"name": "fixed", "access": "private10"}
+                {
+                    "name": "floating",
+                    "pool": ["172.16.0.0/12"],
+                    "use_public_vlan": true
+                },
+                {
+                    "name": "public",
+                    "pool": ["172.16.0.0/12"],
+                    "use_public_vlan": true
+                },
+                {
+                    "name": "management",
+                    "pool": ["192.168.0.0/16"]
+                },
+                {
+                    "name": "storage",
+                    "pool": ["192.168.0.0/16"]
+                },
+                {
+                    "name": "fixed",
+                    "pool": ["10.0.0.0/8"]
+                }
             ],
             "volumes_metadata": {
                 "volumes_roles_mapping": {
@@ -407,11 +424,26 @@
                 }
             },
             "networks_metadata": [
-                {"name": "floating", "access": "public"},
-                {"name": "public", "access": "public"},
-                {"name": "management", "access": "private192"},
-                {"name": "storage", "access": "private192"},
-                {"name": "fixed", "access": "private10"}
+                {
+                    "name": "floating",
+                    "cidr": "172.16.0.0/12"
+                },
+                {
+                    "name": "public",
+                    "cidr": "172.16.0.0/12"
+                },
+                {
+                    "name": "management",
+                    "cidr": "192.168.0.0/16"
+                },
+                {
+                    "name": "storage",
+                    "cidr": "192.168.0.0/16"
+                },
+                {
+                    "name": "fixed",
+                    "cidr": "10.0.0.0/8"
+                }
             ],
             "volumes_metadata": {
                 "volumes_roles_mapping": {
@@ -729,11 +761,28 @@
                 }
             },
             "networks_metadata": [
-                {"name": "floating", "access": "public"},
-                {"name": "public", "access": "public"},
-                {"name": "management", "access": "private192"},
-                {"name": "storage", "access": "private192"},
-                {"name": "fixed", "access": "private10"}
+                {
+                    "name": "floating",
+                    "pool": ["172.16.0.0/12"],
+                    "use_public_vlan": true
+                },
+                {
+                    "name": "public",
+                    "pool": ["172.16.0.0/12"],
+                    "use_public_vlan": true
+                },
+                {
+                    "name": "management",
+                    "pool": ["192.168.0.0/16"]
+                },
+                {
+                    "name": "storage",
+                    "pool": ["192.168.0.0/16"]
+                },
+                {
+                    "name": "fixed",
+                    "pool": ["10.0.0.0/8"]
+                }
             ],
             "volumes_metadata": {
                 "volumes_roles_mapping": {

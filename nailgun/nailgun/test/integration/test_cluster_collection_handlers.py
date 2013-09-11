@@ -130,10 +130,23 @@ class TestHandlers(BaseIntegrationTest):
         release.description = u"release_desc" + str(release.version)
         release.operating_system = "CentOS"
         release.networks_metadata = [
-            {"name": "floating", "access": "public"},
-            {"name": "management", "access": "private192"},
-            {"name": "storage", "access": "private192"},
-            {"name": "fixed", "access": "private10"}
+            {
+                "name": "floating",
+                "pool": ["172.16.0.0/12"],
+                "use_public_vlan": True
+            },
+            {
+                "name": "management",
+                "pool": ["192.168.0.0/16"]
+            },
+            {
+                "name": "storage",
+                "pool": ["192.168.0.0/16"]
+            },
+            {
+                "name": "fixed",
+                "pool": ["10.0.0.0/8"]
+            }
         ]
         release.attributes_metadata = {
             "editable": {
@@ -166,7 +179,6 @@ class TestHandlers(BaseIntegrationTest):
             obtained.append({
                 'release': net.release,
                 'name': net.name,
-                'access': net.access,
                 'vlan_id': net.vlan_id,
                 'cidr': net.cidr,
                 'gateway': net.gateway
@@ -175,7 +187,6 @@ class TestHandlers(BaseIntegrationTest):
             {
                 'release': release.id,
                 'name': u'floating',
-                'access': 'public',
                 'vlan_id': 100,
                 'cidr': '172.16.0.0/24',
                 'gateway': '172.16.0.1'
@@ -183,7 +194,6 @@ class TestHandlers(BaseIntegrationTest):
             {
                 'release': release.id,
                 'name': u'fixed',
-                'access': 'private10',
                 'vlan_id': 103,
                 'cidr': '10.0.0.0/24',
                 'gateway': '10.0.0.1'
@@ -191,7 +201,6 @@ class TestHandlers(BaseIntegrationTest):
             {
                 'release': release.id,
                 'name': u'storage',
-                'access': 'private192',
                 'vlan_id': 102,
                 'cidr': '192.168.1.0/24',
                 'gateway': '192.168.1.1'
@@ -199,7 +208,6 @@ class TestHandlers(BaseIntegrationTest):
             {
                 'release': release.id,
                 'name': u'management',
-                'access': 'private192',
                 'vlan_id': 101,
                 'cidr': '192.168.0.0/24',
                 'gateway': '192.168.0.1'

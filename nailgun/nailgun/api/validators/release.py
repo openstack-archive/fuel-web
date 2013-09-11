@@ -18,7 +18,6 @@ from nailgun.api.models import Release
 from nailgun.api.validators.base import BasicValidator
 from nailgun.db import db
 from nailgun.errors import errors
-from nailgun.settings import settings
 
 
 class ReleaseValidator(BasicValidator):
@@ -46,15 +45,11 @@ class ReleaseValidator(BasicValidator):
                 log_message=True
             )
         if "networks_metadata" in d:
+            # TODO: additional validation
             for network in d["networks_metadata"]:
-                if not "name" in network or not "access" in network:
+                if not "name" in network:
                     raise errors.InvalidData(
                         "Invalid network data: %s" % str(network),
-                        log_message=True
-                    )
-                if network["access"] not in settings.NETWORK_POOLS:
-                    raise errors.InvalidData(
-                        "Invalid access mode for network",
                         log_message=True
                     )
         else:

@@ -63,6 +63,12 @@ class Role(Base):
     name = Column(String(50), nullable=False)
 
 
+class GlobalParameters(Base):
+    __tablename__ = 'global_parameters'
+    id = Column(Integer, primary_key=True)
+    parameters = Column(JSON, default={})
+
+
 class Release(Base):
     __tablename__ = 'releases'
     __table_args__ = (
@@ -431,7 +437,6 @@ class Network(Base):
     # can be nullable only for fuelweb admin net
     release = Column(Integer, ForeignKey('releases.id'))
     name = Column(Unicode(100), nullable=False)
-    access = Column(String(20), nullable=False)
     vlan_id = Column(Integer, ForeignKey('vlan.id'))
     network_group_id = Column(Integer, ForeignKey('network_groups.id'))
     cidr = Column(String(25), nullable=False)
@@ -460,7 +465,6 @@ class NetworkGroup(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(Enum(*NAMES, name='network_group_name'), nullable=False)
-    access = Column(String(20), nullable=False)
     # can be nullable only for fuelweb admin net
     release = Column(Integer, ForeignKey('releases.id'))
     # can be nullable only for fuelweb admin net

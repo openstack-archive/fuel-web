@@ -236,7 +236,7 @@ class TestHandlers(BaseIntegrationTest):
 
             admin_ips = set([i.ip_addr for i in self.db.query(IPAddr).
                             filter_by(node=n.id).
-                            filter_by(network=admin_net_id)])
+                            filter_by(network=admin_net.id)])
 
             for i in n.meta.get('interfaces', []):
                 if 'interfaces' not in pnd:
@@ -244,7 +244,7 @@ class TestHandlers(BaseIntegrationTest):
                 pnd['interfaces'][i['name']] = {
                     'mac_address': i['mac'],
                     'static': '0',
-                    'netmask': settings.ADMIN_NETWORK['netmask'],
+                    'netmask': admin_net.network_group.netmask,
                     'ip_address': admin_ips.pop(),
                 }
                 if 'interfaces_extra' not in pnd:

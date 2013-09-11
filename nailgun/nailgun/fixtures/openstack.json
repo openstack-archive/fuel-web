@@ -333,41 +333,40 @@
                         }
                     },
                     "storage": {
-                        "cinder": {
-                            "value": "lvm",
-                            "values": [
-                                {
-                                    "data": "ceph",
-                                    "display_name": "Ceph",
-                                    "description": ""
-                                },
-                                {
-                                    "data": "lvm",
-                                    "display_name": "LVM",
-                                    "description": ""
-                                }
-                            ],
-                            "label": "Storage backend for Cinder",
-                            "weight": 30,
-                            "type": "radio"
+                        "volumes_lvm": {
+                            "value": false,
+                            "label": "Cinder LVM over iSCSI for volumes",
+                            "description": "Requires at least one Cinder node",
+                            "weight": 10,
+                            "type": "checkbox"
                         },
-                        "glance": {
-                            "value": "swift",
-                            "values": [
-                                {
-                                    "data": "ceph",
-                                    "display_name": "Ceph",
-                                    "description": ""
-                                },
-                                {
-                                    "data": "swift",
-                                    "display_name": "Swift",
-                                    "description": ""
-                                }
-                            ],
-                            "label": "Storage backend for Glance",
+                        "volumes_ceph": {
+                            "value": false,
+                            "label": "Ceph RBD for volumes",
+                            "description": "Requires at least two Ceph-OSD nodes",
+                            "weight": 20,
+                            "type": "checkbox"
+                        },
+                        "images_ceph": {
+                            "value": false,
+                            "label": "Ceph RBD for images",
+                            "description": "Requires at least two Ceph-OSD nodes",
+                            "weight": 30,
+                            "type": "checkbox"
+                        },
+                        "objects_swift": {
+                            "value": false,
+                            "label": "Swift for objects",
+                            "description": "Requires HA mode",
                             "weight": 40,
-                            "type": "radio"
+                            "type": "checkbox"
+                        },
+                        "objects_ceph": {
+                            "value": false,
+                            "label": "Ceph rados-gw for objects",
+                            "description": "Requires at least two Ceph-OSD nodes",
+                            "weight": 40,
+                            "type": "checkbox"
                         }
                     }
                 },
@@ -742,6 +741,22 @@
                             "weight": 20,
                             "type": "text"
                         }
+                    },
+                    "storage": {
+                        "volumes_lvm": {
+                            "value": false,
+                            "label": "Cinder LVM over iSCSI for volumes",
+                            "description": "Requires at least one Cinder node",
+                            "weight": 10,
+                            "type": "checkbox"
+                        },
+                        "objects_swift": {
+                            "value": false,
+                            "label": "Swift for objects",
+                            "description": "Requires HA mode",
+                            "weight": 40,
+                            "type": "checkbox"
+                        }
                     }
                 },
                 "generated": {
@@ -755,8 +770,11 @@
                         "enabled": false
                     },
                     "storage": {
-                        "cinder": "lvm",
-                        "glance": "swift"
+                        "volumes_lvm": true,
+                        "volumes_ceph": false,
+                        "images_ceph": false,
+                        "objects_swift": true,
+                        "objects_ceph": false
                     },
                     "mysql": {
                         "root_password": {
@@ -914,6 +932,7 @@
                         "type": "partition",
                         "min_size": {"generator": "calc_min_ceph_size"},
                         "label": "Ceph",
+                        "name": "Ceph",
                         "mount": "none",
                         "disk_label": "cephosd",
                         "file_system": "xfs"
@@ -1136,41 +1155,40 @@
                         }
                     },
                     "storage": {
-                        "cinder": {
-                            "value": "lvm",
-                            "values": [
-                                {
-                                    "data": "ceph",
-                                    "display_name": "Ceph",
-                                    "description": ""
-                                },
-                                {
-                                    "data": "lvm",
-                                    "display_name": "LVM",
-                                    "description": ""
-                                }
-                            ],
-                            "label": "Storage backend for Cinder",
-                            "weight": 30,
-                            "type": "radio"
+                        "volumes_lvm": {
+                            "value": false,
+                            "label": "Cinder LVM over iSCSI for volumes",
+                            "description": "Requires at least one Cinder node",
+                            "weight": 10,
+                            "type": "checkbox"
                         },
-                        "glance": {
-                            "value": "swift",
-                            "values": [
-                                {
-                                    "data": "ceph",
-                                    "display_name": "Ceph",
-                                    "description": ""
-                                },
-                                {
-                                    "data": "swift",
-                                    "display_name": "Swift",
-                                    "description": ""
-                                }
-                            ],
-                            "label": "Storage backend for Glance",
+                        "volumes_ceph": {
+                            "value": false,
+                            "label": "Ceph RBD for volumes",
+                            "description": "Requires at least two Ceph-OSD nodes",
+                            "weight": 20,
+                            "type": "checkbox"
+                        },
+                        "images_ceph": {
+                            "value": false,
+                            "label": "Ceph RBD for images",
+                            "description": "Requires at least two Ceph-OSD nodes",
+                            "weight": 30,
+                            "type": "checkbox"
+                        },
+                        "objects_swift": {
+                            "value": false,
+                            "label": "Swift for objects",
+                            "description": "Requires HA mode",
                             "weight": 40,
-                            "type": "radio"
+                            "type": "checkbox"
+                        },
+                        "objects_ceph": {
+                            "value": false,
+                            "label": "Ceph rados-gw for objects",
+                            "description": "Requires at least two Ceph-OSD nodes",
+                            "weight": 40,
+                            "type": "checkbox"
                         }
                     }
                 },

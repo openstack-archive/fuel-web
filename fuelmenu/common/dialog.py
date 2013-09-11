@@ -35,7 +35,7 @@ class ModalDialog(urwid.WidgetWrap):
         bodybox = urwid.LineBox(urwid.Pile([body,blank,Button("Close", self.close)]), title)
         #overlay = urwid.Overlay(urwid.Pile([bodybox]), previous_widget, 'center',
         overlay = urwid.Overlay(urwid.Filler(bodybox), previous_widget, 'center',
-('relative', 50), 'middle', ('relative', 50))
+('relative', 80), 'middle', ('relative', 80))
         #overlay = urwid.Overlay(body, previous_widget, 'center',
                                 #80, "top", 24, 80, 24,
                                 #0,0,0,0)
@@ -58,10 +58,6 @@ class ModalDialog(urwid.WidgetWrap):
                                           hex(id(self)))
 
 def display_dialog(self, body, title, escape_key="esc"):
-        #self.logger.debug("Displaying dialog: %s / %s" % (body, title))
-        #self.logger.debug("Stack: %s" % self.__widget_stack)
-        #filler = body
-        #filler = urwid.Filler(body, ("fixed top", 1), height=35)
         filler = urwid.Pile([body])
         #dialog = urwid.Padding(ModalDialog(title, filler, escape_key,
         #                        self.parent.mainloop.widget))

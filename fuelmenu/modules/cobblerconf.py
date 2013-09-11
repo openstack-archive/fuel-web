@@ -9,7 +9,7 @@ import re
 import copy
 import socket, struct
 import netaddr
-import dhcp_checker
+import dhcp_checker.api
 sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
 from settings import *
 from common import network, puppet, replace, nailyfactersettings, dialog
@@ -87,6 +87,9 @@ class cobblerconf(urwid.WidgetWrap):
      
   def check(self, args):
     """Validates that all fields have valid values and some sanity checks"""
+    self.parent.footer.set_text("Checking data...")
+    self.parent.refreshScreen()
+
     #Get field information
     responses=dict()
 
@@ -103,8 +106,14 @@ class cobblerconf(urwid.WidgetWrap):
     if responses["ADMIN_NETWORK/interface"] not in self.netsettings.keys():
       errors.append("Management interface not valid")
     else:
+      self.parent.footer.set_text("Scanning for DHCP servers. Please wait...")
+      self.parent.refreshScreen()
+
       ###Start DHCP check on this interface
-      dhcp_server_data=[{'server_id': '192.168.200.2', 'iface': 'eth2', 'yiaddr': '192.168.200.15', 'mac': '52:54:00:12:35:02', 'server_ip': '192.168.200.2', 'dport': 67, 'message': 'offer', 'gateway': '0.0.0.0'}]
+      #dhcp_server_data=[{'server_id': '192.168.200.2', 'iface': 'eth2', 'yiaddr': '192.168.200.15', 'mac': '52:54:00:12:35:02', 'server_ip': '192.168.200.2', 'dport': 67, 'message': 'offer', 'gateway': '0.0.0.0'}]
+      dhcp_server_data=dhcp_checker.api.check_dhcp_on_eth(\
+                        self.activeiface,timeout=5)
+                            
       num_dhcp=len(dhcp_server_data)
       if num_dhcp == 0:
         log.debug("No DHCP servers found")
@@ -114,18 +123,19 @@ class cobblerconf(urwid.WidgetWrap):
 
         #Build dialog elements
         dhcp_info=[]
-        dhcp_info.append(TextLabel("!!! WARNING !!!"))
-        dhcp_info.append(TextLabel("You have selected a server that contains \
-one or more DHCP servers. This will impact provisioning. You should disable \
-these DHCP servers before you continue, or else deployments will likely \
-fail."))
+        dhcp_info.append(urwid.Padding(\
+                           urwid.Text(("header","!!! WARNING !!!"))\
+                           ,"center"))
+        dhcp_info.append(TextLabel("You have selected an interface that \
+contains one or more DHCP servers. This will impact provisioning. You should \
+ disable these DHCP servers before you continue, or else deployment will \
+likely fail."))
         dhcp_info.append(TextLabel(""))
         for index, dhcp_server in enumerate(dhcp_server_data):
           dhcp_info.append(TextLabel("DHCP Server # %s:" % (index+1)))
           dhcp_info.append(TextLabel("IP address: %-10s" % dhcp_server['server_ip']))
           dhcp_info.append(TextLabel("MAC address: %-10s" % dhcp_server['mac']))
           dhcp_info.append(TextLabel(""))
-
         dialog.display_dialog(self,urwid.Pile(dhcp_info),"DHCP Servers Found on %s" \
 % self.activeiface)
       ###Ensure pool start and end are on the same subnet as mgmt_if
@@ -514,4 +524,4 @@ nodes." % len(dhcp_pool))
     self.listwalker=urwid.SimpleListWalker(self.listbox_content)
     screen = urwid.ListBox(self.listwalker)
     return screen
-    
+

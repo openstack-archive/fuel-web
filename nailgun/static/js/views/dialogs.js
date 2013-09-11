@@ -60,7 +60,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             this.$('.modal-body').html(this.errorMessageTemplate({logsLink: logsLink}));
         },
         displayInfoMessage: function(options) {
-            this.$el.html(this.template(options));
+            this.$el.html(views.Dialog.prototype.template(options));
             if (options.error) {
                 this.displayErrorMessage();
             }
@@ -383,14 +383,20 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterStoragePane = views.WizardPane.extend({
-        title: 'Storage',
+        title: 'Storage Backends',
         template: _.template(clusterStoragePaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
                 var storageSettings = settings.get('editable').storage;
                 if (storageSettings) {
-                    storageSettings.cinder.value = this.$('input[name=cinder]:checked').val();
-                    storageSettings.glance.value = this.$('input[name=glance]:checked').val();
+                    if (this.$('input[name=cinder]:checked').val() == 'ceph' && storageSettings.volumes_ceph) {
+                        storageSettings.volumes_ceph.value = true;
+                    } else if (storageSettings.volumes_lvm) {
+                        storageSettings.volumes_lvm.value = true;
+                    }
+                    if (this.$('input[name=glance]:checked').val() == 'ceph' && storageSettings.images_ceph) {
+                        storageSettings.images_ceph.value = true;
+                    }
                 }
             } catch(e) {
                 return (new $.Deferred()).reject();
@@ -404,7 +410,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             if (disabled) {
                 this.$('input[value=ceph]').prop('disabled', true);
             }
-            this.$('input[name=cinder]:last, input[name=glance]:last').prop('checked', true);
+            this.$('input[name=cinder]:first, input[name=glance]:first').prop('checked', true);
             return this;
         }
     });

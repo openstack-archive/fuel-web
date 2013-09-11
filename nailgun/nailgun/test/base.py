@@ -377,24 +377,34 @@ class Environment(object):
             {
                 "name": "floating",
                 "pool": ["172.16.0.0/12"],
-                "use_public_vlan": True
+                "use_public_vlan": True,
+                "assign": False,
+                "assign_vip": False
             },
             {
                 "name": "public",
                 "pool": ["172.16.0.0/12"],
-                "use_public_vlan": True
+                "use_public_vlan": True,
+                "assign": True,
+                "assign_vip": True
             },
             {
                 "name": "management",
-                "pool": ["192.168.0.0/16"]
+                "pool": ["192.168.0.0/16"],
+                "assign": True,
+                "assign_vip": True
             },
             {
                 "name": "storage",
-                "pool": ["192.168.0.0/16"]
+                "pool": ["192.168.0.0/16"],
+                "assign": True,
+                "assign_vip": False
             },
             {
                 "name": "fixed",
-                "pool": ["10.0.0.0/8"]
+                "pool": ["10.0.0.0/8"],
+                "assign": False,
+                "assign_vip": False
             }
         ]
 

@@ -374,6 +374,12 @@ class NetworkManager(object):
                 continue
 
             # IP address has not been assigned, let's do it
+            logger.info(
+                "Assigning IP for node '{0}' in network '{1}'".format(
+                    node_id,
+                    network_name
+                )
+            )
             free_ip = self.get_free_ips(network.network_group.id)[0]
             ip_db = IPAddr(
                 network=network.id,

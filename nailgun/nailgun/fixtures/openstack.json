@@ -33,24 +33,34 @@
                 {
                     "name": "floating",
                     "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true
+                    "use_public_vlan": true,
+                    "assign": false,
+                    "assign_vip": false
                 },
                 {
                     "name": "public",
                     "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true
+                    "use_public_vlan": true,
+                    "assign": true,
+                    "assign_vip": true
                 },
                 {
                     "name": "management",
-                    "pool": ["192.168.0.0/16"]
+                    "pool": ["192.168.0.0/16"],
+                    "assign": true,
+                    "assign_vip": true
                 },
                 {
                     "name": "storage",
-                    "pool": ["192.168.0.0/16"]
+                    "pool": ["192.168.0.0/16"],
+                    "assign": true,
+                    "assign_vip": false
                 },
                 {
                     "name": "fixed",
-                    "pool": ["10.0.0.0/8"]
+                    "pool": ["10.0.0.0/8"],
+                    "assign": false,
+                    "assign_vip": false
                 }
             ],
             "volumes_metadata": {
@@ -427,24 +437,34 @@
                 {
                     "name": "floating",
                     "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true
+                    "use_public_vlan": true,
+                    "assign": false,
+                    "assign_vip": false
                 },
                 {
                     "name": "public",
                     "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true
+                    "use_public_vlan": true,
+                    "assign": true,
+                    "assign_vip": true
                 },
                 {
                     "name": "management",
-                    "pool": ["192.168.0.0/16"]
+                    "pool": ["192.168.0.0/16"],
+                    "assign": true,
+                    "assign_vip": true
                 },
                 {
                     "name": "storage",
-                    "pool": ["192.168.0.0/16"]
+                    "pool": ["192.168.0.0/16"],
+                    "assign": true,
+                    "assign_vip": false
                 },
                 {
                     "name": "fixed",
-                    "pool": ["10.0.0.0/8"]
+                    "pool": ["10.0.0.0/8"],
+                    "assign": false,
+                    "assign_vip": false
                 }
             ],
             "volumes_metadata": {
@@ -766,24 +786,34 @@
                 {
                     "name": "floating",
                     "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true
+                    "use_public_vlan": true,
+                    "assign": false,
+                    "assign_vip": false
                 },
                 {
                     "name": "public",
                     "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true
+                    "use_public_vlan": true,
+                    "assign": true,
+                    "assign_vip": true
                 },
                 {
                     "name": "management",
-                    "pool": ["192.168.0.0/16"]
+                    "pool": ["192.168.0.0/16"],
+                    "assign": true,
+                    "assign_vip": true
                 },
                 {
                     "name": "storage",
-                    "pool": ["192.168.0.0/16"]
+                    "pool": ["192.168.0.0/16"],
+                    "assign": true,
+                    "assign_vip": false
                 },
                 {
                     "name": "fixed",
-                    "pool": ["10.0.0.0/8"]
+                    "pool": ["10.0.0.0/8"],
+                    "assign": false,
+                    "assign_vip": false
                 }
             ],
             "volumes_metadata": {

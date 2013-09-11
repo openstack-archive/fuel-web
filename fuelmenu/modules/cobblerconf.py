@@ -9,9 +9,10 @@ import re
 import copy
 import socket, struct
 import netaddr
+import dhcp_checker
 sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
 from settings import *
-from common import network, puppet, replace, nailyfactersettings
+from common import network, puppet, replace, nailyfactersettings, dialog
 from common.urwidwrapper import *
 log = logging.getLogger('fuelmenu.pxe_setup')
 blank = urwid.Divider()
@@ -102,6 +103,30 @@ class cobblerconf(urwid.WidgetWrap):
     if responses["ADMIN_NETWORK/interface"] not in self.netsettings.keys():
       errors.append("Management interface not valid")
     else:
+      ###Start DHCP check on this interface
+      dhcp_server_data=[{'server_id': '192.168.200.2', 'iface': 'eth2', 'yiaddr': '192.168.200.15', 'mac': '52:54:00:12:35:02', 'server_ip': '192.168.200.2', 'dport': 67, 'message': 'offer', 'gateway': '0.0.0.0'}]
+      num_dhcp=len(dhcp_server_data)
+      if num_dhcp == 0:
+        log.debug("No DHCP servers found")
+      else:
+        #We have a problem and will report it, but permit it to continue
+        log.error("%s foreign DHCP server(s) found: %s" % (num_dhcp, dhcp_server_data))
+
+        #Build dialog elements
+        dhcp_info=[]
+        dhcp_info.append(TextLabel("!!! WARNING !!!"))
+        dhcp_info.append(TextLabel("You have selected a server that contains \
+one or more DHCP servers. This will impact provisioning. You should disable \
+these DHCP servers before you continue, or else deployments will likely \
+fail."))
+        for index, dhcp_server in enumerate(dhcp_server_data):
+          dhcp_info.append(TextLabel("DHCP Server # %s:" % index))
+          dhcp_info.append(TextLabel("IP address: %-10s" % dhcp_server['server_ip']))
+          dhcp_info.append(TextLabel("MAC address: %-10s" % dhcp_server['mac']))
+          dhcp_info.append(TextLabel(""))
+
+        dialog.show_dialog(urwid.Pile(dhcp_info),"DHCP Servers Found on %s" \
+% self.activeiface)
       ###Ensure pool start and end are on the same subnet as mgmt_if
       #Ensure mgmt_if has an IP first
       if len(self.netsettings[responses["ADMIN_NETWORK/interface"]]["addr"]) == 0:

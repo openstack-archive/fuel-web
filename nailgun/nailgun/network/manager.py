@@ -27,6 +27,7 @@ from netaddr import IPSet
 from sqlalchemy.sql import not_
 
 from nailgun.api.models import Cluster
+from nailgun.api.models import GlobalParameters
 from nailgun.api.models import IPAddr
 from nailgun.api.models import IPAddrRange
 from nailgun.api.models import Network
@@ -35,7 +36,6 @@ from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
 from nailgun.api.models import NodeNICInterface
 from nailgun.api.models import Vlan
-from nailgun.api.models import GlobalParameters
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -761,9 +761,10 @@ class NetworkManager(object):
             lambda interface: interface['mac'], interfaces)
 
         interfaces_to_delete = db().query(NodeNICInterface).filter(
-            NodeNICInterface.node_id == node.id).filter(
-                not_(NodeNICInterface.mac.in_(
-                    interfaces_mac_addresses))).all()
+            NodeNICInterface.node_id == node.id
+        ).filter(
+            not_(NodeNICInterface.mac.in_(interfaces_mac_addresses))
+        ).all()
 
         if interfaces_to_delete:
             mac_addresses = ' '.join(

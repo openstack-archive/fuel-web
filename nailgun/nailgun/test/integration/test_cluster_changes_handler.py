@@ -47,7 +47,9 @@ class TestHandlers(BaseIntegrationTest):
                 {'roles': ['controller', 'cinder'], 'pending_addition': True},
                 {'roles': ['compute', 'cinder'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True},
-                {'roles': ['cinder'], 'pending_addition': True}])
+                {'roles': ['cinder'], 'pending_addition': True}
+            ]
+        )
 
         cluster_db = self.env.clusters[0]
 

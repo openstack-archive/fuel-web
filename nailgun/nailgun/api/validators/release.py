@@ -45,9 +45,9 @@ class ReleaseValidator(BasicValidator):
                 log_message=True
             )
         if "networks_metadata" in d:
-            # TODO: additional validation
+            # TODO(enchantner): additional validation
             for network in d["networks_metadata"]:
-                if not "name" in network:
+                if "name" not in network:
                     raise errors.InvalidData(
                         "Invalid network data: %s" % str(network),
                         log_message=True

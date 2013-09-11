@@ -3,36 +3,29 @@
 <% } %>
 <form class="form-horizontal" style="margin:0" onsubmit="return false">
   <fieldset>
-    <div class="row-fluid control-group">
-      <div class="span6">
-        <h5>Cinder backend</h5>
-        <% _.each(['Ceph', 'LVM'], function(backend) { %>
-          <label class="parameter-box clearfix">
-            <div class="parameter-control">
-              <div class="custom-tumbler">
-                <input type="radio" name="cinder" value="<%- backend.toLowerCase() %>" />
-                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-              </div>
+    <div class="control-group">
+      <% var backends = [
+        {name: 'volumes_lvm', label: 'Cinder LVM over iSCSI for volumes', description: 'Requires at least one Cinder node'},
+        {name: 'volumes_ceph', label: 'Ceph RBD for volumes', description: 'Requires at least two Ceph-OSD nodes'},
+        {name: 'images_ceph', label: 'Ceph RBD for images', description: 'Requires at least two Ceph-OSD nodes'},
+        {name: 'objects_swift', label: 'Swift for objects', description: 'Requires HA mode'},
+        {name: 'objects_ceph', label: 'Ceph rados-gw for objects', description: 'Requires at least two Ceph-OSD nodes'}
+      ] %>
+      <% _.each(backends, function(backend) { %>
+        <label class="parameter-box clearfix">
+          <div class="parameter-control">
+            <div class="custom-tumbler">
+              <input type="checkbox" name="<%= backend.name %>" />
+              <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
-            <div class="parameter-name"><%- backend %></div>
-          </label>
-        <% }) %>
-      </div>
-      <div class="span6">
-        <h5>Glance backend</h5>
-        <% _.each(['Ceph', 'Swift'], function(backend) { %>
-          <label class="parameter-box clearfix">
-            <div class="parameter-control">
-              <div class="custom-tumbler">
-                <input type="radio" name="glance" value="<%- backend.toLowerCase() %>" />
-                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-              </div>
-            </div>
-            <div class="parameter-name"><%- backend %></div>
-          </label>
-        <% }) %>
-      </div>
+          </div>
+          <div class="parameter-name"><%= backend.label %></div>
+        </label>
+        <div class="modal-parameter-description"><%= backend.description %></div>
+      <% }) %>
     </div>
-
+    <div class="help-block">
+      If no backends are enabled, local storage will be used for volumes and images.
+    </div>
   </fieldset>
 </form>

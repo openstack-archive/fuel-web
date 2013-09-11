@@ -60,7 +60,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             this.$('.modal-body').html(this.errorMessageTemplate({logsLink: logsLink}));
         },
         displayInfoMessage: function(options) {
-            this.$el.html(this.template(options));
+            this.$el.html(views.Dialog.prototype.template(options));
             if (options.error) {
                 this.displayErrorMessage();
             }
@@ -383,14 +383,23 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterStoragePane = views.WizardPane.extend({
-        title: 'Storage',
+        title: 'Storage Backends',
         template: _.template(clusterStoragePaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
                 var storageSettings = settings.get('editable').storage;
                 if (storageSettings) {
-                    storageSettings.cinder.value = this.$('input[name=cinder]:checked').val();
-                    storageSettings.glance.value = this.$('input[name=glance]:checked').val();
+                    storageSettings.volumes_lvm.value = this.$('input[name=volumes_lvm]').is(':checked');
+                    if (storageSettings.volumes_ceph) {
+                        storageSettings.volumes_ceph.value = this.$('input[name=volumes_ceph]').is(':checked');
+                    }
+                    if (storageSettings.images_ceph) {
+                        storageSettings.images_ceph.value = this.$('input[name=images_ceph]').is(':checked');
+                    }
+                    storageSettings.objects_swift.value = this.$('input[name=objects_swift]').is(':checked');
+                    if (storageSettings.objects_ceph) {
+                        storageSettings.objects_ceph.value = this.$('input[name=objects_ceph]').is(':checked');
+                    }
                 }
             } catch(e) {
                 return (new $.Deferred()).reject();
@@ -402,9 +411,10 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var disabled = !release || !_.contains(release.get('roles'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
             this.$el.html(this.template({disabled: disabled, release: release}));
             if (disabled) {
-                this.$('input[value=ceph]').prop('disabled', true);
+                this.$('input[name=volumes_ceph]').prop('disabled', true);
+                this.$('input[name=images_ceph]').prop('disabled', true);
+                this.$('input[name=objects_ceph]').prop('disabled', true);
             }
-            this.$('input[name=cinder]:last, input[name=glance]:last').prop('checked', true);
             return this;
         }
     });

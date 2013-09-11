@@ -62,7 +62,8 @@ function(commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
         tagName: 'tr',
         template: _.template(releaseTemplate),
         'events': {
-            'click .btn-rhel-setup': 'showRhelLicenseCredentials'
+            'click .btn-rhel-setup': 'showRhelLicenseCredentials',
+            'click .error': 'showErrorText'
         },
         showRhelLicenseCredentials: function() {
             var dialog = new dialogViews.RhelCredentialsDialog({release: this.release});
@@ -74,10 +75,15 @@ function(commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
             if (setupTask) {
                 if (setupTask.get('status') == 'ready') {
                     setupTask.destroy();
+                } else {
+                    this.$('div.error').text(setupTask.get('message'));
                 }
                 this.release.fetch();
                 app.navbar.refresh();
             }
+        },
+        showErrorText: function() {
+            this.$('div.error').toggleClass('hide');
         },
         updateProgress: function() {
             var task = this.page.tasks.findTask({name: 'redhat_setup', status: 'running', release: this.release.id});
@@ -85,6 +91,13 @@ function(commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
                 this.$('.bar').css('width', task.get('progress') + '%');
                 this.$('.bar-title span').text(task.get('progress') + '%');
             }
+        },
+        updateErrorMessage: function() {
+            var setupTask = this.page.tasks.findTask({name: 'redhat_setup', status: 'error', release: this.release.id});
+            if (setupTask) {
+                    this.$('div.error').text(setupTask.get('message'));
+            }
+            
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -112,6 +125,7 @@ function(commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({release: this.release}));
             this.updateProgress();
+            this.updateErrorMessage();
             return this;
         }
     });

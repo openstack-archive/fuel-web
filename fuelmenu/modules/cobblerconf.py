@@ -120,7 +120,7 @@ one or more DHCP servers. This will impact provisioning. You should disable \
 these DHCP servers before you continue, or else deployments will likely \
 fail."))
         for index, dhcp_server in enumerate(dhcp_server_data):
-          dhcp_info.append(TextLabel("DHCP Server # %s:" % index))
+          dhcp_info.append(TextLabel("DHCP Server # %s:" % (index+1)))
           dhcp_info.append(TextLabel("IP address: %-10s" % dhcp_server['server_ip']))
           dhcp_info.append(TextLabel("MAC address: %-10s" % dhcp_server['mac']))
           dhcp_info.append(TextLabel(""))

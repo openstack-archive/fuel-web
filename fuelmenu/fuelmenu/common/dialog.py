@@ -10,8 +10,8 @@ import socket, struct
 import re
 import netaddr
 sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
-from settings import *
-from common.urwidwrapper import *
+from fuelmenu.settings import *
+from fuelmenu.common.urwidwrapper import *
 blank = urwid.Divider()
 
 

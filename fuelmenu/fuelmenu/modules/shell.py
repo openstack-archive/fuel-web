@@ -3,7 +3,7 @@
 import urwid
 import urwid.raw_display
 import urwid.web_display
-from common.urwidwrapper import *
+from fuelmenu.common.urwidwrapper import *
 import subprocess
 
 blank = urwid.Divider()

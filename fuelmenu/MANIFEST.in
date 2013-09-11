@@ -1,0 +1,2 @@
+recursive-include fuelmenu *.py *.yaml *.default
+recursive-include fuelmenu *

@@ -6,9 +6,8 @@ import urwid.web_display
 import logging
 import sys
 import copy
-sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
-from settings import *
-from common.urwidwrapper import *
+from fuelmenu.settings import *
+from fuelmenu.common.urwidwrapper import *
 log = logging.getLogger('fuelmenu.mirrors')
 log.info("test")
 blank = urwid.Divider()

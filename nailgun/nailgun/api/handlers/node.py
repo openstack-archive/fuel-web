@@ -305,7 +305,7 @@ class NodeCollectionHandler(JSONHandler):
                 db().commit()
             old_cluster_id = node.cluster_id
 
-            if data.get("pending_roles") == [] and node.cluster:
+            if nd.get("pending_roles") == [] and node.cluster:
                 node.cluster.clear_pending_changes(node_id=node.id)
 
             if "cluster_id" in nd:

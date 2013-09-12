@@ -12,9 +12,7 @@
     <% var stateMessages = {'available': 'Active', 'error': 'Error', 'not_available': 'Not available', 'downloading': 'Downloading'};
        var state = stateMessages[release.get('state')];
     %>
-    <span class="<%- release.get('state') %>" 
-style="<%= release.get('state') == 'error' ? 'cursor:pointer' : '' %>"
-> <%= state %></span>
+    <span class="<%- release.get('state') %> <%= release.get('state') == 'error' ? 'release-error-link' : '' %>"> <%= state %></span>
     <div class="error hide"></div>
   <% } %>
 </td>

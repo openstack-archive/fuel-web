@@ -4327,6 +4327,10 @@ div.create-cluster-form .radio-checkbox-group label {
   vertical-align: middle;
 }
 
+.release-error-link {
+  cursor: pointer;
+}
+
 label.show-password {
   clear: both;
   margin-left: 120px;

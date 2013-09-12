@@ -76,7 +76,7 @@ function(commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
                 if (setupTask.get('status') == 'ready') {
                     setupTask.destroy();
                 } else {
-                    this.$('div.error').text(setupTask.get('message'));
+                    this.updateErrorMessage();
                 }
                 this.release.fetch();
                 app.navbar.refresh();

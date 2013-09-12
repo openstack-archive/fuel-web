@@ -20,7 +20,7 @@ Vendor:         Dmitry Shulyak <yashulyak@gmail.com>
 Url:            http://github.com/Mirantis/
 
 
-Requires: python-cliff-tablib
+Requires: python-cliff
 Requires: scapy
 Requires: nailgun-net-check
 

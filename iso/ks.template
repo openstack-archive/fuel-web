@@ -76,6 +76,7 @@ bind-utils
 cronie
 crontabs
 curl
+fuelmenu
 man
 mlocate
 ntp
@@ -217,6 +218,17 @@ echo "ENABLED=1" > /etc/sysconfig/bootstrap_admin_node
 # Copying version.yaml file. It contains COMMIT_SHA of last commit.
 mkdir -p /etc/nailgun
 cp ${SOURCE}/version.yaml /etc/nailgun/version.yaml
+
+###Run fuel menu
+#Redirect output and input for the app
+exec < /dev/tty6 > /dev/tty6 2> /dev/tty6
+#Switch to a terminal so we can see the app
+chvt 6
+fuelmenu
+
+#Switch back to Anaconda
+chvt 1
+exec < /dev/tty1 > /dev/tty1 2> /dev/tty1
 
 
 # Prepare custom /etc/issue logon banner and script for changing IP in it

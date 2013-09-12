@@ -61,8 +61,10 @@ class FuelSetup():
         self.footer = None
         self.frame = None
         self.screen = None
-        self.defaultsettingsfile = "settings.yaml"
-        self.settingsfile = "newsettings.yaml"
+        self.defaultsettingsfile = "%s/settings.yaml" \
+                                   % (os.path.dirname(__file__))
+        self.settingsfile = "%s/newsettings.yaml" \
+                            % (os.path.dirname(__file__))
         self.main()
         self.choices = []
 

@@ -196,7 +196,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
 
         provision_nodes = []
-        admin_net_id = self.env.network_manager.get_admin_network_id()
+        admin_net = self.env.network_manager.get_admin_network()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
             pnd = {

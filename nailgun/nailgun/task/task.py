@@ -102,26 +102,7 @@ class DeploymentTask(object):
 
         task.cluster.prepare_for_deployment()
         nodes = TaskHelper.nodes_to_deploy(task.cluster)
-<<<<<<< HEAD
         nodes_ids = [n.id for n in nodes]
-=======
-
-        logger.info("Associated FQDNs to nodes: %s" %
-                    ', '.join([n.fqdn for n in nodes]))
-
-        nw_metadata = task.cluster.release.networks_metadata
-
-        nodes_ids = [n.id for n in nodes]
-        if nodes_ids:
-            logger.info("Assigning IP addresses to nodes..")
-            for network in nw_metadata:
-                if network.get("assign") is not False:
-                    netmanager.assign_ips(nodes_ids, network["name"])
-
-        nodes_with_attrs = []
-        # FIXME(mihgen): We need to pass all other nodes, so astute
-        #  can know about all the env, not only about added nodes.
->>>>>>> assign logic moved to json
         for n in db().query(Node).filter_by(
                 cluster=task.cluster).order_by(Node.id):
             # However, we must not pass nodes which are set to be deleted.
@@ -138,57 +119,6 @@ class DeploymentTask(object):
                 n.progress = 0
                 db().add(n)
                 db().commit()
-<<<<<<< HEAD
-=======
-            nodes_with_attrs.append(cls.__format_node_for_naily(n))
-
-        cluster_attrs = task.cluster.attributes.merged_attrs_values()
-        cluster_attrs['master_ip'] = settings.MASTER_IP
-        cluster_attrs['controller_nodes'] = cls.__controller_nodes(cluster_id)
-
-        ng_db = db().query(NetworkGroup).filter_by(
-            cluster_id=cluster_id).all()
-        for net in ng_db:
-            net_name = net.name + '_network_range'
-            if net.name == 'floating':
-                cluster_attrs[net_name] = \
-                    cls.__get_ip_ranges_first_last(net)
-            elif net.name == 'public':
-                # We shouldn't pass public_network_range attribute
-                continue
-            else:
-                cluster_attrs[net_name] = net.cidr
-
-        net_params = {}
-        net_params['network_manager'] = task.cluster.net_manager
-
-        fixed_net = db().query(NetworkGroup).filter_by(
-            cluster_id=cluster_id).filter_by(name='fixed').first()
-        # network_size is required for all managers, otherwise
-        #  puppet will use default (255)
-        net_params['network_size'] = fixed_net.network_size
-        if net_params['network_manager'] == 'VlanManager':
-            net_params['num_networks'] = fixed_net.amount
-            net_params['vlan_start'] = fixed_net.vlan_start
-            cls.__add_vlan_interfaces(nodes_with_attrs)
-
-        cluster_attrs['novanetwork_parameters'] = net_params
-
-        if task.cluster.mode == 'ha':
-            logger.info("HA mode chosen, creating VIP addresses for it..")
-
-            for network in nw_metadata:
-                if network.get("assign_vip") is not False:
-                    cluster_attrs['{0}_vip'.format(
-                        network["name"]
-                    )] = netmanager.assign_vip(
-                        cluster_id,
-                        network["name"]
-                    )
-
-        cluster_attrs['deployment_mode'] = task.cluster.mode
-        cluster_attrs['deployment_id'] = cluster_id
->>>>>>> assign logic moved to json
 
         # here we replace provisioning data if user redefined them
         serialized_cluster = task.cluster.replaced_deployment_info or \

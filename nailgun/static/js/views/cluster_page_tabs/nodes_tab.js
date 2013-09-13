@@ -117,19 +117,16 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         updateBatchActionsButtons: function() {
             this.$('.btn-delete-nodes').prop('disabled', !this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
-            this.$('.btn-group-congiration').toggleClass('disabled', !this.$('.node-box:not(.node-delete):not(.node-offline):not(.node-error) input[type=checkbox]:checked').length);
             var selectedNodes = this.$('.node-checkbox input:checked');
             this.$('.btn-add-nodes').toggle(!selectedNodes.length);
             this.$('.btn-edit-nodes').toggle(!!selectedNodes.length);
-            // update batch actions links
             var selectedNodesIds = selectedNodes.map(function() {return parseInt($(this).val(), 10);}).get().join(',');
-            _.each(this.$('.btn-batch-action'), function(btn) {
-                $(btn).attr('href', '#cluster/' + this.model.id + '/nodes/' + $(btn).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}));
-            }, this);
+            this.$('.btn-edit-nodes').attr('href', '#cluster/' + this.model.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: selectedNodesIds}));
             // check selected nodes for group configuration availability
-            var nodes = new models.Nodes(this.nodes.filter(function(node) {return _.contains(selectedNodesIds, node.id);}));
-            this.$('.btn-configure-disks').toggleClass('disabled', _.uniq(nodes.map(function(node) {return node.resource('hdd');})).length != 1);
-            this.$('.btn-configure-interfaces').toggleClass('disabled', _.uniq(nodes.map(function(node) {return node.resource('ram');})).length != 1);
+            var nodeIds = this.$('.node-box:not(.node-delete):not(.node-offline) input[type=checkbox]:checked').map(function() {return parseInt($(this).val(), 10);}).get();
+            var nodes = new models.Nodes(this.nodes.filter(function(node) {return _.contains(nodeIds, node.id);}));
+            this.$('.btn-configure-disks').prop('disabled', _.uniq(nodes.map(function(node) {return node.resource('hdd');})).length != 1);
+            this.$('.btn-configure-interfaces').prop('disabled', _.uniq(nodes.map(function(node) {return node.resource('ram');})).length != 1);
         },
         initialize: function() {
             this.nodes.on('resize', this.render, this);
@@ -227,7 +224,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         events: {
             'change select[name=grouping]' : 'groupNodes',
             'click .btn-delete-nodes:not(:disabled)' : 'showDeleteNodesDialog',
-            'click .btn-apply:not(:disabled)' : 'applyChanges'
+            'click .btn-apply:not(:disabled)' : 'applyChanges',
+            'click .btn-group-congiration' : 'goToConfigurationScreen'
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -278,6 +276,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     this.$('.btn-apply').prop('disabled', false);
                     utils.showErrorDialog({title: 'Unable to apply changes'});
                 }, this));
+        },
+        goToConfigurationScreen: function(e) {
+            var selectedNodesIds = this.screen.$('.node-checkbox input:checked').map(function() {return parseInt($(this).val(), 10);}).get().join(',');
+            app.navigate('#cluster/' + this.cluster.id + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
         },
         render: function() {
             this.tearDownRegisteredSubViews();

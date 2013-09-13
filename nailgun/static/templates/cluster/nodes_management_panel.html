@@ -16,17 +16,17 @@
   <% if (clusterNodesScreen) { %>
 
     <div class="cluster-toolbar-item pull-right">
-      <<%= locked ? 'div' : 'a' %> class="btn btn-group-congiration btn-batch-action btn-configure-interfaces disabled" data-action="interfaces" href="">Configure Interfaces</<%= locked ? 'div' : 'a' %>>
+      <button class="btn btn-group-congiration btn-configure-interfaces" disabled data-action="interfaces">Configure Interfaces</button>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <<%= locked ? 'div' : 'a' %> class="btn btn-group-congiration btn-batch-action btn-configure-disks disabled" data-action="disks" href="">Configure Disks</<%= locked ? 'div' : 'a' %>>
+      <button class="btn btn-group-congiration btn-configure-disks" disabled data-action="disks">Configure Disks</button>
     </div>
     <div class="cluster-toolbar-item pull-right">
       <button class="btn btn-danger btn-delete-nodes" disabled>Delete Nodes</button>
     </div>
     <% var disabled = nodes.cluster.task('deploy', 'running') ? 'disabled' : '' %>
     <div class="cluster-toolbar-item pull-right">
-      <a class="btn btn-success btn-batch-action btn-edit-nodes hide" data-action="edit" href="" <%= disabled %>>Edit Nodes</a>
+      <a class="btn btn-success btn-edit-nodes hide" data-action="edit" href="" <%= disabled %>>Edit Nodes</a>
     </div>
     <div class="cluster-toolbar-item pull-right">
       <<%= locked ? 'div' : 'a' %> class="btn btn-success btn-add-nodes" href="#cluster/<%- cluster.id %>/nodes/add" <%= disabled %>>Add Nodes</<%= locked ? 'div' : 'a' %>>

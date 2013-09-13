@@ -94,6 +94,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         keepScrollPosition: false,
         goToNodeList: function() {
             app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});
+        },
+        isLocked: function() {
+            return !!this.model.task('deploy', 'running');
         }
     });
 
@@ -109,19 +112,24 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         update: function() {
             this.nodes.fetch().always(_.bind(this.scheduleUpdate, this));
         },
-        calculateBatchActionsButtonsState: function() {
-            this.$('.btn-delete-nodes').prop('disabled', !this.$('.node-box:not(.node-delete) .node-checkbox input:checked').length);
-        },
         calculateApplyButtonState: function() {
             this.$('.btn-apply').prop('disabled', !this.hasChanges());
         },
-        showEditNodesButton: function() {
+        updateBatchActionsButtons: function() {
+            this.$('.btn-delete-nodes').prop('disabled', !this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
+            this.$('.btn-group-congiration').toggleClass('disabled', !this.$('.node-box:not(.node-delete):not(.node-offline):not(.node-error) input[type=checkbox]:checked').length);
             var selectedNodes = this.$('.node-checkbox input:checked');
             this.$('.btn-add-nodes').toggle(!selectedNodes.length);
             this.$('.btn-edit-nodes').toggle(!!selectedNodes.length);
+            // update batch actions links
             var selectedNodesIds = selectedNodes.map(function() {return parseInt($(this).val(), 10);}).get().join(',');
-            var href = '#cluster/' + this.model.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: selectedNodesIds});
-            this.$('.btn-edit-nodes').attr('href', href);
+            _.each(this.$('.btn-batch-action'), function(btn) {
+                $(btn).attr('href', '#cluster/' + this.model.id + '/nodes/' + $(btn).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}));
+            }, this);
+            // check selected nodes for group configuration availability
+            var nodes = new models.Nodes(this.nodes.filter(function(node) {return _.contains(selectedNodesIds, node.id);}));
+            this.$('.btn-configure-disks').toggleClass('disabled', _.uniq(nodes.map(function(node) {return node.resource('hdd');})).length != 1);
+            this.$('.btn-configure-interfaces').toggleClass('disabled', _.uniq(nodes.map(function(node) {return node.resource('ram');})).length != 1);
         },
         initialize: function() {
             this.nodes.on('resize', this.render, this);
@@ -277,7 +285,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 nodes: this.nodes,
                 cluster: this.cluster,
                 edit: this.screen instanceof EditNodesScreen,
-                deployment: this.cluster.task('deploy', 'running')
+                locked: this.screen.isLocked()
             }));
             return this;
         }
@@ -413,8 +421,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.nodeGroups = this.nodes.groupBy(function(node) {return _.union(node.get('roles'), node.get('pending_roles')).join(' + ') + ' + HDD: ' + utils.showDiskSize(node.resource('hdd')) + ' RAM: ' + utils.showMemorySize(node.resource('ram'));});
             }
             this.renderNodeGroups();
-            this.screen.calculateBatchActionsButtonsState();
-            this.screen.showEditNodesButton();
+            this.screen.updateBatchActionsButtons();
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -437,7 +444,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.html(this.template({
                 nodes: this.nodes,
                 edit: this.screen instanceof EditNodesScreen,
-                deployment: this.screen.tab.model.task('deploy', 'running')
+                locked: this.screen.isLocked()
             }));
             this.groupNodes();
             return this;
@@ -478,7 +485,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 groupLabel: this.groupLabel,
                 nodes: this.nodes,
                 edit: this.nodeList.screen instanceof EditNodesScreen,
-                deployment: this.nodeList.screen.tab.model.task('deploy', 'running')
+                locked: this.nodeList.screen.isLocked()
             }));
             this.nodes.each(this.renderNode, this);
             this.calculateSelectAllTumblerState();
@@ -512,8 +519,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             if (this.screen instanceof AddNodesScreen || this.screen instanceof EditNodesScreen) {
                 this.screen.roles.handleChanges();
             } else {
-                this.screen.showEditNodesButton();
-                this.screen.calculateBatchActionsButtonsState();
+                this.screen.updateBatchActionsButtons();
             }
         },
         startNodeRenaming: function() {
@@ -646,7 +652,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 renameable: this.renameable,
                 checked: this.checked,
                 edit: this.screen instanceof EditNodesScreen,
-                deployment: this.screen.tab.model.task('deploy', 'running')
+                locked: this.screen.isLocked()
             }, this.templateHelpers)));
             this.updateStatus();
             return this;
@@ -666,8 +672,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.goToNodeList();
             }
         },
-        isLocked: function() {
-            return !!this.model.task('deploy', 'running');
+        initialize: function(options) {
+            _.defaults(this, options);
+            var nodeIds = utils.deserializeTabOptions(this.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);});
+            this.nodes = new models.Nodes(this.model.get('nodes').getByIds(nodeIds));
         }
     });
 
@@ -690,7 +698,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return result;
         },
         isLocked: function() {
-            return !(this.node.get('pending_addition') || (this.node.get('status') == 'error' && this.node.get('error_type') == 'provision')) || this.constructor.__super__.isLocked.apply(this);
+            var forbiddenNodes = _.union(this.nodes.where({pending_addition: true}), this.nodes.where({status: 'error', error_type: 'provision'})).length;
+            return !forbiddenNodes || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
             var hasChanges = this.hasChanges();
@@ -701,10 +710,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         loadDefaults: function() {
             this.disableControls(true);
-            this.disks.fetch({url: _.result(this.node, 'url') + '/disks/defaults/'})
-                .fail(_.bind(function() {
-                    utils.showErrorDialog({title: 'Node disks configuration'});
-                }, this));
+            this.disks.fetch({url: _.result(this.node(), 'url') + '/disks/defaults/'})
+                .fail(_.bind(function() {utils.showErrorDialog({title: 'Disks configuration'});}, this));
         },
         revertChanges: function() {
             this.disks.reset(_.cloneDeep(this.initialData), {parse: true});
@@ -714,7 +721,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 return (new $.Deferred()).reject();
             }
             this.disableControls(true);
-            return Backbone.sync('update', this.disks, {url: _.result(this.node, 'url') + '/disks'})
+            return $.when.apply($, this.nodes.map(function(node) {
+                    return Backbone.sync('update', this.disks, {url: _.result(node, 'url') + '/disks'});
+                }, this))
                 .done(_.bind(function() {
                     this.model.fetch();
                     this.initialData = _.cloneDeep(this.disks.toJSON());
@@ -722,7 +731,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this))
                 .fail(_.bind(function() {
                     this.checkForChanges();
-                    utils.showErrorDialog({title: 'Node disks configuration'});
+                    utils.showErrorDialog({title: 'Disks configuration'});
                 }, this));
         },
         mapVolumesColors: function() {
@@ -742,14 +751,16 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.volumesColors[volume.get('name')] = colors[index];
             }, this);
         },
+        node: function() {
+            return this.nodes.at(0);
+        },
         initialize: function(options) {
-            _.defaults(this, options);
-            this.node = this.model.get('nodes').get(this.screenOptions[0]);
-            if (this.node) {
+            this.constructor.__super__.initialize.apply(this, arguments);
+            if (this.nodes.length) {
                 this.model.on('change:status', this.revertChanges, this);
-                this.volumes = new models.Volumes([], {url: _.result(this.node, 'url') + '/volumes'});
-                this.disks = new models.Disks([], {url: _.result(this.node, 'url') + '/disks'});
-                this.loading = $.when(this.node.fetch(), this.volumes.fetch(), this.disks.fetch())
+                this.volumes = new models.Volumes([], {url: _.result(this.node(), 'url') + '/volumes'});
+                this.disks = new models.Disks([], {url: _.result(this.node(), 'url') + '/disks'});
+                this.loading = $.when(this.volumes.fetch(), this.disks.fetch())
                     .done(_.bind(function() {
                         this.initialData = _.cloneDeep(this.disks.toJSON());
                         this.mapVolumesColors();
@@ -769,7 +780,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.disks.each(function(disk) {
                 var nodeDisk = new NodeDisk({
                     disk: disk,
-                    diskMetaData: _.find(this.node.get('meta').disks, {disk: disk.id}),
+                    diskMetaData: _.find(this.node().get('meta').disks, {disk: disk.id}),
                     screen: this
                 });
                 this.registerSubView(nodeDisk);
@@ -777,10 +788,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }, this);
         },
         render: function() {
-            this.$el.html(this.template({
-                node: this.node,
-                locked: this.isLocked()
-            }));
+            this.$el.html(this.template({locked: this.isLocked()}));
             if (this.loading && this.loading.state() != 'pending') {
                 this.renderDisks();
                 this.checkForChanges();
@@ -913,14 +921,15 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !_.isEqual(this.interfaces.toJSON(), this.initialData);
         },
         isLocked: function() {
-            return !(this.node.get('pending_addition') || this.model.get('status') == 'error') || this.constructor.__super__.isLocked.apply(this);
+            var forbiddenNodes = _.union(this.nodes.where({pending_addition: true}), this.nodes.where({status: 'error'})).length;
+            return !forbiddenNodes || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
             this.$('.btn-apply, .btn-revert-changes').attr('disabled', this.isLocked() || !this.hasChanges());
         },
         loadDefaults: function() {
             this.disableControls(true);
-            this.interfaces.fetch({url: _.result(this.node, 'url') + '/interfaces/default_assignment', reset: true})
+            this.interfaces.fetch({url: _.result(this.node(), 'url') + '/interfaces/default_assignment', reset: true})
                 .done(_.bind(function() {
                     this.disableControls(false);
                     this.checkForChanges();
@@ -935,25 +944,27 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         applyChanges: function() {
             this.disableControls(true);
-            var configuration = new models.NodeInterfaceConfiguration({id: this.node.id, interfaces: this.interfaces});
-            return Backbone.sync('update', new models.NodeInterfaceConfigurations(configuration))
+            return $.when.apply($, this.nodes.map(function(node) {
+                    var configuration = new models.NodeInterfaceConfiguration({id: node.id, interfaces: this.interfaces});
+                    return Backbone.sync('update', new models.NodeInterfaceConfigurations(configuration));
+                }, this))
                 .done(_.bind(function() {
                     this.initialData = this.interfaces.toJSON();
                 }, this))
                 .fail(_.bind(function() {
-                    var dialog = new dialogViews.Dialog();
-                    app.page.registerSubView(dialog);
-                    dialog.displayInfoMessage({error: true, title: 'Node network interfaces configuration error'});
+                    utils.showErrorDialog({title: 'Interfaces configuration'});
                 }, this))
                 .always(_.bind(function() {
                     this.disableControls(false);
                     this.checkForChanges();
                 }, this));
         },
+        node: function() {
+            return this.nodes.at(0);
+        },
         initialize: function(options) {
-            _.defaults(this, options);
-            this.node = this.model.get('nodes').get(this.screenOptions[0]);
-            if (this.node) {
+            this.constructor.__super__.initialize.apply(this, arguments);
+            if (this.nodes.length) {
                 this.model.on('change:status', function() {
                     this.revertChanges();
                     this.render();
@@ -961,7 +972,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 var networkConfiguration = new models.NetworkConfiguration();
                 this.interfaces = new models.Interfaces();
                 this.loading = $.when(
-                   this.interfaces.fetch({url: _.result(this.node, 'url') + '/interfaces', reset: true}),
+                   this.interfaces.fetch({url: _.result(this.node(), 'url') + '/interfaces', reset: true}),
                    networkConfiguration.fetch({url: _.result(this.model, 'url') + '/network_configuration'})
                 ).done(_.bind(function() {
                     // FIXME(vk): modifying models prototypes to use vlan data from NetworkConfiguration
@@ -994,10 +1005,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }, this));
         },
         render: function() {
-            this.$el.html(this.template({
-                node: this.node,
-                locked: this.isLocked()
-            }));
+            this.$el.html(this.template({locked: this.isLocked()}));
             if (this.loading && this.loading.state() != 'pending') {
                 this.renderInterfaces();
             }

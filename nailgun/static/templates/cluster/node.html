@@ -12,8 +12,7 @@
   <div class="node-content">
     <div class="node-checkbox">
       <div class="custom-tumbler">
-      <label>
-        <% var disabledNode = ((!node.get('online') || node.get('status') == 'error') && !node.get('cluster')) || node.get('pending_deletion') || edit || deployment %>
+        <% var disabledNode = ((!node.get('online') || node.get('status') == 'error') && !node.get('cluster')) || node.get('pending_deletion') || edit || locked %>
         <input type="checkbox" value="<%- node.id %>" <%= checked || edit ? 'checked' : '' %> <%= disabledNode ? 'disabled' : '' %> />
         <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
         </label>

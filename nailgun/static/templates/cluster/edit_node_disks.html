@@ -1,7 +1,5 @@
 <div class="edit-node-disks wrapper <%= locked ? 'changes-locked' : '' %>">
-  <% if (node) { %>
-    <h3 class="span12">Configure <%- node.get('name') %> node disk<%= node.get('meta').disks.length == 1 ? '' : 's' %></h3>
-  <% } %>
+  <h3 class="span12">Configure disks</h3>
 
   <div class="row node-disks">
     <div class="span4"></div>

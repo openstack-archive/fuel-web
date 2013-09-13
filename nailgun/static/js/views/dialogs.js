@@ -637,10 +637,10 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             $(e.currentTarget).siblings('.accordion-body').collapse('toggle');
         },
         goToDisksConfiguration: function() {
-            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/disks/' + this.node.id, {trigger: true});
+            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/disks/' + utils.serializeTabOptions({nodes: this.node.id}), {trigger: true});
         },
         goToInterfacesConfiguration: function() {
-            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/interfaces/' + this.node.id, {trigger: true});
+            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/interfaces/' + utils.serializeTabOptions({nodes: this.node.id}), {trigger: true});
         },
         initialize: function(options) {
             _.defaults(this, options);

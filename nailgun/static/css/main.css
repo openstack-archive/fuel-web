@@ -4374,11 +4374,6 @@ input.input-append {
   color: #666666;
 }
 
-.btn-edit-nodes {
-  position: relative;
-  top: 2px;
-}
-
 .role-conflict {
   display: inline-block;
   color: #B94A48;

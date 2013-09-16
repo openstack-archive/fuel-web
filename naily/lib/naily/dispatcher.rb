@@ -76,16 +76,21 @@ module Naily
       Naily.logger.info("'provision' method called with data: #{data.inspect}")
 
       reporter = Naily::Reporter.new(@producer, data['respond_to'], data['args']['task_uuid'])
-      @orchestrator.fast_provision(reporter,
-                                   data['args']['provisioning_info']['engine'],
-                                   data['args']['provisioning_info']['nodes'])
+      begin
+        @orchestrator.provision(reporter, 
+                                data['args']['provisioning_info']['engine'], 
+                                data['args']['provisioning_info']['nodes']
+                               )
+      rescue
+        raise StopIteration
+      end
     end
 
     def deploy(data)
       Naily.logger.info("'deploy' method called with data: #{data.inspect}")
 
       reporter = Naily::Reporter.new(@producer, data['respond_to'], data['args']['task_uuid'])
-      @orchestrator.provision(reporter, data['args']['task_uuid'], data['args']['deployment_info'])
+      @orchestrator.watch_provision_progress(reporter, data['args']['task_uuid'], data['args']['deployment_info'])
 
       begin
         @orchestrator.deploy(reporter, data['args']['task_uuid'], data['args']['deployment_info'])

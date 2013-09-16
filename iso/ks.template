@@ -255,9 +255,6 @@ echo "ENABLED=1" > /etc/sysconfig/bootstrap_admin_node
 mkdir -p /etc/nailgun
 cp ${SOURCE}/version.yaml /etc/nailgun/version.yaml
 
-# Generete Fuel UUID
-uuidgen > /etc/fuel-uuid
-
 ###Run fuel menu
 [ -z "$showmenu" ] && showmenu="no"
 cat > /root/.showfuelmenu << EOF
@@ -266,6 +263,8 @@ cat > /root/.showfuelmenu << EOF
 showmenu=$showmenu
 EOF
 
+# Generete Fuel UUID
+uuidgen > /etc/fuel-uuid
 
 # Prepare custom /etc/issue logon banner and script for changing IP in it
 cat > /etc/issue << EOF

@@ -1,3 +1,0 @@
-[console_scripts]
-fuelmenu = fuelmenu.fuelmenu:setup
-

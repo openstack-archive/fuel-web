@@ -126,7 +126,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var nodeIds = this.$('.node-box:not(.node-delete):not(.node-offline) input[type=checkbox]:checked').map(function() {return parseInt($(this).val(), 10);}).get();
             this.$('.btn-group-congiration').prop('disabled', !nodeIds.length);
             var nodes = new models.Nodes(this.nodes.filter(function(node) {return _.contains(nodeIds, node.id);}));
-            this.$('.btn-configure-disks').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('disks');})).length > 1);
+            this.$('.btn-configure-disks').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('disks');})).length > 1 || _.uniq(nodes.map(function(node) {return node.resource('hdd');})).length > 1);
             this.$('.btn-configure-interfaces').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);
         },
         initialize: function() {
@@ -226,7 +226,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'change select[name=grouping]' : 'groupNodes',
             'click .btn-delete-nodes:not(:disabled)' : 'showDeleteNodesDialog',
             'click .btn-apply:not(:disabled)' : 'applyChanges',
-            'click .btn-group-congiration:not(.conflict)' : 'goToConfigurationScreen',
+            'click .btn-group-congiration:not(.conflict):not(:disabled)' : 'goToConfigurationScreen',
             'click .btn-group-congiration.conflict' : 'showUnavailableGroupConfigurationDialog'
         },
         initialize: function(options) {

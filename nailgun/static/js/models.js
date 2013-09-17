@@ -128,9 +128,13 @@ define(['utils'], function(utils) {
                     resource = _.reduce(this.get('meta').disks, function(hdd, disk) {return _.isNumber(disk.size) ?  hdd + disk.size : hdd;}, 0);
                 } else if (resourceName == 'ram') {
                     resource = this.get('meta').memory.total;
+                } else if (resourceName == 'disks') {
+                    resource = _.pluck(this.get('meta').disks, 'size').sort(function(a, b) {return a - b;});
+                } else if (resourceName == 'interfaces') {
+                    resource = this.get('meta').interfaces.length;
                 }
             } catch (e) {}
-            if (_.isNaN(resource) || !_.isNumber(resource)) {
+            if (_.isNaN(resource)) {
                 resource = 0;
             }
             return resource;

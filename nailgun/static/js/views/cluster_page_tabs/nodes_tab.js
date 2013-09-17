@@ -124,9 +124,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$('.btn-edit-nodes').attr('href', '#cluster/' + this.model.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: selectedNodesIds}));
             // check selected nodes for group configuration availability
             var nodeIds = this.$('.node-box:not(.node-delete):not(.node-offline) input[type=checkbox]:checked').map(function() {return parseInt($(this).val(), 10);}).get();
+            this.$('.btn-group-congiration').prop('disabled', !nodeIds.length);
             var nodes = new models.Nodes(this.nodes.filter(function(node) {return _.contains(nodeIds, node.id);}));
-            this.$('.btn-configure-disks').prop('disabled', _.uniq(nodes.map(function(node) {return node.resource('hdd');})).length != 1);
-            this.$('.btn-configure-interfaces').prop('disabled', _.uniq(nodes.map(function(node) {return node.resource('ram');})).length != 1);
+            this.$('.btn-configure-disks').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('disks');})).length > 1);
+            this.$('.btn-configure-interfaces').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);
         },
         initialize: function() {
             this.nodes.on('resize', this.render, this);
@@ -225,7 +226,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'change select[name=grouping]' : 'groupNodes',
             'click .btn-delete-nodes:not(:disabled)' : 'showDeleteNodesDialog',
             'click .btn-apply:not(:disabled)' : 'applyChanges',
-            'click .btn-group-congiration' : 'goToConfigurationScreen'
+            'click .btn-group-congiration:not(.conflict)' : 'goToConfigurationScreen',
+            'click .btn-group-congiration.conflict' : 'showUnavailableGroupConfigurationDialog'
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -280,6 +282,16 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         goToConfigurationScreen: function(e) {
             var selectedNodesIds = this.screen.$('.node-checkbox input:checked').map(function() {return parseInt($(this).val(), 10);}).get().join(',');
             app.navigate('#cluster/' + this.cluster.id + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
+        },
+        showUnavailableGroupConfigurationDialog: function (e) {
+            var action = this.$(e.currentTarget).data('action');
+            var messages = {
+                'disks': 'Drive capacity varies between some of the selected nodes. Please select only nodes with identical drive capacities to configure disk allocations.',
+                'interfaces': 'Network interfaces number varies between some of the selected nodes. Please select only nodes with the same number of network intefaces.'
+            };
+            var dialog = new dialogViews.Dialog();
+            app.page.registerSubView(dialog);
+            dialog.render({title: 'Unable to configure ' + action, message: messages[action]});
         },
         render: function() {
             this.tearDownRegisteredSubViews();

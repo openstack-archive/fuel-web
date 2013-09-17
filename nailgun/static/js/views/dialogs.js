@@ -43,6 +43,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     views.Dialog = Backbone.View.extend({
         className: 'modal fade',
+        template: _.template(simpleMessageTemplate),
         errorMessageTemplate: _.template(errorMessageTemplate),
         modalBound: false,
         beforeTearDown: function() {
@@ -59,7 +60,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             this.$('.modal-body').html(this.errorMessageTemplate({logsLink: logsLink}));
         },
         displayInfoMessage: function(options) {
-            this.$el.html(_.template(simpleMessageTemplate)(options));
+            this.$el.html(this.template(options));
             if (options.error) {
                 this.displayErrorMessage();
             }

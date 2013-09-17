@@ -11,3 +11,6 @@ ISO, other materials: http://fuel.mirantis.com/
 User guide: http://docs.mirantis.com/
 
 Development documentation: http://docs.mirantis.com/fuel-dev/
+
+Launchpad: https://launchpad.net/fuel
+

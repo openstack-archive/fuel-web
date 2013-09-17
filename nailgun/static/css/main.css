@@ -4327,8 +4327,8 @@ div.create-cluster-form .radio-checkbox-group label {
   vertical-align: middle;
 }
 
-.release-error-link {
-  cursor: pointer;
+.release-error {
+  font-size: 12px;
 }
 
 label.show-password {

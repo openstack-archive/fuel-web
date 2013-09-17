@@ -62,8 +62,7 @@ function(commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
         tagName: 'tr',
         template: _.template(releaseTemplate),
         'events': {
-            'click .btn-rhel-setup': 'showRhelLicenseCredentials',
-            'click .error': 'showErrorText'
+            'click .btn-rhel-setup': 'showRhelLicenseCredentials'
         },
         showRhelLicenseCredentials: function() {
             var dialog = new dialogViews.RhelCredentialsDialog({release: this.release});
@@ -81,9 +80,6 @@ function(commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
                 this.release.fetch();
                 app.navbar.refresh();
             }
-        },
-        showErrorText: function() {
-            this.$('div.error').toggleClass('hide');
         },
         updateProgress: function() {
             var task = this.page.tasks.findTask({name: 'redhat_setup', status: 'running', release: this.release.id});

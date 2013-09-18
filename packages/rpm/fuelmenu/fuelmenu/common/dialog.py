@@ -33,18 +33,9 @@ class ModalDialog(urwid.WidgetWrap):
             logging.debug("Set text widget")
         self.title = title
         bodybox = urwid.LineBox(urwid.Pile([body,blank,Button("Close", self.close)]), title)
-        #overlay = urwid.Overlay(urwid.Pile([bodybox]), previous_widget, 'center',
         overlay = urwid.Overlay(urwid.Filler(bodybox), previous_widget, 'center',
 ('relative', 80), 'middle', ('relative', 80))
-        #overlay = urwid.Overlay(body, previous_widget, 'center',
-                                #80, "top", 24, 80, 24,
-                                #0,0,0,0)
-                                #100, 'bottom',
-                                #100)
-                                #('relative', 100), 'bottom',
-                                #('relative', 100))
         overlay_attrmap = urwid.AttrMap(overlay, "body")
-        #overlay_attrmap = urwid.AttrMap(overlay, "plugin.widget.dialog")
         super(ModalDialog, self).__init__(overlay_attrmap)
         logging.debug(overlay.contents[0])
 
@@ -59,16 +50,9 @@ class ModalDialog(urwid.WidgetWrap):
 
 def display_dialog(self, body, title, escape_key="esc"):
         filler = urwid.Pile([body])
-        #dialog = urwid.Padding(ModalDialog(title, filler, escape_key,
-        #                        self.parent.mainloop.widget))
         dialog = ModalDialog(title, filler, escape_key,
                                 self.parent.mainloop.widget,
                                 loop=self.parent.mainloop)
-        #self.parent.frame.set_body(dialog)
         self.parent.mainloop.widget = dialog
-        #self.parent.mainloop.widget = urwid.Padding(dialog,width=80)
-        #self.__widget_stack.append(dialog)
-        #self.force_redraw()
-        #self.logger.debug("New Stack: %s" % self.__widget_stack)
         return dialog
 

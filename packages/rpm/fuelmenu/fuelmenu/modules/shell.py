@@ -5,9 +5,10 @@ import urwid.raw_display
 import urwid.web_display
 from fuelmenu.common.urwidwrapper import *
 import subprocess
+import os
+import pty
 
 blank = urwid.Divider()
-
 
 class shell():
   def __init__(self, parent):
@@ -24,7 +25,8 @@ class shell():
   def start_shell(self, args):
     self.parent.mainloop.screen.stop()
     message="Type exit to return to the main UI."
-    subprocess.call("clear ; echo '%s';echo; bash -l" % message, shell=True)
+
+    subprocess.call("clear ; echo '%s';echo;bash -i" % message, shell=True)
     self.parent.mainloop.screen.start()
 
   def refresh(self):

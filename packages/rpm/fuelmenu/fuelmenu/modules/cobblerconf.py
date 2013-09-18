@@ -78,12 +78,13 @@ class cobblerconf(urwid.WidgetWrap):
     self.priority=20
     self.visible=True
     self.netsettings = dict()
+    self.parent = parent
     self.deployment="pre"
     self.getNetwork()
     self.gateway=self.get_default_gateway_linux()
     self.activeiface = sorted(self.netsettings.keys())[0]
+    self.parent.managediface=self.activeiface
     self.extdhcp=True
-    self.parent = parent
     self.oldsettings= self.load()
     self.screen = None
      
@@ -390,6 +391,7 @@ likely fail."))
          continue
        if rb.base_widget.state == True:
          self.activeiface = rb.base_widget.get_label()
+         self.parent.managediface=self.activeiface
          break
     self.gateway=self.get_default_gateway_linux()
     self.getNetwork()

@@ -1,6 +1,6 @@
 HOSTNAME: "fuel"
-DNS_DOMAIN: "example.com"
-DNS_SEARCH: "example.com"
+DNS_DOMAIN: "domain.tld"
+DNS_SEARCH: "domain.tld"
 DNS_UPSTREAM: "8.8.8.8"
 
 ADMIN_NETWORK:

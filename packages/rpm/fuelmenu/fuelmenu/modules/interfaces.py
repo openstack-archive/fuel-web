@@ -50,6 +50,8 @@ class interfaces(urwid.WidgetWrap):
     self.priority=5
     self.visible=True
     self.netsettings = dict()
+    self.parent = parent
+    self.screen = None
     logging.basicConfig(filename='./fuelmenu.log',level=logging.DEBUG)
     self.log = logging
     self.log.basicConfig(filename='./fuelmenu.log',level=logging.DEBUG)
@@ -57,9 +59,41 @@ class interfaces(urwid.WidgetWrap):
     self.getNetwork()
     self.gateway=self.get_default_gateway_linux()
     self.activeiface = sorted(self.netsettings.keys())[0]
+    #self.parent.managediface=self.activeiface
     self.extdhcp=True
-    self.parent = parent
-    self.screen = None
+
+  def fixDnsmasqUpstream(self):
+    #check upstream dns server 
+    with open('/etc/dnsmasq.upstream','r') as f:
+      dnslines=f.readlines()
+    f.close()
+    nameservers=dnslines[0].split(" ")[1:]
+    for nameserver in nameservers:
+      if not self.checkDNS(nameserver):
+        nameservers.remove(nameserver)
+    if nameservers == []:
+      #Write dnsmasq upstream server to default if it's not readable
+      with open('/etc/dnsmasq.upstream','w') as f:
+        nameservers=DEFAULTS['DNS_UPSTREAM']['value'].replace(',',' ')
+        f.write("nameserver %s\n" % nameservers)
+        f.close()
+
+  def fixEtcHosts(self):
+    #replace ip for env variable HOSTNAME in /etc/hosts
+    if self.netsettings[self.parent.managediface]["addr"] != "":
+      managediface_ip = self.netsettings[self.parent.managediface]["addr"]
+    else:
+      managediface_ip = "127.0.0.1"
+    found=False
+    with open("/etc/hosts") as fh:
+      for line in fh:
+       if re.match("%s.*%s" % (managediface_ip,socket.gethostname()), line):
+         found=True
+         break
+    if not found:
+      expr=".*%s.*" % socket.gethostname()
+      replace.replaceInFile("/etc/hosts", expr, "%s   %s" % (
+                          managediface_ip, socket.gethostname()))
 
   def check(self, args):
     """Validates that all fields have valid values and some sanity checks"""
@@ -169,8 +203,12 @@ IP address")
         puppet.puppetApply(puppetclass,self.activeiface, params)
         self.getNetwork()
         expr='^GATEWAY=.*'
-        replace.replaceInFile("/etc/sysconfig/network",expr,"GATEWAY=%s"
-                          % (self.get_default_gateway_linux()))
+        gateway=self.get_default_gateway_linux()
+        if gateway is None:
+          gateway = ""
+        replace.replaceInFile("/etc/sysconfig/network",expr,"GATEWAY=%s"\
+                               % gateway)
+        self.fixEtcHosts()
 
     except Exception, e:
         self.log.error(e)
@@ -280,6 +318,7 @@ IP address")
          continue
        if rb.base_widget.state == True:
          self.activeiface = rb.base_widget.get_label()
+         #self.parent.managediface=self.activeiface
          break
     self.getNetwork()
     self.setNetworkDetails()

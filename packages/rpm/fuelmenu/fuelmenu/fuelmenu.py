@@ -65,6 +65,7 @@ class FuelSetup():
                                    % (os.path.dirname(__file__))
         self.settingsfile = "%s/newsettings.yaml" \
                             % (os.path.dirname(__file__))
+        self.managediface="eth0"
         self.main()
         self.choices = []
 
@@ -96,7 +97,6 @@ class FuelSetup():
               else:
                 item.set_attr_map({ None: None})
             except Exception, e:
-              self.footer.set_text("%s" % item)
               log.info("%s" % item)
               log.error("%s" % e)
               #continue

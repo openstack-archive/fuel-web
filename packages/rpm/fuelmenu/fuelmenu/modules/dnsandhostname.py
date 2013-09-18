@@ -9,6 +9,8 @@ import re
 import copy
 import socket, struct
 import netaddr
+import netifaces
+import subprocess
 from fuelmenu.settings import *
 from fuelmenu.common import network, puppet, replace, \
      nailyfactersettings, dialog
@@ -24,18 +26,18 @@ fields = ["HOSTNAME", "DNS_DOMAIN", "DNS_SEARCH","DNS_UPSTREAM","blank", "TEST_D
 DEFAULTS = {
   "HOSTNAME"     : { "label"  : "Hostname",
                    "tooltip": "Hostname to use for Fuel master node",
-                   "value"  : "fuel"},
+                   "value"  : socket.gethostname().split('.')[0]},
   "DNS_UPSTREAM" : { "label"  : "External DNS",
                    "tooltip": "DNS server(s) (comma separated) to handle DNS\
  requests (example 8.8.8.8)",
                    "value"  : "8.8.8.8"},
   "DNS_DOMAIN"   : { "label"  : "Domain",
                    "tooltip": "Domain suffix to user for all nodes in your cluster",
-                   "value"  : "example.com"},
+                   "value"  : "domain.tld"},
   "DNS_SEARCH"   : { "label"  : "Search Domain",
                    "tooltip": "Domains to search when looking up DNS\
  (space separated)",
-                   "value"  : "example.com"},
+                   "value"  : "domain.tld"},
   "TEST_DNS"     : { "label" : "Hostname to test DNS:",
                        "value" : "www.google.com",
                        "tooltip": "DNS record to resolve to see if DNS is \
@@ -47,7 +49,7 @@ accessible",}
 class dnsandhostname(urwid.WidgetWrap):
   def __init__(self, parent):
     self.name="DNS & Hostname"
-    self.priority=15
+    self.priority=50
     self.visible=True
     self.netsettings = dict()
     self.deployment="pre"
@@ -57,8 +59,42 @@ class dnsandhostname(urwid.WidgetWrap):
     self.parent = parent
     self.oldsettings= self.load()
     self.screen = None
-    #self.screen = self.screenUI()
-     
+    self.fixDnsmasqUpstream()
+    self.fixEtcHosts()
+
+  def fixDnsmasqUpstream(self):
+    #check upstream dns server 
+    with open('/etc/dnsmasq.upstream','r') as f:
+      dnslines=f.readlines()
+    f.close() 
+    nameservers=dnslines[0].split(" ")[1:]
+    for nameserver in nameservers:
+      if not self.checkDNS(nameserver):
+        nameservers.remove(nameserver)
+    if nameservers == []:
+      #Write dnsmasq upstream server to default if it's not readable
+      with open('/etc/dnsmasq.upstream','w') as f:
+        nameservers=DEFAULTS['DNS_UPSTREAM']['value'].replace(',',' ')
+        f.write("nameserver %s\n" % nameservers)
+        f.close() 
+
+  def fixEtcHosts(self):
+    #replace ip for env variable HOSTNAME in /etc/hosts
+    if self.netsettings[self.parent.managediface]["addr"] != "":
+      managediface_ip = self.netsettings[self.parent.managediface]["addr"]
+    else: 
+      managediface_ip = "127.0.0.1"
+    found=False
+    with open("/etc/hosts") as fh:
+      for line in fh:
+       if re.match("%s.*%s" % (managediface_ip,socket.gethostname()), line):
+         found=True
+         break
+    if not found:
+      expr=".*%s.*" % socket.gethostname()
+      replace.replaceInFile("/etc/hosts", expr, "%s   %s" % (
+                          managediface_ip, socket.gethostname()))
+    
   def check(self, args):
     """Validates that all fields have valid values and some sanity checks"""
     self.parent.footer.set_text("Checking data...")
@@ -125,20 +161,9 @@ Releases."
           % responses["DNS_UPSTREAM"])
 
         #Try to resolve with first address
-        #Note: Python's internal resolver caches negative answers.
-        #Therefore, we should call dig externally to be sure.
-        import subprocess
-        noout=open('/dev/null','w')
-        dns_works = subprocess.call(["dig","+short","+time=3",
-                        "+retries=1",responses["TEST_DNS"],
-                       "@%s" % DNS_UPSTREAM],stdout=noout, stderr=noout)
-        if dns_works != 0:
-            errors.append("Domain Name server %s unable to resolve host."
+        if not self.checkDNS(DNS_UPSTREAM):
+          errors.append("Domain Name server %s unable to resolve host."
                           % DNS_UPSTREAM)
-        #from twisted.names import client
-        #for nameserver in responses["ext_dns"].split(","):
-        #   resolver = client.createResolver(servers=[(nameserver,53))
-        #   if resolver.getHostByName('wikipedia.org')
       except Exception, e:
  
         errors.append(e)
@@ -162,10 +187,32 @@ Releases."
     self.save(responses)
     #Apply hostname
     expr='HOSTNAME=.*'
-    replace.replaceInFile("/etc/sysconfig/network",expr,"HOSTNAME=%s" 
-                          % (responses["HOSTNAME"]))
+    replace.replaceInFile("/etc/sysconfig/network",expr,"HOSTNAME=%s.%s" 
+                          % (responses["HOSTNAME"],responses["DNS_DOMAIN"]))
+    #remove old hostname from /etc/hosts
+    f = open("/etc/hosts","r")
+    lines = f.readlines()
+    f.close()
+    with open("/etc/hosts", "w") as etchosts:
+      lines = etchosts.readlines()
+      for line in lines:
+        if responses["HOSTNAME"] in line or oldsettings["HOSTNAME"] in line:
+          continue
+        else:
+          etchosts.write(line)
+      etchosts.close()
+
+    #append hostname and ip address to /etc/hosts
+    with open("/etc/hosts", "a") as etchosts:
+      if self.netsettings[self.parent.managediface]["addr"] != "":
+        managediface_ip = self.netsettings[self.parent.managediface]["addr"]
+      else: 
+        managediface_ip = "127.0.0.1"
+      etchosts.write("%s   %s.%s" % (managediface_ip, responses["HOSTNAME"],
+                                     responses['DNS_DOMAIN']))
+      etchosts.close()
     #Write dnsmasq upstream server 
-    with open('/etc/dnsmasq.upstream','a') as f:
+    with open('/etc/dnsmasq.upstream','w') as f:
       nameservers=responses['DNS_UPSTREAM'].replace(',',' ')
       f.write("nameserver %s\n" % nameservers)
     f.close() 
@@ -251,7 +298,20 @@ Releases."
     for index, fieldname in enumerate(fields):
       if fieldname != "blank":
         DEFAULTS[fieldname]['value']= newsettings[fieldname]
-    
+  
+  def checkDNS(self,server):
+    #Note: Python's internal resolver caches negative answers.
+    #Therefore, we should call dig externally to be sure.
+
+    noout=open('/dev/null','w')
+    dns_works = subprocess.call(["dig","+short","+time=3",
+                       "+retries=1",DEFAULTS["TEST_DNS"]['value'],
+                       "@%s" % server],stdout=noout, stderr=noout)
+    if dns_works != 0:
+      return False
+    else:
+      return True
+
   def getNetwork(self):
     """Uses netifaces module to get addr, broadcast, netmask about
        network interfaces"""

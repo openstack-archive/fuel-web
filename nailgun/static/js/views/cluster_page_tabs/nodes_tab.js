@@ -126,7 +126,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var nodeIds = this.$('.node-box:not(.node-delete):not(.node-offline) input[type=checkbox]:checked').map(function() {return parseInt($(this).val(), 10);}).get();
             this.$('.btn-group-congiration').prop('disabled', !nodeIds.length);
             var nodes = new models.Nodes(this.nodes.filter(function(node) {return _.contains(nodeIds, node.id);}));
-            this.$('.btn-configure-disks').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('disks');})).length > 1 || _.uniq(nodes.map(function(node) {return node.resource('hdd');})).length > 1);
+            var noDisksConflict = true;
+            nodes.each(function(node) {
+                noDisksConflict = noDisksConflict && _.isEqual(nodes.at(0).resource('disks'), node.resource('disks'));
+            });
+            this.$('.btn-configure-disks').toggleClass('conflict', !noDisksConflict);
             this.$('.btn-configure-interfaces').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);
         },
         initialize: function() {

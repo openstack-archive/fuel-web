@@ -129,7 +129,7 @@ define(['utils'], function(utils) {
                 } else if (resourceName == 'ram') {
                     resource = this.get('meta').memory.total;
                 } else if (resourceName == 'disks') {
-                    resource = this.get('meta').disks.length;
+                    resource = _.pluck(this.get('meta').disks, 'size').sort(function(a, b) {return a - b;});
                 } else if (resourceName == 'interfaces') {
                     resource = this.get('meta').interfaces.length;
                 }

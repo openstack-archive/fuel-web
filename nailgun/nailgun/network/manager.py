@@ -173,7 +173,7 @@ class NetworkManager(object):
                 )
 
             nets_free_set = IPSet(pool) -\
-                IPSet(settings.NET_EXCLUDE) -\
+                IPSet(global_params.parameters["net_exclude"]) -\
                 IPSet(
                     IPRange(
                         admin_network_range.first,

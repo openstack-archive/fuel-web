@@ -39,7 +39,6 @@ from nailgun.api.models import Vlan
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.settings import settings
 
 
 class NetworkManager(object):
@@ -173,7 +172,9 @@ class NetworkManager(object):
                 )
 
             nets_free_set = IPSet(pool) -\
-                IPSet(global_params.parameters["net_exclude"]) -\
+                IPSet(
+                    IPNetwork(global_params.parameters["net_exclude"])
+                ) -\
                 IPSet(
                     IPRange(
                         admin_network_range.first,

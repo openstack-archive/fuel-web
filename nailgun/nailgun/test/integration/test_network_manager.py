@@ -31,7 +31,6 @@ from nailgun.api.models import Network
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import NodeNICInterface
 from nailgun.api.models import Vlan
-from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse

@@ -150,7 +150,14 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 deferred
                     .done(_.bind(function() {
                         this.collection.add(cluster);
-                        $.when.apply($, _.invoke(this.panes, 'afterClusterCreation', cluster))
+                        var settings = new models.Settings({}, {url: _.result(cluster, 'url') + '/attributes'});
+                        settings.fetch()
+                            .then(_.bind(function() {
+                                return $.when.apply($, _.invoke(this.panes, 'beforeSettingsSaving', settings));
+                            }, this))
+                            .then(_.bind(function() {
+                                return settings.save();
+                            }, this))
                             .done(_.bind(function() {
                                 this.$el.modal('hide');
                             }, this))
@@ -207,7 +214,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         beforeClusterCreation: function(cluster) {
             return (new $.Deferred()).resolve();
         },
-        afterClusterCreation: function(cluster) {
+        beforeSettingsSaving: function(cluster) {
             return (new $.Deferred()).resolve();
         },
         render: function() {
@@ -331,23 +338,13 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     clusterWizardPanes.ClusterComputePane = views.WizardPane.extend({
         title: 'Compute',
         template: _.template(clusterComputePaneTemplate),
-        afterClusterCreation: function(cluster) {
-            var deferred = new $.Deferred();
-            var settings = new models.Settings({}, {url: _.result(cluster, 'url') + '/attributes'});
-            //FIXME: redo with deferred.pipe?
-            settings.fetch()
-                .done(_.bind(function() {
-                    try {
-                        settings.get('editable').common.libvirt_type.value = this.$('input[name=hypervisor]:checked').val();
-                    } catch(e) {
-                        deferred.reject();
-                    }
-                    settings.save()
-                        .done(function() {deferred.resolve();})
-                        .fail(function() {deferred.reject();});
-                }, this))
-                .fail(function() {deferred.reject();});
-            return deferred;
+        beforeSettingsSaving: function(settings) {
+            try {
+                settings.get('editable').common.libvirt_type.value = this.$('input[name=hypervisor]:checked').val();
+            } catch(e) {
+                return (new $.Deferred()).reject();
+            }
+            return (new $.Deferred()).resolve();
         },
         render: function() {
             this.$el.html(this.template());

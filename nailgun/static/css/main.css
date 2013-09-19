@@ -3676,8 +3676,12 @@ hr.slim {
   cursor: not-allowed;
 }
 
-.cluster-toolbar-item .btn.conflict {
-  color: #ff0000;
+.cluster-toolbar-item a {
+  display: block;
+}
+
+.cluster-toolbar-item .btn.conflict i {
+  display: inline;
 }
 
 .disk-map-full {

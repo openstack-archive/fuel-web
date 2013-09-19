@@ -390,7 +390,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         clusterWizardPanes.ClusterNameAndReleasePane,
         clusterWizardPanes.ClusterModePane,
         clusterWizardPanes.ClusterComputePane,
-        //clusterWizardPanes.ClusterNetworkPane,
+        clusterWizardPanes.ClusterNetworkPane,
         //clusterWizardPanes.ClusterStoragePane,
         //clusterWizardPanes.ClusterAdditionalServicesPane,
         clusterWizardPanes.ClusterReadyPane

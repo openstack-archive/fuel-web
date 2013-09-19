@@ -1,10 +1,11 @@
 <form class="form-horizontal" onsubmit="return false">
   <fieldset>
     <div class="control-group">
-      <% var managers = ['nova-network', 'quantum'] %>
+      <% var managers = ['nova-network', 'neutron-gre', 'neutron-vlan'] %>
       <% var descriptions = {
-        'nova-network': 'Nova-network description',
-        quantum: 'Quantum description'
+        'nova-network': 'Nova-Network',
+        'neutron-gre': 'Neutron with GRE segmentation',
+        'neutron-vlan': 'Neutron with VLAN segmentation'
       } %>
       <% _.each(managers, function(manager) { %>
         <label class="parameter-box clearfix">
@@ -14,9 +15,8 @@
               <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
           </div>
-          <div class="parameter-name" style="text-transform: capitalize"><%- manager %></div>
+          <div class="parameter-name"><%- descriptions[manager] %></div>
         </label>
-        <div class="modal-parameter-description"><%- descriptions[manager] %></div>
       <% }) %>
     </div>
   </fieldset>

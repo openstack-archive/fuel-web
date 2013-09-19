@@ -95,6 +95,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     views.CreateClusterWizard = views.Dialog.extend({
         template: _.template(createClusterWizardTemplate),
+        templateHelpers: _.pick(utils, 'floor'),
         events: {
             'click .next-pane-btn': 'nextPane',
             'click .prev-pane-btn': 'prevPane',
@@ -189,11 +190,11 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var currentStep = this.activePaneIndex + 1;
             var maxAvailableStep = this.maxAvaialblePaneIndex + 1;
             var totalSteps = this.panes.length;
-            this.constructor.__super__.render.call(this, {
+            this.constructor.__super__.render.call(this, _.extend({
                 currentStep: currentStep,
                 totalSteps: totalSteps,
                 maxAvailableStep: maxAvailableStep
-            });
+            }, this.templateHelpers));
             this.$('.pane-title').text(pane.title || '');
             this.$('.pane-content').append(pane.el);
             this.$('.prev-pane-btn').prop('disabled', !this.activePaneIndex);
@@ -402,7 +403,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         clusterWizardPanes.ClusterModePane,
         clusterWizardPanes.ClusterComputePane,
         clusterWizardPanes.ClusterNetworkPane,
-        //clusterWizardPanes.ClusterStoragePane,
+        clusterWizardPanes.ClusterStoragePane,
         //clusterWizardPanes.ClusterAdditionalServicesPane,
         clusterWizardPanes.ClusterReadyPane
     ];

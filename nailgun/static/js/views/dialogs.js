@@ -359,6 +359,20 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     clusterWizardPanes.ClusterNetworkPane = views.WizardPane.extend({
         title: 'Network',
         template: _.template(clusterNetworkPaneTemplate),
+        beforeClusterCreation: function(cluster) {
+            var manager = this.$('input[name=manager]:checked').val();
+            if (manager == 'nova-network') {
+                cluster.set({net_provider: 'NovaNetwork'});
+            } else {
+                cluster.set({net_provider: 'Neutron'});
+                if (manager == 'neutron-gre') {
+                    cluster.set({net_segment_type: 'GRE'});
+                } else if (manager == 'neutron-vlan') {
+                    cluster.set({net_segment_type: 'VLAN'});
+                }
+            }
+            return (new $.Deferred()).resolve();
+        },
         render: function() {
             this.$el.html(this.template());
             this.$('input[name=manager]:first').prop('checked', true);

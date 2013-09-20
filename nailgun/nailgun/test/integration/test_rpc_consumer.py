@@ -342,6 +342,125 @@ class TestVerifyNetworks(BaseIntegrationTest):
                         }]
         self.assertEqual(task.result, error_nodes)
 
+    def test_verify_networks_resp_without_vlans_only(self):
+        """Verify that network verification without vlans passes
+        when there only iface without vlans configured
+        """
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        node1, node2 = self.env.nodes
+        nets_sent = [{'iface': 'eth0', 'vlans': [0]},
+                     {'iface': 'eth1', 'vlans': [0]}]
+
+        task = Task(
+            name="super",
+            cluster_id=cluster_db.id
+        )
+        task.cache = {
+            "args": {
+                'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                          {'uid': node2.id, 'networks': nets_sent}]
+            }
+        }
+        self.db.add(task)
+        self.db.commit()
+
+        kwargs = {'task_uuid': task.uuid,
+                  'status': 'ready',
+                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                            {'uid': node2.id, 'networks': nets_sent}]}
+        self.receiver.verify_networks_resp(**kwargs)
+        self.db.refresh(task)
+        self.assertEqual(task.status, "ready")
+
+
+    def test_verify_networks_resp_without_vlans_only_erred(self):
+        """Verify that network verification without vlans fails
+        when not all sended info received
+        """
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        node1, node2 = self.env.nodes
+        nets_sent = [{'iface': 'eth0', 'vlans': [0]}]
+        nets_resp = [{'iface': 'eth0', 'vlans': []}]
+
+        task = Task(
+            name="super",
+            cluster_id=cluster_db.id
+        )
+        task.cache = {
+            "args": {
+                'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                          {'uid': node2.id, 'networks': nets_sent}]
+            }
+        }
+        self.db.add(task)
+        self.db.commit()
+
+        kwargs = {'task_uuid': task.uuid,
+                  'status': 'ready',
+                  'nodes': [{'uid': node1.id, 'networks': nets_resp},
+                            {'uid': node2.id, 'networks': nets_resp}]}
+        self.receiver.verify_networks_resp(**kwargs)
+        self.db.refresh(task)
+        self.assertEqual(task.status, "error")
+        error_nodes = [{'uid': node1.id, 'interface': 'eth0',
+                        'name': node1.name, 'mac': node1.interfaces[0].mac,
+                        'absent_vlans': nets_sent[0]['vlans']},
+                        {'uid': node2.id, 'interface': 'eth0',
+                        'name': node2.name, 'mac': node2.interfaces[0].mac,
+                        'absent_vlans': nets_sent[0]['vlans']}]
+        self.assertEqual(task.result, error_nodes)
+
+
+    def test_verify_networks_resp_partially_without_vlans(self):
+        """Verify that network verification partially without vlans passes
+        """
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        node1, node2 = self.env.nodes
+        nets_sent = [{'iface': 'eth0', 'vlans': [0]},
+                     {'iface': 'eth1', 'vlans': range(100,104)}]
+
+        task = Task(
+            name="super",
+            cluster_id=cluster_db.id
+        )
+        task.cache = {
+            "args": {
+                'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                          {'uid': node2.id, 'networks': nets_sent}]
+            }
+        }
+        self.db.add(task)
+        self.db.commit()
+
+        kwargs = {'task_uuid': task.uuid,
+                  'status': 'ready',
+                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                            {'uid': node2.id, 'networks': nets_sent}]}
+        self.receiver.verify_networks_resp(**kwargs)
+        self.db.refresh(task)
+        self.assertEqual(task.status, "ready")
+
 
 class TestDhcpCheckTask(BaseIntegrationTest):
 

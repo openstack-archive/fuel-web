@@ -4441,3 +4441,7 @@ input.input-append {
 .compute-step .parameter-name {
   text-transform: uppercase;
 }
+
+.btn-configure-interfaces {
+  margin-right: 30px;
+}

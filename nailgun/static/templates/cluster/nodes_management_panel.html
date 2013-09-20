@@ -14,22 +14,21 @@
     </select>
   </div>
   <% if (clusterNodesScreen) { %>
-
+    <div class="cluster-toolbar-item pull-right">
+      <button class="btn btn-danger btn-delete-nodes hide">Delete</button>
+    </div>
+    <% var disabled = nodes.cluster.task('deploy', 'running') ? 'disabled' : '' %>
+    <div class="cluster-toolbar-item pull-right">
+      <a class="btn btn-success btn-edit-nodes hide" data-action="edit" href="" <%= disabled %>>Edit Roles</a>
+    </div>
+    <div class="cluster-toolbar-item pull-right">
+      <<%= locked ? 'div' : 'a' %> class="btn btn-success btn-add-nodes" href="#cluster/<%- cluster.id %>/nodes/add" <%= disabled %>>Add Nodes</<%= locked ? 'div' : 'a' %>>
+    </div>
     <div class="cluster-toolbar-item pull-right">
       <button class="btn btn-group-congiration btn-configure-interfaces" disabled data-action="interfaces"><i class="icon-attention text-error hide"></i> Configure Interfaces</button>
     </div>
     <div class="cluster-toolbar-item pull-right">
       <button class="btn btn-group-congiration btn-configure-disks" disabled data-action="disks"><i class="icon-attention text-error hide"></i> Configure Disks</button>
-    </div>
-    <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-danger btn-delete-nodes" disabled>Delete Nodes</button>
-    </div>
-    <% var disabled = nodes.cluster.task('deploy', 'running') ? 'disabled' : '' %>
-    <div class="cluster-toolbar-item pull-right">
-      <a class="btn btn-success btn-edit-nodes hide" data-action="edit" href="" <%= disabled %>>Edit Nodes</a>
-    </div>
-    <div class="cluster-toolbar-item pull-right">
-      <<%= locked ? 'div' : 'a' %> class="btn btn-success btn-add-nodes" href="#cluster/<%- cluster.id %>/nodes/add" <%= disabled %>>Add Nodes</<%= locked ? 'div' : 'a' %>>
     </div>
   <% } else { %>
     <div class="cluster-toolbar-item pull-right">

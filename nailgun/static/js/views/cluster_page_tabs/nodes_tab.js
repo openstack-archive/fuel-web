@@ -116,7 +116,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$('.btn-apply').prop('disabled', !this.hasChanges());
         },
         updateBatchActionsButtons: function() {
-            this.$('.btn-delete-nodes').prop('disabled', !this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
+            this.$('.btn-delete-nodes').toggle(!!this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
             var selectedNodes = this.$('.node-checkbox input:checked');
             this.$('.btn-add-nodes').toggle(!selectedNodes.length);
             this.$('.btn-edit-nodes').toggle(!!selectedNodes.length);

@@ -379,7 +379,6 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
 
-
     def test_verify_networks_resp_without_vlans_only_erred(self):
         """Verify that network verification without vlans fails
         when not all sended info received
@@ -419,11 +418,10 @@ class TestVerifyNetworks(BaseIntegrationTest):
         error_nodes = [{'uid': node1.id, 'interface': 'eth0',
                         'name': node1.name, 'mac': node1.interfaces[0].mac,
                         'absent_vlans': nets_sent[0]['vlans']},
-                        {'uid': node2.id, 'interface': 'eth0',
+                       {'uid': node2.id, 'interface': 'eth0',
                         'name': node2.name, 'mac': node2.interfaces[0].mac,
                         'absent_vlans': nets_sent[0]['vlans']}]
         self.assertEqual(task.result, error_nodes)
-
 
     def test_verify_networks_resp_partially_without_vlans(self):
         """Verify that network verification partially without vlans passes
@@ -438,7 +436,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         cluster_db = self.env.clusters[0]
         node1, node2 = self.env.nodes
         nets_sent = [{'iface': 'eth0', 'vlans': [0]},
-                     {'iface': 'eth1', 'vlans': range(100,104)}]
+                     {'iface': 'eth1', 'vlans': range(100, 104)}]
 
         task = Task(
             name="super",

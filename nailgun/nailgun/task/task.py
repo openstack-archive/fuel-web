@@ -358,7 +358,9 @@ class VerifyNetworksTask(object):
                     )[0]
                     vlans.extend(data_ng['vlans'])
                 if not vlans:
-                    continue
+                    # in case absence of vlans net_probe will
+                    # send packages on untagged iface
+                    vlans.append(0)
                 node_json['networks'].append(
                     {'iface': nic.name, 'vlans': vlans}
                 )

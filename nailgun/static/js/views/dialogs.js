@@ -381,9 +381,19 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     clusterWizardPanes.ClusterStoragePane = views.WizardPane.extend({
         title: 'Storage',
         template: _.template(clusterStoragePaneTemplate),
+        beforeSettingsSaving: function(settings) {
+            try {
+                var storageSettings = settings.get('editable').storage;
+                storageSettings.cinder.value = this.$('input[name=cinder]:checked').val();
+                storageSettings.glance.value = this.$('input[name=glance]:checked').val();
+            } catch(e) {
+                return (new $.Deferred()).reject();
+            }
+            return (new $.Deferred()).resolve();
+        },
         render: function() {
             this.$el.html(this.template());
-            this.$('input[name=storage]:first').prop('checked', true);
+            this.$('input[name=cinder]:last, input[name=glance]:last').prop('checked', true);
             return this;
         }
     });

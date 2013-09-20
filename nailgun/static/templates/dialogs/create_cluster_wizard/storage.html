@@ -1,23 +1,35 @@
 <form class="form-horizontal" onsubmit="return false">
   <fieldset>
-    <div class="control-group">
-      <% var storages = ['no', 'linux-volumes', 'ceph'] %>
-      <% var descriptions = {
-        no: 'No storage',
-        'linux-volumes': 'Linux volumes',
-        ceph: 'Ceph'
-      } %>
-      <% _.each(storages, function(storage) { %>
-        <label class="parameter-box clearfix">
-          <div class="parameter-control">
-            <div class="custom-tumbler">
-              <input type="radio" name="storage" value="<%= storage %>" />
-              <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+    <div class="row-fluid control-group">
+      <div class="span6">
+        <h5>Cinder backend</h5>
+        <% _.each(['Ceph', 'LVM'], function(backend) { %>
+          <label class="parameter-box clearfix">
+            <div class="parameter-control">
+              <div class="custom-tumbler">
+                <input type="radio" name="cinder" value="<%- backend.toLowerCase() %>" />
+                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+              </div>
             </div>
-          </div>
-          <div class="parameter-name" style="text-transform: capitalize"><%- descriptions[storage] %></div>
-        </label>
-      <% }) %>
+            <div class="parameter-name"><%- backend %></div>
+          </label>
+        <% }) %>
+      </div>
+      <div class="span6">
+        <h5>Glance backend</h5>
+        <% _.each(['Ceph', 'Swift'], function(backend) { %>
+          <label class="parameter-box clearfix">
+            <div class="parameter-control">
+              <div class="custom-tumbler">
+                <input type="radio" name="glance" value="<%- backend.toLowerCase() %>" />
+                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+              </div>
+            </div>
+            <div class="parameter-name"><%- backend %></div>
+          </label>
+        <% }) %>
+      </div>
     </div>
+
   </fieldset>
 </form>

@@ -1,6 +1,6 @@
 <% var disabled = locked ? 'disabled' : '' %>
 
-<legend class="openstack-settings"><%- legend %></legend>
+<legend class="openstack-settings"><%- legend.replace('_', ' ') %></legend>
 <div class="settings-group" data-settings-group="<%- legend %>">
   <% var sortedSettings = _.sortBy(_.keys(settings), function(setting) {return settings[setting].weight;}) %>
   <% _.each(sortedSettings, function(settingName) { %>

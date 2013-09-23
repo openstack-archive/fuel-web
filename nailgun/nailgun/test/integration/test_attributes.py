@@ -179,6 +179,11 @@ class TestAttributes(BaseIntegrationTest):
             for attr, orig_value in group_attrs.iteritems():
                 if group == 'common':
                     value = attrs[attr]
+                elif group == 'additional_components':
+                    for c, val in group_attrs.iteritems():
+                        self.assertIn(c, attrs)
+                        self.assertEquals(val["value"], attrs[c]["enabled"])
+                    continue
                 else:
                     value = attrs[group][attr]
                 if isinstance(orig_value, dict) and 'value' in orig_value:

@@ -164,6 +164,22 @@
                             "type": "password"
                         }
                     },
+                    "additional_components": {
+                        "savanna": {
+                            "value": false,
+                            "label": "Install Savanna",
+                            "description": "If selected, Savanna component will be installed",
+                            "weight": 10,
+                            "type": "checkbox"
+                        },
+                        "murano": {
+                            "value": false,
+                            "label": "Install Murano",
+                            "description": "If selected, Murano component will be installed",
+                            "weight": 20,
+                            "type": "checkbox"
+                        }
+                    },
                     "common": {
                         "auto_assign_floating_ip": {
                             "value": false,
@@ -357,6 +373,16 @@
                             "generator": "password"
                         },
                         "user_password": {
+                            "generator": "password"
+                        }
+                    },
+                    "savanna": {
+                        "db_password": {
+                            "generator": "password"
+                        }
+                    },
+                    "murano": {
+                        "db_password": {
                             "generator": "password"
                         }
                     },

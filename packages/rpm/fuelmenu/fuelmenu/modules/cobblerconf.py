@@ -375,20 +375,22 @@ interface first.")
                 if self.netsettings[iface]["addr"] != "":
                     self.netsettings[iface]["link"] = "up"
 
-        #Try to read bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
-        try:
-            with open("/etc/sysconfig/network-scripts/ifcfg-%s" % iface) as fh:
-                for line in fh:
-                    if re.match("^BOOTPROTO=", line):
-                        self.netsettings[iface]['bootproto'] = \
-                            line.split('=').strip()
-                        break
-        except:
-            #Let's try checking for dhclient process running for this interface
-            if self.getDHCP(iface):
-                self.netsettings[iface]['bootproto'] = "dhcp"
-            else:
-                self.netsettings[iface]['bootproto'] = "none"
+            #Read bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
+            self.netsettings[iface]['bootproto'] = "none"
+            try:
+                with open("/etc/sysconfig/network-scripts/ifcfg-%s" % iface)\
+                        as fh:
+                    for line in fh:
+                        if re.match("^BOOTPROTO=", line):
+                            self.netsettings[iface]['bootproto'] = \
+                                line.split('=').strip()
+                            break
+            except:
+                #Check for dhclient process running for this interface
+                if self.getDHCP(iface):
+                    self.netsettings[iface]['bootproto'] = "dhcp"
+                else:
+                    self.netsettings[iface]['bootproto'] = "none"
         self.gateway = self.get_default_gateway_linux()
 
     def getDHCP(self, iface):

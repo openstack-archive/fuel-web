@@ -62,7 +62,7 @@ class welcome():
 [('light gray','YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY'),('black','YY'),('light gray','YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY')],
 [('light gray','YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY')],
 ]
-    fuellogo_small=[
+        fuellogo_small=[
 [('red',u'±ÛÛÛÛÛÛÛÛÛÛ±  ±ÛÛ±     ±ÛÛ±    ±ÛÛÛÛÛÛÛÛÛ±   ±ÛÛ±     TM')],
 [('red',u'Û²²²²²²²²²²Û  Û²²²     Û²²²    Û²²²²²²²²²²   Û²²²')],
 [('red',u'Û²²²²²²²²²²°  Û²²²     Û²²²    Û²²²²²²²²²±   Û²²²')],

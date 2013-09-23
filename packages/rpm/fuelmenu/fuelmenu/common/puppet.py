@@ -34,7 +34,10 @@ def puppetApply(classname, name=None, params=None):
     input = [classname, "{", '"%s":' % name]
     #Build params
     for key, value in params.items():
-        input.extend([key, "=>", '"%s",' % value])
+        if type(value) == bool:
+            input.extend([key, "=>", '%s,' % str(value).lower()])
+        else:
+            input.extend([key, "=>", '"%s",' % value])
     input.append('}')
 
     log.debug(' '.join(command))

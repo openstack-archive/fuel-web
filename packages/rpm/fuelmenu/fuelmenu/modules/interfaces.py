@@ -129,6 +129,29 @@ class interfaces(urwid.WidgetWrap):
         #No checks yet for DHCP, just return
 
         if responses["bootproto"] == "dhcp":
+            self.parent.footer.set_text("Scanning for DHCP servers. "
+                                        "Please wait...")
+            self.parent.refreshScreen()
+            dhcp_server_data = dhcp_checker.api.check_dhcp_on_eth(
+                self.activeiface, timeout=3)
+            if len(dhcp_server_data) < 1:
+                log.debug("No DHCP servers found. Warning user about "
+                          "dhcp_nowait.")
+                #Build dialog elements
+                dhcp_info = []
+                dhcp_info.append(urwid.Padding(
+                                 urwid.Text(("header", "!!! WARNING !!!")),
+                                 "center"))
+                dhcp_info.append(TextLabel("Unable to detect DHCP server on"
+                                 "interface %s." % (self.activeiface) +
+                                 "\nDHCP will be set up in the background, "
+                                 "but may not receive an IP address. You may "
+                                 "want to check your DHCP connection manually "
+                                 "using the Shell Login menu to the left."))
+                dialog.display_dialog(self, urwid.Pile(dhcp_info),
+                                      "DHCP Servers Found on %s"
+                                      % self.activeiface)
+                responses["dhcp_nowait"] = True
             return responses
         #Check ipaddr, netmask, gateway only if static
         if responses["bootproto"] == "none":
@@ -183,7 +206,11 @@ class interfaces(urwid.WidgetWrap):
         if responses["onboot"].lower() == "no":
             params = {"ipaddr": "none"}
         elif responses["bootproto"] == "dhcp":
-            params = {"ipaddr": "dhcp"}
+            if "dhcp_nowait" in responses.keys():
+                params = {"ipaddr": "dhcp",
+                          "dhcp_nowait": responses["dhcp_nowait"]}
+            else:
+                params = {"ipaddr": "dhcp"}
         else:
             params = {"ipaddr": responses["ipaddr"],
                       "netmask": responses["netmask"]}
@@ -336,7 +363,6 @@ class interfaces(urwid.WidgetWrap):
                 else:
                     self.extdhcp = False
                 break
-        self.setExtIfaceFields(self.extdhcp)
         return
 
     def setNetworkDetails(self):
@@ -385,7 +411,7 @@ class interfaces(urwid.WidgetWrap):
                 if network.inSameSubnet(
                         self.netsettings[self.activeiface]['addr'],
                         self.gateway,
-                        self.netsettings[self.activeiface]['netmask ']):
+                        self.netsettings[self.activeiface]['netmask']):
                     self.edits[index].set_edit_text(self.gateway)
                 else:
                     self.edits[index].set_edit_text("")

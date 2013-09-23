@@ -36,7 +36,7 @@ casper.then(function() {
     this.then(function() {
         this.fill('form.create-cluster-form', {name: name});
         this.fill('form.rhel-license', {username: 'rheltest', password: 'password'});
-        for (var i = 0; i < 4; i++) {
+        for (var i = 0; i < 5; i++) {
             this.click('.next-pane-btn');
         }
         this.click('.finish-btn');

@@ -1,4 +1,7 @@
-<form class="form-horizontal" onsubmit="return false">
+<% if (disabled && release) { %>
+  <div class="alert" style="margin:0">Ceph is not supported in <%- release.get('name') %></div>
+<% } %>
+<form class="form-horizontal" style="margin:0" onsubmit="return false">
   <fieldset>
     <div class="row-fluid control-group">
       <div class="span6">

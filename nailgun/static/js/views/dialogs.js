@@ -241,6 +241,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     this.updateReleaseParameters();
                 }
             }
+            if (success) {
+                this.wizard.findPane(clusterWizardPanes.ClusterStoragePane).render();
+            }
             var deferred = new $.Deferred();
             return deferred[success ? 'resolve' : 'reject']();
         },
@@ -384,15 +387,22 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         beforeSettingsSaving: function(settings) {
             try {
                 var storageSettings = settings.get('editable').storage;
-                storageSettings.cinder.value = this.$('input[name=cinder]:checked').val();
-                storageSettings.glance.value = this.$('input[name=glance]:checked').val();
+                if (storageSettings) {
+                    storageSettings.cinder.value = this.$('input[name=cinder]:checked').val();
+                    storageSettings.glance.value = this.$('input[name=glance]:checked').val();
+                }
             } catch(e) {
                 return (new $.Deferred()).reject();
             }
             return (new $.Deferred()).resolve();
         },
         render: function() {
-            this.$el.html(this.template());
+            var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
+            var disabled = !release || !_.contains(release.get('roles'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
+            this.$el.html(this.template({disabled: disabled, release: release}));
+            if (disabled) {
+                this.$('input[value=ceph]').prop('disabled', true);
+            }
             this.$('input[name=cinder]:last, input[name=glance]:last').prop('checked', true);
             return this;
         }

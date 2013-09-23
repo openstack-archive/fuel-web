@@ -604,6 +604,12 @@ class Attributes(Base):
                     group_attrs[attr] = value['value']
         if 'common' in attrs:
             attrs.update(attrs.pop('common'))
+        if 'additional_components' in attrs:
+            for comp, enabled in attrs['additional_components'].iteritems():
+                attrs.setdefault(comp, {}).update({
+                    "enabled": enabled
+                })
+            attrs.pop('additional_components')
         return attrs
 
     def _dict_merge(self, a, b):

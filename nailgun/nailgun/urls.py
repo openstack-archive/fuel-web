@@ -14,13 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api import v1
-from nailgun.api import v2
+from nailgun.api import urls
 from nailgun.webui import urls as webui_urls
 
 urls = (
-    "/api", v2.app,
-    "/api/v1", v1.app,
-    "/api/v2", v2.app,
+    "/api", urls.v1.app,
+    "/api/v1", urls.v1.app,
     "", webui_urls.app
 )

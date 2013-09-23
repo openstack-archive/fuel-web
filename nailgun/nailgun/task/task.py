@@ -356,11 +356,14 @@ class VerifyNetworksTask(object):
                         lambda i: i['name'] == ng.name,
                         data
                     )[0]
-                    vlans.extend(data_ng['vlans'])
+                    if data_ng['vlans']:
+                        vlans.extend(data_ng['vlans'])
+                    else:
+                        # in case absence of vlans net_probe will
+                        # send packages on untagged iface
+                        vlans.append(0)
                 if not vlans:
-                    # in case absence of vlans net_probe will
-                    # send packages on untagged iface
-                    vlans.append(0)
+                    continue
                 node_json['networks'].append(
                     {'iface': nic.name, 'vlans': vlans}
                 )

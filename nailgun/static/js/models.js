@@ -246,7 +246,8 @@ define(['utils'], function(utils) {
         urlRoot: '/api/clusters/',
         isNew: function() {
             return false;
-        }
+        },
+        preferredOrder: ['access', 'additional_components', 'common', 'glance', 'syslog', 'storage']
     });
 
     models.Disk = Backbone.Model.extend({

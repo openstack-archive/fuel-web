@@ -169,14 +169,14 @@
                             "value": false,
                             "label": "Install Savanna",
                             "description": "If true, Savanna project will be installed",
-                            "weight": 40,
+                            "weight": 10,
                             "type": "checkbox"
                         },
                         "murano": {
                             "value": false,
                             "label": "Install Murano",
                             "description": "If true, Murano project will be installed",
-                            "weight": 40,
+                            "weight": 20,
                             "type": "checkbox"
                         }
                     },

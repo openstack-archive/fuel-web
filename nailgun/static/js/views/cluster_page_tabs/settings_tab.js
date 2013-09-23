@@ -24,7 +24,7 @@ define(
 ],
 function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsGroupTemplate) {
     'use strict';
-    var SettingsTab, SettingsGroup;
+    var SettingsTab, SettingGroup;
 
     SettingsTab = commonViews.Tab.extend({
         template: _.template(settingsTabTemplate),
@@ -86,10 +86,19 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.$el.html(this.template({cluster: this.model, locked: this.isLocked()}));
             if (this.model.get('settings').deferred.state() != 'pending') {
                 this.$('.settings').html('');
-                _.each(_.keys(this.settings), function(setting) {
-                    var settingsGroupView = new SettingsGroup({legend: setting, settings: this.settings[setting], tab: this});
-                    this.registerSubView(settingsGroupView);
-                    this.$('.settings').append(settingsGroupView.render().el);
+                var settingGroups = _.keys(this.settings);
+                var order = this.model.get('settings').preferredOrder;
+                settingGroups.sort(function(a, b) {
+                    return _.indexOf(order, a) - _.indexOf(order, b);
+                });
+                _.each(settingGroups, function(settingGroup) {
+                    var settingGroupView = new SettingGroup({
+                        legend: settingGroup,
+                        settings: this.settings[settingGroup],
+                        tab: this
+                    });
+                    this.registerSubView(settingGroupView);
+                    this.$('.settings').append(settingGroupView.render().el);
                 }, this);
             }
             return this;
@@ -118,7 +127,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         }
     });
 
-    SettingsGroup = Backbone.View.extend({
+    SettingGroup = Backbone.View.extend({
         template: _.template(settingsGroupTemplate),
         className: 'fieldset-group wrapper',
         events: {

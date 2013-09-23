@@ -95,12 +95,12 @@
                     {
                         "id": "cephjournal",
                         "type": "partition",
-                        "min_size": 0,
+                        "min_size": {"generator": "calc_min_ceph_journal_size"},
                         "name": "Ceph Journal",
                         "label": "Ceph Journal",
-                        "mount": "/var/lib/ceph/journal",
+                        "mount": "none",
                         "disk_label": "cephjournal",
-                        "file_system": "xfs"
+                        "file_system": "ext4"
                     },
                     {
                         "id": "os",
@@ -920,13 +920,13 @@
                     },
                     {
                         "id": "cephjournal",
-                        "type": "raid",
-                        "min_size": 0,
+                        "type": "partition",
+                        "min_size": {"generator": "calc_min_ceph_journal_size"},
                         "name": "Ceph Journal",
                         "label": "Ceph Journal",
-                        "mount": "/var/lib/ceph/journal",
+                        "mount": "none",
                         "disk_label": "cephjournal",
-                        "file_system": "xfs"
+                        "file_system": "ext4"
                     },
                     {
                         "id": "os",

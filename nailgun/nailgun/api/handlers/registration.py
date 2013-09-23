@@ -37,9 +37,9 @@ class FuelKeyHandler(JSONHandler):
         :http: * 200 (OK)
         """
         key_data = {
-            "sha": settings.COMMIT_SHA,
-            "release": settings.PRODUCT_VERSION,
-            "uuid": settings.FUEL_KEY
+            "sha": settings.VERSION['nailgun_sha'],
+            "release": settings.VERSION['release'],
+            "uuid": settings.VERSION['fuel_key']
         }
         signature = base64.b64encode(json.dumps(key_data))
         key_data["signature"] = signature

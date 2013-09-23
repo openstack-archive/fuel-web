@@ -33,7 +33,10 @@ class VersionHandler(JSONHandler):
         :http: * 200 (OK)
         """
         return {
-            "sha": str(settings.COMMIT_SHA),
-            "release": str(settings.PRODUCT_VERSION),
-            "fuel_sha": str(settings.FUEL_COMMIT_SHA)
+            "release": str(settings.VERSION['release']),
+            "nailgun_sha": str(settings.VERSION['nailgun_sha']),
+            "astute_sha": str(settings.VERSION['astute_sha']),
+            "fuellib_sha": str(settings.VERSION['fuellib_sha']),
+            "ostf_tests_sha": str(settings.VERSION['ostf_tests_sha']),
+            "ostf_plugin_sha": str(settings.VERSION['ostf_plugin_sha'])
         }

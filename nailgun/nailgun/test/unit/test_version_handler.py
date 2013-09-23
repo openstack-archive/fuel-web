@@ -23,8 +23,14 @@ from nailgun.test.base import reverse
 
 class TestVersionHandler(BaseIntegrationTest):
 
-    @patch('nailgun.api.handlers.version.settings.PRODUCT_VERSION', '0.1b')
-    @patch('nailgun.api.handlers.version.settings.COMMIT_SHA', '12345')
+    @patch('nailgun.api.handlers.version.settings.VERSION', {
+        'release': '0.1b',
+        'nailgun_sha': '12345',
+        "astute_sha": "Unknown build",
+        "fuellib_sha": "Unknown build",
+        "ostf_tests_sha": "Unknown build",
+        "ostf_plugin_sha": "Unknown build"
+    })
     def test_version_handler(self):
         resp = self.app.get(
             reverse('VersionHandler'),
@@ -33,5 +39,12 @@ class TestVersionHandler(BaseIntegrationTest):
         self.assertEqual(200, resp.status)
         self.assertEqual(
             json.loads(resp.body),
-            {"release": "0.1b", "sha": "12345", "fuel_sha": "Unknown build"}
+            {
+                "release": "0.1b",
+                "nailgun_sha": "12345",
+                "astute_sha": "Unknown build",
+                "fuellib_sha": "Unknown build",
+                "ostf_tests_sha": "Unknown build",
+                "ostf_plugin_sha": "Unknown build"
+            }
         )

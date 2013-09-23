@@ -10,8 +10,9 @@ import sys
 import logging
 #logging.basicConfig(filename='./fuelmenu.log')
 #logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(filename='./fuelmenu.log',level=logging.DEBUG)
+logging.basicConfig(filename='./fuelmenu.log', level=logging.DEBUG)
 log = logging.getLogger('fuelmenu.loader')
+
 
 class Loader:
 
@@ -29,7 +30,7 @@ class Loader:
 
         modules = [os.path.splitext(f)[0] for f in os.listdir(module_dir)
                    if f.endswith('.py')]
-        
+
         for module in modules:
             log.info('loading module %s' % module)
             try:
@@ -50,11 +51,12 @@ class Loader:
         self.modlist.sort(key=operator.attrgetter('priority'))
         for module in self.modlist:
             self.choices.append(module.name)
-        return (self.modlist,self.choices)
+        return (self.modlist, self.choices)
 
 
-version="3.2"
-#choices= u"Status,Networking,OpenStack Setup,Terminal,Save & Quit".split(',')
+version = "3.2"
+
+
 class FuelSetup():
 
     def __init__(self):
@@ -65,7 +67,7 @@ class FuelSetup():
                                    % (os.path.dirname(__file__))
         self.settingsfile = "%s/newsettings.yaml" \
                             % (os.path.dirname(__file__))
-        self.managediface="eth0"
+        self.managediface = "eth0"
         self.main()
         self.choices = []
 
@@ -77,31 +79,20 @@ class FuelSetup():
             body.append(urwid.AttrMap(button, None, focus_map='reversed'))
         return urwid.ListBox(urwid.SimpleListWalker(body))
         #return urwid.ListBox(urwid.SimpleFocusListWalker(body))
-    
+
     def menu_chosen(self, button, choice):
         size = self.screen.get_cols_rows()
         self.screen.draw_screen(size, self.frame.render(size))
-        
-    
-        #Highlight menu item
-        #menulist=self.menuitems.original_widget
-        #log.info("%s" % self.menuitems)
-        #log.info("%s" % self.menuitems.contents())
         for item in self.menuitems.body.contents:
             try:
-              #log.info("inside loop %s" % item.original_widget.get_label())
-              #self.footer.set_text("inside loop %s" % item.original_widget.get_label())
-              if item.original_widget.get_label() == choice:
-                #self.footer.set_text("Found choice %s" % choice)
-                item.set_attr_map({ None: 'header'})
-              else:
-                item.set_attr_map({ None: None})
+                if item.original_widget.get_label() == choice:
+                    item.set_attr_map({None: 'header'})
+                else:
+                    item.set_attr_map({None: None})
             except Exception, e:
-              log.info("%s" % item)
-              log.error("%s" % e)
-              #continue
+                log.info("%s" % item)
+                log.error("%s" % e)
         self.setChildScreen(name=choice)
-
 
     def setChildScreen(self, name=None):
         if name is None:
@@ -109,19 +100,19 @@ class FuelSetup():
         else:
             child = self.children[int(self.choices.index(name))]
         if not child.screen:
-           child.screen = child.screenUI()
+            child.screen = child.screenUI()
         self.childpage = child.screen
         self.childfill = urwid.Filler(self.childpage, 'top', 40)
         self.childbox = urwid.BoxAdapter(self.childfill, 40)
         self.cols = urwid.Columns([
-                ('fixed', 20, urwid.Pile([
-                    urwid.AttrMap(self.menubox, 'bright'),
-                    urwid.Divider(" ")])),
-                ('weight', 3, urwid.Pile([
-                    urwid.Divider(" "),
-                    self.childbox,
-                    urwid.Divider(" ")]))
-                ], 1)
+            ('fixed', 20, urwid.Pile([
+                urwid.AttrMap(self.menubox, 'bright'),
+                urwid.Divider(" ")])),
+            ('weight', 3, urwid.Pile([
+                urwid.Divider(" "),
+                self.childbox,
+                urwid.Divider(" ")]))
+            ], 1)
         child.refresh()
         self.listwalker[:] = [self.cols]
 
@@ -132,33 +123,30 @@ class FuelSetup():
     def refreshChildScreen(self, name):
         child = self.children[int(self.choices.index(name))]
         #Refresh child listwalker
-        child.listwalker[:]=child.listbox_content
-        
+        child.listwalker[:] = child.listbox_content
+
         #reassign childpage top level objects
         self.childpage = urwid.ListBox(child.listwalker)
         self.childfill = urwid.Filler(self.childpage, 'middle', 22)
         self.childbox = urwid.BoxAdapter(self.childfill, 22)
         self.cols = urwid.Columns([
-                ('fixed', 20, urwid.Pile([
-                    urwid.AttrMap(self.menubox, 'bright'),
-                    urwid.Divider(" ")])),
-                ('weight', 3, urwid.Pile([
-                    urwid.Divider(" "),
-                    self.childbox,
-                    urwid.Divider(" ")]))
-                ], 1)
+            ('fixed', 20, urwid.Pile([
+                urwid.AttrMap(self.menubox, 'bright'),
+                urwid.Divider(" ")])),
+            ('weight', 3, urwid.Pile([
+                urwid.Divider(" "),
+                self.childbox,
+                urwid.Divider(" ")]))
+            ], 1)
         #Refresh top level listwalker
         #self.listwalker[:] = [self.cols]
 
-         
-
     def main(self):
-    
         text_header = (u"Fuel %s setup "
-            u"UP / DOWN / PAGE UP / PAGE DOWN scroll.  F8 exits."
-            % version)
+                       u"UP / DOWN / PAGE UP / PAGE DOWN scroll.  F8 exits."
+                       % version)
         text_footer = (u"Status messages go here.")
-    
+
         blank = urwid.Divider()
 
         #Top and bottom lines of frame
@@ -167,72 +155,70 @@ class FuelSetup():
 
         #Prepare submodules
         loader = Loader(self)
-        self.children, self.choices = loader.load_modules(module_dir="%s/%s" \
-          % (os.path.dirname(__file__),"modules"))
+        moduledir = "%s/modules" % (os.path.dirname(__file__))
+        self.children, self.choices = loader.load_modules(module_dir=moduledir)
 
         if len(self.children) == 0:
-          import sys
-          sys.exit(1)
+            import sys
+            sys.exit(1)
 
-        self.menuitems=self.menu(u'Menu', self.choices)
+        self.menuitems = self.menu(u'Menu', self.choices)
         menufill = urwid.Filler(self.menuitems, 'top', 40)
         self.menubox = urwid.BoxAdapter(menufill, 40)
-
 
         child = self.children[0]
         self.childpage = child.screenUI()
         self.childfill = urwid.Filler(self.childpage, 'top', 22)
         self.childbox = urwid.BoxAdapter(self.childfill, 22)
         self.cols = urwid.Columns([
-                ('fixed', 20, urwid.Pile([
-                    urwid.AttrMap(self.menubox, 'bright'),
-                    urwid.Divider(" ")])),
-                ('weight', 3, urwid.Pile([
-                    urwid.Divider(" "),
-                    self.childbox,
-                    urwid.Divider(" ")]))
-                ], 1)
-    
+            ('fixed', 20, urwid.Pile([
+                urwid.AttrMap(self.menubox, 'bright'),
+                urwid.Divider(" ")])),
+            ('weight', 3, urwid.Pile([
+                urwid.Divider(" "),
+                self.childbox,
+                urwid.Divider(" ")]))
+            ], 1)
+
         self.listwalker = urwid.SimpleListWalker([self.cols])
         #self.listwalker = urwid.TreeWalker([self.cols])
         self.listbox = urwid.ListBox(self.listwalker)
         #listbox = urwid.ListBox(urwid.SimpleListWalker(listbox_content))
-    
-        #frame = urwid.Frame(urwid.AttrWrap(cols, 'background'), header=header, footer=footer)
-        #frame = urwid.Frame(urwid.AttrWrap(cols, 'body'), header=header, footer=footer)
-        self.frame = urwid.Frame(urwid.AttrWrap(self.listbox, 'body'), header=self.header, footer=self.footer)
-    
+
+        self.frame = urwid.Frame(urwid.AttrWrap(self.listbox, 'body'),
+                                 header=self.header, footer=self.footer)
+
         palette = [
-            ('body','black','light gray', 'standout'),
-            ('reverse','light gray','black'),
-            ('header','white','dark red', 'bold'),
-            ('important','dark blue','light gray',('standout','underline')),
-            ('editfc','white', 'dark blue', 'bold'),
-            ('editbx','light gray', 'dark blue'),
-            ('editcp','black','light gray', 'standout'),
-            ('bright','dark gray','light gray', ('bold','standout')),
-            ('buttn','black','dark cyan'),
-            ('buttnf','white','dark blue','bold'),
-            ('light gray','white', 'light gray','bold'),
-            ('red','dark red','light gray','bold'),
-            ('black','black','black','bold'),
+            ('body', 'black', 'light gray', 'standout'),
+            ('reverse', 'light gray', 'black'),
+            ('header', 'white', 'dark red', 'bold'),
+            ('important', 'dark blue', 'light gray',
+                ('standout', 'underline')),
+            ('editfc', 'white', 'dark blue', 'bold'),
+            ('editbx', 'light gray', 'dark blue'),
+            ('editcp', 'black', 'light gray', 'standout'),
+            ('bright', 'dark gray', 'light gray', ('bold', 'standout')),
+            ('buttn', 'black', 'dark cyan'),
+            ('buttnf', 'white', 'dark blue', 'bold'),
+            ('light gray', 'white', 'light gray', 'bold'),
+            ('red', 'dark red', 'light gray', 'bold'),
+            ('black', 'black', 'black', 'bold'),
             ]
-    
-    
+
         # use appropriate Screen class
         if urwid.web_display.is_web_request():
             self.screen = urwid.web_display.Screen()
         else:
             self.screen = urwid.raw_display.Screen()
-    
+
         def unhandled(key):
             if key == 'f8':
                 raise urwid.ExitMainLoop()
-    
-        self.mainloop= urwid.MainLoop(self.frame, palette, self.screen,
-            unhandled_input=unhandled)
+
+        self.mainloop = urwid.MainLoop(self.frame, palette, self.screen,
+                                       unhandled_input=unhandled)
         self.mainloop.run()
-    
+
     def exit_program(self, button):
         raise urwid.ExitMainLoop()
 
@@ -241,12 +227,10 @@ def setup():
     urwid.web_display.set_preferences("Fuel Setup")
     # try to handle short web requests quickly
     if urwid.web_display.handle_short_request():
-         return
+        return
     fm = FuelSetup()
-    
 
-if '__main__'==__name__ or urwid.web_display.is_web_request():
-    if urwid.VERSION < (1,1,0):
-      print "This program requires urwid 1.1.0 or greater."
+if '__main__' == __name__ or urwid.web_display.is_web_request():
+    if urwid.VERSION < (1, 1, 0):
+        print "This program requires urwid 1.1.0 or greater."
     setup()
-

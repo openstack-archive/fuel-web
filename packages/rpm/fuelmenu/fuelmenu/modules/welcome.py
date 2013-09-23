@@ -4,29 +4,27 @@ import urwid
 import urwid.raw_display
 import urwid.web_display
 from fuelmenu.common.urwidwrapper import *
-
-
 blank = urwid.Divider()
 
 
 class welcome():
-  def __init__(self, parent):
-    self.name="Welcome"
-    self.priority=1
-    self.visible=False
-    self.screen = self.screenUI()
+    def __init__(self, parent):
+        self.name = "Welcome"
+        self.priority = 1
+        self.visible = False
+        self.screen = self.screenUI()
 
-  def check(self):
-    #TODO: Ensure all params are filled out and sensible
-    return True
+    def check(self):
+        #TODO: Ensure all params are filled out and sensible
+        return True
 
-  def refresh(self):
-    pass
+    def refresh(self):
+        pass
 
-  def screenUI(self):
-    #Define your text labels, text fields, and buttons first
-    text1 = urwid.Text("Welcome to Fuel! Use the menu on the left")
-    fuellogo_huge=[
+    def screenUI(self):
+        #Define your text labels, text fields, and buttons first
+        text1 = urwid.Text("Welcome to Fuel! Use the menu on the left")
+        fuellogo_huge = [
 [('light gray','YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY')],
 [('light gray','YYYY'),('red','YYYYYYYYYYYYYYYYYYYY'),('light gray','YYYYYYYYYY'),('red','YYYY'),('light gray','YYYYYYYYYYYY'),('red','YYYY'),('light gray','YYYYYYYYYYYY'),('red','YYYYYYYYYYYYYYYYYYYY'),('light gray','YYYYYYYYYY'),('red','YYYY'),('light gray','YYYYYYYYYYYYYYYYYYYY')],
 [('light gray','YY'),('red','YYYYYYYYYYYYYYYYYYYYYYYY'),('light gray','YYYYYY'),('red','YYYYYYYY'),('light gray','YYYYYYYY'),('red','YYYYYYYY'),('light gray','YYYYYYYY'),('red','YYYYYYYYYYYYYYYYYYYYYYYY'),('light gray','YYYYYY'),('red','YYYYYYYY'),('light gray','YYYYYYYYYYYYYYYYYY')],
@@ -64,8 +62,8 @@ class welcome():
 [('light gray','YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY'),('black','YY'),('light gray','YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY')],
 [('light gray','YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY')],
 ]
-    fuellogo_small=[  
-[('red',u'±ÛÛÛÛÛÛÛÛÛÛ±  ±ÛÛ±     ±ÛÛ±    ±ÛÛÛÛÛÛÛÛÛ±   ±ÛÛ±     TM')],                              
+    fuellogo_small=[
+[('red',u'±ÛÛÛÛÛÛÛÛÛÛ±  ±ÛÛ±     ±ÛÛ±    ±ÛÛÛÛÛÛÛÛÛ±   ±ÛÛ±     TM')],
 [('red',u'Û²²²²²²²²²²Û  Û²²²     Û²²²    Û²²²²²²²²²²   Û²²²')],
 [('red',u'Û²²²²²²²²²²°  Û²²²     Û²²²    Û²²²²²²²²²±   Û²²²')],
 #[('red',u'Û²²²          Û²²²     Û²²²    Û²²²          Û²²²')],
@@ -93,13 +91,12 @@ class welcome():
 [('light gray',u'                     Û')],
 [('light gray',u'                     Û')],
 ]
-    logotexts=[]
-    for line in fuellogo_small:
-       logotexts.append(TextLabel(line))
-    #Build all of these into a list
-    listbox_content = [ text1 ] + logotexts
-   
-    #Add everything into a ListBox and return it
-    screen = urwid.ListBox(urwid.SimpleListWalker(listbox_content))
-    return screen
-    
+        logotexts=[]
+        for line in fuellogo_small:
+            logotexts.append(TextLabel(line))
+        #Build all of these into a list
+        listbox_content = [ text1 ] + logotexts
+
+        #Add everything into a ListBox and return it
+        screen = urwid.ListBox(urwid.SimpleListWalker(listbox_content))
+        return screen

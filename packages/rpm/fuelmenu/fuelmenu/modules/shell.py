@@ -10,36 +10,37 @@ import pty
 
 blank = urwid.Divider()
 
+
 class shell():
-  def __init__(self, parent):
-    self.name="Shell Login"
-    self.priority=99
-    self.visible=True
-    self.parent=parent
-    self.screen = None
-    #self.screen = self.screenUI()
-  def check(self):
-    #TODO: Ensure all params are filled out and sensible
-    return True
+    def __init__(self, parent):
+        self.name = "Shell Login"
+        self.priority = 99
+        self.visible = True
+        self.parent = parent
+        self.screen = None
+        #self.screen = self.screenUI()
 
-  def start_shell(self, args):
-    self.parent.mainloop.screen.stop()
-    message="Type exit to return to the main UI."
+    def check(self):
+        #TODO: Ensure all params are filled out and sensible
+        return True
 
-    subprocess.call("clear ; echo '%s';echo;bash -i" % message, shell=True)
-    self.parent.mainloop.screen.start()
+    def start_shell(self, args):
+        self.parent.mainloop.screen.stop()
+        message = "Type exit to return to the main UI."
 
-  def refresh(self):
-    pass
+        subprocess.call("clear ; echo '%s';echo;bash -i" % message, shell=True)
+        self.parent.mainloop.screen.start()
 
-  def screenUI(self):
-    #Define your text labels, text fields, and buttons first
-    text1 = urwid.Text("Press the button below to enter a shell login.")
-    login_button = Button("Shell Login",self.start_shell)
-    #Build all of these into a list
-    listbox_content = [ text1, blank, login_button ]
-   
-    #Add everything into a ListBox and return it
-    screen = urwid.ListBox(urwid.SimpleListWalker(listbox_content))
-    return screen
-    
+    def refresh(self):
+        pass
+
+    def screenUI(self):
+        #Define your text labels, text fields, and buttons first
+        text1 = urwid.Text("Press the button below to enter a shell login.")
+        login_button = Button("Shell Login", self.start_shell)
+        #Build all of these into a list
+        listbox_content = [text1, blank, login_button]
+
+        #Add everything into a ListBox and return it
+        screen = urwid.ListBox(urwid.SimpleListWalker(listbox_content))
+        return screen

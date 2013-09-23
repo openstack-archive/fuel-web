@@ -91,7 +91,10 @@ function run_flake8 {
   # H302 - "import only modules. does not import a module" requires to import only modules and not functions
   # H802 - first line of git commit commentary should be less than 50 characters
   # __init__.py - excluded because it doesn't comply with pep8 standard
-  flake8 --exclude=__init__.py --ignore=H302,H802 --show-source --show-pep8 --count . || return 1
+  flake_status=0
+  flake8 --exclude=__init__.py --ignore=H302,H802 --show-source --show-pep8 --count shotgun nailgun || flake_status=1
+  pep8 --exclude=welcome.py bin dhcp-checker fuelmenu || flake_status=1
+  [[ $flake_status = 0 ]] || return 1
   echo "Flake8 check passed successfully."
 }
 
@@ -108,10 +111,13 @@ function run_jslint {
         echo "sudo npm install -g jslint"
         return 1
     fi
+    (
+    cd nailgun
     jsfiles=$(find static/js -type f | grep -v ^static/js/libs/ | grep \\.js$)
     jslint_predef=(requirejs require define app Backbone $ _ alert confirm)
     jslint_options="$(echo ${jslint_predef[@]} | sed 's/^\| / --predef=/g') --browser=true --nomen=true --eqeq=true --vars=true --white=true --es5=false"
-    jslint $jslint_options $jsfiles || return 1
+    jslint $jslint_options $jsfiles
+    ) || return 1
 }
 
 if [ $just_jslint -eq 1 ]; then
@@ -131,6 +137,8 @@ function run_ui_tests {
         echo "sudo ln -sf \`pwd\`/bin/casperjs /usr/local/bin/casperjs"
         return 1
     fi
+    (
+    cd nailgun
     ui_tests_dir=ui_tests
     if [ -z "$ui_test_files" ]; then
         ui_test_files=$ui_tests_dir/test_*.js
@@ -180,6 +188,7 @@ function run_ui_tests {
     done
     ./manage.py dropdb >> /dev/null
     rm $test_server_log_file
+    )
     return $result
 }
 
@@ -190,10 +199,13 @@ fi
 
 function run_tests {
   clean
+  (
+  cd nailgun
   ./manage.py dropdb > /dev/null
   ./manage.py syncdb > /dev/null
   [ -z "$noseargs" ] && test_args=. || test_args="$noseargs"
   stderr=$(nosetests $noseopts $test_args --verbosity=2 3>&1 1>&2 2>&3 | tee /dev/stderr)
+  )
 # TODO: uncomment after cluster deletion issue fix
 #  if [[ "$stderr" =~ "Exception" ]]; then
 #    echo "Tests executed with errors!"
@@ -226,7 +238,7 @@ errors=''
 trap drop_db INT
 
 function drop_db {
-  ./manage.py dropdb >> /dev/null
+  nailgun/manage.py dropdb >> /dev/null
   exit 1
 }
 

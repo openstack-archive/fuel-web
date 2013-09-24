@@ -395,11 +395,38 @@ class Environment(object):
 
     def get_default_networks_metadata(self):
         return [
-            {"name": "floating", "access": "public"},
-            {"name": "public", "access": "public"},
-            {"name": "management", "access": "private192"},
-            {"name": "storage", "access": "private192"},
-            {"name": "fixed", "access": "private10"}
+            {
+                "name": "floating",
+                "pool": ["172.16.0.0/12"],
+                "use_public_vlan": True,
+                "assign": False,
+                "assign_vip": False
+            },
+            {
+                "name": "public",
+                "pool": ["172.16.0.0/12"],
+                "use_public_vlan": True,
+                "assign": True,
+                "assign_vip": True
+            },
+            {
+                "name": "management",
+                "pool": ["192.168.0.0/16"],
+                "assign": True,
+                "assign_vip": True
+            },
+            {
+                "name": "storage",
+                "pool": ["192.168.0.0/16"],
+                "assign": True,
+                "assign_vip": False
+            },
+            {
+                "name": "fixed",
+                "pool": ["10.0.0.0/8"],
+                "assign": False,
+                "assign_vip": False
+            }
         ]
 
     def get_default_attributes_metadata(self):
@@ -566,7 +593,8 @@ class Environment(object):
 
 
 class BaseTestCase(TestCase):
-    fixtures = ['admin_network']
+
+    fixtures = ['global', 'admin_network']
 
     def __init__(self, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)

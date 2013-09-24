@@ -31,7 +31,6 @@ from nailgun.api.models import Network
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import NodeNICInterface
 from nailgun.api.models import Vlan
-from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -205,6 +204,9 @@ class TestNetworkManager(BaseIntegrationTest):
         node = self.env.create_node()
         self.env.network_manager.assign_admin_ips(node.id, 2)
         admin_net_id = self.env.network_manager.get_admin_network_id()
+        admin_ng_id = self.env.network_manager.get_admin_network_group_id()
+        admin_network_range = self.db.query(IPAddrRange).\
+            filter_by(network_group_id=admin_ng_id).all()[0]
 
         admin_ips = self.db.query(IPAddr).\
             filter_by(node=node.id).\
@@ -214,8 +216,8 @@ class TestNetworkManager(BaseIntegrationTest):
             lambda x: self.assertIn(
                 IPAddress(x.ip_addr),
                 IPRange(
-                    settings.ADMIN_NETWORK['first'],
-                    settings.ADMIN_NETWORK['last']
+                    admin_network_range.first,
+                    admin_network_range.last
                 )
             ),
             admin_ips
@@ -377,14 +379,18 @@ class TestNetworkManager(BaseIntegrationTest):
         rpc_nodes_provision = nailgun.task.manager.rpc.cast. \
             call_args_list[0][0][1][0]['args']['provisioning_info']['nodes']
 
+        admin_ng_id = self.env.network_manager.get_admin_network_group_id()
+        admin_network_range = self.db.query(IPAddrRange).\
+            filter_by(network_group_id=admin_ng_id).all()[0]
+
         map(
             lambda (x, y): self.assertIn(
                 IPAddress(
                     rpc_nodes_provision[x]['interfaces'][y]['ip_address']
                 ),
                 IPRange(
-                    settings.ADMIN_NETWORK['first'],
-                    settings.ADMIN_NETWORK['last']
+                    admin_network_range.first,
+                    admin_network_range.last
                 )
             ),
             itertools.product((0, 1), ('eth0', 'eth1'))

@@ -27,6 +27,7 @@ from netaddr import IPSet
 from sqlalchemy.sql import not_
 
 from nailgun.api.models import Cluster
+from nailgun.api.models import GlobalParameters
 from nailgun.api.models import IPAddr
 from nailgun.api.models import IPAddrRange
 from nailgun.api.models import Network
@@ -38,7 +39,6 @@ from nailgun.api.models import Vlan
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.settings import settings
 
 
 class NetworkManager(object):
@@ -74,6 +74,54 @@ class NetworkManager(object):
             raise errors.AdminNetworkNotFound()
         return admin_net.id
 
+    def get_admin_network(self, fail_if_not_found=True):
+        '''Method for receiving Admin Network.
+
+        :param fail_if_not_found: Raise an error
+        if admin network is not found in database.
+        :type  fail_if_not_found: bool
+        :returns: Admin Network or None.
+        :raises: errors.AdminNetworkNotFound
+        '''
+        admin_net = db().query(Network).filter_by(
+            name="fuelweb_admin"
+        ).first()
+        if not admin_net and fail_if_not_found:
+            raise errors.AdminNetworkNotFound()
+        return admin_net
+
+    def get_admin_network_group_id(self, fail_if_not_found=True):
+        '''Method for receiving Admin NetworkGroup ID.
+
+        :param fail_if_not_found: Raise an error
+        if admin network group is not found in database.
+        :type  fail_if_not_found: bool
+        :returns: Admin NetworkGroup ID or None.
+        :raises: errors.AdminNetworkNotFound
+        '''
+        admin_ng = db().query(NetworkGroup).filter_by(
+            name="fuelweb_admin"
+        ).first()
+        if not admin_ng and fail_if_not_found:
+            raise errors.AdminNetworkNotFound()
+        return admin_ng.id
+
+    def get_admin_network_group(self, fail_if_not_found=True):
+        '''Method for receiving Admin NetworkGroup.
+
+        :param fail_if_not_found: Raise an error
+        if admin network group is not found in database.
+        :type  fail_if_not_found: bool
+        :returns: Admin NetworkGroup or None.
+        :raises: errors.AdminNetworkNotFound
+        '''
+        admin_ng = db().query(NetworkGroup).filter_by(
+            name="fuelweb_admin"
+        ).first()
+        if not admin_ng and fail_if_not_found:
+            raise errors.AdminNetworkNotFound()
+        return admin_ng
+
     def create_network_groups(self, cluster_id):
         '''Method for creation of network groups for cluster.
 
@@ -86,15 +134,20 @@ class NetworkManager(object):
         used_nets = []
         used_vlans = []
 
+        global_params = db().query(GlobalParameters).first()
+
         cluster_db = db().query(Cluster).get(cluster_id)
 
         networks_metadata = cluster_db.release.networks_metadata
 
+        admin_network_range = db().query(IPAddrRange).filter_by(
+            network_group_id=self.get_admin_network_group_id()
+        ).all()[0]
+
         def _free_vlans():
             free_vlans = set(
                 range(
-                    int(settings.VLANS_RANGE_START),
-                    int(settings.VLANS_RANGE_END)
+                    *global_params.parameters["vlan_range"]
                 )
             ) - set(used_vlans)
             if not free_vlans or len(free_vlans) < len(networks_metadata):
@@ -105,24 +158,27 @@ class NetworkManager(object):
         used_vlans.append(public_vlan)
         for network in networks_metadata:
             free_vlans = _free_vlans()
-            vlan_start = public_vlan if network['access'] == 'public' \
+            vlan_start = public_vlan if network.get("use_public_vlan") \
                 else free_vlans[0]
 
             logger.debug("Found free vlan: %s", vlan_start)
-            pool = settings.NETWORK_POOLS[network['access']]
+            pool = network.get('pool')
             if not pool:
-                raise errors.InvalidNetworkAccess(
-                    u"Invalid access '{0}' for network '{1}'".format(
-                        network['access'],
+                raise errors.InvalidNetworkPool(
+                    u"Invalid pool '{0}' for network '{1}'".format(
+                        pool,
                         network['name']
                     )
                 )
+
             nets_free_set = IPSet(pool) -\
-                IPSet(settings.NET_EXCLUDE) -\
+                IPSet(
+                    IPNetwork(global_params.parameters["net_exclude"])
+                ) -\
                 IPSet(
                     IPRange(
-                        settings.ADMIN_NETWORK["first"],
-                        settings.ADMIN_NETWORK["last"]
+                        admin_network_range.first,
+                        admin_network_range.last
                     )
                 ) -\
                 IPSet(used_nets)
@@ -148,7 +204,6 @@ class NetworkManager(object):
             nw_group = NetworkGroup(
                 release=cluster_db.release.id,
                 name=network['name'],
-                access=network['access'],
                 cidr=str(new_net),
                 netmask=str(new_net.netmask),
                 gateway=str(new_net[1]),
@@ -211,7 +266,6 @@ class NetworkManager(object):
             net_db = Network(
                 release=nw_group.release,
                 name=nw_group.name,
-                access=nw_group.access,
                 cidr=str(subnets[n]),
                 vlan_id=vlan_id,
                 gateway=gateway,
@@ -321,6 +375,12 @@ class NetworkManager(object):
                 continue
 
             # IP address has not been assigned, let's do it
+            logger.info(
+                "Assigning IP for node '{0}' in network '{1}'".format(
+                    node_id,
+                    network_name
+                )
+            )
             free_ip = self.get_free_ips(network.network_group.id)[0]
             ip_db = IPAddr(
                 network=network.id,
@@ -708,9 +768,10 @@ class NetworkManager(object):
             lambda interface: interface['mac'], interfaces)
 
         interfaces_to_delete = db().query(NodeNICInterface).filter(
-            NodeNICInterface.node_id == node.id).filter(
-                not_(NodeNICInterface.mac.in_(
-                    interfaces_mac_addresses))).all()
+            NodeNICInterface.node_id == node.id
+        ).filter(
+            not_(NodeNICInterface.mac.in_(interfaces_mac_addresses))
+        ).all()
 
         if interfaces_to_delete:
             mac_addresses = ' '.join(

@@ -455,7 +455,8 @@ class CheckNetworksTask(object):
                               ))
                     raise errors.NetworkCheckError(err_msg, add_client=False)
 
-        admin_range = netaddr.IPNetwork(settings.ADMIN_NETWORK['cidr'])
+        admin_ng = NetworkManager().get_admin_network_group()
+        admin_range = netaddr.IPNetwork(admin_ng.cidr)
         for ng in networks:
             net_errors = []
             sub_ranges = []
@@ -471,7 +472,7 @@ class CheckNetworksTask(object):
                         err_msgs.append(
                             "Intersection with admin "
                             "network(s) '{0}' found".format(
-                                settings.ADMIN_NETWORK['cidr']
+                                admin_ng.cidr
                             )
                         )
                     if fnet.size < ng['network_size'] * ng['amount']:
@@ -494,7 +495,7 @@ class CheckNetworksTask(object):
                                 "with admin range of {3}".format(
                                     v[0], v[1],
                                     ng.get('name') or ng_db.name or ng_db.id,
-                                    settings.ADMIN_NETWORK['cidr']
+                                    admin_ng.cidr
                                 )
                             )
                             sub_ranges.append(k)

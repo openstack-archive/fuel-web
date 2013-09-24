@@ -39,7 +39,6 @@ class TestNetworkModels(BaseIntegrationTest):
               'netmask': '255.255.255.0',
               'network_size': 256,
               'name': 'fixed',
-              'access': 'private',
               'vlan_start': 200,
               'cluster_id': cluster.id}
         ng = NetworkGroup(**kw)
@@ -52,7 +51,6 @@ class TestNetworkModels(BaseIntegrationTest):
         self.assertEquals(len(nets_db), 1)
         self.assertEquals(nets_db[0].vlan_id, kw['vlan_start'])
         self.assertEquals(nets_db[0].name, kw['name'])
-        self.assertEquals(nets_db[0].access, kw['access'])
         self.assertEquals(nets_db[0].cidr, kw['cidr'])
 
     @fake_tasks()
@@ -93,7 +91,6 @@ class TestNetworkModels(BaseIntegrationTest):
               'netmask': '255.0.0.0',
               'network_size': 256,
               'name': 'fixed',
-              'access': 'private',
               'vlan_start': 200,
               'amount': 25,
               'cluster_id': cluster.id}
@@ -109,7 +106,6 @@ class TestNetworkModels(BaseIntegrationTest):
         self.assertEquals(nets_db[kw['amount'] - 1].vlan_id,
                           kw['vlan_start'] + kw['amount'] - 1)
         self.assertEquals(all(x.name == kw['name'] for x in nets_db), True)
-        self.assertEquals(all(x.access == kw['access'] for x in nets_db), True)
         vlans_db = self.db.query(Vlan).all()
         self.assertEquals(len(vlans_db), kw['amount'] + 1)  # + 1 for admin net
 
@@ -120,7 +116,6 @@ class TestNetworkModels(BaseIntegrationTest):
               'netmask': '255.0.0.0',
               'network_size': 128,
               'name': 'fixed',
-              'access': 'private',
               'vlan_start': 200,
               'amount': 2,
               'cluster_id': cluster.id}
@@ -144,7 +139,6 @@ class TestNetworkModels(BaseIntegrationTest):
               'netmask': '255.255.255.0',
               'network_size': 64,
               'name': 'fixed',
-              'access': 'private',
               'vlan_start': 200,
               'amount': 3,
               'cluster_id': cluster.id}
@@ -162,7 +156,6 @@ class TestNetworkModels(BaseIntegrationTest):
               'netmask': '255.0.0.0',
               'network_size': 256,
               'name': 'public',
-              'access': 'public',
               'vlan_start': 200,
               'amount': 1,
               'cluster_id': cluster.id}
@@ -180,7 +173,6 @@ class TestNetworkModels(BaseIntegrationTest):
               'netmask': '255.0.0.0',
               'network_size': 128,
               'name': 'fixed',
-              'access': 'private',
               'vlan_start': 200,
               'amount': 2,
               'gateway': "10.0.0.5",

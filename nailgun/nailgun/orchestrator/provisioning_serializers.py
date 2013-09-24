@@ -100,13 +100,15 @@ class ProvisioningSerializer(object):
         interfaces_extra = {}
         admin_ips = cls.get_admin_ips(node)
 
+        admin_ng = NetworkManager().get_admin_network_group()
+
         for interface in node.meta.get('interfaces', []):
             name = interface['name']
 
             interfaces[name] = {
                 'mac_address': interface['mac'],
                 'static': '0',
-                'netmask': settings.ADMIN_NETWORK['netmask'],
+                'netmask': admin_ng.netmask,
                 'ip_address': admin_ips.pop()}
 
             # interfaces_extra field in cobbler ks_meta

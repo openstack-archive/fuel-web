@@ -39,16 +39,18 @@ def capitalize_model_name(model_name):
     return ''.join(map(lambda s: s.capitalize(), model_name.split('_')))
 
 
-def template_fixture(fileobj, config=None):
-    if not config:
-        config = settings
+def template_fixture(fileobj, **kwargs):
+    if not kwargs.get('settings'):
+        kwargs["settings"] = settings
     t = jinja2.Template(fileobj.read())
-    return StringIO.StringIO(t.render(settings=config))
+    return StringIO.StringIO(t.render(**kwargs))
 
 
 def upload_fixture(fileobj):
     db.expunge_all()
-    fixture = json.load(template_fixture(fileobj))
+    fixture = json.load(
+        template_fixture(fileobj)
+    )
 
     queue = Queue.Queue()
     keys = {}

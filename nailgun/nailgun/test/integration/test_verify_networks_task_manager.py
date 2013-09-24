@@ -17,8 +17,6 @@
 import json
 from mock import patch
 
-from nailgun.settings import settings
-
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -90,7 +88,9 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         self.assertEquals(200, resp.status)
         nets = json.loads(resp.body)
 
-        nets['networks'][-1]['cidr'] = settings.ADMIN_NETWORK['cidr']
+        admin_ng = self.env.network_manager.get_admin_network_group()
+
+        nets['networks'][-1]['cidr'] = admin_ng.cidr
 
         task = self.env.launch_verify_networks(nets)
         self.env.wait_error(task, 30)
@@ -98,7 +98,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             task.message,
             "Intersection with admin "
             "network(s) '{0}' found".format(
-                settings.ADMIN_NETWORK['cidr']
+                admin_ng.cidr
             )
         )
         self.assertEquals(mocked_rpc.called, False)

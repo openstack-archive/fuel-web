@@ -18,7 +18,6 @@ import json
 from netaddr import IPNetwork
 
 from nailgun.api.models import NetworkGroup
-from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -65,7 +64,8 @@ class TestHandlers(BaseIntegrationTest):
         )
         cluster = self.env.clusters[0]
         nets = self.env.generate_ui_networks(cluster.id)
-        nets['networks'][-1]["cidr"] = settings.ADMIN_NETWORK['cidr']
+        admin_ng = self.env.network_manager.get_admin_network_group()
+        nets['networks'][-1]["cidr"] = admin_ng.cidr
         resp = self.update_networks(cluster.id, nets, expect_errors=True)
         self.assertEquals(resp.status, 202)
         task = json.loads(resp.body)
@@ -76,7 +76,7 @@ class TestHandlers(BaseIntegrationTest):
             task['message'],
             "Intersection with admin "
             "network(s) '{0}' found".format(
-                settings.ADMIN_NETWORK['cidr']
+                admin_ng.cidr
             )
         )
 
@@ -89,7 +89,8 @@ class TestHandlers(BaseIntegrationTest):
         )
         cluster = self.env.clusters[0]
         nets = self.env.generate_ui_networks(cluster.id)
-        base = IPNetwork(settings.ADMIN_NETWORK['cidr'])
+        admin_ng = self.env.network_manager.get_admin_network_group()
+        base = IPNetwork(admin_ng.cidr)
         base.prefixlen += 1
         start_range = str(base[0])
         end_range = str(base[-1])
@@ -108,7 +109,7 @@ class TestHandlers(BaseIntegrationTest):
             "range of {3}".format(
                 start_range, end_range,
                 nets['networks'][1]['name'],
-                settings.ADMIN_NETWORK['cidr']
+                admin_ng.cidr
             )
         )
 

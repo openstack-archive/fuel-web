@@ -212,7 +212,8 @@ class ClusterCollectionHandler(JSONHandler):
         except (
             errors.OutOfVLANs,
             errors.OutOfIPs,
-            errors.NoSuitableCIDR
+            errors.NoSuitableCIDR,
+            errors.InvalidNetworkPool
         ) as e:
             # Cluster was created in this request,
             # so we no need to use ClusterDeletionManager.

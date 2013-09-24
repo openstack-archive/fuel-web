@@ -41,11 +41,15 @@ class NetworkConfigurationSerializer(BasicSerializer):
             cls.serialize_network_group,
             cluster.network_groups
         )
-
         if cluster.is_ha_mode:
+            nw_metadata = cluster.release.networks_metadata
             net_manager = NetworkManager()
-            result['management_vip'] = net_manager.assign_vip(
-                cluster.id, 'management')
-            result['public_vip'] = net_manager.assign_vip(
-                cluster.id, 'public')
+            for network in nw_metadata:
+                if network.get("assign_vip") is not False:
+                    result['{0}_vip'.format(
+                        network["name"]
+                    )] = net_manager.assign_vip(
+                        cluster.id,
+                        network["name"]
+                    )
         return result

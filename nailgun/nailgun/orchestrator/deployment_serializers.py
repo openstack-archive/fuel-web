@@ -77,8 +77,6 @@ class OrchestratorSerializer(object):
         """Common attributes for all facts
         """
         attrs = cls.serialize_cluster_attrs(cluster)
-
-        attrs['controller_nodes'] = cls.controller_nodes(cluster)
         attrs['nodes'] = cls.node_list(cls.get_nodes_to_serialization(cluster))
 
         for node in attrs['nodes']:
@@ -170,23 +168,6 @@ class OrchestratorSerializer(object):
             "{0}-{1}".format(ip_range.first, ip_range.last)
             for ip_range in network_group.ip_ranges
         ]
-
-    @classmethod
-    def controller_nodes(cls, cluster):
-        """Serialize nodes in same format
-        as cls.node_list do that but only
-        controller nodes.
-        """
-        nodes = cls.get_nodes_to_serialization(cluster)
-
-        # If role has more than one role
-        # then node_list return serialized node
-        # for each role
-        ctrl_nodes = filter(
-            lambda n: n['role'] == 'controller',
-            cls.node_list(nodes))
-
-        return ctrl_nodes
 
     @classmethod
     def serialize_nodes(cls, nodes):

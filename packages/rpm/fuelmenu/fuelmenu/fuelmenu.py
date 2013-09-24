@@ -1,13 +1,14 @@
+import logging
+import operator
+import os
+import subprocess
+import sys
 import urwid
 import urwid.raw_display
 import urwid.web_display
-import sys
-import operator
-import os
-import sys
+
 
 # set up logging
-import logging
 #logging.basicConfig(filename='./fuelmenu.log')
 #logging.basicConfig(level=logging.DEBUG)
 logging.basicConfig(filename='./fuelmenu.log', level=logging.DEBUG)
@@ -142,8 +143,14 @@ class FuelSetup():
         #self.listwalker[:] = [self.cols]
 
     def main(self):
+        #Disable kernel print messages. They make our UI ugly
+        noout = open('/dev/null', 'w')
+        retcode = subprocess.call(["sysctl", "kernel.printk='4 1 1 7'"],
+                                    stdout=noout,
+                                    stderr=noout)
+
         text_header = (u"Fuel %s setup "
-                       u"UP / DOWN / PAGE UP / PAGE DOWN scroll.  F8 exits."
+                       u"Use Up/Down/Left/Right to navigate.  F8 exits."
                        % version)
         text_footer = (u"Status messages go here.")
 
@@ -220,6 +227,13 @@ class FuelSetup():
         self.mainloop.run()
 
     def exit_program(self, button):
+        #return kernel logging to normal
+        noout = open('/dev/null', 'w')
+        retcode = subprocess.call(["echo", "7 4 1 7", ">",
+                                   "/proc/sys/kernel/printk"],
+                                    stdout=noout,
+                                    stderr=noout)
+
         raise urwid.ExitMainLoop()
 
 

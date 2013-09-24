@@ -127,33 +127,37 @@ class interfaces(urwid.WidgetWrap):
         #Perform checks only if enabled
         if responses["onboot"] == "no":
             return responses
-        #No checks yet for DHCP, just return
 
         if responses["bootproto"] == "dhcp":
             self.parent.footer.set_text("Scanning for DHCP servers. "
                                         "Please wait...")
             self.parent.refreshScreen()
-            dhcp_server_data = dhcp_checker.api.check_dhcp_on_eth(
-                self.activeiface, timeout=3)
-            if len(dhcp_server_data) < 1:
-                self.log.debug("No DHCP servers found. Warning user about "
-                          "dhcp_nowait.")
-                #Build dialog elements
-                dhcp_info = []
-                dhcp_info.append(urwid.Padding(
-                                 urwid.Text(("header", "!!! WARNING !!!")),
-                                 "center"))
-                dhcp_info.append(TextLabel("Unable to detect DHCP server on"
-                                 "interface %s." % (self.activeiface) +
-                                 "\nDHCP will be set up in the background, "
-                                 "but may not receive an IP address. You may "
-                                 "want to check your DHCP connection manually "
-                                 "using the Shell Login menu to the left."))
-                dialog.display_dialog(self, urwid.Pile(dhcp_info),
-                                      "DHCP Servers Found on %s"
-                                      % self.activeiface)
-                responses["dhcp_nowait"] = True
-            return responses
+            try:
+                dhcp_server_data = dhcp_checker.api.check_dhcp_on_eth(
+                    self.activeiface, timeout=3)
+                if len(dhcp_server_data) < 1:
+                    self.log.debug("No DHCP servers found. Warning user about "
+                              "dhcp_nowait.")
+                    #Build dialog elements
+                    dhcp_info = []
+                    dhcp_info.append(urwid.Padding(
+                                     urwid.Text(("header", "!!! WARNING !!!")),
+                                     "center"))
+                    dhcp_info.append(TextLabel("Unable to detect DHCP server on "
+                                     "interface %s." % (self.activeiface) +
+                                     "\nDHCP will be set up in the background, "
+                                     "but may not receive an IP address. You may "
+                                     "want to check your DHCP connection manually "
+                                     "using the Shell Login menu to the left."))
+                    dialog.display_dialog(self, urwid.Pile(dhcp_info),
+                                          "DHCP Servers Found on %s"
+                                          % self.activeiface)
+                    responses["dhcp_nowait"] = True
+            except:
+                self.log.warning("dhcp_checker failed to check on %s"
+                                 % self.activeiface)
+                #TODO: Fix set up DHCP on down iface
+                responses["dhcp_nowait"] = False
         #Check ipaddr, netmask, gateway only if static
         if responses["bootproto"] == "none":
             try:
@@ -214,7 +218,8 @@ class interfaces(urwid.WidgetWrap):
                 params = {"ipaddr": "dhcp"}
         else:
             params = {"ipaddr": responses["ipaddr"],
-                      "netmask": responses["netmask"]}
+                      "netmask": responses["netmask"],
+                      "check_by_ping": "none"}
         if len(responses["gateway"]) > 1:
             params["gateway"] = responses["gateway"]
         self.log.info("Puppet data: %s %s %s" % (
@@ -399,8 +404,14 @@ class interfaces(urwid.WidgetWrap):
                         rb_group[0].set_state(True)
                         rb_group[1].set_state(False)
                 else:
-                    rb_group[0].set_state(False)
-                    rb_group[1].set_state(True)
+                    #onboot should only be no if the interface is also down
+                    if self.netsettings[self.activeiface]['addr'] == "":
+                        rb_group[0].set_state(False)
+                        rb_group[1].set_state(True)
+                    else:
+                        rb_group[0].set_state(True)
+                        rb_group[1].set_state(False)
+
             elif fieldname == "ipaddr":
                 self.edits[index].set_edit_text(self.netsettings[
                     self.activeiface]['addr'])

@@ -128,7 +128,7 @@ class dnsandhostname(urwid.WidgetWrap):
             errors.append("Hostname must not be empty.")
 
         #hostname needs to have valid chars
-        if not re.match('[a-z0-9-]', responses["HOSTNAME"]):
+        if re.search('[^a-z0-9-]', responses["HOSTNAME"]):
             errors.append(
                 "Hostname must contain only alphanumeric and hyphen.")
 
@@ -141,7 +141,7 @@ class dnsandhostname(urwid.WidgetWrap):
             errors.append("Domain must not be empty.")
 
         #domain needs to have valid chars
-        if not re.match('[a-z0-9-.]', responses["DNS_DOMAIN"]):
+        if re.match('[^a-z0-9-.]', responses["DNS_DOMAIN"]):
             errors.append(
                 "Domain must contain only alphanumeric, period and hyphen.")
         #ensure external DNS is valid
@@ -158,7 +158,7 @@ class dnsandhostname(urwid.WidgetWrap):
         else:
             #external DNS must contain only numbers, periods, and commas
             #TODO: More serious ip address checking
-            if not re.match('[0-9.,]', responses["DNS_UPSTREAM"]):
+            if re.match('[^0-9.,]', responses["DNS_UPSTREAM"]):
                 errors.append(
                     "External DNS must contain only IP addresses and commas.")
             #ensure test DNS name isn't empty
@@ -208,7 +208,6 @@ class dnsandhostname(urwid.WidgetWrap):
         lines = f.readlines()
         f.close()
         with open("/etc/hosts", "w") as etchosts:
-            lines = etchosts.readlines()
             for line in lines:
                 if responses["HOSTNAME"] in line \
                         or oldsettings["HOSTNAME"] in line:

@@ -28,7 +28,7 @@ import urllib2
 API_ROOT = "http://127.0.0.1:8000/api/"
 DEBUG = False
 JSON = False
-passive_arguments = ["env", "action", "debug", "json"]
+passive_arguments = ["rel", "env", "action", "debug", "json"]
 
 
 class SetAction(argparse.Action):
@@ -215,26 +215,26 @@ def release(params):
     """
     acceptable_keys = ["id", "name", "state", "operating_system", "version"]
     if not has_arguments(params) or params.list:
-        if params.rid:
-            data = json_api_get_request(
+        if params.rel:
+            data = [json_api_get_request(
                 "releases/{0}/"
-                .format(params.rid)
-            )
+                .format(params.rel)
+            )]
         else:
             data = json_api_get_request("releases/")
         if params.json:
             print(json.dumps(data, indent=4))
         else:
-            print(format_table([data], acceptable_keys=acceptable_keys))
+            print(format_table(data, acceptable_keys=acceptable_keys))
     elif params.config:
-        check_for_attributes(params, ["rid", "username", "password"])
+        check_for_attributes(params, ["rel", "username", "password"])
         data = {
-          "release_id": params.rid,
-          "license_type": "rhsm",
-          "username": params.username,
-          "password": params.password,
-          "satellite": "",
-          "activation_key": ""
+            "release_id": params.rel,
+            "license_type": "rhsm",
+            "username": params.username,
+            "password": params.password,
+            "satellite": "",
+            "activation_key": ""
         }
         release_response = json_api_post_request(
             "redhat/setup/",
@@ -244,12 +244,10 @@ def release(params):
             print(json.dumps(release_response, indent=4))
         else:
             print(
-                "Credentials for release with id={id}"
+                "Credentials for release with id={0}"
                 " were successfully modified!"
-                .format(params.rid)
+                .format(params.rel)
             )
-
-
 
 
 def environment(params):
@@ -267,12 +265,12 @@ def environment(params):
         print(format_table(data, acceptable_keys=acceptable_keys,
                            subdict_keys=[("release", u"id")]))
     elif params.create:
-        check_for_attributes(params, ["ename", "rid"])
+        check_for_attributes(params, ["ename", "rel"])
         data = {
             "nodes": [],
             "tasks": [],
             "name": params.ename,
-            "release": int(params.rid)
+            "release": int(params.rel)
         }
         cluster_response = json_api_post_request("clusters/", data)
         cluster_id = cluster_response[u"id"]
@@ -422,7 +420,51 @@ def node(params):
 def network(params):
     """Show or modify network settings of specific environments
     """
-    print(params)
+    check_for_attributes(params, ["env"])
+
+    network_url = "clusters/{0}/network_configuration".format(params.env)
+    network_data = json_api_get_request(network_url)
+    network_file_path = os.path.join(
+        os.path.abspath(os.path.curdir
+                        if params.dir is None else params.dir),
+        "network_{0}.json".format(params.env)
+    )
+    if params.upload:
+        put_response = json_api_put_request(
+            network_url,
+            read_json(network_file_path)
+        )
+        if params.json:
+            print(json.dumps(put_response, indent=4))
+        else:
+            print("Network configuration uploaded successfully.")
+    elif params.verify:
+        verify_url = network_url + "/verify"
+        put_response = json_api_put_request(verify_url, network_data)
+        if params.json:
+            print(json.dumps(put_response, indent=4))
+        else:
+            print(
+                "Verification status is '{status}'. message: {message}"
+                .format(**put_response)
+            )
+            # if put_response["status"] == "error":
+            #     pass
+            # elif put_response["status"] == 'ready':
+            #     pass
+            # elif put_response["status"] == 'running':
+            #     pass
+    else:
+        if params.download:
+            write_json(network_file_path, network_data)
+            print(
+                "Network configuration for environment with id={0}"
+                "downloaded to {1} successfully."
+                .format(params.env, network_file_path)
+            )
+        else:
+            if params.json:
+                print(json.dumps(network_data, indent=4))
 
 
 def settings(params):
@@ -597,6 +639,11 @@ def fact(params, info_type):
                 print(json.dumps(facts, indent=4))
 
 
+def write_json(path, data):
+    with open(path, "w+") as json_file:
+            json_file.write(json.dumps(data, indent=4))
+
+
 def read_json(path):
         with open(path, "r") as json_file:
             return json.loads(json_file.read())
@@ -716,7 +763,7 @@ actions = {
         }, {
             "args": ["--rel", "--release"],
             "params": {
-                "dest": "rid",
+                "dest": "rel",
                 "action": "store",
                 "type": str,
                 "help": "Specify release id to configure",
@@ -790,7 +837,7 @@ actions = {
         }, {
             "args": ["--rel", "--release"],
             "params": {
-                "dest": "rid",
+                "dest": "rel",
                 "action": "store",
                 "type": str,
                 "help": "Release id",
@@ -857,19 +904,11 @@ actions = {
     "network": {
         "action": network,
         "args": [{
-            "args": ["-d", "--default"],
+            "args": ["-d", "--download"],
             "params": {
-                "dest": "default",
+                "dest": "download",
                 "action": "store_true",
-                "help": "Open default configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-m", "--modify"],
-            "params": {
-                "dest": "modify",
-                "action": "store_true",
-                "help": "Modify current configuration.",
+                "help": "Download current network configuration.",
                 "default": False
             }
         }, {
@@ -877,24 +916,24 @@ actions = {
             "params": {
                 "dest": "verify",
                 "action": "store_true",
-                "help": "Verify current configuration.",
+                "help": "Verify current network configuration.",
                 "default": False
             }
         }, {
-            "args": ["-c", "--cancel"],
+            "args": ["-u", "--upload"],
             "params": {
-                "dest": "cancel",
+                "dest": "upload",
                 "action": "store_true",
-                "help": "Remove current changes in configuration.",
+                "help": "Upload changed network configuration.",
                 "default": False
             }
         }, {
-            "args": ["-s", "--save"],
+            "args": ["--dir"],
             "params": {
-                "dest": "save",
-                "action": "store_true",
-                "help": "Save current changes in configuration.",
-                "default": False
+                "dest": "dir",
+                "action": "store",
+                "help": "Directory with network data.",
+                "default": None
             }
         }]
     },

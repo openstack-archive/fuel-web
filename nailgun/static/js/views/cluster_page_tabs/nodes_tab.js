@@ -964,6 +964,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.disableControls(true);
             return $.when.apply($, this.nodes.map(function(node) {
                     var configuration = new models.NodeInterfaceConfiguration({id: node.id, interfaces: this.interfaces});
+                    configuration.get('interfaces').each(function(ifc, index) {
+                        ifc.set({id: this.nodeInterfaceIds[node.id][index]}, {silent: true});
+                    }, this);
                     return Backbone.sync('update', new models.NodeInterfaceConfigurations(configuration));
                 }, this))
                 .done(_.bind(function() {
@@ -987,28 +990,42 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     this.revertChanges();
                     this.render();
                 }, this);
-                var networkConfiguration = new models.NetworkConfiguration();
-                this.interfaces = new models.Interfaces();
-                this.loading = $.when(
-                   this.interfaces.fetch({url: _.result(this.node(), 'url') + '/interfaces', reset: true}),
-                   networkConfiguration.fetch({url: _.result(this.model, 'url') + '/network_configuration'})
-                ).done(_.bind(function() {
-                    // FIXME(vk): modifying models prototypes to use vlan data from NetworkConfiguration
-                    // this mean that these models cannot be used safely in places other than this view
-                    // helper function for template to get vlan_start NetworkConfiguration
-                    models.InterfaceNetwork.prototype.vlanStart = function() {
-                        return networkConfiguration.get('networks').findWhere({name: this.get('name')}).get('vlan_start');
-                    };
-                    models.InterfaceNetwork.prototype.amount = function() {
-                        return networkConfiguration.get('networks').findWhere({name: this.get('name')}).get('amount');
-                    };
-                    this.initialData = this.interfaces.toJSON();
-                    this.interfaces.on('reset', this.renderInterfaces, this);
-                    this.interfaces.on('reset', this.checkForChanges, this);
-                    this.checkForChanges();
-                    this.renderInterfaces();
-                }, this))
-                .fail(_.bind(this.goToNodeList, this));
+                var complete = _.after(this.nodes.length, _.bind(function() {
+                    var networkConfiguration = new models.NetworkConfiguration();
+                    networkConfiguration
+                        .fetch({url: _.result(this.model, 'url') + '/network_configuration'})
+                        .done(_.bind(function() {
+                            // FIXME(vk): modifying models prototypes to use vlan data from NetworkConfiguration
+                            // this mean that these models cannot be used safely in places other than this view
+                            // helper function for template to get vlan_start NetworkConfiguration
+                            models.InterfaceNetwork.prototype.vlanStart = function() {
+                                return networkConfiguration.get('networks').findWhere({name: this.get('name')}).get('vlan_start');
+                            };
+                            models.InterfaceNetwork.prototype.amount = function() {
+                                return networkConfiguration.get('networks').findWhere({name: this.get('name')}).get('amount');
+                            };
+                            this.checkForChanges();
+                            this.renderInterfaces();
+                        }, this))
+                        .fail(_.bind(this.goToNodeList, this));
+                }, this));
+                this.nodeInterfaceIds = {};
+                this.nodes.each(function(node) {
+                    var interfaces = new models.Interfaces();
+                    interfaces
+                        .fetch({url: _.result(node, 'url') + '/interfaces'})
+                        .done(_.bind(function() {
+                            if (node.id == this.node().id) {
+                                this.initialData = interfaces.toJSON();
+                                this.interfaces = new models.Interfaces();
+                                this.interfaces.reset(_.cloneDeep(this.initialData), {parse: true});
+                                this.interfaces.on('reset', this.renderInterfaces, this);
+                                this.interfaces.on('reset', this.checkForChanges, this);
+                            }
+                            this.nodeInterfaceIds[node.id] = interfaces.pluck('id');
+                        }, this))
+                        .always(complete);
+                }, this);
             } else {
                 this.goToNodeList();
             }

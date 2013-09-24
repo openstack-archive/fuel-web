@@ -82,13 +82,13 @@ if __name__ == "__main__":
           install_requires=requires,
           include_package_data=True,
           scripts=['manage.py', 'fuel-cli/fuel'],
-          entry_points={
+          x={
               'console_scripts': [
                   'nailgun_syncdb = nailgun.db:syncdb',
                   'nailgun_fixtures = \
                       nailgun.fixtures.fixman:upload_fixtures',
                   'nailgund = nailgun.wsgi:appstart',
-                  'nailgun_dump = nailgun.task:dump'
+                  'nailgun_dump = nailgun.task.task:dump'
               ],
           },
           data_files=recursive_data_files([('share/nailgun', 'static')])

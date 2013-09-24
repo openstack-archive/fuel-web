@@ -409,8 +409,20 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterAdditionalServicesPane = views.WizardPane.extend({
-        title: 'Addition Services',
-        template: _.template(clusterAdditionalServicesPaneTemplate)
+        title: 'Additional Services',
+        template: _.template(clusterAdditionalServicesPaneTemplate),
+        beforeSettingsSaving: function(settings) {
+            try {
+                var additionalServices = settings.get('editable').additional_components;
+                if (additionalServices) {
+                    additionalServices.savanna.value = this.$('input[name=savanna]').is(':checked');
+                    additionalServices.murano.value = this.$('input[name=murano]').is(':checked');
+                }
+            } catch(e) {
+                return (new $.Deferred()).reject();
+            }
+            return (new $.Deferred()).resolve();
+        }
     });
 
     clusterWizardPanes.ClusterReadyPane = views.WizardPane.extend({
@@ -424,7 +436,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         clusterWizardPanes.ClusterComputePane,
         clusterWizardPanes.ClusterNetworkPane,
         clusterWizardPanes.ClusterStoragePane,
-        //clusterWizardPanes.ClusterAdditionalServicesPane,
+        clusterWizardPanes.ClusterAdditionalServicesPane,
         clusterWizardPanes.ClusterReadyPane
     ];
 

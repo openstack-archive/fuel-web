@@ -173,18 +173,6 @@ class TestOrchestratorSerializer(OrchestratorSerializerTestBase):
                 self.assertEquals(attrs['storage_address'],
                                   node['storage_address'])
 
-    def test_controller_nodes(self):
-        ctrl_nodes = self.serializer.controller_nodes(self.cluster)
-        self.assertEquals(len(ctrl_nodes), 1)
-
-        # And should equal to nodes in nodes_list
-        all_nodes = self.serializer.node_list(self.cluster.nodes)
-        ctrl_nodes_from_nodes_list = filter(
-            lambda node: node['role'] == 'controller',
-            all_nodes)
-
-        self.assertEquals(ctrl_nodes, ctrl_nodes_from_nodes_list)
-
     def test_vlan_manager(self):
         cluster = self.create_env('multinode', 'VlanManager')
         facts = self.serializer.serialize(cluster)
@@ -342,7 +330,3 @@ class TestOrchestratorHASerializer(OrchestratorSerializerTestBase):
             attrs['mp'],
             [{'point': '1', 'weight': '1'},
              {'point': '2', 'weight': '2'}])
-
-        self.assertEquals(
-            attrs['mountpoints'],
-            '1 1\\n2 2\\n')

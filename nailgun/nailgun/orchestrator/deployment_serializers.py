@@ -359,6 +359,30 @@ class OrchestratorSerializer(object):
 class OrchestratorHASerializer(OrchestratorSerializer):
 
     @classmethod
+    def serialize(cls, cluster):
+        serialized_nodes = super(
+            OrchestratorHASerializer, cls).serialize(cluster)
+        cls.set_primary_controller(serialized_nodes)
+
+        return serialized_nodes
+
+    @classmethod
+    def set_primary_controller(cls, nodes):
+        """Set primary controller for the first controller
+        node if it not set yet
+        """
+        sorted_nodes = sorted(
+            nodes, key=lambda node: node['uid'])
+
+        primary_controller = cls.filter_by_roles(
+            sorted_nodes, ['primary-controller'])
+
+        if not primary_controller:
+            controllers = cls.filter_by_roles(
+                sorted_nodes, ['controller'])
+            controllers[0]['role'] = 'primary-controller'
+
+    @classmethod
     def node_list(cls, nodes):
         """Node list
         """
@@ -382,21 +406,26 @@ class OrchestratorHASerializer(OrchestratorSerializer):
         common_attrs['public_vip'] = netmanager.assign_vip(
             cluster.id, 'public')
 
-        common_attrs['last_controller'] = sorted(
-            common_attrs['controller_nodes'],
-            key=lambda node: node['uid'])[-1]['name']
+        sorted_nodes = sorted(
+            common_attrs['nodes'], key=lambda node: node['uid'])
 
-        first_controller = filter(
-            lambda node: 'controller' in node['role'],
-            common_attrs['nodes'])[0]
+        controller_nodes = cls.filter_by_roles(
+            sorted_nodes, ['controller', 'primary-controller'])
+        common_attrs['last_controller'] = controller_nodes[-1]['name']
 
-        first_controller['role'] = 'primary-controller'
+        # Assign primary controller in nodes list
+        cls.set_primary_controller(common_attrs['nodes'])
 
         common_attrs['mp'] = [
             {'point': '1', 'weight': '1'},
             {'point': '2', 'weight': '2'}]
 
         return common_attrs
+
+    @classmethod
+    def filter_by_roles(cls, nodes, roles):
+        return filter(
+            lambda node: node['role'] in roles, nodes)
 
     @classmethod
     def set_deployment_priorities(cls, nodes):

@@ -4,12 +4,13 @@ DEVELOPMENT: 1
 
 VERSION:
   release: "3.0"
-  fuel_key: "Unknown"
   nailgun_sha: "Unknown build"
   astute_sha: "Unknown build"
   fuellib_sha: "Unknown build"
   ostf_tests_sha: "Unknown build"
   ostf_plugin_sha: "Unknown build"
+
+FUEL_KEY: "Unknown"
 
 FIXTURES_TO_UPLOAD:
   - "openstack.json"

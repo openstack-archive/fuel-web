@@ -39,7 +39,7 @@ class FuelKeyHandler(JSONHandler):
         key_data = {
             "sha": settings.VERSION['nailgun_sha'],
             "release": settings.VERSION['release'],
-            "uuid": settings.VERSION['fuel_key']
+            "uuid": settings.FUEL_KEY
         }
         signature = base64.b64encode(json.dumps(key_data))
         key_data["signature"] = signature

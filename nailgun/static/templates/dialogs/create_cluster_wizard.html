@@ -7,7 +7,7 @@
     <% _(totalSteps).times(function(step) { %>
       <% step++ %>
       <div class="wizard-step <%= step != currentStep ? step <= maxAvailableStep ? 'available' : '' : 'current' %>"
-        style="width: <%= (100 / totalSteps).toFixed(2) %>%"
+        style="width: <%= floor(100 / totalSteps, 2) %>%"
         data-pane="<%= step - 1 %>"
       >
         Step <%= step %>

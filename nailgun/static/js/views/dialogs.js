@@ -95,6 +95,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     views.CreateClusterWizard = views.Dialog.extend({
         template: _.template(createClusterWizardTemplate),
+        templateHelpers: _.pick(utils, 'floor'),
         events: {
             'click .next-pane-btn': 'nextPane',
             'click .prev-pane-btn': 'prevPane',
@@ -150,7 +151,14 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 deferred
                     .done(_.bind(function() {
                         this.collection.add(cluster);
-                        $.when.apply($, _.invoke(this.panes, 'afterClusterCreation', cluster))
+                        var settings = new models.Settings({}, {url: _.result(cluster, 'url') + '/attributes'});
+                        settings.fetch()
+                            .then(_.bind(function() {
+                                return $.when.apply($, _.invoke(this.panes, 'beforeSettingsSaving', settings));
+                            }, this))
+                            .then(_.bind(function() {
+                                return settings.save();
+                            }, this))
                             .done(_.bind(function() {
                                 this.$el.modal('hide');
                             }, this))
@@ -182,11 +190,11 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var currentStep = this.activePaneIndex + 1;
             var maxAvailableStep = this.maxAvaialblePaneIndex + 1;
             var totalSteps = this.panes.length;
-            this.constructor.__super__.render.call(this, {
+            this.constructor.__super__.render.call(this, _.extend({
                 currentStep: currentStep,
                 totalSteps: totalSteps,
                 maxAvailableStep: maxAvailableStep
-            });
+            }, this.templateHelpers));
             this.$('.pane-title').text(pane.title || '');
             this.$('.pane-content').append(pane.el);
             this.$('.prev-pane-btn').prop('disabled', !this.activePaneIndex);
@@ -207,7 +215,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         beforeClusterCreation: function(cluster) {
             return (new $.Deferred()).resolve();
         },
-        afterClusterCreation: function(cluster) {
+        beforeSettingsSaving: function(cluster) {
             return (new $.Deferred()).resolve();
         },
         render: function() {
@@ -232,6 +240,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     this.redHatAccount.absent = false;
                     this.updateReleaseParameters();
                 }
+            }
+            if (success) {
+                this.wizard.findPane(clusterWizardPanes.ClusterStoragePane).render();
             }
             var deferred = new $.Deferred();
             return deferred[success ? 'resolve' : 'reject']();
@@ -331,23 +342,13 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     clusterWizardPanes.ClusterComputePane = views.WizardPane.extend({
         title: 'Compute',
         template: _.template(clusterComputePaneTemplate),
-        afterClusterCreation: function(cluster) {
-            var deferred = new $.Deferred();
-            var settings = new models.Settings({}, {url: _.result(cluster, 'url') + '/attributes'});
-            //FIXME: redo with deferred.pipe?
-            settings.fetch()
-                .done(_.bind(function() {
-                    try {
-                        settings.get('editable').common.libvirt_type.value = this.$('input[name=hypervisor]:checked').val();
-                    } catch(e) {
-                        deferred.reject();
-                    }
-                    settings.save()
-                        .done(function() {deferred.resolve();})
-                        .fail(function() {deferred.reject();});
-                }, this))
-                .fail(function() {deferred.reject();});
-            return deferred;
+        beforeSettingsSaving: function(settings) {
+            try {
+                settings.get('editable').common.libvirt_type.value = this.$('input[name=hypervisor]:checked').val();
+            } catch(e) {
+                return (new $.Deferred()).reject();
+            }
+            return (new $.Deferred()).resolve();
         },
         render: function() {
             this.$el.html(this.template());
@@ -359,6 +360,20 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     clusterWizardPanes.ClusterNetworkPane = views.WizardPane.extend({
         title: 'Network',
         template: _.template(clusterNetworkPaneTemplate),
+        beforeClusterCreation: function(cluster) {
+            var manager = this.$('input[name=manager]:checked').val();
+            if (manager == 'nova-network') {
+                cluster.set({net_provider: 'NovaNetwork'});
+            } else {
+                cluster.set({net_provider: 'Neutron'});
+                if (manager == 'neutron-gre') {
+                    cluster.set({net_segment_type: 'GRE'});
+                } else if (manager == 'neutron-vlan') {
+                    cluster.set({net_segment_type: 'VLAN'});
+                }
+            }
+            return (new $.Deferred()).resolve();
+        },
         render: function() {
             this.$el.html(this.template());
             this.$('input[name=manager]:first').prop('checked', true);
@@ -369,16 +384,45 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     clusterWizardPanes.ClusterStoragePane = views.WizardPane.extend({
         title: 'Storage',
         template: _.template(clusterStoragePaneTemplate),
+        beforeSettingsSaving: function(settings) {
+            try {
+                var storageSettings = settings.get('editable').storage;
+                if (storageSettings) {
+                    storageSettings.cinder.value = this.$('input[name=cinder]:checked').val();
+                    storageSettings.glance.value = this.$('input[name=glance]:checked').val();
+                }
+            } catch(e) {
+                return (new $.Deferred()).reject();
+            }
+            return (new $.Deferred()).resolve();
+        },
         render: function() {
-            this.$el.html(this.template());
-            this.$('input[name=storage]:first').prop('checked', true);
+            var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
+            var disabled = !release || !_.contains(release.get('roles'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
+            this.$el.html(this.template({disabled: disabled, release: release}));
+            if (disabled) {
+                this.$('input[value=ceph]').prop('disabled', true);
+            }
+            this.$('input[name=cinder]:last, input[name=glance]:last').prop('checked', true);
             return this;
         }
     });
 
     clusterWizardPanes.ClusterAdditionalServicesPane = views.WizardPane.extend({
-        title: 'Addition Services',
-        template: _.template(clusterAdditionalServicesPaneTemplate)
+        title: 'Additional Services',
+        template: _.template(clusterAdditionalServicesPaneTemplate),
+        beforeSettingsSaving: function(settings) {
+            try {
+                var additionalServices = settings.get('editable').additional_components;
+                if (additionalServices) {
+                    additionalServices.savanna.value = this.$('input[name=savanna]').is(':checked');
+                    additionalServices.murano.value = this.$('input[name=murano]').is(':checked');
+                }
+            } catch(e) {
+                return (new $.Deferred()).reject();
+            }
+            return (new $.Deferred()).resolve();
+        }
     });
 
     clusterWizardPanes.ClusterReadyPane = views.WizardPane.extend({
@@ -390,9 +434,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         clusterWizardPanes.ClusterNameAndReleasePane,
         clusterWizardPanes.ClusterModePane,
         clusterWizardPanes.ClusterComputePane,
-        //clusterWizardPanes.ClusterNetworkPane,
-        //clusterWizardPanes.ClusterStoragePane,
-        //clusterWizardPanes.ClusterAdditionalServicesPane,
+        clusterWizardPanes.ClusterNetworkPane,
+        clusterWizardPanes.ClusterStoragePane,
+        clusterWizardPanes.ClusterAdditionalServicesPane,
         clusterWizardPanes.ClusterReadyPane
     ];
 

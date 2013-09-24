@@ -415,8 +415,6 @@ class OrchestratorHASerializer(OrchestratorSerializer):
             {'point': '1', 'weight': '1'},
             {'point': '2', 'weight': '2'}]
 
-        common_attrs['mountpoints'] = '1 1\\n2 2\\n'
-
         return common_attrs
 
     @classmethod

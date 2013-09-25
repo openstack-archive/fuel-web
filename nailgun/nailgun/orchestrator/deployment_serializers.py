@@ -77,8 +77,6 @@ class OrchestratorSerializer(object):
         """Common attributes for all facts
         """
         attrs = cls.serialize_cluster_attrs(cluster)
-
-        attrs['controller_nodes'] = cls.controller_nodes(cluster)
         attrs['nodes'] = cls.node_list(cls.get_nodes_to_serialization(cluster))
 
         for node in attrs['nodes']:
@@ -170,23 +168,6 @@ class OrchestratorSerializer(object):
             "{0}-{1}".format(ip_range.first, ip_range.last)
             for ip_range in network_group.ip_ranges
         ]
-
-    @classmethod
-    def controller_nodes(cls, cluster):
-        """Serialize nodes in same format
-        as cls.node_list do that but only
-        controller nodes.
-        """
-        nodes = cls.get_nodes_to_serialization(cluster)
-
-        # If role has more than one role
-        # then node_list return serialized node
-        # for each role
-        ctrl_nodes = filter(
-            lambda n: n['role'] == 'controller',
-            cls.node_list(nodes))
-
-        return ctrl_nodes
 
     @classmethod
     def serialize_nodes(cls, nodes):
@@ -378,6 +359,30 @@ class OrchestratorSerializer(object):
 class OrchestratorHASerializer(OrchestratorSerializer):
 
     @classmethod
+    def serialize(cls, cluster):
+        serialized_nodes = super(
+            OrchestratorHASerializer, cls).serialize(cluster)
+        cls.set_primary_controller(serialized_nodes)
+
+        return serialized_nodes
+
+    @classmethod
+    def set_primary_controller(cls, nodes):
+        """Set primary controller for the first controller
+        node if it not set yet
+        """
+        sorted_nodes = sorted(
+            nodes, key=lambda node: node['uid'])
+
+        primary_controller = cls.filter_by_roles(
+            sorted_nodes, ['primary-controller'])
+
+        if not primary_controller:
+            controllers = cls.filter_by_roles(
+                sorted_nodes, ['controller'])
+            controllers[0]['role'] = 'primary-controller'
+
+    @classmethod
     def node_list(cls, nodes):
         """Node list
         """
@@ -401,23 +406,26 @@ class OrchestratorHASerializer(OrchestratorSerializer):
         common_attrs['public_vip'] = netmanager.assign_vip(
             cluster.id, 'public')
 
-        common_attrs['last_controller'] = sorted(
-            common_attrs['controller_nodes'],
-            key=lambda node: node['uid'])[-1]['name']
+        sorted_nodes = sorted(
+            common_attrs['nodes'], key=lambda node: node['uid'])
 
-        first_controller = filter(
-            lambda node: 'controller' in node['role'],
-            common_attrs['nodes'])[0]
+        controller_nodes = cls.filter_by_roles(
+            sorted_nodes, ['controller', 'primary-controller'])
+        common_attrs['last_controller'] = controller_nodes[-1]['name']
 
-        first_controller['role'] = 'primary-controller'
+        # Assign primary controller in nodes list
+        cls.set_primary_controller(common_attrs['nodes'])
 
         common_attrs['mp'] = [
             {'point': '1', 'weight': '1'},
             {'point': '2', 'weight': '2'}]
 
-        common_attrs['mountpoints'] = '1 1\\n2 2\\n'
-
         return common_attrs
+
+    @classmethod
+    def filter_by_roles(cls, nodes, roles):
+        return filter(
+            lambda node: node['role'] in roles, nodes)
 
     @classmethod
     def set_deployment_priorities(cls, nodes):

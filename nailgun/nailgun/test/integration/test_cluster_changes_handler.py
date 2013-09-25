@@ -55,7 +55,6 @@ class TestHandlers(BaseIntegrationTest):
 
         common_attrs = {
             'deployment_mode': 'ha_compact',
-            'mountpoints': '1 1\\n2 2\\n',
 
             'management_vip': '192.168.0.2',
             'public_vip': '172.16.1.2',
@@ -118,15 +117,14 @@ class TestHandlers(BaseIntegrationTest):
                     'fqdn': 'node-%d.%s' % (node_id, settings.DNS_DOMAIN)})
             i += 1
 
-        common_attrs['controller_nodes'] = filter(
+        controller_nodes = filter(
             lambda node: node['role'] == 'controller',
             deepcopy(nodes_list))
 
         common_attrs['nodes'] = nodes_list
         common_attrs['nodes'][0]['role'] = 'primary-controller'
 
-        common_attrs['last_controller'] = common_attrs[
-            'controller_nodes'][-1]['name']
+        common_attrs['last_controller'] = controller_nodes[-1]['name']
 
         # Individual attrs calculation and
         # merging with common attrs
@@ -183,6 +181,11 @@ class TestHandlers(BaseIntegrationTest):
 
                 individual_atts.update(common_attrs)
                 deployment_info.append(individual_atts)
+
+        controller_nodes = filter(
+            lambda node: node['role'] == 'controller',
+            deployment_info)
+        controller_nodes[0]['role'] = 'primary-controller'
 
         supertask = self.env.launch_deployment()
         deploy_task_uuid = [x.uuid for x in supertask.subtasks

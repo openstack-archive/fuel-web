@@ -145,7 +145,7 @@ class FuelSetup():
     def main(self):
         #Disable kernel print messages. They make our UI ugly
         noout = open('/dev/null', 'w')
-        retcode = subprocess.call(["sysctl", "kernel.printk='4 1 1 7'"],
+        retcode = subprocess.call(["sysctl", "-w",  "kernel.printk=4 1 1 7"],
                                     stdout=noout,
                                     stderr=noout)
 
@@ -229,8 +229,7 @@ class FuelSetup():
     def exit_program(self, button):
         #return kernel logging to normal
         noout = open('/dev/null', 'w')
-        retcode = subprocess.call(["echo", "7 4 1 7", ">",
-                                   "/proc/sys/kernel/printk"],
+        retcode = subprocess.call(["sysctl", "-w",  "kernel.printk=7 4 1 7"],
                                     stdout=noout,
                                     stderr=noout)
 

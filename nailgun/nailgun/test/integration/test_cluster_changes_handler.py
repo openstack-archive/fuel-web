@@ -227,8 +227,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_password': settings.MCO_PASSWORD,
                     'mco_connector': settings.MCO_CONNECTOR,
                     'mco_enable': 1,
-                    'ks_spaces': "\"%s\"" % json.dumps(
-                        n.attributes.volumes).replace("\"", "\\\""),
+                    'ks_spaces': n.attributes.volumes,
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                 }
             }

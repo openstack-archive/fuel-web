@@ -16,8 +16,6 @@
 
 """Provisioning serializers for orchestrator"""
 
-import json
-
 from nailgun.api.models import IPAddr
 from nailgun.db import db
 from nailgun.logger import logger
@@ -72,9 +70,7 @@ class ProvisioningSerializer(object):
             'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
             'netboot_enabled': '1',
             'ks_meta': {
-                'ks_spaces': "\"%s\"" % json.dumps(
-                    node.attributes.volumes).replace("\"", "\\\""),
-
+                'ks_spaces': node.attributes.volumes,
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,
                 'puppet_version': settings.PUPPET_VERSION,

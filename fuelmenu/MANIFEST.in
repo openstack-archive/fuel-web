@@ -1,4 +1,8 @@
 recursive-include fuelmenu *.py *.yaml *.default
+<<<<<<< HEAD
 include setup.py
 include README
 #recursive-include fuelmenu *
+=======
+recursive-include fuelmenu *
+>>>>>>> 265265e6e18510422b50eba78bac1483d41e5052

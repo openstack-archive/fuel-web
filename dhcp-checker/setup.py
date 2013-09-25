@@ -17,16 +17,17 @@ import setuptools
 
 
 setuptools.setup(
-    name="fuelmenu",
+    name="dhcp_checker",
     version='0.1',
-    description="Console util for pre-configuration of Fuel server",
-    author="Matthew Mosesohn",
-    author_email="mmosesohn@mirantis.com",
+    description="Utils for detecting dhcp servers and some other stuff",
+    author="Dmitry Shulyak",
+    author_email="yashulyak@gmail.com",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
         "Environment :: Console :: Curses",
+        "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX",
         "Programming Language :: Python",
         "Topic :: Security",
@@ -36,28 +37,18 @@ setuptools.setup(
         "Topic :: Software Development :: Testing"
     ],
     install_requires=[
-        'netaddr>=0.7.5',
-        'OrderedDict>=1.1',
-        'PyYAML>=3.10',
-        'netifaces>=0.5',
-        'ethtool>=0.6',
-        #'pypcap',
-        'urwid>=1.1.1',
+        'cliff-tablib==1.1',
     ],
     include_package_data=True,
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [
-            'fuelmenu = fuelmenu.fuelmenu:setup',
+            'dhcpcheck = dhcp_checker.cli:main',
         ],
-<<<<<<< HEAD
-=======
-        #'dhcp.check': [
-        #    'discover = dhcp_checker.commands:ListDhcpServers',
-        #    'request = dhcp_checker.commands:ListDhcpAssignment',
-        #    'vlans = dhcp_checker.commands:DhcpWithVlansCheck'
-        #],
->>>>>>> 265265e6e18510422b50eba78bac1483d41e5052
+        'dhcp.check': [
+            'discover = dhcp_checker.commands:ListDhcpServers',
+            'request = dhcp_checker.commands:ListDhcpAssignment',
+            'vlans = dhcp_checker.commands:DhcpWithVlansCheck'
+        ],
     },
 )
-

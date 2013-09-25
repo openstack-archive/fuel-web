@@ -1,0 +1,3 @@
+# Created by anaconda
+HOSTNAME=fuel
+NTPSERVERARGS=iburst

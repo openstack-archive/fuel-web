@@ -459,7 +459,7 @@ def network(params):
             write_json(network_file_path, network_data)
             print(
                 "Network configuration for environment with id={0}"
-                "downloaded to {1} successfully."
+                " downloaded to {1} successfully."
                 .format(params.env, network_file_path)
             )
         else:
@@ -470,7 +470,45 @@ def network(params):
 def settings(params):
     """Show or modify environment settings
     """
-    print(params)
+    check_for_attributes(params, ["env"])
+
+    settings_url = "clusters/{0}/attributes".format(params.env)
+    settings_data = json_api_get_request(settings_url)
+    settings_file_path = os.path.join(
+        os.path.abspath(os.path.curdir
+                        if params.dir is None else params.dir),
+        "settings_{0}.json".format(params.env)
+    )
+    if params.upload:
+        put_response = json_api_put_request(
+            settings_url,
+            read_json(settings_file_path)
+        )
+        if params.json:
+            print(json.dumps(put_response, indent=4))
+        else:
+            print("Settings configuration uploaded successfully.")
+    elif params.default:
+        default_url = settings_url + "/defaults"
+        get_response = json_api_get_request(default_url)
+        write_json(settings_file_path, get_response)
+        if params.json:
+            print(json.dumps(get_response, indent=4))
+        else:
+            print(
+                "Default settings configuration downloaded successfully."
+            )
+    else:
+        if params.download:
+            write_json(settings_file_path, settings_data)
+            print(
+                "Settings configuration for environment with id={0}"
+                " downloaded to {1} successfully."
+                .format(params.env, settings_file_path)
+            )
+        else:
+            if params.json:
+                print(json.dumps(settings_data, indent=4))
 
 
 def logs(params):
@@ -948,28 +986,28 @@ actions = {
                 "default": False
             }
         }, {
-            "args": ["-m", "--modify"],
+            "args": ["--download"],
             "params": {
-                "dest": "modify",
+                "dest": "download",
                 "action": "store_true",
                 "help": "Modify current configuration.",
                 "default": False
             }
         }, {
-            "args": ["-c", "--cancel"],
+            "args": ["-u", "--upload"],
             "params": {
-                "dest": "cancel",
-                "action": "store_true",
-                "help": "Remove current changes in configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-s", "--save"],
-            "params": {
-                "dest": "save",
+                "dest": "upload",
                 "action": "store_true",
                 "help": "Save current changes in configuration.",
                 "default": False
+            }
+        }, {
+            "args": ["--dir"],
+            "params": {
+                "dest": "dir",
+                "action": "store",
+                "help": "Directory with configuration data.",
+                "default": None
             }
         }]
     },

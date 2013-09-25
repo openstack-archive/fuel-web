@@ -98,7 +98,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
         },
         updateLocalSources: function() {
             var input = this.$('select[name=source]');
-            this.sources.each(_.bind(function(source) {
+            this.sources.each(function(source) {
                 if (!source.get('remote')) {
                     var option = $('<option/>', {value: source.id, text: source.get('name')});
                     if (source.get('name') == this.lastSource){
@@ -106,7 +106,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                     }
                     input.append(option);
                 }
-            }, this));
+            }, this);
         },
         updateRemoteSources: function() {
             var input = this.$('select[name=source]');
@@ -119,7 +119,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                 }
                 sourcesByGroup[group].push(source);
             });
-            _.each(groups, _.bind(function(group) {
+            _.each(groups, function(group) {
                 if (sourcesByGroup[group].length) {
                     var el = group ? $('<optgroup/>', {label: group}).appendTo(input) : input;
                     _.each(sourcesByGroup[group], function(source) {
@@ -130,7 +130,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                         el.append(option);
                     });
                 }
-            }, this));
+            }, this);
         },
         updateLevels: function() {
             var input = this.$('select[name=level]');

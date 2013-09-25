@@ -84,6 +84,9 @@ class NodeHandler(JSONHandler):
 
         network_manager = NetworkManager()
 
+        if data.get("pending_roles") == [] and node.cluster:
+            node.cluster.clear_pending_changes(node_id=node.id)
+
         if "cluster_id" in data:
             if data["cluster_id"] is None and node.cluster:
                 node.cluster.clear_pending_changes(node_id=node.id)
@@ -301,6 +304,10 @@ class NodeCollectionHandler(JSONHandler):
                     notifier.notify("discover", msg, node_id=node.id)
                 db().commit()
             old_cluster_id = node.cluster_id
+
+            if nd.get("pending_roles") == [] and node.cluster:
+                node.cluster.clear_pending_changes(node_id=node.id)
+
             if "cluster_id" in nd:
                 if nd["cluster_id"] is None and node.cluster:
                     node.cluster.clear_pending_changes(node_id=node.id)

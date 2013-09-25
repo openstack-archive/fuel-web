@@ -190,3 +190,34 @@ class TestClusterChanges(BaseIntegrationTest):
         self.assertEquals(len(networks_changes), 1)
         all_changes = self.db.query(ClusterChanges).all()
         self.assertEquals(len(all_changes), 2)
+
+    @fake_tasks()
+    def test_role_unassignment_drops_changes(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True, "api": True}
+            ]
+        )
+        supertask = self.env.launch_deployment()
+        self.env.wait_ready(supertask)
+        new_node = self.env.create_node(
+            cluster_id=self.env.clusters[0].id,
+            pending_addition=True,
+            api=True
+        )
+        self.app.put(
+            reverse("NodeHandler",
+                    kwargs={"node_id": new_node["id"]}),
+            json.dumps({
+                "cluster": None,
+                "pending_addition": False,
+                "pending_roles": []
+            }),
+            headers=self.default_headers
+        )
+
+        all_changes = self.db.query(ClusterChanges).filter_by(
+            cluster_id=self.env.clusters[0].id,
+            node_id=new_node["id"]
+        ).all()
+        self.assertEquals(all_changes, [])

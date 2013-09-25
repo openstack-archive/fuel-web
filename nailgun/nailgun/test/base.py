@@ -43,7 +43,7 @@ from nailgun.api.models import Notification
 from nailgun.api.models import RedHatAccount
 from nailgun.api.models import Release
 from nailgun.api.models import Task
-from nailgun.api.urls import urls
+from nailgun.api.urls.v1 import urls
 from nailgun.db import db
 from nailgun.db import flush
 from nailgun.db import syncdb

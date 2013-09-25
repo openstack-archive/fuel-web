@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 #    Copyright 2013 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,12 +11,3 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-from nailgun.api.urls import v1
-from nailgun.webui import urls as webui_urls
-
-urls = (
-    "/api", v1.app,
-    "/api/v1", v1.app,
-    "", webui_urls.app
-)

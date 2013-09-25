@@ -115,7 +115,8 @@ module Naily
     end
 
     def remove_nodes(data)
-      reporter = Naily::Reporter.new(@producer, data['respond_to'], data['args']['task_uuid'])
+      task_uuid = data['args']['task_uuid']
+      reporter = Naily::Reporter.new(@producer, data['respond_to'], task_uuid)
       nodes = data['args']['nodes']
       provision_engine = Astute::Provision::Cobbler.new(data['args']['engine'])
       data['args']['engine_nodes'].each do |name|
@@ -133,7 +134,14 @@ module Naily
       end
       Naily.logger.debug("Cobbler syncing")
       provision_engine.sync
-      result = @orchestrator.remove_nodes(reporter, data['args']['task_uuid'], nodes)
+
+      result = nil
+      if nodes.empty?
+        Naily.logger.debug("#{task_uuid} Nodes list is empty")
+      else
+        result = @orchestrator.remove_nodes(reporter, task_uuid, nodes)
+      end
+
       report_result(result, reporter)
     end
 

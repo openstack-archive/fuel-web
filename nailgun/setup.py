@@ -82,7 +82,7 @@ if __name__ == "__main__":
           install_requires=requires,
           include_package_data=True,
           scripts=['manage.py', 'fuel-cli/fuel'],
-          x={
+          entry_points={
               'console_scripts': [
                   'nailgun_syncdb = nailgun.db:syncdb',
                   'nailgun_fixtures = \

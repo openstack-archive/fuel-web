@@ -18,10 +18,10 @@
 Handlers dealing with nodes
 """
 
-from itertools import groupby
 from datetime import datetime
 import json
 import traceback
+
 from sqlalchemy.orm import joinedload
 
 import web
@@ -152,19 +152,21 @@ class NodeCollectionHandler(JSONHandler):
 
     @classmethod
     def render(cls, nodes, fields=None):
-        json_data = None
+        json_list = []
         network_manager = NetworkManager()
-        ips_db = network_manager._get_ips_except_admin(joined=True)
-        ips_mapped = dict(groupby(ips_db, lambda ip: ip.node.id))
+        ips_mapped = network_manager.get_grouped_ips_by_node()
         for node in nodes:
+            json_data = None
             try:
                 json_data = JSONHandler.render(node, fields=cls.fields)
 
                 json_data['network_data'] = network_manager.\
-                    get_node_networks_optimized(node, ips_mapped[node.id])
+                    get_node_networks_optimized(
+                        node, ips_mapped.get(node.id, []))
+                json_list.append(json_data)
             except Exception:
                 logger.error(traceback.format_exc())
-        return json_data
+        return json_list
 
     @content_json
     def GET(self):
@@ -178,8 +180,7 @@ class NodeCollectionHandler(JSONHandler):
         nodes = db().query(Node).options(
             joinedload('cluster'),
             joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks'),
-            )
+            joinedload('interfaces.assigned_networks'))
         if user_data.cluster_id == '':
             nodes = nodes.filter_by(
                 cluster_id=None).all()

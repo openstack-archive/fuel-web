@@ -18,14 +18,16 @@ from itertools import chain
 from itertools import ifilter
 from itertools import imap
 from itertools import islice
+from itertools import groupby
 import math
 
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 from netaddr import IPSet
-from sqlalchemy.sql import not_
 from sqlalchemy.orm import joinedload
+from sqlalchemy.sql import not_
+
 
 from nailgun.api.models import Cluster
 from nailgun.api.models import GlobalParameters
@@ -697,11 +699,17 @@ class NetworkManager(object):
 
         return network_data
 
+    def get_grouped_ips_by_node(self):
+        """returns {node.id: generator([IPAddr1, IPAddr2])}
+        """
+        ips_db = self._get_ips_except_admin(joined=True)
+        return dict(groupby(ips_db, lambda ip: ip.node.id))
+
     def get_node_networks_optimized(self, node_db, ips_db):
         """Method for receiving data for a given node with db data provided
         as input
         @nodes_db - List of Node instances
-        @ips_db - map of {Node.id : [IPAddr]}
+        @ips_db - generator([IPAddr1, IPAddr2])
         """
         cluster_db = node_db.cluster
         if cluster_db is None:
@@ -739,6 +747,9 @@ class NetworkManager(object):
                 'gateway': net.gateway,
                 'dev': interface.name})
             network_ids.append(net.id)
+
+        network_data.extend(
+            self._add_networks_wo_ips(cluster_db, network_ids, node_db))
 
         return network_data
 

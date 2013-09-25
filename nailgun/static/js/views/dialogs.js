@@ -43,6 +43,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     views.Dialog = Backbone.View.extend({
         className: 'modal fade',
+        template: _.template(simpleMessageTemplate),
         errorMessageTemplate: _.template(errorMessageTemplate),
         modalBound: false,
         beforeTearDown: function() {
@@ -59,7 +60,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             this.$('.modal-body').html(this.errorMessageTemplate({logsLink: logsLink}));
         },
         displayInfoMessage: function(options) {
-            this.$el.html(_.template(simpleMessageTemplate)(options));
+            this.$el.html(this.template(options));
             if (options.error) {
                 this.displayErrorMessage();
             }
@@ -637,10 +638,10 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             $(e.currentTarget).siblings('.accordion-body').collapse('toggle');
         },
         goToDisksConfiguration: function() {
-            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/disks/' + this.node.id, {trigger: true});
+            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/disks/' + utils.serializeTabOptions({nodes: this.node.id}), {trigger: true});
         },
         goToInterfacesConfiguration: function() {
-            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/interfaces/' + this.node.id, {trigger: true});
+            app.navigate('#cluster/' + this.node.get('cluster') + '/nodes/interfaces/' + utils.serializeTabOptions({nodes: this.node.id}), {trigger: true});
         },
         initialize: function(options) {
             _.defaults(this, options);

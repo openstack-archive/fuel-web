@@ -3676,6 +3676,14 @@ hr.slim {
   cursor: not-allowed;
 }
 
+.cluster-toolbar-item a {
+  display: block;
+}
+
+.cluster-toolbar-item .btn.conflict i {
+  display: inline;
+}
+
 .disk-map-full {
   clear: both;
   display: block;
@@ -4374,11 +4382,6 @@ input.input-append {
   color: #666666;
 }
 
-.btn-edit-nodes {
-  position: relative;
-  top: 2px;
-}
-
 .role-conflict {
   display: inline-block;
   color: #B94A48;
@@ -4437,4 +4440,8 @@ input.input-append {
 
 .compute-step .parameter-name {
   text-transform: uppercase;
+}
+
+.btn-configure-interfaces {
+  margin-right: 30px;
 }

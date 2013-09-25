@@ -655,7 +655,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             this.constructor.__super__.render.call(this, _.extend({
                 node: this.node,
-                deployment: app.page.tab.model.task('deploy', 'running')
+                locked: !app.page.tab || app.page.tab.model.task('deploy', 'running')
             }, this.templateHelpers));
             this.$('.accordion-body').collapse({
                 parent: this.$('.accordion'),

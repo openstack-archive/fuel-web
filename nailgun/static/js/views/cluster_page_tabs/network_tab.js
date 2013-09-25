@@ -80,6 +80,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             task.save({}, options)
                 .fail(_.bind(function() {
                     utils.showErrorDialog({title: 'Network verification'});
+                    this.$('.verify-networks-btn').prop('disabled', false);
                 }, this))
                 .always(_.bind(function() {
                     this.model.get('tasks').fetch({data: {cluster_id: this.model.id}}).done(_.bind(this.scheduleUpdate, this));
@@ -87,6 +88,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         verifyNetworks: function() {
             if (!_.some(this.networkConfiguration.get('networks').models, 'validationError')) {
+                this.$('.verify-networks-btn').prop('disabled', true);
                 this.page.removeFinishedTasks().always(_.bind(this.startVerification, this));
             }
         },

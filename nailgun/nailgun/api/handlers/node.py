@@ -18,9 +18,11 @@
 Handlers dealing with nodes
 """
 
+from itertools import groupby
 from datetime import datetime
 import json
 import traceback
+from sqlalchemy.orm import joinedload
 
 import web
 
@@ -141,7 +143,28 @@ class NodeCollectionHandler(JSONHandler):
     """Node collection handler
     """
 
+    fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
+              'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
+              'pending_addition', 'pending_deletion', 'os_platform',
+              'error_type', 'online', 'cluster')
+
     validator = NodeValidator
+
+    @classmethod
+    def render(cls, nodes, fields=None):
+        json_data = None
+        network_manager = NetworkManager()
+        ips_db = network_manager._get_ips_except_admin(joined=True)
+        ips_mapped = dict(groupby(ips_db, lambda ip: ip.node.id))
+        for node in nodes:
+            try:
+                json_data = JSONHandler.render(node, fields=cls.fields)
+
+                json_data['network_data'] = network_manager.\
+                    get_node_networks_optimized(node, ips_mapped[node.id])
+            except Exception:
+                logger.error(traceback.format_exc())
+        return json_data
 
     @content_json
     def GET(self):
@@ -152,15 +175,20 @@ class NodeCollectionHandler(JSONHandler):
         :http: * 200 (OK)
         """
         user_data = web.input(cluster_id=None)
+        nodes = db().query(Node).options(
+            joinedload('cluster'),
+            joinedload('interfaces'),
+            joinedload('interfaces.assigned_networks'),
+            )
         if user_data.cluster_id == '':
-            nodes = db().query(Node).filter_by(
+            nodes = nodes.filter_by(
                 cluster_id=None).all()
         elif user_data.cluster_id:
-            nodes = db().query(Node).filter_by(
+            nodes = nodes.filter_by(
                 cluster_id=user_data.cluster_id).all()
         else:
-            nodes = db().query(Node).all()
-        return map(NodeHandler.render, nodes)
+            nodes = nodes.all()
+        return self.render(nodes)
 
     @content_json
     def POST(self):

@@ -1,4 +1,4 @@
-<td class="release-name"><%- release.get('name') %></td>
+<td class="release-name"><%- release.get('name') %><div class="error release-error"></div></td>
 <td class="release-version"><%- release.get('version') %></td>
 <td class="release-status">
   <% if (release.get('state') == 'downloading') { %>

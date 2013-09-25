@@ -15,10 +15,11 @@
 #    under the License.
 
 from itertools import chain
+from itertools import groupby
 from itertools import ifilter
 from itertools import imap
 from itertools import islice
-from itertools import groupby
+
 import math
 
 from netaddr import IPAddress
@@ -767,7 +768,7 @@ class NetworkManager(object):
         #   in fixed network. We are skipping fixed nets in Vlan mode.
         for net in nets.order_by(Network.id).all():
             interface = self._get_interface_by_network_name(
-                node_db.id,
+                node_db,
                 net.name
             )
 

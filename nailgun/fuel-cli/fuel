@@ -28,7 +28,7 @@ import urllib2
 API_ROOT = "http://127.0.0.1:8000/api/"
 DEBUG = False
 JSON = False
-passive_arguments = ["eid", "action", "debug", "json"]
+passive_arguments = ["rel", "env", "action", "debug", "json"]
 
 
 class SetAction(argparse.Action):
@@ -215,14 +215,39 @@ def release(params):
     """
     acceptable_keys = ["id", "name", "state", "operating_system", "version"]
     if not has_arguments(params) or params.list:
-        data = json_api_get_request("releases/")
-        print(format_table(data, acceptable_keys=acceptable_keys))
-    if params.rid:
-        data = json_api_get_request(
-            "releases/{0}/"
-            .format(params.rid)
+        if params.rel:
+            data = [json_api_get_request(
+                "releases/{0}/"
+                .format(params.rel)
+            )]
+        else:
+            data = json_api_get_request("releases/")
+        if params.json:
+            print(json.dumps(data, indent=4))
+        else:
+            print(format_table(data, acceptable_keys=acceptable_keys))
+    elif params.config:
+        check_for_attributes(params, ["rel", "username", "password"])
+        data = {
+            "release_id": params.rel,
+            "license_type": "rhsm",
+            "username": params.username,
+            "password": params.password,
+            "satellite": "",
+            "activation_key": ""
+        }
+        release_response = json_api_post_request(
+            "redhat/setup/",
+            data
         )
-        print(format_table([data], acceptable_keys=acceptable_keys))
+        if params.json:
+            print(json.dumps(release_response, indent=4))
+        else:
+            print(
+                "Credentials for release with id={0}"
+                " were successfully modified!"
+                .format(params.rel)
+            )
 
 
 def environment(params):
@@ -232,20 +257,20 @@ def environment(params):
         acceptable_keys = ["id", "status", "name", "mode",
                            "release", "changes"]
         data = json_api_get_request("clusters/")
-        if params.eid:
+        if params.env:
             data = filter(
-                lambda x: x[u"id"] == int(params.eid),
+                lambda x: x[u"id"] == int(params.env),
                 data
             )
         print(format_table(data, acceptable_keys=acceptable_keys,
                            subdict_keys=[("release", u"id")]))
     elif params.create:
-        check_for_attributes(params, ["ename", "rid"])
+        check_for_attributes(params, ["ename", "rel"])
         data = {
             "nodes": [],
             "tasks": [],
             "name": params.ename,
-            "release": int(params.rid)
+            "release": int(params.rel)
         }
         cluster_response = json_api_post_request("clusters/", data)
         cluster_id = cluster_response[u"id"]
@@ -264,7 +289,7 @@ def environment(params):
                 .format(**cluster_response)
             )
     elif params.set:
-        check_for_attributes(params, ["eid"])
+        check_for_attributes(params, ["env"])
         if params.mode or params.ename:
             data = {}
             if params.mode:
@@ -272,7 +297,7 @@ def environment(params):
             if params.ename:
                 data["name"] = params.ename
             put_response = json_api_put_request(
-                "clusters/{0}/".format(params.eid),
+                "clusters/{0}/".format(params.env),
                 data
             )
             if params.json:
@@ -283,7 +308,7 @@ def environment(params):
                         "Environment with id={0} was "
                         "successfully renamed to {1}"
                         .format(
-                            params.eid,
+                            params.env,
                             params.ename
                         )
                     )
@@ -292,10 +317,23 @@ def environment(params):
                         "Mode of environment with id={0} was "
                         "successfully set to {1}."
                         .format(
-                            params.eid,
+                            params.env,
                             params.mode
                         )
                     )
+    elif params.delete:
+        check_for_attributes(params, ["env"])
+        delete_response = json_api_delete_request(
+            "clusters/{0}/".format(params.env)
+        )
+        if params.json:
+            print(json.dumps(delete_response, indent=4))
+        else:
+            print(
+                "Environment with id={0} was "
+                "successfully deleted."
+                .format(params.env)
+            )
 
 
 def node(params):
@@ -305,22 +343,22 @@ def node(params):
         acceptable_keys = ["id", "status", "name", "cluster",
                            "mac", "roles", "online"]
         data = json_api_get_request("nodes/")
-        if params.eid:
+        if params.env:
             data = filter(
-                lambda x: x[u"cluster"] == int(params.eid),
+                lambda x: x[u"cluster"] == int(params.env),
                 data
             )
         print(
             format_table(data, acceptable_keys=acceptable_keys)
         )
     elif params.set:
-        check_for_attributes(params, ["nid", "role", "eid"])
+        check_for_attributes(params, ["nid", "role", "env"])
         node_ids = list(chain(*params.nid))
         roles = map(str.lower, params.role)
         data = map(
             lambda node_id: {
                 "id": node_id,
-                "cluster_id": params.eid,
+                "cluster_id": params.env,
                 "roles": roles,
                 "pending_addition": True,
                 "pending_deletion": False
@@ -338,25 +376,25 @@ def node(params):
                     "Node with id={0} was".format(node_ids[0])
                     if len(node_ids) == 1 else
                     "Nodes with ids={0} were".format(", ".join(node_ids)),
-                    params.eid,
+                    params.env,
                     "role={0}".format(roles[0])
                     if len(roles) == 1 else
                     "roles={0}".format(", ".join(roles))
                 )
             )
     elif params.remove:
-        check_for_one_attribute(params, ["eid", "nid"])
+        check_for_one_attribute(params, ["env", "nid"])
         nodes_clusters = dict((node["id"], node["cluster"])
                               for node in json_api_get_request("nodes/"))
-        if not params.nid and params.eid:
+        if not params.nid and params.env:
             node_ids = [k for k, v in nodes_clusters.iteritems()
-                        if v == int(params.eid)]
+                        if v == int(params.env)]
         else:
             node_ids = list(chain(*params.nid))
         data = map(
             lambda node_id: {
                 "id": node_id,
-                "cluster_id": params.eid or nodes_clusters.get(node_id),
+                "cluster_id": params.env or nodes_clusters.get(node_id),
                 "pending_roles": [],
                 "pending_addition": False,
                 "pending_deletion": True
@@ -374,7 +412,7 @@ def node(params):
                     "Node with id={0} was".format(node_ids[0])
                     if len(node_ids) == 1 else
                     "Nodes with ids={0} were".format(", ".join(node_ids)),
-                    params.eid
+                    params.env
                 )
             )
 
@@ -382,13 +420,89 @@ def node(params):
 def network(params):
     """Show or modify network settings of specific environments
     """
-    print(params)
+    check_for_attributes(params, ["env"])
+
+    network_url = "clusters/{0}/network_configuration".format(params.env)
+    network_data = json_api_get_request(network_url)
+    network_file_path = os.path.join(
+        os.path.abspath(os.path.curdir
+                        if params.dir is None else params.dir),
+        "network_{0}.json".format(params.env)
+    )
+    if params.upload:
+        put_response = json_api_put_request(
+            network_url,
+            read_json(network_file_path)
+        )
+        if params.json:
+            print(json.dumps(put_response, indent=4))
+        else:
+            print("Network configuration uploaded successfully.")
+    elif params.verify:
+        verify_url = network_url + "/verify"
+        put_response = json_api_put_request(verify_url, network_data)
+        if params.json:
+            print(json.dumps(put_response, indent=4))
+        else:
+            print(
+                "Verification status is '{status}'. message: {message}"
+                .format(**put_response)
+            )
+    else:
+        if params.download:
+            write_json(network_file_path, network_data)
+            print(
+                "Network configuration for environment with id={0}"
+                " downloaded to {1} successfully."
+                .format(params.env, network_file_path)
+            )
+        else:
+            if params.json:
+                print(json.dumps(network_data, indent=4))
 
 
 def settings(params):
     """Show or modify environment settings
     """
-    print(params)
+    check_for_attributes(params, ["env"])
+
+    settings_url = "clusters/{0}/attributes".format(params.env)
+    settings_data = json_api_get_request(settings_url)
+    settings_file_path = os.path.join(
+        os.path.abspath(os.path.curdir
+                        if params.dir is None else params.dir),
+        "settings_{0}.json".format(params.env)
+    )
+    if params.upload:
+        put_response = json_api_put_request(
+            settings_url,
+            read_json(settings_file_path)
+        )
+        if params.json:
+            print(json.dumps(put_response, indent=4))
+        else:
+            print("Settings configuration uploaded successfully.")
+    elif params.default:
+        default_url = settings_url + "/defaults"
+        get_response = json_api_get_request(default_url)
+        write_json(settings_file_path, get_response)
+        if params.json:
+            print(json.dumps(get_response, indent=4))
+        else:
+            print(
+                "Default settings configuration downloaded successfully."
+            )
+    else:
+        if params.download:
+            write_json(settings_file_path, settings_data)
+            print(
+                "Settings configuration for environment with id={0}"
+                " downloaded to {1} successfully."
+                .format(params.env, settings_file_path)
+            )
+        else:
+            if params.json:
+                print(json.dumps(settings_data, indent=4))
 
 
 def logs(params):
@@ -420,15 +534,15 @@ def health(params):
 def deploy(params):
     """Deploy changes to environments
     """
-    check_for_attributes(params, ["eid"])
+    check_for_attributes(params, ["env"])
     put_response = json_api_put_request(
-        "clusters/{0}/changes".format(params.eid),
+        "clusters/{0}/changes".format(params.env),
         {}
     )
     if params.json:
         print(json.dumps(put_response, indent=4))
     else:
-        print_deploy_progress(params.eid)
+        print_deploy_progress(params.env)
 
 
 def get_bar_for_progress(full_width, progress):
@@ -442,12 +556,12 @@ def get_bar_for_progress(full_width, progress):
     )
 
 
-def print_deploy_progress(eid):
+def print_deploy_progress(env):
     stdscr = curses.initscr()
     scr_width = stdscr.getmaxyx()[1]
     curses.noecho()
     curses.cbreak()
-    tasks = json_api_get_request("tasks?cluster_id={0}".format(eid))
+    tasks = json_api_get_request("tasks?cluster_id={0}".format(env))
     deploy_task = filter(
         lambda x: x.get("name", "") == "deploy",
         tasks
@@ -466,12 +580,12 @@ def print_deploy_progress(eid):
             progress = task_response["progress"]
             nodes = json_api_get_request(
                 "nodes?cluster_id={0}"
-                .format(eid)
+                .format(env)
             )
             nodes.sort(key=lambda node: node.get("id"))
             stdscr.addstr(0, 0,
                           "Deploying changes to environment with id={0}"
-                          .format(eid)
+                          .format(env)
                           )
             stdscr.addstr(1, 0,
                           "Deployment: {0} {1:4.0%}".format(
@@ -509,19 +623,19 @@ def deployment(params):
 
 
 def fact(params, info_type):
-    check_for_attributes(params, ["eid"])
+    check_for_attributes(params, ["env"])
 
     dir_name = os.path.join(
         os.path.abspath(os.path.curdir
                         if params.dir is None else params.dir),
-        "{0}_{1}".format(info_type, params.eid)
+        "{0}_{1}".format(info_type, params.env)
     )
     facts_default_url = "clusters/{0}/orchestrator/{1}/defaults".format(
-        params.eid,
+        params.env,
         info_type
     )
     facts_url = "clusters/{0}/orchestrator/{1}/".format(
-        params.eid,
+        params.env,
         info_type
     )
     if params.default:
@@ -547,7 +661,7 @@ def fact(params, info_type):
         if not facts:
             print(
                 "Environment with id={0} has no {1} info."
-                .format(params.eid, info_type)
+                .format(params.env, info_type)
             )
             return
         if params.download:
@@ -555,6 +669,11 @@ def fact(params, info_type):
         else:
             if params.json:
                 print(json.dumps(facts, indent=4))
+
+
+def write_json(path, data):
+    with open(path, "w+") as json_file:
+            json_file.write(json.dumps(data, indent=4))
 
 
 def read_json(path):
@@ -676,10 +795,28 @@ actions = {
         }, {
             "args": ["--rel", "--release"],
             "params": {
-                "dest": "rid",
+                "dest": "rel",
                 "action": "store",
                 "type": str,
                 "help": "Specify release id to configure",
+                "default": None
+            }
+        }, {
+            "args": ["-U", "--user", "--user-name"],
+            "params": {
+                "dest": "username",
+                "action": "store",
+                "type": str,
+                "help": "Username for release credentials",
+                "default": None
+            }
+        }, {
+            "args": ["-P", "--pass", "--password"],
+            "params": {
+                "dest": "password",
+                "action": "store",
+                "type": str,
+                "help": "Password for release credentials",
                 "default": None
             }
         }]
@@ -726,13 +863,13 @@ actions = {
             "params": {
                 "dest": "delete",
                 "action": "store_true",
-                "help": "Delete environment with specific eid or name",
+                "help": "Delete environment with specific env or name",
                 "default": False
             }
         }, {
             "args": ["--rel", "--release"],
             "params": {
-                "dest": "rid",
+                "dest": "rel",
                 "action": "store",
                 "type": str,
                 "help": "Release id",
@@ -799,19 +936,11 @@ actions = {
     "network": {
         "action": network,
         "args": [{
-            "args": ["-d", "--default"],
+            "args": ["-d", "--download"],
             "params": {
-                "dest": "default",
+                "dest": "download",
                 "action": "store_true",
-                "help": "Open default configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-m", "--modify"],
-            "params": {
-                "dest": "modify",
-                "action": "store_true",
-                "help": "Modify current configuration.",
+                "help": "Download current network configuration.",
                 "default": False
             }
         }, {
@@ -819,24 +948,24 @@ actions = {
             "params": {
                 "dest": "verify",
                 "action": "store_true",
-                "help": "Verify current configuration.",
+                "help": "Verify current network configuration.",
                 "default": False
             }
         }, {
-            "args": ["-c", "--cancel"],
+            "args": ["-u", "--upload"],
             "params": {
-                "dest": "cancel",
+                "dest": "upload",
                 "action": "store_true",
-                "help": "Remove current changes in configuration.",
+                "help": "Upload changed network configuration.",
                 "default": False
             }
         }, {
-            "args": ["-s", "--save"],
+            "args": ["--dir"],
             "params": {
-                "dest": "save",
-                "action": "store_true",
-                "help": "Save current changes in configuration.",
-                "default": False
+                "dest": "dir",
+                "action": "store",
+                "help": "Directory with network data.",
+                "default": None
             }
         }]
     },
@@ -851,28 +980,28 @@ actions = {
                 "default": False
             }
         }, {
-            "args": ["-m", "--modify"],
+            "args": ["--download"],
             "params": {
-                "dest": "modify",
+                "dest": "download",
                 "action": "store_true",
                 "help": "Modify current configuration.",
                 "default": False
             }
         }, {
-            "args": ["-c", "--cancel"],
+            "args": ["-u", "--upload"],
             "params": {
-                "dest": "cancel",
-                "action": "store_true",
-                "help": "Remove current changes in configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-s", "--save"],
-            "params": {
-                "dest": "save",
+                "dest": "upload",
                 "action": "store_true",
                 "help": "Save current changes in configuration.",
                 "default": False
+            }
+        }, {
+            "args": ["--dir"],
+            "params": {
+                "dest": "dir",
+                "action": "store",
+                "help": "Directory with configuration data.",
+                "default": None
             }
         }]
     },
@@ -1011,7 +1140,8 @@ substitutions = {
     "upload": "--upload",
     "default": "--default",
     "create": "--create",
-    "remove": "--remove"
+    "remove": "--remove",
+    "config": "--config"
 }
 
 if __name__ == '__main__':
@@ -1043,7 +1173,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", "--env-id",
-                        dest="eid",
+                        dest="env",
                         action="store",
                         type=str,
                         help="environment id",

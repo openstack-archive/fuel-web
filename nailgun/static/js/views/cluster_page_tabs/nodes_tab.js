@@ -728,7 +728,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         loadDefaults: function() {
             this.disableControls(true);
-            this.disks.fetch({url: _.result(this.node(), 'url') + '/disks/defaults/'})
+            this.disks.fetch({url: _.result(this.nodes.at(0), 'url') + '/disks/defaults/'})
                 .fail(_.bind(function() {utils.showErrorDialog({title: 'Disks configuration'});}, this));
         },
         revertChanges: function() {
@@ -769,15 +769,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.volumesColors[volume.get('name')] = colors[index];
             }, this);
         },
-        node: function() {
-            return this.nodes.at(0);
-        },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
                 this.model.on('change:status', this.revertChanges, this);
-                this.volumes = new models.Volumes([], {url: _.result(this.node(), 'url') + '/volumes'});
-                this.disks = new models.Disks([], {url: _.result(this.node(), 'url') + '/disks'});
+                this.volumes = new models.Volumes([], {url: _.result(this.nodes.at(0), 'url') + '/volumes'});
+                this.disks = new models.Disks([], {url: _.result(this.nodes.at(0), 'url') + '/disks'});
                 this.loading = $.when(this.volumes.fetch(), this.disks.fetch())
                     .done(_.bind(function() {
                         this.initialData = _.cloneDeep(this.disks.toJSON());
@@ -798,7 +795,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.disks.each(function(disk) {
                 var nodeDisk = new NodeDisk({
                     disk: disk,
-                    diskMetaData: _.find(this.node().get('meta').disks, {disk: disk.id}),
+                    diskMetaData: _.find(this.nodes.at(0).get('meta').disks, {disk: disk.id}),
                     screen: this
                 });
                 this.registerSubView(nodeDisk);
@@ -806,7 +803,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }, this);
         },
         render: function() {
-            this.$el.html(this.template({locked: this.isLocked()}));
+            this.$el.html(this.template({
+                nodes: this.nodes,
+                locked: this.isLocked()
+            }));
             if (this.loading && this.loading.state() != 'pending') {
                 this.renderDisks();
                 this.checkForChanges();
@@ -947,7 +947,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         loadDefaults: function() {
             this.disableControls(true);
-            this.interfaces.fetch({url: _.result(this.node(), 'url') + '/interfaces/default_assignment', reset: true})
+            this.interfaces.fetch({url: _.result(this.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true})
                 .done(_.bind(function() {
                     this.disableControls(false);
                     this.checkForChanges();
@@ -979,9 +979,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     this.disableControls(false);
                     this.checkForChanges();
                 }, this));
-        },
-        node: function() {
-            return this.nodes.at(0);
         },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
@@ -1015,7 +1012,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     interfaces
                         .fetch({url: _.result(node, 'url') + '/interfaces'})
                         .done(_.bind(function() {
-                            if (node.id == this.node().id) {
+                            if (node.id == this.nodes.at(0).id) {
                                 this.initialData = interfaces.toJSON();
                                 this.interfaces = new models.Interfaces();
                                 this.interfaces.reset(_.cloneDeep(this.initialData), {parse: true});
@@ -1040,7 +1037,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }, this));
         },
         render: function() {
-            this.$el.html(this.template({locked: this.isLocked()}));
+            this.$el.html(this.template({
+                nodes: this.nodes,
+                locked: this.isLocked()
+            }));
             if (this.loading && this.loading.state() != 'pending') {
                 this.renderInterfaces();
             }

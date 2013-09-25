@@ -1,0 +1,15 @@
+HOSTNAME: "fuel"
+DNS_DOMAIN: "example.com"
+DNS_SEARCH: "example.com"
+DNS_UPSTREAM: "8.8.8.8"
+
+ADMIN_NETWORK:
+  interface: "eth0"
+  cidr: "10.20.0.0/24"
+  netmask: "255.255.255.0"
+  size: "256"
+  static_start: "10.20.0.10"
+  static_end: "10.20.0.120"
+  first: "10.20.0.130"
+  last: "10.20.0.254"
+

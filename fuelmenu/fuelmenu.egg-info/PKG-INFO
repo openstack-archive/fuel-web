@@ -1,0 +1,21 @@
+Metadata-Version: 1.1
+Name: fuelmenu
+Version: 0.1
+Summary: Console util for pre-configuration of Fuel server
+Home-page: UNKNOWN
+Author: Matthew Mosesohn
+Author-email: mmosesohn@mirantis.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Environment :: Console :: Curses
+Classifier: Operating System :: POSIX
+Classifier: Programming Language :: Python
+Classifier: Topic :: Security
+Classifier: Topic :: Internet
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Internet :: Proxy Servers
+Classifier: Topic :: Software Development :: Testing

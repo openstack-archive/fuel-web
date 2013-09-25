@@ -1,0 +1,12 @@
+mnbs_internal_ipaddress=10.20.0.2
+mnbs_internal_netmask=255.255.255.0
+mnbs_static_pool_start=10.20.0.2
+mnbs_static_pool_end=10.20.0.127
+mnbs_dhcp_pool_start=10.20.0.128
+mnbs_dhcp_pool_end=10.20.0.254
+mnbs_internal_interface=vboxnet0
+mnbs_TEST_DNS=www.google.com
+mnbs_DNS_UPSTREAM=8.8.4.4
+mnbs_DNS_SEARCH=example.com
+mnbs_DNS_DOMAIN=example.com
+mnbs_HOSTNAME=fuel

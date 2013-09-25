@@ -661,7 +661,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
-                app.page.tab.discardSettingsChanges({cb: _.bind(this.goToNodeList, this)});
+                this.tab.page.discardSettingsChanges({cb: _.bind(this.goToNodeList, this)});
             } else {
                 this.goToNodeList();
             }

@@ -59,7 +59,7 @@ function(commonViews, models, supportPageTemplate) {
             task.save({}, {method: 'PUT'});
             this.$('.download-logs').addClass('disabled');
             this.$('.donwload-logs-link').addClass('hide');
-            this.$('.download-logs-error').addlass('hide');
+            this.$('.download-logs-error').addClass('hide');
             this.$('.genereate-logs').removeClass('hide');
             this.logsPackageTasks = new models.Tasks();
             this.logsPackageTasks.fetch();

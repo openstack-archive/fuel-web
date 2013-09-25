@@ -88,6 +88,7 @@ if __name__ == "__main__":
                   'nailgun_fixtures = \
                       nailgun.fixtures.fixman:upload_fixtures',
                   'nailgund = nailgun.wsgi:appstart',
+                  'nailgun_dump = nailgun.task.task:dump'
               ],
           },
           data_files=recursive_data_files([('share/nailgun', 'static')])

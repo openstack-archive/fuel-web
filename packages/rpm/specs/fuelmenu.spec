@@ -1,10 +1,10 @@
 %define name fuelmenu
-%define version 0.1
+%define version 0.2
 %define unmangled_version 0.1
 %define unmangled_version 0.1
 %define release 1
 
-Summary: Console util for pre-configuration of Fuel server
+Summary: Console utility for pre-configuration of Fuel server
 Name: %{name}
 Version: %{version}
 Release: %{release}
@@ -26,7 +26,7 @@ Requires: python-ordereddict
 
 
 %description
-UNKNOWN
+Summary: Console utility for pre-configuration of Fuel server
 
 %prep
 %setup -n %{name}-%{unmangled_version} -n %{name}-%{unmangled_version}

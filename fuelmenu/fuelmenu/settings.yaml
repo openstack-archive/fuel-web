@@ -1,11 +1,6 @@
 HOSTNAME: "fuel"
-<<<<<<< HEAD
 DNS_DOMAIN: "domain.tld"
 DNS_SEARCH: "domain.tld"
-=======
-DNS_DOMAIN: "example.com"
-DNS_SEARCH: "example.com"
->>>>>>> 265265e6e18510422b50eba78bac1483d41e5052
 DNS_UPSTREAM: "8.8.8.8"
 
 ADMIN_NETWORK:

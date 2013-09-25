@@ -50,14 +50,6 @@ setuptools.setup(
         'console_scripts': [
             'fuelmenu = fuelmenu.fuelmenu:setup',
         ],
-<<<<<<< HEAD
-=======
-        #'dhcp.check': [
-        #    'discover = dhcp_checker.commands:ListDhcpServers',
-        #    'request = dhcp_checker.commands:ListDhcpAssignment',
-        #    'vlans = dhcp_checker.commands:DhcpWithVlansCheck'
-        #],
->>>>>>> 265265e6e18510422b50eba78bac1483d41e5052
     },
 )
 

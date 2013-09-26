@@ -17,8 +17,11 @@
 import json
 import time
 
+from mock import patch
+
 from nailgun.settings import settings
 
+import nailgun
 from nailgun.api.models import Cluster
 from nailgun.api.models import Node
 from nailgun.api.models import Notification
@@ -43,7 +46,7 @@ class TestTaskManagers(BaseIntegrationTest):
             cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True},
-                {"pending_deletion": True},
+                {"pending_deletion": True, 'status': 'provisioned'},
             ]
         )
         supertask = self.env.launch_deployment()
@@ -71,6 +74,26 @@ class TestTaskManagers(BaseIntegrationTest):
         ):
             self.assertEquals(n.status, 'ready')
             self.assertEquals(n.progress, 100)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_do_not_send_node_to_orchestrator_which_has_status_discover(
+            self, _):
+
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {'pending_deletion': True, 'status': 'discover'}])
+
+        self.env.launch_deployment()
+
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        self.assertEquals(len(args[1]['args']['nodes']), 0)
+        self.assertEquals(len(args[1]['args']['engine_nodes']), 0)
+
+        self.env.refresh_nodes()
+        for n in self.env.nodes:
+            self.assertEquals(len(self.env.nodes), 0)
 
     @fake_tasks()
     def test_do_not_redeploy_nodes_in_ready_status(self):

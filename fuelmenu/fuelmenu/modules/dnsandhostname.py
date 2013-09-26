@@ -210,7 +210,7 @@ class dnsandhostname(urwid.WidgetWrap):
         with open("/etc/hosts", "w") as etchosts:
             for line in lines:
                 if responses["HOSTNAME"] in line \
-                        or oldsettings["HOSTNAME"] in line:
+                        or self.oldsettings["HOSTNAME"] in line:
                     continue
                 else:
                     etchosts.write(line)

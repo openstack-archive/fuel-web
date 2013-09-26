@@ -137,7 +137,7 @@ module Naily
 
       result = nil
       if nodes.empty?
-        Naily.logger.debug("#{task_uuid} Nodes list is empty")
+        Naily.logger.debug("#{task_uuid} Node list is empty")
       else
         result = @orchestrator.remove_nodes(reporter, task_uuid, nodes)
       end

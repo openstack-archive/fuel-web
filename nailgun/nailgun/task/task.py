@@ -255,7 +255,7 @@ class DeletionTask(object):
             if not node_db.online or node_db.status == 'discover':
                 logger.info(
                     "Node is offline or not deployed yet,"
-                    " can't MBR clean: %s", slave_name)
+                    " can't clean MBR: %s", slave_name)
                 db().delete(node_db)
                 db().commit()
 

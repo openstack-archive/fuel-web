@@ -9,7 +9,7 @@ except:
     from ordereddict import OrderedDict
 
 
-class NailyFacterSettings():
+class NailyFacterSettings(object):
     def __init__(self):
         self.defaultsfile = "/etc/naily.facts.default"
         self.settingsfile = "/etc/naily.facts"
@@ -18,13 +18,13 @@ class NailyFacterSettings():
         config = OrderedDict()
 
         if os.path.isfile(infile):
-            fd = open(infile, 'r')
-            lines = fd.readlines()
-            for line in lines:
-                key = line.split('=')[0]
-                value = line.split('=')[1]
-                config[key] = value
-            fd.close()
+            with open(infile, 'r') as fd:
+                lines = fd.readlines()
+                for line in lines:
+                    key = line.split('=')[0]
+                    value = line.split('=')[1]
+                    config[key] = value
+                fd.close()
         return config
 
     def write(self, newvalues, prefix='mnbs_',

@@ -324,11 +324,7 @@ class interfaces(urwid.WidgetWrap):
         dhclient_running = subprocess.call(["pgrep", "-f", "dhclient.*%s" %
                                            (iface)], stdout=noout,
                                            stderr=noout)
-        #self.log.info("Interface %s: %s" % (iface, dhclient_running))
-        if dhclient_running != 0:
-            return False
-        else:
-            return True
+        return dhclient_running == 0
 
     def get_default_gateway_linux(self):
         """Read the default gateway directly from /proc."""

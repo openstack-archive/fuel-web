@@ -48,7 +48,7 @@ def puppetApply(classname, name=None, params=None):
                                    stdin=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         output, errout = process.communicate(input=' '.join(input))[0]
-    except Exception, e:
+    except Exception as e:
         import traceback
         log.error(traceback.print_exc())
         log.error(e)

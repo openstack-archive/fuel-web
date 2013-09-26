@@ -14,7 +14,7 @@ import urwid.web_display
 logging.basicConfig(filename='./fuelmenu.log', level=logging.DEBUG)
 log = logging.getLogger('fuelmenu.loader')
 
-class Loader:
+class Loader(object):
 
     def __init__(self, parent):
         self.modlist = []
@@ -57,7 +57,7 @@ class Loader:
 version = "3.2"
 
 
-class FuelSetup():
+class FuelSetup(object):
 
     def __init__(self):
         self.footer = None

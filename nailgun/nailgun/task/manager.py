@@ -15,6 +15,7 @@
 #    under the License.
 
 import traceback
+import web
 
 from nailgun.api.models import Cluster
 from nailgun.api.models import RedHatAccount
@@ -328,6 +329,20 @@ class CheckNetworksTaskManager(TaskManager):
 class VerifyNetworksTaskManager(TaskManager):
 
     def execute(self, nets, vlan_ids):
+
+        verification_tasks = filter(
+            lambda task: task.cluster_id == self.cluster.id
+            and task.name == "verify_networks",
+            self.cluster.tasks)
+        if verification_tasks:
+            ver_task = verification_tasks[0]
+            if ver_task.status not in ("ready", "error"):
+                raise web.badrequest("You cannot delete running task manually")
+            for subtask in ver_task.subtasks:
+                db().delete(subtask)
+            db().delete(ver_task)
+            db().commit()
+
         task = Task(
             name="check_networks",
             cluster=self.cluster

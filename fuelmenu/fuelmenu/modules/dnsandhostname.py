@@ -102,8 +102,8 @@ class dnsandhostname(urwid.WidgetWrap):
             expr = ".*%s.*" % socket.gethostname()
             replace.replaceInFile("/etc/hosts", expr, "%s   %s %s" % (
                                   managediface_ip,
-                                  socket.gethostname().split('.')[0],
-                                  socket.gethostname()))
+                                  socket.gethostname(),
+                                  socket.gethostname().split('.')[0]))
 
     def fixEtcResolv(self):
         with open("/etc/resolv.conf", "w") as fh:
@@ -207,9 +207,11 @@ class dnsandhostname(urwid.WidgetWrap):
         self.save(responses)
         #Apply hostname
         expr = 'HOSTNAME=.*'
-        replace.replaceInFile("/etc/sysconfig/network", expr, "HOSTNAME=%s.%s"
+        replace.replaceInFile("/etc/sysconfig/network", expr,
+                              "HOSTNAME=%s.%s %s"
                               % (responses["HOSTNAME"],
-                                 responses["DNS_DOMAIN"]))
+                                 responses["DNS_DOMAIN"],
+                                 responses["HOSTNAME"]))
         #remove old hostname from /etc/hosts
         f = open("/etc/hosts", "r")
         lines = f.readlines()
@@ -231,9 +233,9 @@ class dnsandhostname(urwid.WidgetWrap):
             else:
                 managediface_ip = "127.0.0.1"
             etchosts.write(
-                "%s   %s %s.%s\n" % (managediface_ip, responses["HOSTNAME"],
-                                     responses["HOSTNAME"],
-                                     responses['DNS_DOMAIN']))
+                "%s   %s.%s %s\n" % (managediface_ip, responses["HOSTNAME"],
+                                     responses['DNS_DOMAIN'],
+                                     responses["HOSTNAME"]))
             etchosts.close()
         self.fixEtcResolv()
         #Write dnsmasq upstream server

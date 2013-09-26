@@ -96,8 +96,9 @@ class interfaces(urwid.WidgetWrap):
                     break
         if not found:
             expr = ".*%s.*" % socket.gethostname()
-            replace.replaceInFile("/etc/hosts", expr, "%s   %s" % (
-                                  managediface_ip, socket.gethostname()))
+            replace.replaceInFile("/etc/hosts", expr, "%s   %s %s" % (
+                                  managediface_ip, socket.gethostname(),
+                                  socket.gethostname().split(".")[0]))
 
     def check(self, args):
         """Validate that all fields have valid values and some sanity checks"""

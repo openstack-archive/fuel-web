@@ -727,8 +727,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         this.$el.modal('hide');
                         app.page.tab.model.fetch();
                         app.page.tab.screen.nodes.fetch();
-                        app.page.tab.screen.calculateBatchActionsButtonsState();
-                        app.page.tab.screen.showEditNodesButton();
+                        app.page.tab.screen.updateBatchActionsButtons();
                         app.navbar.refresh();
                         app.page.removeFinishedTasks();
                     }, this))

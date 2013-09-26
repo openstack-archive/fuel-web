@@ -229,8 +229,9 @@ class dnsandhostname(urwid.WidgetWrap):
             else:
                 managediface_ip = "127.0.0.1"
             etchosts.write(
-                "%s   %s.%s\n" % (managediface_ip, responses["HOSTNAME"],
-                                responses['DNS_DOMAIN']))
+                "%s   %s %s.%s\n" % (managediface_ip, responses["HOSTNAME"],
+                                     responses["HOSTNAME"],
+                                     responses['DNS_DOMAIN']))
             etchosts.close()
         self.fixEtcResolv()
         #Write dnsmasq upstream server

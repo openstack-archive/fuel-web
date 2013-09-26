@@ -91,8 +91,8 @@ class DhcpWithVlansCheck(lister.Lister, BaseCommand):
 
     def take_action(self, parsed_args):
         res = api.check_dhcp_with_vlans(json.loads(parsed_args.config),
-                                            timeout=parsed_args.timeout,
-                                            repeat=parsed_args.repeat)
+                            timeout=parsed_args.timeout,
+                            repeat=parsed_args.repeat)
         first = res.next()
         columns = first.keys()
         return columns, [first.values()] + [item.values() for item in res]

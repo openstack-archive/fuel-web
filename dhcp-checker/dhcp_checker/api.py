@@ -22,13 +22,13 @@ from dhcp_checker import utils
 from dhcp_checker import vlans_utils
 
 
-
 @utils.multiproc_map
 @utils.single_format
 def check_dhcp_on_eth(iface, timeout):
     """Check if there is roque dhcp server in network on given iface
-        @eth - name of the ethernet interface
-        >>> check_dhcp_on_eth('eth1')
+        @iface - name of the ethernet interface
+        @timeout - scapy timeout for waiting on response
+    >>> check_dhcp_on_eth('eth1')
     """
 
     conf.iface = iface
@@ -55,7 +55,10 @@ def check_dhcp_on_eth(iface, timeout):
 @utils.filter_duplicated_results
 def check_dhcp(ifaces, timeout=5, repeat=2):
     """Given list of ifaces. Process them in separate processes
-        >>> check_dhcp(['eth1', 'eth2'])
+    @ifaces - lsit of ifaces
+    @timeout - timeout for scapy to wait for response
+    @repeat - number of packets sended
+    >>> check_dhcp(['eth1', 'eth2'])
     """
     ifaces_filtered = list(utils.filtered_ifaces(ifaces))
     if not ifaces_filtered:
@@ -67,7 +70,7 @@ def check_dhcp(ifaces, timeout=5, repeat=2):
 
 def check_dhcp_with_vlans(config, timeout=5, repeat=2):
     """
-    config - {'eth0': (100, 101), 'eth1': (100, 102)}
+    @config - {'eth0': (100, 101), 'eth1': (100, 102)}
     @ifaces - string : eth0, eth1
     @vlans - iterable (100, 101, 102)
     """
@@ -87,8 +90,6 @@ def check_dhcp_request(iface, server, range_start, range_end, timeout=5):
     conf.checkIPaddr = False
 
     fam, hw = get_if_raw_hwaddr(iface)
-
-
 
     ip_address = next(utils.pick_ip(range_start, range_end))
 

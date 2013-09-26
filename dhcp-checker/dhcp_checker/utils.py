@@ -52,10 +52,11 @@ def filtered_ifaces(ifaces):
             else:
                 yield iface
 
+
 def pick_ip(range_start, range_end):
     """Given start_range, end_range generate list of ips
-        >>> next(pick_ip('192.168.1.10','192.168.1.13'))
-        '192.168.1.10'
+    >>> next(pick_ip('192.168.1.10','192.168.1.13'))
+    '192.168.1.10'
     """
     split_address = lambda ip_address: \
         [int(item) for item in ip_address.split('.')]
@@ -75,13 +76,15 @@ def pick_ip(range_start, range_end):
 def format_options(options):
     """Util for serializing dhcp options
     @options = [1,2,3]
-    return '\x01\x02\x03'
+    >>> format_options([1, 2, 3])
+    '\x01\x02\x03'
     """
     return "".join((chr(item) for item in options))
 
 
 def _dhcp_options(dhcp_options):
-    """[('message-type', 2), ('server_id', '192.168.0.5'),
+    """Dhcp options returned by scapy is not in usable format
+    [('message-type', 2), ('server_id', '192.168.0.5'),
         ('name_server', '192.168.0.1', '192.168.0.2'), 'end']
     """
     for option in dhcp_options:
@@ -94,7 +97,7 @@ def _dhcp_options(dhcp_options):
 
 
 def single_format(func):
-    """All request formatting logic lies here
+    """Manage format of dhcp response
     """
     @functools.wraps(func)
     def formatter(*args, **kwargs):
@@ -128,6 +131,8 @@ def multiproc_map(func):
 
 
 def filter_duplicated_results(func):
+    # due to network infra on broadcast multiple duplicated results
+    # returned. This helper filter them out
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         resp = func(*args, **kwargs)

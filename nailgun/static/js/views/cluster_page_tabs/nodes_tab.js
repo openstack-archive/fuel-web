@@ -117,7 +117,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         updateBatchActionsButtons: function() {
             this.$('.btn-delete-nodes').toggle(!!this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
-            this.$('.btn-add-nodes').toggle(!this.$('.node-checkbox input:checked').length);
+            this.$('.btn-add-nodes').css('display', this.$('.node-checkbox input:checked').length ? 'none' : 'block');
             var notDeployedSelectedNodes = this.$('.node-box.node-new .node-checkbox input:checked');
             this.$('.btn-edit-nodes').toggle(!!notDeployedSelectedNodes.length);
             var nodesIds = notDeployedSelectedNodes.map(function() {return parseInt($(this).val(), 10);}).get().join(',');

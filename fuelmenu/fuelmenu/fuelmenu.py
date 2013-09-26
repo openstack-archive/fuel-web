@@ -230,6 +230,10 @@ class FuelSetup():
         retcode = subprocess.call(["sysctl", "-w",  "kernel.printk=7 4 1 7"],
                                     stdout=noout,
                                     stderr=noout)
+        #Fix /etc/hosts and /etc/resolv.conf before quitting
+        dnsobj = self.children[int(self.choices.index("DNS & Hostname"))]
+        dnsobj.fixEtcHosts()
+        dnsobj.fixEtcResolv()
 
         raise urwid.ExitMainLoop()
 

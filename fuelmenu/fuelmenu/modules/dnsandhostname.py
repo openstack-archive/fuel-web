@@ -103,6 +103,11 @@ class dnsandhostname(urwid.WidgetWrap):
             replace.replaceInFile("/etc/hosts", expr, "%s   %s" % (
                                   managediface_ip, socket.gethostname()))
 
+    def fixEtcResolv(self):
+        with open("/etc/resolv.conf", "w") as fh:
+            fh.write("nameserver 127.0.0.1\n")
+            fh.close()
+
     def check(self, args):
         """Validate that all fields have valid values and some sanity checks"""
         self.parent.footer.set_text("Checking data...")
@@ -227,6 +232,7 @@ class dnsandhostname(urwid.WidgetWrap):
                 "%s   %s.%s" % (managediface_ip, responses["HOSTNAME"],
                                 responses['DNS_DOMAIN']))
             etchosts.close()
+        self.fixEtcResolv()
         #Write dnsmasq upstream server
         with open('/etc/dnsmasq.upstream', 'w') as f:
             nameservers = responses['DNS_UPSTREAM'].replace(',', ' ')
@@ -410,7 +416,6 @@ class dnsandhostname(urwid.WidgetWrap):
                 break
         self.gateway = self.get_default_gateway_linux()
         self.getNetwork()
-        self.setNetworkDetails()
         return
 
     def refresh(self):
@@ -433,7 +438,7 @@ class dnsandhostname(urwid.WidgetWrap):
                 label = TextLabel(DEFAULTS[key]["label"])
                 choices = ChoicesGroup(self, ["Yes", "No"],
                                        default_value="Yes",
-                                       fn=self.radioSelectExtIf)
+                                       fn=self.radioSelectIface)
                 self.edits.append(Columns([label, choices]))
             else:
                 caption = DEFAULTS[key]["label"]

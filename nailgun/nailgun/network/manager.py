@@ -704,7 +704,7 @@ class NetworkManager(object):
         """returns {node.id: generator([IPAddr1, IPAddr2])}
         """
         ips_db = self._get_ips_except_admin(joined=True)
-        return dict(groupby(ips_db, lambda ip: ip.node.id))
+        return dict(groupby(ips_db, lambda ip: ip.node_data.id))
 
     def get_node_networks_optimized(self, node_db, ips_db):
         """Method for receiving data for a given node with db data provided

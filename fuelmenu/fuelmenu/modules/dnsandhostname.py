@@ -100,8 +100,10 @@ class dnsandhostname(urwid.WidgetWrap):
                     break
         if not found:
             expr = ".*%s.*" % socket.gethostname()
-            replace.replaceInFile("/etc/hosts", expr, "%s   %s" % (
-                                  managediface_ip, socket.gethostname()))
+            replace.replaceInFile("/etc/hosts", expr, "%s   %s %s" % (
+                                  managediface_ip,
+                                  socket.gethostname().split('.')[0],
+                                  socket.gethostname()))
 
     def fixEtcResolv(self):
         with open("/etc/resolv.conf", "w") as fh:

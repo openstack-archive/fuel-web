@@ -26,6 +26,15 @@ DATABASE:
   user: "nailgun"
   passwd: "nailgun"
 
+# Config updates for admin network do not apply on any environment,
+# changes should be made in database if required
+ADMIN_NETWORK:
+  cidr: "10.20.0.0/24"
+  netmask: "255.255.255.0"
+  size: "256"
+  first: "10.20.0.129"
+  last: "10.20.0.254"
+
 # Check timeouts for offline-online nodes detection
 KEEPALIVE:
   interval: 30  # How often to check if node went offline. If node powered on, it is immediately switched to online state.

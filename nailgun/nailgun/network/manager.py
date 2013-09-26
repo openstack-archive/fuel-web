@@ -650,20 +650,16 @@ class NetworkManager(object):
         :type  node_id: int
         :returns: List of network info for node.
         """
-        # disable this and iterate on nodes from query
         node_db = db().query(Node).get(node_id)
         cluster_db = node_db.cluster
         if cluster_db is None:
             # Node doesn't belong to any cluster, so it should not have nets
             return []
 
-        # make it as subquery or separate query and groupby it
-        # this is used for nets only, select related network
         ips = self._get_ips_except_admin(node_id=node_id)
         network_data = []
         network_ids = []
         for i in ips:
-            # wtf? we already got network
             net = db().query(Network).get(i.network)
             #
             interface = self._get_interface_by_network_name(

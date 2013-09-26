@@ -205,13 +205,14 @@ class dnsandhostname(urwid.WidgetWrap):
             return False
 
         self.save(responses)
+        #Update network details so we write correct IP address
+        self.getNetwork()
         #Apply hostname
         expr = 'HOSTNAME=.*'
         replace.replaceInFile("/etc/sysconfig/network", expr,
-                              "HOSTNAME=%s.%s %s"
+                              "HOSTNAME=%s.%s"
                               % (responses["HOSTNAME"],
-                                 responses["DNS_DOMAIN"],
-                                 responses["HOSTNAME"]))
+                                 responses["DNS_DOMAIN"]))
         #remove old hostname from /etc/hosts
         f = open("/etc/hosts", "r")
         lines = f.readlines()

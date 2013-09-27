@@ -12,21 +12,21 @@
             "roles_metadata": {
                 "controller": {
                     "name": "Controller",
-                    "description": "Controller description",
+                    "description": "The controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well.",
                     "conflicts": ["compute"]
                 },
                 "compute": {
                     "name": "Compute",
-                    "description": "Compute description",
+                    "description": "A compute node creates, manages and terminates virtual machine instances.",
                     "conflicts": ["controller"]
                 },
                 "cinder": {
                     "name": "Cinder",
-                    "description": ["Cinder"]
+                    "description": "Cinder provides an infrastructure for managing block storage volumes in OpenStack.  Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level storage."
                 },
                 "ceph-osd": {
                     "name": "Ceph OSD",
-                    "description": ["Ceph Storage Node"]
+                    "description": "Ceph OSD is the object storage daemon for the Ceph distributed file system.  It is responsible for storing objects on a local file system and providing access to them over the network, for example to Glance."
                 }
             },
             "networks_metadata": [
@@ -446,17 +446,17 @@
             "roles_metadata": {
                 "controller": {
                     "name": "Controller",
-                    "description": "Controller description",
+                    "description": "The controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well.",
                     "conflicts": ["compute"]
                 },
                 "compute": {
                     "name": "Compute",
-                    "description": "Compute description",
+                    "description": "A compute node creates, manages and terminates virtual machine instances.",
                     "conflicts": ["controller"]
                 },
                 "cinder": {
                     "name": "Cinder",
-                    "description": ["Cinder"]
+                    "description": "Cinder provides an infrastructure for managing block storage volumes in OpenStack.  Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level storage."
                 }
             },
             "networks_metadata": [
@@ -791,21 +791,21 @@
             "roles_metadata": {
                 "controller": {
                     "name": "Controller",
-                    "description": "Controller description",
+                    "description": "The controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well.",
                     "conflicts": ["compute"]
                 },
                 "compute": {
                     "name": "Compute",
-                    "description": "Compute description",
+                    "description": "A compute node creates, manages and terminates virtual machine instances.",
                     "conflicts": ["controller"]
                 },
                 "cinder": {
                     "name": "Cinder",
-                    "description": ["Cinder"]
+                    "description": "Cinder provides an infrastructure for managing block storage volumes in OpenStack.  Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level storage."
                 },
                 "ceph-osd": {
                     "name": "Ceph OSD",
-                    "description": ["Ceph Storage Node"]
+                    "description": "Ceph OSD is the object storage daemon for the Ceph distributed file system.  It is responsible for storing objects on a local file system and providing access to them over the network, for example to Glance."
                 }
             },
             "networks_metadata": [

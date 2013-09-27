@@ -34,6 +34,7 @@ from nailgun.api.serializers.network_configuration \
     import NetworkConfigurationSerializer
 from nailgun.api.validators.network import NetworkConfigurationValidator
 from nailgun.db import db
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import CheckNetworksTaskManager
@@ -75,8 +76,10 @@ class NetworkConfigurationVerifyHandler(JSONHandler):
         } for n in data['networks']]
 
         task_manager = VerifyNetworksTaskManager(cluster_id=cluster.id)
-        task = task_manager.execute(data, vlan_ids)
-
+        try:
+            task = task_manager.execute(data, vlan_ids)
+        except errors.CantRemoveOldVerificationTask:
+            raise web.badrequest("You cannot delete running task manually")
         return TaskHandler.render(task)
 
 

@@ -19,6 +19,9 @@ from random import choice
 import string
 import uuid
 
+from netaddr import IPAddress
+from netaddr import IPNetwork
+
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Float
@@ -34,6 +37,7 @@ import web
 
 from nailgun.api.fields import JSON
 from nailgun.db import db
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.volumes.manager import VolumeManager
@@ -356,6 +360,26 @@ class Node(Base):
             lambda role: Role(name=role), new_roles)
 
         db().commit()
+
+    @property
+    def admin_interface(self):
+        """Iterate over interfaces, if admin subnet include
+        ip address of current interface then return this interface.
+
+        :raises: errors.CanNotFindInterface
+        """
+        from nailgun.network.manager import NetworkManager
+        admin_cidr = NetworkManager().get_admin_network().cidr
+
+        for interface in self.interfaces:
+            ip_addr = interface.ip_addr
+            if ip_addr and IPAddress(ip_addr) in IPNetwork(admin_cidr):
+                return interface
+
+        err_msg = u'Cannot find admin interface for node: "%s"' % \
+                  self.full_name
+        logger.warning(err_msg)
+        return self.interfaces[0]
 
     def _check_interface_has_required_params(self, iface):
         return bool(iface.get('name') and iface.get('mac'))
@@ -823,21 +847,19 @@ class NodeNICInterface(Base):
     node_id = Column(
         Integer,
         ForeignKey('nodes.id', ondelete="CASCADE"),
-        nullable=False
-    )
+        nullable=False)
     name = Column(String(128), nullable=False)
     mac = Column(String(32), nullable=False)
     max_speed = Column(Integer)
     current_speed = Column(Integer)
     allowed_networks = relationship(
         "NetworkGroup",
-        secondary=AllowedNetworks.__table__,
-    )
+        secondary=AllowedNetworks.__table__)
     assigned_networks = relationship(
         "NetworkGroup",
-        secondary=NetworkAssignment.__table__,
-    )
-
+        secondary=NetworkAssignment.__table__)
+    ip_addr = Column(String(25))
+    netmask = Column(String(25))
 
 class Plugin(Base):
     __tablename__ = 'plugins'

@@ -847,11 +847,13 @@ class NetworkManager(object):
         db().commit()
 
     def __set_interface_attributes(self, interface, interface_attrs):
-        interface.name = interface_attrs["name"]
-        interface.mac = interface_attrs["mac"]
+        interface.name = interface_attrs['name']
+        interface.mac = interface_attrs['mac']
 
-        interface.current_speed = interface_attrs.get("current_speed")
-        interface.max_speed = interface_attrs.get("max_speed")
+        interface.current_speed = interface_attrs.get('current_speed')
+        interface.max_speed = interface_attrs.get('max_speed')
+        interface.ip_addr = interface_attrs.get('ip')
+        interface.netmask = interface_attrs.get('netmask')
 
     def __delete_not_found_interfaces(self, node, interfaces):
         interfaces_mac_addresses = map(
@@ -895,13 +897,10 @@ class NetworkManager(object):
         when node was loaded. By this mac address
         we can identify interface name for admin network.
         """
-        for interface in node.meta.get('interfaces', []):
-            if interface['mac'] == node.mac:
-                return {
-                    'name': u'admin',
-                    'dev': interface['name']}
-
-        raise errors.CanNotFindInterface()
+        return {
+            'name': 'admin',
+            'dev': node.admin_interface.name
+        }
 
     def _get_interface_by_network_name(self, node, network_name):
         """Return network device which has appointed

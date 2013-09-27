@@ -63,7 +63,7 @@ class rootpw(urwid.WidgetWrap):
         try:
             asciipw = responses["PASSWORD"].decode('ascii')
         except UnicodeDecodeError:
-            errors.append("Password contains non-ASCII characters."
+            errors.append("Password contains non-ASCII characters.")
 
         if len(errors) > 0:
             self.parent.footer.set_text(
@@ -113,21 +113,14 @@ class rootpw(urwid.WidgetWrap):
         self.edits = []
         toolbar = self.parent.footer
         for key in fields:
-        #for key, values in DEFAULTS.items():
             #Example: key = hostname, label = Hostname, value = fuel-pm
             if key == "blank":
                 self.edits.append(blank)
-            elif DEFAULTS[key]["value"] == "radio":
-                label = TextLabel(DEFAULTS[key]["label"])
-                choices = ChoicesGroup(self, ["Yes", "No"],
-                                       default_value="Yes",
-                                       fn=self.radioSelectIface)
-                self.edits.append(Columns([label, choices]))
             else:
                 caption = DEFAULTS[key]["label"]
                 default = DEFAULTS[key]["value"]
                 tooltip = DEFAULTS[key]["tooltip"]
-                password = "PASSWORD" in key.upper()
+                ispassword = "PASSWORD" in key.upper()
                 self.edits.append(
                     TextField(key, caption, 23, default, tooltip, toolbar,
                               ispassword))
@@ -143,14 +136,12 @@ class rootpw(urwid.WidgetWrap):
         check_col = Columns([button_check, button_cancel,
                              button_apply, ('weight', 2, blank)])
 
+        #Build all of these into a list
         self.listbox_content = [text1, blank, text2, blank]
         self.listbox_content.extend(self.edits)
         self.listbox_content.append(blank)
         self.listbox_content.append(check_col)
 
-        #Add listeners
-
-        #Build all of these into a list
 
         #Add everything into a ListBox and return it
         self.listwalker = urwid.SimpleListWalker(self.listbox_content)

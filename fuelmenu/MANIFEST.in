@@ -1,0 +1,3 @@
+recursive-include fuelmenu *.py *.yaml *.default
+include setup.py
+include README

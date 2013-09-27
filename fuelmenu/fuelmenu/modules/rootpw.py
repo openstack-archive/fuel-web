@@ -15,7 +15,7 @@ from fuelmenu.common.urwidwrapper import *
 log = logging.getLogger('fuelmenu.rootpw')
 blank = urwid.Divider()
 
-fields = ["PASSWORD", "CONFIRM_PASSWORD"
+fields = ["PASSWORD", "CONFIRM_PASSWORD"]
 
 DEFAULTS = {
     "PASSWORD": {"label": "Enter password",

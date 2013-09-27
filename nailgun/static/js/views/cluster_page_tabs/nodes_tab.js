@@ -545,7 +545,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .node-details': 'showNodeDetails',
             'click .btn-discard-role-changes': 'discardRoleChanges',
             'click .btn-discard-addition': 'discardAddition',
-            'click .btn-discard-deletion': 'discardDeletion'
+            'click .btn-discard-deletion': 'discardDeletion',
+            'click .btn-view-logs': 'showNodeLogs'
         },
         selectNode: function() {
             this.$el.toggleClass('checked');
@@ -634,13 +635,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         updateStatus: function() {
             this.$('.node-status').html(this.nodeStatusTemplate({
                 node: this.node,
-                logsLink: this.getLogsLink(),
                 edit: this.screen instanceof EditNodesScreen
             }));
             this.$('.node-box').toggleClass('node-offline', !this.node.get('online'));
             this.updateProgress();
         },
-        getLogsLink: function() {
+        showNodeLogs: function() {
             var status = this.node.get('status');
             var error = this.node.get('error_type');
             var options = {type: 'remote', node: this.node.id};
@@ -651,7 +651,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             } else if (status == 'deploying' || status == 'ready' || (status == 'error' && error == 'deploy')) {
                 options.source = 'install/puppet';
             }
-            return '#cluster/' + app.page.model.id + '/logs/' + utils.serializeTabOptions(options);
+            app.navigate('#cluster/' + this.screen.tab.model.id + '/logs/' + utils.serializeTabOptions(options), {trigger: true});
         },
         rolesChanged: function() {
             var roles = this.node.get('pending_roles') || [];

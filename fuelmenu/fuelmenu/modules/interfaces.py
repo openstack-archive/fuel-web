@@ -385,9 +385,9 @@ class interfaces(urwid.WidgetWrap):
                             == "dhcp":
                         rb_group[0].set_state(True)
                         rb_group[1].set_state(False)
-                else:
-                    rb_group[0].set_state(False)
-                    rb_group[1].set_state(True)
+                    else:
+                        rb_group[0].set_state(False)
+                        rb_group[1].set_state(True)
             elif fieldname == "onboot":
                 rb_group = self.edits[index].rb_group
                 for rb in rb_group:

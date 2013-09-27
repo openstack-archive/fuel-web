@@ -67,11 +67,10 @@ class interfaces(urwid.WidgetWrap):
         #check upstream dns server
         with open('/etc/dnsmasq.upstream', 'r') as f:
             dnslines = f.readlines()
-            f.close()
         nameservers = dnslines[0].split(" ")[1:]
-        for nameserver in nameservers:
-            if not self.checkDNS(nameserver):
-                nameservers.remove(nameserver)
+        #for nameserver in nameservers:
+        #    if not self.checkDNS(nameserver):
+        #        nameservers.remove(nameserver)
         if nameservers == []:
             #Write dnsmasq upstream server to default if it's not readable
             with open('/etc/dnsmasq.upstream', 'w') as f:
@@ -207,7 +206,7 @@ class interfaces(urwid.WidgetWrap):
             self.log.error("%s" % (responses))
             return False
 
-        self.parent.footer.set_text("Applying changes...")
+        self.parent.footer.set_text("Applying changes... (May take up to 20s)")
         puppetclass = "l23network::l3::ifconfig"
         if responses["onboot"].lower() == "no":
             params = {"ipaddr": "none"}
@@ -223,6 +222,13 @@ class interfaces(urwid.WidgetWrap):
                       "check_by_ping": "none"}
         if len(responses["gateway"]) > 1:
             params["gateway"] = responses["gateway"]
+        elif network.inSameSubnet(self.get_default_gateway_linux(),
+                                  responses["ipaddr"], responses["netmask"]):
+            #If the current gateway is in the same subnet AND the user
+            #sets the gateway to empty, unset gateway
+            expr = '^GATEWAY=.*'
+            replace.replaceInFile("/etc/sysconfig/network", expr,
+                                  "GATEWAY=")
         self.log.info("Puppet data: %s %s %s" % (
                       puppetclass, self.activeiface, params))
         try:
@@ -254,17 +260,6 @@ class interfaces(urwid.WidgetWrap):
         self.setNetworkDetails()
 
         return True
-
-    def save(self, args):
-        newsettings = dict()
-        newsettings['common'] = {YAMLTREE: {"domain": DEFAULTS['domain'][
-                                 'value']}}
-        for key, widget in self.edits.items():
-            text = widget.original_widget.get_edit_text()
-            newsettings['common'][YAMLTREE][key] = text
-        log.warning(str(newsettings))
-        Settings().write(newsettings, tree=YAMLTREE)
-        logging.warning('And this, too')
 
     def getNetwork(self):
         """Uses netifaces module to get addr, broadcast, netmask about

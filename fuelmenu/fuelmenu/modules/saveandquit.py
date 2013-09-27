@@ -10,7 +10,7 @@ import time
 blank = urwid.Divider()
 
 
-class shell():
+class saveandquit():
     def __init__(self, parent):
         self.name = "Save & Quit"
         self.priority = 99

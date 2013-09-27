@@ -44,8 +44,6 @@ DEFAULTS = {
                 "192.168.1.1)",
                 "value":   ""},
     }
-YAMLTREE = "cobbler_common"
-
 
 class interfaces(urwid.WidgetWrap):
     def __init__(self, parent):
@@ -126,9 +124,8 @@ class interfaces(urwid.WidgetWrap):
         errors = []
         #Perform checks only if enabled
         if responses["onboot"] == "no":
-            return responses
-
-        if responses["bootproto"] == "dhcp":
+            pass
+        elif responses["bootproto"] == "dhcp":
             self.parent.footer.set_text("Scanning for DHCP servers. "
                                         "Please wait...")
             self.parent.refreshScreen()
@@ -159,7 +156,7 @@ class interfaces(urwid.WidgetWrap):
                 #TODO: Fix set up DHCP on down iface
                 responses["dhcp_nowait"] = False
         #Check ipaddr, netmask, gateway only if static
-        if responses["bootproto"] == "none":
+        elif responses["bootproto"] == "none":
             try:
                 if netaddr.valid_ipv4(responses["ipaddr"]):
                     ipaddr = netaddr.IPAddress(responses["ipaddr"])
@@ -186,8 +183,8 @@ class interfaces(urwid.WidgetWrap):
                     if network.inSameSubnet(responses["ipaddr"],
                                             responses["gateway"],
                                             responses["netmask"]) is False:
-                        raise Exception("Gateway IP address is not in the "
-                                        "same subnet as IP address")
+                        raise Exception("Gateway IP is not in same "
+                                        "subnet as IP address")
             except Exception, e:
                 errors.append(e)
         if len(errors) > 0:
@@ -385,9 +382,9 @@ class interfaces(urwid.WidgetWrap):
                             == "dhcp":
                         rb_group[0].set_state(True)
                         rb_group[1].set_state(False)
-                else:
-                    rb_group[0].set_state(False)
-                    rb_group[1].set_state(True)
+                    else:
+                        rb_group[0].set_state(False)
+                        rb_group[1].set_state(True)
             elif fieldname == "onboot":
                 rb_group = self.edits[index].rb_group
                 for rb in rb_group:

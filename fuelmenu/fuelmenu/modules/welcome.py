@@ -14,7 +14,7 @@ class welcome():
         self.visible = False
         self.screen = self.screenUI()
 
-    def check(self):
+    def check(self, args):
         #TODO: Ensure all params are filled out and sensible
         return True
 

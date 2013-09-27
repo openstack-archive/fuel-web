@@ -24,48 +24,39 @@ blank = urwid.Divider()
 #fields = ["hostname", "domain", "mgmt_if","dhcp_start","dhcp_end",
 #          "blank","ext_if","ext_dns"]
 fields = ["static_label",
-          "ADMIN_NETWORK/static_start", "ADMIN_NETWORK/static_end",
-          "blank", "dynamic_label", "ADMIN_NETWORK/first",
-          "ADMIN_NETWORK/last"]
+          "ADMIN_NETWORK/static_pool_start", "ADMIN_NETWORK/static_pool_end",
+          "blank", "dynamic_label", "ADMIN_NETWORK/dhcp_pool_start",
+          "ADMIN_NETWORK/dhcp_pool_end"]
 facter_translate = {
     "ADMIN_NETWORK/interface":     "internal_interface",
-    "ADMIN_NETWORK/ipaddr":        "internal_ipaddress",
+    "ADMIN_NETWORK/ipaddress":        "internal_ipaddress",
     "ADMIN_NETWORK/netmask":       "internal_netmask",
-    "ADMIN_NETWORK/first":         "dhcp_pool_start",
-    "ADMIN_NETWORK/last":          "dhcp_pool_end",
-    "ADMIN_NETWORK/static_start":  "static_pool_start",
-    "ADMIN_NETWORK/static_end":    "static_pool_end",
+    "ADMIN_NETWORK/dhcp_pool_start":         "dhcp_pool_start",
+    "ADMIN_NETWORK/dhcp_pool_end":          "dhcp_pool_end",
+    "ADMIN_NETWORK/static_pool_start":  "static_pool_start",
+    "ADMIN_NETWORK/static_pool_end":    "static_pool_end",
 }
-mnbs_internal_ipaddress = "10.20.0.2"
-mnbs_internal_netmask = "255.255.255.0"
-mnbs_static_pool_start = "10.20.0.130"
-mnbs_static_pool_end = "10.20.0.250"
-mnbs_dhcp_pool_start = "10.20.0.10"
-mnbs_dhcp_pool_end = "10.20.0.120"
-mnbs_internal_interface = "eth1"
 
 DEFAULTS = {
-    #"ADMIN_NETWORK/interface" : { "label"  : "Management Interface",
-    #   "tooltip": "This is the INTERNAL network for provisioning",
-    #   "value"  : "eth0"},
-    "ADMIN_NETWORK/first": {"label": "DHCP Pool Start",
-                            "tooltip": "Used for defining IPs for hosts and \
-instance public addresses",
-                            "value":   "10.0.0.130"},
-    "ADMIN_NETWORK/last": {"label": "DHCP Pool End",
-                           "tooltip": "Used for defining IPs for hosts and \
-instance public addresses",
-                           "value":  "10.0.0.254"},
+    "ADMIN_NETWORK/dhcp_pool_start": {"label": "DHCP Pool Start",
+                                      "tooltip": "Used for defining IPs for \
+hosts and instance public addresses",
+                                      "value":   "10.0.0.130"},
+    "ADMIN_NETWORK/dhcp_pool_end": {"label": "DHCP Pool End",
+                                    "tooltip": "Used for defining IPs for \
+hosts and instance public addresses",
+                                    "value":  "10.0.0.254"},
     "static_label": {"label": "Static pool for installed nodes:",
                      "tooltip": "",
                      "value":   "label"},
-    "ADMIN_NETWORK/static_start": {"label": "Static Pool Start",
-                                   "tooltip": "Static pool for installed \
+    "ADMIN_NETWORK/static_pool_start": {"label": "Static Pool Start",
+                                        "tooltip": "Static pool for installed \
 nodes",
-                                   "value":   "10.0.0.10"},
-    "ADMIN_NETWORK/static_end": {"label": "Static Pool End",
-                                 "tooltip": "Static pool for installed nodes",
-                                 "value":   "10.0.0.120"},
+                                        "value":   "10.0.0.10"},
+    "ADMIN_NETWORK/static_pool_end": {"label": "Static Pool End",
+                                      "tooltip": "Static pool for installed \
+nodes",
+                                      "value":   "10.0.0.120"},
     "dynamic_label": {"label": "DHCP pool for node discovery:",
                       "tooltip": "",
                       "value":   "label"},
@@ -115,7 +106,7 @@ class cobblerconf(urwid.WidgetWrap):
         responses["ADMIN_NETWORK/interface"] = self.activeiface
         responses["ADMIN_NETWORK/netmask"] = self.netsettings[
             self.activeiface]["netmask"]
-        responses["ADMIN_NETWORK/ipaddr"] = self.netsettings[
+        responses["ADMIN_NETWORK/ipaddress"] = self.netsettings[
             self.activeiface]["addr"]
 
         #ensure management interface is valid
@@ -165,23 +156,24 @@ will likely fail."))
                                       % self.activeiface)
             ###Ensure pool start and end are on the same subnet as mgmt_if
             #Ensure mgmt_if has an IP first
-            if len(self.netsettings[responses["ADMIN_NETWORK/interface"]][
-               "addr"]) == 0:
+            if len(self.netsettings[responses[
+               "ADMIN_NETWORK/interface"]]["addr"]) == 0:
                 errors.append("Go to Interfaces to configure management \
 interface first.")
             else:
                 #Ensure ADMIN_NETWORK/interface is not running DHCP
-                if self.netsettings[responses["ADMIN_NETWORK/interface"]][
-                   "bootproto"] == "dhcp":
-                    errors.append("%s is running DHCP.Change it to static "
+                if self.netsettings[responses[
+                    "ADMIN_NETWORK/interface"]]["bootproto"]\
+                    == "dhcp":
+                        errors.append("%s is running DHCP.Change it to static "
                                   "first." % self.activeiface)
 
                 #Ensure Static Pool Start and Static Pool are valid IPs
                 try:
                     if netaddr.valid_ipv4(responses[
-                            "ADMIN_NETWORK/static_start"]):
+                            "ADMIN_NETWORK/static_pool_start"]):
                         static_start = netaddr.IPAddress(responses[
-                            "ADMIN_NETWORK/static_start"])
+                            "ADMIN_NETWORK/static_pool_start"])
                     else:
                         raise Exception("")
                 except Exception, e:
@@ -189,51 +181,56 @@ interface first.")
                                   "Start: %s" % e)
                 try:
                     if netaddr.valid_ipv4(responses[
-                            "ADMIN_NETWORK/static_end"]):
+                            "ADMIN_NETWORK/static_pool_end"]):
                         static_end = netaddr.IPAddress(responses[
-                            "ADMIN_NETWORK/static_end"])
+                            "ADMIN_NETWORK/static_pool_end"])
                     else:
                         raise Exception("")
                 except:
                     errors.append("Invalid IP address for Static Pool end: "
-                                  "%s" % responses["ADMIN_NETWORK/static_end"])
+                                  "%s" %
+                                  responses["ADMIN_NETWORK/static_pool_end"])
                 #Ensure DHCP Pool Start and DHCP Pool are valid IPs
                 try:
-                    if netaddr.valid_ipv4(responses["ADMIN_NETWORK/first"]):
+                    if netaddr.valid_ipv4(
+                        responses["ADMIN_NETWORK/dhcp_pool_start"]):
                         dhcp_start = netaddr.IPAddress(
-                            responses["ADMIN_NETWORK/first"])
+                            responses["ADMIN_NETWORK/dhcp_pool_start"])
                     else:
                         raise Exception("")
                 except Exception, e:
                     errors.append("Invalid IP address for DHCP Pool Start:"
                                   " %s" % e)
                 try:
-                    if netaddr.valid_ipv4(responses["ADMIN_NETWORK/last"]):
+                    if netaddr.valid_ipv4(responses[
+                            "ADMIN_NETWORK/dhcp_pool_end"]):
                         dhcp_end = netaddr.IPAddress(
-                            responses["ADMIN_NETWORK/last"])
+                            responses["ADMIN_NETWORK/dhcp_pool_end"])
                     else:
                         raise Exception("")
                 except:
                     errors.append("Invalid IP address for DHCP Pool end: %s"
-                                  % responses["ADMIN_NETWORK/last"])
+                                  % responses["ADMIN_NETWORK/dhcp_pool_end"])
 
                 #Ensure pool start and end are in the same subnet of each other
-                netmask = self.netsettings[responses["ADMIN_NETWORK/interface"]
-                                           ]["netmask"]
-                if network.inSameSubnet(responses["ADMIN_NETWORK/first"],
-                                        responses["ADMIN_NETWORK/last"],
-                                        netmask) is False:
+                netmask = self.netsettings[responses["ADMIN_NETWORK/interface"
+                                           ]]["netmask"]
+                if not network.inSameSubnet(
+                        responses["ADMIN_NETWORK/dhcp_pool_start"],
+                        responses["ADMIN_NETWORK/dhcp_pool_end"], netmask):
                     errors.append("DHCP Pool start and end are not in the "
                                   "same subnet.")
 
                 #Ensure pool start and end are in the right netmask
                 mgmt_if_ipaddr = self.netsettings[responses[
                     "ADMIN_NETWORK/interface"]]["addr"]
-                if network.inSameSubnet(responses["ADMIN_NETWORK/first"],
+                if network.inSameSubnet(responses[
+                                        "ADMIN_NETWORK/dhcp_pool_start"],
                                         mgmt_if_ipaddr, netmask) is False:
                     errors.append("DHCP Pool start does not match management"
                                   " network.")
-                if network.inSameSubnet(responses["ADMIN_NETWORK/last"],
+                if network.inSameSubnet(responses[
+                                        "ADMIN_NETWORK/dhcp_pool_end"],
                                         mgmt_if_ipaddr, netmask) is False:
                     errors.append("DHCP Pool end is not in the same subnet as"
                                   " management interface.")
@@ -258,6 +255,7 @@ interface first.")
         #Need to decide if we are pre-deployment or post-deployment
         if self.deployment == "post":
             self.updateCobbler(responses)
+        return True
 
     def updateCobbler(self, params):
         patterns = {
@@ -323,8 +321,9 @@ interface first.")
             newsettings['ADMIN_NETWORK']['cidr'])
 
         log.debug(str(newsettings))
-        Settings().write(newsettings, defaultsfile=self.parent.settingsfile,
-                         outfn="newsettings.yaml")
+        Settings().write(newsettings,
+                         defaultsfile=self.parent.defaultsettingsfile,
+                         outfn=self.parent.settingsfile)
         #Write naily.facts
         factsettings = dict()
         #for key in newsettings.keys():
@@ -476,13 +475,13 @@ interface first.")
             dynamic_start = ""
             dynamic_end = ""
         for index, key in enumerate(fields):
-            if key == "ADMIN_NETWORK/static_start":
+            if key == "ADMIN_NETWORK/static_pool_start":
                 self.edits[index].set_edit_text(static_start)
-            elif key == "ADMIN_NETWORK/static_end":
+            elif key == "ADMIN_NETWORK/static_pool_end":
                 self.edits[index].set_edit_text(static_end)
-            elif key == "ADMIN_NETWORK/first":
+            elif key == "ADMIN_NETWORK/dhcp_pool_start":
                 self.edits[index].set_edit_text(dynamic_start)
-            elif key == "ADMIN_NETWORK/last":
+            elif key == "ADMIN_NETWORK/dhcp_pool_end":
                 self.edits[index].set_edit_text(dynamic_end)
 
     def refresh(self):
@@ -532,8 +531,11 @@ interface first.")
         button_apply = Button("Apply", self.apply)
 
         #Wrap buttons into Columns so it doesn't expand and look ugly
-        check_col = Columns([button_check, button_cancel,
-                             button_apply, ('weight', 2, blank)])
+        if self.parent.globalsave:
+            check_col = Columns([button_check])
+        else:
+            check_col = Columns([button_check, button_cancel,
+                                 button_apply, ('weight', 2, blank)])
 
         self.listbox_content = [text1, blank, text2]
         self.listbox_content.extend([self.net_choices, self.net_text1,

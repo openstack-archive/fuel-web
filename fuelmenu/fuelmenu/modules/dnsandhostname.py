@@ -155,9 +155,9 @@ class dnsandhostname(urwid.WidgetWrap):
         if len(responses["DNS_UPSTREAM"]) == 0:
             #We will allow empty if user doesn't need external networking
             #and present a strongly worded warning
-            msg = "If you continue without DNS, you may not be able to access \
-      external data necessary for installation needed for some OpenStack \
-      Releases."
+            msg = "If you continue without DNS, you may not be able to access"\
+                  + " external data necessary for installation needed for " \
+                  + "some OpenStack Releases."
 
             diag = dialog.display_dialog(
                 self, TextLabel(msg), "Empty DNS Warning")
@@ -251,6 +251,7 @@ class dnsandhostname(urwid.WidgetWrap):
         #  self.updateCobbler(responses)
         #  services.restart("cobbler")
 
+        return True
 #  def updateCobbler(self, params):
 #    patterns={
 #      'cblr_server'      : '^server: .*',
@@ -310,8 +311,9 @@ class dnsandhostname(urwid.WidgetWrap):
         ## Generic settings end ##
 
         #log.debug(str(newsettings))
-        Settings().write(newsettings, defaultsfile=self.parent.settingsfile,
-                         outfn="newsettings.yaml")
+        Settings().write(newsettings, 
+                         defaultsfile=self.parent.defaultsettingsfile,
+                         outfn=self.parent.settingsfile)
         #Write naily.facts
         factsettings = dict()
         #log.debug(newsettings)
@@ -461,8 +463,11 @@ class dnsandhostname(urwid.WidgetWrap):
         button_apply = Button("Apply", self.apply)
 
         #Wrap buttons into Columns so it doesn't expand and look ugly
-        check_col = Columns([button_check, button_cancel,
-                             button_apply, ('weight', 2, blank)])
+        if self.parent.globalsave:
+            check_col = Columns([button_check])
+        else:
+            check_col = Columns([button_check, button_cancel,
+                                 button_apply, ('weight', 2, blank)])
 
         self.listbox_content = [text1, blank, text2, blank]
         self.listbox_content.extend(self.edits)

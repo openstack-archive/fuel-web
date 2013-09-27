@@ -7,7 +7,6 @@ import urwid
 import urwid.raw_display
 import urwid.web_display
 
-
 # set up logging
 #logging.basicConfig(filename='./fuelmenu.log')
 #logging.basicConfig(level=logging.DEBUG)
@@ -36,7 +35,6 @@ class Loader(object):
             try:
                 imported = __import__(module)
                 pass
-                #imported = process(module)
             except ImportError as e:
                 log.error('module could not be imported: %s' % e)
                 continue
@@ -65,9 +63,10 @@ class FuelSetup(object):
         self.screen = None
         self.defaultsettingsfile = "%s/settings.yaml" \
                                    % (os.path.dirname(__file__))
-        self.settingsfile = "%s/newsettings.yaml" \
-                            % (os.path.dirname(__file__))
+        self.settingsfile = "/etc/astute.yaml"
         self.managediface = "eth0"
+        #Set to true to move all settings to end
+        self.globalsave = True
         self.main()
         self.choices = []
 
@@ -237,6 +236,27 @@ class FuelSetup(object):
 
         raise urwid.ExitMainLoop()
 
+    def global_save(self):
+        #Runs save function for every module
+        for module, modulename in zip(self.children,self.choices):
+            if not module.visible:
+                continue
+            else:
+                try:
+                    log.info("Checking and applying module: %s" 
+                                         % modulename)
+                    self.footer.set_text("Checking and applying module: %s" 
+                                         % modulename)
+                    self.refreshScreen()
+
+                    if module.apply(None):
+                        log.info("Saving module: %s" % modulename)
+                    else:
+                        return False, modulename
+                except AttributeError:
+                    log.info("Module %s does not have save function"
+                             % (modulename))
+        return True, None
 
 def setup():
     urwid.web_display.set_preferences("Fuel Setup")

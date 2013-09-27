@@ -5,11 +5,12 @@ DNS_UPSTREAM: "8.8.8.8"
 
 ADMIN_NETWORK:
   interface: "eth0"
-  cidr: "10.20.0.0/24"
+  ipaddress: "10.20.0.2"
   netmask: "255.255.255.0"
+  cidr: "10.20.0.0/24"
   size: "256"
-  static_start: "10.20.0.10"
-  static_end: "10.20.0.120"
-  first: "10.20.0.130"
-  last: "10.20.0.254"
+  static_pool_start: "10.20.0.10"
+  static_pool_end: "10.20.0.120"
+  dhcp_pool_start: "10.20.0.130"
+  dhcp_pool_end: "10.20.0.254"
 

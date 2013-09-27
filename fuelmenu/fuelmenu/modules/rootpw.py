@@ -133,8 +133,11 @@ class rootpw(urwid.WidgetWrap):
         button_apply = Button("Apply", self.apply)
 
         #Wrap buttons into Columns so it doesn't expand and look ugly
-        check_col = Columns([button_check, button_cancel,
-                             button_apply, ('weight', 2, blank)])
+        if self.parent.globalsave:
+            check_col = Columns([button_check])
+        else:
+            check_col = Columns([button_check, button_cancel,
+                                 button_apply, ('weight', 2, blank)])
 
         #Build all of these into a list
         self.listbox_content = [text1, blank, text2, blank]

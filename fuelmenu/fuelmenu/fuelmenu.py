@@ -7,7 +7,6 @@ import urwid
 import urwid.raw_display
 import urwid.web_display
 
-
 # set up logging
 #logging.basicConfig(filename='./fuelmenu.log')
 #logging.basicConfig(level=logging.DEBUG)
@@ -36,7 +35,6 @@ class Loader(object):
             try:
                 imported = __import__(module)
                 pass
-                #imported = process(module)
             except ImportError as e:
                 log.error('module could not be imported: %s' % e)
                 continue
@@ -246,27 +244,16 @@ class FuelSetup(object):
                 continue
             else:
                 try:
-                    self.log.info("Checking module: %s" % modulename)
+                    log.info("Checking module: %s" % modulename)
                     details = module.check()
                     if details:
-                    self.log.info("Saving module: %s" % modulename)
+                        log.info("Saving module: %s" % modulename)
                         module.apply(details)
                     else:
-                        #module will display errors at bottom
-                        #show pop up with more details
-                        msg = "ERROR: Module 
-to access"\ 
-                  + " external data necessary for installation needed for " \   
-                  + "some OpenStack Releases."                                  
-                                                                                
-            diag = dialog.display_dialog(                                       
-                self, TextLabel(msg), "Empty DNS Warning")            
                         return False
                 except AttributeError:
-                    self.log.info("Module %s does not have save function")
+                    log.info("Module %s does not have save function")
         return True
-             
- 
 
 def setup():
     urwid.web_display.set_preferences("Fuel Setup")

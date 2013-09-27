@@ -27,6 +27,13 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 
 
+def is_service(space):
+    '''Helper to check if the space is a service partition
+    '''
+    return (space.get('mount') == '/boot' or
+            space.get('type') not in ('pv', 'partition', 'raid'))
+
+
 def only_disks(spaces):
     '''Helper for retrieving only disks from spaces
     '''
@@ -167,12 +174,7 @@ class DisksFormatConvertor(object):
 
     @classmethod
     def calculate_service_partitions_size(self, volumes):
-        service_partitions = filter(
-            lambda vg: vg.get('type') != 'pv' and
-            vg.get('type') != 'partition' and
-            (vg.get('type') != 'raid' or vg.get('mount') == '/boot'),
-            volumes)
-
+        service_partitions = filter(is_service, volumes)
         return sum(
             [partition.get('size', 0) for partition in service_partitions])
 
@@ -180,15 +182,17 @@ class DisksFormatConvertor(object):
     def serialize_volumes(cls, all_partitions):
         """Convert volumes from full format to simple format
         """
+        non_service_volumes = filter(
+            lambda vg: not is_service(vg), all_partitions)
+
         pv_full_format = filter(
-            lambda vg: vg.get('type') == 'pv', all_partitions)
+            lambda vg: vg.get('type') == 'pv', non_service_volumes)
 
         partitions_full_format = filter(
-            lambda vg: vg.get('type') == 'partition', all_partitions)
+            lambda vg: vg.get('type') == 'partition', non_service_volumes)
 
         raid_full_format = filter(
-            lambda vg: vg.get('type') == 'raid' and vg.get('mount') != '/boot',
-            all_partitions)
+            lambda vg: vg.get('type') == 'raid', non_service_volumes)
 
         volumes_simple_format = []
         for volume in pv_full_format:

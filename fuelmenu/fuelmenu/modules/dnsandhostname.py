@@ -155,9 +155,9 @@ class dnsandhostname(urwid.WidgetWrap):
         if len(responses["DNS_UPSTREAM"]) == 0:
             #We will allow empty if user doesn't need external networking
             #and present a strongly worded warning
-            msg = "If you continue without DNS, you may not be able to access \
-      external data necessary for installation needed for some OpenStack \
-      Releases."
+            msg = "If you continue without DNS, you may not be able to access"\
+                  + " external data necessary for installation needed for " \
+                  + "some OpenStack Releases."
 
             diag = dialog.display_dialog(
                 self, TextLabel(msg), "Empty DNS Warning")

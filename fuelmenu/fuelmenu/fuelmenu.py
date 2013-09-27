@@ -68,6 +68,8 @@ class FuelSetup(object):
         self.settingsfile = "%s/newsettings.yaml" \
                             % (os.path.dirname(__file__))
         self.managediface = "eth0"
+        #Set to true to move all settings to end
+        self.globalsave = True
         self.main()
         self.choices = []
 
@@ -237,6 +239,34 @@ class FuelSetup(object):
 
         raise urwid.ExitMainLoop()
 
+    def global_save(self):
+        #Runs save function for every module
+        for module, modulename in zip(self.children,self.choices):
+            if not module.visible:
+                continue
+            else:
+                try:
+                    self.log.info("Checking module: %s" % modulename)
+                    details = module.check()
+                    if details:
+                    self.log.info("Saving module: %s" % modulename)
+                        module.apply(details)
+                    else:
+                        #module will display errors at bottom
+                        #show pop up with more details
+                        msg = "ERROR: Module 
+to access"\ 
+                  + " external data necessary for installation needed for " \   
+                  + "some OpenStack Releases."                                  
+                                                                                
+            diag = dialog.display_dialog(                                       
+                self, TextLabel(msg), "Empty DNS Warning")            
+                        return False
+                except AttributeError:
+                    self.log.info("Module %s does not have save function")
+        return True
+             
+ 
 
 def setup():
     urwid.web_display.set_preferences("Fuel Setup")

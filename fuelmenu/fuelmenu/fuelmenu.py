@@ -245,7 +245,7 @@ class FuelSetup(object):
             else:
                 try:
                     log.info("Checking module: %s" % modulename)
-                    details = module.check()
+                    details = module.check(None)
                     if details:
                         log.info("Saving module: %s" % modulename)
                         module.apply(details)

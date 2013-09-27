@@ -169,6 +169,7 @@ class Cluster(Base):
                                   cascade="delete")
     replaced_deployment_info = Column(JSON, default={})
     replaced_provisioning_info = Column(JSON, default={})
+    is_customized = Column(Boolean, default=False)
 
     @property
     def is_ha_mode(self):

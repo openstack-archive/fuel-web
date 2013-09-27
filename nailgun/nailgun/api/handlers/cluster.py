@@ -51,6 +51,7 @@ class ClusterHandler(JSONHandler):
         "mode",
         "status",
         "grouping",
+        "is_customized",
         ("release", "*")
     )
 

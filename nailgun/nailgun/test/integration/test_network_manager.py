@@ -238,7 +238,8 @@ class TestNetworkManager(BaseIntegrationTest):
             joinedload('interfaces.assigned_networks')).all()
 
         ips_mapped = self.env.network_manager.get_grouped_ips_by_node()
-        networks_grouped = self.env.network_manager.get_networks_grouped_by_cluster()
+        networks_grouped = self.env.network_manager.\
+            get_networks_grouped_by_cluster()
         full_results = []
         for node in nodes:
             result = self.env.network_manager.get_node_networks_optimized(

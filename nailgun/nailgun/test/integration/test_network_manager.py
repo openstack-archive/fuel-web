@@ -218,7 +218,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertTrue(isinstance(ips[0].network_data.network_group,
                         NetworkGroup))
 
-    def test_get_node_networks_optimizartion(self):
+    def test_get_node_networks_optimization(self):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -238,10 +238,12 @@ class TestNetworkManager(BaseIntegrationTest):
             joinedload('interfaces.assigned_networks')).all()
 
         ips_mapped = self.env.network_manager.get_grouped_ips_by_node()
+        networks_grouped = self.env.network_manager.get_networks_grouped_by_cluster()
         full_results = []
         for node in nodes:
             result = self.env.network_manager.get_node_networks_optimized(
-                node, ips_mapped.get(node.id, []))
+                node, ips_mapped.get(node.id, []),
+                networks_grouped.get(node.cluster_id, []))
             full_results.append(result)
         self.assertEqual(len(full_results), 2)
 

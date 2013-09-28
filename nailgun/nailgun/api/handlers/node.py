@@ -165,7 +165,7 @@ class NodeCollectionHandler(JSONHandler):
                 json_data['network_data'] = network_manager.\
                     get_node_networks_optimized(
                         node, ips_mapped.get(node.id, []),
-                        networks_grouped[node.cluster_id])
+                        networks_grouped.get(node.cluster_id, []))
                 json_list.append(json_data)
             except Exception:
                 logger.error(traceback.format_exc())

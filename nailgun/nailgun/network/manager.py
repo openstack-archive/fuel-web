@@ -562,7 +562,6 @@ class NetworkManager(object):
         ips = db().query(IPAddr).order_by(IPAddr.id)
         if joined:
             ips = ips.options(
-                joinedload('node_data'),
                 joinedload('network_data'),
                 joinedload('network_data.network_group'))
         if node_id:
@@ -700,9 +699,15 @@ class NetworkManager(object):
         """returns {node.id: generator([IPAddr1, IPAddr2])}
         """
         ips_db = self._get_ips_except_admin(joined=True)
-        return dict(groupby(ips_db, lambda ip: ip.node_data.id))
+        return dict(groupby(ips_db, lambda ip: ip.node))
 
-    def get_node_networks_optimized(self, node_db, ips_db):
+    def get_networks_grouped_by_cluster(self):
+        networks = db().query(Network).options(joinedload('network_group')).\
+            order_by(Network.id).all()
+        return dict(groupby(networks,
+                    lambda net: net.network_group.cluster_id))
+
+    def get_node_networks_optimized(self, node_db, ips_db, networks):
         """Method for receiving data for a given node with db data provided
         as input
         @nodes_db - List of Node instances
@@ -745,8 +750,22 @@ class NetworkManager(object):
                 'dev': interface.name})
             network_ids.append(net.id)
 
-        network_data.extend(
-            self._add_networks_wo_ips(cluster_db, network_ids, node_db))
+        nets_wo_ips = [n for n in networks if n.id not in network_ids]
+
+        for net in nets_wo_ips:
+            interface = self._get_interface_by_network_name(
+                node_db,
+                net.name
+            )
+
+            if net.name == 'fixed' and cluster_db.net_manager == 'VlanManager':
+                continue
+            network_data.append({
+                'name': net.name,
+                'vlan': net.vlan_id,
+                'dev': interface.name})
+
+        network_data.append(self._get_admin_network(node_db))
 
         return network_data
 

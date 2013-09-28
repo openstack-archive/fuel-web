@@ -155,6 +155,8 @@ class NodeCollectionHandler(JSONHandler):
         json_list = []
         network_manager = NetworkManager()
         ips_mapped = network_manager.get_grouped_ips_by_node()
+        networks_grouped = network_manager.get_networks_grouped_by_cluster()
+
         for node in nodes:
             json_data = None
             try:
@@ -162,7 +164,8 @@ class NodeCollectionHandler(JSONHandler):
 
                 json_data['network_data'] = network_manager.\
                     get_node_networks_optimized(
-                        node, ips_mapped.get(node.id, []))
+                        node, ips_mapped.get(node.id, []),
+                        networks_grouped[node.cluster_id])
                 json_list.append(json_data)
             except Exception:
                 logger.error(traceback.format_exc())
@@ -180,7 +183,9 @@ class NodeCollectionHandler(JSONHandler):
         nodes = db().query(Node).options(
             joinedload('cluster'),
             joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks'))
+            joinedload('interfaces.assigned_networks'),
+            joinedload('role_list'),
+            joinedload('pending_role_list'))
         if user_data.cluster_id == '':
             nodes = nodes.filter_by(
                 cluster_id=None).all()
@@ -406,7 +411,14 @@ class NodeCollectionHandler(JSONHandler):
                         node.id
                     )
                     network_manager.assign_networks_to_main_interface(node.id)
-        return map(NodeHandler.render, nodes_updated)
+
+        # we need eagerload everything that is used in render
+        nodes = db().query(Node).options(
+            joinedload('cluster'),
+            joinedload('interfaces'),
+            joinedload('interfaces.assigned_networks')).\
+            filter(Node.id.in_([n.id for n in nodes_updated])).all()
+        return self.render(nodes)
 
 
 class NodeNICsHandler(JSONHandler):

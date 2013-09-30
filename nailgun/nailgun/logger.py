@@ -64,7 +64,7 @@ class HTTPLoggerMiddleware(object):
             env['REQUEST_METHOD'],
             env['REQUEST_URI'],
             self.__get_remote_ip(env),
-            env['REQUEST_METHOD'],
+            env['REMOTE_PORT'],
         )
 
         if response_code == SERVER_ERROR_MSG:
@@ -84,7 +84,7 @@ class HTTPLoggerMiddleware(object):
             env['REQUEST_METHOD'],
             env['REQUEST_URI'],
             self.__get_remote_ip(env),
-            env['REQUEST_METHOD'],
+            env['REMOTE_PORT'],
             body
         )
 

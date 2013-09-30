@@ -37,7 +37,6 @@ import web
 
 from nailgun.api.fields import JSON
 from nailgun.db import db
-from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.volumes.manager import VolumeManager
@@ -860,6 +859,7 @@ class NodeNICInterface(Base):
         secondary=NetworkAssignment.__table__)
     ip_addr = Column(String(25))
     netmask = Column(String(25))
+
 
 class Plugin(Base):
     __tablename__ = 'plugins'

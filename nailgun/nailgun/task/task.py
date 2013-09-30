@@ -23,7 +23,6 @@ from sqlalchemy.orm import object_mapper
 
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
-from nailgun.api.models import NodeNICInterface
 from nailgun.api.models import RedHatAccount
 from nailgun.api.models import Release
 from nailgun.db import db

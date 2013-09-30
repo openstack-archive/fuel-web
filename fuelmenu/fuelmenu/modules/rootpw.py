@@ -78,13 +78,26 @@ class rootpw(urwid.WidgetWrap):
         if responses is False:
             log.error("Check failed. Not applying")
             log.error("%s" % (responses))
+            if responses["PASSWORD"] == "":
+                #Empty password means user didn't enter any text
+                return True
             return False
 
         hashed = crypt.crypt(responses["PASSWORD"])
         log.info("Changing root password")
-        retcode = subprocess.call(["usermod", "-p", hashed, "root"],
-                                  stdout=log,
-                                  stderr=log)
+        try:
+            #clear any locks first
+            noop = subprocess.call(["rm", "-f", "/etc/passwd.lock",
+                                    "/etc/shadow.lock"], stdout=noout,
+                                    stderr=noout)
+            retcode = subprocess.call(["usermod", "-p", hashed, "root"],
+                                      stdout=noout,
+                                      stderr=noout)
+        except OSError:
+            log.error("Unable to change password.")
+            self.parent.footer.set_text("Unable to change password.")
+            return False
+
         if retcode == 0:
             self.parent.footer.set_text("Changed applied successfully.")
             log.info("Root password successfully changed.")

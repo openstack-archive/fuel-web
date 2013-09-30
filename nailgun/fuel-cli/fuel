@@ -116,6 +116,8 @@ def json_api_delete_request(api):
         return json.loads(
             opener.open(request).read()
         )
+    except ValueError:
+        return {}
     except urllib2.HTTPError as e:
         print_error(str(e) + "\n")
 
@@ -341,7 +343,7 @@ def node(params):
     """
     if not has_arguments(params) or params.list:
         acceptable_keys = ["id", "status", "name", "cluster",
-                           "mac", "roles", "online"]
+                           "mac", "roles", "pending_roles", "online"]
         data = json_api_get_request("nodes/")
         if params.env:
             data = filter(
@@ -359,7 +361,7 @@ def node(params):
             lambda node_id: {
                 "id": node_id,
                 "cluster_id": params.env,
-                "roles": roles,
+                "pending_roles": roles,
                 "pending_addition": True,
                 "pending_deletion": False
             },
@@ -514,9 +516,29 @@ def logs(params):
 def task(params):
     """Show tasks
     """
-    get_response = json_api_get_request("tasks/")
-    if params.json:
-        print(json.dumps(get_response, indent=4))
+    if params.delete:
+        check_for_attributes(params, ["tid"])
+        task_ids = list(chain(*params.tid))
+        delete_response = map(
+            lambda tid: json_api_delete_request("tasks/{0}/".format(tid)),
+            task_ids
+        )
+        if params.json:
+            print(json.dumps(delete_response , indent=4))
+        else:
+            print(
+                "Tasks with id's {0} deleted successfully!"
+                .format(','.join(task_ids))
+            )
+    else:
+        acceptable_keys = ["id", "status", "name", "cluster", "progress"]
+        tasks = json_api_get_request("tasks/")
+        if params.json:
+            print(json.dumps(tasks, indent=4))
+        else:
+            print(
+                format_table(tasks, acceptable_keys=acceptable_keys)
+            )
 
 
 def notifications(params):
@@ -1066,7 +1088,25 @@ actions = {
     },
     "task": {
         "action": task,
-        "args": []
+        "args": [{
+            "args": ["-d", "--delete"],
+            "params": {
+                "dest": "delete",
+                "action": "store_true",
+                "help": "delete",
+                "default": False
+            }
+        }, {
+            "args": ["--id", "--task-id"],
+            "params": {
+                "dest": "tid",
+                "action": "store",
+                "nargs": '+',
+                "type": parse_node_ids,
+                "help": "Task id.",
+                "default": None
+            }
+        }]
     },
     "notification": {
         "action": notifications,
@@ -1131,6 +1171,7 @@ def get_args_for_facts(fact_type):
 
 substitutions = {
     "env": "environment",
+    "nodes": "node",
     "net": "network",
     "rel": "release",
     "list": "--list",
@@ -1144,7 +1185,8 @@ substitutions = {
     "config": "--config"
 }
 
-if __name__ == '__main__':
+
+def prepare_args():
     sys.argv = map(
         lambda x: substitutions.get(x, x),
         sys.argv
@@ -1156,20 +1198,29 @@ if __name__ == '__main__':
             sys.argv.insert(1, argument)
 
     for argument in ["--env", "--env-id"]:
-        if argument in sys.argv:
-            index_of_inv = sys.argv.index(argument)
-            sys.argv.pop(index_of_inv)
-            env = sys.argv.pop(index_of_inv)
-            sys.argv.insert(1, env)
-            sys.argv.insert(1, argument)
-            break
+        for arg in sys.argv:
+            if argument in arg:
+                if "=" in arg:
+                    index_of_inv = sys.argv.index(arg)
+                    env = sys.argv.pop(index_of_inv)
+                    sys.argv.insert(1, env)
+                else:
+                    index_of_inv = sys.argv.index(argument)
+                    sys.argv.pop(index_of_inv)
+                    env = sys.argv.pop(index_of_inv)
+                    sys.argv.insert(1, env)
+                    sys.argv.insert(1, argument)
+                break
 
-    fact_types = [deployment, provisioning]
-    for fact_type in fact_types:
+    for fact_type in [deployment, provisioning]:
         actions[fact_type.__name__] = {
             "action": fact_type,
             "args": get_args_for_facts(fact_type.__name__)
         }
+
+
+if __name__ == '__main__':
+    prepare_args()
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", "--env-id",

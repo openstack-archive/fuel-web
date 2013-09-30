@@ -33,7 +33,7 @@
       <% }) %>
       </div>
       <div class="parameter-spacer"></div>
-    <% } else { %>
+    <% } else if (setting.type != 'hidden') { %>
       <label class="parameter-box clearfix">
         <div class="openstack-sub-title parameter-name"><%- setting.label %></div>
         <div class="parameter-control <%= setting.type == 'password' ? 'input-append' : '' %>">

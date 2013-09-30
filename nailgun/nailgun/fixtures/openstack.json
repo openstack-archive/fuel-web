@@ -205,6 +205,13 @@
                             "description": "If selected, Murano component will be installed",
                             "weight": 20,
                             "type": "checkbox"
+                        },
+                        "heat": {
+                            "value": false,
+                            "label": "",
+                            "description": "",
+                            "weight": 30,
+                            "type": "hidden"
                         }
                     },
                     "common": {

@@ -524,11 +524,11 @@ def task(params):
             task_ids
         )
         if params.json:
-            print(json.dumps(delete_response , indent=4))
+            print(json.dumps(delete_response, indent=4))
         else:
             print(
                 "Tasks with id's {0} deleted successfully!"
-                .format(','.join(task_ids))
+                .format(','.join(map(str, task_ids)))
             )
     else:
         acceptable_keys = ["id", "status", "name", "cluster", "progress"]

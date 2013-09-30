@@ -250,9 +250,8 @@ class FuelSetup(object):
                                          % modulename)
                     self.refreshScreen()
 
-                    if module.check(None):
+                    if module.apply(None):
                         log.info("Saving module: %s" % modulename)
-                        module.apply(details)
                     else:
                         return False, modulename
                 except AttributeError:

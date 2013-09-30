@@ -110,8 +110,7 @@ class ProvisioningInfo(OrchestratorInfo):
         return cluster.replaced_provisioning_info
 
     def update_orchestrator_info(self, cluster, data):
-        cluster.replaced_provisioning_info = data
-        cluster.is_customized = True
+        cluster.replace_provisioning_info(data)
         db().commit()
         return cluster.replaced_provisioning_info
 
@@ -122,7 +121,6 @@ class DeploymentInfo(OrchestratorInfo):
         return cluster.replaced_deployment_info
 
     def update_orchestrator_info(self, cluster, data):
-        cluster.replaced_deployment_info = data
-        cluster.is_customized = True
+        cluster.replace_deployment_info(data)
         db().commit()
         return cluster.replaced_deployment_info

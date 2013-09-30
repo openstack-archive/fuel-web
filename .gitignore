@@ -23,5 +23,4 @@ lock
 .idea
 .DS_Store
 
-Nailgun.egg-info
-Shotgun.egg-info
+*.egg-info

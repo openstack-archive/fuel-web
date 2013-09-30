@@ -106,6 +106,8 @@ class rootpw(urwid.WidgetWrap):
         else:
             self.parent.footer.set_text("Unable to apply changes. Check logs "
                                         "for more details.")
+            return False
+        return True
 
     def cancel(self, button):
         for index, fieldname in enumerate(fields):

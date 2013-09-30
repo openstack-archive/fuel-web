@@ -36,6 +36,7 @@ class mirrors(urwid.WidgetWrap):
             return False
         conf = Settings()
         conf.write(module="mirrors", values=self.settings)
+        return True
 
     def check(self, args):
         log = logging.getLogger('fuelmenu.mirrors')

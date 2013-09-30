@@ -258,6 +258,7 @@ interface first.")
         #Need to decide if we are pre-deployment or post-deployment
         if self.deployment == "post":
             self.updateCobbler(responses)
+        return True
 
     def updateCobbler(self, params):
         patterns = {

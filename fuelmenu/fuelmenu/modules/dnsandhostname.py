@@ -251,6 +251,7 @@ class dnsandhostname(urwid.WidgetWrap):
         #  self.updateCobbler(responses)
         #  services.restart("cobbler")
 
+        return True
 #  def updateCobbler(self, params):
 #    patterns={
 #      'cblr_server'      : '^server: .*',

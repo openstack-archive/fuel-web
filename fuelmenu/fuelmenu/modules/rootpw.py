@@ -87,6 +87,7 @@ class rootpw(urwid.WidgetWrap):
         log.info("Changing root password")
         try:
             #clear any locks first
+            noout = open('/dev/null', 'w')
             noop = subprocess.call(["rm", "-f", "/etc/passwd.lock",
                                     "/etc/shadow.lock"], stdout=noout,
                                     stderr=noout)

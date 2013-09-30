@@ -417,6 +417,9 @@ class IPAddr(Base):
     node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     ip_addr = Column(String(25), nullable=False)
 
+    network_data = relationship("Network")
+    node_data = relationship("Node")
+
 
 class IPAddrRange(Base):
     __tablename__ = 'ip_addr_ranges'

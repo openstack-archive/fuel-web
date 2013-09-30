@@ -105,6 +105,29 @@ class TestHandlers(BaseIntegrationTest):
         response = json.loads(resp.body)
         self.assertEquals(2, len(response))
 
+    def test_node_get_with_cluster_and_assigned_ip_addrs(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"pending_addition": True, "api": True},
+                {"pending_addition": True, "api": True}
+            ]
+        )
+
+        self.env.network_manager.assign_ips(
+            [n.id for n in self.env.nodes],
+            "management"
+        )
+
+        resp = self.app.get(
+            reverse('NodeCollectionHandler'),
+            headers=self.default_headers
+        )
+
+        self.assertEquals(200, resp.status)
+        response = json.loads(resp.body)
+        self.assertEquals(2, len(response))
+
     def test_node_creation(self):
         resp = self.app.post(
             reverse('NodeCollectionHandler'),

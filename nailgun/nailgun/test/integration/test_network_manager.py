@@ -23,12 +23,14 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 from sqlalchemy import not_
+from sqlalchemy.orm import joinedload
 
 import nailgun
 from nailgun.api.models import IPAddr
 from nailgun.api.models import IPAddrRange
 from nailgun.api.models import Network
 from nailgun.api.models import NetworkGroup
+from nailgun.api.models import Node
 from nailgun.api.models import NodeNICInterface
 from nailgun.api.models import Vlan
 from nailgun.test.base import BaseIntegrationTest
@@ -194,6 +196,57 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertEquals(len(network_data), 5)
         fixed_nets = filter(lambda net: net['name'] == 'fixed', network_data)
         self.assertEquals(fixed_nets, [])
+
+    def test_ipaddr_joinedload_relations(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"pending_addition": True, "api": True},
+                {"pending_addition": True, "api": True}
+            ]
+        )
+
+        self.env.network_manager.assign_ips(
+            [n.id for n in self.env.nodes],
+            "management"
+        )
+
+        ips = self.env.network_manager._get_ips_except_admin(joined=True)
+        self.assertEqual(len(ips), 2)
+        self.assertTrue(isinstance(ips[0].node_data, Node))
+        self.assertTrue(isinstance(ips[0].network_data, Network))
+        self.assertTrue(isinstance(ips[0].network_data.network_group,
+                        NetworkGroup))
+
+    def test_get_node_networks_optimization(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"pending_addition": True, "api": True},
+                {"pending_addition": True, "api": True}
+            ]
+        )
+
+        self.env.network_manager.assign_ips(
+            [n.id for n in self.env.nodes],
+            "management"
+        )
+
+        nodes = self.db.query(Node).options(
+            joinedload('cluster'),
+            joinedload('interfaces'),
+            joinedload('interfaces.assigned_networks')).all()
+
+        ips_mapped = self.env.network_manager.get_grouped_ips_by_node()
+        networks_grouped = self.env.network_manager.\
+            get_networks_grouped_by_cluster()
+        full_results = []
+        for node in nodes:
+            result = self.env.network_manager.get_node_networks_optimized(
+                node, ips_mapped.get(node.id, []),
+                networks_grouped.get(node.cluster_id, []))
+            full_results.append(result)
+        self.assertEqual(len(full_results), 2)
 
     def test_nets_empty_list_if_node_does_not_belong_to_cluster(self):
         node = self.env.create_node(api=False)

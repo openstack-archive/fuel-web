@@ -250,10 +250,10 @@ class FuelSetup(object):
                         log.info("Saving module: %s" % modulename)
                         module.apply(details)
                     else:
-                        return False
+                        return False, modulename
                 except AttributeError:
                     log.info("Module %s does not have save function")
-        return True
+        return True, None
 
 def setup():
     urwid.web_display.set_preferences("Fuel Setup")

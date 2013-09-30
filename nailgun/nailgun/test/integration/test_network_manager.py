@@ -17,6 +17,7 @@
 import itertools
 import json
 
+from copy import deepcopy
 from mock import Mock
 from mock import patch
 from netaddr import IPAddress
@@ -26,6 +27,7 @@ from sqlalchemy import not_
 from sqlalchemy.orm import joinedload
 
 import nailgun
+
 from nailgun.api.models import IPAddr
 from nailgun.api.models import IPAddrRange
 from nailgun.api.models import Network
@@ -33,6 +35,7 @@ from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
 from nailgun.api.models import NodeNICInterface
 from nailgun.api.models import Vlan
+from nailgun.network.manager import NetworkManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -136,17 +139,31 @@ class TestNetworkManager(BaseIntegrationTest):
         node = self.env.create_node(api=True)
         node_db = self.env.nodes[0]
 
-        main_nic_id = self.env.network_manager.get_main_nic(node_db.id)
+        admin_nic = node_db.admin_interface
         other_iface = self.db.query(NodeNICInterface).filter_by(
             node_id=node['id']
         ).filter(
-            not_(NodeNICInterface.mac == node_db.mac)
+            not_(NodeNICInterface.id == admin_nic.id)
         ).first()
+
+        interfaces = deepcopy(node_db.meta['interfaces'])
+
+        # allocate ip from admin subnet
+        admin_ip = str(IPNetwork(NetworkManager().get_admin_network().cidr)[0])
+        for interface in interfaces:
+            if interface['mac'] == admin_nic.mac:
+                # reset admin ip for previous admin interface
+                interface['ip'] = None
+            elif interface['mac'] == other_iface.mac:
+                # set new admin interface
+                interface['ip'] = admin_ip
+
+        node_db.meta['interfaces'] = interfaces
 
         self.app.put(
             reverse('NodeCollectionHandler'),
             json.dumps([{
-                'mac': other_iface.mac,
+                'mac': admin_nic.mac,
                 'meta': node_db.meta,
                 'is_agent': True,
                 'cluster_id': cluster["id"]
@@ -155,19 +172,16 @@ class TestNetworkManager(BaseIntegrationTest):
             expect_errors=True
         )
 
-        new_main_nic_id = self.env.network_manager.get_main_nic(node_db.id)
+        new_main_nic_id = node_db.admin_interface.id
         self.assertEquals(new_main_nic_id, other_iface.id)
         self.assertEquals(
-            [n.id for n in other_iface.assigned_networks],
+            other_iface.assigned_networks,
             self.env.network_manager.get_default_nic_networkgroups(
-                node_db.id,
-                other_iface.id
-            )
-        )
+                node_db, other_iface))
         self.assertEquals(
-            self.db.query(NodeNICInterface).get(main_nic_id).assigned_networks,
-            []
-        )
+            self.db.query(
+                NodeNICInterface).get(admin_nic.id).assigned_networks,
+            [])
 
     def test_assign_vip_is_idempotent(self):
         cluster = self.env.create_cluster(api=True)

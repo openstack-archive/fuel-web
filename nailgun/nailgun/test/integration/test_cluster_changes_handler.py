@@ -23,7 +23,6 @@ from mock import patch
 import nailgun
 from nailgun.api.models import IPAddr
 from nailgun.api.models import NetworkGroup
-from nailgun.api.models import NodeNICInterface
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
@@ -474,12 +473,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
 
-        main_iface_id = self.env.network_manager.get_main_nic(
-            node_db.id
-        )
-        main_iface_db = self.db.query(NodeNICInterface).get(
-            main_iface_id
-        )
+        main_iface_db = node_db.admin_interface
 
         assigned_net_names = [
             n.name

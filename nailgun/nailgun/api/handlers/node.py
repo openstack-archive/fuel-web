@@ -97,13 +97,12 @@ class NodeHandler(JSONHandler):
             node.cluster_id = data["cluster_id"]
             if node.cluster_id != old_cluster_id:
                 if old_cluster_id:
-                    network_manager.clear_assigned_networks(node.id)
+                    network_manager.clear_assigned_networks(node)
                     network_manager.clear_all_allowed_networks(node.id)
                 if node.cluster_id:
                     network_manager.allow_network_assignment_to_all_interfaces(
-                        node.id
-                    )
-                    network_manager.assign_networks_to_main_interface(node.id)
+                        node)
+                    network_manager.assign_networks_to_main_interface(node)
         for key, value in data.iteritems():
             # we don't allow to update id explicitly
             # and updated cluster_id before all other fields
@@ -267,8 +266,8 @@ class NodeCollectionHandler(JSONHandler):
             network_manager.update_interfaces_info(node.id)
 
         if node.cluster_id:
-            network_manager.allow_network_assignment_to_all_interfaces(node.id)
-            network_manager.assign_networks_to_main_interface(node.id)
+            network_manager.allow_network_assignment_to_all_interfaces(node)
+            network_manager.assign_networks_to_main_interface(node)
 
         try:
             # we use multiplier of 1024 because there are no problems here
@@ -411,13 +410,12 @@ class NodeCollectionHandler(JSONHandler):
             db().commit()
             if 'cluster_id' in nd and nd['cluster_id'] != old_cluster_id:
                 if old_cluster_id:
-                    network_manager.clear_assigned_networks(node.id)
+                    network_manager.clear_assigned_networks(node)
                     network_manager.clear_all_allowed_networks(node.id)
                 if nd['cluster_id']:
                     network_manager.allow_network_assignment_to_all_interfaces(
-                        node.id
-                    )
-                    network_manager.assign_networks_to_main_interface(node.id)
+                        node)
+                    network_manager.assign_networks_to_main_interface(node)
 
         # we need eagerload everything that is used in render
         nodes = db().query(Node).options(
@@ -511,25 +509,19 @@ class NodeNICsDefaultHandler(JSONHandler):
                 "current_speed": nic.current_speed
             }
 
-            assigned_ng_ids = network_manager.get_default_nic_networkgroups(
-                node.id,
-                nic.id
-            )
-            for ng_id in assigned_ng_ids:
-                ng = db().query(NetworkGroup).get(ng_id)
-                nic_dict.setdefault("assigned_networks", []).append(
-                    {"id": ng_id, "name": ng.name}
-                )
+            assigned_ngs = network_manager.get_default_nic_networkgroups(
+                node, nic)
 
-            allowed_ng_ids = network_manager.get_allowed_nic_networkgroups(
-                node.id,
-                nic.id
-            )
-            for ng_id in allowed_ng_ids:
-                ng = db().query(NetworkGroup).get(ng_id)
-                nic_dict.setdefault("allowed_networks", []).append(
-                    {"id": ng_id, "name": ng.name}
-                )
+            for ng in assigned_ngs:
+                nic_dict.setdefault('assigned_networks', []).append(
+                    {'id': ng.id, 'name': ng.name})
+
+            allowed_ngs = network_manager.get_allowed_nic_networkgroups(
+                node, nic)
+
+            for ng in allowed_ngs:
+                nic_dict.setdefault('allowed_networks', []).append(
+                    {'id': ng.id, 'name': ng.name})
 
             nics.append(nic_dict)
         return nics

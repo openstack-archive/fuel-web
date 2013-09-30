@@ -322,11 +322,11 @@ class Environment(object):
 
     def _add_interfaces_to_node(self, node_id, count=1):
         interfaces = []
+        node = self.db.query(Node).get(node_id)
+        ng_ids = [ng.id for ng in
+                  self.network_manager.get_all_cluster_networkgroups(node)]
         allowed_networks = list(self.db.query(NetworkGroup).filter(
-            NetworkGroup.id.in_(
-                self.network_manager.get_all_cluster_networkgroups(node_id)
-            )
-        ))
+            NetworkGroup.id.in_(ng_ids)))
 
         for i in xrange(count):
             nic_dict = {

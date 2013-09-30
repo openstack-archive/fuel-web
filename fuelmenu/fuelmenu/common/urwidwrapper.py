@@ -12,10 +12,10 @@ def TextField(keyword, label, width, default_value=None, tooltip=None,
         mask = None
     if not tooltip:
         edit_obj = urwid.Edit(('important', label.ljust(width)), default_value,
-                               mask)
+                               mask=mask)
     else:
         edit_obj = TextWithTip(('important', label.ljust(width)),
-                               default_value, tooltip, toolbar, mask)
+                               default_value, tooltip, toolbar, mask=mask)
     wrapped_obj = urwid.AttrWrap(edit_obj, 'editbx', 'editfc')
     if disabled:
         wrapped_obj = urwid.WidgetDisable(urwid.AttrWrap(edit_obj,

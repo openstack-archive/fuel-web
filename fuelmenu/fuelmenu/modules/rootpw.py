@@ -123,7 +123,7 @@ class rootpw(urwid.WidgetWrap):
                 ispassword = "PASSWORD" in key.upper()
                 self.edits.append(
                     TextField(key, caption, 23, default, tooltip, toolbar,
-                              ispassword))
+                              ispassword=ispassword))
 
         #Button to check
         button_check = Button("Check", self.check)

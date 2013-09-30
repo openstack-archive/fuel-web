@@ -20,15 +20,16 @@ class saveandquit():
         #self.screen = self.screenUI()
 
     def save_and_exit(self, args):
-        if self.parent.global_save():
+        results, modulename = self.parent.global_save()
+        if results:
            self.parent.footer.set_text("All changes saved successfully!")
            self.parent.refresh()
            time.sleep(1.5)
            self.parent.exit_program(None)
         else:
            #show pop up with more details
-           msg = "ERROR: Module %s failed to save. Go back and" \
-                 + " fix any mistakes or choose Exit without Saving."
+           msg = "ERROR: Module %s failed to save. Go back" % (modulename)\
+                 + " and fix any mistakes or choose Exit without Saving."
            diag = dialog.display_dialog(self, TextLabel(msg),
                                         "Error saving changes!")
 

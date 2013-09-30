@@ -32,10 +32,17 @@ def _check_vconfig():
     return not command_util('which', 'vconfig').stderr.read()
 
 
-def check_network_up(iface):
+def _iface_state(iface):
+    """For a given iface return it's state
+    returns UP, DOWN, UNKNOWN
+    """
     state = command_util('ip', 'link', 'show', iface)
-    response = re.search(r'state (?P<state>[A-Z]*)', state.stdout.read())
-    return response.groupdict()['state'] == 'UP'
+    return re.search(r'state (?P<state>[A-Z]*)',
+                     state.stdout.read()).groupdict()['state']
+
+
+def check_network_up(iface):
+    return _iface_state(iface) == 'UP'
 
 
 def check_iface_exist(iface):
@@ -162,3 +169,36 @@ class VlansContext(object):
 
     def __exit__(self, type, value, trace):
         pass
+
+
+class IfaceState(object):
+    """Context manager to control state of iface when dhcp checker is running
+    """
+
+    def __init__(self, iface, rollback=True, retry=3):
+        self.rollback = rollback
+        self.retry = retry
+        self.iface = iface
+        self.pre_iface_state = _iface_state(iface)
+        self.iface_state = self.pre_iface_state
+        self.post_iface_state = ''
+
+    def iface_up(self):
+        while self.retry or self.iface_state != 'UP':
+            command_util('ifconfig', self.iface, 'up')
+            self.iface_state = _iface_state(self.iface)
+            self.retry -= 1
+        if self.iface_state != 'UP':
+            raise EnvironmentError(
+                'Tried my best to ifup iface {0}.'.format(self.iface))
+
+    def __enter__(self):
+        self.iface_up()
+        return self.iface
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.pre_iface_state != 'UP' and self.rollback:
+            print 'stuff'
+            command_util('ifconfig', self.iface, 'down')
+        self.post_iface_state = _iface_state(self.iface)
+        

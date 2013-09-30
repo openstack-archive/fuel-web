@@ -11,7 +11,7 @@
 *.pid
 
 # Vagrant housekeeping file
-/.vagrant
+.vagrant
 
 /build
 /local_mirror

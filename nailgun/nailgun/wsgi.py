@@ -20,6 +20,7 @@ import web
 from web.httpserver import StaticMiddleware
 from web.httpserver import WSGIServer
 
+
 curdir = os.path.dirname(__file__)
 sys.path.insert(0, curdir)
 
@@ -93,20 +94,25 @@ def appstart(keepalive=False):
             logger.info("Running KeepAlive watcher...")
             keep_alive.start()
         rpc_process = threaded.RPCKombuThread()
+        rpc_process_two = threaded.RPCKombuThread()
         logger.info("Running RPC consumer...")
         rpc_process.start()
+        rpc_process_two.start()
     logger.info("Running WSGI app...")
 
     wsgifunc = build_middleware(app.wsgifunc)
 
-    run_server(wsgifunc,
-               (settings.LISTEN_ADDRESS, int(settings.LISTEN_PORT)))
+    #run_server(wsgifunc,
+    #           (settings.LISTEN_ADDRESS, int(settings.LISTEN_PORT)))
 
-    logger.info("Stopping WSGI app...")
-    if keep_alive.is_alive():
-        logger.info("Stopping KeepAlive watcher...")
-        keep_alive.join()
-    if not settings.FAKE_TASKS:
-        logger.info("Stopping RPC consumer...")
-        rpc_process.join()
-    logger.info("Done")
+    #logger.info("Stopping WSGI app...")
+    #if keep_alive.is_alive():
+    #    logger.info("Stopping KeepAlive watcher...")
+    #    keep_alive.join()
+    #if not settings.FAKE_TASKS:
+    #    logger.info("Stopping RPC consumer...")
+    #    rpc_process.join()
+    #logger.info("Done")
+    return wsgifunc
+
+application = appstart()

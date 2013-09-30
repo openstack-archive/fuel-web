@@ -39,12 +39,42 @@ class TestFixture(BaseIntegrationTest):
                 "version": "0.0.1",
                 "description": "Sample release for testing",
                 "operating_system": "CentOS",
-                "networks_metadata": [
-                    {"name": "floating", "access": "public"},
-                    {"name": "management", "access": "private192"},
-                    {"name": "storage", "access": "private192"},
-                    {"name": "fixed", "access": "private10"}
-                ]
+                "networks_metadata": {
+                    "nova_network": [
+                        {
+                            "name": "floating",
+                            "pool": ["172.16.0.0/12"],
+                            "use_public_vlan": true,
+                            "assign": false,
+                            "assign_vip": false
+                        },
+                        {
+                            "name": "public",
+                            "pool": ["172.16.0.0/12"],
+                            "use_public_vlan": true,
+                            "assign": true,
+                            "assign_vip": true
+                        },
+                        {
+                            "name": "management",
+                            "pool": ["192.168.0.0/16"],
+                            "assign": true,
+                            "assign_vip": true
+                        },
+                        {
+                            "name": "storage",
+                            "pool": ["192.168.0.0/16"],
+                            "assign": true,
+                            "assign_vip": false
+                        },
+                        {
+                            "name": "fixed",
+                            "pool": ["10.0.0.0/8"],
+                            "assign": false,
+                            "assign_vip": false
+                        }
+                    ]
+                }
             }
         }]'''
 

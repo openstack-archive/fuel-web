@@ -30,9 +30,16 @@ from nailgun.api.models import Cluster
 from nailgun.api.models import NetworkConfiguration
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Task
+
 from nailgun.api.serializers.network_configuration \
-    import NetworkConfigurationSerializer
-from nailgun.api.validators.network import NetworkConfigurationValidator
+    import NeutronNetworkConfigurationSerializer
+from nailgun.api.serializers.network_configuration \
+    import NovaNetworkConfigurationSerializer
+from nailgun.api.validators.network \
+    import NeutronNetworkConfigurationValidator
+from nailgun.api.validators.network \
+    import NovaNetworkConfigurationValidator
+
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -41,11 +48,11 @@ from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
 
-class NetworkConfigurationVerifyHandler(JSONHandler):
+class NovaNetworkConfigurationVerifyHandler(JSONHandler):
     """Network configuration verify handler
     """
 
-    validator = NetworkConfigurationValidator
+    validator = NovaNetworkConfigurationValidator
 
     @content_json
     def PUT(self, cluster_id):
@@ -83,12 +90,12 @@ class NetworkConfigurationVerifyHandler(JSONHandler):
         return TaskHandler.render(task)
 
 
-class NetworkConfigurationHandler(JSONHandler):
+class NovaNetworkConfigurationHandler(JSONHandler):
     """Network configuration handler
     """
 
-    validator = NetworkConfigurationValidator
-    serializer = NetworkConfigurationSerializer
+    validator = NovaNetworkConfigurationValidator
+    serializer = NovaNetworkConfigurationSerializer
 
     @content_json
     def GET(self, cluster_id):
@@ -129,3 +136,48 @@ class NetworkConfigurationHandler(JSONHandler):
         else:
             db().commit()
         raise web.accepted(data=data)
+
+
+class NeutronNetworkConfigurationHandler(JSONHandler):
+    """Neutron Network configuration handler
+    """
+
+    validator = NeutronNetworkConfigurationValidator
+    serializer = NeutronNetworkConfigurationSerializer
+
+    @content_json
+    def GET(self, cluster_id):
+        """:returns: JSONized network configuration for cluster.
+        :http: * 200 (OK)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+        return self.serializer.serialize_for_cluster(cluster)
+
+    @content_json
+    def PUT(self, cluster_id):
+        data = json.loads(web.data())
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+
+        # TODO(enchantner) check task
+
+        try:
+            if 'networks' in data:
+                self.validator.validate_networks_update(
+                    json.dumps(data)
+                )
+
+            if 'neutron_parameters' in data:
+                self.validator.validate_neutron_params(
+                    json.dumps(data)
+                )
+
+            NetworkConfiguration.update(cluster, data)
+        except Exception:
+            logger.error(traceback.format_exc())
+
+        return self.serializer.serialize_for_cluster(cluster)
+
+
+class NeutronNetworkConfigurationVerifyHandler(JSONHandler):
+    pass

@@ -366,7 +366,7 @@ class TestHandlers(BaseIntegrationTest):
 
         self.app.put(
             reverse(
-                'NetworkConfigurationHandler',
+                'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': cluster.id}),
             json.dumps(net_data),
             headers=self.default_headers,
@@ -470,7 +470,7 @@ class TestHandlers(BaseIntegrationTest):
                 net["vlan_start"] = None
 
         resp = self.app.put(
-            reverse('NetworkConfigurationHandler', kwargs={
+            reverse('NovaNetworkConfigurationHandler', kwargs={
                 'cluster_id': cluster_id
             }),
             json.dumps(nets),

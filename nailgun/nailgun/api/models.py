@@ -133,6 +133,10 @@ class Cluster(Base):
     STATUSES = ('new', 'deployment', 'operational', 'error', 'remove')
     NET_MANAGERS = ('FlatDHCPManager', 'VlanManager')
     GROUPING = ('roles', 'hardware', 'both')
+    # Neutron-related
+    NET_PROVIDERS = ('nova_network', 'neutron')
+    NET_L23_PROVIDERS = ('ovs',)
+    NET_SEGMENT_TYPES = ('none', 'vlan', 'gre')
     id = Column(Integer, primary_key=True)
     mode = Column(
         Enum(*MODES, name='cluster_mode'),
@@ -143,6 +147,22 @@ class Cluster(Base):
         Enum(*STATUSES, name='cluster_status'),
         nullable=False,
         default='new'
+    )
+    net_provider = Column(
+        Enum(*NET_PROVIDERS, name='net_provider'),
+        nullable=False,
+        default='nova_network'
+    )
+    net_l23_provider = Column(
+        Enum(*NET_L23_PROVIDERS, name='net_l23_provider'),
+        nullable=False,
+        default='ovs'
+    )
+    net_segment_type = Column(
+        Enum(*NET_SEGMENT_TYPES,
+             name='net_segment_type'),
+        nullable=False,
+        default='vlan'
     )
     net_manager = Column(
         Enum(*NET_MANAGERS, name='cluster_net_manager'),
@@ -184,6 +204,10 @@ class Cluster(Base):
         self.replaced_deployment_info = data
         self.is_customized = True
         return self.replaced_deployment_info
+
+    neutron_config = relationship("NeutronConfig",
+                                  backref=backref("cluster"),
+                                  uselist=False)
 
     @property
     def is_ha_mode(self):
@@ -505,7 +529,8 @@ class NetworkGroup(Base):
         # VM networks
         'floating',
         # private in terms of fuel
-        'fixed'
+        'fixed',
+        'private'
     )
 
     id = Column(Integer, primary_key=True)
@@ -583,6 +608,54 @@ class NetworkConfiguration(object):
                 network_group_id=network_group_id)
             db().add(new_ip_range)
         db().commit()
+
+
+class NeutronNetworkConfiguration(NetworkConfiguration):
+    @classmethod
+    def update(cls, cluster, network_configuration):
+        from nailgun.network.neutron import NeutronManager
+        network_manager = NeutronManager()
+        if 'networks' in network_configuration:
+            for ng in network_configuration['networks']:
+                ng_db = db().query(NetworkGroup).get(ng['id'])
+
+                for key, value in ng.iteritems():
+                    if key == "ip_ranges":
+                        cls.__set_ip_ranges(ng['id'], value)
+                    else:
+                        if key == 'cidr' and \
+                                not ng['name'] in ('public', 'floating'):
+                            network_manager.update_ranges_from_cidr(
+                                ng_db, value)
+
+                        setattr(ng_db, key, value)
+
+                network_manager.create_networks(ng_db)
+                ng_db.cluster.add_pending_changes('networks')
+
+        if 'neutron_parameters' in network_configuration:
+            for key, value in network_configuration['neutron_parameters']:
+                setattr(cluster.neutron_config, key, value)
+            db().add(cluster.neutron_config)
+            db().commit()
+
+
+class NeutronConfig(Base):
+    __tablename__ = 'neutron_configs'
+    NET_SEGMENT_TYPES = ('vlan', 'gre')
+    id = Column(Integer, primary_key=True)
+    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    parameters = Column(JSON, default={})
+    L2 = Column(JSON, default={})
+    L3 = Column(JSON, default={})
+    predefined_networks = Column(JSON, default={})
+
+    segmentation_type = Column(
+        Enum(*NET_SEGMENT_TYPES,
+             name='segmentation_type'),
+        nullable=False,
+        default='vlan'
+    )
 
 
 class AttributesGenerators(object):

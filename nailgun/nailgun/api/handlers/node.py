@@ -38,6 +38,7 @@ from nailgun.api.validators.node import NodeValidator
 from nailgun.db import db
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
 from nailgun.network.topology import TopoChecker
 from nailgun import notifier
 
@@ -324,7 +325,6 @@ class NodeCollectionHandler(JSONHandler):
             self.validator.validate_collection_update
         )
 
-        network_manager = NetworkManager()
         q = db().query(Node)
         nodes_updated = []
         for nd in data:
@@ -345,6 +345,21 @@ class NodeCollectionHandler(JSONHandler):
                     notifier.notify("discover", msg, node_id=node.id)
                 db().commit()
             old_cluster_id = node.cluster_id
+
+            # Choosing network manager
+            if nd.get('cluster_id') is not None:
+                cluster = db().query(Cluster).get(nd['cluster_id'])
+            else:
+                cluster = node.cluster
+
+            if cluster and cluster.net_provider == "nova_network":
+                network_manager = NetworkManager()
+            elif cluster and cluster.net_provider == "neutron":
+                network_manager = NeutronManager()
+            # essential rollback - we can't avoid it now
+            elif not cluster:
+                network_manager = NetworkManager()
+            # /Choosing network manager
 
             if nd.get("pending_roles") == [] and node.cluster:
                 node.cluster.clear_pending_changes(node_id=node.id)

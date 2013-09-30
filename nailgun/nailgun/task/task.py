@@ -466,7 +466,7 @@ class CheckNetworksTask(object):
                 net_errors.append("id")
                 err_msgs.append("Invalid network ID: {0}".format(ng['id']))
             else:
-                if 'cidr' in ng:
+                if ng.get('cidr'):
                     fnet = netaddr.IPNetwork(ng['cidr'])
                     if NetworkManager().is_range_in_cidr(fnet, admin_range):
                         net_errors.append("cidr")

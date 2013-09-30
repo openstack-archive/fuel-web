@@ -21,9 +21,9 @@ from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
 from nailgun.db import db
 from nailgun.orchestrator.deployment_serializers \
-    import OrchestratorHASerializer
+    import NovaOrchestratorHASerializer
 from nailgun.orchestrator.deployment_serializers \
-    import OrchestratorSerializer
+    import NovaOrchestratorSerializer
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 
@@ -73,7 +73,7 @@ class TestOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        return OrchestratorSerializer
+        return NovaOrchestratorSerializer
 
     def assert_roles_flattened(self, nodes):
         self.assertEquals(len(nodes), 6)
@@ -303,7 +303,7 @@ class TestOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        return OrchestratorHASerializer
+        return NovaOrchestratorHASerializer
 
     def test_set_deployment_priorities(self):
         nodes = [
@@ -392,7 +392,7 @@ class TestOrchestratorHASerializerRedeploymentErrorNodes(
 
     @property
     def serializer(self):
-        return OrchestratorHASerializer
+        return NovaOrchestratorHASerializer
 
     def filter_by_role(self, nodes, role):
         return filter(lambda node: role in node.all_roles, nodes)

@@ -77,7 +77,7 @@ class TestNetworkModels(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse(
-                'NetworkConfigurationHandler',
+                'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': self.env.clusters[0].id}),
             json.dumps(test_nets),
             headers=self.default_headers

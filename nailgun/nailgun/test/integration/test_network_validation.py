@@ -26,7 +26,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def update_networks(self, cluster_id, networks, expect_errors=False):
         return self.app.put(
-            reverse('NetworkConfigurationHandler',
+            reverse('NovaNetworkConfigurationHandler',
                     kwargs={'cluster_id': cluster_id}),
             json.dumps(networks),
             headers=self.default_headers,

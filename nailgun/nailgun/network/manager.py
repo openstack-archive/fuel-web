@@ -155,13 +155,15 @@ class NetworkManager(object):
                     *global_params.parameters["vlan_range"]
                 )
             ) - set(used_vlans)
-            if not free_vlans or len(free_vlans) < len(networks_metadata):
+            if not free_vlans or len(free_vlans) < len(
+                networks_metadata["nova_network"]
+            ):
                 raise errors.OutOfVLANs()
             return sorted(list(free_vlans))
 
         public_vlan = _free_vlans()[0]
         used_vlans.append(public_vlan)
-        for network in networks_metadata:
+        for network in networks_metadata["nova_network"]:
             free_vlans = _free_vlans()
             vlan_start = public_vlan if network.get("use_public_vlan") \
                 else free_vlans[0]
@@ -672,6 +674,11 @@ class NetworkManager(object):
 
         return network_data
 
+    def get_node_network_by_netname(self, node_id, netname):
+        networks = self.get_node_networks(node_id)
+        return filter(
+            lambda n: n['name'] == netname, networks)[0]
+
     def group_by_key_and_history(self, values, key_func):
         response = defaultdict(list)
         for group, value in groupby(values, key_func):
@@ -981,5 +988,13 @@ class NetworkManager(object):
                 lambda x: str(int(''.join(x), 2)),
                 zip(*[iter(bin)] * 8)
             )
-        )
-        )
+        ))
+
+    def get_node_interface_by_netname(self, node_id, netname):
+        return db().query(NodeNICInterface).join(
+            (NetworkGroup, NodeNICInterface.assigned_networks)
+        ).filter(
+            NetworkGroup.name == netname
+        ).filter(
+            NodeNICInterface.node_id == node_id
+        ).first()

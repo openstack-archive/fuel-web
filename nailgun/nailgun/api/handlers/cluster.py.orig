@@ -52,8 +52,11 @@ class ClusterHandler(JSONHandler):
         "mode",
         "status",
         "grouping",
+<<<<<<< HEAD
         "is_customized",
+=======
         "net_provider",
+>>>>>>> neutron initial entities
         ("release", "*")
     )
 
@@ -194,15 +197,15 @@ class ClusterCollectionHandler(JSONHandler):
         )
         attributes.generate_fields()
 
-        if cluster.net_provider == 'nova_network':
-            netmanager = NetworkManager()
-        elif cluster.net_provider == 'neutron':
-            netmanager = NeutronManager()
-
+        netmanager = NetworkManager()
         try:
             netmanager.create_network_groups(cluster.id)
+
+            # Neutron-related
             if cluster.net_provider == 'neutron':
-                netmanager.create_neutron_config(cluster)
+                neutron_manager = NeutronManager()
+                neutron_manager.create_neutron_config(cluster)
+            # /Neutron-related
 
             cluster.add_pending_changes("attributes")
             cluster.add_pending_changes("networks")

@@ -23,7 +23,7 @@ class saveandquit():
         results, modulename = self.parent.global_save()
         if results:
            self.parent.footer.set_text("All changes saved successfully!")
-           self.parent.refresh()
+           self.parent.refreshScreen()
            time.sleep(1.5)
            self.parent.exit_program(None)
         else:

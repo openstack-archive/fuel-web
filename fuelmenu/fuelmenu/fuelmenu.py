@@ -244,15 +244,20 @@ class FuelSetup(object):
                 continue
             else:
                 try:
-                    log.info("Checking module: %s" % modulename)
-                    details = module.check(None)
-                    if details:
+                    log.info("Checking and applying module: %s" 
+                                         % modulename)
+                    self.footer.set_text("Checking and applying module: %s" 
+                                         % modulename)
+                    self.refreshScreen()
+
+                    if module.check(None):
                         log.info("Saving module: %s" % modulename)
                         module.apply(details)
                     else:
                         return False, modulename
                 except AttributeError:
-                    log.info("Module %s does not have save function")
+                    log.info("Module %s does not have save function"
+                             % (modulename))
         return True, None
 
 def setup():

@@ -413,6 +413,17 @@
                             "generator": "password"
                         }
                     },
+                    "heat": {
+                        "db_password": {
+                            "generator": "password"
+                        },
+                        "rabbit_password": {
+                            "generator": "password"
+                        },
+                        "rabbit_user": {
+                            "generator": "password"
+                        }
+                    },
                     "base_syslog": {
                         "syslog_server": {
                             "generator": "ip",

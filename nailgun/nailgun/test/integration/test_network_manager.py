@@ -27,6 +27,7 @@ from sqlalchemy import not_
 from sqlalchemy.orm import joinedload
 
 import nailgun
+
 from nailgun.api.models import IPAddr
 from nailgun.api.models import IPAddrRange
 from nailgun.api.models import Network
@@ -34,10 +35,10 @@ from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
 from nailgun.api.models import NodeNICInterface
 from nailgun.api.models import Vlan
+from nailgun.network.manager import NetworkManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
-from nailgun.network.manager import NetworkManager
 
 
 class TestNetworkManager(BaseIntegrationTest):
@@ -178,7 +179,8 @@ class TestNetworkManager(BaseIntegrationTest):
             self.env.network_manager.get_default_nic_networkgroups(
                 node_db, other_iface))
         self.assertEquals(
-            self.db.query(NodeNICInterface).get(admin_nic.id).assigned_networks,
+            self.db.query(
+                NodeNICInterface).get(admin_nic.id).assigned_networks,
             [])
 
     def test_assign_vip_is_idempotent(self):

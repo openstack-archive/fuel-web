@@ -63,7 +63,7 @@ class FuelSetup(object):
         self.screen = None
         self.defaultsettingsfile = "%s/settings.yaml" \
                                    % (os.path.dirname(__file__))
-        self.settingsfile = "%s/newsettings.yaml" \
+        self.settingsfile = "/etc/astute.yaml" \
                             % (os.path.dirname(__file__))
         self.managediface = "eth0"
         #Set to true to move all settings to end

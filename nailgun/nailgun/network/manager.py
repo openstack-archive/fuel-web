@@ -577,16 +577,6 @@ class NetworkManager(object):
 
         return ips.all()
 
-    def get_main_nic(self, node_id):
-        node_db = db().query(Node).get(node_id)
-        for nic in node_db.interfaces:
-            if node_db.mac == nic.mac:
-                return nic.id
-        # we need at least one interface here - so let's
-        # take the first one
-        if node_db.interfaces:
-            return node_db.interfaces[0].id
-
     def clear_all_allowed_networks(self, node_id):
         node_db = db().query(Node).get(node_id)
         for nic in node_db.interfaces:
@@ -594,26 +584,22 @@ class NetworkManager(object):
                 nic.allowed_networks.pop()
         db().commit()
 
-    def clear_assigned_networks(self, node_id):
-        node_db = db().query(Node).get(node_id)
-        for nic in node_db.interfaces:
+    def clear_assigned_networks(self, node):
+        for nic in node.interfaces:
             while nic.assigned_networks:
                 nic.assigned_networks.pop()
         db().commit()
 
-    def get_cluster_networkgroups_by_node(self, node_id):
+    def get_cluster_networkgroups_by_node(self, node):
         """Method for receiving cluster network groups by node.
 
         :param node: Node object.
         :type  node: Node
         :returns: List of network groups for cluster node belongs to.
         """
-        node_db = db().query(Node).get(node_id)
-        if node_db.cluster:
-            return [ng.id for ng in node_db.cluster.network_groups]
-        return []
+        return node.cluster.network_groups
 
-    def allow_network_assignment_to_all_interfaces(self, node_id):
+    def allow_network_assignment_to_all_interfaces(self, node):
         """Method adds all network groups from cluster
         to allowed_networks list for all interfaces
         of specified node.
@@ -621,26 +607,16 @@ class NetworkManager(object):
         :param node: Node object.
         :type  node: Node
         """
-        node_db = db().query(Node).get(node_id)
-        for nic in node_db.interfaces:
-            for net_group_id in self.get_cluster_networkgroups_by_node(
-                node_id
-            ):
-                ng_db = db().query(NetworkGroup).get(net_group_id)
-                nic.allowed_networks.append(ng_db)
+        for nic in node.interfaces:
+            for ng in self.get_cluster_networkgroups_by_node(node):
+                nic.allowed_networks.append(ng)
         db().commit()
 
-    def assign_networks_to_main_interface(self, node_id):
-        self.clear_assigned_networks(node_id)
-        main_nic_id = self.get_main_nic(node_id)
-        if main_nic_id:
-            main_nic = db().query(NodeNICInterface).get(main_nic_id)
-            for net_group_id in self.get_cluster_networkgroups_by_node(
-                node_id
-            ):
-                ng_db = db().query(NetworkGroup).get(net_group_id)
-                main_nic.assigned_networks.append(ng_db)
-            db().commit()
+    def assign_networks_to_main_interface(self, node):
+        self.clear_assigned_networks(node)
+        for ng in self.get_cluster_networkgroups_by_node(node):
+            node.admin_interface.assigned_networks.append(ng)
+        db().commit()
 
     def get_node_networks(self, node_id):
         """Method for receiving network data for a given node.
@@ -875,22 +851,22 @@ class NetworkManager(object):
 
             map(db().delete, interfaces_to_delete)
 
-    def get_default_nic_networkgroups(self, node_id, nic_id):
-        main_nic_id = self.get_main_nic(node_id)
-        return self.get_all_cluster_networkgroups(node_id) \
-            if nic_id == main_nic_id else []
+    def get_default_nic_networkgroups(self, node, nic):
+        """Assign all network groups on admin interface
+        by default
+        """
+        return self.get_all_cluster_networkgroups(node) \
+            if nic == node.admin_interface else []
 
-    def get_all_cluster_networkgroups(self, node_id):
-        node_db = db().query(Node).get(node_id)
-        if node_db.cluster:
-            return [ng.id for ng in node_db.cluster.network_groups]
+    def get_all_cluster_networkgroups(self, node):
+        if node.cluster:
+            return node.cluster.network_groups
         return []
 
-    def get_allowed_nic_networkgroups(self, node_id, nic_id):
-        """nic_id is not used now, but this logic will be improved
-        in the future, so let it be
+    def get_allowed_nic_networkgroups(self, node):
+        """Get all allowed network groups
         """
-        return self.get_all_cluster_networkgroups(node_id)
+        return self.get_all_cluster_networkgroups(node)
 
     def _get_admin_network(self, node):
         """Node contain mac address which sent ohai,

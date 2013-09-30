@@ -110,13 +110,12 @@ class ClusterHandler(JSONHandler):
                 map(cluster.nodes.remove, nodes_to_remove)
                 map(cluster.nodes.append, nodes_to_add)
                 for node in nodes_to_remove:
-                    network_manager.clear_assigned_networks(node.id)
+                    network_manager.clear_assigned_networks(node)
                     network_manager.clear_all_allowed_networks(node.id)
                 for node in nodes_to_add:
                     network_manager.allow_network_assignment_to_all_interfaces(
-                        node.id
-                    )
-                    network_manager.assign_networks_to_main_interface(node.id)
+                        node)
+                    network_manager.assign_networks_to_main_interface(node)
             else:
                 setattr(cluster, key, value)
         db().commit()
@@ -201,9 +200,8 @@ class ClusterCollectionHandler(JSONHandler):
                 db().commit()
                 for node in nodes:
                     netmanager.allow_network_assignment_to_all_interfaces(
-                        node.id
-                    )
-                    netmanager.assign_networks_to_main_interface(node.id)
+                        node)
+                    netmanager.assign_networks_to_main_interface(node)
 
             raise web.webapi.created(json.dumps(
                 ClusterHandler.render(cluster),

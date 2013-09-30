@@ -376,9 +376,9 @@ class Node(Base):
             if ip_addr and IPAddress(ip_addr) in IPNetwork(admin_cidr):
                 return interface
 
-        err_msg = u'Cannot find admin interface for node: "%s"' % \
-                  self.full_name
-        logger.warning(err_msg)
+        logger.warning(u'Cannot find admin interface for node'
+                       'return first interface: "%s"' %
+                       self.full_name)
         return self.interfaces[0]
 
     def _check_interface_has_required_params(self, iface):

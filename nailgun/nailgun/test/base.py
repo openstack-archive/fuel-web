@@ -415,40 +415,82 @@ class Environment(object):
             ('openstack',))[0]['fields']['volumes_metadata']
 
     def get_default_networks_metadata(self):
-        return [
-            {
-                "name": "floating",
-                "pool": ["172.16.0.0/12"],
-                "use_public_vlan": True,
-                "assign": False,
-                "assign_vip": False
-            },
-            {
-                "name": "public",
-                "pool": ["172.16.0.0/12"],
-                "use_public_vlan": True,
-                "assign": True,
-                "assign_vip": True
-            },
-            {
-                "name": "management",
-                "pool": ["192.168.0.0/16"],
-                "assign": True,
-                "assign_vip": True
-            },
-            {
-                "name": "storage",
-                "pool": ["192.168.0.0/16"],
-                "assign": True,
-                "assign_vip": False
-            },
-            {
-                "name": "fixed",
-                "pool": ["10.0.0.0/8"],
-                "assign": False,
-                "assign_vip": False
+        return {
+            "nova_network": [
+                {
+                    "name": "floating",
+                    "pool": ["172.16.0.0/12"],
+                    "use_public_vlan": True,
+                    "assign": False,
+                    "assign_vip": False
+                },
+                {
+                    "name": "public",
+                    "pool": ["172.16.0.0/12"],
+                    "use_public_vlan": True,
+                    "assign": True,
+                    "assign_vip": True
+                },
+                {
+                    "name": "management",
+                    "pool": ["192.168.0.0/16"],
+                    "assign": True,
+                    "assign_vip": True
+                },
+                {
+                    "name": "storage",
+                    "pool": ["192.168.0.0/16"],
+                    "assign": True,
+                    "assign_vip": False
+                },
+                {
+                    "name": "fixed",
+                    "pool": ["10.0.0.0/8"],
+                    "assign": False,
+                    "assign_vip": False
+                }
+            ],
+            "neutron": {
+                "networks": [
+                    {
+                        "name": "public",
+                        "pool": ["172.16.0.0/12"]
+                    },
+                    {
+                        "name": "management",
+                        "pool": ["192.168.0.0/16"]
+                    },
+                    {
+                        "name": "storage",
+                        "pool": ["192.168.0.0/16"]
+                    }
+                ],
+                "config": {
+                    "parameters": {
+                        "amqp": {
+                            "provider": "rabbitmq",
+                            "username": None,
+                            "passwd": "",
+                            "hosts": "hostname1:5672, hostname2:5672"
+                        },
+                        "database": {
+                            "provider": "mysql",
+                            "port": "3306",
+                            "database": None,
+                            "username": None,
+                            "passwd": ""
+                        },
+                        "keystone": {
+                            "admin_user": None,
+                            "admin_password": ""
+                        },
+                        "metadata": {
+                            "metadata_proxy_shared_secret": ""
+                        }
+                    }
+                }
             }
-        ]
+        }
 
     def get_default_attributes_metadata(self):
         return self.read_fixtures(
@@ -521,7 +563,7 @@ class Environment(object):
             else:
                 resp = self.app.get(
                     reverse(
-                        'NetworkConfigurationHandler',
+                        'NovaNetworkConfigurationHandler',
                         kwargs={'cluster_id': self.clusters[0].id}
                     ),
                     headers=self.default_headers
@@ -531,7 +573,7 @@ class Environment(object):
 
             resp = self.app.put(
                 reverse(
-                    'NetworkConfigurationVerifyHandler',
+                    'NovaNetworkConfigurationVerifyHandler',
                     kwargs={'cluster_id': self.clusters[0].id}),
                 nets,
                 headers=self.default_headers

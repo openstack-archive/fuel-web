@@ -30,13 +30,16 @@ from nailgun.api.models import Cluster
 from nailgun.api.models import Node
 from nailgun.api.models import Release
 from nailgun.api.serializers.network_configuration \
-    import NetworkConfigurationSerializer
+    import NeutronNetworkConfigurationSerializer
+from nailgun.api.serializers.network_configuration \
+    import NovaNetworkConfigurationSerializer
 from nailgun.api.validators.cluster import AttributesValidator
 from nailgun.api.validators.cluster import ClusterValidator
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import DeploymentTaskManager
 
@@ -52,6 +55,7 @@ class ClusterHandler(JSONHandler):
         "status",
         "grouping",
         "is_customized",
+        "net_provider",
         ("release", "*")
     )
 
@@ -174,7 +178,13 @@ class ClusterCollectionHandler(JSONHandler):
         cluster = Cluster()
         cluster.release = db().query(Release).get(data["release"])
         # TODO(NAME): use fields
-        for field in ('name', 'mode', 'net_manager'):
+        for field in (
+            'name',
+            'mode',
+            'net_manager',
+            'net_provider',
+            'net_segment_type'
+        ):
             if data.get(field):
                 setattr(cluster, field, data.get(field))
         db().add(cluster)
@@ -186,9 +196,15 @@ class ClusterCollectionHandler(JSONHandler):
         )
         attributes.generate_fields()
 
-        netmanager = NetworkManager()
+        if cluster.net_provider == 'nova_network':
+            netmanager = NetworkManager()
+        elif cluster.net_provider == 'neutron':
+            netmanager = NeutronManager()
+
         try:
             netmanager.create_network_groups(cluster.id)
+            if cluster.net_provider == 'neutron':
+                netmanager.create_neutron_config(cluster)
 
             cluster.add_pending_changes("attributes")
             cluster.add_pending_changes("networks")
@@ -245,13 +261,17 @@ class ClusterChangesHandler(JSONHandler):
             log_404=(
                 "warning",
                 "Error: there is no cluster "
-                "with id '{0}' in DB.".format(cluster_id)))
+                "with id '{0}' in DB.".format(cluster_id)
+            )
+        )
+
+        if cluster.net_provider == 'nova_network':
+            net_serializer = NovaNetworkConfigurationSerializer
+        elif cluster.net_provider == 'neutron':
+            net_serializer = NeutronNetworkConfigurationSerializer
 
         try:
-            network_info = \
-                NetworkConfigurationSerializer.serialize_for_cluster(
-                    cluster
-                )
+            network_info = net_serializer.serialize_for_cluster(cluster)
             logger.info(
                 u"Network info:\n{0}".format(
                     json.dumps(network_info, indent=4)

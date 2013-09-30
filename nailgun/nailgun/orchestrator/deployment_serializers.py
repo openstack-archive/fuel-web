@@ -50,7 +50,7 @@ class Priority(object):
         return self.priority
 
 
-class OrchestratorSerializer(object):
+class NovaOrchestratorSerializer(object):
     """Base class for orchestrator searilization."""
 
     @classmethod
@@ -195,6 +195,13 @@ class OrchestratorSerializer(object):
         """Serialize node, then it will be
         merged with common attributes
         """
+        return cls._serialize_node(node, role)
+
+    @classmethod
+    def _serialize_node(cls, node, role):
+        """Serialize node, then it will be
+        merged with common attributes
+        """
         network_data = node.network_data
         interfaces = cls.configure_interfaces(network_data)
         cls.__add_hw_interfaces(interfaces, node.meta['interfaces'])
@@ -287,7 +294,7 @@ class OrchestratorSerializer(object):
 
     @classmethod
     def configure_interfaces(cls, network_data):
-        """Configre interfaces
+        """Configure interfaces
         """
         interfaces = {}
         for network in network_data:
@@ -366,13 +373,15 @@ class OrchestratorSerializer(object):
                 }
 
 
-class OrchestratorHASerializer(OrchestratorSerializer):
+class NovaOrchestratorHASerializer(NovaOrchestratorSerializer):
     """Serializer for ha mode."""
 
     @classmethod
     def serialize(cls, cluster):
         serialized_nodes = super(
-            OrchestratorHASerializer, cls).serialize(cluster)
+            NovaOrchestratorHASerializer,
+            cls
+        ).serialize(cluster)
         cls.set_primary_controller(serialized_nodes)
 
         return serialized_nodes
@@ -393,7 +402,9 @@ class OrchestratorHASerializer(OrchestratorSerializer):
           redeployed only node which was failed
         """
         nodes = super(
-            OrchestratorHASerializer, cls).get_nodes_to_deployment(cluster)
+            NovaOrchestratorHASerializer,
+            cls
+        ).get_nodes_to_deployment(cluster)
 
         controller_nodes = []
 
@@ -435,7 +446,10 @@ class OrchestratorHASerializer(OrchestratorSerializer):
     def node_list(cls, nodes):
         """Node list
         """
-        node_list = super(OrchestratorHASerializer, cls).node_list(nodes)
+        node_list = super(
+            NovaOrchestratorHASerializer,
+            cls
+        ).node_list(nodes)
 
         for node in node_list:
             node['swift_zone'] = node['uid']
@@ -446,8 +460,10 @@ class OrchestratorHASerializer(OrchestratorSerializer):
     def get_common_attrs(cls, cluster):
         """Common attributes for all facts
         """
-        common_attrs = super(OrchestratorHASerializer, cls).get_common_attrs(
-            cluster)
+        common_attrs = super(
+            NovaOrchestratorHASerializer,
+            cls
+        ).get_common_attrs(cluster)
 
         netmanager = NetworkManager()
         common_attrs['management_vip'] = netmanager.assign_vip(
@@ -511,15 +527,252 @@ class OrchestratorHASerializer(OrchestratorSerializer):
             n['priority'] = other_nodes_prior
 
 
+class NeutronMethods(object):
+    """Class with methods which should be overrided to make Neutron happy."""
+
+    @classmethod
+    def serialize_node(cls, node, role):
+        """Serialize node, then it will be
+        merged with common attributes
+        """
+        node_attrs = cls._serialize_node(node, role)
+        node_attrs['network_scheme'] = cls.generate_network_scheme(node)
+        for attr in node_attrs.keys()[:]:
+            if attr.endswith("_interface"):
+                del node_attrs[attr]
+
+        return node_attrs
+
+    @classmethod
+    def _node_has_role_by_name(cls, node, rolename):
+        if rolename in node.pending_roles or rolename in node.roles:
+            return True
+        return False
+
+    @classmethod
+    def serialize_cluster_attrs(cls, cluster):
+        """Cluster attributes."""
+        attrs = cluster.attributes.merged_attrs_values()
+        attrs['deployment_mode'] = cluster.mode
+        attrs['deployment_id'] = cluster.id
+        attrs['master_ip'] = settings.MASTER_IP
+        attrs['quantum_settings'] = cls.neutron_attrs(cluster)
+        attrs['quantum'] = True
+
+        if cluster.mode == 'multinode':
+            nm = NetworkManager()
+            for node in cluster.nodes:
+                if cls._node_has_role_by_name(node, 'controller'):
+                    mgmt_cidr = nm.get_node_network_by_netname(
+                        node.id,
+                        'management'
+                    )['ip']
+                    attrs['management_vip'] = mgmt_cidr.split('/')[0]
+                    break
+
+        return attrs
+
+    @classmethod
+    def neutron_attrs(cls, cluster):
+        """Network configuration for Neutron
+        """
+        attrs = {}
+        neutron_config = cluster.neutron_config
+        attrs['metadata'] = neutron_config.nova_metadata
+        attrs['L3'] = neutron_config.L3 or {
+            'use_namespaces': True
+        }
+        attrs['L2'] = neutron_config.L2
+        attrs['L2']['segmentation_type'] = neutron_config.segmentation_type
+
+        join_range = lambda r: (":".join(map(str, r)) if r else None)
+
+        for net, net_conf in attrs['L2']['phys_nets'].iteritems():
+            net_conf['vlan_range'] = join_range(
+                net_conf['vlan_range']
+            )
+            attrs['L2']['phys_nets'][net] = net_conf
+        if attrs['L2'].get('tunnel_id_ranges'):
+            attrs['L2']['tunnel_id_ranges'] = join_range(
+                attrs['L2']['tunnel_id_ranges']
+            )
+
+        attrs['predefined_networks'] = neutron_config.predefined_networks
+
+        nets_l2_configs = {
+            "net04_ext": {
+                "network_type": "flat",
+                "segment_id": None,
+                "router_ext": True,
+                "physnet": "physnet1"
+            },
+            "net04": {
+                "network_type": cluster.net_segment_type,
+                "segment_id": None,
+                "router_ext": False,
+                "physnet": "physnet2"
+            }
+        }
+
+        for net, net_conf in attrs['predefined_networks'].iteritems():
+            net_conf["L3"]["subnet"] = net_conf["L3"].pop("cidr")
+            net_conf["L3"]["floating"] = join_range(
+                net_conf["L3"]["floating"]
+            )
+
+            net_conf["L2"] = nets_l2_configs[net]
+
+            if net == "net04_ext":
+                net_conf["shared"] = False
+
+            attrs['predefined_networks'][net] = net_conf
+
+        if cluster.release.operating_system == 'RHEL':
+            if 'amqp' not in attrs:
+                attrs['amqp'] = {}
+            elif not isinstance(attrs.get('amqp'), dict):
+                # FIXME Raise some meaningful exception.
+                pass
+            attrs['amqp']['provider'] = 'qpid-rh'
+
+        return attrs
+
+    @classmethod
+    def generate_network_scheme(cls, node):
+
+        # Create a data structure and fill it with static values.
+
+        attrs = {
+            'version': '1.0',
+            'provider': 'ovs',
+            'interfaces': {},  # It's a list of physical interfaces.
+            'endpoints': {
+                'br-storage': {},
+                'br-ex': {},
+                'br-mgmt': {},
+                # There should be an endpoint for a fw-admin network.
+            },
+            'roles': {
+                'ex': 'br-ex',
+                'management': 'br-mgmt',
+                'storage': 'br-storage',
+                'fw-admin': ''
+            },
+            'transformations': []
+        }
+        # Add bridges for networks.
+        for brname in ('br-ex', 'br-mgmt', 'br-storage', 'br-prv'):
+            attrs['transformations'].append({
+                'action': 'add-br',
+                'name': brname
+            })
+
+        # Add a dynamic data to a structure.
+
+        # Fill up interfaces and add bridges for them.
+        for iface in node.interfaces:
+            attrs['interfaces'][iface.name] = {}
+            attrs['transformations'].append({
+                'action': 'add-br',
+                'name': 'br-%s' % iface.name
+            })
+            attrs['transformations'].append({
+                'action': 'add-port',
+                'bridge': 'br-%s' % iface.name,
+                'name': iface.name
+            })
+
+        nm = NetworkManager()
+        # Populate IP address information to endpoints.
+        netgroup_mapping = [
+            ('storage', 'br-storage'),
+            ('public', 'br-ex'),
+            ('management', 'br-mgmt')
+        ]
+        netgroups = {}
+        for ngname, brname in netgroup_mapping:
+            # Here we get a dict with network description for this particular
+            # node with its assigned IPs and device names for each network.
+            netgroup = nm.get_node_network_by_netname(node.id, ngname)
+            attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
+            netgroups[ngname] = netgroup
+        attrs['endpoints']['br-ex']['gateway'] = netgroups['public']['gateway']
+
+        # Connect interface bridges to network bridges.
+        for ngname, brname in netgroup_mapping:
+            netgroup = nm.get_node_network_by_netname(node.id, ngname)
+            if netgroup['vlan'] == 0:
+                attrs['transformations'].append({
+                    'action': 'add-patch',
+                    'bridges': ['br-%s' % netgroup['dev'], brname],
+                    'trunks': [0]
+                })
+            elif netgroup['vlan'] > 1:
+                attrs['transformations'].append({
+                    'action': 'add-patch',
+                    'bridges': ['br-%s' % netgroup['dev'], brname],
+                    'tags': [netgroup['vlan'], 0]
+                })
+            else:
+                # FIXME! Should raise some exception I think.
+                pass
+
+        # Dance around Neutron segmentation type.
+        if node.cluster.net_segment_type == 'vlan':
+            attrs['endpoints']['br-prv'] = {'IP': 'none'}
+            attrs['roles']['private'] = 'br-prv'
+
+            attrs['transformations'].append({
+                'action': 'add-patch',
+                'bridges': [
+                    'br-%s' % nm.get_node_interface_by_netname(
+                        node.id,
+                        'private'
+                    ).name,
+                    'br-prv'
+                ],
+                'tags': [0, 0]
+            })
+        elif node.cluster.net_segment_type == 'gre':
+            attrs['roles']['mesh'] = 'br-mgmt'
+        else:
+            # FIXME! Should raise some exception I think.
+            pass
+
+        # Fill up all about fuelweb-admin network.
+        attrs['endpoints'][node.admin_interface.name] = {
+            "IP": "dhcp"
+        }
+        attrs['roles']['fw-admin'] = node.admin_interface.name
+
+        return attrs
+
+
+class NeutronOrchestratorSerializer(NeutronMethods,
+                                    NovaOrchestratorSerializer):
+    """Class for orchestrator searilization with Neutron."""
+
+
+class NeutronOrchestratorHASerializer(NeutronMethods,
+                                      NovaOrchestratorHASerializer):
+    """Class for orchestrator searilization with Neutron and HA."""
+
+
 def serialize(cluster):
     """Serialization depends on deployment mode
     """
     cluster.prepare_for_deployment()
 
     if cluster.mode == 'multinode':
-        serializer = OrchestratorSerializer
+        if cluster.net_provider == 'nova_network':
+            serializer = NovaOrchestratorSerializer
+        else:
+            serializer = NeutronOrchestratorSerializer
     elif cluster.is_ha_mode:
         # Same serializer for all ha
-        serializer = OrchestratorHASerializer
+        if cluster.net_provider == 'nova_network':
+            serializer = NovaOrchestratorHASerializer
+        else:
+            serializer = NeutronOrchestratorHASerializer
 
     return serializer.serialize(cluster)

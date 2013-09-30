@@ -20,7 +20,9 @@ from nailgun.api.models import Cluster
 from nailgun.api.models import RedHatAccount
 from nailgun.api.models import Task
 from nailgun.api.serializers.network_configuration \
-    import NetworkConfigurationSerializer
+    import NeutronNetworkConfigurationSerializer
+from nailgun.api.serializers.network_configuration \
+    import NovaNetworkConfigurationSerializer
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -269,10 +271,12 @@ class DeploymentTaskManager(TaskManager):
 
     def check_before_deployment(self, supertask):
         # checking admin intersection with untagged
-        network_info = NetworkConfigurationSerializer\
-            .serialize_for_cluster(
-                self.cluster
-            )
+        if self.cluster.net_provider == 'nova_network':
+            net_serializer = NovaNetworkConfigurationSerializer
+        elif self.cluster.net_provider == 'neutron':
+            net_serializer = NeutronNetworkConfigurationSerializer
+
+        network_info = net_serializer.serialize_for_cluster(self.cluster)
         check_networks = supertask.create_subtask('check_networks')
         self._call_silently(
             check_networks,

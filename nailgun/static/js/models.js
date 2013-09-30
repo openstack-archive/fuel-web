@@ -364,29 +364,25 @@ define(['utils'], function(utils) {
 
     models.Network = Backbone.Model.extend({
         constructorName: 'Network',
-        getAttributes: function() {
-            var attributes = {
-                'floating': ['ip_ranges', 'vlan_start'],
-                'public': ['ip_ranges', 'vlan_start', 'netmask', 'gateway'],
-                'management': ['cidr', 'vlan_start'],
-                'storage': ['cidr', 'vlan_start'],
-                'fixed': ['cidr', 'amount', 'network_size', 'vlan_start']
-            };
+        getAttributes: function(provider) {
+            var attributes;
+            if (provider == 'nova_network') {
+                attributes = {
+                    'floating': ['ip_ranges', 'vlan_start'],
+                    'public': ['ip_ranges', 'vlan_start', 'netmask', 'gateway'],
+                    'management': ['cidr', 'vlan_start'],
+                    'storage': ['cidr', 'vlan_start'],
+                    'fixed': ['cidr', 'amount', 'network_size', 'vlan_start']
+                };
+            }
+            if (provider == 'neutron') {
+                attributes = {
+                    'public': ['cidr', 'vlan_start', 'gateway'],
+                    'management': ['cidr', 'vlan_start'],
+                    'storage': ['cidr', 'vlan_start']
+                };
+            }
             return attributes[this.get('name')] || ['vlan_start'];
-        },
-        validateIP: function(value) {
-            var ipRegexp = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
-            return _.isString(value) && !value.match(ipRegexp);
-        },
-        validateIPrange: function(startIP, endIP) {
-            var start = startIP.split('.'), end = endIP.split('.');
-            var valid = true;
-            _.each(start, function(el, index) {
-                if (parseInt(el, 10) > parseInt(end[index], 10)) {
-                    valid = false;
-                }
-            });
-            return valid;
         },
         validateNetmask: function(value) {
             var valid_values = {0:1, 128:1, 192:1, 224:1, 240:1, 248:1, 252:1, 254:1, 255:1};
@@ -402,8 +398,7 @@ define(['utils'], function(utils) {
         },
         validate: function(attrs, options) {
             var errors = {};
-            var match;
-            _.each(this.getAttributes(), _.bind(function(attribute) {
+            _.each(this.getAttributes(options.net_provider), _.bind(function(attribute) {
                 if (attribute == 'ip_ranges') {
                     if (_.filter(attrs.ip_ranges, function(range) {return !_.isEqual(range, ['', '']);}).length){
                         _.each(attrs.ip_ranges, _.bind(function(range, index) {
@@ -413,15 +408,15 @@ define(['utils'], function(utils) {
                                 var end = _.last(range);
                                 if (start == '') {
                                     rangeErrors.start = 'Empty IP range start';
-                                } else if (this.validateIP(start)) {
+                                } else if (utils.validateIP(start)) {
                                     rangeErrors.start = 'Invalid IP range start';
                                 }
                                 if (end == '') {
                                     rangeErrors.end = 'Empty IP range end';
-                                } else if (this.validateIP(end)) {
+                                } else if (utils.validateIP(end)) {
                                     rangeErrors.end = 'Invalid IP range end';
                                 }
-                                if (start != '' && end != '' && !this.validateIPrange(start, end)) {
+                                if (start != '' && end != '' && !utils.validateIPrange(start, end)) {
                                     rangeErrors.start = rangeErrors.end = 'IP range start is greater than IP range end';
                                 }
                                 if (rangeErrors.start || rangeErrors.end) {
@@ -436,23 +431,7 @@ define(['utils'], function(utils) {
                         errors.ip_ranges = _.compact(_.union([rangeErrors], errors.ip_ranges));
                     }
                 } else if (attribute == 'cidr') {
-                    var cidrRegexp = /^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$/;
-                    if (_.isString(attrs.cidr)) {
-                        match = attrs.cidr.match(cidrRegexp);
-                        if (match) {
-                            var prefix = parseInt(match[1], 10);
-                            if (prefix < 2) {
-                                errors.cidr = 'Network is too large';
-                            }
-                            if (prefix > 30) {
-                                errors.cidr = 'Network is too small';
-                            }
-                        } else {
-                            errors.cidr = 'Invalid CIDR';
-                        }
-                    } else {
-                        errors.cidr = 'Invalid CIDR';
-                    }
+                    errors = _.extend(errors, utils.validateCidr(attrs.cidr));
                 } else if (attribute == 'vlan_start') {
                     if (!_.isNull(attrs.vlan_start) || (attrs.name == 'fixed' && options.net_manager == 'VlanManager')) {
                         if (!utils.isNaturalNumber(attrs.vlan_start) || attrs.vlan_start < 1 || attrs.vlan_start > 4094) {
@@ -461,7 +440,7 @@ define(['utils'], function(utils) {
                     }
                 } else if (attribute == 'netmask' && this.validateNetmask(attrs.netmask)) {
                     errors.netmask = 'Invalid netmask';
-                } else if (attribute == 'gateway' && this.validateIP(attrs.gateway)) {
+                } else if (attribute == 'gateway' && utils.validateIP(attrs.gateway)) {
                     errors.gateway = 'Invalid gateway';
                 } else if (attribute == 'amount') {
                     if (!utils.isNaturalNumber(attrs.amount)) {
@@ -484,17 +463,76 @@ define(['utils'], function(utils) {
         }
     });
 
+    models.NeutronConfiguration = Backbone.Model.extend({
+        constructorName: 'NeutronConfiguration',
+        validate: function(attrs) {
+            var errors = {};
+            _.each(attrs, function(configuration, title) {
+                if (title == 'L2') {
+                    // ID range validation
+                    var id_range = configuration.tunnel_id_ranges || configuration.phys_nets.physnet2.vlan_range;
+                    if (!_.compact(id_range).length) {
+                        errors.id_range = 'Invalid ID range';
+                    } else {
+                        if (!_.isNull(id_range[0]) && !_.isNull(id_range[1]) && id_range[0] > id_range[1] ) {
+                            errors.id_range = 'ID range start is greater than ID range end';
+                        }
+                        if (_.isNull(id_range[0]) || !utils.isNaturalNumber(id_range[0]) || id_range[0] < 2 || id_range[0] > 65535) {
+                            errors.id_start = 'Invalid ID range start';
+                        }
+                        if (_.isNull(id_range[1]) || !utils.isNaturalNumber(id_range[1]) || id_range[1] < 2 || id_range[1] > 65535) {
+                            errors.id_end = 'Invalid ID range end';
+                        }
+                    }
+                    // base_mac validation
+                    var macRegexp = /^([0-9a-fA-F]{2}[:\-]){5}([0-9a-fA-F]{2})$/;
+                    var mac = configuration.base_mac;
+                    if (mac == '' || !(_.isString(mac) && mac.match(macRegexp))) {
+                        errors.base_mac = 'Invalid MAC address';
+                    }
+                } else if (title == 'predefined_networks') {
+                    // CIDR validation
+                    errors = _.extend(errors, utils.validateCidr(configuration.net04.L3.cidr, 'cidr-int'));
+                    // floating IP range validation
+                    var floatingIpRange = configuration.net04_ext.L3.floating;
+                    if (floatingIpRange[0] == '') {
+                        errors.floating_start = 'Empty IP range start';
+                    } else if (utils.validateIP(floatingIpRange[0])) {
+                        errors.floating_start = 'Invalid IP range start';
+                    }
+                    if (floatingIpRange[1] == '') {
+                        errors.floating_end = 'Empty IP range end';
+                    } else if (utils.validateIP(floatingIpRange[1])) {
+                        errors.floating_end = 'Invalid IP range end';
+                    }
+                    if (floatingIpRange[0] != '' && floatingIpRange[1] != '' && !utils.validateIPrange(floatingIpRange[0], floatingIpRange[1])) {
+                        errors.floating = 'IP range start is greater than IP range end';
+                    }
+                    // nameservers validation
+                    _.each(configuration.net04.L3.nameservers, function(nameserver, index) {
+                        if (utils.validateIP(nameserver)) {
+                            errors['nameserver-' + index] = 'Invalid nameserver';
+                        }
+                    });
+                }
+            });
+            return _.isEmpty(errors) ? null : errors;
+        }
+    });
+
     models.NetworkConfiguration = Backbone.Model.extend({
         constructorName: 'NetworkConfiguration',
         urlRoot: '/api/clusters',
         parse: function(response) {
             response.networks = new models.Networks(response.networks);
+            response.neutron_parameters = new models.NeutronConfiguration(response.neutron_parameters);
             return response;
         },
         toJSON: function() {
             return {
                 net_manager: this.get('net_manager'),
-                networks: this.get('networks').toJSON()
+                networks: this.get('networks').toJSON(),
+                neutron_parameters: this.get('neutron_parameters').toJSON()
             };
         },
         isNew: function() {

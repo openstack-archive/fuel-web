@@ -100,6 +100,43 @@ define(['require'], function(require) {
         },
         isNaturalNumber: function(n) {
             return !_.isNaN(n) && n > 0 && n % 1 === 0;
+        },
+        validateCidr: function(cidr, field) {
+            field = field || 'cidr';
+            var errors = {};
+            var match;
+            var cidrRegexp = /^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$/;
+            if (_.isString(cidr)) {
+                match = cidr.match(cidrRegexp);
+                if (match) {
+                    var prefix = parseInt(match[1], 10);
+                    if (prefix < 2) {
+                        errors[field] = 'Network is too large';
+                    }
+                    if (prefix > 30) {
+                        errors[field] = 'Network is too small';
+                    }
+                } else {
+                    errors[field] = 'Invalid CIDR';
+                }
+            } else {
+                errors[field] = 'Invalid CIDR';
+            }
+            return errors;
+        },
+        validateIP: function(ip) {
+            var ipRegexp = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
+            return _.isString(ip) && !ip.match(ipRegexp);
+        },
+        validateIPrange: function(startIP, endIP) {
+            var start = startIP.split('.'), end = endIP.split('.');
+            var valid = true;
+            _.each(start, function(el, index) {
+                if (parseInt(el, 10) > parseInt(end[index], 10)) {
+                    valid = false;
+                }
+            });
+            return valid;
         }
     };
 

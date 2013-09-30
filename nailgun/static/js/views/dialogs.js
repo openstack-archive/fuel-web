@@ -377,13 +377,13 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         beforeClusterCreation: function(cluster) {
             var manager = this.$('input[name=manager]:checked').val();
             if (manager == 'nova-network') {
-                cluster.set({net_provider: 'NovaNetwork'});
+                cluster.set({net_provider: 'nova_network'});
             } else {
-                cluster.set({net_provider: 'Neutron'});
+                cluster.set({net_provider: 'neutron'});
                 if (manager == 'neutron-gre') {
-                    cluster.set({net_segment_type: 'GRE'});
+                    cluster.set({net_segment_type: 'gre'});
                 } else if (manager == 'neutron-vlan') {
-                    cluster.set({net_segment_type: 'VLAN'});
+                    cluster.set({net_segment_type: 'vlan'});
                 }
             }
             return (new $.Deferred()).resolve();

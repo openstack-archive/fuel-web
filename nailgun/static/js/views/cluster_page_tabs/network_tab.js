@@ -21,11 +21,12 @@ define(
     'views/dialogs',
     'text!templates/cluster/network_tab.html',
     'text!templates/cluster/network.html',
+    'text!templates/cluster/neutron_parameters.html',
     'text!templates/cluster/verify_network_control.html'
 ],
-function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, networkTabVerificationControlTemplate) {
+function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, neutronParametersTemplate, networkTabVerificationControlTemplate) {
     'use strict';
-    var NetworkTab, Network, NetworkTabVerificationControl;
+    var NetworkTab, Network, NeutronConfiguration, NetworkTabVerificationControl;
 
     NetworkTab = commonViews.Tab.extend({
         template: _.template(networkTabTemplate),
@@ -55,7 +56,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         checkForChanges: function() {
             this.hasChanges = !_.isEqual(this.model.get('networkConfiguration').toJSON(), this.networkConfiguration.toJSON());
-            this.defaultButtonsState(_.some(this.networkConfiguration.get('networks').models, 'validationError'));
+            this.defaultButtonsState(_.some(this.networkConfiguration.get('networks').models, 'validationError') || !!(this.networkConfiguration.get('neutron_parameters') && this.networkConfiguration.get('neutron_parameters').validationError));
         },
         changeManager: function(e) {
             this.$('.net-manager input').attr('checked', function(el, oldAttr) {return !oldAttr;});
@@ -63,18 +64,31 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.networkConfiguration.get('networks').findWhere({name: 'fixed'}).set({amount: this.$(e.currentTarget).val() == 'VlanManager' ? this.fixedAmount : 1});
             this.renderNetworks();
             this.checkForChanges();
-            this.networkConfiguration.get('networks').invoke('set', {}, {validate: true, net_manager: this.networkConfiguration.get('net_manager')}); // trigger validation check
+            this.networkConfiguration.get('networks').invoke('set', {}, { // trigger validation check
+                validate: true,
+                net_manager: this.networkConfiguration.get('net_manager'),
+                net_provider: this.model.get('net_provider')
+            });
             this.page.removeFinishedTasks();
         },
         updateFloatingVlanFromPublic: function() {
-            var networks = this.networkConfiguration.get('networks');
-            networks.findWhere({name: 'floating'}).set({vlan_start: networks.findWhere({name: 'public'}).get('vlan_start')});
+            if (this.model.get('net_provider') == 'nova_network') {
+                var networks = this.networkConfiguration.get('networks');
+                networks.findWhere({name: 'floating'}).set({vlan_start: networks.findWhere({name: 'public'}).get('vlan_start')});
+            }
+        },
+        updateExternalCidrFromPublic: function() {
+            if (this.model.get('net_provider') == 'neutron') {
+                var cidr = this.networkConfiguration.get('networks').findWhere({name: 'public'}).get('cidr');
+                this.networkConfiguration.get('neutron_parameters').get('predefined_networks').net04_ext.L3.cidr = cidr;
+                this.$('input[name=cidr-ext]').val(cidr).trigger('change');
+            }
         },
         startVerification: function() {
             var task = new models.Task();
             var options = {
                 method: 'PUT',
-                url: _.result(this.model, 'url') + '/network_configuration/verify',
+                url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider') + '/verify',
                 data: JSON.stringify(this.networkConfiguration)
             };
             task.save({}, options)
@@ -87,8 +101,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 }, this));
         },
         verifyNetworks: function() {
-            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError')) {
+            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError') && (!this.networkConfiguration.get('neutron_parameters') || !this.networkConfiguration.get('neutron_parameters').validationError)) {
                 this.$('.verify-networks-btn').prop('disabled', true);
+                this.filterEmptyIpRanges();
                 this.page.removeFinishedTasks().always(_.bind(this.startVerification, this));
             }
         },
@@ -103,10 +118,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         applyChanges: function() {
             var deferred;
-            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError')) {
+            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError') && (!this.networkConfiguration.get('neutron_parameters') || !this.networkConfiguration.get('neutron_parameters').validationError)) {
                 this.disableControls();
                 this.filterEmptyIpRanges();
-                deferred = Backbone.sync('update', this.networkConfiguration, {url: _.result(this.model, 'url') + '/network_configuration'})
+                deferred = Backbone.sync('update', this.networkConfiguration, {url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
                     .always(_.bind(function() {
                         this.model.fetch();
                         this.model.fetchRelated('tasks');
@@ -116,10 +131,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                             this.defaultButtonsState(false);
                         } else {
                             this.hasChanges = false;
-                            this.model.get('networkConfiguration').set({
-                                net_manager: this.networkConfiguration.get('net_manager'),
-                                networks: new models.Networks(this.networkConfiguration.get('networks').toJSON())
-                            });
+                            this.model.set({networkConfiguration: new models.NetworkConfiguration(this.networkConfiguration.toJSON(), {parse: true})});
                         }
                     }, this))
                     .fail(_.bind(function() {
@@ -154,12 +166,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         setInitialData: function() {
             this.hasChanges = false;
-            this.networkConfiguration.set({
-                net_manager: this.model.get('networkConfiguration').get('net_manager'),
-                networks: new models.Networks(this.model.get('networkConfiguration').get('networks').toJSON())
-            });
-            this.fixedAmount = this.networkConfiguration.get('networks').findWhere({name: 'fixed'}).get('amount') || 1;
-            _.each(this.networkConfiguration.get('networks').filter(function(network) {return network.get('name') != 'fixed';}), function(network) {
+            this.networkConfiguration = new models.NetworkConfiguration(this.model.get('networkConfiguration').toJSON(), {parse: true});
+            this.fixedAmount = this.model.get('net_provider') == 'nova_network' ? this.networkConfiguration.get('networks').findWhere({name: 'fixed'}).get('amount') || 1 : 1;
+            _.each(this.networkConfiguration.get('networks').reject({name: 'fixed'}), function(network) {
                 network.set({network_size: utils.calculateNetworkSize(network.get('cidr'))});
             });
         },
@@ -172,7 +181,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.model.get('tasks').on('remove', this.renderVerificationControl, this);
             if (!this.model.get('networkConfiguration')) {
                 this.model.set({networkConfiguration: new models.NetworkConfiguration()});
-                this.model.get('networkConfiguration').fetch({url: _.result(this.model, 'url') + '/network_configuration'})
+                this.loading = this.model.get('networkConfiguration').fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
                     .done(_.bind(function() {
                         this.setInitialData();
                         this.render();
@@ -214,14 +223,27 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 }, this);
             }
         },
+        renderNeutronConfiguration: function() {
+            if (this.model.get('net_provider') == 'neutron' && this.networkConfiguration.get('neutron_parameters')) {
+                var neutronConfigurationView = new NeutronConfiguration({
+                    neutronParameters: this.networkConfiguration.get('neutron_parameters'),
+                    tab: this
+                });
+                this.registerSubView(neutronConfigurationView);
+                this.$('.neutron-parameters').html(neutronConfigurationView.render().el);
+            }
+        },
         render: function() {
             this.$el.html(this.template({
+                loading: this.loading,
+                net_provider: this.model.get('net_provider'),
                 net_manager: this.networkConfiguration.get('net_manager'),
                 hasChanges: this.hasChanges,
                 locked: this.isLocked(),
                 verificationLocked: this.isVerificationLocked()
             }));
             this.renderNetworks();
+            this.renderNeutronConfiguration();
             this.renderVerificationControl();
             return this;
         }
@@ -234,8 +256,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             'change select': 'changeNetwork',
             'change .use-vlan-tagging': 'changeNetwork',
             'click .range-name': 'setIPRangeFocus',
-            'click .ip-ranges-add': 'addIPRange',
-            'click .ip-ranges-delete': 'deleteIPRange'
+            'click .ip-ranges-add:not(:disabled)': 'addIPRange',
+            'click .ip-ranges-delete:not(:disabled)': 'deleteIPRange'
         },
         setupVlanEnd: function() {
             var vlanEnd = '';
@@ -255,9 +277,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
 
             if (target.hasClass('use-vlan-tagging')) {
                 // toggle VLAN ID input field on checkbox
-                this.$('.vlan_start').toggle(target.is(':checked'));
+                target.parents('.range-row').find('.parameter-control:last').toggle(target.is(':checked'));
             }
-            if (this.network.get('name') == 'public') {
+            if (this.network.get('name') == 'public' && this.tab.model.get('net_provider') == 'nova_network') {
                 this.tab.$('input[name=floating-vlan_start]').val(this.$('input[name=public-vlan_start]').val());
                 if (target.hasClass('use-vlan-tagging')) {
                     this.tab.$('div.floating').find('.use-vlan-tagging').prop('checked', target.is(':checked'));
@@ -273,6 +295,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 this.setupVlanEnd();
             }
             this.tab.updateFloatingVlanFromPublic();
+            this.tab.updateExternalCidrFromPublic();
             this.tab.checkForChanges();
             this.tab.page.removeFinishedTasks();
         },
@@ -293,6 +316,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 network_size: fixedNetworkOnVlanManager ? Number(this.$('.network_size select').val()) : utils.calculateNetworkSize(this.$('.cidr input').val())
             }, {
                 validate: true,
+                net_provider: this.tab.model.get('net_provider'),
                 net_manager: this.tab.networkConfiguration.get('net_manager')
             });
         },
@@ -300,16 +324,13 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$(e.currentTarget).next().find('input:first').focus();
         },
         editIPRange: function(e, add) {
-            if (this.tab.isLocked()) {
-                return;
-            }
             var row = this.$(e.currentTarget).parents('.ip-range-row');
             if (add) {
                 var newRow = row.clone();
                 newRow.find('input').removeClass('error').val('');
                 newRow.find('.help-inline').text('');
                 row.after(newRow);
-                row.parent().find('.ip-ranges-control').removeClass('hide');
+                row.parent().find('.ip-ranges-delete').parent().removeClass('hide');
             } else {
                 row.parent().find('.ip-ranges-delete').parent().toggleClass('hide', row.siblings('.ip-range-row').length == 1);
                 row.remove();
@@ -345,7 +366,67 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         render: function() {
             this.$el.html(this.template({
                 network: this.network,
+                net_provider: this.tab.model.get('net_provider'),
                 net_manager: this.tab.networkConfiguration.get('net_manager'),
+                locked: this.tab.isLocked()
+            }));
+            return this;
+        }
+    });
+
+    NeutronConfiguration = Backbone.View.extend({
+        template: _.template(neutronParametersTemplate),
+        events: {
+            'keyup input[type=text]': 'changeConfiguration'
+        },
+        changeConfiguration: function(e) {
+            this.$('input[type=text]').removeClass('error');
+            this.$('.help-inline').text('');
+
+            var l2 = _.cloneDeep(this.neutronParameters.get('L2'));
+            l2.base_mac = this.$('input[name=base_mac]').val();
+            var idRange = [Number(this.$('input[name=id_start]').val()), Number(this.$('input[name=id_end]').val())];
+            if (this.neutronParameters.get('segmentation_type') == 'gre') {
+                l2.tunnel_id_ranges = idRange;
+            } else {
+                l2.phys_nets.physnet2.vlan_range = idRange;
+            }
+
+            var predefined_networks = _.cloneDeep(this.neutronParameters.get('predefined_networks'));
+            predefined_networks.net04_ext.L3.floating = [this.$('input[name=floating_start]').val(), this.$('input[name=floating_end]').val()];
+            predefined_networks.net04_ext.L3.cidr = this.$('input[name=cidr-ext]').val();
+            predefined_networks.net04.L3.cidr = this.$('input[name=cidr-int]').val();
+            predefined_networks.net04.L3.nameservers = [this.$('input[name=nameserver-0]').val(), this.$('input[name=nameserver-1]').val()];
+
+            this.neutronParameters.set({L2: l2, predefined_networks: predefined_networks}, {validate: true});
+            this.tab.checkForChanges();
+            this.tab.page.removeFinishedTasks();
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+            this.neutronParameters.on('invalid', function(model, errors) {
+                this.$('input.error').removeClass('error').find('.help-inline').text('');
+                _.each(_.without(_.keys(errors), 'id_range', 'floating'), _.bind(function(field) {
+                    this.$('input[name=' + field + ']')
+                        .addClass('error')
+                        .parents('.network-attribute').find('.error .help-inline').text(errors[field]);
+                }, this));
+                if (errors.id_range) {
+                    this.$('input[name=id_start], input[name=id_end]')
+                        .addClass('error')
+                        .parents('.network-attribute').find('.error .help-inline').text(errors.id_range);
+                }
+                if (errors.floating) {
+                    this.$('input[name=floating_start], input[name=floating_end]')
+                        .addClass('error')
+                        .parents('.network-attribute').find('.error .help-inline').text(errors.floating);
+                }
+            }, this);
+        },
+        render: function() {
+            this.$el.html(this.template({
+                neutronParameters: this.neutronParameters,
+                externalCidr: this.tab.networkConfiguration.get('networks').findWhere({name: 'public'}).get('cidr'),
                 locked: this.tab.isLocked()
             }));
             return this;

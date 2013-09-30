@@ -54,10 +54,14 @@ class TestDhcpUtils(unittest.TestCase):
         utils.command_util('ifconfig', self.iface_down, 'down')
 
     def test_check_network_up(self):
+        """Verify that true would be returned on test network up
+        """
         result = utils.check_network_up('eth0')
         self.assertTrue(result)
 
     def test_check_network_down(self):
+        """Verify that false would be returned on test network down
+        """
         self.assertFalse(utils.check_network_up(self.iface_down))
 
     def tearDown(self):

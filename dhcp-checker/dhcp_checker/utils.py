@@ -198,7 +198,5 @@ class IfaceState(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.pre_iface_state != 'UP' and self.rollback:
-            print 'stuff'
             command_util('ifconfig', self.iface, 'down')
         self.post_iface_state = _iface_state(self.iface)
-        

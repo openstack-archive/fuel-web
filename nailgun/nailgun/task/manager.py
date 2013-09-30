@@ -334,7 +334,7 @@ class VerifyNetworksTaskManager(TaskManager):
         )
         if not task.cluster.nodes:
             task.status = 'error'
-            task.message = ('There should be atleast 1 node for dhcp check.'
+            task.message = ('There should be at least 1 node for dhcp check.'
                             'And 2 nodes for connectivity check')
 
         db().add(task)

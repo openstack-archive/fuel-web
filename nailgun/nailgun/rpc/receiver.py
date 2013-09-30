@@ -587,16 +587,16 @@ class NailgunReceiver(object):
         For example of kwargs check FakeCheckingDhcpThread
         """
         logger.info(
-            "RPC method check_dhcp_resp received: %s" %
+            "RPC method check_dhcp_resp received: %s",
             json.dumps(kwargs)
         )
         messages = []
         result = collections.defaultdict(list)
-        message_template = ("Dhcp server on {server_id} - {mac}."
+        message_template = (u"Dhcp server on {server_id} - {mac}."
                             "Discovered from node {yiaddr} on {iface}.")
 
         task_uuid = kwargs.get('task_uuid')
-        nodes = kwargs.get('nodes')
+        nodes = kwargs.get('nodes', [])
         error_msg = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
@@ -604,19 +604,18 @@ class NailgunReceiver(object):
         macs = [item['addr'] for item in cls._get_master_macs()]
         logger.debug('Mac addr on master node %s', macs)
 
-        if nodes:
-            for node in nodes:
-                if node['status'] == 'ready':
-                    for row in node.get('data', []):
-                        if row['mac'] not in macs:
-                            messages.append(message_template.format(**row))
-                            result[node['uid']].append(row)
-                elif node['status'] == 'error':
-                    messages.append(node.get('error_msg',
-                                             ('Dhcp check method failed.'
-                                              ' Check logs for details.')))
-            status = status if not messages else "error"
-            error_msg = '\n'.join(messages) if messages else error_msg
+        for node in nodes:
+            if node['status'] == 'ready':
+                for row in node.get('data', []):
+                    if row['mac'] not in macs:
+                        messages.append(message_template.format(**row))
+                        result[node['uid']].append(row)
+            elif node['status'] == 'error':
+                messages.append(node.get('error_msg',
+                                         ('Dhcp check method failed.'
+                                          ' Check logs for details.')))
+        status = status if not messages else "error"
+        error_msg = '\n'.join(messages) if messages else error_msg
         TaskHelper.update_task_status(task_uuid, status,
                                       progress, error_msg, result)
 

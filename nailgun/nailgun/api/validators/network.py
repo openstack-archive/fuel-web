@@ -23,7 +23,7 @@ from nailgun.db import db
 from nailgun.errors import errors
 
 
-class NetworkConfigurationValidator(BasicValidator):
+class NovaNetworkConfigurationValidator(BasicValidator):
     @classmethod
     def validate_networks_update(cls, data):
         d = cls.validate_json(data)
@@ -54,6 +54,15 @@ class NetworkConfigurationValidator(BasicValidator):
                         "Invalid netmask for public network",
                         log_message=True
                     )
+        return d
+
+
+class NeutronNetworkConfigurationValidator(NovaNetworkConfigurationValidator):
+    # TODO(enchantner): Implement validation logic
+
+    @classmethod
+    def validate_neutron_params(cls, data):
+        d = cls.validate_json(data)
         return d
 
 

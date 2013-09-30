@@ -273,8 +273,10 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertIn(cluster['id'], networks)
         self.assertEqual(len(networks[cluster['id']]), 5)
         networks_keys = (n.network_group.name for n in networks[cluster['id']])
-        # NetworkGroup.names[1:] - all except fuel_admin
-        self.assertEqual(sorted(networks_keys), sorted(NetworkGroup.NAMES[1:]))
+        # NetworkGroup.names[1:6] - all except fuel_admin and private
+        # private is not used with NovaNetwork
+        self.assertEqual(sorted(networks_keys),
+                         sorted(NetworkGroup.NAMES[1:6]))
 
     def test_group_by_key_and_history_util(self):
         """Verifies that grouping util will return defaultdict(list) with
@@ -387,7 +389,7 @@ class TestNetworkManager(BaseIntegrationTest):
         same_vlan = 100
         resp = self.app.get(
             reverse(
-                'NetworkConfigurationHandler',
+                'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': cluster_db.id}),
             headers=self.default_headers
         )
@@ -400,7 +402,7 @@ class TestNetworkManager(BaseIntegrationTest):
         same_vlan_nets_count_expect = len(same_vlan_nets) + 1
         resp = self.app.put(
             reverse(
-                'NetworkConfigurationHandler',
+                'NovaNetworkConfigurationHandler',
                 kwargs={"cluster_id": cluster_db.id}
             ),
             json.dumps(networks_data),
@@ -408,7 +410,7 @@ class TestNetworkManager(BaseIntegrationTest):
         )
         resp = self.app.get(
             reverse(
-                'NetworkConfigurationHandler',
+                'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': cluster_db.id}),
             headers=self.default_headers
         )

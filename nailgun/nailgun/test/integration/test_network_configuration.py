@@ -33,7 +33,7 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
 
     def put(self, cluster_id, data, expect_errors=False):
         url = reverse(
-            'NetworkConfigurationHandler',
+            'NovaNetworkConfigurationHandler',
             kwargs={'cluster_id': cluster_id})
         return self.app.put(
             url, json.dumps(data),
@@ -42,7 +42,7 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
 
     def get(self, cluster_id, expect_errors=False):
         url = reverse(
-            'NetworkConfigurationHandler',
+            'NovaNetworkConfigurationHandler',
             kwargs={'cluster_id': cluster_id})
         return self.app.get(
             url,
@@ -152,7 +152,7 @@ class TestNetworkConfigurationHandlerHAMode(BaseIntegrationTest):
         self.net_manager = NetworkManager()
 
     def test_returns_management_vip_and_public_vip(self):
-        url = reverse('NetworkConfigurationHandler',
+        url = reverse('NovaNetworkConfigurationHandler',
                       kwargs={'cluster_id': self.cluster.id})
 
         resp = json.loads(self.app.get(url, headers=self.default_headers).body)

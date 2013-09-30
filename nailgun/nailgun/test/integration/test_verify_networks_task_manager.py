@@ -61,7 +61,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         resp = self.app.get(
             reverse(
-                'NetworkConfigurationHandler',
+                'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': self.env.clusters[0].id}
             ),
             headers=self.default_headers
@@ -80,7 +80,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         resp = self.app.get(
             reverse(
-                'NetworkConfigurationHandler',
+                'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': self.env.clusters[0].id}
             ),
             headers=self.default_headers
@@ -110,7 +110,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         resp = self.app.get(
             reverse(
-                'NetworkConfigurationHandler',
+                'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': self.env.clusters[0].id}
             ),
             headers=self.default_headers
@@ -125,7 +125,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse(
-                'NetworkConfigurationVerifyHandler',
+                'NovaNetworkConfigurationVerifyHandler',
                 kwargs={'cluster_id': self.env.clusters[0].id}),
             nets,
             headers=self.default_headers,

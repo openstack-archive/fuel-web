@@ -29,40 +29,82 @@
                     "description": "Ceph OSD is the object storage daemon for the Ceph distributed file system.  It is responsible for storing objects on a local file system and providing access to them over the network, for example to Glance."
                 }
             },
-            "networks_metadata": [
-                {
-                    "name": "floating",
-                    "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true,
-                    "assign": false,
-                    "assign_vip": false
-                },
-                {
-                    "name": "public",
-                    "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true,
-                    "assign": true,
-                    "assign_vip": true
-                },
-                {
-                    "name": "management",
-                    "pool": ["192.168.0.0/16"],
-                    "assign": true,
-                    "assign_vip": true
-                },
-                {
-                    "name": "storage",
-                    "pool": ["192.168.0.0/16"],
-                    "assign": true,
-                    "assign_vip": false
-                },
-                {
-                    "name": "fixed",
-                    "pool": ["10.0.0.0/8"],
-                    "assign": false,
-                    "assign_vip": false
+            "networks_metadata": {
+                "nova_network": [
+                    {
+                        "name": "floating",
+                        "pool": ["172.16.0.0/12"],
+                        "use_public_vlan": true,
+                        "assign": false,
+                        "assign_vip": false
+                    },
+                    {
+                        "name": "public",
+                        "pool": ["172.16.0.0/12"],
+                        "use_public_vlan": true,
+                        "assign": true,
+                        "assign_vip": true
+                    },
+                    {
+                        "name": "management",
+                        "pool": ["192.168.0.0/16"],
+                        "assign": true,
+                        "assign_vip": true
+                    },
+                    {
+                        "name": "storage",
+                        "pool": ["192.168.0.0/16"],
+                        "assign": true,
+                        "assign_vip": false
+                    },
+                    {
+                        "name": "fixed",
+                        "pool": ["10.0.0.0/8"],
+                        "assign": false,
+                        "assign_vip": false
+                    }
+                ],
+                "neutron": {
+                    "networks": [
+                        {
+                            "name": "public",
+                            "pool": ["172.16.0.0/12"]
+                        },
+                        {
+                            "name": "management",
+                            "pool": ["192.168.0.0/16"]
+                        },
+                        {
+                            "name": "storage",
+                            "pool": ["192.168.0.0/16"]
+                        }
+                    ],
+                    "config": {
+                        "parameters": {
+                            "amqp": {
+                                "provider": "rabbitmq",
+                                "username": null,
+                                "passwd": "",
+                                "hosts": "hostname1:5672, hostname2:5672"
+                            },
+                            "database": {
+                                "provider": "mysql",
+                                "port": "3306",
+                                "database": null,
+                                "username": null,
+                                "passwd":   ""
+                            },
+                            "keystone": {
+                                "admin_user": null,
+                                "admin_password": ""
+                            },
+                            "metadata": {
+                                "metadata_proxy_shared_secret": ""
+                            }
+                        }
+                    }
                 }
-            ],
+            },
             "volumes_metadata": {
                 "volumes_roles_mapping": {
                     "controller": [
@@ -471,40 +513,82 @@
                     "description": "Cinder provides an infrastructure for managing block storage volumes in OpenStack.  Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level storage."
                 }
             },
-            "networks_metadata": [
-                {
-                    "name": "floating",
-                    "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true,
-                    "assign": false,
-                    "assign_vip": false
-                },
-                {
-                    "name": "public",
-                    "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true,
-                    "assign": true,
-                    "assign_vip": true
-                },
-                {
-                    "name": "management",
-                    "pool": ["192.168.0.0/16"],
-                    "assign": true,
-                    "assign_vip": true
-                },
-                {
-                    "name": "storage",
-                    "pool": ["192.168.0.0/16"],
-                    "assign": true,
-                    "assign_vip": false
-                },
-                {
-                    "name": "fixed",
-                    "pool": ["10.0.0.0/8"],
-                    "assign": false,
-                    "assign_vip": false
+            "networks_metadata": {
+                "nova_network": [
+                    {
+                        "name": "floating",
+                        "pool": ["172.16.0.0/12"],
+                        "use_public_vlan": true,
+                        "assign": false,
+                        "assign_vip": false
+                    },
+                    {
+                        "name": "public",
+                        "pool": ["172.16.0.0/12"],
+                        "use_public_vlan": true,
+                        "assign": true,
+                        "assign_vip": true
+                    },
+                    {
+                        "name": "management",
+                        "pool": ["192.168.0.0/16"],
+                        "assign": true,
+                        "assign_vip": true
+                    },
+                    {
+                        "name": "storage",
+                        "pool": ["192.168.0.0/16"],
+                        "assign": true,
+                        "assign_vip": false
+                    },
+                    {
+                        "name": "fixed",
+                        "pool": ["10.0.0.0/8"],
+                        "assign": false,
+                        "assign_vip": false
+                    }
+                ],
+                "neutron": {
+                    "networks": [
+                        {
+                            "name": "public",
+                            "pool": ["172.16.0.0/12"]
+                        },
+                        {
+                            "name": "management",
+                            "pool": ["192.168.0.0/16"]
+                        },
+                        {
+                            "name": "storage",
+                            "pool": ["192.168.0.0/16"]
+                        }
+                    ],
+                    "config": {
+                        "parameters": {
+                            "amqp": {
+                                "provider": "rabbitmq",
+                                "username": null,
+                                "passwd": "",
+                                "hosts": "hostname1:5672, hostname2:5672"
+                            },
+                            "database": {
+                                "provider": "mysql",
+                                "port": "3306",
+                                "database": null,
+                                "username": null,
+                                "passwd":   ""
+                            },
+                            "keystone": {
+                                "admin_user": null,
+                                "admin_password": ""
+                            },
+                            "metadata": {
+                                "metadata_proxy_shared_secret": ""
+                            }
+                        }
+                    }
                 }
-            ],
+            },
             "volumes_metadata": {
                 "volumes_roles_mapping": {
                     "controller": [
@@ -843,40 +927,82 @@
                     "description": "Ceph OSD is the object storage daemon for the Ceph distributed file system.  It is responsible for storing objects on a local file system and providing access to them over the network, for example to Glance."
                 }
             },
-            "networks_metadata": [
-                {
-                    "name": "floating",
-                    "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true,
-                    "assign": false,
-                    "assign_vip": false
-                },
-                {
-                    "name": "public",
-                    "pool": ["172.16.0.0/12"],
-                    "use_public_vlan": true,
-                    "assign": true,
-                    "assign_vip": true
-                },
-                {
-                    "name": "management",
-                    "pool": ["192.168.0.0/16"],
-                    "assign": true,
-                    "assign_vip": true
-                },
-                {
-                    "name": "storage",
-                    "pool": ["192.168.0.0/16"],
-                    "assign": true,
-                    "assign_vip": false
-                },
-                {
-                    "name": "fixed",
-                    "pool": ["10.0.0.0/8"],
-                    "assign": false,
-                    "assign_vip": false
+            "networks_metadata": {
+                "nova_network": [
+                    {
+                        "name": "floating",
+                        "pool": ["172.16.0.0/12"],
+                        "use_public_vlan": true,
+                        "assign": false,
+                        "assign_vip": false
+                    },
+                    {
+                        "name": "public",
+                        "pool": ["172.16.0.0/12"],
+                        "use_public_vlan": true,
+                        "assign": true,
+                        "assign_vip": true
+                    },
+                    {
+                        "name": "management",
+                        "pool": ["192.168.0.0/16"],
+                        "assign": true,
+                        "assign_vip": true
+                    },
+                    {
+                        "name": "storage",
+                        "pool": ["192.168.0.0/16"],
+                        "assign": true,
+                        "assign_vip": false
+                    },
+                    {
+                        "name": "fixed",
+                        "pool": ["10.0.0.0/8"],
+                        "assign": false,
+                        "assign_vip": false
+                    }
+                ],
+                "neutron": {
+                    "networks": [
+                        {
+                            "name": "public",
+                            "pool": ["172.16.0.0/12"]
+                        },
+                        {
+                            "name": "management",
+                            "pool": ["192.168.0.0/16"]
+                        },
+                        {
+                            "name": "storage",
+                            "pool": ["192.168.0.0/16"]
+                        }
+                    ],
+                    "config": {
+                        "parameters": {
+                            "amqp": {
+                                "provider": "rabbitmq",
+                                "username": null,
+                                "passwd": "",
+                                "hosts": "hostname1:5672, hostname2:5672"
+                            },
+                            "database": {
+                                "provider": "mysql",
+                                "port": "3306",
+                                "database": null,
+                                "username": null,
+                                "passwd":   ""
+                            },
+                            "keystone": {
+                                "admin_user": null,
+                                "admin_password": ""
+                            },
+                            "metadata": {
+                                "metadata_proxy_shared_secret": ""
+                            }
+                        }
+                    }
                 }
-            ],
+            },
             "volumes_metadata": {
                 "volumes_roles_mapping": {
                     "controller": [

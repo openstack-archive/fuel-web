@@ -399,7 +399,14 @@ class VerifyNetworksTask(object):
 class CheckNetworksTask(object):
 
     @classmethod
-    def execute(self, task, data, check_admin_untagged=False):
+    def execute(cls, task, data, check_admin_untagged=False):
+        if task.cluster.net_provider == 'neutron':
+            cls.neutron_check(task, data, check_admin_untagged)
+        elif task.cluster.net_provider == 'nova_network':
+            cls.nova_net_check(task, data, check_admin_untagged)
+
+    @classmethod
+    def nova_net_check(cls, task, data, check_admin_untagged):
         # If not set in data then fetch from db
         if 'net_manager' in data:
             netmanager = data['net_manager']
@@ -466,7 +473,7 @@ class CheckNetworksTask(object):
                 net_errors.append("id")
                 err_msgs.append("Invalid network ID: {0}".format(ng['id']))
             else:
-                if 'cidr' in ng:
+                if ng.get('cidr'):
                     fnet = netaddr.IPNetwork(ng['cidr'])
                     if NetworkManager().is_range_in_cidr(fnet, admin_range):
                         net_errors.append("cidr")
@@ -509,6 +516,145 @@ class CheckNetworksTask(object):
                             ng.get('name') or ng_db.name or ng_db.id
                         )
                     )
+            if net_errors:
+                result.append({
+                    "id": int(ng["id"]),
+                    "range_errors": sub_ranges,
+                    "errors": net_errors
+                })
+        if err_msgs:
+            task.result = result
+            db().add(task)
+            db().commit()
+            full_err_msg = "\n".join(err_msgs)
+            raise errors.NetworkCheckError(full_err_msg)
+
+    @classmethod
+    def neutron_check(cls, task, data, check_admin_untagged):
+
+        if 'networks' in data:
+            networks = data['networks']
+        else:
+            networks = map(lambda x: x.__dict__, task.cluster.network_groups)
+
+        result = []
+        err_msgs = []
+
+        # checking if there any networks
+        # on the same interface as admin network (main)
+        admin_interfaces = map(lambda node: node.admin_interface,
+                               task.cluster.nodes)
+        found_intersection = []
+
+        all_roles = set(n["id"] for n in networks)
+        for iface in admin_interfaces:
+            nets = dict(
+                (n.id, n.name)
+                for n in iface.assigned_networks)
+
+            err_nets = set(nets.keys()) & all_roles
+            if err_nets:
+                err_net_names = [
+                    '"{0}"'.format(nets[i]) for i in err_nets]
+                found_intersection.append(
+                    [iface.node.name, err_net_names])
+
+        if found_intersection:
+            nodes_with_errors = [
+                u'Node "{0}": {1}'.format(
+                    name,
+                    ", ".join(_networks)
+                ) for name, _networks in found_intersection]
+            err_msg = u"Some networks are " \
+                      "assigned to the same physical interface as " \
+                      "admin (PXE) network. You should move them to " \
+                      "another physical interfaces:\n{0}".format("\n".join(
+                nodes_with_errors))
+            raise errors.NetworkCheckError(err_msg, add_client=False)
+
+        # checking if there any networks
+        # on the same interface as private network (for vlan)
+        if task.cluster.net_segment_type == 'vlan':
+            private_interfaces = []
+            # there should be shorter method to do this !
+            for node in task.cluster.nodes:
+                for iface in node.interfaces:
+                    for anet in iface.assigned_networks:
+                        if anet.name == 'private':
+                            private_interfaces.append(iface)
+            found_intersection = []
+
+            all_roles = set(n["id"] for n in networks if n["name"] != 'private')
+            for iface in private_interfaces:
+                nets = dict(
+                    (n.id, n.name)
+                    for n in iface.assigned_networks)
+
+                err_nets = set(nets.keys()) & all_roles
+                if err_nets:
+                    err_net_names = [
+                        '"{0}"'.format(nets[i]) for i in err_nets]
+                    found_intersection.append(
+                        [iface.node.name, err_net_names])
+
+            if found_intersection:
+                nodes_with_errors = [
+                    u'Node "{0}": {1}'.format(
+                        name,
+                        ", ".join(_networks)
+                    ) for name, _networks in found_intersection]
+                err_msg = u"Some networks are " \
+                          "assigned to the same physical interface as " \
+                          "private network. You should move them to " \
+                          "another physical interfaces:\n{0}".format("\n".join(
+                    nodes_with_errors))
+                raise errors.NetworkCheckError(err_msg, add_client=False)
+
+        admin_ng = NetworkManager().get_admin_network_group()
+        admin_range = netaddr.IPNetwork(admin_ng.cidr)
+        for ng in networks:
+            net_errors = []
+            sub_ranges = []
+            ng_db = db().query(NetworkGroup).get(ng['id'])
+            if not ng_db:
+                net_errors.append("id")
+                err_msgs.append("Invalid network ID: {0}".format(ng['id']))
+            else:
+                if ng.get('cidr'):
+                    fnet = netaddr.IPNetwork(ng['cidr'])
+                    if NetworkManager().is_range_in_cidr(fnet, admin_range):
+                        net_errors.append("cidr")
+                        err_msgs.append(
+                            "Intersection with admin "
+                            "network(s) '{0}' found".format(
+                                admin_ng.cidr
+                            )
+                        )
+                    if fnet.size < ng['network_size'] * ng['amount']:
+                        net_errors.append("cidr")
+                        err_msgs.append(
+                            "CIDR size for network '{0}' "
+                            "is less than required".format(
+                                ng.get('name') or ng_db.name or ng_db.id
+                            )
+                        )
+                    # Check for intersection with Admin network
+                if 'ip_ranges' in ng:
+                    for k, v in enumerate(ng['ip_ranges']):
+                        ip_range = netaddr.IPRange(v[0], v[1])
+                        if NetworkManager().is_range_in_cidr(admin_range,
+                                                             ip_range):
+                            net_errors.append("cidr")
+                            err_msgs.append(
+                                "IP range {0} - {1} in {2} network intersects "
+                                "with admin range of {3}".format(
+                                    v[0], v[1],
+                                    ng.get('name') or ng_db.name or ng_db.id,
+                                    admin_ng.cidr
+                                )
+                            )
+                            sub_ranges.append(k)
+
             if net_errors:
                 result.append({
                     "id": int(ng["id"]),

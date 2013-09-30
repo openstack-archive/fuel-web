@@ -1031,7 +1031,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 var complete = _.after(this.nodes.length, _.bind(function() {
                     var networkConfiguration = new models.NetworkConfiguration();
                     this.loading = networkConfiguration
-                        .fetch({url: _.result(this.model, 'url') + '/network_configuration'})
+                        .fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
                         .done(_.bind(function() {
                             // FIXME(vk): modifying models prototypes to use vlan data from NetworkConfiguration
                             // this mean that these models cannot be used safely in places other than this view

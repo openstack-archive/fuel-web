@@ -1562,20 +1562,21 @@ label.node-checkbox {
   margin: 7px 0 5px 0;
 }
 
-.networks-table {
+.networks-table, .neutron-parameters  {
   width: 100%;
   margin-bottom: 10px;
 }
 
-.networks-table > div {
+.networks-table > div, .neutron-parameters > div {
   padding-left: 3px;
 }
 
-.networks-table .range-row-header {
+.networks-table .range-row-header, .neutron-parameters .range-row-header {
   height: 23px;
+  font-weight: bold;
 }
 
-.networks-table .range-row-header > div {
+.networks-table .range-row-header > div, .neutron-parameters .range-row-header > div {
   float: left;
   margin-left: 10px;
   font-size: 11px;
@@ -1583,64 +1584,64 @@ label.node-checkbox {
   width: 220px;
 }
 
-.networks-table .range-row label {
+.networks-table .range-row label, .neutron-parameters .range-row label {
   display: inline-block;
   margin-bottom: 0;
   float: left;
 }
 
-.networks-table .range-row-header.mini > div {
-  width: 105px;
+.networks-table .range-row-header.mini > div, .neutron-parameters .range-row-header.mini > div {
+  width: 133px;
 }
 
-.networks-table .range-row-header > div:first-child {
-  margin-left: 192px;
+.networks-table .range-row-header > div:first-child, .neutron-parameters .range-row-header > div:first-child {
+  margin-left: 202px;
 }
 
-.networks-table .range-row-header {
-  font-weight: bold;
-}
-
-.networks-table label {
-  position: relative;
-}
-
-.networks-table label.hide {
+.networks-table label.hide, .neutron-parameters label.hide {
   display: none;
 }
 
-.networks-table input.mini  {
+.networks-table input.mini, .neutron-parameters input.mini {
   width: 91px;
 }
 
-.networks-table .ip_ranges > div {
+.networks-table .ip_ranges > div, .neutron-parameters .ip_ranges > div {
   margin-bottom: 2px;
   float: left;
 }
 
-.networks-table .ip-ranges-control {
+.networks-table .ip-ranges-control, .neutron-parameters .ranges-control {
   width: 20px;
   margin-top: 3px;
   float: left;
   margin-left: 0 !important;
 }
 
-.networks-table .range-row {
-  margin-left: 189px;
+.parameter-control.vlan-tagging {
+  width: 20px;
 }
 
-.networks-table .ip-ranges {
+input.vlan-tagging {
+  width: 176px;
+}
+
+.networks-table .range-row, .neutron-parameters .range-row {
+  margin-left: 199px;
+}
+
+.networks-table .ip-ranges, .neutron-parameters .nameservers-row button {
   padding: 0;
 }
 
-.networks-table div.error {
+.networks-table div.error, .neutron-parameters div.error {
   float: left;
 }
 
-.networks-table .error .help-inline {
+.networks-table .error .help-inline, .neutron-parameters .error .help-inline {
   display: block;
   padding-top: 5px;
-  max-width: 520px;
+  max-width: 540px;
   color: #B94A48;
 }
 
@@ -3386,7 +3387,7 @@ legend.openstack-sub-title {
 }
 
 .networks-sub-title {
-  width: 175px;
+  width: 185px;
 }
 
 .deploy-task-name {

@@ -32,7 +32,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def _get_cluster_networks(self, cluster_id):
         nets = json.loads(self.app.get(
-            reverse('NetworkConfigurationHandler',
+            reverse('NovaNetworkConfigurationHandler',
                     {"cluster_id": cluster_id}),
             headers=self.default_headers,
         ).body)["networks"]
@@ -129,25 +129,27 @@ class TestHandlers(BaseIntegrationTest):
         release.name = u"release_name_" + str(release.version)
         release.description = u"release_desc" + str(release.version)
         release.operating_system = "CentOS"
-        release.networks_metadata = [
-            {
-                "name": "floating",
-                "pool": ["172.16.0.0/12"],
-                "use_public_vlan": True
-            },
-            {
-                "name": "management",
-                "pool": ["192.168.0.0/16"]
-            },
-            {
-                "name": "storage",
-                "pool": ["192.168.0.0/16"]
-            },
-            {
-                "name": "fixed",
-                "pool": ["10.0.0.0/8"]
-            }
-        ]
+        release.networks_metadata = {
+            "nova_network": [
+                {
+                    "name": "floating",
+                    "pool": ["172.16.0.0/12"],
+                    "use_public_vlan": True
+                },
+                {
+                    "name": "management",
+                    "pool": ["192.168.0.0/16"]
+                },
+                {
+                    "name": "storage",
+                    "pool": ["192.168.0.0/16"]
+                },
+                {
+                    "name": "fixed",
+                    "pool": ["10.0.0.0/8"]
+                }
+            ]
+        }
         release.attributes_metadata = {
             "editable": {
                 "keystone": {
@@ -221,7 +223,7 @@ class TestHandlers(BaseIntegrationTest):
         nets['networks'][-1]["network_size"] = 16
         nets['networks'][-1]["amount"] = 3
         resp = self.app.put(
-            reverse('NetworkConfigurationHandler',
+            reverse('NovaNetworkConfigurationHandler',
                     kwargs={'cluster_id': cluster['id']}),
             json.dumps(nets),
             headers=self.default_headers,
@@ -235,7 +237,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_verify_networks(self, mocked_rpc):
         cluster = self.env.create_cluster(api=True)
         resp = self.app.put(
-            reverse('NetworkConfigurationHandler',
+            reverse('NovaNetworkConfigurationHandler',
                     kwargs={'cluster_id': cluster['id']}),
             json.dumps(self.env.generate_ui_networks(cluster["id"])),
             headers=self.default_headers

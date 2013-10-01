@@ -1187,19 +1187,23 @@ substitutions = {
 
 
 def prepare_args():
+    # replace some args from dict substitutions
     sys.argv = map(
         lambda x: substitutions.get(x, x),
         sys.argv
     )
-
+    # move --json and --debug flags before any action
     for argument in ["--json", "--debug"]:
         if argument in sys.argv:
             sys.argv.remove(argument)
             sys.argv.insert(1, argument)
 
+    # move --env or --env-id flags to beginning if declared after action
+    #
     for argument in ["--env", "--env-id"]:
         for arg in sys.argv:
             if argument in arg:
+                # if declaration with '=' sign (e.g. --env-id=1)
                 if "=" in arg:
                     index_of_inv = sys.argv.index(arg)
                     env = sys.argv.pop(index_of_inv)

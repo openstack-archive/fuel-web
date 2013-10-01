@@ -18,8 +18,6 @@
 
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
-from nailgun.api.models import NodeRoles
-from nailgun.api.models import PendingNodeRoles
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
@@ -398,11 +396,12 @@ class OrchestratorHASerializer(OrchestratorSerializer):
         if cls.has_controller_nodes(nodes):
             # retrive all controllers from cluster
             controller_nodes = db().query(Node).\
-                filter(or_(Node.role_list.any(name='controller'),
-                           Node.pending_role_list.any(name='controller'),
-                           Node.role_list.any(name='primary-controller'),
-                           Node.pending_role_list.any(name='primary-controller')
-                       )).\
+                filter(or_(
+                    Node.role_list.any(name='controller'),
+                    Node.pending_role_list.any(name='controller'),
+                    Node.role_list.any(name='primary-controller'),
+                    Node.pending_role_list.any(name='primary-controller')
+                )).\
                 filter(Node.cluster == cluster).\
                 filter(False == Node.pending_deletion).\
                 order_by(Node.id).all()

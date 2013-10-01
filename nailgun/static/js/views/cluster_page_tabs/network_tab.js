@@ -89,7 +89,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         verifyNetworks: function() {
             if (!_.some(this.networkConfiguration.get('networks').models, 'validationError')) {
                 this.$('.verify-networks-btn').prop('disabled', true);
-                this.startVerification();
+                this.page.removeFinishedTasks().always(_.bind(this.startVerification, this));
             }
         },
         revertChanges: function() {

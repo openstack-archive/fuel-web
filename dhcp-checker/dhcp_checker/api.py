@@ -14,6 +14,9 @@
 
 import itertools
 import multiprocessing
+import logging
+
+logging.getLogger('scapy.runtime').setLevel(logging.ERROR)
 
 from scapy import all as scapy
 from dhcp_checker import utils

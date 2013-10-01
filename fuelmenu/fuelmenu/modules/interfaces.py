@@ -44,8 +44,6 @@ DEFAULTS = {
                 "192.168.1.1)",
                 "value":   ""},
     }
-YAMLTREE = "cobbler_common"
-
 
 class interfaces(urwid.WidgetWrap):
     def __init__(self, parent):

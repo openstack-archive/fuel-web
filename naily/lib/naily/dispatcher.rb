@@ -77,11 +77,11 @@ module Naily
 
       reporter = Naily::Reporter.new(@producer, data['respond_to'], data['args']['task_uuid'])
       begin
-        @orchestrator.provision(reporter, 
-                                data['args']['provisioning_info']['engine'], 
-                                data['args']['provisioning_info']['nodes']
-                               )
-      rescue
+        @orchestrator.provision(reporter,
+                                data['args']['provisioning_info']['engine'],
+                                data['args']['provisioning_info']['nodes'])
+      rescue => e
+        Naily.logger.error "Error running provisioning: #{e.message}, trace: #{e.backtrace.inspect}"
         raise StopIteration
       end
     end

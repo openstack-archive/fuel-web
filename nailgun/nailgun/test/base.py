@@ -145,12 +145,14 @@ class Environment(object):
         cluster_data = {
             'name': 'cluster-api-' + str(randint(0, 1000000))
         }
-        if kwargs:
-            cluster_data.update(kwargs)
         if api:
             cluster_data['release'] = self.create_release(api=False).id
         else:
             cluster_data['release'] = self.create_release(api=False)
+
+        if kwargs:
+            cluster_data.update(kwargs)
+
         if exclude and isinstance(exclude, list):
             for ex in exclude:
                 try:

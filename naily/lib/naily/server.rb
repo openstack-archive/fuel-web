@@ -118,7 +118,7 @@ module Naily
           err_msg = {
             'status' => 'error',
             'error' => 'Task aborted',
-            'progress' => 0,
+            'progress' => 100
           }
 
           if message['args']['nodes'].instance_of?(Array)

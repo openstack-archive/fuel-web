@@ -183,8 +183,8 @@ class interfaces(urwid.WidgetWrap):
                     if network.inSameSubnet(responses["ipaddr"],
                                             responses["gateway"],
                                             responses["netmask"]) is False:
-                        raise Exception("Gateway IP address is not in the "
-                                        "same subnet as IP address")
+                        raise Exception("Gateway IP is not in same "
+                                        "subnet as IP address")
             except Exception, e:
                 errors.append(e)
         if len(errors) > 0:

@@ -19,6 +19,7 @@ from itertools import groupby
 from itertools import ifilter
 from itertools import imap
 from itertools import islice
+from collections import defaultdict
 
 import math
 
@@ -671,17 +672,24 @@ class NetworkManager(object):
 
         return network_data
 
+    def group_by_key_and_history(self, values, key_func):
+        response = defaultdict(list)
+        for group, value in groupby(values, key_func):
+            response[group].extend(list(value))
+        return response
+
     def get_grouped_ips_by_node(self):
         """returns {node.id: generator([IPAddr1, IPAddr2])}
         """
         ips_db = self._get_ips_except_admin(joined=True)
-        return dict(groupby(ips_db, lambda ip: ip.node))
+        return self.group_by_key_and_history(ips_db, lambda ip: ip.node)
 
     def get_networks_grouped_by_cluster(self):
         networks = db().query(Network).options(joinedload('network_group')).\
             order_by(Network.id).all()
-        return dict(groupby(networks,
-                    lambda net: net.network_group.cluster_id))
+        return self.group_by_key_and_history(
+            networks,
+            lambda net: net.network_group.cluster_id)
 
     def get_node_networks_optimized(self, node_db, ips_db, networks):
         """Method for receiving data for a given node with db data provided

@@ -26,12 +26,13 @@ define(
     'views/cluster_page_tabs/actions_tab',
     'views/cluster_page_tabs/healthcheck_tab',
     'text!templates/cluster/page.html',
+    'text!templates/cluster/customization_message.html',
     'text!templates/cluster/deployment_result.html',
     'text!templates/cluster/deployment_control.html'
 ],
-function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
+function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
     'use strict';
-    var ClusterPage, DeploymentResult, DeploymentControl;
+    var ClusterPage, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
 
     ClusterPage = commonViews.Page.extend({
         navbarActiveElement: 'clusters',
@@ -214,6 +215,9 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 renaming: this.renaming
             }));
 
+            this.clusterCustomizationMessage = new ClusterCustomizationMessage({model: this.model, page: this});
+            this.registerSubView(this.clusterCustomizationMessage);
+            this.$('.customization-message').html(this.clusterCustomizationMessage.render().el);
             this.deploymentResult = new DeploymentResult({model: this.model, page: this});
             this.registerSubView(this.deploymentResult);
             this.$('.deployment-result').html(this.deploymentResult.render().el);
@@ -236,6 +240,17 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 this.registerSubView(this.tab);
             }
 
+            return this;
+        }
+    });
+
+    ClusterCustomizationMessage = Backbone.View.extend({
+        template: _.template(clusterCustomizationMessageTemplate),
+        initialize: function(options) {
+            this.model.on('change:is_customized', this.render, this);
+        },
+        render: function() {
+            this.$el.html(this.template({cluster: this.model}));
             return this;
         }
     });

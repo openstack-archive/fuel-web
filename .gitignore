@@ -11,9 +11,10 @@
 *.pid
 
 # Vagrant housekeeping file
-/.vagrant
+.vagrant
 
-/build
+build
+dist
 /local_mirror
 /virtualbox/iso/*.iso
 nosetests.xml
@@ -23,5 +24,4 @@ lock
 .idea
 .DS_Store
 
-Nailgun.egg-info
-Shotgun.egg-info
+*.egg-info

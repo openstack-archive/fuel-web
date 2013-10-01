@@ -1204,13 +1204,13 @@ def prepare_args():
             if argument in arg:
                 # if declaration with '=' sign (e.g. --env-id=1)
                 if "=" in arg:
-                    index_of_inv = sys.argv.index(arg)
-                    env = sys.argv.pop(index_of_inv)
+                    index_of_env = sys.argv.index(arg)
+                    env = sys.argv.pop(index_of_env)
                     sys.argv.insert(1, env)
                 else:
-                    index_of_inv = sys.argv.index(argument)
-                    sys.argv.pop(index_of_inv)
-                    env = sys.argv.pop(index_of_inv)
+                    index_of_env = sys.argv.index(argument)
+                    sys.argv.pop(index_of_env)
+                    env = sys.argv.pop(index_of_env)
                     sys.argv.insert(1, env)
                     sys.argv.insert(1, argument)
                 break

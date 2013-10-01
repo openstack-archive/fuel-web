@@ -311,8 +311,9 @@ class dnsandhostname(urwid.WidgetWrap):
         ## Generic settings end ##
 
         #log.debug(str(newsettings))
-        Settings().write(newsettings, defaultsfile=self.parent.settingsfile,
-                         outfn="newsettings.yaml")
+        Settings().write(newsettings, 
+                         defaultsfile=self.parent.defaultsettingsfile,
+                         outfn=self.parent.settingsfile)
         #Write naily.facts
         factsettings = dict()
         #log.debug(newsettings)

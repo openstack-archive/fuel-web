@@ -124,9 +124,8 @@ class interfaces(urwid.WidgetWrap):
         errors = []
         #Perform checks only if enabled
         if responses["onboot"] == "no":
-            return responses
-
-        if responses["bootproto"] == "dhcp":
+            pass
+        elif responses["bootproto"] == "dhcp":
             self.parent.footer.set_text("Scanning for DHCP servers. "
                                         "Please wait...")
             self.parent.refreshScreen()
@@ -157,7 +156,7 @@ class interfaces(urwid.WidgetWrap):
                 #TODO: Fix set up DHCP on down iface
                 responses["dhcp_nowait"] = False
         #Check ipaddr, netmask, gateway only if static
-        if responses["bootproto"] == "none":
+        elif responses["bootproto"] == "none":
             try:
                 if netaddr.valid_ipv4(responses["ipaddr"]):
                     ipaddr = netaddr.IPAddress(responses["ipaddr"])

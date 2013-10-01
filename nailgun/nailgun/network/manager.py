@@ -14,12 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from collections import defaultdict
 from itertools import chain
 from itertools import groupby
 from itertools import ifilter
 from itertools import imap
 from itertools import islice
-from collections import defaultdict
 
 import math
 

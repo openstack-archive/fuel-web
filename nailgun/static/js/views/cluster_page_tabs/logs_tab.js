@@ -148,7 +148,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
             }
         },
         saveLogLevel: function() {
-           this.lastLogLevel = this.$('select[name=level]').val();
+            this.lastLogLevel = this.$('select[name=level]').val();
         },
         updateShowButtonState: function() {
             this.$('.show-logs-btn').toggleClass('disabled', !this.$('select[name=source]').val());
@@ -303,7 +303,6 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                         this.$('select[name=source]').val(options.source).trigger('change');
                         if (options.level) {
                             this.$('select[name=level]').val(options.level.toUpperCase());
-                            
                         }
                     }, this));
                 }

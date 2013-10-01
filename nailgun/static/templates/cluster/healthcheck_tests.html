@@ -4,7 +4,7 @@
   <tr>
     <td>
       <div class="healthcheck-name"><%- test.get('name') %></div>
-      <% if (status == 'failure' || status == 'error') { %>
+      <% if (status == 'failure' || status == 'error' || status == 'skipped') { %>
         <div class="healthcheck-msg healthcheck-status-failure">
           <% if (result && result.message) { %>
             <b><%- result.message %></b><br><br>
@@ -39,10 +39,8 @@
           <i class="icon-process animate-spin"></i>
         <% } else if (status == 'wait_running') { %>
           <i class="icon-clock"></i>
-        <% } else if (status == 'disabled' || status == 'stopped' || status == 'unknown') { %>
-          &mdash;
         <% } else { %>
-          <%- status %>
+          &mdash;
         <% } %>
       </div>
     </td>

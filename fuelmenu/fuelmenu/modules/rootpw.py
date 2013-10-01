@@ -78,9 +78,13 @@ class rootpw(urwid.WidgetWrap):
         if responses is False:
             log.error("Check failed. Not applying")
             log.error("%s" % (responses))
-            if responses["PASSWORD"] == "":
-                #Empty password means user didn't enter any text
-                return True
+            for index, fieldname in enumerate(fields):
+                if fieldname == "PASSWORD":
+                    if self.edits[index].get_edit_text() == "":
+                        #Empty password means user didn't enter any text
+                        return True
+                    else:
+                        return False
             return False
 
         hashed = crypt.crypt(responses["PASSWORD"])

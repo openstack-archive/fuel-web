@@ -103,7 +103,8 @@ class OrchestratorSerializer(object):
     @classmethod
     def get_nodes_to_deployment(cls, cluster):
         """Nodes which need to deploy."""
-        return TaskHelper.nodes_to_deploy(cluster)
+        return sorted(TaskHelper.nodes_to_deploy(cluster),
+                      key=lambda node: node.id)
 
     @classmethod
     def get_all_nodes(cls, cluster):
@@ -406,7 +407,8 @@ class OrchestratorHASerializer(OrchestratorSerializer):
                 filter(False == Node.pending_deletion).\
                 order_by(Node.id).all()
 
-        return set(nodes + controller_nodes)
+        return sorted(set(nodes + controller_nodes),
+                      key=lambda node: node.id)
 
     @classmethod
     def set_primary_controller(cls, nodes):
@@ -422,7 +424,8 @@ class OrchestratorHASerializer(OrchestratorSerializer):
         if not primary_controller:
             controllers = cls.filter_by_roles(
                 sorted_nodes, ['controller'])
-            controllers[0]['role'] = 'primary-controller'
+            if controllers:
+                controllers[0]['role'] = 'primary-controller'
 
     @classmethod
     def node_list(cls, nodes):

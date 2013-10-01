@@ -517,7 +517,7 @@ class NodeNICsDefaultHandler(JSONHandler):
                     {'id': ng.id, 'name': ng.name})
 
             allowed_ngs = network_manager.get_allowed_nic_networkgroups(
-                node, nic)
+                node)
 
             for ng in allowed_ngs:
                 nic_dict.setdefault('allowed_networks', []).append(

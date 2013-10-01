@@ -106,7 +106,7 @@ class cobblerconf(urwid.WidgetWrap):
         responses["ADMIN_NETWORK/interface"] = self.activeiface
         responses["ADMIN_NETWORK/netmask"] = self.netsettings[
             self.activeiface]["netmask"]
-        responses["ADMIN_NETWORK/ipaddr"] = self.netsettings[
+        responses["ADMIN_NETWORK/ipaddress"] = self.netsettings[
             self.activeiface]["addr"]
 
         #ensure management interface is valid

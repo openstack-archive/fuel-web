@@ -1199,7 +1199,6 @@ def prepare_args():
             sys.argv.insert(1, argument)
 
     # move --env or --env-id flags to beginning if declared after action
-    #
     for argument in ["--env", "--env-id"]:
         for arg in sys.argv:
             if argument in arg:

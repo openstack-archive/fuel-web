@@ -155,7 +155,31 @@ class ProvisioningSerializer(object):
         return settings.PATH_TO_SSH_KEY
 
 
+class UbuntuProvisioningSerializer(ProvisioningSerializer):
+    """Set specific parameters for Ubuntu."""
+
+    @classmethod
+    def serialize_node(cls, cluster_attrs, node):
+        """Add kernel parameter for Ubuntu release
+        netcfg/choose_interface should equal to admin
+        interface.
+        """
+        serialized_node = super(UbuntuProvisioningSerializer, cls).\
+            serialize_node(cluster_attrs, node)
+
+        serialized_node['kernel_options'] = {}
+        serialized_node['kernel_options']['netcfg/choose_interface'] = \
+            node.admin_interface.name
+
+        return serialized_node
+
+
 def serialize(cluster):
     """Serialize cluster for provisioning."""
     cluster.prepare_for_provisioning()
-    return ProvisioningSerializer.serialize(cluster)
+
+    serializer = ProvisioningSerializer
+    if cluster.release.operating_system == 'Ubuntu':
+        serializer = UbuntuProvisioningSerializer
+
+    return serializer.serialize(cluster)

@@ -109,8 +109,7 @@ class DeploymentTask(object):
             if n.pending_deletion:
                 continue
 
-            if n.id in nodes_ids:  # It's node which we need to redeploy
-                n.pending_addition = False
+            if n.id in nodes_ids:
                 if n.pending_roles:
                     n.roles += n.pending_roles
                     n.pending_roles = []
@@ -123,6 +122,11 @@ class DeploymentTask(object):
         # here we replace provisioning data if user redefined them
         serialized_cluster = task.cluster.replaced_deployment_info or \
             deployment_serializers.serialize(task.cluster)
+
+        # After searilization set pending_addition to False
+        for node in db().query(Node).filter(Node.id.in_(nodes_ids)):
+            node.pending_addition = False
+        db().commit()
 
         return {
             'method': 'deploy',

@@ -353,6 +353,11 @@ class Node(Base):
     def pending_roles(self):
         return [role.name for role in self.pending_role_list]
 
+    @property
+    def all_roles(self):
+        """Returns all roles, self.roles and self.pending_roles."""
+        return set(self.pending_roles + self.roles)
+
     @pending_roles.setter
     def pending_roles(self, new_roles):
         self.pending_role_list = map(

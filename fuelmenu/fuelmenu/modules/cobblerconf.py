@@ -214,12 +214,10 @@ interface first.")
 
                 #Ensure pool start and end are in the same subnet of each other
                 netmask = self.netsettings[responses["ADMIN_NETWORK/interface"
-                                           ]["netmask"]
-                if network.inSameSubnet(responses[
-                                        "ADMIN_NETWORK/dhcp_pool_start"],
-                                        responses[
-                                        "ADMIN_NETWORK/dhcp_pool_end"],
-                                        netmask) is False:
+                                           ]]["netmask"]
+                if not network.inSameSubnet(
+                        responses["ADMIN_NETWORK/dhcp_pool_start"],
+                        responses["ADMIN_NETWORK/dhcp_pool_end"], netmask):
                     errors.append("DHCP Pool start and end are not in the "
                                   "same subnet.")
 

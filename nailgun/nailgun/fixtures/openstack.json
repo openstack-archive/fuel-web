@@ -205,6 +205,13 @@
                             "description": "If selected, Murano component will be installed",
                             "weight": 20,
                             "type": "checkbox"
+                        },
+                        "heat": {
+                            "value": false,
+                            "label": "",
+                            "description": "",
+                            "weight": 30,
+                            "type": "hidden"
                         }
                     },
                     "common": {
@@ -410,6 +417,17 @@
                     },
                     "murano": {
                         "db_password": {
+                            "generator": "password"
+                        }
+                    },
+                    "heat": {
+                        "db_password": {
+                            "generator": "password"
+                        },
+                        "rabbit_password": {
+                            "generator": "password"
+                        },
+                        "rabbit_user": {
                             "generator": "password"
                         }
                     },

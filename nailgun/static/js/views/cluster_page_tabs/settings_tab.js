@@ -137,8 +137,13 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         makeChanges: function(e) {
             var target = $(e.currentTarget);
-            var setting = this.tab.settings[target.parents('.settings-group').data('settings-group')][target.attr('name')];
+            var settingName = target.attr('name');
+            var settingGroup = target.parents('.settings-group').data('settings-group');
+            var setting = this.tab.settings[settingGroup][settingName];
             setting.value = setting.type == 'checkbox' ? target.is(':checked') : target.val();
+            if (settingName == 'murano') {
+                this.tab.settings[settingGroup].heat.value = setting.value;
+            }
             this.tab.checkForChanges();
         },
         showPassword: function(e) {

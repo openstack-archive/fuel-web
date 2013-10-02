@@ -35,7 +35,7 @@ class saveandquit():
     def save_and_continue(self, args):
         self.save()
 
-    def save_and_exit(self, args):
+    def save_and_quit(self, args):
         if self.save():
             self.parent.refreshScreen()
             time.sleep(1.5)
@@ -49,12 +49,12 @@ class saveandquit():
         else:
            #show pop up with more details
            msg = "ERROR: Module %s failed to save. Go back" % (modulename)\
-                 + " and fix any mistakes or choose Exit without Saving."
+                 + " and fix any mistakes or choose Quit without Saving."
            diag = dialog.display_dialog(self, TextLabel(msg),
                                         "Error saving changes!")
            return False
 
-    def exit_without_saving(self, args):
+    def quit_without_saving(self, args):
         self.parent.exit_program(None)
 
     def refresh(self):
@@ -62,15 +62,15 @@ class saveandquit():
 
     def screenUI(self):
         #Define your text labels, text fields, and buttons first
-        text1 = urwid.Text("Save configuration before you exit?")
+        text1 = urwid.Text("Save configuration before you quit?")
         saveandcontinue_button = Button("Save and Continue",
                                         self.save_and_continue)
-        saveandexit_button = Button("Save and Exit", self.save_and_exit)
-        exitwithoutsaving_button = Button("Exit without saving",
-                                          self.exit_without_saving)
+        saveandquit_button = Button("Save and Quit", self.save_and_)
+        quitwithoutsaving_button = Button("Quit without saving",
+                                          self.quit_without_saving)
         #Build all of these into a list
         listbox_content = [text1, blank, saveandcontinue_button,
-                           saveandexit_button, exitwithoutsaving_button]
+                           saveandquit_button, quitwithoutsaving_button]
 
         #Add everything into a ListBox and return it
         screen = urwid.ListBox(urwid.SimpleListWalker(listbox_content))

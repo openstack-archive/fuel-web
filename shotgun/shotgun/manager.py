@@ -13,10 +13,9 @@
 #    under the License.
 
 import os
-import logging
 
-from shotgun.logger import logger
 from shotgun.driver import Driver
+from shotgun.logger import logger
 from shotgun.utils import execute
 
 

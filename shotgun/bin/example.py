@@ -12,17 +12,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sys
-import os
-import logging
 import json
+import logging
+import os
+import sys
 
 sys.path[:0] = [os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))]
 
-from shotgun.manager import Manager
 from shotgun.config import Config
+from shotgun.manager import Manager
 
 logging.basicConfig(level=logging.DEBUG)
+
 
 with open("snapshot.json", "r") as fo:
     data = json.loads(fo.read())

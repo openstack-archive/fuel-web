@@ -12,10 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import socket
-import re
 import os
+import re
 import shlex
+import socket
 import subprocess
 
 from shotgun.logger import logger

@@ -14,14 +14,14 @@
 
 import os
 import re
-import tempfile
 import stat
+import tempfile
 
 import fabric.api
 
 from shotgun.logger import logger
-from shotgun.utils import is_local
 from shotgun.utils import execute
+from shotgun.utils import is_local
 
 
 class CommandOut(object):

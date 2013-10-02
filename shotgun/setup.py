@@ -15,10 +15,9 @@
 
 import os
 import os.path
-import pprint
 
-from setuptools import setup
 from setuptools import find_packages
+from setuptools import setup
 
 
 requires = [
@@ -59,4 +58,4 @@ if __name__ == "__main__":
           zip_safe=False,
           install_requires=requires,
           include_package_data=True,
-    )
+          )

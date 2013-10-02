@@ -66,20 +66,20 @@
             "volumes_metadata": {
                 "volumes_roles_mapping": {
                     "controller": [
-                        {"id": "os", "allocate_size": "min"},
-                        {"id": "image", "allocate_size": "all"}],
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "image"}],
                     "compute": [
-                        {"id": "os", "allocate_size": "min"},
-                        {"id": "vm", "allocate_size": "all"}],
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "vm"}],
                     "ceph-osd": [
-                        {"id": "os", "allocate_size": "min"},
-                        {"id": "cephjournal", "allocate_size": "min"},
-                        {"id": "ceph", "allocate_size": "all"}],
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "min", "id": "cephjournal"},
+                        {"allocate_size": "all", "id": "ceph"}],
                     "cinder": [
-                        {"id": "os", "allocate_size": "min"},
-                        {"id": "cinder", "allocate_size": "all"}],
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "cinder"}],
                     "other": [
-                        {"id": "os", "allocate_size": "all"}]
+                        {"allocate_size": "all", "id": "os"}]
                 },
                 "volumes": [
                     {

@@ -7,8 +7,7 @@ VERSION:
   nailgun_sha: "Unknown build"
   astute_sha: "Unknown build"
   fuellib_sha: "Unknown build"
-  ostf_tests_sha: "Unknown build"
-  ostf_plugin_sha: "Unknown build"
+  ostf_sha: "Unknown build"
 
 FUEL_KEY: "Unknown"
 

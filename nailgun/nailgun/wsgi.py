@@ -70,7 +70,8 @@ def appstart(keepalive=False):
     logger.info("Fuel-Web {0} SHA: {1}\nFuel SHA: {2}".format(
         settings.VERSION['release'],
         settings.VERSION['nailgun_sha'],
-        settings.VERSION['fuellib_sha']
+        settings.VERSION['fuellib_sha'],
+        settings.VERSION['ostf_sha']
     ))
     if not engine.dialect.has_table(engine.connect(), "nodes"):
         logger.error(

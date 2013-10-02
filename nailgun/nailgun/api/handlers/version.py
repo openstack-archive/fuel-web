@@ -37,6 +37,5 @@ class VersionHandler(JSONHandler):
             "nailgun_sha": str(settings.VERSION['nailgun_sha']),
             "astute_sha": str(settings.VERSION['astute_sha']),
             "fuellib_sha": str(settings.VERSION['fuellib_sha']),
-            "ostf_tests_sha": str(settings.VERSION['ostf_tests_sha']),
-            "ostf_plugin_sha": str(settings.VERSION['ostf_plugin_sha'])
+            "ostf_sha": str(settings.VERSION['ostf_sha'])
         }

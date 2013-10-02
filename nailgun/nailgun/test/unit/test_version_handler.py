@@ -28,8 +28,7 @@ class TestVersionHandler(BaseIntegrationTest):
         'nailgun_sha': '12345',
         "astute_sha": "Unknown build",
         "fuellib_sha": "Unknown build",
-        "ostf_tests_sha": "Unknown build",
-        "ostf_plugin_sha": "Unknown build"
+        "ostf_sha": "Unknown build",
     })
     def test_version_handler(self):
         resp = self.app.get(
@@ -44,7 +43,6 @@ class TestVersionHandler(BaseIntegrationTest):
                 "nailgun_sha": "12345",
                 "astute_sha": "Unknown build",
                 "fuellib_sha": "Unknown build",
-                "ostf_tests_sha": "Unknown build",
-                "ostf_plugin_sha": "Unknown build"
+                "ostf_sha": "Unknown build"
             }
         )

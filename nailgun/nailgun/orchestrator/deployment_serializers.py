@@ -25,6 +25,7 @@ from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from netaddr import IPNetwork
 from sqlalchemy import and_
+from sqlalchemy import or_
 
 
 class Priority(object):
@@ -57,7 +58,7 @@ class OrchestratorSerializer(object):
         through an orchestrator passes to puppet
         """
         common_attrs = cls.get_common_attrs(cluster)
-        nodes = cls.serialize_nodes(cls.get_nodes_to_serialization(cluster))
+        nodes = cls.serialize_nodes(cls.get_nodes_to_deployment(cluster))
 
         if cluster.net_manager == 'VlanManager':
             cls.add_vlan_interfaces(nodes)
@@ -77,7 +78,7 @@ class OrchestratorSerializer(object):
         """Common attributes for all facts
         """
         attrs = cls.serialize_cluster_attrs(cluster)
-        attrs['nodes'] = cls.node_list(cls.get_nodes_to_serialization(cluster))
+        attrs['nodes'] = cls.node_list(cls.get_all_nodes(cluster))
 
         for node in attrs['nodes']:
             if node['role'] in 'cinder':
@@ -87,8 +88,7 @@ class OrchestratorSerializer(object):
 
     @classmethod
     def serialize_cluster_attrs(cls, cluster):
-        """Cluster attributes
-        """
+        """Cluster attributes."""
         attrs = cluster.attributes.merged_attrs_values()
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
@@ -99,9 +99,14 @@ class OrchestratorSerializer(object):
         return attrs
 
     @classmethod
-    def get_nodes_to_serialization(cls, cluster):
-        """Nodes which need to serialize
-        """
+    def get_nodes_to_deployment(cls, cluster):
+        """Nodes which need to deploy."""
+        return sorted(TaskHelper.nodes_to_deploy(cluster),
+                      key=lambda node: node.id)
+
+    @classmethod
+    def get_all_nodes(cls, cluster):
+        """All clusters nodes except nodes for deletion."""
         return db().query(Node).filter(
             and_(Node.cluster == cluster,
                  False == Node.pending_deletion)).order_by(Node.id)
@@ -178,7 +183,7 @@ class OrchestratorSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in set(node.pending_roles + node.roles):
+            for role in node.all_roles:
                 serialized_node = cls.serialize_node(node, role)
                 serialized_nodes.append(serialized_node)
 
@@ -220,7 +225,7 @@ class OrchestratorSerializer(object):
         for node in nodes:
             network_data = node.network_data
 
-            for role in set(node.pending_roles + node.roles):
+            for role in node.all_roles:
                 node_list.append({
                     # Yes, uid is really should be a string
                     'uid': str(node.id),
@@ -357,6 +362,7 @@ class OrchestratorSerializer(object):
 
 
 class OrchestratorHASerializer(OrchestratorSerializer):
+    """Serializer for ha mode."""
 
     @classmethod
     def serialize(cls, cluster):
@@ -365,6 +371,43 @@ class OrchestratorHASerializer(OrchestratorSerializer):
         cls.set_primary_controller(serialized_nodes)
 
         return serialized_nodes
+
+    @classmethod
+    def has_controller_nodes(cls, nodes):
+        for node in nodes:
+            if 'controller' in node.all_roles:
+                return True
+        return False
+
+    @classmethod
+    def get_nodes_to_deployment(cls, cluster):
+        """Get nodes for deployment
+        * in case of failed controller should be redeployed
+          all controllers
+        * in case of failed non-controller should be
+          redeployed only node which was failed
+        """
+        nodes = super(
+            OrchestratorHASerializer, cls).get_nodes_to_deployment(cluster)
+
+        controller_nodes = []
+
+        # if list contain at least one controller
+        if cls.has_controller_nodes(nodes):
+            # retrive all controllers from cluster
+            controller_nodes = db().query(Node).\
+                filter(or_(
+                    Node.role_list.any(name='controller'),
+                    Node.pending_role_list.any(name='controller'),
+                    Node.role_list.any(name='primary-controller'),
+                    Node.pending_role_list.any(name='primary-controller')
+                )).\
+                filter(Node.cluster == cluster).\
+                filter(False == Node.pending_deletion).\
+                order_by(Node.id).all()
+
+        return sorted(set(nodes + controller_nodes),
+                      key=lambda node: node.id)
 
     @classmethod
     def set_primary_controller(cls, nodes):
@@ -380,7 +423,8 @@ class OrchestratorHASerializer(OrchestratorSerializer):
         if not primary_controller:
             controllers = cls.filter_by_roles(
                 sorted_nodes, ['controller'])
-            controllers[0]['role'] = 'primary-controller'
+            if controllers:
+                controllers[0]['role'] = 'primary-controller'
 
     @classmethod
     def node_list(cls, nodes):

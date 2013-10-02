@@ -1,4 +1,3 @@
-#!/usr/bin/python
 #    Copyright 2013 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -13,13 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from scapy.all import *
 import itertools
 import multiprocessing
-import functools
-import subprocess
+import logging
+
+logging.getLogger('scapy.runtime').setLevel(logging.ERROR)
+
+from scapy import all as scapy
 from dhcp_checker import utils
-from dhcp_checker import vlans_utils
 
 
 @utils.multiproc_map
@@ -31,24 +31,25 @@ def check_dhcp_on_eth(iface, timeout):
     >>> check_dhcp_on_eth('eth1')
     """
 
-    conf.iface = iface
+    scapy.conf.iface = iface
 
-    conf.checkIPaddr = False
+    scapy.conf.checkIPaddr = False
     dhcp_options = [("message-type", "discover"),
-                    ("param_req_list", utils.format_options([1, 2, 3, 4, 5, 6,
-                        11, 12, 13, 15, 16, 17, 18, 22, 23,
-                        28, 40, 41, 42, 43, 50, 51, 54, 58, 59, 60, 66, 67])),
+                    ("param_req_list", utils.format_options(
+                        [1, 2, 3, 4, 5, 6,
+                         11, 12, 13, 15, 16, 17, 18, 22, 23,
+                         28, 40, 41, 42, 43, 50, 51, 54, 58, 59, 60, 66, 67])),
                     "end"]
 
-    fam, hw = get_if_raw_hwaddr(iface)
+    fam, hw = scapy.get_if_raw_hwaddr(iface)
     dhcp_discover = (
-        Ether(src=hw, dst="ff:ff:ff:ff:ff:ff") /
-        IP(src="0.0.0.0", dst="255.255.255.255") /
-        UDP(sport=68, dport=67) /
-        BOOTP(chaddr=hw) /
-        DHCP(options=dhcp_options))
-    ans, unans = srp(dhcp_discover, multi=True,
-                     nofilter=1, timeout=timeout, verbose=0)
+        scapy.Ether(src=hw, dst="ff:ff:ff:ff:ff:ff") /
+        scapy.IP(src="0.0.0.0", dst="255.255.255.255") /
+        scapy.UDP(sport=68, dport=67) /
+        scapy.BOOTP(chaddr=hw) /
+        scapy.DHCP(options=dhcp_options))
+    ans, unans = scapy.srp(dhcp_discover, multi=True,
+                           nofilter=1, timeout=timeout, verbose=0)
     return ans
 
 
@@ -64,8 +65,8 @@ def check_dhcp(ifaces, timeout=5, repeat=2):
     if not ifaces_filtered:
         raise EnvironmentError("No valid interfaces provided.")
     pool = multiprocessing.Pool(len(ifaces_filtered)*repeat)
-    return itertools.chain(*pool.map(check_dhcp_on_eth,
-        ((iface, timeout) for iface in ifaces_filtered*repeat)))
+    return itertools.chain(*pool.map(check_dhcp_on_eth, (
+        (iface, timeout) for iface in ifaces_filtered*repeat)))
 
 
 def check_dhcp_with_vlans(config, timeout=5, repeat=2):
@@ -74,7 +75,7 @@ def check_dhcp_with_vlans(config, timeout=5, repeat=2):
     @ifaces - string : eth0, eth1
     @vlans - iterable (100, 101, 102)
     """
-    with vlans_utils.VlansActor(config) as vifaces:
+    with utils.VlansContext(config) as vifaces:
         return check_dhcp(list(vifaces), timeout=timeout, repeat=repeat)
 
 
@@ -85,22 +86,23 @@ def check_dhcp_request(iface, server, range_start, range_end, timeout=5):
         >>> check_dhcp_request('eth1','10.10.0.5','10.10.0.10','10.10.0.15')
     """
 
-    conf.iface = iface
+    scapy.conf.iface = iface
 
-    conf.checkIPaddr = False
+    scapy.conf.checkIPaddr = False
 
-    fam, hw = get_if_raw_hwaddr(iface)
+    fam, hw = scapy.get_if_raw_hwaddr(iface)
 
     ip_address = next(utils.pick_ip(range_start, range_end))
 
     # note lxc dhcp server does not respond to unicast
-    dhcp_request = (Ether(src=hw, dst="ff:ff:ff:ff:ff:ff") /
-                    IP(src="0.0.0.0", dst="255.255.255.255") /
-                    UDP(sport=68, dport=67) /
-                    BOOTP(chaddr=hw) /
-                    DHCP(options=[("message-type", "request"),
-                                  ("server_id", server),
-                                  ("requested_addr", ip_address), "end"]))
-    ans, unans = srp(dhcp_request, nofilter=1, multi=True,
-                     timeout=timeout, verbose=0)
+    dhcp_request = (scapy.Ether(src=hw, dst="ff:ff:ff:ff:ff:ff") /
+                    scapy.IP(src="0.0.0.0", dst="255.255.255.255") /
+                    scapy.UDP(sport=68, dport=67) /
+                    scapy.BOOTP(chaddr=hw) /
+                    scapy.DHCP(options=[("message-type", "request"),
+                                        ("server_id", server),
+                                        ("requested_addr", ip_address),
+                                        "end"]))
+    ans, unans = scapy.srp(dhcp_request, nofilter=1, multi=True,
+                           timeout=timeout, verbose=0)
     return ans

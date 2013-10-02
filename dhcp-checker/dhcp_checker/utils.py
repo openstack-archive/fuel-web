@@ -11,10 +11,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-from scapy.all import *
 import subprocess
 import functools
 import re
+import sys
+
+from scapy import all as scapy
 
 
 def command_util(*command):
@@ -30,16 +32,23 @@ def _check_vconfig():
     return not command_util('which', 'vconfig').stderr.read()
 
 
-def check_network_up(iface):
+def _iface_state(iface):
+    """For a given iface return it's state
+    returns UP, DOWN, UNKNOWN
+    """
     state = command_util('ip', 'link', 'show', iface)
-    response = re.search(r'state (?P<state>[A-Z]*)', state.stdout.read())
-    return response.groupdict()['state'] == 'UP'
+    return re.search(r'state (?P<state>[A-Z]*)',
+                     state.stdout.read()).groupdict()['state']
+
+
+def check_network_up(iface):
+    return _iface_state(iface) == 'UP'
 
 
 def check_iface_exist(iface):
     """Check provided interface exists
     """
-    return not command_util("ip","link", "show", iface).stderr.read()
+    return not command_util("ip", "link", "show", iface).stderr.read()
 
 
 def filtered_ifaces(ifaces):
@@ -48,7 +57,8 @@ def filtered_ifaces(ifaces):
             sys.stderr.write('Iface {0} does not exist.'.format(iface))
         else:
             if not check_network_up(iface):
-                sys.stderr.write('Network for iface {0} is down.'.format(iface))
+                sys.stderr.write('Network for iface {0} is down.'.format(
+                    iface))
             else:
                 yield iface
 
@@ -104,18 +114,18 @@ def single_format(func):
         iface = args[0]
         ans = func(*args, **kwargs)
         columns = ('iface', 'mac', 'server_ip', 'server_id', 'gateway',
-               'dport', 'message', 'yiaddr')
+                   'dport', 'message', 'yiaddr')
         data = []
         #scapy stores all sequence of requests
         #so ans[0][1] would be response to first request
         for response in ans:
-            dhcp_options = dict(_dhcp_options(response[1][DHCP].options))
+            dhcp_options = dict(_dhcp_options(response[1][scapy.DHCP].options))
             results = (
-                iface, response[1][Ether].src, response[1][IP].src,
-                dhcp_options['server_id'], response[1][BOOTP].giaddr,
-                response[1][UDP].sport,
-                DHCPTypes[dhcp_options['message-type']],
-                response[1][BOOTP].yiaddr)
+                iface, response[1][scapy.Ether].src, response[1][scapy.IP].src,
+                dhcp_options['server_id'], response[1][scapy.BOOTP].giaddr,
+                response[1][scapy.UDP].sport,
+                scapy.DHCPTypes[dhcp_options['message-type']],
+                response[1][scapy.BOOTP].yiaddr)
             data.append(dict(zip(columns, results)))
         return data
     return formatter
@@ -138,3 +148,55 @@ def filter_duplicated_results(func):
         resp = func(*args, **kwargs)
         return (dict(t) for t in set([tuple(d.items()) for d in resp]))
     return wrapper
+
+
+class VlansContext(object):
+    """Contains all logic to manage vlans
+    """
+
+    def __init__(self, config):
+        """
+        @config - list or tuple of (iface, vlan) pairs
+        """
+        self.config = config
+
+    def __enter__(self):
+        for iface, vlans in self.config.iteritems():
+            yield str(iface)
+            for vlan in vlans:
+                if vlan > 0:
+                    yield '{0}.{1}'.format(iface, vlan)
+
+    def __exit__(self, type, value, trace):
+        pass
+
+
+class IfaceState(object):
+    """Context manager to control state of iface when dhcp checker is running
+    """
+
+    def __init__(self, iface, rollback=True, retry=3):
+        self.rollback = rollback
+        self.retry = retry
+        self.iface = iface
+        self.pre_iface_state = _iface_state(iface)
+        self.iface_state = self.pre_iface_state
+        self.post_iface_state = ''
+
+    def iface_up(self):
+        while self.retry or self.iface_state != 'UP':
+            command_util('ifconfig', self.iface, 'up')
+            self.iface_state = _iface_state(self.iface)
+            self.retry -= 1
+        if self.iface_state != 'UP':
+            raise EnvironmentError(
+                'Tried my best to ifup iface {0}.'.format(self.iface))
+
+    def __enter__(self):
+        self.iface_up()
+        return self.iface
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.pre_iface_state != 'UP' and self.rollback:
+            command_util('ifconfig', self.iface, 'down')
+        self.post_iface_state = _iface_state(self.iface)

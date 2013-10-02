@@ -18,7 +18,12 @@
 <div class="row-fluid">
   <% if (!nodes.deferred || nodes.deferred.state() != 'pending') { %>
     <% if (!nodes.length) { %>
-      <div class="alert alert-warning"><%= cluster ?  edit ? 'There are no selected nodes' : 'List of deployment mode requirements' : 'How to add nodes in Fuel' %></div>
+      <% var descriptions = [
+        'There are no selected nodes to edit',
+        'To add nodes to the environment, select the Add Nodes option, choose the nodes you want to allocate and assign roles to each.',
+        'A pool of one or more unallocated nodes is needed for this operation.  To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting).  Fuel will automatically provision and discover the nodes.'
+      ] %>
+      <div class="alert alert-warning"><%= cluster ?  edit ? descriptions[0] : descriptions[1] : descriptions[2] %></div>
     <% } %>
     <div class="nodes"></div>
   <% } else { %>

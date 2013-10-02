@@ -290,8 +290,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         showUnavailableGroupConfigurationDialog: function (e) {
             var action = this.$(e.currentTarget).data('action');
             var messages = {
-                'disks': 'Drive capacity varies between some of the selected nodes. Please select only nodes with identical drive capacities to configure disk allocations.',
-                'interfaces': 'Network interfaces number varies between some of the selected nodes. Please select only nodes with the same number of network intefaces.'
+                'disks': 'Only nodes with identical disk capacities can be configured together in the same action.',
+                'interfaces': 'Only nodes with an identical number of network interfaces can be configured together in the same action.'
             };
             var dialog = new dialogViews.Dialog();
             app.page.registerSubView(dialog);
@@ -368,7 +368,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var selectedRoles = _.filter(this.$('input'), function(input) {return $(input).prop('indeterminate') || $(input).prop('checked');}).map(function(input) {return $(input).val();});
             _.each(this.getListOfUncompatibleRoles(selectedRoles), function(role) {
                 this.$('input[value=' + role + ']').prop('disabled', true);
-                this.$('.role-conflict.' + role).text('This role can not be assigned together with selected roles.');
+                this.$('.role-conflict.' + role).text('This role cannot be combined with the other roles already selected.');
             }, this);
             // non-ha deployment mode restriction: environment can not have more than one controller node
             if (this.cluster.get('mode') == 'multinode') {
@@ -380,7 +380,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     this.$('input[value=controller]').prop('disabled', true);
                 }
                 if (this.nodeIds.length > 1 || controllerSelected || cantAddController) {
-                    this.$('.role-conflict.controller').text('This role can not be assigned to more than one node in Multinode deployment mode.');
+                    this.$('.role-conflict.controller').text('Only one controller can be assigned in a multi-node deployment that is not Highly-Available (HA).');
                 }
             }
         },

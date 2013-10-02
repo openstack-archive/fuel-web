@@ -262,6 +262,34 @@ class TestNetworkManager(BaseIntegrationTest):
             full_results.append(result)
         self.assertEqual(len(full_results), 2)
 
+    def test_network_group_grouping_by_cluster(self):
+        """Verifies that for cluster created would be returned all networks,
+        except fuel_admin
+        """
+        cluster = self.env.create_cluster(api=True)
+        self.env.create_node(api=True)
+        networks = self.env.network_manager.get_networks_grouped_by_cluster()
+        self.assertTrue(isinstance(networks, dict))
+        self.assertIn(cluster['id'], networks)
+        self.assertEqual(len(networks[cluster['id']]), 5)
+        networks_keys = (n.network_group.name for n in networks[cluster['id']])
+        # NetworkGroup.names[1:] - all except fuel_admin
+        self.assertEqual(sorted(networks_keys), sorted(NetworkGroup.NAMES[1:]))
+
+    def test_group_by_key_and_history_util(self):
+        """Verifies that grouping util will return defaultdict(list) with
+        items grouped by user provided func
+        """
+        example = [{'key': 'value1'},
+                   {'key': 'value1'},
+                   {'key': 'value3'}]
+        result = self.env.network_manager.group_by_key_and_history(
+            example, lambda item: item['key'])
+        expected = {'value1': [{'key': 'value1'}, {'key': 'value1'}],
+                    'value3': [{'key': 'value3'}]}
+        self.assertEqual(result, expected)
+        self.assertEqual(result['value2'], [])
+
     def test_nets_empty_list_if_node_does_not_belong_to_cluster(self):
         node = self.env.create_node(api=False)
         network_data = self.env.network_manager.get_node_networks(node.id)

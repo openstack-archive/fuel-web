@@ -14,7 +14,7 @@
     <% } %>
   </div>
   <div class="span2 select-all">
-    <% var disabled = !nodes.length || edit || locked ? 'disabled' : '' %>
+    <% var disabled = !nodes.filter(function(node) {return node.get('online') && node.get('status') != 'error';}).length || edit || locked ? 'disabled' : '' %>
     <label class="<%= disabled %>"><input type="checkbox" name="select-nodes-common" value="" <%= disabled %> />Select All</label>
   </div>
 </div>

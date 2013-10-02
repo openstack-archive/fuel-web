@@ -117,11 +117,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         updateBatchActionsButtons: function() {
             this.$('.btn-delete-nodes').toggle(!!this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
-            var selectedNodes = this.$('.node-checkbox input:checked');
-            this.$('.btn-add-nodes').toggle(!selectedNodes.length);
-            this.$('.btn-edit-nodes').toggle(!!selectedNodes.length);
-            var selectedNodesIds = selectedNodes.map(function() {return parseInt($(this).val(), 10);}).get().join(',');
-            this.$('.btn-edit-nodes').attr('href', '#cluster/' + this.model.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: selectedNodesIds}));
+            this.$('.btn-add-nodes').toggle(!this.$('.node-checkbox input:checked').length);
+            var notDeployedSelectedNodes = this.$('.node-box.node-new .node-checkbox input:checked');
+            this.$('.btn-edit-nodes').toggle(!!notDeployedSelectedNodes.length);
+            var nodesIds = notDeployedSelectedNodes.map(function() {return parseInt($(this).val(), 10);}).get().join(',');
+            this.$('.btn-edit-nodes').attr('href', '#cluster/' + this.model.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: nodesIds}));
             // check selected nodes for group configuration availability
             var nodeIds = this.$('.node-box:not(.node-delete):not(.node-offline) input[type=checkbox]:checked').map(function() {return parseInt($(this).val(), 10);}).get();
             this.$('.btn-group-congiration').prop('disabled', !nodeIds.length);

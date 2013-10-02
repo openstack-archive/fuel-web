@@ -749,7 +749,11 @@ class VolumeManager(object):
 
         # And allocate rest of the space for
         # last volume. We want to be sure
-        # that we use all free space
+        # that we use all free space.
+        # Problems which we solved with such approach
+        # * when we allocate pv, we set size without
+        #   lvm_meta size, lvm size added inside create_pv
+        # * we can loose 1 mb in calculation above
         if self._all_size_volumes:
             self._allocate_all_free_space_for_volume(
                 self._all_size_volumes[-1])

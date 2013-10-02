@@ -29,13 +29,10 @@ function(commonViews, models, supportPageTemplate) {
         updateInterval: 2000,
         template: _.template(supportPageTemplate),
         events: {
-            'click .download-logs:not(.disabled)': 'downloadLogs'
-        },
-        findDumpTask: function() {
-            return this.logsPackageTasks.findTask({name: 'dump'});
+            'click .download-logs': 'downloadLogs'
         },
         scheduleUpdate: function() {
-            var task = this.findDumpTask();
+            var task = this.logsPackageTasks.findTask({name: 'dump'});
             if (this.timeout) {
                 this.timeout.clear();
             }
@@ -43,7 +40,8 @@ function(commonViews, models, supportPageTemplate) {
                 this.registerDeferred(this.timeout = $.timeout(this.updateInterval).done(_.bind(this.update, this)));
             } else {
                 this.renderDumpTaskResult(task);
-                this.$('.download-logs').removeClass('disabled').text('Generate logs');
+                this.$('.download-logs').removeClass('hide');
+                this.$('.download-logs-progress').addClass('hide')
             }
         },
         update: function() {
@@ -52,17 +50,14 @@ function(commonViews, models, supportPageTemplate) {
         downloadLogs: function() {
             var task = new models.LogsPackage();
             task.save({}, {method: 'PUT'});
-            this.$('.download-logs').addClass('disabled').html('<span class="icon-process animate-spin"></span>Generating logs');
+            this.$('.download-logs').addClass('hide');
+            this.$('.download-logs-progress').removeClass('hide')
             this.$('.donwload-logs-link').addClass('hide');
             this.$('.download-logs-error').addClass('hide');
-            // Redefine logsPackageTasks to ignoring previous state
-            this.logsPackageTasks = new models.Tasks();
+            // Reset logsPackageTasks to ignoring previous state
+            this.logsPackageTasks.reset();
             this.logsPackageTasks.fetch();
             this.scheduleUpdate();
-        },
-        initLogsTask: function() {
-            this.logsPackageTasks = new models.Tasks();
-            this.logsPackageTasks.fetch();
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -75,16 +70,18 @@ function(commonViews, models, supportPageTemplate) {
             this.logsPackageTasks.fetch();
         },
         checkCompletedTask: function() {
-            var task = this.findDumpTask();
+            var task = this.logsPackageTasks.findTask({name: 'dump'});
             if (_.isUndefined(task) || task.get('progress') < 100 ) {
                 this.$('.genereate-logs').addClass('hide');
-                this.$('.download-logs').removeClass('disabled').text('Generate logs');
+                this.$('.download-logs').removeClass('hide');
+                this.$('.download-logs-progress').addClass('hide');
             } else if (task.get('progress') < 100) {
                 this.scheduleUpdate();
             } else {
                 this.renderDumpTaskResult(task);
             }
-            this.$('.download-logs').removeClass('disabled').text('Generate logs');
+            this.$('.download-logs').removeClass('hide');
+            this.$('.download-logs-progress').addClass('hide');
         },
         renderDumpTaskResult: function(task){
             if (task.get('status') == 'error') {

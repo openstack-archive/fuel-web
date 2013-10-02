@@ -30,7 +30,6 @@ class saveandquit():
         self.visible = True
         self.parent = parent
         self.screen = None
-        #self.screen = self.screenUI()
 
 
     def save_and_continue(self, args):
@@ -40,7 +39,7 @@ class saveandquit():
         if self.save():
             self.parent.refreshScreen()
             time.sleep(1.5)
-            self.parent.exit_program()
+            self.parent.exit_program(None)
 
     def save(self):
         results, modulename = self.parent.global_save()

@@ -58,33 +58,44 @@ def byte_to_megabyte(byte):
     return byte / 1024 ** 2
 
 
-def get_node_volumes(node):
-    """Helper for retrieving node volumes in correct order.
+def find_space_by_id(spaces, space_id):
+    """Iterate through spaces and return space which has space_id."""
+    return filter(lambda space: space.get('id') == space_id, spaces)[0]
+
+
+def get_node_spaces(node):
+    """Helper for retrieving node volumes.
     If spaces don't defained for role, will be used
     partitioning for role `other`.
+    Sets key `_allocate_size` which used only for internal calculation
+    and not used in partitioning system.
     """
-    node_volumes = []
+    node_spaces = []
 
-    role_volumes = node.cluster.release.volumes_metadata[
+    role_mapping = node.cluster.release.volumes_metadata[
         'volumes_roles_mapping']
-    roles = node.roles + node.pending_roles
+    all_spaces = node.cluster.release.volumes_metadata['volumes']
 
-    for role in roles:
-        if not role_volumes.get(role):
+    for role in node.all_roles:
+        if not role_mapping.get(role):
             continue
 
-        for volume in role_volumes[role]:
-            if volume not in node_volumes:
-                node_volumes.append(volume)
+        for volume in role_mapping[role]:
+            space = find_space_by_id(all_spaces, volume['id'])
+            if space not in node_spaces:
+                space['_allocate_size'] = volume['allocate_size']
+                node_spaces.append(space)
 
-    # Use role other
-    if not node_volumes:
+    # Use role `other`
+    if not node_spaces:
         logger.warn('Cannot find volumes for node: %s assigning default '
                     'volumes' % (node.full_name))
-        for volume in role_volumes['other']:
-            node_volumes.append(volume)
+        for volume in role_mapping['other']:
+            space = find_space_by_id(all_spaces, volume['id'])
+            space['_allocate_size'] = volume['allocate_size']
+            node_spaces.append(space)
 
-    return node_volumes
+    return node_spaces
 
 
 class DisksFormatConvertor(object):
@@ -232,18 +243,14 @@ class DisksFormatConvertor(object):
             ]
         '''
         volumes_info = []
-        for volume_id in get_node_volumes(node):
-            volume = filter(
-                lambda volume: volume.get('id') == volume_id,
-                node.cluster.release.volumes_metadata['volumes'])[0]
-
+        for space in get_node_spaces(node):
             # Here we calculate min_size of nodes
             min_size = node.volume_manager.expand_generators(
-                volume)['min_size']
+                space)['min_size']
 
             volumes_info.append({
-                'name': volume_id,
-                'label': volume['label'],
+                'name': space['id'],
+                'label': space['label'],
                 'min_size': min_size})
 
         return volumes_info
@@ -496,13 +503,7 @@ class VolumeManager(object):
         # If node bound to the cluster than it has a role
         # and volume groups which we should to allocate
         if node.cluster:
-            volumes_metadata = node.cluster.release.volumes_metadata
-            # Adding volume groups in same order
-            # as they represent in volumes_roles_mapping list
-            for vg_name in get_node_volumes(node):
-                vg = filter(lambda vg: vg.get('id') == vg_name,
-                            volumes_metadata['volumes'])[0]
-                self.allowed_volumes.append(vg)
+            self.allowed_volumes = get_node_spaces(node)
 
         self.disks = []
         for d in sorted(node.meta['disks'], key=lambda i: i['name']):

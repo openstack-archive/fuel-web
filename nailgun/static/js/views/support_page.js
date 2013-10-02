@@ -41,7 +41,7 @@ function(commonViews, models, supportPageTemplate) {
             } else {
                 this.renderDumpTaskResult(task);
                 this.$('.download-logs').removeClass('hide');
-                this.$('.download-logs-progress').addClass('hide')
+                this.$('.download-logs-progress').addClass('hide');
             }
         },
         update: function() {
@@ -51,7 +51,7 @@ function(commonViews, models, supportPageTemplate) {
             var task = new models.LogsPackage();
             task.save({}, {method: 'PUT'});
             this.$('.download-logs').addClass('hide');
-            this.$('.download-logs-progress').removeClass('hide')
+            this.$('.download-logs-progress').removeClass('hide');
             this.$('.donwload-logs-link').addClass('hide');
             this.$('.download-logs-error').addClass('hide');
             // Reset logsPackageTasks to ignoring previous state
@@ -63,7 +63,7 @@ function(commonViews, models, supportPageTemplate) {
             _.defaults(this, options);
             this.model = new models.FuelKey();
             this.model.fetch();
-            this.model.on('change', this.render, this);
+            this.model.on('change', this.renderRegistrationLink, this);
             this.logsPackageTasks = new models.Tasks();
             // Check for task was created earlier
             this.logsPackageTasks.once('sync', this.checkCompletedTask, this);
@@ -83,7 +83,10 @@ function(commonViews, models, supportPageTemplate) {
             this.$('.download-logs').removeClass('hide');
             this.$('.download-logs-progress').addClass('hide');
         },
-        renderDumpTaskResult: function(task){
+        renderRegistrationLink: function() {
+            this.$('.registration-link').attr('href', 'http://fuel.mirantis.com/create-subscriber/?key=' + this.model.get('key'));
+        },
+        renderDumpTaskResult: function(task) {
             if (task.get('status') == 'error') {
                 this.$('.download-logs-error').text(task.get('message'));
                 this.$('.download-logs-error').removeClass('hide');

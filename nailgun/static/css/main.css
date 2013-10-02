@@ -1101,12 +1101,12 @@ h6.page-title {
 }
 
 .globalalert > h4 {color: #C09853;}
-.global-error > h4 {color: #B94A48;}
+.global-error > h4 {color: #de4744;}
 .global-success > h4 {color: #41b142;}
 .global-info > h4 {color: #3A87AD;}
 
 .globalalert > p {color: #C09853;}
-.global-error > p {color: #B94A48;}
+.global-error > p {color: #de4744;}
 .global-success > p {color: #41b142;}
 .global-info > p {color: #3A87AD;}
 

@@ -15,12 +15,13 @@
 **/
 define(
 [
+    'utils',
     'views/common',
     'views/dialogs',
     'text!templates/release/list.html',
     'text!templates/release/release.html'
 ],
-function(commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
+function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
     'use strict';
 
     var ReleasesPage, Release;
@@ -91,9 +92,8 @@ function(commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
         updateErrorMessage: function() {
             var setupTask = this.page.tasks.findTask({name: 'redhat_setup', status: 'error', release: this.release.id});
             if (setupTask) {
-                    this.$('div.error').text(setupTask.get('message'));
+                this.$('div.error').html(utils.urlify(setupTask.get('message')));
             }
-            
         },
         initialize: function(options) {
             _.defaults(this, options);

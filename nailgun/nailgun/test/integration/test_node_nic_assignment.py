@@ -189,3 +189,24 @@ class TestNodeHandlers(BaseIntegrationTest):
         for resp_nic in response:
             self.assertEquals(resp_nic['assigned_networks'], [])
             self.assertEquals(resp_nic['allowed_networks'], [])
+
+    def test_getting_default_nic_information_for_node(self):
+        cluster = self.env.create_cluster(api=True)
+        macs = ('123', 'abc')
+        meta = self.env.default_metadata()
+        meta['interfaces'] = [
+            {'name': 'eth0', 'mac': macs[0]},
+            {'name': 'eth1', 'mac': macs[1]},
+        ]
+        node = self.env.create_node(api=True, meta=meta, mac=macs[0],
+                                    cluster_id=cluster['id'])
+        resp = self.app.get(
+            reverse('NodeNICsDefaultHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers
+        )
+        resp_macs = map(
+            lambda interface: interface["mac"],
+            json.loads(resp.body)
+        )
+        self.assertEquals(resp.status, 200)
+        self.assertItemsEqual(macs, resp_macs)

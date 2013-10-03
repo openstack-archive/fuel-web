@@ -291,11 +291,12 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
 
 class TestVolumeManager(BaseIntegrationTest):
 
-    def create_node(self, role):
+    def create_node(self, *role):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[{
-                'roles': [role],
+                'roles': [],
+                'pending_roles': role,
                 'pending_addition': True,
                 'api': True}])
 
@@ -426,15 +427,16 @@ class TestVolumeManager(BaseIntegrationTest):
         self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
 
     def create_node_and_calculate_min_size(
-            self, role, vg_names, volumes_metadata):
+            self, role, space_info, volumes_metadata):
         node = self.create_node(role)
         volume_manager = node.volume_manager
         volumes = volume_manager.expand_generators(
             volumes_metadata['volumes'])
 
+        role_ids = [space['id'] for space in space_info]
         min_installation_size = sum([
             volume['min_size'] for volume in
-            filter(lambda volume: volume['id'] in vg_names, volumes)])
+            filter(lambda volume: volume['id'] in role_ids, volumes)])
 
         boot_data_size = volume_manager.call_generator('calc_boot_size') +\
             volume_manager.call_generator('calc_boot_records_size')
@@ -464,10 +466,10 @@ class TestVolumeManager(BaseIntegrationTest):
         volumes_metadata = self.env.get_default_volumes_metadata()
         volumes_roles_mapping = volumes_metadata['volumes_roles_mapping']
 
-        for role, vg_names in volumes_roles_mapping.iteritems():
+        for role, space_info in volumes_roles_mapping.iteritems():
             node, min_installation_size = self.\
                 create_node_and_calculate_min_size(
-                    role, vg_names, volumes_metadata)
+                    role, space_info, volumes_metadata)
 
             self.update_node_with_single_disk(node, min_installation_size)
             node.volume_manager.check_disk_space_for_deployment()

@@ -505,10 +505,17 @@
             ],
             "volumes_metadata": {
                 "volumes_roles_mapping": {
-                    "controller": ["os", "image"],
-                    "compute": ["os", "vm"],
-                    "cinder": ["os", "cinder"],
-                    "other": ["os"]
+                    "controller": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "image"}],
+                    "compute": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "vm"}],
+                    "cinder": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "cinder"}],
+                    "other": [
+                        {"allocate_size": "all", "id": "os"}]
                 },
                 "volumes": [
                     {
@@ -854,11 +861,21 @@
             ],
             "volumes_metadata": {
                 "volumes_roles_mapping": {
-                    "controller": ["os", "image"],
-                    "compute": ["os", "vm"],
-                    "ceph-osd": ["os", "cephjournal", "ceph"],
-                    "cinder": ["os", "cinder"],
-                    "other": ["os"]
+                    "controller": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "image"}],
+                    "compute": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "vm"}],
+                    "ceph-osd": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "min", "id": "cephjournal"},
+                        {"allocate_size": "all", "id": "ceph"}],
+                    "cinder": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "cinder"}],
+                    "other": [
+                        {"allocate_size": "all", "id": "os"}]
                 },
                 "volumes": [
                     {

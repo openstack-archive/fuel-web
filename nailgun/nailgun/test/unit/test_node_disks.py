@@ -28,11 +28,16 @@ from nailgun.volumes.manager import only_vg
 
 class TestNodeDisksHandlers(BaseIntegrationTest):
 
-    def create_node(self, role='controller'):
+    def create_node(self, roles=None, pending_roles=None):
+        if roles is None:
+            roles = ['controller']
+        if pending_roles is None:
+            pending_roles = []
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[{
-                'role': role,
+                'roles': roles,
+                'pending_roles': pending_roles,
                 'pending_addition': True,
                 'api': True}])
 
@@ -88,6 +93,20 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         response = self.get(node_db.id)
         self.assertNotEquals(response, [])
 
+    def test_volumes_regeneration_after_roles_update(self):
+        self.create_node(roles=[], pending_roles=['compute'])
+        node_db = self.env.nodes[0]
+        original_roles_response = self.get(node_db.id)
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node_db.id, 'pending_roles': ['cinder']}]),
+            headers=self.default_headers)
+        self.assertEquals(200, resp.status)
+
+        modified_roles_response = self.get(node_db.id)
+        self.assertNotEquals(original_roles_response, modified_roles_response)
+
     def test_disks_volumes_size_update(self):
         node_db = self.create_node()
         disks = self.get(node_db.id)
@@ -137,7 +156,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             self.assertEquals(size_volumes_after, volume_group_size)
 
     def test_update_ceph_partition(self):
-        node = self.create_node(role='ceph-osd')
+        node = self.create_node(roles=['ceph-osd'])
         disks = self.get(node.id)
 
         new_volume_size = 4321
@@ -196,7 +215,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=False)
         self.env.create_node(
             api=True,
-            role='compute',  # vgs: os, vm
+            roles=['compute'],  # vgs: os, vm
             cluster_id=cluster.id)
         node_db = self.env.nodes[0]
         response = self.get(node_db.id)
@@ -291,12 +310,12 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
 
 class TestVolumeManager(BaseIntegrationTest):
 
-    def create_node(self, *role):
+    def create_node(self, *roles):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[{
                 'roles': [],
-                'pending_roles': role,
+                'pending_roles': roles,
                 'pending_addition': True,
                 'api': True}])
 

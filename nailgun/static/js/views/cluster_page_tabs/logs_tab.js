@@ -29,6 +29,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
         reversed: true,
         template: _.template(logsTabTemplate),
         logEntryTemplate: _.template(logEntryTemplate),
+        lastLogLevel: 'INFO',
         events: {
             'click .show-logs-btn:not(.disabled)': 'onShowButtonClick',
             'click .show-more-entries': 'onShowMoreClick',
@@ -36,7 +37,8 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
             'change select': 'updateShowButtonState',
             'change select[name=type]': 'onTypeChange',
             'change select[name=node]': 'onNodeChange',
-            'change select[name=source]': 'updateLevels'
+            'change select[name=source]': 'updateLevels',
+            'change select[name=level]': 'saveLogLevel'
         },
         scheduleUpdate: function() {
             this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
@@ -98,9 +100,13 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
             var input = this.$('select[name=source]');
             this.sources.each(function(source) {
                 if (!source.get('remote')) {
-                    input.append($('<option/>', {value: source.id, text: source.get('name')}));
+                    var option = $('<option/>', {value: source.id, text: source.get('name')});
+                    if (source.get('name') == this.lastSource){
+                        option.attr('selected', 'selected');
+                    }
+                    input.append(option);
                 }
-            });
+            }, this);
         },
         updateRemoteSources: function() {
             var input = this.$('select[name=source]');
@@ -117,10 +123,14 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                 if (sourcesByGroup[group].length) {
                     var el = group ? $('<optgroup/>', {label: group}).appendTo(input) : input;
                     _.each(sourcesByGroup[group], function(source) {
-                        el.append($('<option/>', {value: source.id, text: source.get('name')}));
+                        var option = $('<option/>', {value: source.id, text: source.get('name')});
+                        if (source.get('name') == this.lastSource){
+                            option.attr('selected', 'selected');
+                        }
+                        el.append(option);
                     });
                 }
-            });
+            }, this);
         },
         updateLevels: function() {
             var input = this.$('select[name=level]');
@@ -129,9 +139,16 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                 input.html('').attr('disabled', false);
                 var source = this.sources.get(chosenSourceId);
                 _.each(source.get('levels'), function(level) {
-                    input.append($('<option/>').text(level));
+                    var option = $('<option/>').text(level);
+                    if (level == this.lastLogLevel){
+                        option.attr('selected', 'selected');
+                    }
+                    input.append(option);
                 }, this);
             }
+        },
+        saveLogLevel: function() {
+            this.lastLogLevel = this.$('select[name=level]').val();
         },
         updateShowButtonState: function() {
             this.$('.show-logs-btn').toggleClass('disabled', !this.$('select[name=source]').val());

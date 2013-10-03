@@ -327,7 +327,7 @@ class CheckNetworksTaskManager(TaskManager):
 
 class VerifyNetworksTaskManager(TaskManager):
 
-    def remove_prvious_task(self):
+    def remove_previous_task(self):
         verification_tasks = filter(
             lambda task: task.cluster_id == self.cluster.id
             and task.name == "verify_networks",
@@ -342,7 +342,7 @@ class VerifyNetworksTaskManager(TaskManager):
             db().commit()
 
     def execute(self, nets, vlan_ids):
-        self.remove_prvious_task()
+        self.remove_previous_task()
 
         task = Task(
             name="check_networks",

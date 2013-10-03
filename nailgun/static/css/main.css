@@ -1647,6 +1647,7 @@ h6.page-title {
 
 .tab-pane > div > div {
   overflow-y: hidden;
+  min-height: 360px;
 }
 
 .wrapper {

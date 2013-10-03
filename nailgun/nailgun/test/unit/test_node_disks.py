@@ -431,6 +431,50 @@ class TestVolumeManager(BaseIntegrationTest):
             node.volume_manager.volumes, 'ceph')
         self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
 
+    def should_allocates_same_size(self, volumes, same_size_volume_names):
+        disks = only_disks(volumes)
+
+        actual_volumes_size = {}
+        for disk in disks:
+            for volume in disk['volumes']:
+                name = volume.get('vg') or volume.get('name')
+                if not name:
+                    continue
+                actual_volumes_size.setdefault(name, {})
+                actual_volumes_size[name].setdefault('size', 0)
+                actual_volumes_size[name].setdefault(
+                    'type', volume.get('type'))
+                actual_volumes_size[name]['size'] += volume.get('size')
+
+        actual_volumes = [v for k, v in actual_volumes_size.iteritems()
+                          if k in same_size_volume_names]
+
+        # All pv should have equal size
+        actual_pv_volumes = filter(
+            lambda volume: volume['type'] == 'pv', actual_volumes)
+        sum_pv_size = sum([volume['size'] for volume in actual_pv_volumes])
+        average_size = sum_pv_size / len(actual_pv_volumes)
+        for pv in actual_pv_volumes:
+            self.assertEqual(pv['size'], average_size)
+
+    def test_multirole_controller_ceph(self):
+        node = self.create_node('controller', 'ceph-osd')
+        self.should_contain_os_with_minimal_size(node.volume_manager)
+        self.should_allocates_same_size(
+            node.volume_manager.volumes, ['image', 'ceph'])
+        self.logical_volume_sizes_should_equal_all_phisical_volumes(
+            node.attributes.volumes)
+        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+
+    def test_multirole_controller_cinder_ceph(self):
+        node = self.create_node('controller', 'cinder', 'ceph-osd')
+        self.should_contain_os_with_minimal_size(node.volume_manager)
+        self.should_allocates_same_size(
+            node.volume_manager.volumes, ['image', 'cinder', 'ceph'])
+        self.logical_volume_sizes_should_equal_all_phisical_volumes(
+            node.attributes.volumes)
+        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+
     def create_node_and_calculate_min_size(
             self, role, space_info, volumes_metadata):
         node = self.create_node(role)

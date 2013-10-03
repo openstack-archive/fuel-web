@@ -327,7 +327,23 @@ class CheckNetworksTaskManager(TaskManager):
 
 class VerifyNetworksTaskManager(TaskManager):
 
+    def remove_previous_task(self):
+        verification_tasks = filter(
+            lambda task: task.cluster_id == self.cluster.id
+            and task.name == "verify_networks",
+            self.cluster.tasks)
+        if verification_tasks:
+            ver_task = verification_tasks[0]
+            if ver_task.status == "running":
+                raise errors.CantRemoveOldVerificationTask()
+            for subtask in ver_task.subtasks:
+                db().delete(subtask)
+            db().delete(ver_task)
+            db().commit()
+
     def execute(self, nets, vlan_ids):
+        self.remove_previous_task()
+
         task = Task(
             name="check_networks",
             cluster=self.cluster

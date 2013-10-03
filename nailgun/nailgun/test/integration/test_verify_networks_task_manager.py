@@ -102,3 +102,33 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             )
         )
         self.assertEquals(mocked_rpc.called, False)
+
+    @fake_tasks()
+    def test_network_verify_if_old_task_is_running(self,
+                                                   macs_mock):
+        macs_mock.return_value = self.master_macs
+
+        resp = self.app.get(
+            reverse(
+                'NetworkConfigurationHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}
+            ),
+            headers=self.default_headers
+        )
+        nets = resp.body
+
+        self.env.create_task(
+            name="verify_networks",
+            status="running",
+            cluster_id=self.env.clusters[0].id
+        )
+
+        resp = self.app.put(
+            reverse(
+                'NetworkConfigurationVerifyHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}),
+            nets,
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEquals(400, resp.status)

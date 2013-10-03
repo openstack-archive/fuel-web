@@ -46,6 +46,7 @@ default_messages = {
     "InvalidNetworkPool": "Invalid network pool",
     "AssignIPError": "Failed to assign IP to node",
     "NetworkCheckError": "Network checking failed",
+    "CantRemoveOldVerificationTask": "Can't remove old verification task, still running",
     "OutOfVLANs": "Not enough available VLAN IDs",
     "OutOfIPs": "Not enough free IP addresses in pool",
     "NoSuitableCIDR": "Cannot find suitable CIDR",

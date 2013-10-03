@@ -372,6 +372,11 @@ class TestVolumeManager(BaseIntegrationTest):
         pv_sizes = {}
         for disk in only_disks(spaces):
             for volume in disk['volumes']:
+                # Skip cinder because it does not have
+                # logical volumes
+                if volume.get('vg') == 'cinder':
+                    continue
+
                 if volume['type'] == 'pv':
                     vg_name = volume['vg']
                     if not pv_sizes.get(vg_name):

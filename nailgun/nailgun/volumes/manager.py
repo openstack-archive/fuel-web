@@ -743,8 +743,8 @@ class VolumeManager(object):
         # Then allocate volumes which required
         # all free space
         if len(self._all_size_volumes) > 1:
+            size = self._all_disks_free_space / len(self._all_size_volumes)
             for volume in self._all_size_volumes[:-1]:
-                size = self._all_disks_free_space / len(self._all_size_volumes)
                 self._allocate_size_for_volume(volume, size)
 
         # And allocate rest of the space for

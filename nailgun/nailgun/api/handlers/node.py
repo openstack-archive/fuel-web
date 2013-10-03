@@ -109,8 +109,12 @@ class NodeHandler(JSONHandler):
             if key in ("id", "cluster_id"):
                 continue
             setattr(node, key, value)
-        if not node.status in ('provisioning', 'deploying') \
-                and "roles" in data or "cluster_id" in data:
+        if not node.status in ('provisioning', 'deploying') and any((
+            'roles' in data and set(data['roles']) != set(node.roles),
+            'pending_roles' in data and
+                set(data['pending_roles']) != set(node.pending_roles),
+            'cluster_id' in data and data['cluster_id'] != node.cluster_id
+        )):
             try:
                 node.attributes.volumes = \
                     node.volume_manager.gen_volumes_info()
@@ -374,8 +378,10 @@ class NodeCollectionHandler(JSONHandler):
                             node.attributes.volumes
                         )
                     ),
-                    "roles" in nd,
-                    "cluster_id" in nd
+                    'roles' in nd and set(nd['roles']) != set(node.roles),
+                    'pending_roles' in nd and
+                    set(nd['pending_roles']) != set(node.pending_roles),
+                    'cluster_id' in nd and nd['cluster_id'] != node.cluster_id
                 )
                 if any(variants):
                     try:

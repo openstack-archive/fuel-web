@@ -87,8 +87,9 @@ class Settings():
             settings = yaml.load(infile)
             return settings
         except:
-            import logging
-            logging.error("Unable to read YAML: %s" % yamlfile)
+            if yamlfile is not None:
+                import logging
+                logging.error("Unable to read YAML: %s" % yamlfile)
             return OrderedDict()
 
     def write(self, newvalues, tree=None, defaultsfile='settings.yaml',

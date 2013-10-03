@@ -14,6 +14,7 @@
 # under the License.
 import logging
 import operator
+from optparse import OptionParser, OptionGroup
 import os
 import subprocess
 import sys
@@ -22,8 +23,6 @@ import urwid.raw_display
 import urwid.web_display
 
 # set up logging
-#logging.basicConfig(filename='./fuelmenu.log')
-#logging.basicConfig(level=logging.DEBUG)
 logging.basicConfig(filename='./fuelmenu.log', level=logging.DEBUG)
 log = logging.getLogger('fuelmenu.loader')
 
@@ -272,6 +271,7 @@ class FuelSetup(object):
                              % (modulename))
         return True, None
 
+
 def setup():
     urwid.web_display.set_preferences("Fuel Setup")
     # try to handle short web requests quickly
@@ -279,7 +279,84 @@ def setup():
         return
     fm = FuelSetup()
 
+def save_only(iface):
+    import common.network as network
+    from common import nailyfactersettings
+    from settings import Settings
+    import netifaces
+    #Naily.facts translation map from astute.yaml format
+    facter_translate = {
+        "ADMIN_NETWORK/interface": "internal_interface",
+        "ADMIN_NETWORK/ipaddress": "internal_ipaddress",
+        "ADMIN_NETWORK/netmask": "internal_netmask",
+        "ADMIN_NETWORK/dhcp_pool_start": "dhcp_pool_start",
+        "ADMIN_NETWORK/dhcp_pool_end": "dhcp_pool_end",
+        "ADMIN_NETWORK/static_pool_start": "static_pool_start",
+        "ADMIN_NETWORK/static_pool_end": "static_pool_end",
+        }
+    #Calculate and set Static/DHCP pool fields
+    #Max IPs = net size - 2 (master node + bcast)
+    try:
+        ip = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]['addr']
+        netmask = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]['netmask']
+    except:
+        print "Interface %s does is missing either IP address or netmask" \
+            % (iface)
+        sys.exit(1)
+    net_ip_list = network.getNetwork(ip, netmask)
+    try:
+        half = int(len(net_ip_list)/2)
+        static_pool = list(net_ip_list[:half])
+        dhcp_pool = list(net_ip_list[half:])
+        static_start = str(static_pool[0])
+        static_end = str(static_pool[-1])
+        dynamic_start = str(dhcp_pool[0])
+        dynamic_end = str(dhcp_pool[-1])
+    except:
+        print "Unable to define DHCP pools" 
+        sys.exit(1)
+    settings={
+        "ADMIN_NETWORK/interface": iface,
+        "ADMIN_NETWORK/ipaddress": ip,
+        "ADMIN_NETWORK/netmask": netmask,
+        "ADMIN_NETWORK/dhcp_pool_start": dynamic_start,
+        "ADMIN_NETWORK/dhcp_pool_end": dynamic_end,
+        "ADMIN_NETWORK/static_pool_start": static_start,
+        "ADMIN_NETWORK/static_pool_end": static_end,
+        }
+    newsettings=dict()
+    for setting in settings.keys():
+        if "/" in setting:
+            part1, part2 = setting.split("/")
+            if part1 not in newsettings.keys():
+                newsettings[part1] = {}
+            newsettings[part1][part2] = settings[setting]
+        else:
+            newsettings[setting] = settings[setting]
+    #Write astute.yaml
+    Settings().write(newsettings, defaultsfile=None,
+                     outfn="/etc/astute.yaml")
+    #Prepare naily.facts
+    for key in facter_translate.keys():
+        factsettings[facter_translate[key]] = settings[key]
+    n = nailyfactersettings.NailyFacterSettings()
+    n.write(factsettings)
+
 if '__main__' == __name__ or urwid.web_display.is_web_request():
+
     if urwid.VERSION < (1, 1, 0):
         print "This program requires urwid 1.1.0 or greater."
-    setup()
+
+    parser = OptionParser()
+    parser.add_option("-s", "--save-only", dest="save_only", 
+                      action="store_true", help="Save default values and exit.")
+
+    parser.add_option("-i", "--iface", dest="iface", metavar="IFACE",
+                      default="eth0", help="Set IFACE as primary.")
+
+    options, args = parser.parse_args()
+
+    if options.save_only:
+        save_only(options.iface)
+    else:
+        setup()

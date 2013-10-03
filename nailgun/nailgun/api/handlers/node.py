@@ -211,7 +211,7 @@ class NodeCollectionHandler(JSONHandler):
             error.data = "Only bootstrap nodes are allowed to be registered."
             msg = u"Node with mac '{0}' was not created, " \
                   u"because request status is '{1}'."\
-                .format(data[u'mac'], data[u'status'])
+                .format(data[u'mac'], data.get(u'status'))
             logger.warning(msg)
             raise error
 

@@ -65,7 +65,7 @@ class saveandquit():
         text1 = urwid.Text("Save configuration before you quit?")
         saveandcontinue_button = Button("Save and Continue",
                                         self.save_and_continue)
-        saveandquit_button = Button("Save and Quit", self.save_and_)
+        saveandquit_button = Button("Save and Quit", self.save_and_quit)
         quitwithoutsaving_button = Button("Quit without saving",
                                           self.quit_without_saving)
         #Build all of these into a list

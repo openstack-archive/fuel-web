@@ -1,16 +1,35 @@
+# Copyright 2013 Mirantis, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+
 import urwid
 import urwid.raw_display
 import urwid.web_display
 
 
 def TextField(keyword, label, width, default_value=None, tooltip=None,
-              toolbar=None, disabled=False):
+              toolbar=None, disabled=False, ispassword=False):
     """Returns an Urwid Edit object"""
+    if ispassword:
+        mask = "*"
+    else:
+        mask = None
     if not tooltip:
-        edit_obj = urwid.Edit(('important', label.ljust(width)), default_value)
+        edit_obj = urwid.Edit(('important', label.ljust(width)), default_value,
+                               mask=mask)
     else:
         edit_obj = TextWithTip(('important', label.ljust(width)),
-                               default_value, tooltip, toolbar)
+                               default_value, tooltip, toolbar, mask=mask)
     wrapped_obj = urwid.AttrWrap(edit_obj, 'editbx', 'editfc')
     if disabled:
         wrapped_obj = urwid.WidgetDisable(urwid.AttrWrap(edit_obj,
@@ -27,10 +46,6 @@ def ChoicesGroup(self, choices, default_value=None, fn=None):
     rb_group = []
 
     for txt in choices:
-        #if default_value == None:
-        #  is_default = "first True"
-        #else:
-        #   is_default = True if txt == default_value else False
         is_default = True if txt == default_value else False
         radio_button = urwid.AttrWrap(urwid.RadioButton(rb_group, txt,
                                       is_default, on_state_change=fn,
@@ -69,22 +84,14 @@ def Button(text, fn):
 
 
 class TextWithTip(urwid.Edit):
-    def __init__(self, label, default_value=None, tooltip=None, toolbar=None):
-        urwid.Edit.__init__(self, caption=label, edit_text=default_value)
+    def __init__(self, label, default_value=None, tooltip=None, toolbar=None,
+                 mask=None):
+        urwid.Edit.__init__(self, caption=label, edit_text=default_value,
+                            mask=mask)
         self.tip = tooltip
         self.toolbar = toolbar
-    #def keypress(self, size, key):
-    #   key = super(TextWithTip, self).keypress(size, key)
-    #   self.toolbar.set_text(self.tip)
-    #   return key
-
     def render(self, size, focus=False):
         if focus:
             self.toolbar.set_text(self.tip)
         canv = super(TextWithTip, self).render(size, focus)
         return canv
-    #def mouse_event(self, size, event, button, x, y, focus):
-    #   self.toolbar.set_text(self.tip)
-    #   (maxcol,) = size
-    #   if button==1:
-    #       return self.move_cursor_to_coords( (maxcol,), x, y )

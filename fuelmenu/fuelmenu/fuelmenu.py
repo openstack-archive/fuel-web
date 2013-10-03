@@ -1,5 +1,20 @@
+#!/usr/bin/env python
+# Copyright 2013 Mirantis, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may
+# not use this file except in compliance with the License. You may obtain
+# a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
 import logging
 import operator
+from optparse import OptionParser, OptionGroup
 import os
 import subprocess
 import sys
@@ -7,10 +22,7 @@ import urwid
 import urwid.raw_display
 import urwid.web_display
 
-
 # set up logging
-#logging.basicConfig(filename='./fuelmenu.log')
-#logging.basicConfig(level=logging.DEBUG)
 logging.basicConfig(filename='./fuelmenu.log', level=logging.DEBUG)
 log = logging.getLogger('fuelmenu.loader')
 
@@ -36,7 +48,6 @@ class Loader(object):
             try:
                 imported = __import__(module)
                 pass
-                #imported = process(module)
             except ImportError as e:
                 log.error('module could not be imported: %s' % e)
                 continue
@@ -65,9 +76,10 @@ class FuelSetup(object):
         self.screen = None
         self.defaultsettingsfile = "%s/settings.yaml" \
                                    % (os.path.dirname(__file__))
-        self.settingsfile = "%s/newsettings.yaml" \
-                            % (os.path.dirname(__file__))
+        self.settingsfile = "/etc/astute.yaml"
         self.managediface = "eth0"
+        #Set to true to move all settings to end
+        self.globalsave = True
         self.main()
         self.choices = []
 
@@ -237,6 +249,28 @@ class FuelSetup(object):
 
         raise urwid.ExitMainLoop()
 
+    def global_save(self):
+        #Runs save function for every module
+        for module, modulename in zip(self.children,self.choices):
+            if not module.visible:
+                continue
+            else:
+                try:
+                    log.info("Checking and applying module: %s" 
+                                         % modulename)
+                    self.footer.set_text("Checking and applying module: %s" 
+                                         % modulename)
+                    self.refreshScreen()
+
+                    if module.apply(None):
+                        log.info("Saving module: %s" % modulename)
+                    else:
+                        return False, modulename
+                except AttributeError:
+                    log.info("Module %s does not have save function"
+                             % (modulename))
+        return True, None
+
 
 def setup():
     urwid.web_display.set_preferences("Fuel Setup")
@@ -245,7 +279,85 @@ def setup():
         return
     fm = FuelSetup()
 
-if '__main__' == __name__ or urwid.web_display.is_web_request():
+def save_only(iface):
+    import common.network as network
+    from common import nailyfactersettings
+    from settings import Settings
+    import netifaces
+    #Naily.facts translation map from astute.yaml format
+    facter_translate = {
+        "ADMIN_NETWORK/interface": "internal_interface",
+        "ADMIN_NETWORK/ipaddress": "internal_ipaddress",
+        "ADMIN_NETWORK/netmask": "internal_netmask",
+        "ADMIN_NETWORK/dhcp_pool_start": "dhcp_pool_start",
+        "ADMIN_NETWORK/dhcp_pool_end": "dhcp_pool_end",
+        "ADMIN_NETWORK/static_pool_start": "static_pool_start",
+        "ADMIN_NETWORK/static_pool_end": "static_pool_end",
+        }
+    #Calculate and set Static/DHCP pool fields
+    #Max IPs = net size - 2 (master node + bcast)
+    try:
+        ip = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]['addr']
+        netmask = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]['netmask']
+    except:
+        print "Interface %s does is missing either IP address or netmask" \
+            % (iface)
+        sys.exit(1)
+    net_ip_list = network.getNetwork(ip, netmask)
+    try:
+        half = int(len(net_ip_list)/2)
+        #In most cases, skip 10.XXX.0.1
+        static_pool = list(net_ip_list[1:half])
+        dhcp_pool = list(net_ip_list[half:])
+        static_start = str(static_pool[0])
+        static_end = str(static_pool[-1])
+        dynamic_start = str(dhcp_pool[0])
+        dynamic_end = str(dhcp_pool[-1])
+    except:
+        print "Unable to define DHCP pools" 
+        sys.exit(1)
+    settings={
+        "ADMIN_NETWORK/interface": iface,
+        "ADMIN_NETWORK/ipaddress": ip,
+        "ADMIN_NETWORK/netmask": netmask,
+        "ADMIN_NETWORK/dhcp_pool_start": dynamic_start,
+        "ADMIN_NETWORK/dhcp_pool_end": dynamic_end,
+        "ADMIN_NETWORK/static_pool_start": static_start,
+        "ADMIN_NETWORK/static_pool_end": static_end,
+        }
+    newsettings=dict()
+    for setting in settings.keys():
+        if "/" in setting:
+            part1, part2 = setting.split("/")
+            if part1 not in newsettings.keys():
+                newsettings[part1] = {}
+            newsettings[part1][part2] = settings[setting]
+        else:
+            newsettings[setting] = settings[setting]
+    #Write astute.yaml
+    Settings().write(newsettings, defaultsfile=None,
+                     outfn="/etc/astute.yaml")
+    #Prepare naily.facts
+    factsettings = dict()
+    for key in facter_translate.keys():
+        factsettings[facter_translate[key]] = settings[key]
+    n = nailyfactersettings.NailyFacterSettings()
+    n.write(factsettings)
+
+def main(*args, **kwargs):
     if urwid.VERSION < (1, 1, 0):
         print "This program requires urwid 1.1.0 or greater."
-    setup()
+
+    parser = OptionParser()
+    parser.add_option("-s", "--save-only", dest="save_only", 
+                      action="store_true", help="Save default values and exit.")
+
+    parser.add_option("-i", "--iface", dest="iface", metavar="IFACE",
+                      default="eth0", help="Set IFACE as primary.")
+
+    options, args = parser.parse_args()
+
+    if options.save_only:
+        save_only(options.iface)
+    else:
+        setup()

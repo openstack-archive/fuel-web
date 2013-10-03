@@ -204,9 +204,9 @@ class TestNodeHandlers(BaseIntegrationTest):
             reverse('NodeNICsDefaultHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers
         )
-        resp_macs = set(map(
+        resp_macs = map(
             lambda interface: interface["mac"],
             json.loads(resp.body)
-        ))
+        )
         self.assertEquals(resp.status, 200)
-        self.assertEquals(set(macs), resp_macs)
+        self.assertItemsEqual(macs, resp_macs)

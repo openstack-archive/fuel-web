@@ -419,13 +419,22 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         className: 'node-list',
         template: _.template(nodeListTemplate),
         events: {
-            'change input[name=select-nodes-common]' : 'selectAllNodes'
+            'change input[name=select-nodes-common]' : 'selectAllNodes',
+            'click .btn-cluster-details': 'toggleSummaryPanel'
         },
         availableNodes: function() {
             return this.$('.node-box:not(.node-offline):not(.node-error):not(.node-delete)');
         },
         selectAllNodes: function(e) {
             this.$('input[name=select-node-group]').prop('checked', this.$(e.currentTarget).is(':checked')).trigger('change');
+        },
+        hideSummaryPanel: function(e) {
+            if (!(e && $(e.target).closest(this.$('.node-list-name')).length)) {
+                this.$('.cluster-details').hide();
+            }
+        },
+        toggleSummaryPanel: function() {
+            this.$('.cluster-details').toggle();
         },
         calculateSelectAllTumblerState: function() {
             this.$('input[name=select-nodes-common]').prop('checked', this.availableNodes().length && this.$('.node-checkbox input:checked').length == this.availableNodes().length);
@@ -447,6 +456,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             _.defaults(this, options);
             this.screen.initialRoles = this.nodes.map(function(node) {return node.get('pending_roles') || [];});
+            this.eventNamespace = 'click.click-summary-panel';
         },
         renderNodeGroups: function() {
             this.$('.nodes').html('');
@@ -460,6 +470,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.$('.nodes').append(nodeGroupView.render().el);
             }, this);
         },
+        beforeTearDown: function() {
+            $('html').off(this.eventNamespace);
+            Backbone.history.off('route', this.hideSummaryPanel, this);
+        },
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({
@@ -468,6 +482,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 locked: this.screen.isLocked()
             }));
             this.groupNodes();
+            $('html').on(this.eventNamespace, _.bind(this.hideSummaryPanel, this));
+            Backbone.history.on('route', this.hideSummaryPanel, this);
             return this;
         }
     });

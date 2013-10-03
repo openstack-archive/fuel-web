@@ -832,8 +832,8 @@ class VolumeManager(object):
             self.call_generator('calc_boot_records_size')
 
         min_installation_size = disks_count * boot_size
-        for vg in self.allowed_volumes:
-            min_size = self.expand_generators(vg)['min_size']
+        for volume in self.allowed_volumes:
+            min_size = self.expand_generators(volume)['min_size']
             min_installation_size += min_size
 
         return min_installation_size

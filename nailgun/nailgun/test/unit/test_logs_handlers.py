@@ -30,6 +30,8 @@ from mock import patch
 import nailgun
 from nailgun.api.handlers.logs import read_backwards
 from nailgun.api.models import RedHatAccount
+from nailgun.api.models import Role
+from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
@@ -450,3 +452,22 @@ class TestLogs(BaseIntegrationTest):
         response = json.loads(resp.body)
         response['entries'].reverse()
         self.assertEquals(response['entries'], response_log_entries)
+
+    @patch('nailgun.api.handlers.logs.DumpTaskManager')
+    def test_log_package_handler_with_dump_task_manager_error(self,
+                                                              dump_manager):
+        """Test verifies that 400 status would be returned in case of errors
+        with uncompleted models in session
+        """
+
+        def dump_task_with_bad_model(*args, **kwargs):
+            db().add(Role())
+            raise errors.DumpRunning()
+
+        dump_manager().execute.side_effect = dump_task_with_bad_model
+
+        resp = self.app.put(
+            reverse('LogPackageHandler'), "[]",
+            headers=self.default_headers, expect_errors=True
+        )
+        self.assertEqual(resp.status, 400)

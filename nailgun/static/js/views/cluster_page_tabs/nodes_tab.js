@@ -117,7 +117,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         updateBatchActionsButtons: function() {
             this.$('.btn-delete-nodes').toggle(!!this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
-            this.$('.btn-add-nodes').toggle(!this.$('.node-checkbox input:checked').length);
+            this.$('.btn-add-nodes').css('display', this.$('.node-checkbox input:checked').length ? 'none' : 'block');
             var notDeployedSelectedNodes = this.$('.node-box.node-new .node-checkbox input:checked');
             this.$('.btn-edit-nodes').toggle(!!notDeployedSelectedNodes.length);
             var nodesIds = notDeployedSelectedNodes.map(function() {return parseInt($(this).val(), 10);}).get().join(',');
@@ -435,7 +435,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 attribute = this.screen instanceof AddNodesScreen ? 'hardware' : this.screen.tab.model.get('grouping');
             }
             if (attribute == 'roles') {
-                this.nodeGroups = this.nodes.groupBy(function(node) {return node.sortRoles().join(' + ');});
+                var rolesMetadata = this.screen.tab.model.get('release').get('roles_metadata');
+                this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
             } else if (attribute == 'hardware') {
                 this.nodeGroups = this.nodes.groupBy(function(node) {return 'HDD: ' + utils.showDiskSize(node.resource('hdd')) + ' RAM: ' + utils.showMemorySize(node.resource('ram'));});
             } else {

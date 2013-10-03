@@ -10,14 +10,6 @@
 %>
 <div class="node-box node-<%- nodeClass || node.get('status') %>">
   <div class="node-content">
-    <div class="node-checkbox">
-      <div class="custom-tumbler">
-        <% var disabledNode = ((!node.get('online') || node.get('status') == 'error') && !node.get('cluster')) || node.get('pending_deletion') || edit || locked %>
-        <input type="checkbox" value="<%- node.id %>" <%= checked || edit ? 'checked' : '' %> <%= disabledNode ? 'disabled' : '' %> />
-        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-        </label>
-      </div>
-    </div>
     <div class="node-logo <%- node.get('manufacturer') ? 'manufacturer-' + node.get('manufacturer').toLowerCase() : '' %>"></div>
     <div class="node-details"></div>
     <div class="node-hardware">
@@ -54,4 +46,12 @@
       </div>
     </div>
   </div>
+  <label class="node-checkbox">
+    <div class="custom-tumbler">
+      <% var disabledNode = ((!node.get('online') || node.get('status') == 'error') && !node.get('cluster')) || node.get('pending_deletion') || edit || locked %>
+      <input type="checkbox" value="<%- node.id %>" <%= checked || edit ? 'checked' : '' %> <%= disabledNode ? 'disabled' : '' %> />
+      <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+    </div>
+  </label>
 </div>
+

@@ -512,21 +512,25 @@ h6.page-title {
   width: 48px;
   height: 48px;
   float: left;
-  padding: 8px 0px 0px 11px;
-  border-right: 1px dotted #a0a0a0;
+  padding: 9px 0px 0px 13px;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
-  /* margin-left: -49px; */
   -webkit-transition: all 0.3s ease;
   -moz-transition: all 0.3s ease;
   -o-transition: all 0.3s ease;
   -ms-transition: all 0.3s ease;
 }
-.node-logo {
-  width: 64px;
-  float: left;
+
+label.node-checkbox {
+  display: block;
+  width: 100%;
+  height: 50px;
+  margin-top: -50px;
+  background: none;
+  margin-bottom: 0;
 }
+
 .node-name {/* width: 320px; float: left; */
   -webkit-font-smoothing: antialiased;
   height: 50px;
@@ -575,6 +579,7 @@ h6.page-title {
   text-transform: uppercase;
   font-size: 10px;
   margin: 14px 20px 0px 20px;
+  position: relative;
 }
 .node-status > .progress {
   background-color: #b9bdbf;
@@ -596,6 +601,12 @@ h6.page-title {
   margin: -4px 0 0 4px;
   text-align: left;
   text-shadow: none;
+}
+.node-discard-changes {
+  float: right;
+  position: relative;
+  margin-top: 12px;
+  width: 30px;
 }
 .node-hardware {
   width: 240px;
@@ -632,6 +643,7 @@ h6.page-title {
   background: url(/static/img/icons.png) 0px 0px no-repeat;
   margin: 13px 13px 0px 14px;
   cursor: pointer;
+  position: relative;
 }
 .node-details:hover {
   background: url(/static/img/icons.png) 0px -22px no-repeat;
@@ -827,15 +839,14 @@ h6.page-title {
 /* === Node Block End === */
 
 .node-logo {
-  display: block;
-  margin: 0px;
-  padding: 0px;
-  width: 60px;
-  height: 40px;
-  float: left;
-  box-sizing: border-box;
   -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
+    border-left: 1px dotted #A0A0A0;
+    display: block;
+    float: left;
+    height: 48px;
+    margin: 0 0 0 49px;
+    padding: 0;
+    width: 58px;
 }
 
 .node-renameable {
@@ -862,7 +873,7 @@ h6.page-title {
 }
 
 .node-status .logs-link, .node-status .btn-discard-node-changes {
-  display: block;
+    display: block;
     height: 25px;
     color: #2c67a0 !important;
     font-size: 9.5px !important;
@@ -2580,7 +2591,6 @@ h6.page-title {
   text-shadow: 0 1px 0px rgba(255, 255, 255, 0.65);
   border-color: #aaaaaa;
   background-image: none;
-  /* opacity: 0.65; */
   -webkit-box-shadow: inset 0 1px 0px rgba(255, 255, 255, 0.45);
      -moz-box-shadow: inset 0 1px 0px rgba(255, 255, 255, 0.45);
           box-shadow: inset 0 1px 0px rgba(255, 255, 255, 0.45);
@@ -2596,7 +2606,6 @@ h6.page-title {
   text-shadow: 0 1px 0px rgba(255, 255, 255, 0.65);
   border: none;
   background-image: none;
-  /* opacity: 0.65; */
   text-decoration: none;
   -webkit-box-shadow: inset 0 1px 0px rgba(255, 255, 255, 0);
      -moz-box-shadow: inset 0 1px 0px rgba(255, 255, 255, 0);
@@ -2604,7 +2613,6 @@ h6.page-title {
   filter: alpha(opacity=65);
 
 }
-
 
 .node-image-outline {
   display: block;
@@ -2627,10 +2635,6 @@ h6.page-title {
 
 .node-popup .span7 div {
   word-break: break-all;
-}
-
-.simple-mode-title, .simple-type-title {
-  /* padding: 0 20px 0 15px; */
 }
 
 .mode-description, .type-description {

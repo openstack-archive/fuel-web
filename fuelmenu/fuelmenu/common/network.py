@@ -40,7 +40,7 @@ def getCidrSize(cidr):
         return False
 
 
-def getNetwork(ip, netmask):
+def getNetwork(ip, netmask, additionalip=None):
     #Return a list excluding ip and broadcast IPs
     try:
         ipn = netaddr.IPNetwork("%s/%s" % (ip, netmask))
@@ -49,6 +49,10 @@ def getNetwork(ip, netmask):
         ipn_list = ipn_list[1:-1]
         #Drop ip
         ipn_list[:] = [value for value in ipn_list if str(value) != ip]
+        #Drop additionalip
+        if additionalip:
+            ipn_list[:] = [value for value in ipn_list if
+                           str(value) != additionalip]
 
         return ipn_list
     except:

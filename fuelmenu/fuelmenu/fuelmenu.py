@@ -306,7 +306,8 @@ def save_only(iface):
     net_ip_list = network.getNetwork(ip, netmask)
     try:
         half = int(len(net_ip_list)/2)
-        static_pool = list(net_ip_list[:half])
+        #In most cases, skip 10.XXX.0.1
+        static_pool = list(net_ip_list[1:half])
         dhcp_pool = list(net_ip_list[half:])
         static_start = str(static_pool[0])
         static_end = str(static_pool[-1])

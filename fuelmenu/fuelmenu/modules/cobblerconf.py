@@ -468,9 +468,11 @@ interface first.")
 
         #Calculate and set Static/DHCP pool fields
         #Max IPs = net size - 2 (master node + bcast)
+        #Add gateway so we exclude it
         net_ip_list = network.getNetwork(
             self.netsettings[self.activeiface]['addr'],
-            self.netsettings[self.activeiface]['netmask'])
+            self.netsettings[self.activeiface]['netmask'],
+            self.gateway)
         try:
             half = int(len(net_ip_list)/2)
             static_pool = list(net_ip_list[:half])

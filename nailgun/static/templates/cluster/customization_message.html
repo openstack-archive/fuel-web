@@ -1,0 +1,7 @@
+<% if (cluster.get('is_customized')) { %>
+  <div class="alert alert-block global-error alert-error">
+    <p class="enable-selection">
+      This environment's deploy parameters were modified with CLI, any further modification through Web interface will not affect deployment, proceed with caution.
+    </p>
+  </div>
+<% } %>

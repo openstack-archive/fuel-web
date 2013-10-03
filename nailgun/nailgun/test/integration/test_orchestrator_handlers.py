@@ -83,6 +83,17 @@ class TestDefaultOrchestratorHandlers(BaseIntegrationTest):
 
         self.cluster = self.db.query(Cluster).get(cluster['id'])
 
+    def customization_handler_helper(self, handler_name, get_info):
+        facts = {"key": "value"}
+        resp = self.app.put(
+            reverse(handler_name,
+                    kwargs={'cluster_id': self.cluster.id}),
+            json.dumps(facts),
+            headers=self.default_headers)
+        self.assertEqual(resp.status, 200)
+        self.assertTrue(self.cluster.is_customized)
+        self.datadiff(get_info(), facts)
+
     def test_default_deployment_handler(self):
         resp = self.app.get(
             reverse('DefaultDeploymentInfo',
@@ -100,3 +111,15 @@ class TestDefaultOrchestratorHandlers(BaseIntegrationTest):
 
         self.assertEqual(resp.status, 200)
         self.assertEqual(3, len(json.loads(resp.body)['nodes']))
+
+    def test_cluster_provisioning_customization(self):
+        self.customization_handler_helper(
+            'ProvisioningInfo',
+            lambda: self.cluster.replaced_provisioning_info
+        )
+
+    def test_cluster_deployment_customization(self):
+        self.customization_handler_helper(
+            'DeploymentInfo',
+            lambda: self.cluster.replaced_deployment_info
+        )

@@ -20,6 +20,15 @@
       </ul>
     </div>
     <div class="node-status"></div>
+    <div class="node-button">
+      <% if (!locked && !edit && node.get('cluster') && (node.get('pending_addition') || node.canDiscardDeletion() || node.get('pending_roles').length)) { %>
+        <% var btnClass = node.get('pending_addition') ? 'addition' : node.get('pending_deletion') ? 'deletion' : 'role-changes' %>
+        <% var btnTitle = node.get('pending_addition') ? 'Addition' : node.get('pending_deletion') ? 'Deletion' : 'Role Changes' %>
+        <button class="btn btn-link btn-discard-node-changes btn-discard-<%= btnClass %>" title="Discard <%= btnTitle %>"><i class="icon-back-in-time"></i></button>
+      <% } else { %>
+        <button class="btn btn-link btn-view-logs" title="View Logs"><i class="icon-logs"></i></button>
+      <% } %>
+    </div>
     <div class="node-name">
       <div class="name enable-selection">
         <% if (renaming) { %>
@@ -28,22 +37,7 @@
           <p <%= renameable ? 'class="node-renameable"  title="Edit Name"' : '' %>><%- node.get('name') || node.get('mac') %></p>
         <% } %>
       </div>
-      <div class="roles">
-        <ul>
-          <% if (node.get('roles').length || (node.get('pending_roles') && node.get('pending_roles').length)) { %>
-            <% _.each(node.get('roles'), function(role) { %>
-              <li><%= role %></li>
-            <% }) %>
-            <% if (node.get('pending_roles')) { %>
-              <% _.each(node.get('pending_roles'), function(role) { %>
-                <li class="pending"><%= role %></li>
-              <% }) %>
-            <% } %>
-          <% } else { %>
-            <li>unallocated</li>
-          <% } %>
-        </ul>
-      </div>
+      <div class="roles"></div>
     </div>
   </div>
   <label class="node-checkbox">

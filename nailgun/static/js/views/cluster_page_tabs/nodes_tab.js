@@ -25,13 +25,14 @@ define(
     'text!templates/cluster/node_group.html',
     'text!templates/cluster/node.html',
     'text!templates/cluster/node_status.html',
+    'text!templates/cluster/node_roles.html',
     'text!templates/cluster/edit_node_disks.html',
     'text!templates/cluster/node_disk.html',
     'text!templates/cluster/volume_style.html',
     'text!templates/cluster/edit_node_interfaces.html',
     'text!templates/cluster/node_interface.html'
 ],
-function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, assignRolesPanelTemplate, nodeListTemplate, nodeGroupTemplate, nodeTemplate, nodeStatusTemplate, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate, editNodeInterfacesScreenTemplate, nodeInterfaceTemplate) {
+function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, assignRolesPanelTemplate, nodeListTemplate, nodeGroupTemplate, nodeTemplate, nodeStatusTemplate, nodeRolesTemplate, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate, editNodeInterfacesScreenTemplate, nodeInterfaceTemplate) {
     'use strict';
     var NodesTab, Screen, NodeListScreen, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, NodesManagementPanel, AssignRolesPanel, NodeList, NodeGroup, Node, EditNodeScreen, EditNodeDisksScreen, NodeDisk, EditNodeInterfacesScreen, NodeInterface;
 
@@ -535,6 +536,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         className: 'node',
         template: _.template(nodeTemplate),
         nodeStatusTemplate: _.template(nodeStatusTemplate),
+        nodeRolesTemplate: _.template(nodeRolesTemplate),
         templateHelpers: _.pick(utils, 'showDiskSize', 'showMemorySize'),
         renaming: false,
         checked: false,
@@ -545,7 +547,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .node-details': 'showNodeDetails',
             'click .btn-discard-role-changes': 'discardRoleChanges',
             'click .btn-discard-addition': 'discardAddition',
-            'click .btn-discard-deletion': 'discardDeletion'
+            'click .btn-discard-deletion': 'discardDeletion',
+            'click .btn-view-logs': 'showNodeLogs'
         },
         selectNode: function() {
             this.$el.toggleClass('checked');
@@ -602,8 +605,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.node.save(data, {patch: true, wait: true})
                 .done(_.bind(function() {
                     this.screen.tab.model.get('nodes').fetch();
-                    this.screen.nodeList.groupNodes();
                     app.page.deploymentControl.render();
+                    app.page.removeFinishedTasks();
                 }, this))
                 .fail(function() {utils.showErrorDialog({title: "Can't discard node changes"});});
         },
@@ -634,13 +637,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         updateStatus: function() {
             this.$('.node-status').html(this.nodeStatusTemplate({
                 node: this.node,
-                logsLink: this.getLogsLink(),
                 edit: this.screen instanceof EditNodesScreen
             }));
             this.$('.node-box').toggleClass('node-offline', !this.node.get('online'));
             this.updateProgress();
         },
-        getLogsLink: function() {
+        showNodeLogs: function() {
             var status = this.node.get('status');
             var error = this.node.get('error_type');
             var options = {type: 'remote', node: this.node.id};
@@ -651,16 +653,16 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             } else if (status == 'deploying' || status == 'ready' || (status == 'error' && error == 'deploy')) {
                 options.source = 'install/puppet';
             }
-            return '#cluster/' + app.page.model.id + '/logs/' + utils.serializeTabOptions(options);
+            app.navigate('#cluster/' + this.screen.tab.model.id + '/logs/' + utils.serializeTabOptions(options), {trigger: true});
         },
-        rolesChanged: function() {
+        updateRoles: function() {
             var roles = this.node.get('pending_roles') || [];
             var preferredOrder = ['controller', 'compute', 'cinder'];
             roles.sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
             this.node.set({pending_roles: roles}, {silent: true});
-            this.render();
+            this.$('.roles').html(this.nodeRolesTemplate({node: this.node}));
         },
         uncheckNode: function() {
             if (this.node.get('pending_deletion')) {
@@ -677,7 +679,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.eventNamespace = 'click.editnodename' + this.node.id;
             this.node.on('change:pending_deletion', this.uncheckNode, this);
             this.node.on('change:name change:online', this.render, this);
-            this.node.on('change:pending_roles', this.rolesChanged, this);
+            this.node.on('change:pending_roles', this.updateRoles, this);
             this.node.on('change:status change:pending_addition', this.updateStatus, this);
             this.node.on('change:progress', this.updateProgress, this);
             this.initialRoles = this.node.get('pending_roles');
@@ -693,6 +695,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 locked: this.screen.isLocked()
             }, this.templateHelpers)));
             this.updateStatus();
+            this.updateRoles();
             return this;
         }
     });

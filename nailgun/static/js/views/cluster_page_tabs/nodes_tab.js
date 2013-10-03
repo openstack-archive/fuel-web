@@ -989,7 +989,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this);
                 var complete = _.after(this.nodes.length, _.bind(function() {
                     var networkConfiguration = new models.NetworkConfiguration();
-                    networkConfiguration
+                    this.loading = networkConfiguration
                         .fetch({url: _.result(this.model, 'url') + '/network_configuration'})
                         .done(_.bind(function() {
                             // FIXME(vk): modifying models prototypes to use vlan data from NetworkConfiguration

@@ -16,7 +16,7 @@
               <strong>Environment Deployment Mode:</strong><%= modes[cluster.get('mode')] %>
             </li>
           </ul>
-          <i class="<%= cluster.get('status') == 'error' ? 'icon-info-circled text-error' : 'icon-info-circled text-info' %> btn-cluster-details"></i>
+          <i class="<%= cluster.get('status') == 'error' ? 'icon-attention text-error' : 'icon-info-circled text-info' %> btn-cluster-details"></i>
         <% } %>
         <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%= cluster ? cluster.get('name') : 'Unallocated Nodes' %></span>
       </div>

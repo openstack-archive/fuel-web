@@ -443,6 +443,10 @@ if agent.prevent_discover?
 end
 agent.update_state
 
+sleep_time = rand(30)
+logger.debug("Sleep for #{sleep_time} seconds before sending request")
+sleep(sleep_time)
+
 begin
   post_res = agent.post
   if post_res.status == 409

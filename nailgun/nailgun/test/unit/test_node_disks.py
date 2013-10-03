@@ -291,11 +291,12 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
 
 class TestVolumeManager(BaseIntegrationTest):
 
-    def create_node(self, role):
+    def create_node(self, *role):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[{
-                'roles': [role],
+                'roles': [],
+                'pending_roles': role,
                 'pending_addition': True,
                 'api': True}])
 
@@ -371,6 +372,11 @@ class TestVolumeManager(BaseIntegrationTest):
         pv_sizes = {}
         for disk in only_disks(spaces):
             for volume in disk['volumes']:
+                # Skip cinder because it does not have
+                # logical volumes
+                if volume.get('vg') == 'cinder':
+                    continue
+
                 if volume['type'] == 'pv':
                     vg_name = volume['vg']
                     if not pv_sizes.get(vg_name):
@@ -425,16 +431,61 @@ class TestVolumeManager(BaseIntegrationTest):
             node.volume_manager.volumes, 'ceph')
         self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
 
+    def should_allocates_same_size(self, volumes, same_size_volume_names):
+        disks = only_disks(volumes)
+
+        actual_volumes_size = {}
+        for disk in disks:
+            for volume in disk['volumes']:
+                name = volume.get('vg') or volume.get('name')
+                if not name:
+                    continue
+                actual_volumes_size.setdefault(name, {})
+                actual_volumes_size[name].setdefault('size', 0)
+                actual_volumes_size[name].setdefault(
+                    'type', volume.get('type'))
+                actual_volumes_size[name]['size'] += volume.get('size')
+
+        actual_volumes = [v for k, v in actual_volumes_size.iteritems()
+                          if k in same_size_volume_names]
+
+        # All pv should have equal size
+        actual_pv_volumes = filter(
+            lambda volume: volume['type'] == 'pv', actual_volumes)
+        sum_pv_size = sum([volume['size'] for volume in actual_pv_volumes])
+        average_size = sum_pv_size / len(actual_pv_volumes)
+        for pv in actual_pv_volumes:
+            self.assertEqual(pv['size'], average_size)
+
+    def test_multirole_controller_ceph(self):
+        node = self.create_node('controller', 'ceph-osd')
+        self.should_contain_os_with_minimal_size(node.volume_manager)
+        self.should_allocates_same_size(
+            node.volume_manager.volumes, ['image', 'ceph'])
+        self.logical_volume_sizes_should_equal_all_phisical_volumes(
+            node.attributes.volumes)
+        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+
+    def test_multirole_controller_cinder_ceph(self):
+        node = self.create_node('controller', 'cinder', 'ceph-osd')
+        self.should_contain_os_with_minimal_size(node.volume_manager)
+        self.should_allocates_same_size(
+            node.volume_manager.volumes, ['image', 'cinder', 'ceph'])
+        self.logical_volume_sizes_should_equal_all_phisical_volumes(
+            node.attributes.volumes)
+        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+
     def create_node_and_calculate_min_size(
-            self, role, vg_names, volumes_metadata):
+            self, role, space_info, volumes_metadata):
         node = self.create_node(role)
         volume_manager = node.volume_manager
         volumes = volume_manager.expand_generators(
             volumes_metadata['volumes'])
 
+        role_ids = [space['id'] for space in space_info]
         min_installation_size = sum([
             volume['min_size'] for volume in
-            filter(lambda volume: volume['id'] in vg_names, volumes)])
+            filter(lambda volume: volume['id'] in role_ids, volumes)])
 
         boot_data_size = volume_manager.call_generator('calc_boot_size') +\
             volume_manager.call_generator('calc_boot_records_size')
@@ -464,10 +515,10 @@ class TestVolumeManager(BaseIntegrationTest):
         volumes_metadata = self.env.get_default_volumes_metadata()
         volumes_roles_mapping = volumes_metadata['volumes_roles_mapping']
 
-        for role, vg_names in volumes_roles_mapping.iteritems():
+        for role, space_info in volumes_roles_mapping.iteritems():
             node, min_installation_size = self.\
                 create_node_and_calculate_min_size(
-                    role, vg_names, volumes_metadata)
+                    role, space_info, volumes_metadata)
 
             self.update_node_with_single_disk(node, min_installation_size)
             node.volume_manager.check_disk_space_for_deployment()

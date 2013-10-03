@@ -58,33 +58,44 @@ def byte_to_megabyte(byte):
     return byte / 1024 ** 2
 
 
-def get_node_volumes(node):
-    """Helper for retrieving node volumes in correct order.
+def find_space_by_id(spaces, space_id):
+    """Iterate through spaces and return space which has space_id."""
+    return filter(lambda space: space.get('id') == space_id, spaces)[0]
+
+
+def get_node_spaces(node):
+    """Helper for retrieving node volumes.
     If spaces don't defained for role, will be used
     partitioning for role `other`.
+    Sets key `_allocate_size` which used only for internal calculation
+    and not used in partitioning system.
     """
-    node_volumes = []
+    node_spaces = []
 
-    role_volumes = node.cluster.release.volumes_metadata[
+    role_mapping = node.cluster.release.volumes_metadata[
         'volumes_roles_mapping']
-    roles = node.roles + node.pending_roles
+    all_spaces = node.cluster.release.volumes_metadata['volumes']
 
-    for role in roles:
-        if not role_volumes.get(role):
+    for role in node.all_roles:
+        if not role_mapping.get(role):
             continue
 
-        for volume in role_volumes[role]:
-            if volume not in node_volumes:
-                node_volumes.append(volume)
+        for volume in role_mapping[role]:
+            space = find_space_by_id(all_spaces, volume['id'])
+            if space not in node_spaces:
+                space['_allocate_size'] = volume['allocate_size']
+                node_spaces.append(space)
 
-    # Use role other
-    if not node_volumes:
+    # Use role `other`
+    if not node_spaces:
         logger.warn('Cannot find volumes for node: %s assigning default '
                     'volumes' % (node.full_name))
-        for volume in role_volumes['other']:
-            node_volumes.append(volume)
+        for volume in role_mapping['other']:
+            space = find_space_by_id(all_spaces, volume['id'])
+            space['_allocate_size'] = volume['allocate_size']
+            node_spaces.append(space)
 
-    return node_volumes
+    return node_spaces
 
 
 class DisksFormatConvertor(object):
@@ -232,18 +243,14 @@ class DisksFormatConvertor(object):
             ]
         '''
         volumes_info = []
-        for volume_id in get_node_volumes(node):
-            volume = filter(
-                lambda volume: volume.get('id') == volume_id,
-                node.cluster.release.volumes_metadata['volumes'])[0]
-
+        for space in get_node_spaces(node):
             # Here we calculate min_size of nodes
             min_size = node.volume_manager.expand_generators(
-                volume)['min_size']
+                space)['min_size']
 
             volumes_info.append({
-                'name': volume_id,
-                'label': volume['label'],
+                'name': space['id'],
+                'label': space['label'],
                 'min_size': min_size})
 
         return volumes_info
@@ -496,13 +503,7 @@ class VolumeManager(object):
         # If node bound to the cluster than it has a role
         # and volume groups which we should to allocate
         if node.cluster:
-            volumes_metadata = node.cluster.release.volumes_metadata
-            # Adding volume groups in same order
-            # as they represent in volumes_roles_mapping list
-            for vg_name in get_node_volumes(node):
-                vg = filter(lambda vg: vg.get('id') == vg_name,
-                            volumes_metadata['volumes'])[0]
-                self.allowed_volumes.append(vg)
+            self.allowed_volumes = get_node_spaces(node)
 
         self.disks = []
         for d in sorted(node.meta['disks'], key=lambda i: i['name']):
@@ -668,45 +669,45 @@ class VolumeManager(object):
         else:
             return gb_to_mb(4)
 
-    def _allocate_volumes(self, volume_info, size=None):
-        '''Allocate volumes. If size is None,
-        then allocate all existing space on all disks.
-        '''
-        self.__logger('Allocate volume group %s with size %s' %
-                      (volume_info, size))
+    def _allocate_all_free_space_for_volume(self, volume_info):
+        """Allocate all existing space on all disks."""
+        self.__logger('Allocate all free space for volume %s ' % (volume_info))
 
-        if size is None:
-            for disk in self.disks:
-                if disk.free_space > 0:
-                    self.__logger('Allocating all available space for volume: '
-                                  'disk: %s volume: %s' %
-                                  (disk.id, volume_info))
-                    self._get_allocator(disk, volume_info)(volume_info)
-                else:
-                    self.__logger('Not enough free space for volume '
-                                  'allocation: disk: %s volume: %s' %
-                                  (disk.id, volume_info))
-                    self._get_allocator(disk, volume_info)(volume_info, 0)
-        else:
-            not_allocated_size = size
-            for disk in self.disks:
-                self.__logger('Creating volume: disk: %s, vg: %s' %
+        for disk in self.disks:
+            if disk.free_space > 0:
+                self.__logger('Allocating all available space for volume: '
+                              'disk: %s volume: %s' %
                               (disk.id, volume_info))
+                self._get_allocator(disk, volume_info)(volume_info)
+            else:
+                self.__logger('Not enough free space for volume '
+                              'allocation: disk: %s volume: %s' %
+                              (disk.id, volume_info))
+                self._get_allocator(disk, volume_info)(volume_info, 0)
 
-                if disk.free_space >= not_allocated_size:
-                    # if we can allocate all required size
-                    # on one disk, then just allocate it
-                    size_to_allocation = not_allocated_size
-                elif disk.free_space > 0:
-                    # if disk has free space, then allocate it
-                    size_to_allocation = disk.free_space
-                else:
-                    # else just allocate volume with size 0
-                    size_to_allocation = 0
+    def _allocate_size_for_volume(self, volume_info, size):
+        """Allocate volumes with particaular size."""
+        self.__logger('Allocate volume %s with size %s ' % (volume_info, size))
 
-                self._get_allocator(disk, volume_info)(volume_info,
-                                                       size_to_allocation)
-                not_allocated_size -= size_to_allocation
+        not_allocated_size = size
+        for disk in self.disks:
+            self.__logger('Creating volume: disk: %s, vg: %s' %
+                          (disk.id, volume_info))
+
+            if disk.free_space >= not_allocated_size:
+                # if we can allocate all required size
+                # on one disk, then just allocate it
+                size_to_allocation = not_allocated_size
+            elif disk.free_space > 0:
+                # if disk has free space, then allocate it
+                size_to_allocation = disk.free_space
+            else:
+                # else just allocate volume with size 0
+                size_to_allocation = 0
+
+            self._get_allocator(disk, volume_info)(volume_info,
+                                                   size_to_allocation)
+            not_allocated_size -= size_to_allocation
 
     def _get_allocator(self, disk, volume_info):
         """Returns disk method for volume allocation
@@ -731,19 +732,47 @@ class VolumeManager(object):
 
         self.volumes.extend(only_vg(self.allowed_volumes))
 
-        for volume in self.allowed_volumes:
-            # For last volume group in allowed_volumes list
-            # we allocates all free space
-            if (len(self.allowed_volumes) == 1 or
-                    volume == self.allowed_volumes[-1]):
-                self._allocate_volumes(volume)
-            else:
-                min_size = self.expand_generators(volume)['min_size']
-                self._allocate_volumes(volume, min_size)
+        # Firstly allocate volumes which required
+        # minimal size
+        for volume in self._min_size_volumes:
+            min_size = self.expand_generators(volume)['min_size']
+            self._allocate_size_for_volume(volume, min_size)
+
+        # Then allocate volumes which required
+        # all free space
+        if len(self._all_size_volumes) > 1:
+            size = self._all_disks_free_space / len(self._all_size_volumes)
+            for volume in self._all_size_volumes[:-1]:
+                self._allocate_size_for_volume(volume, size)
+
+        # And allocate rest of the space for
+        # last volume. We want to be sure
+        # that we use all free space.
+        # Problem which we solve with such approach:
+        # we can loose 1 mb in calculation above
+        if self._all_size_volumes:
+            self._allocate_all_free_space_for_volume(
+                self._all_size_volumes[-1])
 
         self.volumes = self.expand_generators(self.volumes)
         self.__logger('Generated volumes: %s' % self.volumes)
         return self.volumes
+
+    @property
+    def _all_disks_free_space(self):
+        return sum([d.free_space for d in self.disks])
+
+    @property
+    def _min_size_volumes(self):
+        return filter(
+            lambda volume: volume['_allocate_size'] == 'min',
+            self.allowed_volumes)
+
+    @property
+    def _all_size_volumes(self):
+        return filter(
+            lambda volume: volume['_allocate_size'] == 'all',
+            self.allowed_volumes)
 
     def expand_generators(self, cdict):
         new_dict = {}
@@ -799,8 +828,8 @@ class VolumeManager(object):
             self.call_generator('calc_boot_records_size')
 
         min_installation_size = disks_count * boot_size
-        for vg in self.allowed_volumes:
-            min_size = self.expand_generators(vg)['min_size']
+        for volume in self.allowed_volumes:
+            min_size = self.expand_generators(volume)['min_size']
             min_installation_size += min_size
 
         return min_installation_size

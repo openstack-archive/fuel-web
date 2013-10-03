@@ -2,16 +2,26 @@
 
 <div class="row-fluid node-list-header">
   <div class="span10 enable-selection">
-    <h3><%= cluster ? cluster.get('name') : 'Unallocated Nodes' %> <div style="display: inline-block; color: #666666; font-size: 16px;">(<%= nodes.length %> node<%= nodes.length == 1 ? '' : 's' %>)</div></h3>
-    <% if (cluster && !edit) { %>
-      <div class="environment-status">
-        <p><strong>OpenStack Release:</strong> <%- cluster.get('release').get('name') %></p>
-        <% var statuses = {'new': 'New', 'deployment': 'Deploying', 'operational': 'Operational', 'error': 'Error', 'remove': 'Removing'} %>
-        <p><strong>Environment Status:</strong> <%- statuses[cluster.get('status')] %></p>
-        <% var modes = {'multinode': 'Multi-node', 'ha_compact': 'Multi-node HA'} %>
-        <p><strong>Environment Deployment Mode:</strong> <%- modes[cluster.get('mode')] %></p>
+    <div class="cluster-name-box">
+      <div class="node-list-name">
+        <% if (cluster) { %>
+          <ul class="cluster-details dropdown-menu">
+            <li><strong>OpenStack Release:</strong><%- cluster.get('release').get('name') %></li>
+            <li>
+              <% var statuses = {'new': 'New', 'deployment': 'Deploying', 'operational': 'Operational', 'error': 'Error', 'remove': 'Removing'} %>
+              <strong>Environment Status:</strong><%= statuses[cluster.get('status')] %>
+            </li>
+            <li>
+              <% var modes = {'multinode': 'Multi-node', 'ha_compact': 'Multi-node HA'} %>
+              <strong>Environment Deployment Mode:</strong><%= modes[cluster.get('mode')] %>
+            </li>
+          </ul>
+          <i class="<%= cluster.get('status') == 'error' ? 'icon-attention text-error' : 'icon-info-circled text-info' %> btn-cluster-details"></i>
+        <% } %>
+        <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%= cluster ? cluster.get('name') : 'Unallocated Nodes' %></span>
       </div>
-    <% } %>
+      <div class="node-list-name-count ">(<%= nodes.length %> node<%= nodes.length == 1 ? '' : 's' %>)</div>
+    </div>
   </div>
   <div class="span2 select-all">
     <% var disabled = !nodes.filter(function(node) {return node.get('online') && node.get('status') != 'error';}).length || edit || locked ? 'disabled' : '' %>

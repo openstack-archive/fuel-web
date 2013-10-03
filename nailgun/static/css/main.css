@@ -721,8 +721,8 @@ label.node-checkbox {
   margin-bottom: 0;
 }
 
-.node-list-header a {
-  padding-top: 13px;
+.node-list-header a, .node-list-header label {
+  padding-top: 3px;
   padding-right: 0;
   text-align: right;
 }
@@ -768,6 +768,7 @@ label.node-checkbox {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
+  margin-bottom: 20px;
 }
 
 .roles-panel > h4 {
@@ -1657,6 +1658,7 @@ label.node-checkbox {
 
 .tab-pane > div > div {
   overflow-y: hidden;
+  min-height: 360px;
 }
 
 .wrapper {
@@ -4463,4 +4465,75 @@ input.input-append {
 
 .btn-configure-interfaces {
   margin-right: 30px;
+}
+
+.cluster-name-box {
+  display: block;
+  height: 30px;
+  margin: 0px;
+  padding: 0px;
+}
+
+.node-list-name {
+  float: left;
+  margin: 0px;
+  padding: 0px;
+  display: inline-block;
+  line-height: 18px;
+  cursor: default;
+  font-size: 24px;
+  color: #333333;
+  font-family: "Segoe UI Light","Segoe UI",Helvetica,Georgia,Tahoma,Arial;
+  font-weight: lighter;
+  position: relative;
+}
+
+.btn-cluster-details {
+  cursor: pointer;
+}
+
+i.btn-cluster-details {
+  display: inline-block;
+  font-size: 16px;
+  line-height: 28px;
+  position: relative;
+  bottom: 3px;
+  margin-right: -4px;
+}
+
+
+.node-list-name-count {
+  display: inline-block;
+  margin: 0px;
+  padding: 0px;
+  color: #666666;
+  font-size: 16px;
+  line-height: 22px;
+  margin-left: 15px;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  float: left;
+  cursor: default;
+}
+
+.cluster-details {
+  padding: 10px;
+  text-align: left;
+  margin: 0;
+}
+
+.cluster-details > li {
+  min-width: 200px;
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: #444444;
+}
+
+.cluster-details > li > strong {
+  display: block;
+  color: #999999;
+  font-size: 12px;
+  margin-bottom: -4px;
+  font-weight: 100;
 }

@@ -669,10 +669,8 @@ class VolumeManager(object):
         else:
             return gb_to_mb(4)
 
-    def _allocate_all_free_space_for_volume(self, volume_info, size=None):
-        """Allocate volumes. If size is None,
-        then allocate all existing space on all disks.
-        """
+    def _allocate_all_free_space_for_volume(self, volume_info):
+        """Allocate all existing space on all disks."""
         self.__logger('Allocate all free space for volume %s ' % (volume_info))
 
         for disk in self.disks:

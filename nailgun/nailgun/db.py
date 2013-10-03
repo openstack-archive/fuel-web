@@ -15,7 +15,6 @@
 #    under the License.
 
 import contextlib
-import web
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine
 from sqlalchemy.orm.query import Query
@@ -54,9 +53,6 @@ db = scoped_session(
 def load_db_driver(handler):
     try:
         return handler()
-    except web.HTTPError:
-        db().commit()
-        raise
     except Exception:
         db().rollback()
         raise

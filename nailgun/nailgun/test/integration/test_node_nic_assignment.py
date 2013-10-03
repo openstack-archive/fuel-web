@@ -209,4 +209,4 @@ class TestNodeHandlers(BaseIntegrationTest):
             json.loads(resp.body)
         ))
         self.assertEquals(resp.status, 200)
-        self.assertEquals(set(macs),resp_macs)
+        self.assertEquals(set(macs), resp_macs)

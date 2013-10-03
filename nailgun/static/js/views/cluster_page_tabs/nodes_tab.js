@@ -213,6 +213,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var nodeIds = utils.deserializeTabOptions(this.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);});
             this.nodes = new models.Nodes(this.model.get('nodes').getByIds(nodeIds));
             this.nodes.cluster = this.model;
+            this.nodes.fetch = function(options) {
+                return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: this.cluster.id}}, options));
+            };
             this.constructor.__super__.initialize.apply(this, arguments);
         },
         render: function() {

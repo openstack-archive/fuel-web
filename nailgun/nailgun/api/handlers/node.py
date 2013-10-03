@@ -86,6 +86,8 @@ class NodeHandler(JSONHandler):
 
         network_manager = NetworkManager()
 
+        old_cluster_id = node.cluster_id
+
         if data.get("pending_roles") == [] and node.cluster:
             node.cluster.clear_pending_changes(node_id=node.id)
 
@@ -93,7 +95,6 @@ class NodeHandler(JSONHandler):
             if data["cluster_id"] is None and node.cluster:
                 node.cluster.clear_pending_changes(node_id=node.id)
                 node.roles = node.pending_roles = []
-            old_cluster_id = node.cluster_id
             node.cluster_id = data["cluster_id"]
             if node.cluster_id != old_cluster_id:
                 if old_cluster_id:
@@ -103,14 +104,23 @@ class NodeHandler(JSONHandler):
                     network_manager.allow_network_assignment_to_all_interfaces(
                         node)
                     network_manager.assign_networks_to_main_interface(node)
+
+        regenerate_volumes = any((
+            'roles' in data and set(data['roles']) != set(node.roles),
+            'pending_roles' in data and
+            set(data['pending_roles']) != set(node.pending_roles),
+            node.cluster_id != old_cluster_id
+        ))
+
         for key, value in data.iteritems():
             # we don't allow to update id explicitly
             # and updated cluster_id before all other fields
             if key in ("id", "cluster_id"):
                 continue
             setattr(node, key, value)
-        if not node.status in ('provisioning', 'deploying') \
-                and "roles" in data or "cluster_id" in data:
+
+        if not node.status in ('provisioning', 'deploying'
+                               ) and regenerate_volumes:
             try:
                 node.attributes.volumes = \
                     node.volume_manager.gen_volumes_info()
@@ -344,6 +354,14 @@ class NodeCollectionHandler(JSONHandler):
                     node.cluster.clear_pending_changes(node_id=node.id)
                     node.roles = node.pending_roles = []
                 node.cluster_id = nd["cluster_id"]
+
+            regenerate_volumes = any((
+                'roles' in nd and set(nd['roles']) != set(node.roles),
+                'pending_roles' in nd and
+                set(nd['pending_roles']) != set(node.pending_roles),
+                node.cluster_id != old_cluster_id
+            ))
+
             for key, value in nd.iteritems():
                 if is_agent and (key, value) == ("status", "discover") \
                         and node.status == "provisioning":
@@ -374,8 +392,7 @@ class NodeCollectionHandler(JSONHandler):
                             node.attributes.volumes
                         )
                     ),
-                    "roles" in nd,
-                    "cluster_id" in nd
+                    regenerate_volumes
                 )
                 if any(variants):
                     try:

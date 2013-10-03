@@ -149,6 +149,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html('');
+            if (this instanceof EditNodesScreen) {
+                this.$el.append($('<div>').addClass('alert').text('Disk configuration will be reset to default after roles change'));
+            }
             var managementPanel = new NodesManagementPanel({screen: this});
             this.registerSubView(managementPanel);
             this.$el.append(managementPanel.render().el);

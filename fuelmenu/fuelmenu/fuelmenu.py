@@ -337,13 +337,13 @@ def save_only(iface):
     Settings().write(newsettings, defaultsfile=None,
                      outfn="/etc/astute.yaml")
     #Prepare naily.facts
+    factsettings = dict()
     for key in facter_translate.keys():
         factsettings[facter_translate[key]] = settings[key]
     n = nailyfactersettings.NailyFacterSettings()
     n.write(factsettings)
 
-if '__main__' == __name__ or urwid.web_display.is_web_request():
-
+def main(*args, **kwargs):
     if urwid.VERSION < (1, 1, 0):
         print "This program requires urwid 1.1.0 or greater."
 

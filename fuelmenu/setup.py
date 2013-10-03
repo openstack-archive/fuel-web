@@ -48,7 +48,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [
-            'fuelmenu = fuelmenu.fuelmenu:setup',
+            'fuelmenu = fuelmenu.fuelmenu:main',
         ],
     },
 )

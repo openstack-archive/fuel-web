@@ -29,7 +29,7 @@ function(commonViews, models, supportPageTemplate) {
         updateInterval: 2000,
         template: _.template(supportPageTemplate),
         events: {
-            'click .download-logs:not(.disabled)': 'downloadLogs'
+            'click .download-logs': 'downloadLogs'
         },
         scheduleUpdate: function() {
             var task = this.logsPackageTasks.findTask({name: 'dump'});
@@ -39,16 +39,9 @@ function(commonViews, models, supportPageTemplate) {
             if (_.isUndefined(task) || task.get('progress') < 100 ) {
                 this.registerDeferred(this.timeout = $.timeout(this.updateInterval).done(_.bind(this.update, this)));
             } else {
-                if (task.get('status') == 'error') {
-                    this.$('.download-logs-error').text(task.get('message'));
-                    this.$('.download-logs-error').removeClass('hide');
-                } else {
-
-                    this.$('.donwload-logs-link').removeClass('hide');
-                    this.$('.donwload-logs-link > a').attr('href', task.get('message'));
-                }
-                this.$('.genereate-logs').addClass('hide');
-                this.$('.download-logs').removeClass('disabled');
+                this.renderDumpTaskResult(task);
+                this.$('.download-logs').removeClass('hide');
+                this.$('.download-logs-progress').addClass('hide');
             }
         },
         update: function() {
@@ -57,11 +50,12 @@ function(commonViews, models, supportPageTemplate) {
         downloadLogs: function() {
             var task = new models.LogsPackage();
             task.save({}, {method: 'PUT'});
-            this.$('.download-logs').addClass('disabled');
+            this.$('.download-logs').addClass('hide');
+            this.$('.download-logs-progress').removeClass('hide');
             this.$('.donwload-logs-link').addClass('hide');
             this.$('.download-logs-error').addClass('hide');
-            this.$('.genereate-logs').removeClass('hide');
-            this.logsPackageTasks = new models.Tasks();
+            // Reset logsPackageTasks to ignoring previous state
+            this.logsPackageTasks.reset();
             this.logsPackageTasks.fetch();
             this.scheduleUpdate();
         },
@@ -69,7 +63,37 @@ function(commonViews, models, supportPageTemplate) {
             _.defaults(this, options);
             this.model = new models.FuelKey();
             this.model.fetch();
-            this.model.on('change', this.render, this);
+            this.model.on('change', this.renderRegistrationLink, this);
+            this.logsPackageTasks = new models.Tasks();
+            // Check for task was created earlier
+            this.logsPackageTasks.once('sync', this.checkCompletedTask, this);
+            this.logsPackageTasks.fetch();
+        },
+        checkCompletedTask: function() {
+            var task = this.logsPackageTasks.findTask({name: 'dump'});
+            if (_.isUndefined(task) || task.get('progress') < 100 ) {
+                this.$('.genereate-logs').addClass('hide');
+                this.$('.download-logs').removeClass('hide');
+                this.$('.download-logs-progress').addClass('hide');
+            } else if (task.get('progress') < 100) {
+                this.scheduleUpdate();
+            } else {
+                this.renderDumpTaskResult(task);
+            }
+            this.$('.download-logs').removeClass('hide');
+            this.$('.download-logs-progress').addClass('hide');
+        },
+        renderRegistrationLink: function() {
+            this.$('.registration-link').attr('href', 'http://fuel.mirantis.com/create-subscriber/?key=' + this.model.get('key'));
+        },
+        renderDumpTaskResult: function(task) {
+            if (task.get('status') == 'error') {
+                this.$('.download-logs-error').text(task.get('message'));
+                this.$('.download-logs-error').removeClass('hide');
+            } else {
+                this.$('.donwload-logs-link').removeClass('hide');
+                this.$('.donwload-logs-link > a').attr('href', task.get('message'));
+            }
         },
         render: function() {
             this.$el.html(this.template());

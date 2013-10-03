@@ -202,7 +202,7 @@ function run_tests {
 }
 
 function run_integration_tests {
-    noseargs="nailgun/test/integration" 
+    noseargs="nailgun/test/integration"
     run_tests
 }
 

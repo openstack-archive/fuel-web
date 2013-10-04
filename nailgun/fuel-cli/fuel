@@ -208,7 +208,13 @@ def check_for_one_attribute(params, attributes):
         attributes
     )):
         print_error(
-            "At least one of {0} is required!\n".format(", ".join(attributes))
+            "At least one of {0} is required!\n".format(
+                ", ".join(
+                    map(
+                        lambda attr: "--" + attr,
+                        attributes)
+                )
+            )
         )
 
 
@@ -354,8 +360,8 @@ def node(params):
             format_table(data, acceptable_keys=acceptable_keys)
         )
     elif params.set:
-        check_for_attributes(params, ["nid", "role", "env"])
-        node_ids = list(chain(*params.nid))
+        node_ids = list(chain(*params.node))
+        check_for_attributes(params, ["node", "role", "env"])
         roles = map(str.lower, params.role)
         data = map(
             lambda node_id: {
@@ -368,7 +374,6 @@ def node(params):
             node_ids
         )
         put_response = json_api_put_request("nodes/", data)
-        node_ids = map(str, node_ids)
         if params.json:
             print(json.dumps(put_response, indent=4))
         else:
@@ -377,22 +382,23 @@ def node(params):
                 .format(
                     "Node with id={0} was".format(node_ids[0])
                     if len(node_ids) == 1 else
-                    "Nodes with ids={0} were".format(", ".join(node_ids)),
+                    "Nodes with ids={0} were".format(
+                        ", ".join(map(str, node_ids))
+                    ),
                     params.env,
                     "role={0}".format(roles[0])
                     if len(roles) == 1 else
                     "roles={0}".format(", ".join(roles))
                 )
             )
-    elif params.remove:
-        check_for_one_attribute(params, ["env", "nid"])
+    elif params.delete:
+        node_ids = list(chain(*params.node))
+        check_for_one_attribute(params, ["env", "node"])
         nodes_clusters = dict((node["id"], node["cluster"])
                               for node in json_api_get_request("nodes/"))
-        if not params.nid and params.env:
+        if not params.node and params.env:
             node_ids = [k for k, v in nodes_clusters.iteritems()
                         if v == int(params.env)]
-        else:
-            node_ids = list(chain(*params.nid))
         data = map(
             lambda node_id: {
                 "id": node_id,
@@ -404,7 +410,6 @@ def node(params):
             node_ids
         )
         put_response = json_api_put_request("nodes/", data)
-        node_ids = map(str, node_ids)
         if params.json:
             print(json.dumps(put_response, indent=4))
         else:
@@ -413,10 +418,108 @@ def node(params):
                 .format(
                     "Node with id={0} was".format(node_ids[0])
                     if len(node_ids) == 1 else
-                    "Nodes with ids={0} were".format(", ".join(node_ids)),
+                    "Nodes with ids={0} were".format(
+                        ", ".join(map(str, node_ids))
+                    ),
                     params.env
                 )
             )
+    elif params.network or params.disk:
+        check_for_one_attribute(params, ["default", "download", "upload"])
+        check_for_attributes(params, ["node"])
+        node_ids = list(chain(*params.node))
+        for node_id in node_ids:
+            if params.network:
+                get_node_attribute(
+                    params,
+                    node_id,
+                    "interfaces",
+                    [("interfaces", "default_assignment")]
+                )
+            elif params.disk:
+                get_node_attribute(
+                    params,
+                    node_id,
+                    "disks",
+                    [("volumes", ""), ("disks", "defaults")]
+                )
+
+
+def get_node_attribute(params, node_id, upload_attribute, attributes):
+    default_url_template = "nodes/{0}/{1}/{2}".format(node_id, "{0}", "{1}")
+    node_dir_path = get_node_folder(params, node_id)
+    if params.upload:
+        upload_node_attribute(
+            default_url_template.format(upload_attribute, ""),
+            node_id,
+            node_dir_path,
+            upload_attribute
+        )
+    elif params.default or params.download:
+        for attribute, default_tail in attributes:
+            write_node_attribute(
+                default_url_template.format(
+                    attribute,
+                    default_tail if params.default else ""
+                ),
+                node_dir_path,
+                attribute
+            )
+
+
+def get_node_folder(params, node_id):
+    dir_path = os.path.join(
+        os.path.abspath(os.path.curdir
+                        if params.dir is None else params.dir),
+        "node_{0}".format(node_id)
+    )
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+    return dir_path
+
+
+def upload_node_attribute(url, node_id, node_dir_path, attribute):
+    data = read_json(
+        os.path.join(
+            node_dir_path,
+            attribute + ".json"
+        )
+    )
+    if attribute == "interfaces":
+        url = "nodes/interfaces"
+        data = [{
+            "interfaces": data,
+            "id": node_id
+        }]
+    put_response = json_api_put_request(
+        url,
+        data
+    )
+    if JSON:
+        print(json.dumps(put_response, indent=4))
+    else:
+        print("{0} configuration uploaded successfully.".format(attribute))
+
+
+def write_node_attribute(url, node_dir_path, attribute):
+    attribute_path = os.path.join(
+        node_dir_path,
+        attribute + ".json"
+    )
+    get_response = json_api_get_request(url)
+    if os.path.exists(attribute_path):
+        os.remove(attribute_path)
+    write_json(
+        attribute_path,
+        get_response
+    )
+    if params.json:
+        print(json.dumps(get_response, indent=4))
+    else:
+        print(
+            "{0} configuration successfully downloaded to {1}."
+            .format(attribute, attribute_path)
+        )
 
 
 def network(params):
@@ -795,33 +898,128 @@ def parse_node_ids(x):
         return None
 
 
+def get_download_arg(help_msg):
+    return {
+        "args": ["-d", "--download"],
+        "params": {
+            "dest": "download",
+            "action": "store_true",
+            "help": help_msg,
+            "default": False
+        }
+    }
+
+
+def get_list_arg(help_msg):
+    return {
+        "args": ["-l", "--list"],
+        "params": {
+            "dest": "list",
+            "action": "store_true",
+            "help": help_msg,
+            "default": False
+        }
+    }
+
+
+def get_dir_arg(help_msg):
+    return {
+        "args": ["--dir"],
+        "params": {
+            "dest": "dir",
+            "action": "store",
+            "help": help_msg,
+            "default": None
+        }
+    }
+
+
+def get_verify_arg(help_msg):
+    return {
+        "args": ["-v", "--verify"],
+        "params": {
+            "dest": "verify",
+            "action": "store_true",
+            "help": help_msg,
+            "default": False
+        }
+    }
+
+
+def get_upload_arg(help_msg):
+    return {
+        "args": ["-u", "--upload"],
+        "params": {
+            "dest": "upload",
+            "action": "store_true",
+            "help": help_msg,
+            "default": False
+        }
+    }
+
+
+def get_default_arg(help_msg):
+    return {
+        "args": ["--default"],
+        "params": {
+            "dest": "default",
+            "action": "store_true",
+            "help": help_msg,
+            "default": False
+        }
+    }
+
+
+def get_set_arg(help_msg):
+    return {
+        "args": ["-s", "--set"],
+        "params": {
+            "dest": "set",
+            "action": "store_true",
+            "help": help_msg,
+            "default": False
+        }
+    }
+
+
+def get_delete_arg(help_msg):
+    return {
+        "args": ["--delete", "--env-delete"],
+        "params": {
+            "dest": "delete",
+            "action": "store_true",
+            "help": help_msg,
+            "default": False
+        }
+    }
+
+
+def get_release_arg(help_msg):
+    return {
+        "args": ["--rel", "--release"],
+        "params": {
+            "dest": "rel",
+            "action": "store",
+            "type": str,
+            "help": help_msg,
+            "default": None
+        }
+    }
+
+
 actions = {
     "release": {
         "action": release,
-        "args": [{
-            "args": ["-l", "--list"],
-            "params": {
-                "dest": "list",
-                "action": "store_true",
-                "help": "List all available releases.",
-                "default": False
-            }
-        }, {
+        "args": [
+            get_list_arg("List all available releases."),
+            get_release_arg("Specify release id to configure"),
+        {
             "args": ["-c", "--config"],
             "params": {
                 "dest": "config",
                 "action": "store_true",
                 "help": "Configure release with --release",
                 "default": False
-            }
-        }, {
-            "args": ["--rel", "--release"],
-            "params": {
-                "dest": "rel",
-                "action": "store",
-                "type": str,
-                "help": "Specify release id to configure",
-                "default": None
             }
         }, {
             "args": ["-U", "--user", "--user-name"],
@@ -845,15 +1043,12 @@ actions = {
     },
     "environment": {
         "action": environment,
-        "args": [{
-            "args": ["-l", "--list"],
-            "params": {
-                "dest": "list",
-                "action": "store_true",
-                "help": "List all available environments.",
-                "default": False
-            }
-        }, {
+        "args": [
+        get_list_arg("List all available environments."),
+        get_set_arg("Set environment parameters (e.g name, deployment mode)"),
+        get_delete_arg("Delete environment with specific env or name"),
+        get_release_arg("Release id"),
+        {
             "args": ["-c", "--env-create", "--create"],
             "params": {
                 "dest": "create",
@@ -872,32 +1067,6 @@ actions = {
                 "default": None
             }
         }, {
-            "args": ["-s", "--set"],
-            "params": {
-                "dest": "set",
-                "action": "store_true",
-                "help": "Set environment parameters (e.g name, "
-                        "deployment mode)",
-                "default": False
-            }
-        }, {
-            "args": ["-d", "--delete", "--env-delete"],
-            "params": {
-                "dest": "delete",
-                "action": "store_true",
-                "help": "Delete environment with specific env or name",
-                "default": False
-            }
-        }, {
-            "args": ["--rel", "--release"],
-            "params": {
-                "dest": "rel",
-                "action": "store",
-                "type": str,
-                "help": "Release id",
-                "default": None
-            }
-        }, {
             "args": ["-m", "--mode", "--deployment-mode"],
             "params": {
                 "dest": "mode",
@@ -910,26 +1079,18 @@ actions = {
     },
     "node": {
         "action": node,
-        "args": [{
-            "args": ["-l", "--list"],
-            "params": {
-                "dest": "list",
-                "action": "store_true",
-                "help": "List all nodes.",
-                "default": False
-            }
-        }, {
-            "args": ["-s", "--set"],
-            "params": {
-                "dest": "set",
-                "action": "store_true",
-                "help": "Set role for specific node.",
-                "default": False
-            }
-        }, {
+        "args": [
+            get_list_arg("List all nodes."),
+            get_set_arg("Set role for specific node."),
+            get_delete_arg("Delete specific node from environment."),
+            get_default_arg("Get default network configuration of some node"),
+            get_download_arg("Download configuration of specific node"),
+            get_upload_arg("Upload configuration to specific node"),
+            get_dir_arg("Select directory to which download node attributes"),
+        {
             "args": ["--node", "--node-id"],
             "params": {
-                "dest": "nid",
+                "dest": "node",
                 "action": "store",
                 "nargs": '+',
                 "type": parse_node_ids,
@@ -946,86 +1107,40 @@ actions = {
                 "default": None
             }
         }, {
-            "args": ["--rm", "--remove"],
+            "args": ["--net", "--network"],
             "params": {
-                "dest": "remove",
+                "dest": "network",
                 "action": "store_true",
-                "help": "Remove specific node.",
+                "help": "Node network configuration.",
+                "default": False
+            }
+        }, {
+            "args": ["--disk"],
+            "params": {
+                "dest": "disk",
+                "action": "store_true",
+                "help": "Node disk configuration.",
                 "default": False
             }
         }]
     },
     "network": {
         "action": network,
-        "args": [{
-            "args": ["-d", "--download"],
-            "params": {
-                "dest": "download",
-                "action": "store_true",
-                "help": "Download current network configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-v", "--verify"],
-            "params": {
-                "dest": "verify",
-                "action": "store_true",
-                "help": "Verify current network configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-u", "--upload"],
-            "params": {
-                "dest": "upload",
-                "action": "store_true",
-                "help": "Upload changed network configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["--dir"],
-            "params": {
-                "dest": "dir",
-                "action": "store",
-                "help": "Directory with network data.",
-                "default": None
-            }
-        }]
+        "args": [
+            get_download_arg("Download current network configuration."),
+            get_dir_arg("Directory with network data."),
+            get_verify_arg("Verify current network configuration."),
+            get_upload_arg("Upload changed network configuration.")
+        ]
     },
     "settings": {
         "action": settings,
-        "args": [{
-            "args": ["-d", "--default"],
-            "params": {
-                "dest": "default",
-                "action": "store_true",
-                "help": "Open default configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["--download"],
-            "params": {
-                "dest": "download",
-                "action": "store_true",
-                "help": "Modify current configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-u", "--upload"],
-            "params": {
-                "dest": "upload",
-                "action": "store_true",
-                "help": "Save current changes in configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["--dir"],
-            "params": {
-                "dest": "dir",
-                "action": "store",
-                "help": "Directory with configuration data.",
-                "default": None
-            }
-        }]
+        "args": [
+            get_download_arg("Modify current configuration."),
+            get_default_arg("Open default configuration."),
+            get_upload_arg("Save current changes in configuration."),
+            get_dir_arg("Directory with configuration data.")
+        ]
     },
     "logs": {
         "action": logs,
@@ -1125,51 +1240,16 @@ actions = {
 
 def get_args_for_facts(fact_type):
     return [
-        {
-            "args": ["--delete"],
-            "params": {
-                "dest": "delete",
-                "action": "store_true",
-                "help": "Delete current {0} data.".format(fact_type),
-                "default": False
-            }
-        }, {
-            "args": ["--download"],
-            "params": {
-                "dest": "download",
-                "action": "store_true",
-                "help": "Download current {0} data.".format(fact_type),
-                "default": False
-            }
-        }, {
-            "args": ["--upload"],
-            "params": {
-                "dest": "upload",
-                "action": "store_true",
-                "help": "Upload current {0} data.".format(fact_type),
-                "default": False
-            }
-        }, {
-            "args": ["--default"],
-            "params": {
-                "dest": "default",
-                "action": "store_true",
-                "help": "Download default {0} data.".format(fact_type),
-                "default": False
-            }
-        }, {
-            "args": ["-d", "--dir"],
-            "params": {
-                "dest": "dir",
-                "action": "store",
-                "help": "Directory with {0} data.".format(fact_type),
-                "default": None
-            }
-        }
+        get_delete_arg("Delete current {0} data.".format(fact_type)),
+        get_download_arg("Download current {0} data.".format(fact_type)),
+        get_upload_arg("Upload current {0} data.".format(fact_type)),
+        get_default_arg("Download default {0} data.".format(fact_type)),
+        get_dir_arg("Directory with {0} data.".format(fact_type))
     ]
 
 
 substitutions = {
+    #replace from: to
     "env": "environment",
     "nodes": "node",
     "net": "network",
@@ -1181,8 +1261,9 @@ substitutions = {
     "upload": "--upload",
     "default": "--default",
     "create": "--create",
-    "remove": "--remove",
-    "config": "--config"
+    "remove": "--delete",
+    "config": "--config",
+    "--roles": "--role"
 }
 
 

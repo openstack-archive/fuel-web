@@ -2,8 +2,7 @@
   <div class="row-fluid node-group-header">
     <div class="span10"><h4><%- groupLabel %> (<%= nodes.length %>)</h4></div>
     <div class="span2 select-all">
-      <% var disabled = !nodes.filter(function(node) {return node.get('online') && node.get('status') != 'error';}).length || edit || locked ? 'disabled' : '' %>
-      <label class="<%= disabled %>"><input type="checkbox" name="select-node-group" value="" <%= disabled %> />Select All</label>
+      <label><input type="checkbox" name="select-node-group" value="" />Select All</label>
     </div>
   </div>
 <div class="row-fluid nodes-group"></div>

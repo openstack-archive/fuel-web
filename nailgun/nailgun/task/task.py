@@ -701,6 +701,23 @@ class DumpTask(object):
         rpc.cast('naily', message)
 
 
+class GenerateCapacityLogTask(object):
+    @classmethod
+    def execute(cls, task):
+        logger.debug("DumpTask: task=%s" % task.uuid)
+        message = {
+            'method': 'generate_capacity_log',
+            'respond_to': 'generate_capacity_log_resp',
+            'args': {
+                'task_uuid': task.uuid,
+            }
+        }
+        task.cache = message
+        db().add(task)
+        db().commit()
+        rpc.cast('nailgun', message)
+
+
 def dump():
     """Entry point dump script."""
     from shotgun.config import Config as ShotgunConfig

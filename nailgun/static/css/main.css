@@ -4342,6 +4342,15 @@ input.input-append {
   margin: 10px 0px 0px 20px;
 }
 
+.img-audit-logs {
+  display: block;
+  width: 118px;
+  height: 118px;
+  overflow: hidden;
+  background: url(../img/support_icons.png) no-repeat 0px -354px;
+  margin: 10px 0px 0px 20px;
+}
+
 .compute-step {
   margin:0;
 }

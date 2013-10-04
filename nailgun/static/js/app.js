@@ -22,9 +22,10 @@ define(
     'views/clusters_page',
     'views/releases_page',
     'views/notifications_page',
-    'views/support_page'
+    'views/support_page',
+    'views/capacity_page'
 ],
-function(models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage) {
+function(models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -35,6 +36,7 @@ function(models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage,
             'releases': 'listReleases',
             'notifications': 'showNotifications',
             'support': 'showSupportPage',
+            'capacity': 'showCapacityPage',
             '*default': 'listClusters'
         },
         initialize: function() {
@@ -140,6 +142,9 @@ function(models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage,
         },
         showSupportPage: function() {
             this.setPage(SupportPage);
+        },
+        showCapacityPage: function() {
+            this.setPage(CapacityPage);
         }
     });
 

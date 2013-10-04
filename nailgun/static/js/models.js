@@ -591,5 +591,10 @@ define(['utils'], function(utils) {
         urlRoot: '/api/logs/package'
     });
 
+    models.CapacityLog = Backbone.Model.extend({
+        constructorName: 'CapacityLog',
+        urlRoot: '/api/capacity'
+    });
+
     return models;
 });

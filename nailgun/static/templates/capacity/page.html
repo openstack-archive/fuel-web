@@ -1,0 +1,70 @@
+<div class="row-fluid">
+  <div class="span12">
+    <h3 class="page-title">Capacity Audit</h3>
+  </div>
+</div>
+
+<div class="capatity page-wrapper">
+<% if (!_.isUndefined(this.model) && this.model.deferred.state() != 'pending') { %>
+  <div class="row-fluid">
+    <div class="span12">
+      <h4>License Usage Report</h4>
+      <p>
+        <table class="table table-bordered table-striped">
+          <tr>
+            <td>Fuel version</td>
+            <td><%- this.model.get('report').fuel_data.release %></td>
+          </tr>
+          <tr>
+            <td>Fuel UUID</td>
+            <td><%- this.model.get('report').fuel_data.uuid %></td>
+          </tr>
+          <tr>
+            <td colspan="2"></td>
+          </tr>
+          <tr>
+            <td>Environment Name</td>
+            <td>Node Count</td>
+          </tr>
+          <% _.each(this.model.get('report').environment_stats, function(env) { %>
+          <tr>
+            <td><%- env.cluster %></td>
+            <td><%- env.nodes %></td>
+          </tr>
+          <% }) %>
+          <tr>
+            <td colspan="2"></td>
+          </tr>
+          <tr>
+            <td>Total number of allocated nodes</td>
+            <td>Total number of unallocated nodes</td>
+          </tr>
+          <tr>
+            <td><%- this.model.get('report').allocation_stats.allocated %></td>
+            <td><%- this.model.get('report').allocation_stats.unallocated %></td>
+          </tr>
+          <tr>
+            <td colspan="2"></td>
+          </tr>
+          <tr>
+            <td>Node role(s)</td>
+            <td>Number of nodes with this configuration</td>
+          </tr>
+          <% _.each(_.pairs(this.model.get('report').roles_stat), function(stats) { %>
+          <tr>
+            <td><%- stats[0] %></td>
+            <td><%- stats[1] %></td>
+          </tr>
+          <% }) %>
+        </table>  
+      </p>
+      <p>
+        <a href="/api/capacity/csv">Download report</a>
+      <p>
+    </div>
+  </div>
+  
+<% } else { %>
+  <span class="icon-process animate-spin"></span> Loading...
+<% } %>
+</div>

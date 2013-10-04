@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+from datetime import datetime
 from random import choice
 import string
 import uuid
@@ -712,6 +713,8 @@ class Task(Base):
 
         # dump
         'dump',
+
+        'capacity_log'
     )
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
@@ -899,3 +902,11 @@ class RedHatAccount(Base):
                           nullable=False)
     satellite = Column(String(250))
     activation_key = Column(String(300))
+
+
+class CapacityLog(Base):
+    __tablename__ = 'capacity_log'
+
+    id = Column(Integer, primary_key=True)
+    report = Column(JSON)
+    datetime = Column(DateTime, default=datetime.now())

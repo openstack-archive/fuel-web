@@ -745,6 +745,19 @@
                     }
                 },
                 "generated": {
+                    "savanna": {
+                        "enabled": false
+                    },
+                    "heat": {
+                        "enabled": false
+                    },
+                    "murano": {
+                        "enabled": false
+                    },
+                    "storage": {
+                        "cinder": "lvm",
+                        "glance": "swift"
+                    },
                     "mysql": {
                         "root_password": {
                             "generator": "password"

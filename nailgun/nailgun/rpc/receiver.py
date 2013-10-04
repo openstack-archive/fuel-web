@@ -22,8 +22,12 @@ import os
 import traceback
 
 
+from sqlalchemy import func
 from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
 
+from nailgun.api.models import CapacityLog
+from nailgun.api.models import Cluster
 from nailgun.api.models import IPAddr
 from nailgun.api.models import Node
 from nailgun.api.models import Release
@@ -823,3 +827,54 @@ class NailgunReceiver(object):
             TaskHelper.update_task_status(
                 task_uuid, status, progress,
                 '/dump/{0}'.format(dumpfile))
+
+    @classmethod
+    def generate_capacity_log_resp(cls, **kwargs):
+        status = kwargs.get('status')
+        progress = kwargs.get('progress')
+        task_uuid = kwargs.get('task_uuid')
+
+        unallocated_nodes = db().query(Node).filter_by(cluster_id=None).count()
+        total_nodes = \
+            db().query(Node).count()
+
+        node_allocation = db().query(Cluster, func.count(Node.id)).\
+            outerjoin(Node).group_by(Cluster)
+        env_stats = []
+        for allocation in node_allocation:
+            env_stats.append({'cluster': allocation[0].name,
+                              'nodes': allocation[1]})
+        allocation_stats = {'total': total_nodes,
+                            'unallocated': unallocated_nodes}
+
+        fuel_data = {
+            "release": settings.VERSION['release'],
+            "uuid": settings.FUEL_KEY
+        }
+
+        nodes = db().query(Node).options(
+            joinedload('role_list'))
+        roles_stat = {}
+        for node in nodes:
+            if node.roles:
+                roles_list = '+'.join(node.roles)
+                if roles_list in roles_stat:
+                    roles_stat[roles_list] += 1
+                else:
+                    roles_stat[roles_list] = 1
+
+        capacity_data = {'environment_stats': env_stats,
+                         'allocation_stats': allocation_stats,
+                         'fuel_data': fuel_data,
+                         'roles_stat': roles_stat}
+
+        capacity_log = CapacityLog()
+        capacity_log.report = capacity_data
+        db().add(capacity_log)
+        db().commit()
+
+        status = 'ready'
+        TaskHelper.update_task_status(task_uuid,
+                                      status,
+                                      progress,
+                                      result={'log_id': capacity_log.id})

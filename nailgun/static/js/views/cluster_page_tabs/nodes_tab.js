@@ -119,8 +119,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         updateBatchActionsButtons: function() {
             this.$('.btn-delete-nodes').toggle(!!this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
             this.$('.btn-add-nodes').css('display', this.$('.node-checkbox input:checked').length ? 'none' : 'block');
-            var notDeployedSelectedNodes = this.$('.node-box.node-new .node-checkbox input:checked');
-            this.$('.btn-edit-nodes').toggle(!!notDeployedSelectedNodes.length);
+            var notDeployedSelectedNodes = this.$('.node-box.node-new:not(.node-offline) .node-checkbox input:checked');
+            this.$('.btn-edit-nodes').toggle(!!notDeployedSelectedNodes.length && notDeployedSelectedNodes.length == this.$('.node-checkbox input:checked').length);
             var nodesIds = notDeployedSelectedNodes.map(function() {return parseInt($(this).val(), 10);}).get().join(',');
             this.$('.btn-edit-nodes').attr('href', '#cluster/' + this.model.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: nodesIds}));
             // check selected nodes for group configuration availability
@@ -166,6 +166,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             });
             this.registerSubView(this.nodeList);
             this.$el.append(this.nodeList.render().el);
+            this.nodeList.calculateSelectAllCheckedState();
+            this.nodeList.calculateSelectAllDisabledState();
             return this;
         }
     });
@@ -225,7 +227,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         render: function() {
             this.constructor.__super__.render.apply(this, arguments);
             this.roles.render();
-            this.nodeList.calculateSelectAllTumblerState();
             return this;
         }
     });
@@ -383,6 +384,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 var cantAddController = allocatedController && !_.contains(this.nodeIds, allocatedController.id);
                 var controllerSelected = (this.$('input[value=controller]').is(':checked') || this.$('input[value=controller]').prop('indeterminate')) && this.nodeIds.length;
                 this.screen.$('.node-box:not(.node-offline):not(.node-error):not(.node-delete) input:not(:checked)').prop('disabled', controllerSelected);
+                this.screen.$('.select-all input:not(:checked)').prop('disabled', controllerSelected).parent().toggleClass('disabled', controllerSelected);
+                // if there are no allocated controllers, check Select All tumblers for its' disabled state (offline, error nodes)
+                if (!controllerSelected && this.screen.nodeList) {
+                    _.invoke(this.screen.nodeList.subViews, 'calculateSelectAllDisabledState', this);
+                }
                 if (this.nodeIds.length > 1 || cantAddController) {
                     this.$('input[value=controller]').prop('disabled', true);
                 }
@@ -426,11 +432,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'change input[name=select-nodes-common]' : 'selectAllNodes',
             'click .btn-cluster-details': 'toggleSummaryPanel'
         },
-        availableNodes: function() {
-            return this.$('.node-box:not(.node-offline):not(.node-error):not(.node-delete)');
-        },
         selectAllNodes: function(e) {
-            this.$('input[name=select-node-group]').prop('checked', this.$(e.currentTarget).is(':checked')).trigger('change');
+            this.$('input[name=select-node-group]:not(:disabled)').prop('checked', this.$(e.currentTarget).is(':checked')).trigger('change');
         },
         hideSummaryPanel: function(e) {
             if (!(e && $(e.target).closest(this.$('.node-list-name')).length)) {
@@ -440,8 +443,15 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         toggleSummaryPanel: function() {
             this.$('.cluster-details').toggle();
         },
-        calculateSelectAllTumblerState: function() {
-            this.$('input[name=select-nodes-common]').prop('checked', this.availableNodes().length && this.$('.node-checkbox input:checked').length == this.availableNodes().length);
+        amountOfAvailableNodes: function() {
+            return this.$('.node-box:not(.node-offline):not(.node-error):not(.node-delete)').length;
+        },
+        calculateSelectAllCheckedState: function() {
+            this.$('input[name=select-nodes-common]').prop('checked', this.amountOfAvailableNodes() && this.$('.node-checkbox input:checked').length == this.amountOfAvailableNodes());
+        },
+        calculateSelectAllDisabledState: function() {
+            var disabled = !this.amountOfAvailableNodes() || this.screen instanceof EditNodesScreen || this.screen.isLocked();
+            this.$('input[name=select-nodes-common]').prop('disabled', disabled).parent().toggleClass('disabled', disabled);
         },
         groupNodes: function(attribute) {
             if (_.isUndefined(attribute)) {
@@ -483,8 +493,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({
                 nodes: this.nodes,
-                edit: this.screen instanceof EditNodesScreen,
-                locked: this.screen.isLocked()
+                edit: this.screen instanceof EditNodesScreen
             }));
             this.groupNodes();
             $('html').on(this.eventNamespace, _.bind(this.hideSummaryPanel, this));
@@ -499,15 +508,20 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         events: {
             'change input[name=select-node-group]' : 'selectAllNodes'
         },
-        availableNodes: function() {
-            return this.$('.node-box:not(.node-offline):not(.node-error):not(.node-delete)');
-        },
         selectAllNodes: function(e) {
-            this.availableNodes().find('input[type=checkbox]').prop('checked', this.$(e.currentTarget).is(':checked')).trigger('change');
+            this.$('.node-checkbox input:not(:disabled)').prop('checked', this.$(e.currentTarget).is(':checked')).trigger('change');
         },
-        calculateSelectAllTumblerState: function() {
-            this.$('input[name=select-node-group]').prop('checked', this.availableNodes().length && this.$('.node-checkbox input:checked').length == this.availableNodes().length);
-            this.nodeList.calculateSelectAllTumblerState();
+        amountOfAvailableNodes: function() {
+            return this.$('.node-box:not(.node-offline):not(.node-error):not(.node-delete)').length;
+        },
+        calculateSelectAllCheckedState: function() {
+            this.$('input[name=select-node-group]').prop('checked', this.amountOfAvailableNodes() && this.$('.node-checkbox input:checked').length == this.amountOfAvailableNodes());
+            this.nodeList.calculateSelectAllCheckedState();
+        },
+        calculateSelectAllDisabledState: function() {
+            var disabled = !this.amountOfAvailableNodes() || this.nodeList.screen instanceof EditNodesScreen || this.nodeList.screen.isLocked();
+            this.$('input[name=select-node-group]').prop('disabled', disabled).parent().toggleClass('disabled', disabled);
+            this.nodeList.calculateSelectAllDisabledState();
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -515,7 +529,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         renderNode: function(node) {
             var nodeView = new Node({
                 node: node,
-                renameable: !this.nodeList.screen.tab.model.task('deploy', 'running'),
+                renameable: !this.nodeList.screen.isLocked(),
                 group: this
             });
             this.registerSubView(nodeView);
@@ -525,12 +539,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({
                 groupLabel: this.groupLabel,
-                nodes: this.nodes,
-                edit: this.nodeList.screen instanceof EditNodesScreen,
-                locked: this.nodeList.screen.isLocked()
+                nodes: this.nodes
             }));
             this.nodes.each(this.renderNode, this);
-            this.calculateSelectAllTumblerState();
+            this.calculateSelectAllCheckedState();
+            this.calculateSelectAllDisabledState();
             return this;
         }
     });
@@ -554,9 +567,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-view-logs': 'showNodeLogs'
         },
         selectNode: function() {
-            this.$el.toggleClass('checked');
-            this.checked = !this.checked;
-            this.group.calculateSelectAllTumblerState();
+            this.checked = this.$('.node-checkbox input').is(':checked');
+            this.$el.toggleClass('checked', this.checked);
+            this.group.calculateSelectAllCheckedState();
+            this.group.calculateSelectAllDisabledState();
             if (!this.checked) {
                 this.node.set({pending_roles: this.initialRoles});
             }

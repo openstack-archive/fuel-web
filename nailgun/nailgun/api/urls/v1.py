@@ -16,6 +16,9 @@
 
 import web
 
+from nailgun.api.handlers.capacity import CapacityLogCsvHandler
+from nailgun.api.handlers.capacity import CapacityLogHandler
+
 from nailgun.api.handlers.cluster import ClusterAttributesDefaultsHandler
 from nailgun.api.handlers.cluster import ClusterAttributesHandler
 from nailgun.api.handlers.cluster import ClusterChangesHandler
@@ -156,6 +159,11 @@ urls = (
     RedHatAccountHandler,
     r'/redhat/setup/?$',
     RedHatSetupHandler,
+
+    r'/capacity/?$',
+    CapacityLogHandler,
+    r'/capacity/csv/?$',
+    CapacityLogCsvHandler,
 )
 
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]

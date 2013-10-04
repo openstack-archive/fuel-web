@@ -23,6 +23,8 @@ from nailgun.api.handlers.base import JSONHandler
 from nailgun.settings import settings
 
 
+Bla-bla-bla, let's broke unit tests
+
 class VersionHandler(JSONHandler):
     """Version info handler
     """

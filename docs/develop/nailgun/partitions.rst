@@ -152,13 +152,20 @@ group, a new logical volume group or partition will not be allocated on
 the node unless it is included in the role-to-volumes mapping
 corresponding to one of the node's roles, like this::
 
-    {
-        "volumes_roles_mapping": {
-            "controller": ["os", "image"],
-            "compute": ["os", "vm", "VOLUME_GROUP_NAME"],
-            "cinder": ["os", "cinder"]
-        }
+    "volumes_roles_mapping": {
+        "controller": [
+            {"allocate_size": "min", "id": "os"},
+            {"allocate_size": "all", "id": "image"}],
+        "compute": ...
     }
+
+* *controller* - is a role for which partitioning information is given
+* *id* - is id of volume group or plain partition
+* *allocate_size* - can be "min" or "all"
+  * *min* - allocate volume with minimal size
+  * *all* - allocate all free space for
+    volume, if serveral volumes have this key
+    then free space will be allocated equally
 
 Setting Volume Parameters from Nailgun Settings
 -----------------------------------------------

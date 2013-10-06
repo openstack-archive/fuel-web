@@ -290,14 +290,6 @@
                             "type": "text"
                         }
                     },
-                    "glance": {
-                        "image_cache_max_size": {
-                            "value": "10737418240",
-                            "label": "Glance image cache maximum size (in bytes) ",
-                            "weight": 70,
-                            "type": "text"
-                        }
-                    },
                     "syslog": {
                         "syslog_transport": {
                             "value": "udp",
@@ -701,14 +693,6 @@
                             "type": "text"
                         }
                     },
-                    "glance": {
-                        "image_cache_max_size": {
-                            "value": "10737418240",
-                            "label": "Glance image cache maximum size (in bytes) ",
-                            "weight": 70,
-                            "type": "text"
-                        }
-                    },
                     "syslog": {
                         "syslog_transport": {
                             "value": "udp",
@@ -1077,14 +1061,6 @@
                             "label": "Public Key",
                             "description": "Public key(s) to include in authorized_keys on deployed nodes",
                             "weight": 60,
-                            "type": "text"
-                        }
-                    },
-                    "glance": {
-                        "image_cache_max_size": {
-                            "value": "10737418240",
-                            "label": "Glance image cache maximum size (in bytes) ",
-                            "weight": 70,
                             "type": "text"
                         }
                     },

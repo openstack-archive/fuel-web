@@ -179,6 +179,9 @@ class TestHandlers(BaseIntegrationTest):
                             '_name': 'admin'}}}
 
                 individual_atts.update(common_attrs)
+                individual_atts['glance']['image_cache_max_size'] = (
+                    str(5 * 1024 * 1024 * 1024)
+                )
                 deployment_info.append(individual_atts)
 
         controller_nodes = filter(

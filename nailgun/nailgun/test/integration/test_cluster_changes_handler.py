@@ -29,6 +29,7 @@ from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
+from nailgun.volumes import manager
 
 
 class TestHandlers(BaseIntegrationTest):
@@ -179,6 +180,9 @@ class TestHandlers(BaseIntegrationTest):
                             '_name': 'admin'}}}
 
                 individual_atts.update(common_attrs)
+                individual_atts['glance']['image_cache_max_size'] = str(
+                    manager.gb_to_byte(5)
+                )
                 deployment_info.append(individual_atts)
 
         controller_nodes = filter(

@@ -58,6 +58,10 @@ def byte_to_megabyte(byte):
     return byte / 1024 ** 2
 
 
+def gb_to_byte(gb):
+    return gb * 1024 * 1024 * 1024
+
+
 def find_space_by_id(spaces, space_id):
     """Iterate through spaces and return space which has space_id."""
     return filter(lambda space: space.get('id') == space_id, spaces)[0]
@@ -96,6 +100,32 @@ def get_node_spaces(node):
             node_spaces.append(space)
 
     return node_spaces
+
+
+def calc_glance_cache_size(volumes):
+    """Calculate glance cache size based on formula:
+    10%*(/var/lib/glance) if > 5GB else 5GB
+    """
+    cache_size_form = lambda size: int(0.1 * size)
+    cache_min_size = gb_to_byte(5)
+    glance_mount_size = find_size_by_name(volumes, 'glance', 'image')
+    cache_size = cache_size_form(glance_mount_size)
+    return str(cache_size if cache_size > cache_min_size else cache_min_size)
+
+
+def get_volumes_by_name(volumes, name, id_type):
+    for vg in only_vg(volumes):
+        if vg.get('id') == id_type:
+            for lv in vg['volumes']:
+                if lv.get('name') == name:
+                    yield lv
+
+
+def find_size_by_name(volumes, name, id_type):
+    """Find volumes with specific type
+    """
+    return sum(v.get('size', 0)
+               for v in get_volumes_by_name(volumes, name, id_type))
 
 
 class DisksFormatConvertor(object):

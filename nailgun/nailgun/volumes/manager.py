@@ -820,6 +820,35 @@ class VolumeManager(object):
         if disks_space < minimal_installation_size:
             raise errors.NotEnoughFreeSpace()
 
+    @property
+    def glance_cache_size(self):
+        cache_size = lambda size: int(0.1 * size)
+        cache_min_size = 5 * 1024 * 1024 * 1024
+        glance_mount_size = self._get_volumes_size(
+            self._find_mounted_on(key='/var/lib/glance'))
+        return str(cache_size(glance_mount_size)
+                   if cache_size(glance_mount_size) > cache_min_size
+                   else cache_min_size)
+
+    @staticmethod
+    def _get_volumes_size(volumes):
+        """Get sum of volumes size
+        """
+        def _get_size():
+            for volume in volumes:
+                for v in volume['volumes']:
+                    yield v.get('size', 0)
+
+        return sum(_get_size())
+
+    def _find_mounted_on(self, key='/'):
+        """Find volumes mounted on specific paths
+        """
+        for volume in self.volumes:
+            for v in volume['volumes']:
+                if v.get('mount', '') == key:
+                    yield volume
+
     def __calc_minimal_installation_size(self):
         '''Calc minimal installation size depend on node role
         '''

@@ -49,6 +49,16 @@ class Priority(object):
         return self.priority
 
 
+class UpdatableDict(dict):
+
+    def update_nested(self, common):
+        for key, value in common.iteritems():
+            if key in self and isinstance(self[key], dict):
+                self[key].update(value)
+            elif key not in self:
+                self[key] = value
+
+
 class OrchestratorSerializer(object):
     """Base class for orchestrator searilization."""
 
@@ -58,7 +68,8 @@ class OrchestratorSerializer(object):
         through an orchestrator passes to puppet
         """
         common_attrs = cls.get_common_attrs(cluster)
-        nodes = cls.serialize_nodes(cls.get_nodes_to_deployment(cluster))
+        nodes = list(cls.serialize_nodes(
+                     cls.get_nodes_to_deployment(cluster)))
 
         if cluster.net_manager == 'VlanManager':
             cls.add_vlan_interfaces(nodes)
@@ -66,12 +77,8 @@ class OrchestratorSerializer(object):
         cls.set_deployment_priorities(nodes)
 
         # Merge attributes of nodes with common attributes
-        def merge(dict1, dict2):
-            return dict(dict1.items() + dict2.items())
-
-        return map(
-            lambda node: merge(node, common_attrs),
-            nodes)
+        [node.update_nested(common_attrs) for node in nodes]
+        return nodes
 
     @classmethod
     def get_common_attrs(cls, cluster):
@@ -181,13 +188,9 @@ class OrchestratorSerializer(object):
         in orchestrator will be passed two serialized
         nodes.
         """
-        serialized_nodes = []
         for node in nodes:
             for role in node.all_roles:
-                serialized_node = cls.serialize_node(node, role)
-                serialized_nodes.append(serialized_node)
-
-        return serialized_nodes
+                yield cls.serialize_node(node, role)
 
     @classmethod
     def serialize_node(cls, node, role):
@@ -197,20 +200,23 @@ class OrchestratorSerializer(object):
         network_data = node.network_data
         interfaces = cls.configure_interfaces(network_data)
         cls.__add_hw_interfaces(interfaces, node.meta['interfaces'])
-        node_attrs = {
+
+        node_attrs = UpdatableDict({
             # Yes, uid is really should be a string
             'uid': str(node.id),
             'fqdn': node.fqdn,
             'status': node.status,
             'role': role,
-
+            'glance': {
+                'image_cache_max_size': node.volume_manager.glance_cache_size
+            },
             # Interfaces assingment
             'network_data': interfaces,
 
             # TODO (eli): need to remove, requried
             # for fucking fake thread only
             'online': node.online,
-        }
+        })
         node_attrs.update(cls.interfaces_list(network_data))
 
         return node_attrs
@@ -359,6 +365,18 @@ class OrchestratorSerializer(object):
                     'interface': hw_interface['name'],
                     'ipaddr': "none"
                 }
+
+    @staticmethod
+    def update_nested_dicts(custom, common):
+        """Merge two nested dictionaries.
+        @custom - dict
+        @common - dict
+        """
+        for key, value in common.iteritems():
+            if key in custom and isinstance(custom[key], dict):
+                custom[key].update(value)
+            elif key not in custom:
+                custom[key] = value
 
 
 class OrchestratorHASerializer(OrchestratorSerializer):

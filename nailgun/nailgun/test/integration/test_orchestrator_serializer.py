@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import unittest
 
 from nailgun.api.models import Cluster
 from nailgun.api.models import IPAddrRange
@@ -24,6 +25,8 @@ from nailgun.orchestrator.deployment_serializers \
     import OrchestratorHASerializer
 from nailgun.orchestrator.deployment_serializers \
     import OrchestratorSerializer
+from nailgun.orchestrator.deployment_serializers \
+    import UpdatableDict
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 
@@ -82,7 +85,8 @@ class TestOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assert_nodes_with_role(nodes, 'cinder', 3)
 
     def test_serialize_nodes(self):
-        serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
+        serialized_nodes = list(self.serializer.serialize_nodes(
+            self.cluster.nodes))
         self.assert_roles_flattened(serialized_nodes)
 
         # Each not should be same as result of
@@ -109,6 +113,8 @@ class TestOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEquals(serialized_data['online'], node_db.online)
         self.assertEquals(serialized_data['fqdn'],
                           'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
+        self.assertEquals(serialized_data['glance'],
+                          {'image_cache_max_size': '5368709120'})
 
     def test_node_list(self):
         node_list = self.serializer.node_list(self.cluster.nodes)
@@ -405,3 +411,20 @@ class TestOrchestratorHASerializerRedeploymentErrorNodes(
 
         computes = self.filter_by_role(nodes, 'compute')
         self.assertEquals(len(computes), 1)
+
+
+class TestUpdatableDict(unittest.TestCase):
+
+    def test_nested_update(self):
+        example_dict = UpdatableDict({
+            'glance': {'password': 'something',
+                       'username': 'else'}
+        })
+        example_dict.update_nested(
+            {'glance': {'image_cache_max_size': '1000'}})
+        expected = {'glance': {
+            'password': 'something',
+            'username': 'else',
+            'image_cache_max_size': '1000'
+        }}
+        self.assertEqual(example_dict, expected)

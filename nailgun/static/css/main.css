@@ -66,6 +66,10 @@ h6.page-title {
   display: inline-block;
 }
 
+.tab-content {
+  overflow: visible;
+}
+
 .page-sub-title {margin-top: 10px; margin-bottom: 19px;}
 .page-sub-title .select-all {margin-top: 12px;}
 .page-sub-title .action-btn {margin-top: 7px;}
@@ -1657,13 +1661,16 @@ label.node-checkbox {
 }
 
 .tab-pane > div > div {
-  overflow-y: hidden;
-  min-height: 360px;
+  overflow: visible;
+  /* overflow-y: hidden; */
+  /* min-height: 360px; */
 }
 
 .wrapper {
   margin: 0 20px;
+  /*
   overflow-x: hidden;
+  */
   padding-left: 3px;
 }
 
@@ -4521,6 +4528,8 @@ i.btn-cluster-details {
   padding: 10px;
   text-align: left;
   margin: 0;
+  position: absolute;
+  z-index: 10000;
 }
 
 .cluster-details > li {

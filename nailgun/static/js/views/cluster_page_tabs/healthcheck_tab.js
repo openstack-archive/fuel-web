@@ -143,7 +143,9 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             if (!this.model.get('ostf')) {
                 var ostf = {};
                 ostf.testsets = new models.TestSets();
+                ostf.testsets.url = _.result(ostf.testsets, 'url') + '/' + this.model.id;
                 ostf.tests = new models.Tests();
+                ostf.tests.url = _.result(ostf.tests, 'url') + '/' + this.model.id;
                 ostf.testruns = new models.TestRuns();
                 ostf.testruns.url = _.result(ostf.testruns, 'url') + '/last/' + this.model.id;
                 _.extend(this, ostf);

@@ -1004,17 +1004,18 @@ label.node-checkbox {
   cursor: default;
 }
 
-.nav-tabs {
+/* Cluster Tabs Design */
+.cluster-tabs {
     border: none;
     margin-top: -70px;
 }
 
-.nav-tabs li {
+.cluster-tabs li {
   margin-left: -1px;
   min-width: 98px;
 }
 
-.nav-tabs li a {
+.cluster-tabs li a {
   height: 50px;
   box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -1038,14 +1039,14 @@ label.node-checkbox {
 
 }
 
-.nav-tabs .tab-title {
+.cluster-tabs .tab-title {
   display: block;
   font-size: 11px;
   text-align: center;
 }
 
-.nav-tabs > li > a { margin-right: 3px;}
-.nav-tabs > li > a > b {display: block; width: 30px; height: 30px; margin: -5px auto -5px auto;}
+.cluster-tabs > li > a { margin-right: 3px;}
+.cluster-tabs > li > a > b {display: block; width: 30px; height: 30px; margin: -5px auto -5px auto;}
 .tab-nodes-normal    {background: url(../img/tab_icons.png) no-repeat   0px   0px;}
 .tab-nodes-good      {background: url(../img/tab_icons.png) no-repeat -30px   0px;}
 .tab-nodes-bad       {background: url(../img/tab_icons.png) no-repeat -60px   0px;}
@@ -1074,7 +1075,7 @@ label.node-checkbox {
 .tab-healthcheck-good   {background: url(../img/tab_icons.png) no-repeat -30px -180px;}
 .tab-healthcheck-bad    {background: url(../img/tab_icons.png) no-repeat -60px -180px;}
 
-.nav-tabs li a:hover {
+.cluster-tabs li a:hover {
   border-color: #404c5c #404c5c #404c5c;
   background-image: -webkit-linear-gradient(bottom, #b8b8b8, #e8e8e8 30%);
   background-image: -moz-linear-gradient(bottom, #b8b8b8, #e8e8e8 30%);
@@ -1083,8 +1084,8 @@ label.node-checkbox {
   background-image: linear-gradient(to top, #b8b8b8, #e8e8e8 30%);
 }
 
-.nav-tabs > .active > a,
-.nav-tabs > .active > a:hover {
+.cluster-tabs > .active > a,
+.cluster-tabs > .active > a:hover {
   background-image: none;
   color: #555555;
   cursor: pointer;
@@ -1092,6 +1093,8 @@ label.node-checkbox {
   border-color: #404c5c #404c5c #404c5c;
   border-bottom-color: transparent;
 }
+/* End Cluster Tabs Design */
+
 
 .globalalert,
 .global-error,
@@ -1422,43 +1425,86 @@ label.node-checkbox {
 }
 
 .modal .wizard-body {
-  min-height: 220px;
-  padding-top: 0;
-  margin-top: 10px;
+  margin: 0px;
+  padding: 0px;
 }
 
-.modal .wizard-steps {
-  height: 24px;
-  padding-bottom: 0px;
+.wizard-steps-box {
+  width: 100%;
+  height: 100%;
 }
 
-.modal .wizard-step {
-  /* padding-top: 5px; */
-  font-size: 12px;
-  height: 18px;
-  float: left;
-  text-align: center;
+.wizard-steps-box:after {
+  clear: both;
+}
+
+.wizard-steps-nav {
   background-color: #f0f0f0;
-  color: #aaaaaa;
+  display: block;
+  width: 25%;
+  overflow: hidden;
+  float: left;
 }
 
-.modal .wizard-step:first-child {
-  border-radius: 4px 0px 0px 4px;
+.wizard-steps-content {
+  display: block;
+  float: left;
+  background-color: #ffffff;
+  width: 75%;
+  padding: 15px 20px 20px 20px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
-.modal .wizard-step:last-child {
-  border-radius: 0px 4px 4px 0px;
+.wizard-step-nav-item {
+  list-style: none outside none;
+  margin-bottom: 20px;
+  margin-left: 0px;
 }
 
-.modal .wizard-step.current {
-  background-color: #d07207;
-  color: #f8f8f8;
+.wizard-step-nav-item > li {
+  list-style: none outside none;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 0px 8px 30px;
+  color: #999999;
+  cursor: default;
 }
 
-.modal .wizard-step.available {
-  background-color: #52a652;
-  color: #f8f8f8;
+.wizard-step-nav-item > .current {
+  background-color: #ffffff;
+  color: #e98900;
+  /* border-right: 2px solid #000000; */
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  font-weight: 600;
   cursor: pointer;
+}
+
+
+
+.wizard-step-nav-item > .available {
+  background-color: none;
+  color: #468847;
+  /* border-right: 2px solid #468847; */
+  padding-left: -10px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.wizard-step-nav-item > .available:before {
+  font-family: "fontello";
+  font-style: normal;
+  font-weight: normal;
+  speak: none;
+  content: '\2713';
+  margin-left: -20px;
+  margin-right: 3px;
 }
 
 .loading {
@@ -4423,4 +4469,9 @@ i.btn-cluster-details {
   font-size: 12px;
   margin-bottom: -4px;
   font-weight: 100;
+}
+
+.create-cluster-modal {
+  width: 760px;
+  margin-left: -380px;
 }

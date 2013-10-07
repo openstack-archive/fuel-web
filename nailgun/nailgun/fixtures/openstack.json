@@ -1046,6 +1046,29 @@
                             "type": "password"
                         }
                     },
+                    "additional_components": {
+                        "savanna": {
+                            "value": false,
+                            "label": "Install Savanna",
+                            "description": "If selected, Savanna component will be installed",
+                            "weight": 10,
+                            "type": "checkbox"
+                        },
+                        "murano": {
+                            "value": false,
+                            "label": "Install Murano",
+                            "description": "If selected, Murano component will be installed",
+                            "weight": 20,
+                            "type": "checkbox"
+                        },
+                        "heat": {
+                            "value": false,
+                            "label": "",
+                            "description": "",
+                            "weight": 30,
+                            "type": "hidden"
+                        }
+                    },
                     "common": {
                         "auto_assign_floating_ip": {
                             "value": false,
@@ -1255,6 +1278,27 @@
                         "profile": {
                             "generator": "identical",
                             "generator_arg": "ubuntu_1204_x86_64"
+                        }
+                    },
+                    "savanna": {
+                        "db_password": {
+                            "generator": "password"
+                        }
+                    },
+                    "murano": {
+                        "db_password": {
+                            "generator": "password"
+                        }
+                    },
+                    "heat": {
+                        "db_password": {
+                            "generator": "password"
+                        },
+                        "rabbit_password": {
+                            "generator": "password"
+                        },
+                        "rabbit_user": {
+                            "generator": "password"
                         }
                     }
                 }

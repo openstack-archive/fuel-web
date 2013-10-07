@@ -2,21 +2,30 @@
   <button type="button" class="close" data-dismiss="modal">×</button>
   <h3>Create a new OpenStack environment</h3>
 </div>
+
 <div class="modal-body wizard-body">
-  <div class="wizard-steps">
-    <% _(totalSteps).times(function(step) { %>
-      <% step++ %>
-      <div class="wizard-step <%= step != currentStep ? step <= maxAvailableStep ? 'available' : '' : 'current' %>"
-        style="width: <%= floor(100 / totalSteps, 2) %>%"
-        data-pane="<%= step - 1 %>"
-      >
-        Step <%= step %>
-      </div>
-    <% }) %>
+  <div class="wizard-steps-box">
+    <div class="wizard-steps-nav">
+      <ul class="wizard-step-nav-item">
+        <% _(totalSteps).times(function(step) { %>
+          <% step++ %>
+          <li class="wizard-step <%= step != currentStep ? step <= maxAvailableStep ? 'available' : '' : 'current' %>" data-pane="<%= step - 1 %>">
+            <%- panes[step - 1].title || ('Step ' + step) %>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+
+    <div class="wizard-steps-content">
+      <fieldset>
+        <!--<h3 class="pane-title"></h3>-->
+        <div class="pane-content"></div>
+      </fieldset>
+    </div>
+    <div class="clearfix"></div>
   </div>
-  <h4 class="pane-title"></h4>
-  <div class="pane-content"></div>
 </div>
+
 <div class="modal-footer wizard-footer">
   <button class="btn pull-left" data-dismiss="modal">Cancel</button>
   <button class="btn prev-pane-btn">&lt; Prev</button>

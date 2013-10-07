@@ -149,6 +149,8 @@ if __name__ == "__main__":
                 settings.update({attr: param})
         if params.config_file:
             settings.update_from_file(params.config_file)
+        import web
+        web.config.debug = bool(settings.DEVELOPMENT)
         from nailgun.wsgi import appstart
         appstart(keepalive=params.keepalive)
     elif params.action == "shell":

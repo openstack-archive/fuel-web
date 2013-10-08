@@ -15,13 +15,16 @@
 #    under the License.
 
 
-from sqlalchemy import exc
 import unittest
 
-from nailgun.db import db, load_db_driver
-from nailgun.api import models
-from nailgun.errors import errors, NailgunException
+from sqlalchemy import exc
 import web
+
+from nailgun.api import models
+from nailgun.db import db
+from nailgun.db import load_db_driver
+from nailgun.errors import errors
+from nailgun.errors import NailgunException
 
 
 class TestLoadDBDriverHandler(unittest.TestCase):

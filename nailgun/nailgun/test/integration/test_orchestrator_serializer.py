@@ -303,6 +303,30 @@ class TestOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def serializer(self):
         return OrchestratorHASerializer
 
+    def test_set_deployment_priorities(self):
+        nodes = [
+            {'role': 'primary-swift-proxy'},
+            {'role': 'swift-proxy'},
+            {'role': 'storage'},
+            {'role': 'primary-controller'},
+            {'role': 'controller'},
+            {'role': 'controller'},
+            {'role': 'ceph-osd'},
+            {'role': 'other'}
+        ]
+        self.serializer.set_deployment_priorities(nodes)
+        expected_priorities = [
+            {'role': 'primary-swift-proxy', 'priority': 100},
+            {'role': 'swift-proxy', 'priority': 200},
+            {'role': 'storage', 'priority': 300},
+            {'role': 'primary-controller', 'priority': 400},
+            {'role': 'controller', 'priority': 500},
+            {'role': 'controller', 'priority': 600},
+            {'role': 'ceph-osd', 'priority': 700},
+            {'role': 'other', 'priority': 700}
+        ]
+        self.assertEquals(expected_priorities, nodes)
+
     def test_node_list(self):
         serialized_nodes = self.serializer.node_list(self.cluster.nodes)
 

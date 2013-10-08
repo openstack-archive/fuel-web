@@ -109,6 +109,8 @@ class TestOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEquals(serialized_data['online'], node_db.online)
         self.assertEquals(serialized_data['fqdn'],
                           'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
+        self.assertEquals(serialized_data['glance'],
+                          {'image_cache_max_size': '5368709120'})
 
     def test_node_list(self):
         node_list = self.serializer.node_list(self.cluster.nodes)

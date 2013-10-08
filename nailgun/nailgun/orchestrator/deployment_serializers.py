@@ -23,6 +23,7 @@ from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
+from nailgun.volumes import manager
 from netaddr import IPNetwork
 from sqlalchemy import and_
 from sqlalchemy import or_
@@ -66,12 +67,14 @@ class OrchestratorSerializer(object):
         cls.set_deployment_priorities(nodes)
 
         # Merge attributes of nodes with common attributes
-        def merge(dict1, dict2):
-            return dict(dict1.items() + dict2.items())
-
-        return map(
-            lambda node: merge(node, common_attrs),
-            nodes)
+        def deep_merge(custom, common):
+            for key, value in common.iteritems():
+                if key in custom and isinstance(custom[key], dict):
+                    custom[key].update(value)
+                elif key not in custom:
+                    custom[key] = value
+        [deep_merge(node, common_attrs) for node in nodes]
+        return nodes
 
     @classmethod
     def get_common_attrs(cls, cluster):
@@ -184,9 +187,7 @@ class OrchestratorSerializer(object):
         serialized_nodes = []
         for node in nodes:
             for role in node.all_roles:
-                serialized_node = cls.serialize_node(node, role)
-                serialized_nodes.append(serialized_node)
-
+                serialized_nodes.append(cls.serialize_node(node, role))
         return serialized_nodes
 
     @classmethod
@@ -197,13 +198,17 @@ class OrchestratorSerializer(object):
         network_data = node.network_data
         interfaces = cls.configure_interfaces(network_data)
         cls.__add_hw_interfaces(interfaces, node.meta['interfaces'])
+
         node_attrs = {
             # Yes, uid is really should be a string
             'uid': str(node.id),
             'fqdn': node.fqdn,
             'status': node.status,
             'role': role,
-
+            'glance': {
+                'image_cache_max_size': manager.calc_glance_cache_size(
+                    node.attributes.volumes)
+            },
             # Interfaces assingment
             'network_data': interfaces,
 

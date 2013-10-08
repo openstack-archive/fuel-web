@@ -1,7 +1,7 @@
 <div class="deployment-result"></div>
 <div class="customization-message"></div>
 <div class="whitebox">
-  <ul class="nav nav-tabs">
+  <ul class="nav nav-tabs cluster-tabs">
     <% _.each(tabs, function(tab) { %>
       <li class="<%= activeTab == tab.url ? 'active' : '' %>">
         <a href="#cluster/<%= cluster.id %>/<%= tab.url %>">

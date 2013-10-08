@@ -95,6 +95,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     var clusterWizardPanes = {};
 
     views.CreateClusterWizard = views.Dialog.extend({
+        className: 'modal fade create-cluster-modal',
         template: _.template(createClusterWizardTemplate),
         templateHelpers: _.pick(utils, 'floor'),
         events: {
@@ -192,11 +193,11 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var maxAvailableStep = this.maxAvaialblePaneIndex + 1;
             var totalSteps = this.panes.length;
             this.constructor.__super__.render.call(this, _.extend({
+                panes: this.panes,
                 currentStep: currentStep,
                 totalSteps: totalSteps,
                 maxAvailableStep: maxAvailableStep
             }, this.templateHelpers));
-            this.$('.pane-title').text(pane.title || '');
             this.$('.pane-content').append(pane.el);
             this.$('.prev-pane-btn').prop('disabled', !this.activePaneIndex);
             this.$('.next-pane-btn').toggle(currentStep != totalSteps);
@@ -226,6 +227,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterNameAndReleasePane = views.WizardPane.extend(_.extend({
+        title: 'Name and Release',
         template: _.template(clusterNameAndReleasePaneTemplate),
         events: {
             'keydown input': 'onInputKeydown',

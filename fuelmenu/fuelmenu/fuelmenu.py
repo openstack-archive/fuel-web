@@ -23,7 +23,7 @@ import urwid.raw_display
 import urwid.web_display
 
 # set up logging
-logging.basicConfig(filename='./fuelmenu.log', level=logging.DEBUG)
+logging.basicConfig(filename='/var/log/fuelmenu.log', level=logging.DEBUG)
 log = logging.getLogger('fuelmenu.loader')
 
 class Loader(object):

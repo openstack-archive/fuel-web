@@ -27,7 +27,7 @@ import netifaces
 import dhcp_checker.api
 import dhcp_checker.utils
 from fuelmenu.settings import *
-from fuelmenu.common import network, puppet, replace, dialog
+from fuelmenu.common import network, puppet, replace, dialog, timeout
 from fuelmenu.common.urwidwrapper import *
 blank = urwid.Divider()
 
@@ -145,31 +145,39 @@ class interfaces(urwid.WidgetWrap):
             self.parent.refreshScreen()
             try:
                 with dhcp_checker.utils.IfaceState(self.activeiface) as iface:
-                    dhcp_server_data = dhcp_checker.api.check_dhcp_on_eth(
-                    iface, timeout=5) 
-                if len(dhcp_server_data) < 1:
-                    self.log.debug("No DHCP servers found. Warning user about "
-                              "dhcp_nowait.")
-                    #Build dialog elements
-                    dhcp_info = []
-                    dhcp_info.append(urwid.Padding(
-                                     urwid.Text(("header", "!!! WARNING !!!")),
-                                     "center"))
-                    dhcp_info.append(TextLabel("Unable to detect DHCP server on "
-                                     "interface %s." % (self.activeiface) +
-                                     "\nDHCP will be set up in the background, "
-                                     "but may not receive an IP address. You may "
-                                     "want to check your DHCP connection manually "
-                                     "using the Shell Login menu to the left."))
-                    dialog.display_dialog(self, urwid.Pile(dhcp_info),
-                                          "DHCP Servers Found on %s"
-                                          % self.activeiface)
-                    responses["dhcp_nowait"] = True
-            except:
+                    dhcptimeout=5
+                    dhcp_server_data = timeout.wait_for_true(
+                        dhcp_checker.api.check_dhcp_on_eth,
+                        [iface, dhcptimeout], timeout=dhcptimeout)
+            except timeout.TimeoutError:
+                self.log.info("DHCP scan timed out")   
+                dhcp_server_data = []
+            except Exception:
                 self.log.warning("dhcp_checker failed to check on %s"
                                  % self.activeiface)
-                #TODO: Fix set up DHCP on down iface
+                dhcp_server_data = []
                 responses["dhcp_nowait"] = False
+
+
+            if len(dhcp_server_data) < 1:
+                self.log.debug("No DHCP servers found. Warning user about "
+                          "dhcp_nowait.")
+                #Build dialog elements
+                dhcp_info = []
+                dhcp_info.append(urwid.Padding(
+                                 urwid.Text(("header", "!!! WARNING !!!")),
+                                 "center"))
+                dhcp_info.append(TextLabel("Unable to detect DHCP server on "
+                                 "interface %s." % (self.activeiface) +
+                                 "\nDHCP will be set up in the background, "
+                                 "but may not receive an IP address. You may "
+                                 "want to check your DHCP connection manually "
+                                 "using the Shell Login menu to the left."))
+                dialog.display_dialog(self, urwid.Pile(dhcp_info),
+                                      "DHCP Servers Found on %s"
+                                      % self.activeiface)
+                self.parent.refreshScreen()
+                responses["dhcp_nowait"] = True
         #Check ipaddr, netmask, gateway only if static
         elif responses["bootproto"] == "none":
             try:

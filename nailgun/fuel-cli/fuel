@@ -1067,7 +1067,7 @@ actions = {
             "params": {
                 "dest": "mode",
                 "action": "store",
-                "choices": ["multinode", "ha", "ha_full", "ha_compact"],
+                "choices": ["multinode", "ha_compact"],
                 "help": "Set deployment mode for specific environment.",
                 "default": False
             }

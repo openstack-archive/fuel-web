@@ -289,7 +289,7 @@ DUMP:
         to_file: lvm_lvdisplay.txt
     slave:
       - type: file
-        path: /etc/naily.facts
+        path: /etc/astute.yaml
       - type: command
         command: df -h
         to_file: df.txt

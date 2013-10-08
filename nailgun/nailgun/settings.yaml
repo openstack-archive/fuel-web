@@ -227,7 +227,7 @@ RHEL_VALIDATION_TIMEOUT: 10
 MAX_ITEMS_PER_PAGE: 500
 
 DUMP:
-  target: "/var/www/nailgun/dump/dump"
+  target: "/var/www/nailgun/dump/fuel-snapshot"
   lastdump: "/var/www/nailgun/dump/last"
   timestamp: True
   dump_roles:
@@ -256,6 +256,10 @@ DUMP:
       - type: subs
         path: /var/log/remote
         subs: {}
+      - type: file
+        path: /var/log/ostf.log
+      - type: file
+        path: /var/log/ostf-stdout.log
       - type: command
         command: df -h
         to_file: df.txt
@@ -286,6 +290,15 @@ DUMP:
       - type: command
         command: lvdisplay
         to_file: lvm_lvdisplay.txt
+      - type: command
+        command: ip a
+        to_file: ip_a.txt
+      - type: command
+        command: ip r
+        to_file: ip_r.txt
+      - type: command
+        command: netstat -anp
+        to_file: netstat.txt
     slave:
       - type: file
         path: /etc/astute.yaml
@@ -319,3 +332,12 @@ DUMP:
       - type: command
         command: lvdisplay
         to_file: lvm_lvdisplay.txt
+      - type: command
+        command: ip a
+        to_file: ip_a.txt
+      - type: command
+        command: ip r
+        to_file: ip_r.txt
+      - type: command
+        command: netstat -anp
+        to_file: netstat.txt

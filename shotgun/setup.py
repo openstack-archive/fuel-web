@@ -16,9 +16,7 @@
 import os
 import os.path
 
-from setuptools import find_packages
-from setuptools import setup
-
+import setuptools
 
 requires = [
     'Fabric==1.7.0'
@@ -42,20 +40,21 @@ def recursive_data_files(spec_data_files):
 
 
 if __name__ == "__main__":
-    setup(name=name,
-          version=version,
-          description='Shotgun package',
-          long_description="""Shotgun package""",
-          classifiers=[
-              "Development Status :: 4 - Beta",
-              "Programming Language :: Python",
-          ],
-          author='Mirantis Inc.',
-          author_email='product@mirantis.com',
-          url='http://mirantis.com',
-          keywords='shotgun mirantis',
-          packages=find_packages(),
-          zip_safe=False,
-          install_requires=requires,
-          include_package_data=True,
-          )
+    setuptools.setup(
+        name=name,
+        version=version,
+        description='Shotgun package',
+        long_description="""Shotgun package""",
+        classifiers=[
+            "Development Status :: 4 - Beta",
+            "Programming Language :: Python",
+        ],
+        author='Mirantis Inc.',
+        author_email='product@mirantis.com',
+        url='http://mirantis.com',
+        keywords='shotgun mirantis',
+        packages=setuptools.find_packages(),
+        zip_safe=False,
+        install_requires=requires,
+        include_package_data=True,
+    )

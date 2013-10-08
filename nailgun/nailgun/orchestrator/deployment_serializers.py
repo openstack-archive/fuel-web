@@ -415,7 +415,7 @@ class OrchestratorHASerializer(OrchestratorSerializer):
         node if it not set yet
         """
         sorted_nodes = sorted(
-            nodes, key=lambda node: node['uid'])
+            nodes, key=lambda node: int(node['uid']))
 
         primary_controller = cls.filter_by_roles(
             sorted_nodes, ['primary-controller'])

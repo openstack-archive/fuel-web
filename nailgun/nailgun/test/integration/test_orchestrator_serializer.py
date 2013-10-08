@@ -331,6 +331,25 @@ class TestOrchestratorHASerializer(OrchestratorSerializerTestBase):
             [{'point': '1', 'weight': '1'},
              {'point': '2', 'weight': '2'}])
 
+    def test_primary_controller_selection_depend_on_uid_as_int_not_as_string(
+            self):
+        node_list = [
+            {
+                'uid': '11',
+                'role': 'controller'},
+            {
+                'uid': '10',
+                'role': 'controller'},
+            {
+                'uid': '9',
+                'role': 'controller'}]
+
+        self.serializer.set_primary_controller(node_list)
+        primary_controller = filter(
+            lambda node: node['role'] == 'primary-controller',
+            node_list)[0]
+        self.assertEquals(primary_controller['uid'], '9')
+
 
 class TestOrchestratorHASerializerRedeploymentErrorNodes(
         OrchestratorSerializerTestBase):

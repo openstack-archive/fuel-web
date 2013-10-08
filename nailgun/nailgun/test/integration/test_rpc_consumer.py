@@ -307,8 +307,61 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
-                {"api": False},
-                {"api": False}
+                {"api": False, 'name': 'node1'},
+                {"api": False, 'name': 'node2'},
+                {"api": False, 'name': 'node3'}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        node1, node2, node3 = self.env.nodes
+        nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)},
+                     {'iface': 'eth1', 'vlans': [106]},
+                     {'iface': 'eth2', 'vlans': [107]}]
+
+        task = Task(
+            name="super",
+            cluster_id=cluster_db.id
+        )
+        task.cache = {
+            "args": {
+                'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                          {'uid': node2.id, 'networks': nets_sent},
+                          {'uid': node3.id, 'networks': nets_sent}]
+            }
+        }
+        self.db.add(task)
+        self.db.commit()
+
+        kwargs = {'task_uuid': task.uuid,
+                  'status': 'ready',
+                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                            {'uid': node2.id, 'networks': []},
+                            {'uid': node3.id, 'networks': nets_sent}]}
+        self.receiver.verify_networks_resp(**kwargs)
+        self.db.refresh(task)
+        self.assertEqual(task.status, "error")
+        self.assertEqual(task.message, None)
+        error_nodes = [{'uid': node2.id, 'interface': 'eth0',
+                        'name': node2.name, 'mac': node2.interfaces[0].mac,
+                        'absent_vlans': nets_sent[0]['vlans']},
+                       {'uid': node2.id, 'interface': 'eth1',
+                        'name': node2.name, 'mac': 'unknown',
+                        'absent_vlans': nets_sent[1]['vlans']},
+                       {'uid': node2.id, 'interface': 'eth2',
+                        'name': node2.name, 'mac': 'unknown',
+                        'absent_vlans': nets_sent[2]['vlans']}
+                       ]
+        self.assertEqual(task.result, error_nodes)
+
+    def test_verify_networks_resp_incomplete_network_data_on_first_node(self):
+        """Test verifies that when network data is incomplete on first node
+        task would not fail and be erred as expected
+        """
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False, 'name': 'node1'},
+                {"api": False, 'name': 'node2'},
             ]
         )
         cluster_db = self.env.clusters[0]
@@ -325,21 +378,21 @@ class TestVerifyNetworks(BaseIntegrationTest):
                           {'uid': node2.id, 'networks': nets_sent}]
             }
         }
+
         self.db.add(task)
         self.db.commit()
 
         kwargs = {'task_uuid': task.uuid,
                   'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
-                            {'uid': node2.id, 'networks': []}]}
+                  'nodes': [{'uid': node1.id, 'networks': []},
+                            {'uid': node2.id, 'networks': nets_sent}]}
         self.receiver.verify_networks_resp(**kwargs)
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         self.assertEqual(task.message, None)
-        error_nodes = [{'uid': node2.id, 'interface': 'eth0',
-                        'name': node2.name, 'mac': node2.interfaces[0].mac,
-                        'absent_vlans': nets_sent[0]['vlans'],
-                        }]
+        error_nodes = [{'uid': node1.id, 'interface': 'eth0',
+                        'name': node1.name, 'mac': node1.interfaces[0].mac,
+                        'absent_vlans': nets_sent[0]['vlans']}]
         self.assertEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_without_vlans_only(self):

@@ -127,8 +127,8 @@ class TestNetworkModels(BaseIntegrationTest):
             not_(Network.name == "fuelweb_admin")
         ).all()
         self.assertEquals(len(nets_db), kw['amount'])
-        self.assertEquals(nets_db[0].cidr, '10.0.0.0/25')
-        self.assertEquals(nets_db[1].cidr, '10.0.0.128/25')
+        self.assertEquals(nets_db[0].cidr, '10.0.0.0/8')
+        self.assertEquals(nets_db[1].cidr, '10.0.0.0/8')
         self.db.refresh(ng)
         self.assertEquals(ng.cidr, '10.0.0.0/8')
 

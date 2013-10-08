@@ -56,12 +56,12 @@ class TestHandlers(BaseIntegrationTest):
             'deployment_mode': 'ha_compact',
 
             'management_vip': '192.168.0.2',
-            'public_vip': '172.16.1.2',
+            'public_vip': '172.16.0.2',
 
-            'fixed_network_range': '10.0.0.0/24',
-            'management_network_range': '192.168.0.0/24',
-            'floating_network_range': ['172.16.0.2-172.16.0.254'],
-            'storage_network_range': '192.168.1.0/24',
+            'fixed_network_range': '10.0.0.0/16',
+            'management_network_range': '192.168.0.0/16',
+            'floating_network_range': ['172.16.0.128-172.16.0.255'],
+            'storage_network_range': '192.168.0.0/16',
 
             'mp': [{'weight': '1', 'point': '1'},
                    {'weight': '2', 'point': '2'}],
@@ -95,8 +95,8 @@ class TestHandlers(BaseIntegrationTest):
             for role in sorted(node.roles + node.pending_roles):
                 assigned_ips[node_id] = {}
                 assigned_ips[node_id]['internal'] = '192.168.0.%d' % (i + 3)
-                assigned_ips[node_id]['public'] = '172.16.1.%d' % (i + 3)
-                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 2)
+                assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
+                assigned_ips[node_id]['storage'] = '192.168.0.%d' % (i + 9)
 
                 nodes_list.append({
                     'role': role,
@@ -105,9 +105,9 @@ class TestHandlers(BaseIntegrationTest):
                     'public_address': assigned_ips[node_id]['public'],
                     'storage_address': assigned_ips[node_id]['storage'],
 
-                    'internal_netmask': '255.255.255.0',
+                    'internal_netmask': '255.255.0.0',
                     'public_netmask': '255.255.255.0',
-                    'storage_netmask': '255.255.255.0',
+                    'storage_netmask': '255.255.0.0',
 
                     'uid': str(node_id),
                     'swift_zone': str(node_id),
@@ -153,15 +153,15 @@ class TestHandlers(BaseIntegrationTest):
                         'eth0.100': {
                             'interface': 'eth0.100',
                             'ipaddr': ['%s/24' % ips['public']],
-                            'gateway': '172.16.1.1',
+                            'gateway': '172.16.0.1',
                             '_name': 'public'},
                         'eth0.101': {
                             'interface': 'eth0.101',
-                            'ipaddr': ['%s/24' % ips['internal']],
+                            'ipaddr': ['%s/16' % ips['internal']],
                             '_name': 'management'},
                         'eth0.102': {
                             'interface': 'eth0.102',
-                            'ipaddr': ['%s/24' % ips['storage']],
+                            'ipaddr': ['%s/16' % ips['storage']],
                             '_name': 'storage'},
                         'eth0.103': {
                             'interface': 'eth0.103',

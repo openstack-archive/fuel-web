@@ -490,13 +490,14 @@ class OrchestratorHASerializer(OrchestratorSerializer):
             n['priority'] = swift_proxy_prior
 
         storage_prior = prior.next
-        for n in cls.not_roles(nodes, 'storage'):
+        for n in cls.by_role(nodes, 'storage'):
             n['priority'] = storage_prior
 
-        # Controllers deployed one by one
+        # Deploy primary-controller
         for n in cls.by_role(nodes, 'primary-controller'):
             n['priority'] = prior.next
 
+        # Then deploy other controllers one by one
         for n in cls.by_role(nodes, 'controller'):
             n['priority'] = prior.next
 

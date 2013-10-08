@@ -528,14 +528,14 @@ class NailgunReceiver(object):
 
                         if absent_vlans:
                             data = {'uid': node['uid'],
-                                    'interface': received_network['iface'],
+                                    'interface': cached_network['iface'],
                                     'absent_vlans': absent_vlans}
                             node_db = db().query(Node).get(node['uid'])
                             if node_db:
                                 data['name'] = node_db.name
                                 db_nics = filter(
                                     lambda i:
-                                    i.name == received_network['iface'],
+                                    i.name == cached_network['iface'],
                                     node_db.interfaces
                                 )
                                 if db_nics:
@@ -544,7 +544,7 @@ class NailgunReceiver(object):
                                     logger.warning(
                                         "verify_networks_resp: can't find "
                                         "interface %r for node %r in DB",
-                                        received_network['iface'], node_db.id
+                                        cached_network['iface'], node_db.id
                                     )
                                     data['mac'] = 'unknown'
                             else:

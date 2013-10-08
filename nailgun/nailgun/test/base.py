@@ -399,6 +399,12 @@ class Environment(object):
         return [
             {
                 "name": "floating",
+                "cidr": "172.16.0.255/25",
+                "netmask": "255.255.255.128",
+                "gateway": "172.16.0.1",
+                "ip_range": ["172.16.0.128", "172.16.0.255"],
+                "vlan_start": 100,
+                "network_size": 128,
                 "pool": ["172.16.0.0/12"],
                 "use_public_vlan": True,
                 "assign": False,
@@ -406,6 +412,11 @@ class Environment(object):
             },
             {
                 "name": "public",
+                "cidr": "172.16.0.0/24",
+                "netmask": "255.255.255.0",
+                "gateway": "172.16.0.1",
+                "ip_range": ["172.16.0.2", "172.16.0.127"],
+                "vlan_start": 100,
                 "pool": ["172.16.0.0/12"],
                 "use_public_vlan": True,
                 "assign": True,
@@ -413,19 +424,34 @@ class Environment(object):
             },
             {
                 "name": "management",
+                "cidr": "192.168.0.0/16",
+                "netmask": "255.255.0.0",
+                "gateway": "192.168.0.1",
+                "ip_range": ["192.168.0.2", "192.168.0.255"],
+                "vlan_start": 101,
                 "pool": ["192.168.0.0/16"],
                 "assign": True,
                 "assign_vip": True
             },
             {
                 "name": "storage",
+                "cidr": "192.168.0.0/16",
+                "netmask": "255.255.0.0",
+                "gateway": "192.168.0.1",
+                "ip_range": ["192.168.0.2", "192.168.0.255"],
+                "vlan_start": 102,
                 "pool": ["192.168.0.0/16"],
                 "assign": True,
                 "assign_vip": False
             },
             {
                 "name": "fixed",
-                "pool": ["10.0.0.0/8"],
+                "cidr": "10.0.0.0/16",
+                "netmask": "255.255.0.0",
+                "gateway": "10.0.0.1",
+                "ip_range": ["10.0.0.1", "10.0.255.255"],
+                "vlan_start": 103,
+                "pool": ["10.0.0.0/16"],
                 "assign": False,
                 "assign_vip": False
             }

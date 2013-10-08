@@ -120,8 +120,8 @@ class TestOrchestratorSerializer(OrchestratorSerializerTestBase):
         for node in node_list:
             node_db = self.db.query(Node).get(int(node['uid']))
             self.assertEquals(node['public_netmask'], '255.255.255.0')
-            self.assertEquals(node['internal_netmask'], '255.255.255.0')
-            self.assertEquals(node['storage_netmask'], '255.255.255.0')
+            self.assertEquals(node['internal_netmask'], '255.255.0.0')
+            self.assertEquals(node['storage_netmask'], '255.255.0.0')
             self.assertEquals(node['uid'], str(node_db.id))
             self.assertEquals(node['name'], 'node-%d' % node_db.id)
             self.assertEquals(node['fqdn'], 'node-%d.%s' %
@@ -135,29 +135,29 @@ class TestOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'attrs': {
                     'uid': node_uids[0],
                     'internal_address': '192.168.0.2',
-                    'public_address': '172.16.1.2',
-                    'storage_address': '192.168.1.2'}},
+                    'public_address': '172.16.0.2',
+                    'storage_address': '192.168.0.6'}},
             {
                 'roles': ['compute', 'cinder'],
                 'attrs': {
                     'uid': node_uids[1],
                     'internal_address': '192.168.0.3',
-                    'public_address': '172.16.1.3',
-                    'storage_address': '192.168.1.3'}},
+                    'public_address': '172.16.0.3',
+                    'storage_address': '192.168.0.7'}},
             {
                 'roles': ['compute'],
                 'attrs': {
                     'uid': node_uids[2],
                     'internal_address': '192.168.0.4',
-                    'public_address': '172.16.1.4',
-                    'storage_address': '192.168.1.4'}},
+                    'public_address': '172.16.0.4',
+                    'storage_address': '192.168.0.8'}},
             {
                 'roles': ['cinder'],
                 'attrs': {
                     'uid': node_uids[3],
                     'internal_address': '192.168.0.5',
-                    'public_address': '172.16.1.5',
-                    'storage_address': '192.168.1.5'}}]
+                    'public_address': '172.16.0.5',
+                    'storage_address': '192.168.0.9'}}]
 
         for expected in expected_list:
             attrs = expected['attrs']
@@ -313,8 +313,8 @@ class TestOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def test_get_common_attrs(self):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
-        self.assertEquals(attrs['management_vip'], '192.168.0.8')
-        self.assertEquals(attrs['public_vip'], '172.16.1.8')
+        self.assertEquals(attrs['management_vip'], '192.168.0.14')
+        self.assertEquals(attrs['public_vip'], '172.16.0.8')
 
         # last_contrller
         controllers = self.get_controllers(self.cluster.id)

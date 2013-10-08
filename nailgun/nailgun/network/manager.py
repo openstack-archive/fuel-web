@@ -26,13 +26,11 @@ import math
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
-from netaddr import IPSet
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 
 
 from nailgun.api.models import Cluster
-from nailgun.api.models import GlobalParameters
 from nailgun.api.models import IPAddr
 from nailgun.api.models import IPAddrRange
 from nailgun.api.models import Network
@@ -136,94 +134,32 @@ class NetworkManager(object):
         :raises: errors.OutOfVLANs, errors.OutOfIPs,
         errors.NoSuitableCIDR
         '''
-        used_nets = []
-        used_vlans = []
-
-        global_params = db().query(GlobalParameters).first()
 
         cluster_db = db().query(Cluster).get(cluster_id)
-
         networks_metadata = cluster_db.release.networks_metadata
-
-        admin_network_range = db().query(IPAddrRange).filter_by(
-            network_group_id=self.get_admin_network_group_id()
-        ).all()[0]
-
-        def _free_vlans():
-            free_vlans = set(
-                range(
-                    *global_params.parameters["vlan_range"]
-                )
-            ) - set(used_vlans)
-            if not free_vlans or len(free_vlans) < len(networks_metadata):
-                raise errors.OutOfVLANs()
-            return sorted(list(free_vlans))
-
-        public_vlan = _free_vlans()[0]
-        used_vlans.append(public_vlan)
         for network in networks_metadata:
-            free_vlans = _free_vlans()
-            vlan_start = public_vlan if network.get("use_public_vlan") \
-                else free_vlans[0]
-
-            logger.debug("Found free vlan: %s", vlan_start)
-            pool = network.get('pool')
-            if not pool:
-                raise errors.InvalidNetworkPool(
-                    u"Invalid pool '{0}' for network '{1}'".format(
-                        pool,
-                        network['name']
-                    )
-                )
-
-            nets_free_set = IPSet(pool) -\
-                IPSet(
-                    IPNetwork(global_params.parameters["net_exclude"])
-                ) -\
-                IPSet(
-                    IPRange(
-                        admin_network_range.first,
-                        admin_network_range.last
-                    )
-                ) -\
-                IPSet(used_nets)
-            if not nets_free_set:
-                raise errors.OutOfIPs()
-
-            free_cidrs = sorted(list(nets_free_set._cidrs))
-            new_net = None
-            for fcidr in free_cidrs:
-                for n in fcidr.subnet(24, count=1):
-                    new_net = n
-                    break
-                if new_net:
-                    break
-            if not new_net:
-                raise errors.NoSuitableCIDR()
-
             new_ip_range = IPAddrRange(
-                first=str(new_net[2]),
-                last=str(new_net[-2])
+                first=network["ip_range"][0],
+                last=network["ip_range"][1]
             )
 
             nw_group = NetworkGroup(
                 release=cluster_db.release.id,
                 name=network['name'],
-                cidr=str(new_net),
-                netmask=str(new_net.netmask),
-                gateway=str(new_net[1]),
+                cidr=network['cidr'],
+                netmask=network['netmask'],
+                gateway=network['gateway'],
                 cluster_id=cluster_id,
-                vlan_start=vlan_start,
-                amount=1
+                vlan_start=network['vlan_start'],
+                amount=1,
+                network_size=network['network_size']
+                if 'network_size' in network else 256
             )
             db().add(nw_group)
             db().commit()
             nw_group.ip_ranges.append(new_ip_range)
             db().commit()
             self.create_networks(nw_group)
-
-            used_vlans.append(vlan_start)
-            used_nets.append(str(new_net))
 
     def create_networks(self, nw_group):
         '''Method for creation of networks for network group.
@@ -271,7 +207,7 @@ class NetworkManager(object):
             net_db = Network(
                 release=nw_group.release,
                 name=nw_group.name,
-                cidr=str(subnets[n]),
+                cidr=nw_group.cidr,
                 vlan_id=vlan_id,
                 gateway=gateway,
                 network_group_id=nw_group.id)

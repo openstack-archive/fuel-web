@@ -415,7 +415,7 @@ class OrchestratorHASerializer(OrchestratorSerializer):
         node if it not set yet
         """
         sorted_nodes = sorted(
-            nodes, key=lambda node: node['uid'])
+            nodes, key=lambda node: int(node['uid']))
 
         primary_controller = cls.filter_by_roles(
             sorted_nodes, ['primary-controller'])
@@ -451,7 +451,7 @@ class OrchestratorHASerializer(OrchestratorSerializer):
             cluster.id, 'public')
 
         sorted_nodes = sorted(
-            common_attrs['nodes'], key=lambda node: node['uid'])
+            common_attrs['nodes'], key=lambda node: int(node['uid']))
 
         controller_nodes = cls.filter_by_roles(
             sorted_nodes, ['controller', 'primary-controller'])

@@ -15,7 +15,7 @@
 } %>
 
 <div data-network-id="<%- network.id %>" class="<%- networkName %>">
-  <% var shownAttributes = network.getAttributes() %>
+  <% var shownAttributes = network.getAttributes(net_provider) %>
   <% var attributes = _.sortBy(_.keys(network.attributes), function(attribute) {return _.indexOf(shownAttributes, attribute)}) %>
   <% _.each(attributes, function(attribute) { %>
     <div class="network-attribute">
@@ -55,7 +55,7 @@
           <div class="error"><span class="help-inline"></span></div>
         </label>
     <% } else if (attribute == 'vlan_start') { %>
-      <% if (networkName == 'fixed' && !vlanManager) { %>
+      <% if (net_provider == 'nova_network' && !vlanManager && networkName == 'fixed') { %>
         <div class="range-row-header mini <%= hidden %>">
           <div>Start</div><div>End</div>
         </div>
@@ -77,7 +77,7 @@
         <div class="networks-sub-title parameter-name">Use VLAN Tagging</div>
         <div class="range-row clearfix" style="height: 40px">
           <label class="parameter-box clearfix setting">
-            <div class="parameter-control" style="width: 106px">
+            <div class="parameter-control">
               <div class="custom-tumbler">
                 <input type="checkbox" class="use-vlan-tagging" <%= _.isNull(vlan) ? '' : 'checked' %> <%= isFloating || disabled %>>
                 <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
@@ -86,7 +86,7 @@
           </label>
           <label class="parameter-box clearfix setting">
             <div class="parameter-control <%- attribute %>" <%= _.isNull(vlan) ? 'style="display:none"' : '' %>>
-              <input type="text" value="<%- _.isNull(vlan) ? '' : vlan %>" name="<%- networkName %>-<%- attribute %>" class="input-small" <%= isFloating || disabled %>>
+              <input type="text" value="<%- _.isNull(vlan) ? '' : vlan %>" name="<%- networkName %>-<%- attribute %>" class="vlan-tagging" <%= isFloating || disabled %>>
             </div>
           </label>
           <div class="error"><span class="help-inline"></span></div>

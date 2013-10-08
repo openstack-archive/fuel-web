@@ -25,7 +25,9 @@ from shotgun.utils import is_local
 
 
 class CommandOut(object):
-    pass
+    stdout = None
+    return_code = None
+    stderr = None
 
 
 class Driver(object):
@@ -53,28 +55,38 @@ class Driver(object):
 
     def command(self, command):
         out = CommandOut()
-        if not self.local:
-            with fabric.api.settings(host_string=self.host):
-                logger.debug("Running remote command: "
-                             "host: %s command: %s", self.host, command)
-                output = fabric.api.run(command, pty=True)
-                out.stdout = output
-                out.return_code = output.return_code
-                out.stderr = output.stderr
-        else:
-            logger.debug("Running local command: %s", command)
-            out.return_code, out.stdout, out.stderr = execute(command)
+        try:
+            if not self.local:
+                with fabric.api.settings(host_string=self.host,
+                                         timeout=2, warn_only=True):
+                    logger.debug("Running remote command: "
+                                 "host: %s command: %s", self.host, command)
+                    output = fabric.api.run(command, pty=True)
+                    out.stdout = output
+                    out.return_code = output.return_code
+                    out.stderr = output.stderr
+            else:
+                logger.debug("Running local command: %s", command)
+                out.return_code, out.stdout, out.stderr = execute(command)
+        except Exception as e:
+            logger.error("Error occured: %s", str(e))
         return out
 
     def get(self, path, target_path):
-        if not self.local:
-            with fabric.api.settings(host_string=self.host):
-                logger.debug("Getting remote file: %s %s", path, target_path)
-                return fabric.api.get(path, target_path)
-        else:
-            logger.debug("Getting local file: cp -r %s %s", path, target_path)
-            execute("mkdir -p %s" % os.path.dirname(target_path))
-            return execute("cp -r %s %s" % (path, target_path))
+        try:
+            if not self.local:
+                with fabric.api.settings(host_string=self.host,
+                                         timeout=2, warn_only=True):
+                    logger.debug("Getting remote file: %s %s",
+                                 path, target_path)
+                    return fabric.api.get(path, target_path)
+            else:
+                logger.debug("Getting local file: cp -r %s %s",
+                             path, target_path)
+                execute("mkdir -p %s" % os.path.dirname(target_path))
+                return execute("cp -r %s %s" % (path, target_path))
+        except Exception as e:
+            logger.error("Error occured: %s", str(e))
 
 
 class File(Driver):

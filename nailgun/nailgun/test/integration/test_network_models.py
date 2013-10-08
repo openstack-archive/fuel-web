@@ -112,8 +112,8 @@ class TestNetworkModels(BaseIntegrationTest):
     def test_network_group_slices_cidr_for_networks(self):
         cluster = self.env.create_cluster(api=False)
         kw = {'release': cluster.release_id,
-              'cidr': '10.0.0.0/8',
-              'netmask': '255.0.0.0',
+              'cidr': '10.0.0.0/16',
+              'netmask': '255.255.0.0',
               'network_size': 128,
               'name': 'fixed',
               'vlan_start': 200,
@@ -130,7 +130,7 @@ class TestNetworkModels(BaseIntegrationTest):
         self.assertEquals(nets_db[0].cidr, '10.0.0.0/25')
         self.assertEquals(nets_db[1].cidr, '10.0.0.128/25')
         self.db.refresh(ng)
-        self.assertEquals(ng.cidr, '10.0.0.0/8')
+        self.assertEquals(ng.cidr, '10.0.0.0/16')
 
     def test_network_group_does_not_squeezes_base_cidr(self):
         cluster = self.env.create_cluster(api=False)

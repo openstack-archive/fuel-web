@@ -33,35 +33,44 @@
                 "nova_network": [
                     {
                         "name": "floating",
-                        "pool": ["172.16.0.0/12"],
-                        "use_public_vlan": true,
-                        "assign": false,
-                        "assign_vip": false
+                        "cidr": "172.16.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "172.16.0.1",
+                        "ip_range": ["172.16.0.128", "172.16.0.255"],
+                        "vlan_start": 100,
+                        "network_size": 128
                     },
                     {
                         "name": "public",
-                        "pool": ["172.16.0.0/12"],
-                        "use_public_vlan": true,
-                        "assign": true,
-                        "assign_vip": true
+                        "cidr": "172.16.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "172.16.0.1",
+                        "ip_range": ["172.16.0.2", "172.16.0.127"],
+                        "vlan_start": 100
                     },
                     {
                         "name": "management",
-                        "pool": ["192.168.0.0/16"],
-                        "assign": true,
-                        "assign_vip": true
+                        "cidr": "192.168.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "192.168.0.1",
+                        "ip_range": ["192.168.0.1", "192.168.0.255"],
+                        "vlan_start": 101
                     },
                     {
                         "name": "storage",
-                        "pool": ["192.168.0.0/16"],
-                        "assign": true,
-                        "assign_vip": false
+                        "cidr": "192.168.1.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "192.168.1.1",
+                        "ip_range": ["192.168.1.1", "192.168.1.255"],
+                        "vlan_start": 102
                     },
                     {
                         "name": "fixed",
-                        "pool": ["10.0.0.0/8"],
-                        "assign": false,
-                        "assign_vip": false
+                        "cidr": "10.0.0.0/16",
+                        "netmask": "255.255.0.0",
+                        "gateway": "10.0.0.1",
+                        "ip_range": ["10.0.0.1", "10.0.255.255"],
+                        "vlan_start": 103
                     }
                 ],
                 "neutron": {
@@ -102,114 +111,8 @@
                                 "metadata_proxy_shared_secret": ""
                             }
                         }
-                    }
-                }
-            },
-            "volumes_metadata": {
-                "volumes_roles_mapping": {
-                    "controller": [
-                        {"allocate_size": "min", "id": "os"},
-                        {"allocate_size": "all", "id": "image"}],
-                    "compute": [
-                        {"allocate_size": "min", "id": "os"},
-                        {"allocate_size": "all", "id": "vm"}],
-                    "ceph-osd": [
-                        {"allocate_size": "min", "id": "os"},
-                        {"allocate_size": "min", "id": "cephjournal"},
-                        {"allocate_size": "all", "id": "ceph"}],
-                    "cinder": [
-                        {"allocate_size": "min", "id": "os"},
-                        {"allocate_size": "all", "id": "cinder"}],
-                    "other": [
-                        {"allocate_size": "all", "id": "os"}]
-                },
-                "volumes": [
-                    {
-                        "id": "ceph",
-                        "type": "partition",
-                        "min_size": {"generator": "calc_min_ceph_size"},
-                        "label": "Ceph",
-                        "name": "Ceph",
-                        "mount": "none",
-                        "disk_label": "cephosd",
-                        "file_system": "xfs"
-                    },
-                    {
-                        "id": "cephjournal",
-                        "type": "partition",
-                        "min_size": {"generator": "calc_min_ceph_journal_size"},
-                        "name": "Ceph Journal",
-                        "label": "Ceph Journal",
-                        "mount": "none",
-                        "disk_label": "cephjournal",
-                        "file_system": "ext4"
-                    },
-                    {
-                        "id": "os",
-                        "type": "vg",
-                        "min_size": {"generator": "calc_min_os_size"},
-                        "label": "Base System",
-                        "volumes": [
-                            {
-                                "mount": "/",
-                                "type": "lv",
-                                "name": "root",
-                                "size": {"generator": "calc_total_root_vg"},
-                                "file_system": "ext4"
-                            },
-                            {
-                                "mount": "swap",
-                                "type": "lv",
-                                "name": "swap",
-                                "size": {"generator": "calc_swap_size"},
-                                "file_system": "swap"
-                            }
-                        ]
-                    },
-                    {
-                        "id": "vm",
-                        "type": "vg",
-                        "min_size": {"generator": "calc_min_vm_size"},
-                        "label": "Virtual Storage",
-                        "volumes": [
-                            {
-                                "mount": "{{settings.NOVA_STATE_PATH}}",
-                                "type": "lv",
-                                "name": "nova",
-                                "size": {
-                                    "generator": "calc_total_vg",
-                                    "generator_args": ["vm"]
-                                },
-                                "file_system": "xfs"
-                            }
-                        ]
-                    },
-                    {
-                        "id": "image",
-                        "type": "vg",
-                        "min_size": {"generator": "calc_min_glance_size"},
-                        "label": "Image Storage",
-                        "volumes": [
-                            {
-                                "mount": "/var/lib/glance",
-                                "type": "lv",
-                                "name": "glance",
-                                "size": {
-                                    "generator": "calc_total_vg",
-                                    "generator_args": ["image"]
-                                },
-                                "file_system": "xfs"
-                            }
-                        ]
-                    },
-                    {
-                        "id": "cinder",
-                        "type": "vg",
-                        "label": "Cinder",
-                        "min_size": {"generator": "calc_min_cinder_size"},
-                        "volumes": []
-                    }
-                ]
+                    }            
+                }                                
             },
             "attributes_metadata": {
                 "editable": {
@@ -484,6 +387,112 @@
                         }
                     }
                 }
+            },
+            "volumes_metadata": {
+                "volumes_roles_mapping": {
+                    "controller": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "image"}],
+                    "compute": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "vm"}],
+                    "ceph-osd": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "min", "id": "cephjournal"},
+                        {"allocate_size": "all", "id": "ceph"}],
+                    "cinder": [
+                        {"allocate_size": "min", "id": "os"},
+                        {"allocate_size": "all", "id": "cinder"}],
+                    "other": [
+                        {"allocate_size": "all", "id": "os"}]
+                },
+                "volumes": [
+                    {
+                        "id": "ceph",
+                        "type": "partition",
+                        "min_size": {"generator": "calc_min_ceph_size"},
+                        "label": "Ceph",
+                        "name": "Ceph",
+                        "mount": "none",
+                        "disk_label": "cephosd",
+                        "file_system": "xfs"
+                    },
+                    {
+                        "id": "cephjournal",
+                        "type": "partition",
+                        "min_size": {"generator": "calc_min_ceph_journal_size"},
+                        "name": "Ceph Journal",
+                        "label": "Ceph Journal",
+                        "mount": "none",
+                        "disk_label": "cephjournal",
+                        "file_system": "ext4"
+                    },
+                    {
+                        "id": "os",
+                        "type": "vg",
+                        "min_size": {"generator": "calc_min_os_size"},
+                        "label": "Base System",
+                        "volumes": [
+                            {
+                                "mount": "/",
+                                "type": "lv",
+                                "name": "root",
+                                "size": {"generator": "calc_total_root_vg"},
+                                "file_system": "ext4"
+                            },
+                            {
+                                "mount": "swap",
+                                "type": "lv",
+                                "name": "swap",
+                                "size": {"generator": "calc_swap_size"},
+                                "file_system": "swap"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "vm",
+                        "type": "vg",
+                        "min_size": {"generator": "calc_min_vm_size"},
+                        "label": "Virtual Storage",
+                        "volumes": [
+                            {
+                                "mount": "{{settings.NOVA_STATE_PATH}}",
+                                "type": "lv",
+                                "name": "nova",
+                                "size": {
+                                    "generator": "calc_total_vg",
+                                    "generator_args": ["vm"]
+                                },
+                                "file_system": "xfs"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "image",
+                        "type": "vg",
+                        "min_size": {"generator": "calc_min_glance_size"},
+                        "label": "Image Storage",
+                        "volumes": [
+                            {
+                                "mount": "/var/lib/glance",
+                                "type": "lv",
+                                "name": "glance",
+                                "size": {
+                                    "generator": "calc_total_vg",
+                                    "generator_args": ["image"]
+                                },
+                                "file_system": "xfs"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "cinder",
+                        "type": "vg",
+                        "label": "Cinder",
+                        "min_size": {"generator": "calc_min_cinder_size"},
+                        "volumes": []
+                    }
+                ]
             }
         }
     },
@@ -517,35 +526,44 @@
                 "nova_network": [
                     {
                         "name": "floating",
-                        "pool": ["172.16.0.0/12"],
-                        "use_public_vlan": true,
-                        "assign": false,
-                        "assign_vip": false
+                        "cidr": "172.16.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "172.16.0.1",
+                        "ip_range": ["172.16.0.128", "172.16.0.255"],
+                        "vlan_start": 100,
+                        "network_size": 128
                     },
                     {
                         "name": "public",
-                        "pool": ["172.16.0.0/12"],
-                        "use_public_vlan": true,
-                        "assign": true,
-                        "assign_vip": true
+                        "cidr": "172.16.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "172.16.0.1",
+                        "ip_range": ["172.16.0.2", "172.16.0.127"],
+                        "vlan_start": 100
                     },
                     {
                         "name": "management",
-                        "pool": ["192.168.0.0/16"],
-                        "assign": true,
-                        "assign_vip": true
+                        "cidr": "192.168.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "192.168.0.1",
+                        "ip_range": ["192.168.0.1", "192.168.0.255"],
+                        "vlan_start": 101
                     },
                     {
                         "name": "storage",
-                        "pool": ["192.168.0.0/16"],
-                        "assign": true,
-                        "assign_vip": false
+                        "cidr": "192.168.1.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "192.168.1.1",
+                        "ip_range": ["192.168.1.1", "192.168.1.255"],
+                        "vlan_start": 102
                     },
                     {
                         "name": "fixed",
-                        "pool": ["10.0.0.0/8"],
-                        "assign": false,
-                        "assign_vip": false
+                        "cidr": "10.0.0.0/16",
+                        "netmask": "255.255.0.0",
+                        "gateway": "10.0.0.1",
+                        "ip_range": ["10.0.0.1", "10.0.255.255"],
+                        "vlan_start": 103
                     }
                 ],
                 "neutron": {
@@ -586,8 +604,8 @@
                                 "metadata_proxy_shared_secret": ""
                             }
                         }
-                    }
-                }
+                    }            
+                }                
             },
             "volumes_metadata": {
                 "volumes_roles_mapping": {
@@ -931,35 +949,45 @@
                 "nova_network": [
                     {
                         "name": "floating",
-                        "pool": ["172.16.0.0/12"],
-                        "use_public_vlan": true,
-                        "assign": false,
-                        "assign_vip": false
+                        "cidr": "172.16.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "172.16.0.1",
+                        "ip_range": ["172.16.0.128", "172.16.0.255"],
+                        "vlan_start": 100,
+                        "network_size": 128
                     },
                     {
                         "name": "public",
-                        "pool": ["172.16.0.0/12"],
-                        "use_public_vlan": true,
-                        "assign": true,
-                        "assign_vip": true
+                        "cidr": "172.16.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "172.16.0.1",
+                        "ip_range": ["172.16.0.2", "172.16.0.127"],
+                        "vlan_start": 100
                     },
                     {
                         "name": "management",
-                        "pool": ["192.168.0.0/16"],
-                        "assign": true,
-                        "assign_vip": true
+                        "cidr": "192.168.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "192.168.0.1",
+                        "ip_range": ["192.168.0.2", "192.168.0.255"],
+                        "vlan_start": 101
                     },
                     {
                         "name": "storage",
-                        "pool": ["192.168.0.0/16"],
-                        "assign": true,
-                        "assign_vip": false
+                        "cidr": "192.168.1.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "192.168.1.1",
+                        "ip_range": ["192.168.1.1", "192.168.1.255"],
+                        "vlan_start": 102
                     },
                     {
                         "name": "fixed",
-                        "pool": ["10.0.0.0/8"],
-                        "assign": false,
-                        "assign_vip": false
+                        "cidr": "10.0.0.0/16",
+                        "netmask": "255.255.0.0",
+                        "gateway": "10.0.0.1",
+                        "ip_range": ["10.0.0.1", "10.0.255.255"],
+                        "vlan_start": 103,
+                        "network_size": 65536
                     }
                 ],
                 "neutron": {

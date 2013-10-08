@@ -13,14 +13,15 @@ master node installation ISO, and generate documentation.
 Getting the Source Code
 -----------------------
 
-Clone the Mirantis FuelWeb repository from GitHub::
+Clone the Mirantis Fuel repositories from GitHub::
 
-    git clone git@github.com:Mirantis/fuelweb.git
-    cd fuelweb
-    git submodule init
-    git submodule update
+    git clone https://github.com/stackforge/fuel-main
+    git clone https://github.com/stackforge/fuel-web
+    git clone https://github.com/stackforge/fuel-astute
+    git clone https://github.com/stackforge/fuel-ostf
+    git clone https://github.com/Mirantis/fuel
 
-All sections below assume you start in your clone of this repository.
+All sections below assume you start in your clone of the fuel-main repository.
 
 Setup for Nailgun Unit Tests
 ----------------------------
@@ -151,14 +152,14 @@ Building the Fuel ISO
 
 #. If you haven't already done so, get the source code::
 
-    git clone https://github.com/Mirantis/fuelweb.git
-    cd fuelweb
-    git submodule init
-    git submodule update
+    git clone https://github.com/stackforge/fuel-main
 
 #. Now you can build the Fuel ISO image::
 
     make iso
+
+#. To build an ISO image from custom branches of fuel, astute, nailgun
+   or ostf-tests, edit the "Repos and versions" section of config.mk.
 
 Running the FuelWeb Integration Test
 ------------------------------------
@@ -198,7 +199,7 @@ Running the FuelWeb Integration Test
 
 #. Run the integration test::
 
-    cd fuelweb
+    cd fuel-main
     make test-integration
 
 #. To save time, you can execute individual test cases from the
@@ -206,7 +207,7 @@ Running the FuelWeb Integration Test
    is that it takes you from nothing to a Fuel master with 9 blank nodes
    connected to 3 virtual networks)::
 
-    cd fuelweb
+    cd fuel-main
     export ENV_NAME=fuelweb
     export PUBLIC_FORWARD=nat
     export ISO_PATH=`pwd`/build/iso/fuelweb-centos-6.4-x86_64.iso

@@ -28,7 +28,7 @@ import netifaces
 import subprocess
 from fuelmenu.settings import *
 from fuelmenu.common import network, puppet, replace, nailyfactersettings, \
-    dialog
+    dialog, timeout
 from fuelmenu.common.urwidwrapper import *
 log = logging.getLogger('fuelmenu.pxe_setup')
 blank = urwid.Divider()
@@ -136,9 +136,15 @@ Please wait...")
             #                '52:54:00:12:35:02', 'server_ip': '192.168.200.2',
             #                   'dport': 67, 'message': 'offer',
             #                   'gateway': '0.0.0.0'}]
-            with dhcp_checker.utils.IfaceState(self.activeiface) as iface:
-                dhcp_server_data = dhcp_checker.api.check_dhcp_on_eth(
-                    iface, timeout=5)
+            try:
+                with dhcp_checker.utils.IfaceState(self.activeiface) as iface:
+                    dhcptimeout=5
+                    dhcp_server_data = timeout.wait_for_true(
+                        dhcp_checker.api.check_dhcp_on_eth,
+                        [iface, dhcptimeout], timeout=dhcptimeout)
+            except timeout.TimeoutError:
+                log.debug("DHCP scan timed out")
+                dhcp_server_data=[]
 
             num_dhcp = len(dhcp_server_data)
             if num_dhcp == 0:
@@ -475,7 +481,7 @@ interface first.")
             self.gateway)
         try:
             half = int(len(net_ip_list)/2)
-            static_pool = list(net_ip_list[:half])
+            static_pool = list(net_ip_list[1:half])
             dhcp_pool = list(net_ip_list[half:])
             static_start = str(static_pool[0])
             static_end = str(static_pool[-1])

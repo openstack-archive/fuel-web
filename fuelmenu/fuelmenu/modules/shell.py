@@ -32,7 +32,6 @@ class shell():
         #self.screen = self.screenUI()
 
     def check(self, args):
-        #TODO: Ensure all params are filled out and sensible
         return True
 
     def start_shell(self, args):

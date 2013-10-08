@@ -21,7 +21,6 @@ import netifaces
 import os
 import traceback
 
-
 from sqlalchemy import or_
 
 from nailgun.api.models import IPAddr

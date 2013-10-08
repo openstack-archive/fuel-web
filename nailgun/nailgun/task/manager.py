@@ -55,6 +55,17 @@ class TaskManager(object):
                 msg=err
             )
 
+    def check_running_task(self, task_name):
+        current_tasks = db().query(Task).filter_by(
+            name=task_name
+        )
+        for task in current_tasks:
+            if task.status == "running":
+                raise errors.DumpRunning()
+            elif task.status in ("ready", "error"):
+                db().delete(task)
+                db().commit()
+
 
 class DeploymentTaskManager(TaskManager):
 
@@ -537,15 +548,7 @@ class RedHatSetupTaskManager(TaskManager):
 class DumpTaskManager(TaskManager):
     def execute(self):
         logger.info("Trying to start dump_environment task")
-        current_tasks = db().query(Task).filter_by(
-            name="dump"
-        )
-        for task in current_tasks:
-            if task.status == "running":
-                raise errors.DumpRunning()
-            elif task.status in ("ready", "error"):
-                db().delete(task)
-                db().commit()
+        self.check_running_task('dump')
 
         task = Task(name="dump")
         db().add(task)
@@ -554,4 +557,18 @@ class DumpTaskManager(TaskManager):
             task,
             tasks.DumpTask,
         )
+        return task
+
+
+class GenerateCapacityLogTaskManager(TaskManager):
+    def execute(self):
+        logger.info("Trying to start capacity_log task")
+        self.check_running_task('capacity_log')
+
+        task = Task(name='capacity_log')
+        db().add(task)
+        db().commit()
+        self._call_silently(
+            task,
+            tasks.GenerateCapacityLogTask)
         return task

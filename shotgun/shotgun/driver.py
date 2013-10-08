@@ -68,6 +68,7 @@ class Driver(object):
             else:
                 logger.debug("Running local command: %s", command)
                 out.return_code, out.stdout, out.stderr = execute(command)
+            logger.debug("Stderr: %s", out.stderr)
         except Exception as e:
             logger.error("Error occured: %s", str(e))
         return out

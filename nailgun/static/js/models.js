@@ -332,6 +332,11 @@ define(['utils'], function(utils) {
         model: models.Interface,
         comparator: function(ifc) {
             return ifc.get('name');
+        },
+        getAssignedNetworks: function() {
+            return this.map(function(ifc) {
+                return ifc.get('assigned_networks').toJSON();
+            }, this);
         }
     });
 

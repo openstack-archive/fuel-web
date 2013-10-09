@@ -100,6 +100,12 @@ define(['require'], function(require) {
         },
         isNaturalNumber: function(n) {
             return !_.isNaN(n) && n > 0 && n % 1 === 0;
+        },
+        sortRoles: function(roles) {
+            var preferredOrder = ['controller', 'compute', 'cinder', 'ceph-osd'];
+            return roles.sort(function(a, b) {
+                return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
+            });
         }
     };
 

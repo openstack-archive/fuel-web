@@ -354,7 +354,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     nodes.each(function(node) {
                         if (!_.contains(node.get('roles'), role)) {
                             var pending_roles = $(input).is(':checked') ? _.uniq(_.union(node.get('pending_roles'), role)) : _.difference(node.get('pending_roles'), role);
-                            node.set({pending_roles: pending_roles});
+                            node.set({pending_roles: utils.sortRoles(pending_roles)});
                         }
                     }, this);
                 }
@@ -449,7 +449,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             if (attribute == 'roles') {
                 var rolesMetadata = this.screen.tab.model.get('release').get('roles_metadata');
-                this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
+                this.nodeGroups = this.nodes.groupBy(function(node) {
+                    return  _.map(utils.sortRoles(_.union(node.get('roles'), node.get('pending_roles'))), function(role) {return rolesMetadata[role].name;}).join(' + ');
+                });
             } else if (attribute == 'hardware') {
                 this.nodeGroups = this.nodes.groupBy(function(node) {return 'HDD: ' + utils.showDiskSize(node.resource('hdd')) + ' RAM: ' + utils.showMemorySize(node.resource('ram'));});
             } else {
@@ -659,12 +661,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             app.navigate('#cluster/' + this.screen.tab.model.id + '/logs/' + utils.serializeTabOptions(options), {trigger: true});
         },
         updateRoles: function() {
-            var roles = this.node.get('pending_roles') || [];
-            var preferredOrder = ['controller', 'compute', 'cinder'];
-            roles.sort(function(a, b) {
-                return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
-            });
-            this.node.set({pending_roles: roles}, {silent: true});
             this.$('.roles').html(this.nodeRolesTemplate({node: this.node}));
         },
         uncheckNode: function() {

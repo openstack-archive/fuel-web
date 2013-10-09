@@ -273,7 +273,7 @@ class FuelSetup(object):
                         log.info("Saving module: %s" % modulename)
                     else:
                         return False, modulename
-                except AttributeError e:
+                except AttributeError as e:
                     log.debug("Module %s does not have save function: %s"
                              % (modulename, e))
         return True, None

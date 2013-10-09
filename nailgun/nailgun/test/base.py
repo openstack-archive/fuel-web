@@ -26,6 +26,7 @@ from itertools import izip
 import json
 import logging
 import mock
+from netaddr import IPNetwork
 import os
 from random import randint
 import re
@@ -316,6 +317,7 @@ class Environment(object):
                     'max_speed': 1000
                 }
             )
+        self.set_admin_ip_for_for_single_interface(nics)
         return {'interfaces': nics}
 
     def _set_interfaces_if_not_set_in_meta(self, node_id, meta):
@@ -351,6 +353,23 @@ class Environment(object):
             interfaces.append(interface)
 
         return interfaces
+
+    def set_admin_ip_for_for_single_interface(self, interfaces):
+        """Set admin ip for single interface if it not setted yet."""
+        ips = [interface.get('ip') for interface in interfaces]
+        admin_ips = [
+            ip for ip in ips
+            if self.network_manager.is_ip_belongs_to_admin_subnet(ip)]
+
+        if not admin_ips:
+            admin_cidr = self.network_manager.get_admin_network().cidr
+            interfaces[0]['ip'] = str(IPNetwork(admin_cidr).ip)
+
+    def set_interfaces_in_meta(self, meta, interfaces):
+        """Set interfaces in metadata."""
+        meta['interfaces'] = interfaces
+        self.set_admin_ip_for_for_single_interface(meta['interfaces'])
+        return meta['interfaces']
 
     def generate_ui_networks(self, cluster_id):
         start_id = self.db.query(NetworkGroup.id).order_by(

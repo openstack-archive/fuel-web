@@ -129,7 +129,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var nodes = new models.Nodes(this.nodes.filter(function(node) {return _.contains(nodeIds, node.id);}));
             var noDisksConflict = true;
             nodes.each(function(node) {
-                noDisksConflict = noDisksConflict && _.isEqual(nodes.at(0).resource('disks'), node.resource('disks'));
+                var noRolesConflict = !_.difference(_.union(nodes.at(0).get('roles'), nodes.at(0).get('pending_roles')), _.union(node.get('roles'), node.get('pending_roles'))).length;
+                noDisksConflict = noDisksConflict && noRolesConflict && _.isEqual(nodes.at(0).resource('disks'), node.resource('disks'));
             });
             this.$('.btn-configure-disks').toggleClass('conflict', !noDisksConflict);
             this.$('.btn-configure-interfaces').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);

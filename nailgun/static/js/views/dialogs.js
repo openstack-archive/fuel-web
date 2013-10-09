@@ -231,7 +231,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         template: _.template(clusterNameAndReleasePaneTemplate),
         events: {
             'keydown input': 'onInputKeydown',
-            'change select[name=release]': 'updateReleaseParameters'
+            'change select[name=release]': 'onReleaseChange'
         },
         processPaneData: function() {
             var success = this.createCluster();
@@ -244,8 +244,12 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     this.updateReleaseParameters();
                 }
             }
-            if (success) {
-                this.wizard.findPane(clusterWizardPanes.ClusterStoragePane).render();
+            if (success && (!this.previousRelease || this.previousRelease.id != this.release.id)) {
+                this.previousRelease = this.release;
+                var releaseDependentPanes = _.filter(this.wizard.subViews, function(pane) {
+                    return pane instanceof views.WizardPane && pane.releaseDependent;
+                });
+                _.invoke(releaseDependentPanes, 'render');
             }
             var deferred = new $.Deferred();
             return deferred[success ? 'resolve' : 'reject']();
@@ -271,6 +275,12 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 e.preventDefault();
                 this.wizard.nextPane();
             }
+        },
+        onReleaseChange: function() {
+            this.updateReleaseParameters();
+            this.$el.detach();
+            this.wizard.maxAvaialblePaneIndex = 0;
+            this.wizard.render();
         },
         updateReleaseParameters: function() {
             if (this.releases.length) {
@@ -362,6 +372,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterNetworkPane = views.WizardPane.extend({
         title: 'Network',
+        releaseDependent: true,
         template: _.template(clusterNetworkPaneTemplate),
         beforeClusterCreation: function(cluster) {
             var manager = this.$('input[name=manager]:checked').val();
@@ -378,7 +389,12 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             return (new $.Deferred()).resolve();
         },
         render: function() {
-            this.$el.html(this.template());
+            var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
+            var disabled = !release || release.get('operating_system') == 'RHEL'; // no Neutron for RHOS for now
+            this.$el.html(this.template({disabled: disabled, release: release}));
+            if (disabled) {
+                this.$('input[value^=neutron]').prop('disabled', true);
+            }
             this.$('input[name=manager]:first').prop('checked', true);
             return this;
         }
@@ -386,6 +402,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterStoragePane = views.WizardPane.extend({
         title: 'Storage Backends',
+        releaseDependent: true,
         template: _.template(clusterStoragePaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {

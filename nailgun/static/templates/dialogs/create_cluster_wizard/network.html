@@ -1,3 +1,6 @@
+<% if (disabled && release) { %>
+  <div class="alert" style="margin:0">Neutron is not supported in <%- release.get('name') %></div>
+<% } %>
 <form class="form-horizontal" onsubmit="return false">
   <fieldset>
     <div class="control-group">

@@ -734,7 +734,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
         hasChanges: function() {
-            return !_.isEqual(this.disks.toJSON(), this.initialData);
+            var noChanges = true;
+            this.nodes.each(function(node) {
+                noChanges = noChanges && _.isEqual(this.disks.toJSON(), node.disks.toJSON());
+            }, this);
+            return !noChanges;
         },
         hasValidationErrors: function() {
             var result = false;
@@ -758,7 +762,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 .fail(_.bind(function() {utils.showErrorDialog({title: 'Disks configuration'});}, this));
         },
         revertChanges: function() {
-            this.disks.reset(_.cloneDeep(this.initialData), {parse: true});
+            this.disks.reset(_.cloneDeep(this.nodes.at(0).disks.toJSON()), {parse: true});
         },
         applyChanges: function() {
             if (this.hasValidationErrors()) {
@@ -770,7 +774,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this))
                 .done(_.bind(function() {
                     this.model.fetch();
-                    this.initialData = _.cloneDeep(this.disks.toJSON());
+                    this.nodes.each(function(node) {
+                        node.disks = new models.Disks(_.cloneDeep(this.disks.toJSON()), {parse: true});
+                    }, this);
                     this.render();
                 }, this))
                 .fail(_.bind(function() {
@@ -799,18 +805,28 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
                 this.model.on('change:status', this.revertChanges, this);
-                this.volumes = new models.Volumes([], {url: _.result(this.nodes.at(0), 'url') + '/volumes'});
-                this.disks = new models.Disks([], {url: _.result(this.nodes.at(0), 'url') + '/disks'});
-                this.loading = $.when(this.volumes.fetch(), this.disks.fetch())
-                    .done(_.bind(function() {
-                        this.initialData = _.cloneDeep(this.disks.toJSON());
-                        this.mapVolumesColors();
-                        this.render();
-                        this.disks.on('sync', this.render, this);
-                        this.disks.on('reset', this.render, this);
-                        this.disks.on('error', this.checkForChanges, this);
-                    }, this))
-                    .fail(_.bind(this.goToNodeList, this));
+                var complete = _.after(this.nodes.length, _.bind(function() {
+                    this.volumes = new models.Volumes();
+                    this.loading = this.volumes.fetch({url: _.result(this.nodes.at(0), 'url') + '/volumes'})
+                        .done(_.bind(function() {
+                            this.mapVolumesColors();
+                            this.render();
+                            this.disks.on('sync', this.render, this);
+                            this.disks.on('reset', this.render, this);
+                            this.disks.on('error', this.checkForChanges, this);
+                        }, this))
+                        .fail(_.bind(this.goToNodeList, this));
+                }, this));
+                this.nodes.each(function(node) {
+                    node.disks = new models.Disks();
+                    node.disks.fetch({url: _.result(node, 'url') + '/disks'})
+                        .done(_.bind(function() {
+                            if (node.id == this.nodes.at(0).id) {
+                                this.disks = new models.Disks(_.cloneDeep(node.disks.toJSON()), {parse: true});
+                            }
+                        }, this))
+                        .always(complete);
+                }, this);
             } else {
                 this.goToNodeList();
             }

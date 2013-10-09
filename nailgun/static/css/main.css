@@ -3562,10 +3562,6 @@ hr.slim {
   font-size: 10px;
 }
 
-.changes-locked .logical-network-item {
-  cursor: not-allowed;
-}
-
 .network-help-message {
   font-size: 16px;
   color: #555555;

@@ -55,6 +55,7 @@ class Loader(object):
             clsobj = getattr(imported, module, None)
             modobj = clsobj(self.parent)
 
+
             # add the module to the list
             if modobj.visible:
                 self.modlist.append(modobj)
@@ -234,7 +235,13 @@ class FuelSetup(object):
 
         self.mainloop = urwid.MainLoop(self.frame, palette, self.screen,
                                        unhandled_input=unhandled)
+        #Initialize each module completely before any events are handled
+        for child in reversed(self.choices):
+           self.setChildScreen(name=choice)
+
         self.mainloop.run()
+
+
 
     def exit_program(self, button):
         #return kernel logging to normal
@@ -266,9 +273,9 @@ class FuelSetup(object):
                         log.info("Saving module: %s" % modulename)
                     else:
                         return False, modulename
-                except AttributeError:
-                    log.info("Module %s does not have save function"
-                             % (modulename))
+                except AttributeError e:
+                    log.debug("Module %s does not have save function: %s"
+                             % (modulename, e))
         return True, None
 
 

@@ -103,6 +103,9 @@ class cobblerconf(urwid.WidgetWrap):
         self.parent.footer.set_text("Checking data...")
         self.parent.refreshScreen()
 
+        #Refresh networking to make sure IP matches
+        self.getNetwork()
+
         #Get field information
         responses = dict()
 

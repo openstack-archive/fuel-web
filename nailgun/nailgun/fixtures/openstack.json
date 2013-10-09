@@ -346,17 +346,10 @@
                             "weight": 30,
                             "type": "checkbox"
                         },
-                        "objects_swift": {
-                            "value": false,
-                            "label": "Swift for objects",
-                            "description": "Requires HA mode",
-                            "weight": 40,
-                            "type": "checkbox"
-                        },
                         "objects_ceph": {
                             "value": false,
                             "label": "Ceph rados-gw for objects",
-                            "description": "Requires at least two Ceph-OSD nodes",
+                            "description": "Requires at least two Ceph-OSD nodes, incompatible with Swift",
                             "weight": 40,
                             "type": "checkbox"
                         }
@@ -733,13 +726,6 @@
                             "description": "Requires at least one Cinder node",
                             "weight": 10,
                             "type": "checkbox"
-                        },
-                        "objects_swift": {
-                            "value": false,
-                            "label": "Swift for objects",
-                            "description": "Requires HA mode",
-                            "weight": 40,
-                            "type": "checkbox"
                         }
                     }
                 },
@@ -757,7 +743,6 @@
                         "volumes_lvm": true,
                         "volumes_ceph": false,
                         "images_ceph": false,
-                        "objects_swift": true,
                         "objects_ceph": false
                     },
                     "mysql": {
@@ -1175,17 +1160,10 @@
                             "weight": 30,
                             "type": "checkbox"
                         },
-                        "objects_swift": {
-                            "value": false,
-                            "label": "Swift for objects",
-                            "description": "Requires HA mode",
-                            "weight": 40,
-                            "type": "checkbox"
-                        },
                         "objects_ceph": {
                             "value": false,
                             "label": "Ceph rados-gw for objects",
-                            "description": "Requires at least two Ceph-OSD nodes",
+                            "description": "Requires at least two Ceph-OSD nodes, incompatible with Swift",
                             "weight": 40,
                             "type": "checkbox"
                         }

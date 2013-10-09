@@ -143,6 +143,14 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             setting.value = setting.type == 'checkbox' ? target.is(':checked') : target.val();
             if (settingName == 'murano') {
                 this.tab.settings[settingGroup].heat.value = setting.value;
+            } else if (this.tab.model.get('mode') != 'multinode') {
+                if (settingName == 'objects_ceph' && setting.value) {
+                    this.tab.settings[settingGroup].images_ceph.value = setting.value;
+                    this.render();
+                } else if (settingName == 'images_ceph' && !setting.value) {
+                    this.tab.settings[settingGroup].objects_ceph.value = setting.value;
+                    this.render();
+                }
             }
             this.tab.checkForChanges();
         },

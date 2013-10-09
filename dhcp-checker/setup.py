@@ -36,7 +36,7 @@ setuptools.setup(
         "Topic :: Software Development :: Testing"
     ],
     install_requires=[
-        'cliff-tablib==1.1',
+        'cliff-tablib',
     ],
     include_package_data=True,
     packages=setuptools.find_packages(),

@@ -802,10 +802,15 @@ class NetworkManager(object):
         db().commit()
         return node_db.id
 
-    def update_interfaces_info(self, node_id):
-        node = db().query(Node).get(node_id)
-        if "interfaces" not in node.meta:
-            raise Exception("No interfaces metadata specified for node")
+    def update_interfaces_info(self, node):
+        """Update interfaces in case of correct interfaces
+        in meta field in node's model
+        """
+        try:
+            self.__check_interfaces_correctness(node)
+        except errors.InvalidInterfacesInfo as e:
+            logger.warn("Cannot update interfaces: %s" % str(e))
+            return
 
         for interface in node.meta["interfaces"]:
             interface_db = db().query(NodeNICInterface).filter_by(
@@ -816,6 +821,41 @@ class NetworkManager(object):
                 self.__add_new_interface(node, interface)
 
         self.__delete_not_found_interfaces(node, node.meta["interfaces"])
+
+    def __check_interfaces_correctness(self, node):
+        """Check that
+        * interface list in meta field is not empty
+        * at least one interface has ip which
+          includes to admin subnet. It can happens in
+          case if agent was running, but network
+          interfaces were not configured yet.
+        """
+        if not node.meta:
+            raise errors.InvalidInterfacesInfo(
+                u'Meta field for node "%s" is empty' % node.full_name)
+        if not node.meta.get('interfaces'):
+            raise errors.InvalidInterfacesInfo(
+                u'Cannot find interfaces field "%s" in meta' % node.full_name)
+
+        interfaces = node.meta['interfaces']
+        admin_interface = None
+        for interface in interfaces:
+            ip_addr = interface.get('ip')
+            if self.is_ip_belongs_to_admin_subnet(ip_addr):
+                # Interface was founded
+                admin_interface = interface
+                break
+
+        if not admin_interface:
+            raise errors.InvalidInterfacesInfo(
+                u'Cannot find interface with ip which '
+                'includes to admin subnet "%s"' % node.full_name)
+
+    def is_ip_belongs_to_admin_subnet(self, ip_addr):
+        admin_cidr = self.get_admin_network().cidr
+        if ip_addr and IPAddress(ip_addr) in IPNetwork(admin_cidr):
+            return True
+        return False
 
     def __add_new_interface(self, node, interface_attrs):
         interface = NodeNICInterface()

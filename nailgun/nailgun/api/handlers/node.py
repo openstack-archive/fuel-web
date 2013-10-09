@@ -271,7 +271,7 @@ class NodeCollectionHandler(JSONHandler):
         network_manager = NetworkManager()
         # Add interfaces for node from 'meta'.
         if node.meta and node.meta.get('interfaces'):
-            network_manager.update_interfaces_info(node.id)
+            network_manager.update_interfaces_info(node)
 
         if node.cluster_id:
             network_manager.allow_network_assignment_to_all_interfaces(node)
@@ -417,9 +417,7 @@ class NodeCollectionHandler(JSONHandler):
                 db().commit()
             if is_agent:
                 # Update node's NICs.
-                if node.meta and 'interfaces' in node.meta:
-                    # we won't update interfaces if data is invalid
-                    network_manager.update_interfaces_info(node.id)
+                network_manager.update_interfaces_info(node)
 
             nodes_updated.append(node)
             db().commit()

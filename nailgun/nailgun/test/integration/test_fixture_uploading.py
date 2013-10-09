@@ -24,7 +24,7 @@ from nailgun.test.base import BaseIntegrationTest
 
 class TestFixture(BaseIntegrationTest):
 
-    fixtures = ['sample_environment']
+    fixtures = ['admin_network', 'sample_environment']
 
     def test_upload_working(self):
         check = self.db.query(Node).all()

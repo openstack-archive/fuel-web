@@ -288,6 +288,20 @@
                             "description": "Public key(s) to include in authorized_keys on deployed nodes",
                             "weight": 60,
                             "type": "text"
+                        },
+                        "primary_dns": {
+                            "value": "8.8.8.8",
+                            "label": "Primary DNS",
+                            "description": "",
+                            "weight": 70,
+                            "type": "text"
+                        },
+                        "secondary_dns": {
+                            "value": "8.8.4.4",
+                            "label": "Secondary DNS",
+                            "description": "",
+                            "weight": 80,
+                            "type": "text"
                         }
                     },
                     "syslog": {
@@ -689,6 +703,20 @@
                             "label": "Public Key",
                             "description": "Public key(s) to include in authorized_keys on deployed nodes",
                             "weight": 60,
+                            "type": "text"
+                        },
+                        "primary_dns": {
+                            "value": "8.8.8.8",
+                            "label": "Primary DNS",
+                            "description": "",
+                            "weight": 70,
+                            "type": "text"
+                        },
+                        "secondary_dns": {
+                            "value": "8.8.4.4",
+                            "label": "Secondary DNS",
+                            "description": "",
+                            "weight": 80,
                             "type": "text"
                         }
                     },
@@ -1116,6 +1144,20 @@
                             "label": "Public Key",
                             "description": "Public key(s) to include in authorized_keys on deployed nodes",
                             "weight": 60,
+                            "type": "text"
+                        },
+                        "primary_dns": {
+                            "value": "8.8.8.8",
+                            "label": "Primary DNS",
+                            "description": "",
+                            "weight": 70,
+                            "type": "text"
+                        },
+                        "secondary_dns": {
+                            "value": "8.8.4.4",
+                            "label": "Secondary DNS",
+                            "description": "",
+                            "weight": 80,
                             "type": "text"
                         }
                     },

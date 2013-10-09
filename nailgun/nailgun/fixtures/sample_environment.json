@@ -124,7 +124,8 @@
                         "mac": "00:25:90:6A:B1:11",
                         "max_speed": 1000,
                         "name": "eth1",
-                        "current_speed": null
+                        "current_speed": null,
+                        "ip": "10.20.0.3"
                     }
                 ],
                 "disks": [
@@ -303,13 +304,14 @@
                 },
                 "interfaces": [
                     {
-                        "ip": "192.168.70.234",
+                        "ip": "10.20.0.4",
                         "mac": "58:91:CF:2A:C4:1B",
                         "netmask": "255.255.255.0",
                         "current_speed": null,
                         "name": "wlan0"
                     },
                     {
+                        "ip": "192.168.70.234",
                         "mac": "24:B6:FD:53:63:00",
                         "max_speed": 100,
                         "name": "eth0",
@@ -431,6 +433,7 @@
                         "current_speed": 1000
                     },
                     {
+                        "ip": "10.20.0.5",
                         "mac": "00:25:90:67:9F:B6",
                         "max_speed": 1000,
                         "name": "eth0",
@@ -553,7 +556,7 @@
                     },
                     {
                         "name": "eth0",
-                        "ip": "172.18.67.173",
+                        "ip": "10.20.0.6",
                         "netmask": "255.255.255.240",
                         "mac": "00:25:90:67:9D:24",
                         "max_speed": 1000,
@@ -673,11 +676,11 @@
                         "mac": "00:25:90:67:9C:9D",
                         "max_speed": 1000,
                         "name": "eth1",
-                        "current_speed": null
+                        "current_speed": null,
+                        "ip": "10.20.0.7"
                     },
                     {
                         "name": "eth0",
-                        "ip": "172.18.82.135",
                         "netmask": "255.255.255.224",
                         "mac": "00:25:90:67:9C:9C",
                         "max_speed": 1000,
@@ -996,6 +999,7 @@
                         "current_speed": 1000
                     },
                     {
+                        "ip": "10.20.0.7",
                         "mac": "00:25:90:6A:B1:85",
                         "max_speed": 1000,
                         "name": "p2p2",

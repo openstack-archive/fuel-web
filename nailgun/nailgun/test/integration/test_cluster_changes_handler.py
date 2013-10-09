@@ -437,7 +437,7 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks()
     def test_admin_untagged_intersection(self):
         meta = self.env.default_metadata()
-        meta["interfaces"] = [{
+        self.env.set_interfaces_in_meta(meta, [{
             "mac": "00:00:00:00:00:66",
             "max_speed": 1000,
             "name": "eth0",
@@ -446,8 +446,7 @@ class TestHandlers(BaseIntegrationTest):
             "mac": "00:00:00:00:00:77",
             "max_speed": 1000,
             "name": "eth1",
-            "current_speed": None
-        }]
+            "current_speed": None}])
 
         self.env.create(
             nodes_kwargs=[

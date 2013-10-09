@@ -20,9 +20,6 @@ from random import choice
 import string
 import uuid
 
-from netaddr import IPAddress
-from netaddr import IPNetwork
-
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Float
@@ -385,11 +382,11 @@ class Node(Base):
         :raises: errors.CanNotFindInterface
         """
         from nailgun.network.manager import NetworkManager
-        admin_cidr = NetworkManager().get_admin_network().cidr
+        network_manager = NetworkManager()
 
         for interface in self.interfaces:
             ip_addr = interface.ip_addr
-            if ip_addr and IPAddress(ip_addr) in IPNetwork(admin_cidr):
+            if network_manager.is_ip_belongs_to_admin_subnet(ip_addr):
                 return interface
 
         logger.warning(u'Cannot find admin interface for node '

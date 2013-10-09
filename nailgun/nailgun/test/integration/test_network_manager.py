@@ -430,6 +430,20 @@ class TestNetworkManager(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_admin_ip_cobbler(self, mocked_rpc):
+        node_1_meta = {}
+        self.env.set_interfaces_in_meta(node_1_meta, [{
+            "name": "eth0",
+            "mac": "00:00:00:00:00:00",
+        }, {
+            "name": "eth1",
+            "mac": "00:00:00:00:00:01"}])
+        node_2_meta = {}
+        self.env.set_interfaces_in_meta(node_2_meta, [{
+            "name": "eth0",
+            "mac": "00:00:00:00:00:02",
+        }, {
+            "name": "eth1",
+            "mac": "00:00:00:00:00:03"}])
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
@@ -437,35 +451,13 @@ class TestNetworkManager(BaseIntegrationTest):
                     "api": True,
                     "pending_addition": True,
                     "mac": "00:00:00:00:00:00",
-                    "meta": {
-                        "interfaces": [
-                            {
-                                "name": "eth0",
-                                "mac": "00:00:00:00:00:00",
-                            },
-                            {
-                                "name": "eth1",
-                                "mac": "00:00:00:00:00:01",
-                            }
-                        ]
-                    }
+                    "meta": node_1_meta
                 },
                 {
                     "api": True,
                     "pending_addition": True,
                     "mac": "00:00:00:00:00:02",
-                    "meta": {
-                        "interfaces": [
-                            {
-                                "name": "eth0",
-                                "mac": "00:00:00:00:00:02",
-                            },
-                            {
-                                "name": "eth1",
-                                "mac": "00:00:00:00:00:03",
-                            }
-                        ]
-                    }
+                    "meta": node_2_meta
                 }
             ]
         )

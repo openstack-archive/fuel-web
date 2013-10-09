@@ -754,7 +754,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
         hasChanges: function() {
-            return !_.isEqual(this.disks.toJSON(), this.initialData);
+            var noChanges = true;
+            var disks = this.disks.toJSON();
+            this.nodes.each(function(node) {
+                noChanges = noChanges && _.isEqual(disks, node.disks.toJSON());
+            }, this);
+            return !noChanges;
         },
         hasValidationErrors: function() {
             var result = false;
@@ -778,7 +783,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 .fail(_.bind(function() {utils.showErrorDialog({title: 'Disks configuration'});}, this));
         },
         revertChanges: function() {
-            this.disks.reset(_.cloneDeep(this.initialData), {parse: true});
+            this.disks.reset(_.cloneDeep(this.nodes.at(0).disks.toJSON()), {parse: true});
         },
         applyChanges: function() {
             if (this.hasValidationErrors()) {
@@ -790,7 +795,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this))
                 .done(_.bind(function() {
                     this.model.fetch();
-                    this.initialData = _.cloneDeep(this.disks.toJSON());
+                    var disks = this.disks.toJSON();
+                    this.nodes.each(function(node) {
+                        node.disks = new models.Disks(_.cloneDeep(disks), {parse: true});
+                    }, this);
                     this.render();
                 }, this))
                 .fail(_.bind(function() {
@@ -820,15 +828,17 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             if (this.nodes.length) {
                 this.model.on('change:status', this.revertChanges, this);
                 this.volumes = new models.Volumes([], {url: _.result(this.nodes.at(0), 'url') + '/volumes'});
-                this.disks = new models.Disks([], {url: _.result(this.nodes.at(0), 'url') + '/disks'});
-                this.loading = $.when(this.volumes.fetch(), this.disks.fetch())
+                this.loading = $.when.apply($, this.nodes.map(function(node) {
+                        node.disks = new models.Disks();
+                        return node.disks.fetch({url: _.result(node, 'url') + '/disks'});
+                    }, this).concat(this.volumes.fetch()))
                     .done(_.bind(function() {
-                        this.initialData = _.cloneDeep(this.disks.toJSON());
-                        this.mapVolumesColors();
-                        this.render();
+                        this.disks = new models.Disks(_.cloneDeep(this.nodes.at(0).disks.toJSON()), {parse: true});
                         this.disks.on('sync', this.render, this);
                         this.disks.on('reset', this.render, this);
                         this.disks.on('error', this.checkForChanges, this);
+                        this.mapVolumesColors();
+                        this.render();
                     }, this))
                     .fail(_.bind(this.goToNodeList, this));
             } else {
@@ -982,7 +992,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
         hasChanges: function() {
-            return !_.isEqual(this.interfaces.toJSON(), this.initialData);
+            var noChanges = true;
+            var networks = this.interfaces.getAssignedNetworks();
+            this.nodes.each(function(node) {
+                noChanges = noChanges && _.isEqual(networks, node.interfaces.getAssignedNetworks());
+            }, this);
+            return !noChanges;
         },
         isLocked: function() {
             var forbiddenNodes = _.union(this.nodes.where({pending_addition: true}), this.nodes.where({status: 'error'})).length;
@@ -1004,19 +1019,22 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this));
         },
         revertChanges: function() {
-            this.interfaces.reset(_.cloneDeep(this.initialData), {parse: true});
+            this.interfaces.reset(_.cloneDeep(this.nodes.at(0).interfaces.toJSON()), {parse: true});
         },
         applyChanges: function() {
             this.disableControls(true);
             return $.when.apply($, this.nodes.map(function(node) {
                     var configuration = new models.NodeInterfaceConfiguration({id: node.id, interfaces: this.interfaces});
                     configuration.get('interfaces').each(function(ifc, index) {
-                        ifc.set({id: this.nodeInterfaceIds[node.id][index]}, {silent: true});
+                        ifc.set({id: node.interfaces.at(index).id}, {silent: true});
                     }, this);
                     return Backbone.sync('update', new models.NodeInterfaceConfigurations(configuration));
                 }, this))
                 .done(_.bind(function() {
-                    this.initialData = this.interfaces.toJSON();
+                    var interfaces = this.interfaces.toJSON();
+                    this.nodes.each(function(node) {
+                        node.interfaces = new models.Interfaces(_.cloneDeep(interfaces), {parse: true});
+                    }, this);
                 }, this))
                 .fail(_.bind(function() {
                     utils.showErrorDialog({title: 'Interfaces configuration'});
@@ -1033,7 +1051,14 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     this.revertChanges();
                     this.render();
                 }, this);
-                var complete = _.after(this.nodes.length, _.bind(function() {
+                $.when.apply($, this.nodes.map(function(node) {
+                    node.interfaces = new models.Interfaces();
+                    return node.interfaces.fetch({url: _.result(node, 'url') + '/interfaces'});
+                }, this))
+                .done(_.bind(function() {
+                    this.interfaces = new models.Interfaces(_.cloneDeep(this.nodes.at(0).interfaces.toJSON()), {parse: true});
+                    this.interfaces.on('reset', this.renderInterfaces, this);
+                    this.interfaces.on('reset', this.checkForChanges, this);
                     var networkConfiguration = new models.NetworkConfiguration();
                     this.loading = networkConfiguration
                         .fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
@@ -1052,23 +1077,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                         }, this))
                         .fail(_.bind(this.goToNodeList, this));
                 }, this));
-                this.nodeInterfaceIds = {};
-                this.nodes.each(function(node) {
-                    var interfaces = new models.Interfaces();
-                    interfaces
-                        .fetch({url: _.result(node, 'url') + '/interfaces'})
-                        .done(_.bind(function() {
-                            if (node.id == this.nodes.at(0).id) {
-                                this.initialData = interfaces.toJSON();
-                                this.interfaces = new models.Interfaces();
-                                this.interfaces.reset(_.cloneDeep(this.initialData), {parse: true});
-                                this.interfaces.on('reset', this.renderInterfaces, this);
-                                this.interfaces.on('reset', this.checkForChanges, this);
-                            }
-                            this.nodeInterfaceIds[node.id] = interfaces.pluck('id');
-                        }, this))
-                        .always(complete);
-                }, this);
             } else {
                 this.goToNodeList();
             }

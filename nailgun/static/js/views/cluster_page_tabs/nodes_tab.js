@@ -460,11 +460,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             if (attribute == 'roles') {
                 var rolesMetadata = this.screen.tab.model.get('release').get('roles_metadata');
-                this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
+                this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
             } else if (attribute == 'hardware') {
-                this.nodeGroups = this.nodes.groupBy(function(node) {return 'HDD: ' + utils.showDiskSize(node.resource('hdd')) + ' RAM: ' + utils.showMemorySize(node.resource('ram'));});
+                this.nodeGroups = this.nodes.groupBy(function(node) {return 'HDD: ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 RAM: ' + utils.showMemorySize(node.resource('ram'));});
             } else {
-                this.nodeGroups = this.nodes.groupBy(function(node) {return _.union(node.get('roles'), node.get('pending_roles')).join(' + ') + ' + HDD: ' + utils.showDiskSize(node.resource('hdd')) + ' RAM: ' + utils.showMemorySize(node.resource('ram'));});
+                this.nodeGroups = this.nodes.groupBy(function(node) {return _.union(node.get('roles'), node.get('pending_roles')).join(' + ') + ' + HDD: ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 RAM: ' + utils.showMemorySize(node.resource('ram'));});
             }
             this.renderNodeGroups();
             this.screen.updateBatchActionsButtons();
@@ -476,7 +476,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         renderNodeGroups: function() {
             this.$('.nodes').html('');
-            _.each(_.keys(this.nodeGroups), function(groupLabel) {
+            _.each(_.keys(this.nodeGroups).sort(), function(groupLabel) {
                 var nodeGroupView = new NodeGroup({
                     groupLabel: groupLabel,
                     nodes: new models.Nodes(this.nodeGroups[groupLabel]),
@@ -673,13 +673,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             app.navigate('#cluster/' + this.screen.tab.model.id + '/logs/' + utils.serializeTabOptions(options), {trigger: true});
         },
-        updateRoles: function() {
-            var roles = this.node.get('pending_roles') || [];
-            var preferredOrder = ['controller', 'compute', 'cinder'];
-            roles.sort(function(a, b) {
+        sortRoles: function(roles) {
+            roles = roles || [];
+            var preferredOrder = app.page.tab.model.get('release').get('roles');
+            return roles.sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
-            this.node.set({pending_roles: roles}, {silent: true});
+        },
+        updateRoles: function() {
+            this.node.set({
+                roles: this.sortRoles(this.node.get('roles')),
+                pending_roles: this.sortRoles(this.node.get('pending_roles'))
+            }, {silent: true});
             this.$('.roles').html(this.nodeRolesTemplate({node: this.node}));
         },
         uncheckNode: function() {

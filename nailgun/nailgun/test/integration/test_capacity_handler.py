@@ -12,23 +12,24 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import csv
 import json
+from mock import patch
+from StringIO import StringIO
 
+from nailgun.api.models import CapacityLog
 from nailgun.api.models import Task
+from nailgun.db import db
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
 class TestHandlers(BaseIntegrationTest):
-    @fake_tasks()
-    def test_capacity_log_handler(self):
-        self.env.create_node(api=False)
-
+    def _create_capacity_log(self):
         resp = self.app.put(
             reverse('CapacityLogHandler'),
-            headers=self.default_headers,
-            expect_errors=True)
+            headers=self.default_headers)
         self.assertEquals(resp.status, 202)
 
         capacity_task = self.db.query(Task).filter_by(
@@ -36,16 +37,25 @@ class TestHandlers(BaseIntegrationTest):
         ).first()
         self.env.wait_ready(capacity_task)
 
+    def _get_capacity_log_json(self):
         resp = self.app.get(
             reverse('CapacityLogHandler'),
             headers=self.default_headers
         )
-        response = json.loads(resp.body)
+        return json.loads(resp.body)
+
+    @fake_tasks()
+    def test_capacity_log_handler(self):
+        self.env.create_node(api=False)
+
+        self._create_capacity_log()
+
+        capacity_log = self._get_capacity_log_json()
 
         for field in ['id', 'report']:
-            self.assertTrue(field in response)
+            self.assertTrue(field in capacity_log)
 
-        report = response['report']
+        report = capacity_log['report']
 
         report_fields = ['fuel_data', 'environment_stats', 'allocation_stats']
         for field in report_fields:
@@ -53,3 +63,27 @@ class TestHandlers(BaseIntegrationTest):
 
         self.assertEquals(report['allocation_stats']['allocated'], 0)
         self.assertEquals(report['allocation_stats']['unallocated'], 1)
+
+    @patch('nailgun.api.handlers.version.settings.VERSION', {
+        'release': '0.1b'})
+    def test_capacity_csv_checksum(self):
+        self._create_capacity_log()
+        capacity_log = db().query(CapacityLog).\
+            order_by(CapacityLog.datetime.desc()).first()
+
+        resp = self.app.get(reverse('CapacityLogCsvHandler'))
+        self.assertEquals(200, resp.status)
+        csvreader = csv.reader(StringIO(resp.body), delimiter=',',
+                               quotechar='|', quoting=csv.QUOTE_MINIMAL)
+
+        rows = [
+            ['Fuel version', '0.1b'],
+            ['Fuel UUID', 'Unknown'],
+            ['Environment Name', 'Node Count'],
+            ['Total number allocated of nodes', '0'],
+            ['Total number of unallocated nodes', '0'],
+            ['Node role(s)', 'Number of nodes with this configuration'],
+            [],
+        ]
+        for row in csvreader:
+            self.assertTrue(row in rows)

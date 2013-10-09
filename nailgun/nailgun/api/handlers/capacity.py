@@ -15,7 +15,7 @@
 #    under the License.
 
 import csv
-from hashlib import md5
+import json
 import tempfile
 
 import web
@@ -79,8 +79,6 @@ class CapacityLogCsvHandler(object):
 
         csv_file.writerow(['Fuel version', report['fuel_data']['release']])
         csv_file.writerow(['Fuel UUID', report['fuel_data']['uuid']])
-
-        csv_file.writerow(['Checksum', md5(report).hexdigest()])
 
         csv_file.writerow(['Environment Name', 'Node Count'])
         for stat in report['environment_stats']:

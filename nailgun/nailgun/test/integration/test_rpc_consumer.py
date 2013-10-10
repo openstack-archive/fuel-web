@@ -70,7 +70,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.receiver.verify_networks_resp(**kwargs)
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
-        self.assertEqual(task.message, None)
+        self.assertEqual(task.message, '')
 
     def test_verify_networks_resp_error(self):
         self.env.create(
@@ -110,7 +110,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
             error_nodes.append({'uid': node.id, 'interface': 'eth0',
                                 'name': node.name, 'absent_vlans': [104],
                                 'mac': node.interfaces[0].mac})
-        self.assertEqual(task.message, None)
+        self.assertEqual(task.message, '')
         self.assertEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_error_with_removed_node(self):
@@ -159,7 +159,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                         'mac': node1.interfaces[0].mac},
                        {'uid': node2.id, 'interface': 'eth0',
                         'absent_vlans': [104]}]
-        self.assertEqual(task.get('message'), None)
+        self.assertEqual(task.get('message'), '')
         self.assertEqual(task['result'], error_nodes)
 
     def test_verify_networks_resp_empty_nodes_default_error(self):
@@ -264,7 +264,99 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.receiver.verify_networks_resp(**kwargs)
         self.db.refresh(task)
         self.assertEquals(task.status, "ready")
-        self.assertEquals(task.message, None)
+        self.assertEquals(task.message, '')
+
+    def test_verify_networks_with_dhcp_subtask(self):
+        """Test verifies that whe dhcp subtask ready and
+        verify_networks errored - verify_networks will be in error
+        """
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        node1, node2 = self.env.nodes
+        nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
+
+        task = Task(
+            name="verify_networks",
+            cluster_id=cluster_db.id
+        )
+        task.cache = {
+            "args": {
+                'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                          {'uid': node2.id, 'networks': nets_sent}]
+            }
+        }
+        self.db.add(task)
+        self.db.commit()
+        self.db.refresh(task)
+        dhcp_subtask = Task(
+            name='check_dhcp',
+            cluster_id=cluster_db.id,
+            parent_id=task.id,
+            status='ready'
+        )
+        self.db.add(dhcp_subtask)
+        self.db.commit()
+        kwargs = {'task_uuid': task.uuid,
+                  'status': 'ready',
+                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                            {'uid': node2.id, 'networks': []}]}
+        self.receiver.verify_networks_resp(**kwargs)
+        self.assertEqual(task.status, "error")
+
+    def test_verify_networks_with_dhcp_subtask_erred(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        node1, node2 = self.env.nodes
+        nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)}]
+
+        task = Task(
+            name="verify_networks",
+            cluster_id=cluster_db.id
+        )
+        task.cache = {
+            "args": {
+                'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                          {'uid': node2.id, 'networks': nets_sent}]
+            }
+        }
+        self.db.add(task)
+        self.db.commit()
+        self.db.refresh(task)
+        dhcp_subtask = Task(
+            name='check_dhcp',
+            cluster_id=cluster_db.id,
+            parent_id=task.id,
+            status='error',
+            message='DHCP ERROR'
+        )
+        self.db.add(dhcp_subtask)
+        self.db.commit()
+        kwargs = {'task_uuid': task.uuid,
+                  'status': 'ready',
+                  'nodes': [{'uid': node1.id, 'networks': nets_sent},
+                            {'uid': node2.id, 'networks': []}]}
+        self.receiver.verify_networks_resp(**kwargs)
+
+        self.assertEqual(task.status, "error")
+        self.assertEqual(task.message, 'DHCP ERROR')
+        self.assertEqual(task.result, [{
+            u'absent_vlans': [100, 101, 102, 103, 104],
+            u'interface': 'eth0',
+            u'mac': node2.interfaces[0].mac,
+            u'name': None,
+            u'uid': node2.id}])
 
     def test_verify_networks_resp_forgotten_node_error(self):
         self.env.create(
@@ -301,7 +393,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         self.assertRegexpMatches(task.message, node3.name)
-        self.assertEqual(task.result, [])
+        self.assertEqual(task.result, {})
 
     def test_verify_networks_resp_incomplete_network_data_error(self):
         self.env.create(
@@ -340,7 +432,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.receiver.verify_networks_resp(**kwargs)
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
-        self.assertEqual(task.message, None)
+        self.assertEqual(task.message, '')
         error_nodes = [{'uid': node2.id, 'interface': 'eth0',
                         'name': node2.name, 'mac': node2.interfaces[0].mac,
                         'absent_vlans': nets_sent[0]['vlans']},
@@ -389,7 +481,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.receiver.verify_networks_resp(**kwargs)
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
-        self.assertEqual(task.message, None)
+        self.assertEqual(task.message, '')
         error_nodes = [{'uid': node1.id, 'interface': 'eth0',
                         'name': node1.name, 'mac': node1.interfaces[0].mac,
                         'absent_vlans': nets_sent[0]['vlans']}]

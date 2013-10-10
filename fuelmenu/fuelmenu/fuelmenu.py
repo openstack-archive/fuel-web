@@ -237,7 +237,7 @@ class FuelSetup(object):
                                        unhandled_input=unhandled)
         #Initialize each module completely before any events are handled
         for child in reversed(self.choices):
-           self.setChildScreen(name=choice)
+           self.setChildScreen(name=child)
 
         self.mainloop.run()
 

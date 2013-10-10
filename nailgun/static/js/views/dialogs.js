@@ -456,7 +456,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterReadyPane = views.WizardPane.extend({
-        title: 'Ready',
+        title: 'Finish',
         template: _.template(clusterReadyPaneTemplate)
     });
 

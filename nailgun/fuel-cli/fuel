@@ -25,7 +25,8 @@ import sys
 from time import sleep
 import urllib2
 
-API_ROOT = "http://127.0.0.1:8000/api/"
+ROOT = "http://127.0.0.1:8000"
+API_ROOT = ROOT + "/api/"
 DEBUG = False
 JSON = False
 passive_arguments = ["rel", "env", "action", "debug", "json"]
@@ -36,7 +37,7 @@ class SetAction(argparse.Action):
 
     :returns: Set of arguments
     """
-    def __call__(self, parser, namespace, values, option_string=None):
+    def __call__(self, _parser, namespace, values, option_string=None):
         try:
             getattr(namespace, self.dest).update(values)
         except AttributeError:
@@ -371,8 +372,8 @@ def node(params):
         node_ids = list(chain(*params.node))
         roles = map(str.lower, params.role)
         data = map(
-            lambda node_id: {
-                "id": node_id,
+            lambda _node_id: {
+                "id": _node_id,
                 "cluster_id": params.env,
                 "pending_roles": roles,
                 "pending_addition": True,
@@ -391,16 +392,16 @@ def node(params):
             )
     elif params.delete:
         check_for_one_attribute(params, ["env", "node"])
-        nodes_clusters = dict((node["id"], node["cluster"])
-                              for node in json_api_get_request("nodes/"))
+        nodes_clusters = dict((_node["id"], _node["cluster"])
+                              for _node in json_api_get_request("nodes/"))
         if not params.node and params.env:
             node_ids = [k for k, v in nodes_clusters.iteritems()
                         if v == int(params.env)]
         else:
             node_ids = list(chain(*params.node))
         data = map(
-            lambda node_id: {
-                "id": node_id,
+            lambda _node_id: {
+                "id": _node_id,
                 "cluster_id": None,
                 "pending_roles": [],
                 "pending_addition": False,
@@ -443,8 +444,7 @@ def node(params):
 def get_node_attribute(params, node_id, upload_attribute, attributes):
     default_url_template = "nodes/{0}/{1}/{2}".format(node_id, "{0}", "{1}")
     dir_path = os.path.join(
-        os.path.abspath(os.path.curdir
-                        if params.dir is None else params.dir),
+        os.path.abspath(params.dir or os.path.curdir),
         "node_{0}".format(node_id)
     )
     if params.upload:
@@ -509,7 +509,7 @@ def write_node_attribute(url, node_dir_path, attribute):
         attribute_path,
         get_response
     )
-    if params.json:
+    if JSON:
         print(json.dumps(get_response, indent=4))
     else:
         print(
@@ -526,8 +526,7 @@ def network(params):
     network_url = "clusters/{0}/network_configuration".format(params.env)
     network_data = json_api_get_request(network_url)
     network_file_path = os.path.join(
-        os.path.abspath(os.path.curdir
-                        if params.dir is None else params.dir),
+        os.path.abspath(params.dir or os.path.curdir),
         "network_{0}.json".format(params.env)
     )
     if params.upload:
@@ -570,8 +569,7 @@ def settings(params):
     settings_url = "clusters/{0}/attributes".format(params.env)
     settings_data = json_api_get_request(settings_url)
     settings_file_path = os.path.join(
-        os.path.abspath(os.path.curdir
-                        if params.dir is None else params.dir),
+        os.path.abspath(params.dir or os.path.curdir),
         "settings_{0}.json".format(params.env)
     )
     if params.upload:
@@ -606,12 +604,6 @@ def settings(params):
                 print(json.dumps(settings_data, indent=4))
 
 
-def logs(params):
-    """Show logs for specific environment
-    """
-    print(params)
-
-
 def task(params):
     """Show tasks
     """
@@ -640,16 +632,66 @@ def task(params):
             )
 
 
-def notifications(params):
-    """Show notifications
+def snapshot(params):
+    """Generate and download snapshot.
     """
-    print(params)
+    if params.create:
+        snapshot_generation_task = json_api_put_request(
+            "logs/package",
+            "{}"
+        )
+        if params.json:
+            print(json.dumps(snapshot_generation_task, indent=4))
+        else:
+            print(
+                "Snapshot generation task is started with id={id}."
+                .format(**snapshot_generation_task)
+            )
+    elif params.download:
+        ready_dump_tasks = filter(
+            lambda _task: _task["name"] == "dump"
+            and _task["status"] == "ready",
+            json_api_get_request("tasks/")
+        )
+        if ready_dump_tasks:
+            latest_dump_task = sorted(
+                ready_dump_tasks,
+                key=lambda _task: _task["id"]
+            )[-1]
+            download_url = ROOT + latest_dump_task["message"]
+            download_snapshot_with_progress_bar(download_url, params.dir)
+        else:
+            print("There is no snapshots available for download.")
 
 
-def health(params):
-    """Perform health check for environments
-    """
-    print(params)
+def download_snapshot_with_progress_bar(url, directory):
+    if not os.path.exists(directory):
+        print_error("Folder {0} doesn't exist.".format(directory))
+    file_name = os.path.join(
+        os.path.abspath(directory or os.path.curdir),
+        url.split('/')[-1]
+    )
+    download_handle = urllib2.urlopen(url)
+    with open(file_name, 'wb') as file_handle:
+        meta = download_handle.info()
+        file_size = int(meta.getheaders("Content-Length")[0])
+        print("Downloading: {0} Bytes: {1}".format(url, file_size))
+        file_size_dl = 0
+        block_size = 8192
+        bar = partial(get_bar_for_progress, 80)
+        while True:
+            data_buffer = download_handle.read(block_size)
+            if not data_buffer:
+                break
+            file_size_dl += len(data_buffer)
+            file_handle.write(data_buffer)
+            progress = int(100 * float(file_size_dl) / file_size)
+            sys.stdout.write("\r{0}".format(
+                bar(progress)
+            ))
+            sys.stdout.flush()
+            sleep(1/10)
+        print()
 
 
 def deploy(params):
@@ -694,7 +736,7 @@ def print_deploy_progress(env):
     nodes = []
     try:
         while progress != 100 or \
-                any(map(lambda node: node["progress"] != 100, nodes)):
+                any(map(lambda _node: _node["progress"] != 100, nodes)):
             task_response = json_api_get_request(
                 "tasks/{0}/".format(deploy_task_id)
             )
@@ -703,7 +745,7 @@ def print_deploy_progress(env):
                 "nodes?cluster_id={0}"
                 .format(env)
             )
-            nodes.sort(key=lambda node: node.get("id"))
+            nodes.sort(key=lambda _node: _node.get("id"))
             stdscr.addstr(0, 0,
                           "Deploying changes to environment with id={0}"
                           .format(env)
@@ -747,8 +789,7 @@ def fact(params, info_type):
     check_for_attributes(params, ["env"])
 
     dir_name = os.path.join(
-        os.path.abspath(os.path.curdir
-                        if params.dir is None else params.dir),
+        os.path.abspath(params.dir or os.path.curdir),
         "{0}_{1}".format(info_type, params.env)
     )
     facts_default_url = "clusters/{0}/orchestrator/{1}/defaults".format(
@@ -980,7 +1021,7 @@ def get_set_arg(help_msg):
 
 def get_delete_arg(help_msg):
     return {
-        "args": ["--delete", "--env-delete"],
+        "args": ["--delete"],
         "params": {
             "dest": "delete",
             "action": "store_true",
@@ -1138,65 +1179,6 @@ actions = {
             get_dir_arg("Directory with configuration data.")
         ]
     },
-    "logs": {
-        "action": logs,
-        "args": [{
-            "args": ["-db", "--date-before"],
-            "params": {
-                "dest": "before",
-                "action": "store",
-                "type": str,
-                "help": "Date before which collect logs.",
-                "default": None
-            }
-        }, {
-            "args": ["-da", "--date-after"],
-            "params": {
-                "dest": "after",
-                "action": "store",
-                "type": str,
-                "help": "Date after which collect logs.",
-                "default": None
-            }
-        }, {
-            "args": ["-m", "--max-entries"],
-            "params": {
-                "dest": "max",
-                "action": "store",
-                "type": str,
-                "help": "Maximum number of log entries.",
-                "default": None
-            }
-        }, {
-            "args": ["-n", "--node"],
-            "params": {
-                "dest": "node",
-                "action": "store",
-                "type": str,
-                "help": "From which node to collect logs.",
-                "default": None
-            }
-        }, {
-            "args": ["-s", "--source"],
-            "params": {
-                "dest": "source",
-                "action": "store",
-                "type": str,
-                "help": "Service to use as log source. "
-                        "(web backend, REST, orchestrator)",
-                "default": None
-            }
-        }, {
-            "args": ["-ll", "--log-level"],
-            "params": {
-                "dest": "level",
-                "action": "store",
-                "type": str,
-                "help": "Log level. e.g DEBUG, INFO, WARNING",
-                "default": None
-            }
-        }]
-    },
     "task": {
         "action": task,
         "args": [{
@@ -1219,13 +1201,21 @@ actions = {
             }
         }]
     },
-    "notification": {
-        "action": notifications,
-        "args": []
-    },
-    "health": {
-        "action": health,
-        "args": []
+    "snapshot": {
+        "action": snapshot,
+        "args": [
+            get_dir_arg("Directory to which download snapshot."),
+            get_download_arg("Download snapshot."),
+            {
+                "args": ["-c", "--create"],
+                "params": {
+                    "dest": "create",
+                    "action": "store_true",
+                    "help": "Create snapshot",
+                    "default": False
+                }
+            }
+        ]
     },
     "deploy": {
         "action": deploy,
@@ -1325,23 +1315,23 @@ if __name__ == '__main__':
         dest="action", help='actions'
     )
 
-    for action, params in actions.iteritems():
+    for action, parameters in actions.iteritems():
         action_parser = subparsers.add_parser(
-            action, help=params["action"].__doc__
+            action, help=parameters["action"].__doc__
         )
-        for arg in params.get("args", []):
+        for arg in parameters.get("args", []):
             action_parser.add_argument(
                 *arg["args"],
                 **arg["params"]
             )
 
-    params, other_params = parser.parse_known_args()
+    parsed_params, other_params = parser.parse_known_args()
     sys.argv.pop(1)
-    DEBUG = params.debug
-    JSON = params.json
-    if params.action not in actions:
+    DEBUG = parsed_params.debug
+    JSON = parsed_params.json
+    if parsed_params.action not in actions:
         parser.print_help()
         sys.exit(0)
-    current_action = getattr(params, "action")
-    delattr(params, "action")
-    actions[current_action]["action"](params)
+    current_action = getattr(parsed_params, "action")
+    delattr(parsed_params, "action")
+    actions[current_action]["action"](parsed_params)

@@ -26,6 +26,7 @@ import urwid.web_display
 logging.basicConfig(filename='/var/log/fuelmenu.log', level=logging.DEBUG)
 log = logging.getLogger('fuelmenu.loader')
 
+
 class Loader(object):
 
     def __init__(self, parent):
@@ -54,7 +55,6 @@ class Loader(object):
 
             clsobj = getattr(imported, module, None)
             modobj = clsobj(self.parent)
-
 
             # add the module to the list
             if modobj.visible:
@@ -158,8 +158,8 @@ class FuelSetup(object):
         #Disable kernel print messages. They make our UI ugly
         noout = open('/dev/null', 'w')
         retcode = subprocess.call(["sysctl", "-w",  "kernel.printk=4 1 1 7"],
-                                    stdout=noout,
-                                    stderr=noout)
+                                  stdout=noout,
+                                  stderr=noout)
 
         text_header = (u"Fuel %s setup "
                        u"Use Up/Down/Left/Right to navigate.  F8 exits."
@@ -237,18 +237,16 @@ class FuelSetup(object):
                                        unhandled_input=unhandled)
         #Initialize each module completely before any events are handled
         for child in reversed(self.choices):
-           self.setChildScreen(name=child)
+            self.setChildScreen(name=child)
 
         self.mainloop.run()
-
-
 
     def exit_program(self, button):
         #return kernel logging to normal
         noout = open('/dev/null', 'w')
         retcode = subprocess.call(["sysctl", "-w",  "kernel.printk=7 4 1 7"],
-                                    stdout=noout,
-                                    stderr=noout)
+                                  stdout=noout,
+                                  stderr=noout)
         #Fix /etc/hosts and /etc/resolv.conf before quitting
         dnsobj = self.children[int(self.choices.index("DNS & Hostname"))]
         dnsobj.fixEtcHosts()
@@ -258,14 +256,14 @@ class FuelSetup(object):
 
     def global_save(self):
         #Runs save function for every module
-        for module, modulename in zip(self.children,self.choices):
+        for module, modulename in zip(self.children, self.choices):
             if not module.visible:
                 continue
             else:
                 try:
-                    log.info("Checking and applying module: %s" 
-                                         % modulename)
-                    self.footer.set_text("Checking and applying module: %s" 
+                    log.info("Checking and applying module: %s"
+                             % modulename)
+                    self.footer.set_text("Checking and applying module: %s"
                                          % modulename)
                     self.refreshScreen()
 
@@ -275,7 +273,7 @@ class FuelSetup(object):
                         return False, modulename
                 except AttributeError as e:
                     log.debug("Module %s does not have save function: %s"
-                             % (modulename, e))
+                              % (modulename, e))
         return True, None
 
 
@@ -285,6 +283,7 @@ def setup():
     if urwid.web_display.handle_short_request():
         return
     fm = FuelSetup()
+
 
 def save_only(iface):
     import common.network as network
@@ -321,9 +320,9 @@ def save_only(iface):
         dynamic_start = str(dhcp_pool[0])
         dynamic_end = str(dhcp_pool[-1])
     except:
-        print "Unable to define DHCP pools" 
+        print "Unable to define DHCP pools"
         sys.exit(1)
-    settings={
+    settings = {
         "ADMIN_NETWORK/interface": iface,
         "ADMIN_NETWORK/ipaddress": ip,
         "ADMIN_NETWORK/netmask": netmask,
@@ -332,7 +331,7 @@ def save_only(iface):
         "ADMIN_NETWORK/static_pool_start": static_start,
         "ADMIN_NETWORK/static_pool_end": static_end,
         }
-    newsettings=dict()
+    newsettings = dict()
     for setting in settings.keys():
         if "/" in setting:
             part1, part2 = setting.split("/")
@@ -351,13 +350,15 @@ def save_only(iface):
     n = nailyfactersettings.NailyFacterSettings()
     n.write(factsettings)
 
+
 def main(*args, **kwargs):
     if urwid.VERSION < (1, 1, 0):
         print "This program requires urwid 1.1.0 or greater."
 
     parser = OptionParser()
-    parser.add_option("-s", "--save-only", dest="save_only", 
-                      action="store_true", help="Save default values and exit.")
+    parser.add_option("-s", "--save-only", dest="save_only",
+                      action="store_true",
+                      help="Save default values and exit.")
 
     parser.add_option("-i", "--iface", dest="iface", metavar="IFACE",
                       default="eth0", help="Set IFACE as primary.")

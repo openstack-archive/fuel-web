@@ -23,7 +23,8 @@ import copy
 import socket
 import struct
 import netaddr
-import dhcp_checker.api, dhcp_checker.utils
+import dhcp_checker.api
+import dhcp_checker.utils
 import netifaces
 import subprocess
 from fuelmenu.settings import *
@@ -141,13 +142,13 @@ Please wait...")
             #                   'gateway': '0.0.0.0'}]
             try:
                 with dhcp_checker.utils.IfaceState(self.activeiface) as iface:
-                    dhcptimeout=5
+                    dhcptimeout = 5
                     dhcp_server_data = timeout.wait_for_true(
                         dhcp_checker.api.check_dhcp_on_eth,
                         [iface, dhcptimeout], timeout=dhcptimeout)
             except timeout.TimeoutError:
                 log.debug("DHCP scan timed out")
-                dhcp_server_data=[]
+                dhcp_server_data = []
 
             num_dhcp = len(dhcp_server_data)
             if num_dhcp == 0:
@@ -186,9 +187,8 @@ interface first.")
             else:
                 #Ensure ADMIN_NETWORK/interface is not running DHCP
                 if self.netsettings[responses[
-                    "ADMIN_NETWORK/interface"]]["bootproto"]\
-                    == "dhcp":
-                        errors.append("%s is running DHCP.Change it to static "
+                        "ADMIN_NETWORK/interface"]]["bootproto"] == "dhcp":
+                    errors.append("%s is running DHCP.Change it to static "
                                   "first." % self.activeiface)
 
                 #Ensure Static Pool Start and Static Pool are valid IPs
@@ -215,8 +215,8 @@ interface first.")
                                   responses["ADMIN_NETWORK/static_pool_end"])
                 #Ensure DHCP Pool Start and DHCP Pool are valid IPs
                 try:
-                    if netaddr.valid_ipv4(
-                        responses["ADMIN_NETWORK/dhcp_pool_start"]):
+                    if netaddr.valid_ipv4(responses[
+                                          "ADMIN_NETWORK/dhcp_pool_start"]):
                         dhcp_start = netaddr.IPAddress(
                             responses["ADMIN_NETWORK/dhcp_pool_start"])
                     else:
@@ -236,7 +236,8 @@ interface first.")
                                   % responses["ADMIN_NETWORK/dhcp_pool_end"])
 
                 #Ensure pool start and end are in the same subnet of each other
-                netmask = self.netsettings[responses["ADMIN_NETWORK/interface"
+                netmask = self.netsettings[responses[
+                                           "ADMIN_NETWORK/interface"
                                            ]]["netmask"]
                 if not network.inSameSubnet(
                         responses["ADMIN_NETWORK/dhcp_pool_start"],

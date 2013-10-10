@@ -26,7 +26,7 @@ def TextField(keyword, label, width, default_value=None, tooltip=None,
         mask = None
     if not tooltip:
         edit_obj = urwid.Edit(('important', label.ljust(width)), default_value,
-                               mask=mask)
+                              mask=mask)
     else:
         edit_obj = TextWithTip(('important', label.ljust(width)),
                                default_value, tooltip, toolbar, mask=mask)
@@ -90,6 +90,7 @@ class TextWithTip(urwid.Edit):
                             mask=mask)
         self.tip = tooltip
         self.toolbar = toolbar
+
     def render(self, size, focus=False):
         if focus:
             self.toolbar.set_text(self.tip)

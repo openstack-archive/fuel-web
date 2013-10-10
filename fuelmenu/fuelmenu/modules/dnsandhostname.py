@@ -277,6 +277,7 @@ class dnsandhostname(urwid.WidgetWrap):
 #      'pxe-service' : '^pxe-service=(^,)',
 #      'dhcp-boot'   : '^dhcp-boot=([^,],{3}),'
 #      }
+
     def cancel(self, button):
         for index, fieldname in enumerate(fields):
             if fieldname == "blank":
@@ -324,7 +325,7 @@ class dnsandhostname(urwid.WidgetWrap):
         ## Generic settings end ##
 
         #log.debug(str(newsettings))
-        Settings().write(newsettings, 
+        Settings().write(newsettings,
                          defaultsfile=self.parent.defaultsettingsfile,
                          outfn=self.parent.settingsfile)
         #Write naily.facts
@@ -497,4 +498,3 @@ class dnsandhostname(urwid.WidgetWrap):
         self.listwalker = urwid.SimpleListWalker(self.listbox_content)
         screen = urwid.ListBox(self.listwalker)
         return screen
-

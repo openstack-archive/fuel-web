@@ -36,7 +36,7 @@ DEFAULTS = {
                  "value": ""},
     "CONFIRM_PASSWORD": {"label": "Confirm password",
                          "tooltip": "Use ASCII characters only",
-                          "value": ""},
+                         "value": ""},
     }
 
 
@@ -107,7 +107,7 @@ class rootpw(urwid.WidgetWrap):
             noout = open('/dev/null', 'w')
             noop = subprocess.call(["rm", "-f", "/etc/passwd.lock",
                                     "/etc/shadow.lock"], stdout=noout,
-                                    stderr=noout)
+                                   stderr=noout)
             retcode = subprocess.call(["usermod", "-p", hashed, "root"],
                                       stdout=noout,
                                       stderr=noout)
@@ -133,7 +133,6 @@ class rootpw(urwid.WidgetWrap):
                 pass
             else:
                 self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
-
 
     def refresh(self):
         pass
@@ -178,9 +177,7 @@ class rootpw(urwid.WidgetWrap):
         self.listbox_content.append(blank)
         self.listbox_content.append(check_col)
 
-
         #Add everything into a ListBox and return it
         self.listwalker = urwid.SimpleListWalker(self.listbox_content)
         screen = urwid.ListBox(self.listwalker)
         return screen
-

@@ -59,6 +59,7 @@ DEFAULTS = {
                 "value":   ""},
     }
 
+
 class interfaces(urwid.WidgetWrap):
     def __init__(self, parent):
         self.name = "Network Setup"
@@ -145,12 +146,12 @@ class interfaces(urwid.WidgetWrap):
             self.parent.refreshScreen()
             try:
                 with dhcp_checker.utils.IfaceState(self.activeiface) as iface:
-                    dhcptimeout=5
+                    dhcptimeout = 5
                     dhcp_server_data = timeout.wait_for_true(
                         dhcp_checker.api.check_dhcp_on_eth,
                         [iface, dhcptimeout], timeout=dhcptimeout)
             except timeout.TimeoutError:
-                self.log.info("DHCP scan timed out")   
+                self.log.info("DHCP scan timed out")
                 dhcp_server_data = []
             except Exception:
                 self.log.warning("dhcp_checker failed to check on %s"
@@ -158,10 +159,9 @@ class interfaces(urwid.WidgetWrap):
                 dhcp_server_data = []
                 responses["dhcp_nowait"] = False
 
-
             if len(dhcp_server_data) < 1:
                 self.log.debug("No DHCP servers found. Warning user about "
-                          "dhcp_nowait.")
+                               "dhcp_nowait.")
                 #Build dialog elements
                 dhcp_info = []
                 dhcp_info.append(urwid.Padding(

@@ -31,7 +31,6 @@ class saveandquit():
         self.parent = parent
         self.screen = None
 
-
     def save_and_continue(self, args):
         self.save()
 
@@ -44,15 +43,15 @@ class saveandquit():
     def save(self):
         results, modulename = self.parent.global_save()
         if results:
-           self.parent.footer.set_text("All changes saved successfully!")
-           return True
+            self.parent.footer.set_text("All changes saved successfully!")
+            return True
         else:
-           #show pop up with more details
-           msg = "ERROR: Module %s failed to save. Go back" % (modulename)\
-                 + " and fix any mistakes or choose Quit without Saving."
-           diag = dialog.display_dialog(self, TextLabel(msg),
-                                        "Error saving changes!")
-           return False
+            #show pop up with more details
+            msg = "ERROR: Module %s failed to save. Go back" % (modulename)\
+                  + " and fix any mistakes or choose Quit without Saving."
+            diag = dialog.display_dialog(self, TextLabel(msg),
+                                         "Error saving changes!")
+            return False
 
     def quit_without_saving(self, args):
         self.parent.exit_program(None)

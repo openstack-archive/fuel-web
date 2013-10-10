@@ -1,7 +1,9 @@
 import time
 
+
 class TimeoutError(Exception):
     pass
+
 
 def wait_for_true(check, args=[], kwargs={},
                   timeout=60, error_message='Timeout error'):
@@ -13,4 +15,3 @@ def wait_for_true(check, args=[], kwargs={},
         if time.time() - start_time > timeout:
             raise TimeoutError(error_message)
         time.sleep(0.1)
-

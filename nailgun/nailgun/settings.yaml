@@ -299,6 +299,9 @@ DUMP:
       - type: command
         command: netstat -anp
         to_file: netstat.txt
+      - type: command
+        command: brctl show
+        to_file: brctl_show.txt
     slave:
       - type: file
         path: /etc/astute.yaml
@@ -341,3 +344,6 @@ DUMP:
       - type: command
         command: netstat -anp
         to_file: netstat.txt
+      - type: command
+        command: brctl show
+        to_file: brctl_show.txt

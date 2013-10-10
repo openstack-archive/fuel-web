@@ -141,15 +141,16 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             var settingGroup = target.parents('.settings-group').data('settings-group');
             var setting = this.tab.settings[settingGroup][settingName];
             setting.value = setting.type == 'checkbox' ? target.is(':checked') : target.val();
+            // some hacks until settings dependecies are implemented
             if (settingName == 'murano') {
                 this.tab.settings[settingGroup].heat.value = setting.value;
-            } else if (this.tab.model.get('mode') != 'multinode') {
+            } else if (settingGroup == 'storage' && this.tab.model.get('mode') != 'multinode') {
                 if (settingName == 'objects_ceph' && setting.value) {
                     this.tab.settings[settingGroup].images_ceph.value = setting.value;
-                    this.render();
+                    this.$('input[name=images_ceph]').prop('checked', setting.value);
                 } else if (settingName == 'images_ceph' && !setting.value) {
                     this.tab.settings[settingGroup].objects_ceph.value = setting.value;
-                    this.render();
+                    this.$('input[name=objects_ceph]').prop('checked', setting.value);
                 }
             }
             this.tab.checkForChanges();

@@ -570,8 +570,8 @@ class NailgunReceiver(object):
             status = 'error'
             logger.error(error_msg)
 
-        TaskHelper.update_task_status(task_uuid, status,
-                                      progress, error_msg, result)
+        TaskHelper.update_verify_networks(task_uuid, status, progress,
+                                          error_msg, result)
 
     @classmethod
     def _master_networks_gen(cls, ifaces):
@@ -605,6 +605,10 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
+        if status == 'error':
+            error_msg = (u'Dhcp check failed internally. '
+                         u'Please check orchestrator logs.')
+
         macs = [item['addr'] for item in cls._get_master_macs()]
         logger.debug('Mac addr on master node %s', macs)
 
@@ -620,8 +624,8 @@ class NailgunReceiver(object):
                                           ' Check logs for details.')))
         status = status if not messages else "error"
         error_msg = '\n'.join(messages) if messages else error_msg
-        TaskHelper.update_task_status(task_uuid, status,
-                                      progress, error_msg, result)
+        TaskHelper.update_task_status(task_uuid, status, progress,
+                                      error_msg, result)
 
     # Red Hat related callbacks
 

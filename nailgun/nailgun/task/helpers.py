@@ -112,8 +112,6 @@ class TaskHelper(object):
 
     @classmethod
     def update_task_status(cls, uuid, status, progress, msg="", result=None):
-        # verify_networks - task is expecting to receive result with
-        # some data if connectivity_verification fails
         logger.debug("Updating task: %s", uuid)
         task = db().query(Task).filter_by(uuid=uuid).first()
         if not task:
@@ -123,6 +121,7 @@ class TaskHelper(object):
         previous_status = task.status
         data = {'status': status, 'progress': progress,
                 'message': msg, 'result': result}
+
         for key, value in data.iteritems():
             if value is not None:
                 setattr(task, key, value)
@@ -145,6 +144,39 @@ class TaskHelper(object):
         if task.parent:
             logger.debug("Updating parent task: %s.", task.parent.uuid)
             cls.update_parent_task(task.parent.uuid)
+
+    @classmethod
+    def update_verify_networks(cls, uuid, status,
+                               progress, msg, result):
+        #TODO(dshulyak) We need to remove this checks into ostf
+        #they really doesnot feet here
+        task = db().query(Task).filter_by(uuid=uuid).first()
+        if not task:
+            logger.error("Can't set status='%s', message='%s': No task \
+                    with UUID %s found!", status, msg, uuid)
+            return
+
+        previous_status = task.status
+
+        statuses = [sub.status for sub in task.subtasks]
+        messages = [sub.message for sub in task.subtasks]
+        if msg:
+            messages.append(msg)
+        statuses.append(status)
+        if any(st == 'error' for st in statuses):
+            task.status = 'error'
+        else:
+            task.status = status or task.status
+        task.progress = progress or task.progress
+        task.result = result or task.result
+        task.message = '\n'.join([m for m in messages
+                                  if isinstance(m, basestring)])
+        db().commit()
+        if previous_status != task.status and task.cluster_id:
+            logger.debug("Updating cluster status: "
+                         "cluster_id: %s status: %s",
+                         task.cluster_id, status)
+            cls.update_cluster_status(uuid)
 
     @classmethod
     def update_parent_task(cls, uuid):

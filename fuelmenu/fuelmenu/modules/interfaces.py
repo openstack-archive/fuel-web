@@ -36,28 +36,30 @@ blank = urwid.Divider()
 fields = ["blank", "ifname", "onboot", "bootproto", "ipaddr", "netmask",
           "gateway"]
 
-DEFAULTS = {
-    "ifname": {"label":   "Interface name:",
-               "tooltip": "Interface system identifier",
-               "value":   "locked"},
-    "onboot": {"label":   "Enabled on boot:",
-               "tooltip": "",
-               "value":   "radio"},
-    "bootproto": {"label":   "Configuration via DHCP:",
-                  "tooltip": "",
-                  "value":   "radio",
-                  "choices": ["DHCP", "Static"]},
-    "ipaddr": {"label":   "IP address:",
-               "tooltip": "Manual IP address (example 192.168.1.2)",
-               "value":    ""},
-    "netmask": {"label":   "Netmask:",
-                "tooltip": "Manual netmask (example 255.255.255.0)",
-                "value":   "255.255.255.0"},
-    "gateway": {"label":   "Default Gateway:",
-                "tooltip": "Manual gateway to access Internet (example "
-                "192.168.1.1)",
-                "value":   ""},
+DEFAULTS = \
+    {
+        "ifname": {"label":   "Interface name:",
+                   "tooltip": "Interface system identifier",
+                   "value":   "locked"},
+        "onboot": {"label":   "Enabled on boot:",
+                   "tooltip": "",
+                   "value":   "radio"},
+        "bootproto": {"label":   "Configuration via DHCP:",
+                      "tooltip": "",
+                      "value":   "radio",
+                      "choices": ["DHCP", "Static"]},
+        "ipaddr": {"label":   "IP address:",
+                   "tooltip": "Manual IP address (example 192.168.1.2)",
+                   "value":    ""},
+        "netmask": {"label":   "Netmask:",
+                    "tooltip": "Manual netmask (example 255.255.255.0)",
+                    "value":   "255.255.255.0"},
+        "gateway": {"label":   "Default Gateway:",
+                    "tooltip": "Manual gateway to access Internet (example "
+                    "192.168.1.1)",
+                    "value":   ""},
     }
+
 
 class interfaces(urwid.WidgetWrap):
     def __init__(self, parent):
@@ -145,12 +147,12 @@ class interfaces(urwid.WidgetWrap):
             self.parent.refreshScreen()
             try:
                 with dhcp_checker.utils.IfaceState(self.activeiface) as iface:
-                    dhcptimeout=5
+                    dhcptimeout = 5
                     dhcp_server_data = timeout.wait_for_true(
                         dhcp_checker.api.check_dhcp_on_eth,
                         [iface, dhcptimeout], timeout=dhcptimeout)
             except timeout.TimeoutError:
-                self.log.info("DHCP scan timed out")   
+                self.log.info("DHCP scan timed out")
                 dhcp_server_data = []
             except Exception:
                 self.log.warning("dhcp_checker failed to check on %s"
@@ -158,10 +160,9 @@ class interfaces(urwid.WidgetWrap):
                 dhcp_server_data = []
                 responses["dhcp_nowait"] = False
 
-
             if len(dhcp_server_data) < 1:
                 self.log.debug("No DHCP servers found. Warning user about "
-                          "dhcp_nowait.")
+                               "dhcp_nowait.")
                 #Build dialog elements
                 dhcp_info = []
                 dhcp_info.append(urwid.Padding(

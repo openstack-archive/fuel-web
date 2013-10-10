@@ -38,25 +38,26 @@ blank = urwid.Divider()
 fields = ["HOSTNAME", "DNS_DOMAIN", "DNS_SEARCH", "DNS_UPSTREAM", "blank",
           "TEST_DNS"]
 
-DEFAULTS = {
-    "HOSTNAME": {"label": "Hostname",
-                 "tooltip": "Hostname to use for Fuel master node",
-                 "value": socket.gethostname().split('.')[0]},
-    "DNS_UPSTREAM": {"label": "External DNS",
-                     "tooltip": "DNS server(s) (comma separated) to handle DNS\
- requests (example 8.8.8.8)",
-                     "value": "8.8.8.8"},
-    "DNS_DOMAIN": {"label": "Domain",
-                   "tooltip": "Domain suffix to user for all nodes in your\
+DEFAULTS = \
+    {
+        "HOSTNAME": {"label": "Hostname",
+                     "tooltip": "Hostname to use for Fuel master node",
+                     "value": socket.gethostname().split('.')[0]},
+        "DNS_UPSTREAM": {"label": "External DNS",
+                         "tooltip": "DNS server(s) (comma separated) to handle\
+ DNS requests (example 8.8.8.8)",
+                         "value": "8.8.8.8"},
+        "DNS_DOMAIN": {"label": "Domain",
+                       "tooltip": "Domain suffix to user for all nodes in your\
 cluster",
-                   "value": "domain.tld"},
-    "DNS_SEARCH": {"label": "Search Domain",
-                   "tooltip": "Domains to search when looking up DNS\
- (space separated)",
-                   "value": "domain.tld"},
-    "TEST_DNS": {"label": "Hostname to test DNS:",
-                 "value": "www.google.com",
-                 "tooltip": "DNS record to resolve to see if DNS is\
+                       "value": "domain.tld"},
+        "DNS_SEARCH": {"label": "Search Domain",
+                       "tooltip": "Domains to search when looking up DNS\
+(space separated)",
+                       "value": "domain.tld"},
+        "TEST_DNS": {"label": "Hostname to test DNS:",
+                     "value": "www.google.com",
+                     "tooltip": "DNS record to resolve to see if DNS is\
 accessible"}
     }
 
@@ -277,6 +278,7 @@ class dnsandhostname(urwid.WidgetWrap):
 #      'pxe-service' : '^pxe-service=(^,)',
 #      'dhcp-boot'   : '^dhcp-boot=([^,],{3}),'
 #      }
+
     def cancel(self, button):
         for index, fieldname in enumerate(fields):
             if fieldname == "blank":
@@ -324,7 +326,7 @@ class dnsandhostname(urwid.WidgetWrap):
         ## Generic settings end ##
 
         #log.debug(str(newsettings))
-        Settings().write(newsettings, 
+        Settings().write(newsettings,
                          defaultsfile=self.parent.defaultsettingsfile,
                          outfn=self.parent.settingsfile)
         #Write naily.facts
@@ -497,4 +499,3 @@ class dnsandhostname(urwid.WidgetWrap):
         self.listwalker = urwid.SimpleListWalker(self.listbox_content)
         screen = urwid.ListBox(self.listwalker)
         return screen
-

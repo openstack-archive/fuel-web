@@ -15,6 +15,7 @@
 #    under the License.
 
 import csv
+from hashlib import md5
 import tempfile
 
 import web
@@ -93,6 +94,12 @@ class CapacityLogCsvHandler(object):
                            'Number of nodes with this configuration'])
         for roles, count in report['roles_stat'].iteritems():
             csv_file.writerow([roles, count])
+
+        f.seek(0)
+        checksum = md5(f.read()).hexdigest()
+        csv_file.writerow([])
+        csv_file.writerow(['Checksum', checksum])
+
         filename = 'fuel-capacity-audit.csv'
         web.header('Content-Type', 'application/octet-stream')
         web.header('Content-Disposition', 'attachment; filename="%s"' % (

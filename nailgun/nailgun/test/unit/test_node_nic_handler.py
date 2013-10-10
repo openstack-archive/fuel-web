@@ -136,10 +136,12 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_get_handler_with_NICs(self):
         meta = self.env.default_metadata()
-        meta.update({'interfaces': [
-            {'name': 'eth0', 'mac': '123', 'current_speed': 1, 'max_speed': 1},
-            {'name': 'eth1', 'mac': '678', 'current_speed': 1, 'max_speed': 1},
-        ]})
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'eth0', 'mac': '123',
+             'current_speed': 1, 'max_speed': 1},
+            {'name': 'eth1', 'mac': '678',
+             'current_speed': 1, 'max_speed': 1}])
+
         self.env.create_node(api=True, meta=meta)
         node_db = self.env.nodes[0]
         resp = self.app.get(
@@ -163,38 +165,15 @@ class TestHandlers(BaseIntegrationTest):
             for conn in ('assigned_networks', 'allowed_networks'):
                 self.assertEquals(resp_nic[conn], [])
 
-    def test_NIC_removes_by_agent(self):
-        meta = self.env.default_metadata()
-        meta.update({'interfaces': [
-            {'name': 'eth0', 'mac': '12345', 'current_speed': 1},
-        ]})
-        node = self.env.create_node(api=True, meta=meta)
-
-        node_data = {'mac': node['mac'], 'is_agent': True,
-                     'meta': {'interfaces': []}}
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([node_data]),
-            headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
-        resp = self.app.get(
-            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
-            headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
-        response = json.loads(resp.body)
-        self.assertEquals(response, [])
-
     def test_NIC_updates_by_agent(self):
         meta = self.env.default_metadata()
-        meta.update({'interfaces': [
-            {'name': 'eth0', 'mac': '12345', 'current_speed': 1},
-        ]})
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'eth0', 'mac': '12345', 'current_speed': 1}])
         node = self.env.create_node(api=True, meta=meta)
         new_meta = self.env.default_metadata()
-        new_meta.update({'interfaces': [
+        self.env.set_interfaces_in_meta(new_meta, [
             {'name': 'new_nic', 'mac': '12345', 'current_speed': 10,
-             'max_speed': 10},
-        ]})
+             'max_speed': 10}])
         node_data = {'mac': node['mac'], 'is_agent': True,
                      'meta': new_meta}
         resp = self.app.put(
@@ -219,9 +198,8 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_NIC_adds_by_agent(self):
         meta = self.env.default_metadata()
-        meta.update({'interfaces': [
-            {'name': 'eth0', 'mac': '12345', 'current_speed': 1},
-        ]})
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'eth0', 'mac': '12345', 'current_speed': 1}])
         node = self.env.create_node(api=True, meta=meta)
 
         meta['interfaces'].append({'name': 'new_nic', 'mac': '643'})
@@ -255,9 +233,8 @@ class TestHandlers(BaseIntegrationTest):
     def test_ignore_NIC_id_in_meta(self):
         fake_id = 'some_data'
         meta = self.env.default_metadata()
-        meta.update({'interfaces': [
-            {'id': fake_id, 'name': 'eth0', 'mac': '12345'},
-        ]})
+        self.env.set_interfaces_in_meta(meta, [
+            {'id': fake_id, 'name': 'eth0', 'mac': '12345'}])
         node = self.env.create_node(api=True, meta=meta)
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),

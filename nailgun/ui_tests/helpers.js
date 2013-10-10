@@ -77,6 +77,7 @@ casper.createNode = function(options) {
               "current_speed": 100
             },
             {
+              "ip": "10.20.0.3",
               "mac": "C8:0A:A9:A6:FF:28",
               "name": "eth1",
               "max_speed": 1000,

@@ -28,9 +28,10 @@ class TestClusterHandlers(BaseIntegrationTest):
     def test_assigned_networks_when_node_added(self):
         mac = '123'
         meta = self.env.default_metadata()
-        meta['interfaces'] = [
-            {'name': 'eth0', 'mac': mac},
-            {'name': 'eth1', 'mac': '654'}]
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': '654'}])
 
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         self.env.create_cluster(api=True, nodes=[node['id']])
@@ -52,10 +53,10 @@ class TestClusterHandlers(BaseIntegrationTest):
     def test_allowed_networks_when_node_added(self):
         mac = '123'
         meta = self.env.default_metadata()
-        meta['interfaces'] = [
-            {'name': 'eth0', 'mac': mac},
-            {'name': 'eth1', 'mac': 'abc'},
-        ]
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': 'abc'}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         self.env.create_cluster(api=True, nodes=[node['id']])
 
@@ -71,10 +72,10 @@ class TestClusterHandlers(BaseIntegrationTest):
     def test_assignment_is_removed_when_delete_node_from_cluster(self):
         mac = '123'
         meta = self.env.default_metadata()
-        meta['interfaces'] = [
-            {'name': 'eth0', 'mac': mac},
-            {'name': 'eth1', 'mac': 'abc'},
-        ]
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': 'abc'}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         cluster = self.env.create_cluster(api=True, nodes=[node['id']])
         resp = self.app.put(
@@ -96,10 +97,10 @@ class TestClusterHandlers(BaseIntegrationTest):
     def test_assignment_is_removed_when_delete_cluster(self):
         mac = '12364759'
         meta = self.env.default_metadata()
-        meta['interfaces'] = [
-            {'name': 'eth0', 'mac': mac},
-            {'name': 'eth1', 'mac': 'abc'},
-        ]
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': 'abc'}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         cluster = self.env.create_cluster(api=True, nodes=[node['id']])
         cluster_db = self.db.query(Cluster).get(cluster['id'])
@@ -118,10 +119,10 @@ class TestNodeHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=True)
         mac = '123'
         meta = self.env.default_metadata()
-        meta['interfaces'] = [
-            {'name': 'eth0', 'mac': mac},
-            {'name': 'eth1', 'mac': '654'},
-        ]
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': '654'}])
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
         resp = self.app.get(
@@ -140,10 +141,10 @@ class TestNodeHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=True)
         mac = '123'
         meta = self.env.default_metadata()
-        meta['interfaces'] = [
-            {'name': 'eth0', 'mac': mac},
-            {'name': 'eth1', 'mac': 'abc'},
-        ]
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': 'abc'}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -168,10 +169,10 @@ class TestNodeHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=True)
         mac = '123'
         meta = self.env.default_metadata()
-        meta['interfaces'] = [
-            {'name': 'eth0', 'mac': mac},
-            {'name': 'eth1', 'mac': 'abc'},
-        ]
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': 'abc'}])
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
         resp = self.app.put(
@@ -194,10 +195,10 @@ class TestNodeHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=True)
         macs = ('123', 'abc')
         meta = self.env.default_metadata()
-        meta['interfaces'] = [
-            {'name': 'eth0', 'mac': macs[0]},
-            {'name': 'eth1', 'mac': macs[1]},
-        ]
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': macs[0]},
+             {'name': 'eth1', 'mac': macs[1]}])
         node = self.env.create_node(api=True, meta=meta, mac=macs[0],
                                     cluster_id=cluster['id'])
         resp = self.app.get(

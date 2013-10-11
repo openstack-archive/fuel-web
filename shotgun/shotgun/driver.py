@@ -202,7 +202,8 @@ class Command(Driver):
         execute("mkdir -p {0}".format(os.path.dirname(self.target_path)))
         with open(self.target_path, "w") as f:
             f.write("===== COMMAND =====: {0}\n".format(self.cmdname))
-            f.write("===== RETURN CODE =====: {0}\n".format(str(out.return_code)))
+            f.write("===== RETURN CODE =====: {0}\n".format(
+                str(out.return_code)))
             f.write("===== STDOUT =====:\n")
             f.write(str(out.stdout))
             f.write("\n===== STDERR =====:\n")

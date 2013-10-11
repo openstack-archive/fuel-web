@@ -611,6 +611,82 @@ class CheckNetworksTask(object):
                     format("\n".join(nodes_with_errors))
                 raise errors.NetworkCheckError(err_msg, add_client=False)
 
+        # check untagged networks intersection
+        untagged_nets = set(
+            n["id"] for n in filter(
+                lambda n: (n["vlan_start"] is None), networks))
+        if untagged_nets:
+            logger.info(
+                "Untagged networks found, "
+                "checking intersection between them...")
+            interfaces = []
+            for node in task.cluster.nodes:
+                for iface in node.interfaces:
+                    interfaces.append(iface)
+            found_intersection = []
+
+            for iface in interfaces:
+                nets = dict(
+                    (n.id, n.name)
+                    for n in iface.assigned_networks)
+
+                crossed_nets = set(nets.keys()) & untagged_nets
+                if len(crossed_nets) > 1:
+                    err_net_names = [
+                        '"{0}"'.format(nets[i]) for i in crossed_nets]
+                    found_intersection.append(
+                        [iface.node.name, err_net_names])
+
+            if found_intersection:
+                nodes_with_errors = [
+                    u'Node "{0}": {1}'.format(
+                        name,
+                        ", ".join(_networks)
+                    ) for name, _networks in found_intersection]
+                err_msg = u"Some untagged networks are " \
+                          "assigned to the same physical interface. " \
+                          "You should assign them to " \
+                          "different physical interfaces:\n{0}". \
+                    format("\n".join(nodes_with_errors))
+                raise errors.NetworkCheckError(err_msg, add_client=False)
+
+        # check: networks VLAN IDs should not be in Neutron L2 VLAN ID range
+        # (VLAN segmentation only)
+        if task.cluster.net_segment_type == 'vlan':
+            tagged_nets = [n for n in filter(
+                lambda n: (n["vlan_start"] is not None), networks)]
+        else:
+            tagged_nets = []
+
+        if tagged_nets:
+            if 'neutron_parameters' in data:
+                l2cfg = data['neutron_parameters']['L2']
+            else:
+                l2cfg = task.cluster.neutron_config.L2
+            for net, net_conf in l2cfg['phys_nets'].iteritems():
+                range = net_conf['vlan_range']
+                if range:
+                    break
+            else:
+                err_msg = u"Wrong VLAN range.\n"
+                raise errors.NetworkCheckError(err_msg, add_client=False)
+
+            for net in tagged_nets:
+                print net["vlan_start"]
+            net_intersect = [net["name"] for net in tagged_nets
+                             if net["vlan_start"] >= range[0]
+                             and net["vlan_start"] <= range[1]]
+            if net_intersect:
+                nets_with_errors = ", ".\
+                    join(net_intersect)
+                err_msg = u"Networks VLAN tags are in " \
+                          "ID range defined for Neutron L2. " \
+                          "You should assign VLAN tags that are " \
+                          "not in Neutron L2 VLAN ID range:\n{0}". \
+                    format(nets_with_errors)
+                raise errors.NetworkCheckError(err_msg, add_client=False)
+
+
         admin_ng = NetworkManager().get_admin_network_group()
         admin_range = netaddr.IPNetwork(admin_ng.cidr)
         for ng in networks:

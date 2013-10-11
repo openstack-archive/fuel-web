@@ -621,7 +621,7 @@ class NeutronNetworkConfiguration(NetworkConfiguration):
                         cls._set_ip_ranges(ng['id'], value)
                     else:
                         if key == 'cidr' and \
-                                not ng['name'] in ('public', 'private'):
+                                not ng['name'] in ('private',):
                             network_manager.update_ranges_from_cidr(
                                 ng_db, value)
 

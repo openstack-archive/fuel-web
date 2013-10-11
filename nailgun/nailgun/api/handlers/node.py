@@ -104,7 +104,7 @@ class NodeHandler(JSONHandler):
                 if node.cluster_id:
                     network_manager.allow_network_assignment_to_all_interfaces(
                         node)
-                    network_manager.assign_networks_to_main_interface(node)
+                    network_manager.assign_networks_by_default(node)
 
         regenerate_volumes = any((
             'roles' in data and set(data['roles']) != set(node.roles),
@@ -276,7 +276,7 @@ class NodeCollectionHandler(JSONHandler):
 
         if node.cluster_id:
             network_manager.allow_network_assignment_to_all_interfaces(node)
-            network_manager.assign_networks_to_main_interface(node)
+            network_manager.assign_networks_by_default(node)
 
         try:
             # we use multiplier of 1024 because there are no problems here
@@ -443,7 +443,7 @@ class NodeCollectionHandler(JSONHandler):
                 if nd['cluster_id']:
                     network_manager.allow_network_assignment_to_all_interfaces(
                         node)
-                    network_manager.assign_networks_to_main_interface(node)
+                    network_manager.assign_networks_by_default(node)
 
         # we need eagerload everything that is used in render
         nodes = db().query(Node).options(

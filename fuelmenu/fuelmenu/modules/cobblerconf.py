@@ -141,8 +141,10 @@ Please wait...")
             #                   'dport': 67, 'message': 'offer',
             #                   'gateway': '0.0.0.0'}]
             try:
-                with dhcp_checker.utils.IfaceState(self.activeiface) as iface:
-                    dhcptimeout = 5
+                dhcptimeout = 5
+                with timeout.wait_for_true(dhcp_checker.utils.IfaceState,
+                                           [self.activeiface],
+                                           timeout=dhcptimeout) as iface:
                     dhcp_server_data = timeout.wait_for_true(
                         dhcp_checker.api.check_dhcp_on_eth,
                         [iface, dhcptimeout], timeout=dhcptimeout)

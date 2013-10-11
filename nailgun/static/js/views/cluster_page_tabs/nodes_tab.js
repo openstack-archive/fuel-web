@@ -383,17 +383,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             if (this.cluster.get('mode') == 'multinode') {
                 var allocatedController = this.screen.tab.model.get('nodes').filter(function(node) {return !node.get('pending_deletion') && _.contains(_.union(node.get('roles'),node.get('pending_roles')), 'controller');})[0];
                 var cantAddController = allocatedController && !_.contains(this.nodeIds, allocatedController.id);
-                var controllerSelected = (this.$('input[value=controller]').is(':checked') || this.$('input[value=controller]').prop('indeterminate')) && this.nodeIds.length;
-                this.screen.$('.node-box:not(.node-offline):not(.node-error):not(.node-delete) input:not(:checked)').prop('disabled', controllerSelected);
-                this.screen.$('.select-all input:not(:checked)').prop('disabled', controllerSelected).parent().toggleClass('disabled', controllerSelected);
+                var controllerRoleSelected = this.$('input[value=controller]').is(':checked') || this.$('input[value=controller]').prop('indeterminate');
+                var controllerNodeChosen = controllerRoleSelected && this.nodeIds.length;
+                this.screen.$('.select-all input:not(:checked)').prop('disabled', controllerRoleSelected).parent().toggleClass('disabled', controllerRoleSelected);
+                this.screen.$('.node-box:not(.node-offline):not(.node-error):not(.node-delete) input:not(:checked)').prop('disabled', controllerNodeChosen);
                 // if there are no allocated controllers, check Select All tumblers for its' disabled state (offline, error nodes)
-                if (!controllerSelected && this.screen.nodeList) {
-                    _.invoke(this.screen.nodeList.subViews, 'calculateSelectAllDisabledState', this);
+                if (!controllerNodeChosen && this.screen.nodeList) {
+                    _.invoke(this.screen.nodeList.subViews, 'calculateSelectAllDisabledState', controllerRoleSelected, this);
                 }
                 if (this.nodeIds.length > 1 || cantAddController) {
                     this.$('input[value=controller]').prop('disabled', true);
                 }
-                if (this.nodeIds.length > 1 || controllerSelected || cantAddController) {
+                if (this.nodeIds.length > 1 || controllerNodeChosen || cantAddController) {
                     this.$('.role-conflict.controller').text('Only one controller can be assigned in a multi-node deployment that is not Highly-Available (HA).');
                 }
             }
@@ -519,8 +520,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$('input[name=select-node-group]').prop('checked', this.amountOfAvailableNodes() && this.$('.node-checkbox input:checked').length == this.amountOfAvailableNodes());
             this.nodeList.calculateSelectAllCheckedState();
         },
-        calculateSelectAllDisabledState: function() {
-            var disabled = !this.amountOfAvailableNodes() || this.nodeList.screen instanceof EditNodesScreen || this.nodeList.screen.isLocked();
+        calculateSelectAllDisabledState: function(controllerRoleSelected) {
+            var disabled = !this.amountOfAvailableNodes() || (controllerRoleSelected && this.amountOfAvailableNodes() > 1) || this.nodeList.screen instanceof EditNodesScreen || this.nodeList.screen.isLocked();
             this.$('input[name=select-node-group]').prop('disabled', disabled).parent().toggleClass('disabled', disabled);
             this.nodeList.calculateSelectAllDisabledState();
         },

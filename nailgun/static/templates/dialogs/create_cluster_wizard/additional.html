@@ -2,8 +2,15 @@
   <fieldset>
     <div class="control-group">
       <% var services = [
-        {name: 'savanna', label: 'Install Savanna', description: 'If true, Savanna project will be installed.'},
-        {name: 'murano', label: 'Install Murano', description: 'If true, Murano project will be installed.'}
+        {
+            name: 'savanna',
+            label: 'Install Savanna',
+            description: 'Savanna enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.'
+        },{
+            name: 'murano',
+            label: 'Install Murano',
+            description: 'Murano enables windows based datacenter services like Active Directory, IIS, Microsoft SQL and ASP.NET to be deployed on OpenStack.'
+        }
       ] %>
       <% _.each(services, function(service) { %>
         <label class="parameter-box clearfix">

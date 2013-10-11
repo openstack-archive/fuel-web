@@ -16,17 +16,19 @@
 
 """Deployment serializers for orchestrator"""
 
+from netaddr import IPNetwork
+from sqlalchemy import and_
+from sqlalchemy import or_
+
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
 from nailgun.db import db
 from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from nailgun.volumes import manager
-from netaddr import IPNetwork
-from sqlalchemy import and_
-from sqlalchemy import or_
 
 
 class Priority(object):
@@ -672,6 +674,10 @@ class NeutronMethods(object):
         # Fill up interfaces and add bridges for them.
         for iface in node.interfaces:
             attrs['interfaces'][iface.name] = {}
+            if iface.name == node.admin_interface.name:
+                # A physical interface for the FuelWeb admin network should
+                # not be used through bridge. Directly only.
+                continue
             attrs['transformations'].append({
                 'action': 'add-br',
                 'name': 'br-%s' % iface.name
@@ -701,13 +707,15 @@ class NeutronMethods(object):
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:
             netgroup = nm.get_node_network_by_netname(node.id, ngname)
-            if netgroup['vlan'] == 0:
+            if not netgroup['vlan']:
+                # Untagged network.
                 attrs['transformations'].append({
                     'action': 'add-patch',
                     'bridges': ['br-%s' % netgroup['dev'], brname],
                     'trunks': [0]
                 })
             elif netgroup['vlan'] > 1:
+                # Tagged network.
                 attrs['transformations'].append({
                     'action': 'add-patch',
                     'bridges': ['br-%s' % netgroup['dev'], brname],
@@ -715,7 +723,7 @@ class NeutronMethods(object):
                 })
             else:
                 # FIXME! Should raise some exception I think.
-                pass
+                logger.error('Invalid vlan for network: %s' % str(netgroup))
 
         # Dance around Neutron segmentation type.
         if node.cluster.net_segment_type == 'vlan':
@@ -737,7 +745,10 @@ class NeutronMethods(object):
             attrs['roles']['mesh'] = 'br-mgmt'
         else:
             # FIXME! Should raise some exception I think.
-            pass
+            logger.error(
+                'Invalid Neutron segmentation type: %s' %
+                node.cluster.net_segment_type
+            )
 
         # Fill up all about fuelweb-admin network.
         attrs['endpoints'][node.admin_interface.name] = {

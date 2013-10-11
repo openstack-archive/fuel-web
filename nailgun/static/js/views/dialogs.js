@@ -53,7 +53,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var logsLink;
             try {
                 if (app.page.model.constructor == models.Cluster) {
-                    var options = {type: 'local', source: 'nailgun', level: 'error'};
+                    var options = {type: 'local', source: 'api', level: 'error'};
                     logsLink = '#cluster/' + app.page.model.id + '/logs/' + utils.serializeTabOptions(options);
                 }
             } catch(e) {}

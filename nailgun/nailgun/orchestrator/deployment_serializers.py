@@ -618,7 +618,9 @@ class NeutronMethods(object):
 
         for net, net_conf in attrs['predefined_networks'].iteritems():
             net_conf["L3"]["subnet"] = net_conf["L3"].pop("cidr")
-            net_conf["L3"]["gateway"] = str(IPNetwork(net_conf["L3"]["subnet"])[1])
+            net_conf["L3"]["gateway"] = str(
+                IPNetwork(net_conf["L3"]["subnet"])[1]
+            )
             net_conf["L3"]["floating"] = join_range(
                 net_conf["L3"]["floating"]
             )

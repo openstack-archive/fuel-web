@@ -482,6 +482,23 @@
                             "generator": "identical",
                             "generator_arg": "centos-x86_64"
                         }
+                    },
+                    "quantum_settings": {
+                        "database": {
+                            "passwd": {
+                                "generator": "password"
+                            }
+                        },
+                        "keystone": {
+                            "admin_password": {
+                                "generator": "password"
+                            }
+                        },
+                        "metadata": {
+                            "metadata_proxy_shared_secret": {
+                                "generator": "password"
+                            }
+                        }
                     }
                 }
             }
@@ -891,6 +908,23 @@
                         "profile": {
                             "generator": "identical",
                             "generator_arg": "rhel-x86_64"
+                        }
+                    },
+                    "quantum_settings": {
+                        "database": {
+                            "passwd": {
+                                "generator": "password"
+                            }
+                        },
+                        "keystone": {
+                            "admin_password": {
+                                "generator": "password"
+                            }
+                        },
+                        "metadata": {
+                            "metadata_proxy_shared_secret": {
+                                "generator": "password"
+                            }
                         }
                     }
                 }
@@ -1379,6 +1413,23 @@
                         },
                         "rabbit_user": {
                             "generator": "password"
+                        }
+                    },
+                    "quantum_settings": {
+                        "database": {
+                            "passwd": {
+                                "generator": "password"
+                            }
+                        },
+                        "keystone": {
+                            "admin_password": {
+                                "generator": "password"
+                            }
+                        },
+                        "metadata": {
+                            "metadata_proxy_shared_secret": {
+                                "generator": "password"
+                            }
                         }
                     }
                 }

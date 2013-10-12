@@ -55,6 +55,15 @@ class Priority(object):
 class NovaOrchestratorSerializer(object):
     """Base class for orchestrator searilization."""
 
+    # Merge attributes of nodes with common attributes
+    @classmethod
+    def deep_merge(cls, custom, common):
+        for key, value in common.iteritems():
+            if key in custom and isinstance(custom[key], dict):
+                custom[key].update(value)
+            elif key not in custom:
+                custom[key] = value
+
     @classmethod
     def serialize(cls, cluster):
         """Method generates facts which
@@ -68,14 +77,7 @@ class NovaOrchestratorSerializer(object):
 
         cls.set_deployment_priorities(nodes)
 
-        # Merge attributes of nodes with common attributes
-        def deep_merge(custom, common):
-            for key, value in common.iteritems():
-                if key in custom and isinstance(custom[key], dict):
-                    custom[key].update(value)
-                elif key not in custom:
-                    custom[key] = value
-        [deep_merge(node, common_attrs) for node in nodes]
+        [cls.deep_merge(node, common_attrs) for node in nodes]
         return nodes
 
     @classmethod
@@ -558,7 +560,7 @@ class NeutronMethods(object):
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
         attrs['master_ip'] = settings.MASTER_IP
-        attrs['quantum_settings'] = cls.neutron_attrs(cluster)
+        cls.deep_merge(attrs['quantum_settings'], cls.neutron_attrs(cluster))
         attrs['quantum'] = True
 
         if cluster.mode == 'multinode':
@@ -580,7 +582,6 @@ class NeutronMethods(object):
         """
         attrs = {}
         neutron_config = cluster.neutron_config
-        attrs['metadata'] = neutron_config.nova_metadata
         attrs['L3'] = neutron_config.L3 or {
             'use_namespaces': True
         }

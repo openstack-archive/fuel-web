@@ -74,7 +74,7 @@ class TestDhcpWithNetworkDown(unittest.TestCase):
         self.iface_down = 'eth2'
         utils.command_util('ifconfig', self.iface_down, 'down')
 
-    def test_dhcp_server_on_eth1_down(self):
+    def test_dhcp_server_on_eth2_down(self):
         """Test verifies that iface would be ifuped in case it's down
         and rolledback after
         """
@@ -101,5 +101,19 @@ class TestDhcpWithNetworkDown(unittest.TestCase):
         self.assertEqual(manager.iface_state, 'UP')
         self.assertEqual(manager.post_iface_state, 'UP')
 
+    def test_dhcp_server_on_nonexistent_iface(self):
+
+        def test_check():
+            manager = utils.IfaceState('eth10')
+            with manager as iface:
+                api.check_dhcp_on_eth(iface, 2)
+        self.assertRaises(EnvironmentError, test_check)
+
+
+
     def tearDown(self):
         utils.command_util('ifconfig', self.iface_down, 'up')
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -650,6 +650,8 @@ class NeutronConfig(Base):
     predefined_networks = Column(JSON, default={})
 
     nova_metadata = Column(JSON, default={})
+    database = Column(JSON, default={})
+    keystone = Column(JSON, default={})
 
     segmentation_type = Column(
         Enum(*NET_SEGMENT_TYPES,

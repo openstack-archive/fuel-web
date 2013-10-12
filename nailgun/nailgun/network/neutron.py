@@ -43,6 +43,12 @@ class NeutronManager(NetworkManager):
             segmentation_type=cluster.net_segment_type,
             nova_metadata={
                 "metadata_proxy_shared_secret": AttributesGenerators.password()
+            },
+            database={
+                "passwd": AttributesGenerators.password()
+            },
+            keystone={
+                "admin_password": AttributesGenerators.password()
             }
         )
         db().add(neutron_config)

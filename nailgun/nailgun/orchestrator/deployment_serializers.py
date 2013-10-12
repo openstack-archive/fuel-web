@@ -556,7 +556,7 @@ class NeutronMethods(object):
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
         attrs['master_ip'] = settings.MASTER_IP
-        attrs['quantum_settings'] = cls.neutron_attrs(cluster)
+        attrs['quantum_settings'].update(cls.neutron_attrs(cluster))
         attrs['quantum'] = True
 
         if cluster.mode == 'multinode':
@@ -578,7 +578,6 @@ class NeutronMethods(object):
         """
         attrs = {}
         neutron_config = cluster.neutron_config
-        attrs['metadata'] = neutron_config.nova_metadata
         attrs['L3'] = neutron_config.L3 or {
             'use_namespaces': True
         }

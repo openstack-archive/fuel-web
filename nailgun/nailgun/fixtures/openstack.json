@@ -482,6 +482,23 @@
                             "generator": "identical",
                             "generator_arg": "centos-x86_64"
                         }
+                    },
+                    "quantum_settings": {
+                        "database": {
+                            "passwd": {
+                                "generator": "password"
+                            }
+                        },
+                        "keystone": {
+                            "admin_password": {
+                                "generator": "password"
+                            }
+                        },
+                        "metadata": {
+                            "metadata_proxy_shared_secret": {
+                                "generator": "password"
+                            }
+                        }
                     }
                 }
             }

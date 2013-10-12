@@ -482,6 +482,23 @@
                             "generator": "identical",
                             "generator_arg": "centos-x86_64"
                         }
+                    },
+                    "quantum_settings": {
+                        "database": {
+                            "passwd": {
+                                "generator": "password"
+                            }
+                        },
+                        "keystone": {
+                            "admin_password": {
+                                "generator": "password"
+                            }
+                        },
+                        "metadata": {
+                            "metadata_proxy_shared_secret": {
+                                "generator": "password"
+                            }
+                        }
                     }
                 }
             }
@@ -547,47 +564,7 @@
                         "assign": false,
                         "assign_vip": false
                     }
-                ],
-                "neutron": {
-                    "networks": [
-                        {
-                            "name": "public",
-                            "pool": ["172.16.0.0/12"]
-                        },
-                        {
-                            "name": "management",
-                            "pool": ["192.168.0.0/16"]
-                        },
-                        {
-                            "name": "storage",
-                            "pool": ["192.168.0.0/16"]
-                        }
-                    ],
-                    "config": {
-                        "parameters": {
-                            "amqp": {
-                                "provider": "rabbitmq",
-                                "username": null,
-                                "passwd": "",
-                                "hosts": "hostname1:5672, hostname2:5672"
-                            },
-                            "database": {
-                                "provider": "mysql",
-                                "port": "3306",
-                                "database": null,
-                                "username": null,
-                                "passwd":   ""
-                            },
-                            "keystone": {
-                                "admin_user": null,
-                                "admin_password": ""
-                            },
-                            "metadata": {
-                                "metadata_proxy_shared_secret": ""
-                            }
-                        }
-                    }
-                }
+                ]
             },
             "volumes_metadata": {
                 "volumes_roles_mapping": {
@@ -1379,6 +1356,23 @@
                         },
                         "rabbit_user": {
                             "generator": "password"
+                        }
+                    },
+                    "quantum_settings": {
+                        "database": {
+                            "passwd": {
+                                "generator": "password"
+                            }
+                        },
+                        "keystone": {
+                            "admin_password": {
+                                "generator": "password"
+                            }
+                        },
+                        "metadata": {
+                            "metadata_proxy_shared_secret": {
+                                "generator": "password"
+                            }
                         }
                     }
                 }

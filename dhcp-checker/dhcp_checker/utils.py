@@ -36,9 +36,15 @@ def _iface_state(iface):
     """For a given iface return it's state
     returns UP, DOWN, UNKNOWN
     """
-    state = command_util('ip', 'link', 'show', iface)
-    return re.search(r'state (?P<state>[A-Z]*)',
-                     state.stdout.read()).groupdict()['state']
+    state = command_util('ip', 'link', 'show', iface).stdout.read()
+    search_result = re.search(r'.*<(?P<state>.*)>.*', state)
+    if search_result:
+        state_list = search_result.groupdict().get('state', [])
+        if 'UP' in state_list:
+            return 'UP'
+        else:
+            return 'DOWN'
+    return 'UNKNOWN'
 
 
 def check_network_up(iface):
@@ -184,7 +190,7 @@ class IfaceState(object):
         self.post_iface_state = ''
 
     def iface_up(self):
-        while self.retry or self.iface_state != 'UP':
+        while self.retry and self.iface_state != 'UP':
             command_util('ifconfig', self.iface, 'up')
             self.iface_state = _iface_state(self.iface)
             self.retry -= 1

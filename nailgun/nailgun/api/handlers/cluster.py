@@ -56,6 +56,8 @@ class ClusterHandler(JSONHandler):
         "grouping",
         "is_customized",
         "net_provider",
+        "net_segment_type",
+        "net_manager",
         ("release", "*")
     )
 
@@ -179,11 +181,11 @@ class ClusterCollectionHandler(JSONHandler):
         cluster.release = db().query(Release).get(data["release"])
         # TODO(NAME): use fields
         for field in (
-            'name',
-            'mode',
-            'net_manager',
-            'net_provider',
-            'net_segment_type'
+            "name",
+            "mode",
+            "net_provider",
+            "net_segment_type",
+            "net_manager"
         ):
             if data.get(field):
                 setattr(cluster, field, data.get(field))

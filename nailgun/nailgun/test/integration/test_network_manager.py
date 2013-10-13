@@ -196,13 +196,19 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertEquals(vip, vip2)
 
     def test_get_node_networks_for_vlan_manager(self):
-        self.env.create(
-            cluster_kwargs={'net_manager': 'VlanManager'},
+        cluster = self.env.create(
+            cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True},
             ]
         )
-
+        networks_data = {'net_manager': 'VlanManager'}
+        self.app.put(
+            reverse('NovaNetworkConfigurationHandler',
+                    kwargs={"cluster_id": cluster['id']}),
+            json.dumps(networks_data),
+            headers=self.default_headers
+        )
         network_data = self.env.network_manager.get_node_networks(
             self.env.nodes[0].id
         )

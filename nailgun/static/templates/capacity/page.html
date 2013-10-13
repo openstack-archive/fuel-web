@@ -6,65 +6,114 @@
 
 <div class="capatity page-wrapper">
 <% if (!_.isUndefined(this.model) && this.model.deferred.state() != 'pending') { %>
+
   <div class="row-fluid">
     <div class="span12">
-      <h4>License Usage Report</h4>
-      <p>
-        <table class="table table-bordered table-striped">
+      <h3>License Usage Report</h3>
+    </div>
+  </div>
+
+  <div class="row-fluid">
+    <div class="span12">
+
+      <table class="table table-bordered table-striped releases-table">
+        <thead>
           <tr>
-            <td>Fuel version</td>
-            <td><%- this.model.get('report').fuel_data.release %></td>
+            <th class="name">Fuel version</th>
+            <th>Fuel UUID</th>
           </tr>
+        </thead>
+        <tbody>
           <tr>
-            <td>Fuel UUID</td>
+            <td><%- this.model.get('report').fuel_data.release %></td>
             <td><%- this.model.get('report').fuel_data.uuid %></td>
           </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <div class="row-fluid">
+    <div class="span12">
+
+      <table class="table table-bordered table-striped releases-table">
+        <thead>
           <tr>
-            <td colspan="2"></td>
+            <th class="name">Environment Name</th>
+            <th>Node Count</th>
           </tr>
-          <tr>
-            <td>Environment Name</td>
-            <td>Node Count</td>
-          </tr>
+        </thead>
+        <tbody>
           <% _.each(this.model.get('report').environment_stats, function(env) { %>
           <tr>
             <td><%- env.cluster %></td>
             <td><%- env.nodes %></td>
           </tr>
           <% }) %>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <div class="row-fluid">
+    <div class="span12">
+
+      <table class="table table-bordered table-striped releases-table">
+        <thead>
           <tr>
-            <td colspan="2"></td>
+            <th class="name">Total number of allocated nodes</th>
+            <th>Total number of unallocated nodes</th>
           </tr>
-          <tr>
-            <td>Total number of allocated nodes</td>
-            <td>Total number of unallocated nodes</td>
-          </tr>
+        </thead>
+        <tbody>
           <tr>
             <td><%- this.model.get('report').allocation_stats.allocated %></td>
             <td><%- this.model.get('report').allocation_stats.unallocated %></td>
           </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+  <div class="row-fluid">
+    <div class="span12">
+
+      <table class="table table-bordered table-striped releases-table">
+        <thead>
           <tr>
-            <td colspan="2"></td>
+            <th class="name">Node role(s)</th>
+            <th>Number of nodes with this configuration</th>
           </tr>
-          <tr>
-            <td>Node role(s)</td>
-            <td>Number of nodes with this configuration</td>
-          </tr>
+        </thead>
+        <tbody>
           <% _.each(_.pairs(this.model.get('report').roles_stat), function(stats) { %>
           <tr>
             <td><%- stats[0] %></td>
             <td><%- stats[1] %></td>
           </tr>
           <% }) %>
-        </table>  
-      </p>
-      <p>
-        <a href="/api/capacity/csv">Download report</a>
-      <p>
+        </tbody>
+      </table>
+
     </div>
   </div>
+
+  <div class="row-fluid">
+    <div class="span12">
+        <a href="/api/capacity/csv" class="btn btn-info"><i class="icon-install"></i> Download report</a>
+    </div>
+  </div>
+
+  
   
 <% } else { %>
-  <span class="icon-process animate-spin"></span> Loading...
+  <div class="row-fluid">
+      <div class="span12" align="center">
+        <span class="icon-process animate-spin"></span> Loading...
+      </div>
+  </div>
 <% } %>
 </div>

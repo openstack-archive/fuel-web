@@ -168,8 +168,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.hasChanges = false;
             this.networkConfiguration = new models.NetworkConfiguration(this.model.get('networkConfiguration').toJSON(), {parse: true});
             this.fixedAmount = this.model.get('net_provider') == 'nova_network' ? this.networkConfiguration.get('networks').findWhere({name: 'fixed'}).get('amount') || 1 : 1;
-            _.each(this.networkConfiguration.get('networks').reject({name: 'fixed'}), function(network) {
-                network.set({network_size: utils.calculateNetworkSize(network.get('cidr'))});
+            this.networkConfiguration.get('networks').each(function(network) {
+                if (!_.contains(['fixed', 'private'], network.get('name'))) {
+                    network.set({network_size: utils.calculateNetworkSize(network.get('cidr'))});
+                }
             });
         },
         initialize: function(options) {

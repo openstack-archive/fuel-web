@@ -384,7 +384,8 @@ define(['utils'], function(utils) {
                 attributes = {
                     'public': ['cidr', 'vlan_start', 'gateway'],
                     'management': ['cidr', 'vlan_start'],
-                    'storage': ['cidr', 'vlan_start']
+                    'storage': ['cidr', 'vlan_start'],
+                    'private': []
                 };
             }
             return attributes[this.get('name')] || ['vlan_start'];

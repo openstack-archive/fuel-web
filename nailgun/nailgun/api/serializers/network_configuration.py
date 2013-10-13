@@ -76,13 +76,13 @@ class NeutronNetworkConfigurationSerializer(BasicSerializer):
         result['net_provider'] = cluster.net_provider
         result['net_l23_provider'] = cluster.net_l23_provider
         result['net_segment_type'] = cluster.net_segment_type
-        # result['networks'] = map(
-        #     cls.serialize_network_group,
-        #     cluster.network_groups
-        # )
-        result['networks'] = [cls.serialize_network_group(ng)
-                              for ng in cluster.network_groups
-                              if ng.name != 'private']
+        result['networks'] = map(
+            cls.serialize_network_group,
+            cluster.network_groups
+        )
+        # result['networks'] = [cls.serialize_network_group(ng)
+        #                       for ng in cluster.network_groups
+        #                       if ng.name != 'private']
 
         result['neutron_parameters'] = {
             'predefined_networks': cluster.neutron_config.predefined_networks,

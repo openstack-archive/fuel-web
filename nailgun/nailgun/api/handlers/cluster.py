@@ -55,7 +55,9 @@ class ClusterHandler(JSONHandler):
         "status",
         "grouping",
         "is_customized",
-        "net_provider",
+        'net_provider',
+        'net_segment_type',
+        'net_manager',
         ("release", "*")
     )
 

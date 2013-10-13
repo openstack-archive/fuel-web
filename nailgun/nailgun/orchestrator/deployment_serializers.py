@@ -540,7 +540,7 @@ class NeutronMethods(object):
         node_attrs = cls._serialize_node(node, role)
         node_attrs['network_scheme'] = cls.generate_network_scheme(node)
         for attr in node_attrs.keys()[:]:
-            if attr.endswith("_interface"):
+            if attr.endswith("_interface") or attr == 'network_data':
                 del node_attrs[attr]
 
         return node_attrs
@@ -742,8 +742,7 @@ class NeutronMethods(object):
                         'private'
                     ).name,
                     'br-prv'
-                ],
-                'tags': [0, 0]
+                ]
             })
         elif node.cluster.net_segment_type == 'gre':
             attrs['roles']['mesh'] = 'br-mgmt'

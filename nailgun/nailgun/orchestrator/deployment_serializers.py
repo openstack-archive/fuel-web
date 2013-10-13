@@ -730,8 +730,7 @@ class NeutronMethods(object):
                         'private'
                     ).name,
                     'br-prv'
-                ],
-                'tags': [0, 0]
+                ]
             })
         elif node.cluster.net_segment_type == 'gre':
             attrs['roles']['mesh'] = 'br-mgmt'

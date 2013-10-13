@@ -615,10 +615,38 @@ class NetworkManager(object):
                 nic.allowed_networks.append(ng)
         db().commit()
 
+    def assign_networks_by_default(self, node):
+        if node.cluster.net_provider == 'nova_network':
+            self.assign_networks_to_main_interface(node)
+        elif node.cluster.net_provider == 'neutron':
+            self.assign_networks_neutron(node)
+
     def assign_networks_to_main_interface(self, node):
         self.clear_assigned_networks(node)
         for ng in self.get_cluster_networkgroups_by_node(node):
             node.admin_interface.assigned_networks.append(ng)
+        db().commit()
+
+    def assign_networks_neutron(self, node):
+        self.clear_assigned_networks(node)
+        # exclude admin interface if it is not only the interface
+        ifaces = [iface for iface in node.interfaces
+                  if iface.id != node.admin_interface.id]
+        if not ifaces:
+            ifaces = [node.admin_interface]
+        # assign private network for vlan
+        if node.cluster.net_segment_type == 'vlan':
+            ng_prv = [ng for ng in self.get_cluster_networkgroups_by_node(node)
+                      if ng.name == 'private']
+            if ng_prv:
+                ifaces[0].assigned_networks.append(ng_prv[0])
+                if len(ifaces) > 1:
+                    ifaces.pop(0)
+        # assign all remaining networks
+        [ifaces[0].assigned_networks.append(ng)
+         for ng in self.get_cluster_networkgroups_by_node(node)
+         if ng.name != 'private']
+
         db().commit()
 
     def get_node_networks(self, node_id):

@@ -499,6 +499,10 @@ define(['utils'], function(utils) {
                 } else if (title == 'predefined_networks') {
                     // CIDR validation
                     errors = _.extend(errors, utils.validateCidr(configuration.net04.L3.cidr, 'cidr-int'));
+                    // gateway validation
+                    if (utils.validateIP(configuration.net04.L3.gateway)) {
+                        errors.gateway = 'Invalid gateway';
+                    }
                     // floating IP range validation
                     var floatingIpRange = configuration.net04_ext.L3.floating;
                     if (floatingIpRange[0] == '') {

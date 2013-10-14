@@ -398,6 +398,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             predefined_networks.net04_ext.L3.floating = [this.$('input[name=floating_start]').val(), this.$('input[name=floating_end]').val()];
             predefined_networks.net04_ext.L3.cidr = this.$('input[name=cidr-ext]').val();
             predefined_networks.net04.L3.cidr = this.$('input[name=cidr-int]').val();
+            predefined_networks.net04.L3.gateway = this.$('input[name=gateway]').val();
             predefined_networks.net04.L3.nameservers = [this.$('input[name=nameserver-0]').val(), this.$('input[name=nameserver-1]').val()];
 
             this.neutronParameters.set({L2: l2, predefined_networks: predefined_networks}, {validate: true});

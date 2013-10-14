@@ -13,6 +13,7 @@
 #    under the License.
 
 import csv
+from hashlib import md5
 import json
 from mock import patch
 from StringIO import StringIO
@@ -68,12 +69,18 @@ class TestHandlers(BaseIntegrationTest):
         self._create_capacity_log()
         resp = self.app.get(reverse('CapacityLogCsvHandler'))
         self.assertEquals(200, resp.status)
-        csvreader = csv.reader(StringIO(resp.body), delimiter=',',
+
+        response_stream = StringIO(resp.body)
+        checksum = md5(''.join(response_stream.readlines()[:-2])).hexdigest()
+
+        response_stream.seek(0)
+        csvreader = csv.reader(response_stream, delimiter=',',
                                quotechar='|', quoting=csv.QUOTE_MINIMAL)
 
         rows = [
             ['Fuel version', '0.1b'],
             ['Fuel UUID', 'Unknown'],
+            ['Checksum', checksum],
             ['Environment Name', 'Node Count'],
             ['Total number allocated of nodes', '0'],
             ['Total number of unallocated nodes', '0'],

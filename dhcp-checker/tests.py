@@ -113,5 +113,19 @@ class TestDhcpWithNetworkDown(unittest.TestCase):
         utils.command_util('ifconfig', self.iface_down, 'up')
 
 
+class TestMainFunctions(unittest.TestCase):
+
+    def test_with_vlans(self):
+        config = {'eth0': (100, 101), 'eth1': (103, 105),
+                  'eth2': range(106, 120)}
+        result = api.check_dhcp_with_vlans(config)
+        self.assertEqual(len(list(result)), 3)
+
+    def test_with_duplicated_with_repeat(self):
+        ifaces = ['eth0', 'eth1', 'eth2']
+        result = api.check_dhcp(ifaces, repeat=3)
+        self.assertEqual(len(list(result)), 3)
+
+
 if __name__ == '__main__':
     unittest.main()

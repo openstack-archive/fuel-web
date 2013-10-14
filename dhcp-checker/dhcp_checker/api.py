@@ -64,7 +64,7 @@ def check_dhcp(ifaces, timeout=5, repeat=2):
     ifaces_filtered = list(utils.filtered_ifaces(ifaces))
     if not ifaces_filtered:
         raise EnvironmentError("No valid interfaces provided.")
-    pool = multiprocessing.Pool(len(ifaces_filtered)*repeat)
+    pool = multiprocessing.Pool(len(ifaces_filtered))
     return itertools.chain(*pool.map(check_dhcp_on_eth, (
         (iface, timeout) for iface in ifaces_filtered*repeat)))
 

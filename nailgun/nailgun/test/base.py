@@ -407,6 +407,38 @@ class Environment(object):
 
         return nets
 
+    def generate_ui_neutron_networks(self, cluster_id):
+        start_id = self.db.query(NetworkGroup.id).order_by(
+            NetworkGroup.id
+        ).first()
+        start_id = 0 if not start_id else start_id[-1] + 1
+        net_names = (
+            "public",
+            "management",
+            "storage"
+        )
+        net_cidrs = (
+            "172.16.1.0/24",
+            "192.168.0.0/24",
+            "192.168.0.0/24"
+        )
+        nets = {'networks': [{
+            "network_size": 256,
+            "name": nd[0],
+            "amount": 1,
+            "cluster_id": cluster_id,
+            "vlan_start": 100 + i,
+            "cidr": nd[1],
+            "id": start_id + i
+        } for i, nd in enumerate(zip(net_names, net_cidrs))]}
+
+        public = filter(
+            lambda net: net['name'] == 'public',
+            nets['networks'])[0]
+        public['netmask'] = '255.255.255.0'
+
+        return nets
+
     def get_default_roles(self):
         return ['controller', 'compute', 'cinder', 'ceph-osd']
 

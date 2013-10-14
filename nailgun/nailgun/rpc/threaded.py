@@ -21,6 +21,7 @@ from kombu import Connection
 from kombu.mixins import ConsumerMixin
 
 from nailgun.db import db
+from nailgun.errors import errors
 from nailgun.logger import logger
 import nailgun.rpc as rpc
 from nailgun.rpc.receiver import NailgunReceiver
@@ -41,6 +42,9 @@ class RPCConsumer(ConsumerMixin):
         try:
             callback(**body["args"])
             db().commit()
+        except errors.CannotFindTask as e:
+            logger.warn(str(e))
+            db().rollback()
         except Exception:
             logger.error(traceback.format_exc())
             db().rollback()

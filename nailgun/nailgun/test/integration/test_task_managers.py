@@ -395,11 +395,14 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_no_node_no_cry(self):
         cluster = self.env.create_cluster(api=True)
-        rcvr = rpc.receiver.NailgunReceiver
-        manager = DeploymentTaskManager(cluster["id"])
-        rcvr.deploy_resp(nodes=[
+        cluster_id = cluster['id']
+        manager = DeploymentTaskManager(cluster_id)
+        task = Task(name='provision', cluster_id=cluster_id)
+        self.db.add(task)
+        self.db.commit()
+        rpc.receiver.NailgunReceiver.deploy_resp(nodes=[
             {'uid': 666, 'id': 666, 'status': 'discover'}
-        ], uuid='no_freaking_way')  # and wrong task also
+        ], task_uuid=task.uuid)
         self.assertRaises(errors.WrongNodeStatus, manager.execute)
 
     @fake_tasks()

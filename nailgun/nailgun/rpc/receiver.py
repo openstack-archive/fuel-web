@@ -28,6 +28,7 @@ from nailgun.api.models import Node
 from nailgun.api.models import Release
 from nailgun.api.models import Task
 from nailgun.db import db
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun import notifier
@@ -35,8 +36,12 @@ from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 
 
-class TaskNotFound(Exception):
-    pass
+def get_task_by_uuid(uuid):
+    task = db().query(Task).filter_by(uuid=uuid).first()
+    if not task:
+        raise errors.CannotFindTask('Cannot find task with uuid %s' % uuid)
+
+    return task
 
 
 class NailgunReceiver(object):
@@ -119,7 +124,7 @@ class NailgunReceiver(object):
 
         cls.remove_nodes_resp(**kwargs)
 
-        task = db().query(Task).filter_by(uuid=task_uuid).first()
+        task = get_task_by_uuid(task_uuid)
         cluster = task.cluster
 
         if task.status in ('ready',):
@@ -177,7 +182,7 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = db().query(Task).filter_by(uuid=task_uuid).first()
+        task = get_task_by_uuid(task_uuid)
         if not task:
             # No task found - nothing to do here, returning
             logger.warning(
@@ -244,7 +249,7 @@ class NailgunReceiver(object):
             db().commit()
 
         # We should calculate task progress by nodes info
-        task = db().query(Task).filter_by(uuid=task_uuid).first()
+        task = get_task_by_uuid(task_uuid)
         coeff = settings.PROVISIONING_PROGRESS_COEFF or 0.3
         if nodes and not progress:
             nodes_progress = []
@@ -290,7 +295,7 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = db().query(Task).filter_by(uuid=task_uuid).first()
+        task = get_task_by_uuid(task_uuid)
         if not task:
             logger.warning(u"No task with uuid %s found", task_uuid)
             return
@@ -449,7 +454,7 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
 
         # We simply check that each node received all vlans for cluster
-        task = db().query(Task).filter_by(uuid=task_uuid).first()
+        task = get_task_by_uuid(task_uuid)
         if not task:
             logger.error("verify_networks_resp: task \
                     with UUID %s not found!", task_uuid)
@@ -631,7 +636,7 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = db().query(Task).filter_by(uuid=task_uuid).first()
+        task = get_task_by_uuid(task_uuid)
         if not task:
             logger.error("check_redhat_credentials_resp: task \
                     with UUID %s not found!", task_uuid)
@@ -681,7 +686,7 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
         notify = kwargs.get('msg')
 
-        task = db().query(Task).filter_by(uuid=task_uuid).first()
+        task = get_task_by_uuid(task_uuid)
         if not task:
             logger.error("redhat_check_licenses_resp: task \
                     with UUID %s not found!", task_uuid)
@@ -732,7 +737,7 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = db().query(Task).filter_by(uuid=task_uuid).first()
+        task = get_task_by_uuid(task_uuid)
         if not task:
             logger.error("download_release_resp: task"
                          " with UUID %s not found", task_uuid)

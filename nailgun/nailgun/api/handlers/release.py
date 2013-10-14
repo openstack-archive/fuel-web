@@ -39,6 +39,7 @@ class ReleaseHandler(JSONHandler):
         "version",
         "description",
         "operating_system",
+        "modes_metadata",
         "roles",
         "roles_metadata",
         "state"

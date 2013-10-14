@@ -54,6 +54,9 @@ default_messages = {
     "CanNotDetermineEndPointIP": "Cannot determine end point IP",
     "CanNotFindNetworkForNode": "Cannot find network for node",
 
+    # RPC errors
+    "CannotFindTask": "Cannot find task",
+
     # plugin errors
     "PluginDownloading": "Cannot install plugin",
     "PluginInitialization": "Cannot initialize plugin",

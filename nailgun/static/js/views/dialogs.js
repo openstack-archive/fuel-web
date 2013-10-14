@@ -332,13 +332,19 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterModePane = views.WizardPane.extend({
         title: 'Deployment Mode',
+        releaseDependent: true,
         template: _.template(clusterModePaneTemplate),
         events: {
             'change input[name=mode]': 'toggleTypes'
         },
         toggleTypes: function() {
-            this.$('.mode-description').addClass('hide');
-            this.$('.help-mode-' + this.$('input[name=mode]:checked').val()).removeClass('hide');
+            var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
+            var mode = this.$('input[name=mode]:checked').val();
+            var description = '';
+            try {
+                description = release.get('modes_metadata')[mode].description;
+            } catch(e) {}
+            this.$('.mode-description').text(description);
         },
         beforeClusterCreation: function(cluster) {
             cluster.set({mode: this.$('input[name=mode]:checked').val()});

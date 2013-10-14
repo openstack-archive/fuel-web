@@ -25,7 +25,7 @@
         <% var btnClass = node.get('pending_addition') ? 'addition' : node.get('pending_deletion') ? 'deletion' : 'role-changes' %>
         <% var btnTitle = node.get('pending_addition') ? 'Addition' : node.get('pending_deletion') ? 'Deletion' : 'Role Changes' %>
         <button class="btn btn-link btn-discard-node-changes btn-discard-<%= btnClass %>" title="Discard <%= btnTitle %>"><i class="icon-back-in-time"></i></button>
-      <% } else { %>
+      <% } else if (node.get('cluster')) { %>
         <button class="btn btn-link btn-view-logs" title="View Logs"><i class="icon-logs"></i></button>
       <% } %>
     </div>

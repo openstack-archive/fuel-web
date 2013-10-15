@@ -97,6 +97,35 @@ class TestHandlers(BaseIntegrationTest):
         self.db.refresh(cluster)
         self.assertEquals(cluster.net_manager, "VlanManager")
 
+    def test_cluster_update_fails_on_net_provider_change(self):
+        cluster = self.env.create_cluster(api=False)
+        self.assertEquals(cluster.net_provider, "nova_network")
+        resp = self.app.put(
+            reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
+            json.dumps({'net_provider': 'neutron'}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.body, "Change of 'net_provider' is prohibited")
+
+    def test_cluster_update_fails_on_net_segment_type_change(self):
+        cluster = self.env.create_cluster(
+            api=False,
+            net_provider='neutron',
+            net_segment_type='gre'
+        )
+        self.assertEquals(cluster.net_provider, "neutron")
+        resp = self.app.put(
+            reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
+            json.dumps({'net_segment_type': 'vlan'}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.body,
+                          "Change of 'net_segment_type' is prohibited")
+
     def test_cluster_node_list_update(self):
         node1 = self.env.create_node(api=False)
         node2 = self.env.create_node(api=False)

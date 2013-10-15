@@ -451,8 +451,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         calculateSelectAllCheckedState: function() {
             this.$('input[name=select-nodes-common]').prop('checked', this.amountOfAvailableNodes() && this.$('.node-checkbox input:checked').length == this.amountOfAvailableNodes());
         },
-        calculateSelectAllDisabledState: function() {
-            var disabled = !this.amountOfAvailableNodes() || this.screen instanceof EditNodesScreen || this.screen.isLocked();
+        calculateSelectAllDisabledState: function(controllerRoleSelected) {
+            var disabled = !this.amountOfAvailableNodes() || (controllerRoleSelected && this.amountOfAvailableNodes() > 1) || this.screen instanceof EditNodesScreen || this.screen.isLocked();
             this.$('input[name=select-nodes-common]').prop('disabled', disabled).parent().toggleClass('disabled', disabled);
         },
         groupNodes: function(attribute) {
@@ -523,7 +523,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         calculateSelectAllDisabledState: function(controllerRoleSelected) {
             var disabled = !this.amountOfAvailableNodes() || (controllerRoleSelected && this.amountOfAvailableNodes() > 1) || this.nodeList.screen instanceof EditNodesScreen || this.nodeList.screen.isLocked();
             this.$('input[name=select-node-group]').prop('disabled', disabled).parent().toggleClass('disabled', disabled);
-            this.nodeList.calculateSelectAllDisabledState();
+            this.nodeList.calculateSelectAllDisabledState(controllerRoleSelected);
         },
         initialize: function(options) {
             _.defaults(this, options);

@@ -43,9 +43,11 @@
           <div class="volume-group-box-flag <%- volume.get('name') %>"></div>
           <div class="volume-group-box-name"><%- volume.get('label') %></div>
           <div class="pull-right">
-            <div class="volume-group-box-edit"><span class="use-all-allowed">Use All Allowed Space</span></div>
+            <% if (!locked) { %>
+              <div class="volume-group-box-edit"><span class="use-all-allowed">Use All Allowed Space</span></div>
+            <% } %>
             <div class="volume-group-box-input">
-              <input id="<%- disk.id + '-' + volume.get('name') %>" class="input-medium" type="text" name="<%- volume.get('name') %>" value="<%- disk.get('volumes').findWhere({name: volume.get('name')}).get('size') || 0 %>" />
+              <input id="<%- disk.id + '-' + volume.get('name') %>" class="input-medium" type="text" <%= locked ? 'disabled' : '' %> name="<%- volume.get('name') %>" value="<%- disk.get('volumes').findWhere({name: volume.get('name')}).get('size') || 0 %>" />
             </div>
             <div class="volume-group-box-sizetype">MB</div>
           </div>

@@ -776,7 +776,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var hasValidationErrors = this.hasValidationErrors();
             this.$('.btn-apply').attr('disabled', !hasChanges || hasValidationErrors);
             this.$('.btn-revert-changes').attr('disabled', !hasChanges && !hasValidationErrors);
-            this.$('.btn-defaults').attr('disabled', false);
+            this.$('.btn-defaults').attr('disabled', this.isLocked());
         },
         loadDefaults: function() {
             this.disableControls(true);
@@ -892,7 +892,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .use-all-allowed': 'useAllAllowedSpace'
         },
         toggleEditDiskForm: function(e) {
-            if (this.screen.isLocked()) {return;}
             this.$('.disk-form').collapse('toggle');
             this.checkForGroupsDeletionAvailability();
         },
@@ -902,7 +901,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         checkForGroupsDeletionAvailability: function() {
             this.disk.get('volumes').each(function(volume) {
                 var name = volume.get('name');
-                this.$('.disk-visual .' + name + ' .close-btn').toggle(volume.getMinimalSize(this.getVolumeMinimum(name)) <= 0 && this.$('.disk-form').hasClass('in'));
+                this.$('.disk-visual .' + name + ' .close-btn').toggle(!this.screen.isLocked() && volume.getMinimalSize(this.getVolumeMinimum(name)) <= 0 && this.$('.disk-form').hasClass('in'));
             }, this);
         },
         validateVolume: function (volume) {
@@ -972,7 +971,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.html(this.template(_.extend({
                 diskMetaData: this.diskMetaData,
                 disk: this.disk,
-                volumes: this.screen.volumes
+                volumes: this.screen.volumes,
+                locked: this.screen.isLocked()
             }, this.templateHelpers)));
             this.$('.disk-form').collapse({toggle: false});
             this.applyColors();

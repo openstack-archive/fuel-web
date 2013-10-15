@@ -39,12 +39,9 @@ class ModalDialog(urwid.WidgetWrap):
         self.previous_widget = previous_widget
         self.keep_open = True
         self.loop = loop
-        logging.debug("start modal")
-        logging.debug(type(body))
 
         if type(body) in [str, unicode]:
             body = urwid.Text(body)
-            logging.debug("Set text widget")
         self.title = title
         bodybox = urwid.LineBox(urwid.Pile([body, blank,
                                 Button("Close", self.close)]), title)
@@ -53,7 +50,6 @@ class ModalDialog(urwid.WidgetWrap):
                                 ('relative', 80))
         overlay_attrmap = urwid.AttrMap(overlay, "body")
         super(ModalDialog, self).__init__(overlay_attrmap)
-        logging.debug(overlay.contents[0])
 
     def close(self, arg):
         urwid.emit_signal(self, "close")

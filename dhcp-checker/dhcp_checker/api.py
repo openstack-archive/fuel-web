@@ -22,6 +22,9 @@ from scapy import all as scapy
 from dhcp_checker import utils
 
 
+CONCURRENCY_LIMIT = 10
+
+
 @utils.multiproc_map
 @utils.single_format
 def check_dhcp_on_eth(iface, timeout):
@@ -64,7 +67,10 @@ def check_dhcp(ifaces, timeout=5, repeat=2):
     ifaces_filtered = list(utils.filtered_ifaces(ifaces))
     if not ifaces_filtered:
         raise EnvironmentError("No valid interfaces provided.")
-    pool = multiprocessing.Pool(len(ifaces_filtered)*repeat)
+    concurrency_limit = (CONCURRENCY_LIMIT
+                         if len(ifaces_filtered) > CONCURRENCY_LIMIT
+                         else len(ifaces_filtered))
+    pool = multiprocessing.Pool(concurrency_limit)
     return itertools.chain(*pool.map(check_dhcp_on_eth, (
         (iface, timeout) for iface in ifaces_filtered*repeat)))
 

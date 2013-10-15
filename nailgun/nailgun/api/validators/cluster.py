@@ -22,8 +22,9 @@ from nailgun.errors import errors
 
 class ClusterValidator(BasicValidator):
     @classmethod
-    def validate(cls, data):
+    def validate(cls, data, **kwargs):
         d = cls.validate_json(data)
+        cluster = kwargs.get("cluster") if kwargs else None
         if d.get("name"):
             if db().query(Cluster).filter_by(
                 name=d["name"]
@@ -39,6 +40,13 @@ class ClusterValidator(BasicValidator):
                     "Invalid release id",
                     log_message=True
                 )
+        if cluster:
+            for k in ("net_provider", "net_segment_type"):
+                if k in d and getattr(cluster, k) != d[k]:
+                    raise errors.InvalidData(
+                        "Change of '%s' is prohibited" % k,
+                        log_message=True
+                    )
         return d
 
 

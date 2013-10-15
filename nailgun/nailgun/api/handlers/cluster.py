@@ -77,6 +77,15 @@ class ClusterHandler(JSONHandler):
             json_data["changes"] = []
         return json_data
 
+    @classmethod
+    def validate_cluster_params(cls, cluster, data):
+        for key, value in data.iteritems():
+            if key in ("net_provider", "net_segment_type"):
+                if value != getattr(cluster, key):
+                    err_str = "Change of '%s' is prohibited" % key
+                    logger.warn(err_str)
+                    raise web.badrequest(err_str)
+
     @content_json
     def GET(self, cluster_id):
         """:returns: JSONized Cluster object.
@@ -95,6 +104,7 @@ class ClusterHandler(JSONHandler):
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
         data = self.checked_data()
+        self.validate_cluster_params(cluster, data)
         network_manager = NetworkManager()
 
         for key, value in data.iteritems():

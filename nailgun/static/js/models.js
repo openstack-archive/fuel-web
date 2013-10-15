@@ -442,12 +442,23 @@ define(['utils'], function(utils) {
                     if (!_.isNull(attrs.vlan_start) || (attrs.name == 'fixed' && options.net_manager == 'VlanManager')) {
                         if (!utils.isNaturalNumber(attrs.vlan_start) || attrs.vlan_start < 1 || attrs.vlan_start > 4094) {
                             errors.vlan_start = 'Invalid VLAN ID';
+                        } else if (options.forbiddenVlans && _.contains(options.forbiddenVlans, attrs.vlan_start)) {
+                            errors.vlan_start = 'This VLAN ID is used by other networks. Please choose another ID';
+                        } else if (options.net_provider == 'neutron' && options.neutronParameters.get('segmentation_type') == 'vlan') {
+                            var vlanIdRange = options.neutronParameters.get('L2').phys_nets.physnet2.vlan_range;
+                            if (attrs.vlan_start >= vlanIdRange[0] && attrs.vlan_start <= vlanIdRange[1]) {
+                                errors.vlan_start = 'This VLAN ID reserved for private networks. Please choose another ID';
+                            }
                         }
                     }
                 } else if (attribute == 'netmask' && this.validateNetmask(attrs.netmask)) {
                     errors.netmask = 'Invalid netmask';
-                } else if (attribute == 'gateway' && utils.validateIP(attrs.gateway)) {
-                    errors.gateway = 'Invalid gateway';
+                } else if (attribute == 'gateway') {
+                    if (utils.validateIP(attrs.gateway)) {
+                        errors.gateway = 'Invalid gateway';
+                    } else if (attrs.name == 'public' && !utils.validateIpCorrespondsToCIDR(attrs.cidr, attrs.gateway)) {
+                        errors.gateway = 'Gateway is out of Public IP range';
+                    }
                 } else if (attribute == 'amount') {
                     if (!utils.isNaturalNumber(attrs.amount)) {
                         errors.amount = 'Invalid amount of networks';
@@ -471,22 +482,23 @@ define(['utils'], function(utils) {
 
     models.NeutronConfiguration = Backbone.Model.extend({
         constructorName: 'NeutronConfiguration',
-        validate: function(attrs) {
+        validate: function(attrs, options) {
             var errors = {};
             _.each(attrs, function(configuration, title) {
                 if (title == 'L2') {
                     // ID range validation
                     var id_range = configuration.tunnel_id_ranges || configuration.phys_nets.physnet2.vlan_range;
+                    var maxId = configuration.tunnel_id_ranges ? 65535 : 4094;
                     if (!_.compact(id_range).length) {
                         errors.id_range = 'Invalid ID range';
                     } else {
                         if (!_.isNull(id_range[0]) && !_.isNull(id_range[1]) && id_range[0] > id_range[1] ) {
                             errors.id_range = 'ID range start is greater than ID range end';
                         }
-                        if (_.isNull(id_range[0]) || !utils.isNaturalNumber(id_range[0]) || id_range[0] < 2 || id_range[0] > 65535) {
+                        if (_.isNull(id_range[0]) || !utils.isNaturalNumber(id_range[0]) || id_range[0] < 2 || id_range[0] > maxId) {
                             errors.id_start = 'Invalid ID range start';
                         }
-                        if (_.isNull(id_range[1]) || !utils.isNaturalNumber(id_range[1]) || id_range[1] < 2 || id_range[1] > 65535) {
+                        if (_.isNull(id_range[1]) || !utils.isNaturalNumber(id_range[1]) || id_range[1] < 2 || id_range[1] > maxId) {
                             errors.id_end = 'Invalid ID range end';
                         }
                     }
@@ -503,17 +515,24 @@ define(['utils'], function(utils) {
                     if (utils.validateIP(configuration.net04.L3.gateway)) {
                         errors.gateway = 'Invalid gateway';
                     }
+                    if (!utils.validateIpCorrespondsToCIDR(configuration.net04.L3.cidr, configuration.net04.L3.gateway)) {
+                        errors.gateway = 'Gateway is out of internal network IP range';
+                    }
                     // floating IP range validation
                     var floatingIpRange = configuration.net04_ext.L3.floating;
                     if (floatingIpRange[0] == '') {
                         errors.floating_start = 'Empty IP range start';
                     } else if (utils.validateIP(floatingIpRange[0])) {
                         errors.floating_start = 'Invalid IP range start';
+                    } else if (!utils.validateIpCorrespondsToCIDR(options.publicCidr, floatingIpRange[0])) {
+                        errors.floating_start = 'IP range start is out of Public IP range';
                     }
                     if (floatingIpRange[1] == '') {
                         errors.floating_end = 'Empty IP range end';
                     } else if (utils.validateIP(floatingIpRange[1])) {
                         errors.floating_end = 'Invalid IP range end';
+                    } else if (!utils.validateIpCorrespondsToCIDR(options.publicCidr, floatingIpRange[1])) {
+                        errors.floating_end = 'IP range end is out of Public IP range';
                     }
                     if (floatingIpRange[0] != '' && floatingIpRange[1] != '' && !utils.validateIPrange(floatingIpRange[0], floatingIpRange[1])) {
                         errors.floating = 'IP range start is greater than IP range end';

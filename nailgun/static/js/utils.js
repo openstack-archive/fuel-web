@@ -137,6 +137,22 @@ define(['require'], function(require) {
                 }
             });
             return valid;
+        },
+        ipIntRepresentation: function(ip) {
+            var octets = ip.split('.');
+            return _.reduce(octets, function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
+        },
+        validateIpCorrespondsToCIDR: function(cidr, ip) {
+            // bitwise operations are exceedingly rare in JS, and those operators usually are a typo for the boolean versions (&&, ||)
+            // so JSLint reports bugs, if an appropriate flag is not set
+            /*jslint bitwise: true*/
+            var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
+            var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
+            var ipToInt = utils.ipIntRepresentation(ip);
+            var result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
+            /*jslint bitwise: false*/
+            return result;
+
         }
     };
 

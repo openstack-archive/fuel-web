@@ -67,7 +67,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.networkConfiguration.get('networks').invoke('set', {}, { // trigger validation check
                 validate: true,
                 net_manager: this.networkConfiguration.get('net_manager'),
-                net_provider: this.model.get('net_provider')
+                net_provider: this.model.get('net_provider'),
+                neutronParameters: this.networkConfiguration.get('neutron_parameters')
             });
             this.page.removeFinishedTasks();
         },
@@ -319,7 +320,11 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             }, {
                 validate: true,
                 net_provider: this.tab.model.get('net_provider'),
-                net_manager: this.tab.networkConfiguration.get('net_manager')
+                net_manager: this.tab.networkConfiguration.get('net_manager'),
+                forbiddenVlans: _.map(this.tab.networkConfiguration.get('networks').filter(function(network) {
+                    return _.contains(_.without(['public', 'storage', 'management'], this.network.get('name')), network.get('name'));
+                }, this), function(network) {return network.get('vlan_start');}),
+                neutronParameters: this.tab.networkConfiguration.get('neutron_parameters')
             });
         },
         setIPRangeFocus: function(e) {
@@ -401,7 +406,13 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             predefined_networks.net04.L3.gateway = this.$('input[name=gateway]').val();
             predefined_networks.net04.L3.nameservers = [this.$('input[name=nameserver-0]').val(), this.$('input[name=nameserver-1]').val()];
 
-            this.neutronParameters.set({L2: l2, predefined_networks: predefined_networks}, {validate: true});
+            this.neutronParameters.set({
+                L2: l2,
+                predefined_networks: predefined_networks
+            }, {
+                validate: true,
+                publicCidr: this.tab.networkConfiguration.get('networks').findWhere({name: 'public'}).get('cidr')
+            });
             this.tab.checkForChanges();
             this.tab.page.removeFinishedTasks();
         },

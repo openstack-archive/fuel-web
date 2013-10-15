@@ -195,7 +195,7 @@ class dnsandhostname(urwid.WidgetWrap):
 
                 #Try to resolve with first address
                 if not self.checkDNS(DNS_UPSTREAM):
-                    errors.append("IP %s unable to resolve host."
+                    errors.append("IP %s unable to resolve DNS hostname."
                                   % DNS_UPSTREAM)
             except Exception, e:
 

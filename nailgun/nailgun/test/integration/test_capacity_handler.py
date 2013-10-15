@@ -89,3 +89,39 @@ class TestHandlers(BaseIntegrationTest):
         ]
         for row in csvreader:
             self.assertTrue(row in rows)
+
+    @fake_tasks()
+    def test_capacity_nodes_allocation(self):
+        self.env.create(
+            cluster_kwargs={
+                'name': 'test_name'
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller', 'cinder'], 'pending_addition': True},
+                {'roles': ['compute', 'cinder'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['cinder'], 'pending_addition': True}
+            ]
+        )
+        deployment_task = self.env.launch_deployment()
+        self.env.wait_ready(deployment_task)
+
+        self._create_capacity_log()
+        capacity_log = self._get_capacity_log_json()
+        report = capacity_log['report']
+
+        self.assertEquals(report['allocation_stats']['allocated'], 6)
+        self.assertEquals(report['allocation_stats']['unallocated'], 0)
+
+        self.assertEquals(report['roles_stat']['controller'], 2)
+        self.assertEquals(report['roles_stat']['controller+cinder'], 1)
+        self.assertEquals(report['roles_stat']['compute+cinder'], 1)
+        self.assertEquals(report['roles_stat']['compute'], 1)
+        self.assertEquals(report['roles_stat']['cinder'], 1)
+
+        self.assertEquals(len(report['environment_stats']), 1)
+        test_env = report['environment_stats'][0]
+        self.assertEquals(test_env['cluster'], 'test_name')
+        self.assertEquals(test_env['nodes'], 6)

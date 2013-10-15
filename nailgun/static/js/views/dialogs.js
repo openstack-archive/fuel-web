@@ -256,17 +256,24 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         createCluster: function() {
             this.$('.control-group').removeClass('error').find('.help-inline').text('');
+            var success = true;
+            var name = $.trim(this.$('input[name=name]').val());
+            var release = parseInt(this.$('select[name=release]').val(), 10);
             this.cluster = new models.Cluster();
             this.cluster.on('invalid', function(model, error) {
+                success = false;
                 _.each(error, function(message, field) {
                     this.$('*[name=' + field + ']').closest('.control-group').addClass('error').find('.help-inline').text(message);
                 }, this);
-                this.$('.create-cluster-btn').attr('disabled', false);
             }, this);
-            return this.cluster.set({
-                name: $.trim(this.$('input[name=name]').val()),
-                release: parseInt(this.$('select[name=release]').val(), 10)
+            if (this.wizard.collection.findWhere({name: name})) {
+                this.cluster.trigger('invalid', this.cluster, {name: 'Environment with name "' + name + '" already exists'});
+            }
+            success = success && this.cluster.set({
+                name: name,
+                release: release
             }, {validate: true});
+            return success;
         },
         onInputKeydown: function(e) {
             this.$('.control-group.error').removeClass('error');

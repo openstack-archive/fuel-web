@@ -267,7 +267,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
             _.defaults(this, params);
             this.to = 0;
             this.sources = new models.LogSources();
-            this.types = [['local', 'Admin node']];
+            this.types = [['local', 'Fuel Master']];
             if (this.model.get('nodes').length) {
                 this.types.push(['remote', 'Other servers']);
             }

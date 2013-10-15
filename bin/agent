@@ -364,6 +364,21 @@ class NodeAgent
     nil
   end
 
+  def _master_mac detailed_data
+    detailed_data.each do |k, v|
+      if k.to_s =~ /^interfaces$/
+        detailed_data[k].each do |i|
+          begin
+            net = IPAddr.new "#{i[:ip]}/#{i[:netmask]}"
+            return i[:mac] if net.include? @api_ip
+          rescue
+          end
+        end
+      end
+    end
+    nil
+  end
+
   def _data
     res = {
       :mac => (@os[:macaddress] rescue nil),
@@ -374,6 +389,7 @@ class NodeAgent
       detailed_data = _detailed
       res.merge!({
         :ip  => ((_master_ip detailed_data or @os[:ipaddress]) rescue nil),
+        :mac  => ((_master_mac detailed_data or @os[:mac]) rescue nil),
         :manufacturer => _manufacturer,
         :platform_name => _product_name,
         :meta => detailed_data

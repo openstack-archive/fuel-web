@@ -20,40 +20,40 @@
   }
 }
 */
- 
+
  [class^="icon-"]:before, [class*=" icon-"]:before {
   font-family: "fontello";
   font-style: normal;
   font-weight: normal;
   speak: none;
- 
+
   display: inline-block;
   text-decoration: inherit;
   width: 1em;
   margin-right: .2em;
   text-align: center;
   /* opacity: .8; */
- 
+
   /* For safety - reset parent styles, that can break glyph codes*/
   font-variant: normal;
   text-transform: none;
-     
+
   /* fix buttons height, for twitter bootstrap */
   line-height: 1em;
- 
+
   /* Animation center compensation - margins should be symmetric */
   /* remove if not needed */
   margin-left: .2em;
- 
+
   /* you can be more comfortable with increased icons size */
   /* font-size: 120%; */
- 
+
   /* Uncomment for 3D effect */
   /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
 }
- 
+
 .icon-skip-test:before { content: '\e807'; } /* '' */
-.icon-block:before { content: '🚫'; } /* '\1f6ab' */
+.icon-block:before { content: '\1f6ab'; } /* '🚫' */
 .icon-ok-circle-empty:before { content: '\e702'; } /* '' */
 .icon-cancel-empty:before { content: '\e703'; } /* '' */
 .icon-eye:before { content: '\e806'; } /* '' */
@@ -63,14 +63,14 @@
 .icon-edit:before { content: '\270e'; } /* '✎' */
 .icon-clock-1:before { content: '\e804'; } /* '' */
 .icon-arrows-cw:before { content: '\e760'; } /* '' */
-.icon-user:before { content: '👤'; } /* '\1f464' */
+.icon-user:before { content: '\1f464'; } /* '👤' */
 .icon-expand:before { content: '\229e'; } /* '⊞' */
 .icon-collapse:before { content: '\229f'; } /* '⊟' */
 .icon-help-circled:before { content: '\e704'; } /* '' */
 .icon-info-circled:before { content: '\e705'; } /* '' */
 .icon-upload-cloud:before { content: '\e711'; } /* '' */
 .icon-process:before { content: '\e803'; } /* '' */
-.icon-bell:before { content: '🔔'; } /* '\1f514' */
+.icon-bell:before { content: '\1f514'; } /* '🔔' */
 .icon-attention:before { content: '\26a0'; } /* '⚠' */
 .icon-back-in-time:before { content: '\e771'; } /* '' */
 .icon-install:before { content: '\e778'; } /* '' */
@@ -84,5 +84,5 @@
 .icon-minus-circle:before { content: '\2796'; } /* '➖' */
 .icon-logs:before { content: '\e730'; } /* '' */
 .icon-settings:before { content: '\2699'; } /* '⚙' */
-.icon-clock:before { content: '🕔'; } /* '\1f554' */
+.icon-clock:before { content: '\1f554'; } /* '🕔' */
 .icon-comment:before { content: '\e718'; } /* '' */

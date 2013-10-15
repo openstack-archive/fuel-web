@@ -94,12 +94,12 @@ class JSONHandler(object):
             fields=fields or cls.fields
         )
 
-    def checked_data(self, validate_method=None):
+    def checked_data(self, validate_method=None, **kwargs):
         try:
             if validate_method:
-                data = validate_method(web.data())
+                data = validate_method(web.data(), **kwargs)
             else:
-                data = self.validator.validate(web.data())
+                data = self.validator.validate(web.data(), **kwargs)
         except (
             errors.InvalidInterfacesInfo,
             errors.InvalidMetadata

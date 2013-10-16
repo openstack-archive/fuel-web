@@ -239,12 +239,20 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
             headers=self.default_headers
         )
 
-        resp = self.update_networks(self.cluster.id, self.nets)
-        self.assertEquals(resp.status, 202)
+        #self.update_networks(self.cluster.id, self.nets)
+
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            headers=self.default_headers
+        )
+
+        self.assertEquals(resp.status, 200)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(task['name'], 'deploy')
         self.assertEquals(
             task['message'].find(
                 "Some networks are "
@@ -304,12 +312,20 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         for n in self.nets['networks']:
             n['vlan_start'] = None
 
-        resp = self.update_networks(self.cluster.id, self.nets)
-        self.assertEquals(resp.status, 202)
+        self.update_networks(self.cluster.id, self.nets)
+
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            headers=self.default_headers
+        )
+
+        self.assertEquals(resp.status, 200)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(task['name'], 'deploy')
         self.assertEquals(
             task['message'].find(
                 "Some untagged networks are "
@@ -401,12 +417,18 @@ class TestNeutronHandlersVlan(BaseIntegrationTest):
             headers=self.default_headers
         )
 
-        resp = self.update_networks(self.cluster.id, self.nets)
-        self.assertEquals(resp.status, 202)
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            headers=self.default_headers
+        )
+
+        self.assertEquals(resp.status, 200)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(task['name'], 'deploy')
         self.assertEquals(
             task['message'].find(
                 "Some networks are "

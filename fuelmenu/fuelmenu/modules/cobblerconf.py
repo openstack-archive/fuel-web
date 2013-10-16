@@ -203,7 +203,7 @@ interface first.")
                         raise Exception("")
                 except Exception, e:
                     errors.append("Not a valid IP address for Static Pool "
-                                  "Start: %s" % e)
+                                  "Start")
                 try:
                     if netaddr.valid_ipv4(responses[
                             "ADMIN_NETWORK/static_pool_end"]):
@@ -212,9 +212,7 @@ interface first.")
                     else:
                         raise Exception("")
                 except:
-                    errors.append("Invalid IP address for Static Pool end: "
-                                  "%s" %
-                                  responses["ADMIN_NETWORK/static_pool_end"])
+                    errors.append("Invalid IP address for Static Pool End")
                 #Ensure DHCP Pool Start and DHCP Pool are valid IPs
                 try:
                     if netaddr.valid_ipv4(responses[
@@ -224,8 +222,7 @@ interface first.")
                     else:
                         raise Exception("")
                 except Exception, e:
-                    errors.append("Invalid IP address for DHCP Pool Start:"
-                                  " %s" % e)
+                    errors.append("Invalid IP address for DHCP Pool Start")
                 try:
                     if netaddr.valid_ipv4(responses[
                             "ADMIN_NETWORK/dhcp_pool_end"]):
@@ -234,8 +231,7 @@ interface first.")
                     else:
                         raise Exception("")
                 except:
-                    errors.append("Invalid IP address for DHCP Pool end: %s"
-                                  % responses["ADMIN_NETWORK/dhcp_pool_end"])
+                    errors.append("Invalid IP address for DHCP Pool end")
 
                 #Ensure pool start and end are in the same subnet of each other
                 netmask = self.netsettings[responses[
@@ -251,6 +247,16 @@ interface first.")
                 mgmt_if_ipaddr = self.netsettings[responses[
                     "ADMIN_NETWORK/interface"]]["addr"]
                 if network.inSameSubnet(responses[
+                                        "ADMIN_NETWORK/static_pool_start"],
+                                        mgmt_if_ipaddr, netmask) is False:
+                    errors.append("Static Pool start does not match management"
+                                  " network.")
+                if network.inSameSubnet(responses[
+                                        "ADMIN_NETWORK/static_pool_end"],
+                                        mgmt_if_ipaddr, netmask) is False:
+                    errors.append("Static Pool end does not match management "
+                                  "network.")
+                if network.inSameSubnet(responses[
                                         "ADMIN_NETWORK/dhcp_pool_start"],
                                         mgmt_if_ipaddr, netmask) is False:
                     errors.append("DHCP Pool start does not match management"
@@ -258,8 +264,8 @@ interface first.")
                 if network.inSameSubnet(responses[
                                         "ADMIN_NETWORK/dhcp_pool_end"],
                                         mgmt_if_ipaddr, netmask) is False:
-                    errors.append("DHCP Pool end is not in the same subnet as"
-                                  " management interface.")
+                    errors.append("DHCP Pool end does not match management "
+                                  "network.")
 
         if len(errors) > 0:
             self.parent.footer.set_text("Errors: %s First error: %s"
@@ -485,16 +491,18 @@ interface first.")
         #you will change the network settings for interface eth0 and then come
         #back to this page to update your DHCP settings. If the inSameSubnet
         #test fails, just recalculate and set new values.
-        for index, key in enumerate(fields):
-            if key == "ADMIN_NETWORK/dhcp_pool_start":
-                dhcp_start = self.edits[index].get_edit_text()
-                break
-        if network.inSameSubnet(dhcp_start,
-                                self.netsettings[self.activeiface]['addr'],
-                                self.netsettings[self.activeiface]['netmask']):
-            log.debug("Existing network settings exist. Not changing.")
-            return
-        else:
+        try:
+            for index, key in enumerate(fields):
+                if key == "ADMIN_NETWORK/dhcp_pool_start":
+                    dhcp_start = self.edits[index].get_edit_text()
+                    break
+            if network.inSameSubnet(dhcp_start,
+                                    self.netsettings[self.activeiface]['addr'],
+                                    self.netsettings[self.activeiface][
+                                    'netmask']):
+                log.debug("Existing network settings exist. Not changing.")
+                return
+        except:
             log.debug("Existing network settings missing or invalid. "
                       "Updating...")
 

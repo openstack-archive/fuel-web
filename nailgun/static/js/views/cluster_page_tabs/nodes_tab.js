@@ -1108,22 +1108,44 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         templateHelpers: _.pick(utils, 'showBandwidth'),
         events: {
             'sortremove .logical-network-box': 'dragStart',
+            'sortstart .logical-network-box': 'dragStart',
             'sortreceive .logical-network-box': 'dragStop',
-            'sortstop .logical-network-box': 'dragStop'
+            'sortstop .logical-network-box': 'dragStop',
+            'sortactivate .logical-network-box': 'dragActivate',
+            'sortdeactivate .logical-network-box': 'dragDeactivate',
+            'sortover .logical-network-box': 'updateDropTarget'
         },
         dragStart: function(event, ui) {
             var networkNames = $(ui.item).find('.logical-network-item').map(function(index, el) {return $(el).data('name');}).get();
-            var networks = this.model.get('assigned_networks').filter(function(network) {return _.contains(networkNames, network.get('name'));});
-            this.model.get('assigned_networks').remove(networks);
-            this.screen.draggedNetworks = networks;
+            this.screen.draggedNetworks = this.model.get('assigned_networks').filter(function(network) {return _.contains(networkNames, network.get('name'));});
+            if (event.type == 'sortstart') {
+                this.updateDropTarget();
+            } else if (event.type == 'sortremove' && this.screen.dropTarget.draggedNetworksAllowed()) {
+                this.model.get('assigned_networks').remove(this.screen.draggedNetworks);
+            }
         },
         dragStop: function(event, ui) {
-            var networks = this.screen.draggedNetworks;
-            if (event.type == 'sortreceive') {
-                this.model.get('assigned_networks').add(networks);
+            if (event.type == 'sortreceive' && this.draggedNetworksAllowed()) {
+                this.model.get('assigned_networks').add(this.screen.draggedNetworks);
             }
             this.render();
             this.screen.draggedNetworks = null;
+        },
+        dragActivate: function(event) {
+            if (!this.draggedNetworksAllowed()) {
+                this.$('.physical-network-box').addClass('nodrag');
+            }
+        },
+        dragDeactivate: function(event) {
+            this.$('.physical-network-box').removeClass('nodrag');
+        },
+        updateDropTarget: function(event) {
+            this.screen.dropTarget = this;
+        },
+        draggedNetworksAllowed: function() {
+            var dragged = _.invoke(this.screen.draggedNetworks, 'get', 'name');
+            var allowed = this.model.get('allowed_networks').pluck('name');
+            return _.intersection(dragged, allowed).length == dragged.length;
         },
         checkIfEmpty: function() {
             this.$('.network-help-message').toggle(!this.model.get('assigned_networks').length && !this.screen.isLocked());

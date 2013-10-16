@@ -239,12 +239,18 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
             headers=self.default_headers
         )
 
-        resp = self.update_networks(self.cluster.id, self.nets)
-        self.assertEquals(resp.status, 202)
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            headers=self.default_headers
+        )
+
+        self.assertEquals(resp.status, 200)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(task['name'], 'deploy')
         self.assertEquals(
             task['message'].find(
                 "Some networks are "
@@ -304,12 +310,20 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         for n in self.nets['networks']:
             n['vlan_start'] = None
 
-        resp = self.update_networks(self.cluster.id, self.nets)
-        self.assertEquals(resp.status, 202)
+        self.update_networks(self.cluster.id, self.nets)
+
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            headers=self.default_headers
+        )
+
+        self.assertEquals(resp.status, 200)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(task['name'], 'deploy')
         self.assertEquals(
             task['message'].find(
                 "Some untagged networks are "
@@ -317,6 +331,95 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
                 "You should assign them to "
                 "different physical interfaces:"),
             0
+        )
+
+    def test_network_checking_fails_if_public_gateway_not_in_cidr(self):
+        for n in self.nets['networks']:
+            if n['name'] == 'public':
+                n['gateway'] = '172.16.10.1'
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Public gateway 172.16.10.1 is not in "
+            "Public address space 172.16.1.0/24."
+        )
+
+    def test_network_checking_fails_if_public_float_range_not_in_cidr(self):
+        for n in self.nets['networks']:
+            if n['name'] == 'public':
+                n['cidr'] = '172.16.10.0/24'
+                n['gateway'] = '172.16.10.1'
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Floating address range 172.16.1.131:172.16.1.254 is not in "
+            "Public address space 172.16.10.0/24."
+        )
+
+    def test_network_checking_fails_if_network_ranges_intersect(self):
+        for n in self.nets['networks']:
+            if n['name'] == 'management':
+                n['cidr'] = '192.168.1.0/24'
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Intersection between network address spaces found:\n"
+            "management, storage"
+        )
+
+    def test_network_checking_fails_if_internal_gateway_not_in_cidr(self):
+        int = self.nets['neutron_parameters']['predefined_networks']['net04']
+        int['L3']['gateway'] = '172.16.10.1'
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Internal gateway 172.16.10.1 is not in "
+            "Internal address space 192.168.111.0/24."
+        )
+
+    def test_network_checking_fails_if_internal_w_floating_intersection(self):
+        int = self.nets['neutron_parameters']['predefined_networks']['net04']
+        int['L3']['cidr'] = '172.16.1.128/26'
+        int['L3']['gateway'] = '172.16.1.129'
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Intersection between Internal CIDR and Floating range."
         )
 
 
@@ -401,12 +504,18 @@ class TestNeutronHandlersVlan(BaseIntegrationTest):
             headers=self.default_headers
         )
 
-        resp = self.update_networks(self.cluster.id, self.nets)
-        self.assertEquals(resp.status, 202)
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            headers=self.default_headers
+        )
+
+        self.assertEquals(resp.status, 200)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(task['name'], 'deploy')
         self.assertEquals(
             task['message'].find(
                 "Some networks are "

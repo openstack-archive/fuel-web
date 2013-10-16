@@ -957,6 +957,16 @@ class NetworkManager(object):
         else:
             return True
 
+    def is_cidr_intersection(self, cidr1, cidr2):
+        """Checks intersection of two CIDRs (IPNetwork objects)
+        """
+        return cidr2 in cidr1 or cidr1 in cidr2
+
+    def is_range_intersection(self, range1, range2):
+        """Checks intersection of two IP ranges (IPNetwork or IPRange objects)
+        """
+        return range1.first <= range2.last and range2.first <= range1.last
+
     def get_min_max_addr(self, range_object):
         """takes object which implicitly has IP range
          and returns min and max address as tuple of two IPAddress elements

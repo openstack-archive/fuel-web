@@ -454,7 +454,8 @@ class TestHandlers(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             params=json.dumps({
                 'editable': {
-                    'storage': {'volumes_ceph': {'value': True}}}}),
+                    'storage': {'volumes_ceph': {'value': True},
+                                'osd_pool_size': {'value': 3}}}}),
             headers=self.default_headers)
 
         task = self.env.launch_deployment()
@@ -463,7 +464,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(
             task.message,
             'Number of OSD nodes (1) cannot be less than '
-            'the default Ceph replication factor (2)')
+            'the Ceph object replication factor (3)')
 
     @fake_tasks()
     def test_admin_untagged_intersection(self):

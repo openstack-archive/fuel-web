@@ -782,7 +782,7 @@ class CheckBeforeDeploymentTask(object):
     def __check_ceph(cls, task):
         storage = task.cluster.attributes.merged_attrs()['storage']
         for option in storage:
-            if 'ceph' in option and storage[option]['value']:
+            if '_ceph' in option and storage[option]['value'] is True:
                 cls.__check_ceph_osds(task)
                 return
 
@@ -791,11 +791,13 @@ class CheckBeforeDeploymentTask(object):
         osd_count = len(filter(
             lambda node: 'ceph-osd' in node.all_roles,
             task.cluster.nodes))
-        if osd_count < 2:
+        osd_pool_size = task.cluster.attributes.merged_attrs(
+        )['storage']['osd_pool_size']['value']
+        if osd_count < osd_pool_size:
             raise errors.NotEnoughOsdNodes(
-                "Number of OSD nodes (%s) cannot be less than the "
-                "default Ceph replication factor (%s)" %
-                (osd_count, 2))
+                'Number of OSD nodes (%s) cannot be less than '
+                'the Ceph object replication factor (%s)' %
+                (osd_count, osd_pool_size))
 
     @classmethod
     def __check_network(cls, task):

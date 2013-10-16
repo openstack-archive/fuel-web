@@ -41,7 +41,6 @@ def puppetApply(classname, name=None, params=None):
     #params should be a dict
     '''Runs puppet apply -e "classname {'name': params}" '''
     log = logging
-    log.basicConfig(filename='./fuelmenu.log', level=logging.DEBUG)
     log.info("Puppet start")
 
     command = ["puppet", "apply", "-d", "-v", "--logdest", "/tmp/puppet.log"]

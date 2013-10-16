@@ -207,7 +207,7 @@ class NovaOrchestratorSerializer(object):
         merged with common attributes
         """
         network_data = node.network_data
-        interfaces = cls.configure_interfaces(network_data)
+        interfaces = cls.configure_interfaces(node)
         cls.__add_hw_interfaces(interfaces, node.meta['interfaces'])
 
         node_attrs = {
@@ -297,10 +297,12 @@ class NovaOrchestratorSerializer(object):
         return interfaces
 
     @classmethod
-    def configure_interfaces(cls, network_data):
+    def configure_interfaces(cls, node):
         """Configure interfaces
         """
+        network_data = node.network_data
         interfaces = {}
+
         for network in network_data:
             network_name = network['name']
 
@@ -312,21 +314,17 @@ class NovaOrchestratorSerializer(object):
             name = cls.__make_interface_name(network.get('dev'),
                                              network.get('vlan'))
 
-            if name not in interfaces:
-                interfaces[name] = {
-                    'interface': name,
-                    'ipaddr': [],
-                    '_name': network_name}
+            interfaces.setdefault(name, {'interface': name, 'ipaddr': []})
 
             interface = interfaces[name]
-
-            if network_name == 'admin':
-                interface['ipaddr'] = 'dhcp'
-            elif network.get('ip'):
+            if network.get('ip'):
                 interface['ipaddr'].append(network.get('ip'))
 
             # Add gateway for public
-            if network_name == 'public' and network.get('gateway'):
+            if network_name == 'admin':
+                admin_ip_addr = cls.get_admin_ip(node)
+                interface['ipaddr'].append(admin_ip_addr)
+            elif network_name == 'public' and network.get('gateway'):
                 interface['gateway'] = network['gateway']
 
             if len(interface['ipaddr']) == 0:
@@ -335,6 +333,20 @@ class NovaOrchestratorSerializer(object):
         interfaces['lo'] = {'interface': 'lo', 'ipaddr': ['127.0.0.1/8']}
 
         return interfaces
+
+    @classmethod
+    def get_admin_ip(cls, node):
+        """Getting admin ip and assign prefix from admin network."""
+        network_manager = NetworkManager()
+        admin_ip = network_manager.get_admin_ips_for_interfaces(
+            node)[node.admin_interface.name]
+        admin_ip = IPNetwork(admin_ip)
+
+        # Assign prefix from admin network
+        admin_net = IPNetwork(network_manager.get_admin_network().cidr)
+        admin_ip.prefixlen = admin_net.prefixlen
+
+        return str(admin_ip)
 
     @classmethod
     def by_role(cls, nodes, role):
@@ -756,7 +768,7 @@ class NeutronMethods(object):
 
         # Fill up all about fuelweb-admin network.
         attrs['endpoints'][node.admin_interface.name] = {
-            "IP": "dhcp"
+            "IP": cls.get_admin_ip(node)
         }
         attrs['roles']['fw-admin'] = node.admin_interface.name
 

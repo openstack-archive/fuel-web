@@ -441,6 +441,30 @@ class TestHandlers(BaseIntegrationTest):
             'Not enough controllers, ha_compact '
             'mode requires at least 3 controllers')
 
+    def test_occurs_error_not_enough_osds_for_ceph(self):
+        cluster = self.env.create(
+            cluster_kwargs={
+                'mode': 'multinode'},
+            nodes_kwargs=[
+                {'roles': ['controller', 'ceph-osd'],
+                 'pending_addition': True}])
+        self.app.put(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            params=json.dumps({
+                'editable': {
+                    'storage': {'volumes_ceph': {'value': True}}}}),
+            headers=self.default_headers)
+
+        task = self.env.launch_deployment()
+
+        self.assertEquals(task.status, 'error')
+        self.assertEquals(
+            task.message,
+            'Number of OSD nodes (1) cannot be less than '
+            'the default Ceph replication factor (2)')
+
     @fake_tasks()
     def test_admin_untagged_intersection(self):
         meta = self.env.default_metadata()

@@ -748,12 +748,13 @@ class CheckBeforeDeploymentTask(object):
     def execute(cls, task):
         cls.__check_controllers_count(task)
         cls.__check_disks(task)
+        cls.__check_ceph(task)
         cls.__check_network(task)
 
     @classmethod
     def __check_controllers_count(cls, task):
         controllers_count = len(filter(
-            lambda node: 'controller' in (node.roles + node.pending_roles),
+            lambda node: 'controller' in node.all_roles,
             task.cluster.nodes)
         )
         cluster_mode = task.cluster.mode
@@ -776,6 +777,25 @@ class CheckBeforeDeploymentTask(object):
             raise errors.NotEnoughFreeSpace(
                 u"Node '%s' has insufficient disk space" %
                 node.human_readable_name)
+
+    @classmethod
+    def __check_ceph(cls, task):
+        storage = task.cluster.attributes.merged_attrs()['storage']
+        for option in storage:
+            if 'ceph' in option and storage[option]['value']:
+                cls.__check_ceph_osds(task)
+                return
+
+    @classmethod
+    def __check_ceph_osds(cls, task):
+        osd_count = len(filter(
+            lambda node: 'ceph-osd' in node.all_roles,
+            task.cluster.nodes))
+        if osd_count < 2:
+            raise errors.NotEnoughOsdNodes(
+                "Number of OSD nodes (%s) cannot be less than the "
+                "default Ceph replication factor (%s)" %
+                (osd_count, 2))
 
     @classmethod
     def __check_network(cls, task):

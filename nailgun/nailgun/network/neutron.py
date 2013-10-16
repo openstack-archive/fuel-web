@@ -111,6 +111,34 @@ class NeutronManager(NetworkManager):
     def _generate_l3(self, cluster):
         return {}
 
+    def get_default_nic_networkgroups(self, node, nic):
+        """Assign all network groups on admin interface
+        by default
+        """
+        return self.get_all_cluster_networkgroups(node) \
+            if nic == node.admin_interface else []
+
+    def allow_network_assignment_to_all_interfaces(self, node):
+        """Method adds all network groups from cluster
+        to allowed_networks list for all interfaces
+        of specified node.
+
+        :param node: Node object.
+        :type  node: Node
+        """
+        for nic in node.interfaces:
+
+            if nic == node.admin_interface:
+                nic.allowed_networks.append(
+                    self.get_admin_network_group()
+                )
+                continue
+
+            for ng in self.get_cluster_networkgroups_by_node(node):
+                nic.allowed_networks.append(ng)
+
+        db().commit()
+
     # TODO(enchantner): refactor and DRY
     def create_network_groups(self, cluster_id):
         '''Method for creation of network groups for cluster.

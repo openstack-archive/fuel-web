@@ -33,6 +33,7 @@ from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 import nailgun.rpc as rpc
@@ -400,6 +401,16 @@ class CheckNetworksTask(object):
 
     @classmethod
     def execute(cls, task, data, check_admin_untagged=False):
+        # getting rid of admin network in input data - we don't need it
+        if task.cluster.net_provider == 'neutron':
+            net_manager = NeutronManager()
+        else:
+            net_manager = NetworkManager()
+        admin_ng_id = net_manager.get_admin_network_group_id()
+        data["networks"] = [
+            n for n in data["networks"] if n["id"] != admin_ng_id
+        ]
+
         if task.cluster.net_provider == 'neutron':
             cls.neutron_check(task, data, check_admin_untagged)
         elif task.cluster.net_provider == 'nova_network':

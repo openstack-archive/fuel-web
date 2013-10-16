@@ -33,6 +33,7 @@ from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 import nailgun.rpc as rpc
@@ -401,7 +402,9 @@ class CheckNetworksTask(object):
     @classmethod
     def execute(cls, task, data, check_admin_untagged=False):
         if task.cluster.net_provider == 'neutron':
-            cls.neutron_check(task, data, check_admin_untagged)
+            cls.neutron_check_config(task, data)
+            if check_admin_untagged:
+                cls.neutron_check_interface_mapping(task, data)
         elif task.cluster.net_provider == 'nova_network':
             cls.nova_net_check(task, data, check_admin_untagged)
 
@@ -463,7 +466,8 @@ class CheckNetworksTask(object):
                                   nodes_with_errors))
                     raise errors.NetworkCheckError(err_msg, add_client=False)
 
-        admin_ng = NetworkManager().get_admin_network_group()
+        net_man = NetworkManager()
+        admin_ng = net_man.get_admin_network_group()
         admin_range = netaddr.IPNetwork(admin_ng.cidr)
         for ng in networks:
             net_errors = []
@@ -471,14 +475,14 @@ class CheckNetworksTask(object):
             ng_db = db().query(NetworkGroup).get(ng['id'])
             if not ng_db:
                 net_errors.append("id")
-                err_msgs.append("Invalid network ID: {0}".format(ng['id']))
+                err_msgs.append(u"Invalid network ID: {0}".format(ng['id']))
             else:
                 if ng.get('cidr'):
                     fnet = netaddr.IPNetwork(ng['cidr'])
-                    if NetworkManager().is_range_in_cidr(fnet, admin_range):
+                    if net_man.is_range_intersection(fnet, admin_range):
                         net_errors.append("cidr")
                         err_msgs.append(
-                            "Intersection with admin "
+                            u"Intersection with admin "
                             "network(s) '{0}' found".format(
                                 admin_ng.cidr
                             )
@@ -486,7 +490,7 @@ class CheckNetworksTask(object):
                     if fnet.size < ng['network_size'] * ng['amount']:
                         net_errors.append("cidr")
                         err_msgs.append(
-                            "CIDR size for network '{0}' "
+                            u"CIDR size for network '{0}' "
                             "is less than required".format(
                                 ng.get('name') or ng_db.name or ng_db.id
                             )
@@ -495,12 +499,12 @@ class CheckNetworksTask(object):
                 if 'ip_ranges' in ng:
                     for k, v in enumerate(ng['ip_ranges']):
                         ip_range = netaddr.IPRange(v[0], v[1])
-                        if NetworkManager().is_range_in_cidr(admin_range,
-                                                             ip_range):
+                        if net_man.is_range_intersection(admin_range,
+                                                         ip_range):
                             net_errors.append("cidr")
                             err_msgs.append(
-                                "IP range {0} - {1} in {2} network intersects "
-                                "with admin range of {3}".format(
+                                u"IP range {0} - {1} in {2} network intersects"
+                                " with admin range of {3}".format(
                                     v[0], v[1],
                                     ng.get('name') or ng_db.name or ng_db.id,
                                     admin_ng.cidr
@@ -511,7 +515,7 @@ class CheckNetworksTask(object):
                 if ng.get('amount') > 1 and netmanager == 'FlatDHCPManager':
                     net_errors.append("amount")
                     err_msgs.append(
-                        "Network amount for '{0}' is more than 1 "
+                        u"Network amount for '{0}' is more than 1 "
                         "while using FlatDHCP manager.".format(
                             ng.get('name') or ng_db.name or ng_db.id
                         )
@@ -530,7 +534,7 @@ class CheckNetworksTask(object):
             raise errors.NetworkCheckError(full_err_msg, add_client=False)
 
     @classmethod
-    def neutron_check(cls, task, data, check_admin_untagged):
+    def neutron_check_config(cls, task, data):
 
         if 'networks' in data:
             networks = data['networks']
@@ -538,9 +542,217 @@ class CheckNetworksTask(object):
             networks = map(lambda x: x.__dict__, task.cluster.network_groups)
 
         result = []
-        err_msgs = []
 
-        # checking if there any networks
+        # check: networks VLAN IDs should not be in
+        # Neutron L2 private VLAN ID range (VLAN segmentation only)
+        tagged_nets = dict((n["name"], n["vlan_start"]) for n in filter(
+            lambda n: (n["vlan_start"] is not None), networks))
+
+        if tagged_nets:
+            if task.cluster.net_segment_type == 'vlan':
+                if 'neutron_parameters' in data:
+                    l2cfg = data['neutron_parameters']['L2']
+                else:
+                    l2cfg = task.cluster.neutron_config.L2
+                for net, net_conf in l2cfg['phys_nets'].iteritems():
+                    vrange = net_conf['vlan_range']
+                    if vrange:
+                        break
+                else:
+                    err_msg = u"Wrong VLAN range.\n"
+                    raise errors.NetworkCheckError(err_msg, add_client=False)
+
+                net_intersect = [name for name, vlan in tagged_nets.iteritems()
+                                 if vrange[0] <= vlan <= vrange[1]]
+                if net_intersect:
+                    nets_with_errors = ", ".\
+                        join(net_intersect)
+                    err_msg = u"Networks VLAN tags are in " \
+                              "ID range defined for Neutron L2. " \
+                              "You should assign VLAN tags that are " \
+                              "not in Neutron L2 VLAN ID range:\n{0}". \
+                        format(nets_with_errors)
+                    raise errors.NetworkCheckError(err_msg, add_client=False)
+
+            # check: networks VLAN IDs should not intersect
+            net_intersect = [name for name, vlan in tagged_nets.iteritems()
+                             if tagged_nets.values().count(vlan) >= 2]
+            if net_intersect:
+                nets_with_errors = ", ". \
+                    join(net_intersect)
+                err_msg = u"Some networks use the same VLAN tags. " \
+                          "You should assign different VLAN tag " \
+                          "to every network:\n{0}". \
+                    format(nets_with_errors)
+                raise errors.NetworkCheckError(err_msg, add_client=False)
+
+        def expose_error_messages():
+            if err_msgs:
+                task.result = result
+                db().add(task)
+                db().commit()
+                full_err_msg = "\n".join(err_msgs)
+                raise errors.NetworkCheckError(full_err_msg, add_client=False)
+
+        # check intersection of address ranges
+        # between admin networks and all other networks
+        net_man = NeutronManager()
+        admin_ng = net_man.get_admin_network_group()
+        admin_range = netaddr.IPNetwork(admin_ng.cidr)
+        err_msgs = []
+        for ng in networks:
+            net_errors = []
+            sub_ranges = []
+            ng_db = db().query(NetworkGroup).get(ng['id'])
+            if not ng_db:
+                net_errors.append("id")
+                err_msgs.append("Invalid network ID: {0}".format(ng['id']))
+            else:
+                if ng.get('cidr'):
+                    fnet = netaddr.IPNetwork(ng['cidr'])
+                    if net_man.is_range_intersection(fnet, admin_range):
+                        net_errors.append("cidr")
+                        err_msgs.append(
+                            u"Intersection with admin "
+                            "network(s) '{0}' found".format(
+                                admin_ng.cidr
+                            )
+                        )
+                    # ng['amount'] is always equal 1 for Neutron
+                    if fnet.size < ng['network_size']:  # * ng['amount']:
+                        net_errors.append("cidr")
+                        err_msgs.append(
+                            u"CIDR size for network '{0}' "
+                            "is less than required".format(
+                                ng.get('name') or ng_db.name or ng_db.id
+                            )
+                        )
+                # Check for intersection with Admin network
+                if 'ip_ranges' in ng:
+                    for k, v in enumerate(ng['ip_ranges']):
+                        ip_range = netaddr.IPRange(v[0], v[1])
+                        if net_man.is_range_intersection(admin_range,
+                                                         ip_range):
+                            net_errors.append("cidr")
+                            err_msgs.append(
+                                u"IP range {0} - {1} in {2} network intersects"
+                                " with admin range of {3}".format(
+                                    v[0], v[1],
+                                    ng.get('name') or ng_db.name or ng_db.id,
+                                    admin_ng.cidr
+                                )
+                            )
+                            sub_ranges.append(k)
+            if net_errors:
+                result.append({
+                    "id": int(ng["id"]),
+                    "range_errors": sub_ranges,
+                    "errors": net_errors
+                })
+        expose_error_messages()
+
+        # check intersection of address ranges
+        # between networks except admin network
+        ng_names = dict((ng['id'], (ng.get('name')) or
+                         db().query(NetworkGroup).get(ng['id']).name)
+                        for ng in networks)
+        ngs = list(networks)
+        for ng1 in networks:
+            net_errors = []
+            ngs.remove(ng1)
+            for ng2 in ngs:
+                if ng1.get('cidr') and ng2.get('cidr'):
+                    cidr1 = netaddr.IPNetwork(ng1['cidr'])
+                    cidr2 = netaddr.IPNetwork(ng2['cidr'])
+                    if net_man.is_cidr_intersection(cidr1, cidr2):
+                        net_errors.append("cidr")
+                        err_msgs.append(
+                            u"Intersection between network address "
+                            "spaces found:\n{0}".format(
+                                ", ".join([ng_names[ng1['id']],
+                                           ng_names[ng2['id']]])
+                            )
+                        )
+            if net_errors:
+                result.append({
+                    "id": int(ng1["id"]),
+                    "errors": net_errors
+                })
+        expose_error_messages()
+
+        # check Public gateway, Floating Start and Stop IPs
+        # belong to Public CIDR
+        if 'neutron_parameters' in data:
+            pre_net = data['neutron_parameters']['predefined_networks']
+        else:
+            pre_net = task.cluster.neutron_config.predefined_networks
+        public = [n for n in networks if n['name'] == 'public'][0]
+        net_errors = []
+        fl_range = pre_net['net04_ext']['L3']['floating']
+        if public.get('cidr') and public.get('gateway'):
+            cidr = netaddr.IPNetwork(public['cidr'])
+            if netaddr.IPAddress(public['gateway']) not in cidr:
+                net_errors.append("gateway")
+                err_msgs.append(
+                    u"Public gateway {0} is not in Public "
+                    "address space {1}.".format(
+                        public['gateway'], public['cidr']
+                    )
+                )
+            if netaddr.IPRange(fl_range[0], fl_range[1]) not in cidr:
+                net_errors.append("float_range")
+                err_msgs.append(
+                    u"Floating address range {0}:{1} is not in Public "
+                    "address space {2}.".format(
+                        netaddr.IPAddress(fl_range[0]),
+                        netaddr.IPAddress(fl_range[1]),
+                        public['cidr']
+                    )
+                )
+        else:
+            net_errors.append("format")
+            err_msgs.append(
+                u"Public gateway or CIDR specification is invalid."
+            )
+        result = {"id": int(public["id"]), "errors": net_errors}
+        expose_error_messages()
+
+        # check internal Gateway is in Internal CIDR
+        internal = pre_net['net04']['L3']
+        if internal.get('cidr') and internal.get('gateway'):
+            cidr = netaddr.IPNetwork(internal['cidr'])
+            if netaddr.IPAddress(internal['gateway']) not in cidr:
+                net_errors.append("gateway")
+                err_msgs.append(
+                    u"Internal gateway {0} is not in Internal "
+                    "address space {1}.".format(
+                        internal['gateway'], internal['cidr']
+                    )
+                )
+            if net_man.is_range_intersection(
+                    netaddr.IPRange(fl_range[0], fl_range[1]),
+                    cidr):
+                net_errors.append("cidr")
+                err_msgs.append(
+                    u"Intersection between Internal CIDR and Floating range."
+                )
+        else:
+            net_errors.append("format")
+            err_msgs.append(
+                u"Internal gateway or CIDR specification is invalid."
+            )
+        result = {"name": "internal", "errors": net_errors}
+        expose_error_messages()
+
+    @classmethod
+    def neutron_check_interface_mapping(cls, task, data):
+
+        if 'networks' in data:
+            networks = data['networks']
+        else:
+            networks = map(lambda x: x.__dict__, task.cluster.network_groups)
+
+        # check if there any networks
         # on the same interface as admin network (main)
         admin_interfaces = map(lambda node: node.admin_interface,
                                task.cluster.nodes)
@@ -568,11 +780,11 @@ class CheckNetworksTask(object):
             err_msg = u"Some networks are " \
                       "assigned to the same physical interface as " \
                       "admin (PXE) network. You should move them to " \
-                      "another physical interfaces:\n{0}".\
+                      "another physical interfaces:\n{0}". \
                 format("\n".join(nodes_with_errors))
             raise errors.NetworkCheckError(err_msg, add_client=False)
 
-        # checking if there any networks
+        # check if there any networks
         # on the same interface as private network (for vlan)
         if task.cluster.net_segment_type == 'vlan':
             private_interfaces = []
@@ -607,7 +819,7 @@ class CheckNetworksTask(object):
                 err_msg = u"Some networks are " \
                           "assigned to the same physical interface as " \
                           "private network. You should move them to " \
-                          "another physical interfaces:\n{0}".\
+                          "another physical interfaces:\n{0}". \
                     format("\n".join(nodes_with_errors))
                 raise errors.NetworkCheckError(err_msg, add_client=False)
 
@@ -649,98 +861,6 @@ class CheckNetworksTask(object):
                           "different physical interfaces:\n{0}". \
                     format("\n".join(nodes_with_errors))
                 raise errors.NetworkCheckError(err_msg, add_client=False)
-
-        # check: networks VLAN IDs should not be in Neutron L2 VLAN ID range
-        # (VLAN segmentation only)
-        if task.cluster.net_segment_type == 'vlan':
-            tagged_nets = [n for n in filter(
-                lambda n: (n["vlan_start"] is not None), networks)]
-        else:
-            tagged_nets = []
-
-        if tagged_nets:
-            if 'neutron_parameters' in data:
-                l2cfg = data['neutron_parameters']['L2']
-            else:
-                l2cfg = task.cluster.neutron_config.L2
-            for net, net_conf in l2cfg['phys_nets'].iteritems():
-                range = net_conf['vlan_range']
-                if range:
-                    break
-            else:
-                err_msg = u"Wrong VLAN range.\n"
-                raise errors.NetworkCheckError(err_msg, add_client=False)
-
-            net_intersect = [net["name"] for net in tagged_nets
-                             if net["vlan_start"] >= range[0]
-                             and net["vlan_start"] <= range[1]]
-            if net_intersect:
-                nets_with_errors = ", ".\
-                    join(net_intersect)
-                err_msg = u"Networks VLAN tags are in " \
-                          "ID range defined for Neutron L2. " \
-                          "You should assign VLAN tags that are " \
-                          "not in Neutron L2 VLAN ID range:\n{0}". \
-                    format(nets_with_errors)
-                raise errors.NetworkCheckError(err_msg, add_client=False)
-
-        admin_ng = NetworkManager().get_admin_network_group()
-        admin_range = netaddr.IPNetwork(admin_ng.cidr)
-        for ng in networks:
-            net_errors = []
-            sub_ranges = []
-            ng_db = db().query(NetworkGroup).get(ng['id'])
-            if not ng_db:
-                net_errors.append("id")
-                err_msgs.append("Invalid network ID: {0}".format(ng['id']))
-            else:
-                if ng.get('cidr'):
-                    fnet = netaddr.IPNetwork(ng['cidr'])
-                    if NetworkManager().is_range_in_cidr(fnet, admin_range):
-                        net_errors.append("cidr")
-                        err_msgs.append(
-                            "Intersection with admin "
-                            "network(s) '{0}' found".format(
-                                admin_ng.cidr
-                            )
-                        )
-                    if fnet.size < ng['network_size'] * ng['amount']:
-                        net_errors.append("cidr")
-                        err_msgs.append(
-                            "CIDR size for network '{0}' "
-                            "is less than required".format(
-                                ng.get('name') or ng_db.name or ng_db.id
-                            )
-                        )
-                    # Check for intersection with Admin network
-                if 'ip_ranges' in ng:
-                    for k, v in enumerate(ng['ip_ranges']):
-                        ip_range = netaddr.IPRange(v[0], v[1])
-                        if NetworkManager().is_range_in_cidr(admin_range,
-                                                             ip_range):
-                            net_errors.append("cidr")
-                            err_msgs.append(
-                                "IP range {0} - {1} in {2} network intersects "
-                                "with admin range of {3}".format(
-                                    v[0], v[1],
-                                    ng.get('name') or ng_db.name or ng_db.id,
-                                    admin_ng.cidr
-                                )
-                            )
-                            sub_ranges.append(k)
-
-            if net_errors:
-                result.append({
-                    "id": int(ng["id"]),
-                    "range_errors": sub_ranges,
-                    "errors": net_errors
-                })
-        if err_msgs:
-            task.result = result
-            db().add(task)
-            db().commit()
-            full_err_msg = "\n".join(err_msgs)
-            raise errors.NetworkCheckError(full_err_msg)
 
 
 class CheckBeforeDeploymentTask(object):
@@ -814,10 +934,8 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def __network_size(cls, network):
-        size = 0
-        for ip_range in network.ip_ranges:
-            size += len(netaddr.IPRange(ip_range.first, ip_range.last))
-        return size
+        return sum(len(netaddr.IPRange(ip_range.first, ip_range.last))
+                   for ip_range in network.ip_ranges)
 
     @classmethod
     def __format_network_error(cls, nodes_count):

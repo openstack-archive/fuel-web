@@ -116,8 +116,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(report['allocation_stats']['unallocated'], 0)
 
         self.assertEquals(report['roles_stat']['controller'], 2)
-        self.assertEquals(report['roles_stat']['controller+cinder'], 1)
-        self.assertEquals(report['roles_stat']['compute+cinder'], 1)
+        self.assertEquals(report['roles_stat']['cinder+controller'], 1)
+        self.assertEquals(report['roles_stat']['cinder+compute'], 1)
         self.assertEquals(report['roles_stat']['compute'], 1)
         self.assertEquals(report['roles_stat']['cinder'], 1)
 

@@ -952,7 +952,7 @@ class GenerateCapacityLogTask(object):
         roles_stat = {}
         for node in nodes:
             if node.roles:
-                roles_list = '+'.join(node.roles)
+                roles_list = '+'.join(sorted(node.roles))
                 if roles_list in roles_stat:
                     roles_stat[roles_list] += 1
                 else:

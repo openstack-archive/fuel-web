@@ -18,6 +18,7 @@ import json
 
 from nailgun.api.models import Cluster
 from nailgun.api.models import IPAddrRange
+from nailgun.api.models import Network
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
 from nailgun.db import db
@@ -32,8 +33,6 @@ from nailgun.orchestrator.deployment_serializers \
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
-
-import unittest
 
 
 class OrchestratorSerializerTestBase(BaseIntegrationTest):
@@ -63,17 +62,17 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster = self.create_env('multinode')
 
     def create_env(self, mode, network_manager='FlatDHCPManager'):
+        node_args = [
+            {'roles': ['controller', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute', 'cinder'], 'pending_addition': True},
+            {'roles': ['compute'], 'pending_addition': True},
+            {'roles': [], 'pending_roles': ['cinder'],
+             'pending_addition': True}]
         cluster = self.env.create(
             cluster_kwargs={
                 'mode': mode,
-                'net_manager': network_manager
-            },
-            nodes_kwargs=[
-                {'roles': ['controller', 'cinder'], 'pending_addition': True},
-                {'roles': ['compute', 'cinder'], 'pending_addition': True},
-                {'roles': ['compute'], 'pending_addition': True},
-                {'roles': [], 'pending_roles': ['cinder'],
-                 'pending_addition': True}])
+                'net_manager': network_manager},
+            nodes_kwargs=node_args)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
         cluster_db.prepare_for_deployment()
@@ -108,7 +107,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster.prepare_for_deployment()
 
         node_db = self.db.query(Node).get(node['id'])
-
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
 
         self.assertEquals(serialized_data['role'], 'controller')
@@ -240,55 +238,27 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                  '172.16.0.10-172.16.0.12'])
 
     def test_configure_interfaces_untagged_network(self):
-        network_data = [
-            {
-                'name': 'management',
-                'ip': '192.168.0.4/24',
-                'dev': 'eth1',
-                'netmask': '255.255.255.0',
-                'brd': '192.168.0.255',
-                'gateway': '192.168.0.1'},
-            {
-                'name': 'public',
-                'ip': '172.16.1.4/24',
-                'dev': 'eth0',
-                'netmask': '255.255.255.0',
-                'brd': '172.16.1.255',
-                'gateway': '172.16.1.1'},
-            {
-                'name': 'storage',
-                'ip': '192.168.1.4/24',
-                'dev': 'eth1',
-                'netmask': '255.255.255.0',
-                'brd': '192.168.1.255',
-                'gateway': '192.168.1.1'},
-            {
-                'name': 'floating', 'dev': 'eth0'},
-            {
-                'name': 'fixed', 'dev': 'eth1'},
-            {
-                'name': 'admin', 'dev': 'eth0'}]
-
-        for network in network_data:
-            network['vlan'] = None
-
-        interfaces = self.serializer.configure_interfaces(network_data)
+        for network in self.db.query(Network).all():
+            network.vlan_id = None
+        self.db.commit()
+        node_db = self.cluster.nodes[0]
+        interfaces = self.serializer.configure_interfaces(node_db)
 
         expected_interfaces = {
             'lo': {
                 'interface': 'lo',
                 'ipaddr': ['127.0.0.1/8']},
+            'eth0': {
+                'interface': 'eth0',
+                'ipaddr': [
+                    '192.168.0.2/24',
+                    '172.16.0.2/24',
+                    '192.168.1.1/24'],
+                'gateway': '172.16.0.1'},
             'eth1': {
                 'interface': 'eth1',
                 'ipaddr': [
-                    '192.168.0.4/24', '192.168.1.4/24'],
-                '_name': 'management'
-            },
-            'eth0': {
-                'interface': 'eth0',
-                'ipaddr': 'dhcp',
-                'gateway': '172.16.1.1',
-                '_name': 'public'}}
+                    '10.20.0.130/24']}}
 
         self.assertEquals(expected_interfaces, interfaces)
 
@@ -501,7 +471,6 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.cluster.prepare_for_deployment()
 
         node_db = self.db.query(Node).get(node['id'])
-
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
 
         self.assertEquals(serialized_data['role'], 'controller')
@@ -585,94 +554,6 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'br-prv' in fact['network_scheme']['endpoints'], False)
             self.assertEquals(
                 'private' in (fact['network_scheme']['roles']), False)
-
-    @unittest.skip("No floating management at Network Group level")
-    def test_floatin_ranges_generation(self):
-        # Set ip ranges for floating ips
-        ranges = [['172.16.0.2', '172.16.0.4'],
-                  ['172.16.0.3', '172.16.0.5'],
-                  ['172.16.0.10', '172.16.0.12']]
-
-        floating_network_group = self.db.query(NetworkGroup).filter(
-            NetworkGroup.name == 'floating'
-        ).filter(
-            NetworkGroup.cluster_id == self.cluster.id
-        ).first()
-
-        # Remove floating ip addr ranges
-        self.db.query(IPAddrRange).filter(
-            IPAddrRange.network_group_id == floating_network_group.id).delete()
-
-        # Add new ranges
-        for ip_range in ranges:
-            new_ip_range = IPAddrRange(
-                first=ip_range[0],
-                last=ip_range[1],
-                network_group_id=floating_network_group.id)
-
-            self.db.add(new_ip_range)
-        self.db.commit()
-        facts = self.serializer.serialize(self.cluster)
-
-        for fact in facts:
-            self.assertEquals(
-                fact['floating_network_range'],
-                ['172.16.0.2-172.16.0.4',
-                 '172.16.0.3-172.16.0.5',
-                 '172.16.0.10-172.16.0.12'])
-
-    def test_configure_interfaces_untagged_network(self):
-        network_data = [
-            {
-                'name': 'management',
-                'ip': '192.168.0.4/24',
-                'dev': 'eth1',
-                'netmask': '255.255.255.0',
-                'brd': '192.168.0.255',
-                'gateway': '192.168.0.1'},
-            {
-                'name': 'public',
-                'ip': '172.16.1.4/24',
-                'dev': 'eth0',
-                'netmask': '255.255.255.0',
-                'brd': '172.16.1.255',
-                'gateway': '172.16.1.1'},
-            {
-                'name': 'storage',
-                'ip': '192.168.1.4/24',
-                'dev': 'eth1',
-                'netmask': '255.255.255.0',
-                'brd': '192.168.1.255',
-                'gateway': '192.168.1.1'},
-            {
-                'name': 'floating', 'dev': 'eth0'},
-            {
-                'name': 'fixed', 'dev': 'eth1'},
-            {
-                'name': 'admin', 'dev': 'eth0'}]
-
-        for network in network_data:
-            network['vlan'] = None
-
-        interfaces = self.serializer.configure_interfaces(network_data)
-
-        expected_interfaces = {
-            'lo': {
-                'interface': 'lo',
-                'ipaddr': ['127.0.0.1/8']},
-            'eth1': {
-                'interface': 'eth1',
-                'ipaddr': [
-                    '192.168.0.4/24', '192.168.1.4/24'],
-                '_name': 'management'
-            },
-            'eth0': {
-                'interface': 'eth0',
-                'ipaddr': 'dhcp',
-                'gateway': '172.16.1.1',
-                '_name': 'public'}}
-
-        self.assertEquals(expected_interfaces, interfaces)
 
 
 class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):

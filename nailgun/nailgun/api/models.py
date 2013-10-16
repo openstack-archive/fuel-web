@@ -277,6 +277,10 @@ class Cluster(Base):
             netmanager.assign_ips(nodes_ids, 'public')
             netmanager.assign_ips(nodes_ids, 'storage')
 
+            for node in nodes:
+                netmanager.assign_admin_ips(
+                    node.id, len(node.meta.get('interfaces', [])))
+
     def prepare_for_provisioning(self):
         from nailgun.network.manager import NetworkManager
         from nailgun.task.helpers import TaskHelper
@@ -342,8 +346,6 @@ class Node(Base):
 
     @property
     def network_data(self):
-        # It is required for integration tests; to get info about nets
-        #   which must be created on target node
         from nailgun.network.manager import NetworkManager
         netmanager = NetworkManager()
         return netmanager.get_node_networks(self.id)

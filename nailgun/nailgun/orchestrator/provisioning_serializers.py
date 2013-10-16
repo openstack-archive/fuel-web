@@ -69,6 +69,8 @@ class ProvisioningSerializer(object):
             'name_servers': '\"%s\"' % settings.DNS_SERVERS,
             'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
             'netboot_enabled': '1',
+            'kernel_options': {
+                'netcfg/choose_interface': node.admin_interface.name},
             'ks_meta': {
                 'ks_spaces': node.attributes.volumes,
                 'puppet_auto_setup': 1,
@@ -94,9 +96,9 @@ class ProvisioningSerializer(object):
     def serialize_interfaces(cls, node):
         interfaces = {}
         interfaces_extra = {}
-        admin_ips = cls.get_admin_ips(node)
-
-        admin_ng = NetworkManager().get_admin_network_group()
+        net_manager = NetworkManager()
+        admin_ips = net_manager.get_admin_ips_for_interfaces(node)
+        admin_netmask = net_manager.get_admin_network_group().netmask
 
         for interface in node.meta.get('interfaces', []):
             name = interface['name']
@@ -104,8 +106,8 @@ class ProvisioningSerializer(object):
             interfaces[name] = {
                 'mac_address': interface['mac'],
                 'static': '0',
-                'netmask': admin_ng.netmask,
-                'ip_address': admin_ips.pop()}
+                'netmask': admin_netmask,
+                'ip_address': admin_ips[name]}
 
             # interfaces_extra field in cobbler ks_meta
             # means some extra data for network interfaces
@@ -133,17 +135,6 @@ class ProvisioningSerializer(object):
             'interfaces_extra': interfaces_extra}
 
     @classmethod
-    def get_admin_ips(cls, node):
-        netmanager = NetworkManager()
-        admin_net_id = netmanager.get_admin_network_id()
-        admin_ips = set([
-            i.ip_addr for i in db().query(IPAddr).
-            filter_by(node=node.id).
-            filter_by(network=admin_net_id)])
-
-        return admin_ips
-
-    @classmethod
     def get_ssh_key_path(cls, node):
         """Assign power pass depend on node state."""
         if node.status == "discover":
@@ -155,31 +146,8 @@ class ProvisioningSerializer(object):
         return settings.PATH_TO_SSH_KEY
 
 
-class UbuntuProvisioningSerializer(ProvisioningSerializer):
-    """Set specific parameters for Ubuntu."""
-
-    @classmethod
-    def serialize_node(cls, cluster_attrs, node):
-        """Add kernel parameter for Ubuntu release
-        netcfg/choose_interface should equal to admin
-        interface.
-        """
-        serialized_node = super(UbuntuProvisioningSerializer, cls).\
-            serialize_node(cluster_attrs, node)
-
-        serialized_node['kernel_options'] = {}
-        serialized_node['kernel_options']['netcfg/choose_interface'] = \
-            node.admin_interface.name
-
-        return serialized_node
-
-
 def serialize(cluster):
     """Serialize cluster for provisioning."""
     cluster.prepare_for_provisioning()
 
-    serializer = ProvisioningSerializer
-    if cluster.release.operating_system == 'Ubuntu':
-        serializer = UbuntuProvisioningSerializer
-
-    return serializer.serialize(cluster)
+    return ProvisioningSerializer.serialize(cluster)

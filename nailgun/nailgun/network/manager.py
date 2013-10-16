@@ -546,8 +546,16 @@ class NetworkManager(object):
         :type  node: Node
         """
         for nic in node.interfaces:
+
+            if nic == node.admin_interface:
+                nic.allowed_networks.append(
+                    self.get_admin_network_group()
+                )
+                continue
+
             for ng in self.get_cluster_networkgroups_by_node(node):
                 nic.allowed_networks.append(ng)
+
         db().commit()
 
     def assign_networks_by_default(self, node):
@@ -581,6 +589,10 @@ class NetworkManager(object):
         [ifaces[0].assigned_networks.append(ng)
          for ng in self.get_cluster_networkgroups_by_node(node)
          if ng.name != 'private']
+
+        node.admin_interface.assigned_networks.append(
+            self.get_admin_network_group()
+        )
 
         db().commit()
 

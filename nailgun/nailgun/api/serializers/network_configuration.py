@@ -16,6 +16,7 @@
 
 from nailgun.api.serializers.base import BasicSerializer
 from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
 
 
 class NovaNetworkConfigurationSerializer(BasicSerializer):
@@ -41,9 +42,9 @@ class NovaNetworkConfigurationSerializer(BasicSerializer):
             cls.serialize_network_group,
             cluster.network_groups
         )
+        net_manager = NetworkManager()
         if cluster.is_ha_mode:
             nw_metadata = cluster.release.networks_metadata["nova_network"]
-            net_manager = NetworkManager()
             for network in nw_metadata:
                 if network.get("assign_vip") is not False:
                     result['{0}_vip'.format(
@@ -79,6 +80,13 @@ class NeutronNetworkConfigurationSerializer(BasicSerializer):
         result['networks'] = map(
             cls.serialize_network_group,
             cluster.network_groups
+        )
+
+        net_manager = NeutronManager()
+        result['networks'].append(
+            cls.serialize_network_group(
+                net_manager.get_admin_network_group()
+            )
         )
         # result['networks'] = [cls.serialize_network_group(ng)
         #                       for ng in cluster.network_groups

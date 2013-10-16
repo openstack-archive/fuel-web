@@ -577,6 +577,9 @@ class NetworkConfiguration(object):
 
         if 'networks' in network_configuration:
             for ng in network_configuration['networks']:
+                if ng['id'] == network_manager.get_admin_network_group_id():
+                    continue
+
                 ng_db = db().query(NetworkGroup).get(ng['id'])
 
                 for key, value in ng.iteritems():
@@ -945,10 +948,12 @@ class NodeNICInterface(Base):
     current_speed = Column(Integer)
     allowed_networks = relationship(
         "NetworkGroup",
-        secondary=AllowedNetworks.__table__)
+        secondary=AllowedNetworks.__table__,
+        order_by="NetworkGroup.id")
     assigned_networks = relationship(
         "NetworkGroup",
-        secondary=NetworkAssignment.__table__)
+        secondary=NetworkAssignment.__table__,
+        order_by="NetworkGroup.id")
     ip_addr = Column(String(25))
     netmask = Column(String(25))
 

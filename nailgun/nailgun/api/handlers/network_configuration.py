@@ -78,6 +78,10 @@ class NovaNetworkConfigurationVerifyHandler(JSONHandler):
             json_task = build_json_response(TaskHandler.render(task))
             raise web.accepted(data=json_task)
 
+        data["networks"] = [
+            n for n in data["networks"] if n["name"] != "fuelweb_admin"
+        ]
+
         vlan_ids = [{
             'name': n['name'],
             'vlans': NetworkGroup.generate_vlan_ids_list(n)

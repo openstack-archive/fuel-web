@@ -21,6 +21,8 @@ from nailgun.api.models import Node
 from nailgun.api.validators.base import BasicValidator
 from nailgun.db import db
 from nailgun.errors import errors
+from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
 
 
 class NovaNetworkConfigurationValidator(BasicValidator):
@@ -181,6 +183,13 @@ class NetAssignmentValidator(BasicValidator):
             )
         network_group_ids = set([ng.id for ng in db_network_groups])
 
+        if db_node.cluster and db_node.cluster.net_provider == 'neutron':
+            net_manager = NeutronManager()
+        else:
+            net_manager = NetworkManager()
+
+        admin_ng_id = net_manager.get_admin_network_group_id()
+
         for iface in interfaces:
             db_iface = filter(
                 lambda i: i.id == iface['id'],
@@ -196,14 +205,16 @@ class NetAssignmentValidator(BasicValidator):
             db_iface = db_iface[0]
 
             for net in iface['assigned_networks']:
-                if net['id'] not in network_group_ids:
+                if net['id'] not in network_group_ids and not \
+                        net['id'] == admin_ng_id:
                     raise errors.InvalidData(
                         "Node '%d' shouldn't be connected to"
                         " network with ID '%d'" %
                         (node['id'], net['id']),
                         log_message=True
                     )
-                network_group_ids.remove(net['id'])
+                elif net['id'] != admin_ng_id:
+                    network_group_ids.remove(net['id'])
 
         # Check if there are unassigned networks for this node.
         if network_group_ids:

@@ -29,6 +29,13 @@ class CommandOut(object):
     return_code = None
     stderr = None
 
+    def __eq__(self, other):
+        return (
+            str(self.stdout) == str(other.stdout) and
+            str(self.stderr) == str(other.stderr) and
+            str(self.return_code) == str(other.return_code)
+        )
+
 
 class Driver(object):
     @classmethod

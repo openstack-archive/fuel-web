@@ -7,7 +7,7 @@
             "cidr": "{{settings.ADMIN_NETWORK['cidr']}}",
             "netmask": "{{settings.ADMIN_NETWORK['netmask']}}",
             "network_size": "{{settings.ADMIN_NETWORK['size']}}",
-            "vlan_start": "1"
+            "vlan_start": null
         }
     },
     {

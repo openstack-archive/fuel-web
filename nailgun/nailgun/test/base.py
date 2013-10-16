@@ -420,7 +420,7 @@ class Environment(object):
         net_cidrs = (
             "172.16.1.0/24",
             "192.168.0.0/24",
-            "192.168.0.0/24"
+            "192.168.1.0/24"
         )
         nets = {'networks': [{
             "network_size": 256,
@@ -436,6 +436,48 @@ class Environment(object):
             lambda net: net['name'] == 'public',
             nets['networks'])[0]
         public['netmask'] = '255.255.255.0'
+        public['gateway'] = '172.16.1.1'
+
+        nets['neutron_parameters'] = {
+            "segmentation_type": "vlan",
+            "predefined_networks": {
+                "net04_ext": {
+                    "L3": {
+                        "nameservers": [],
+                        "cidr": "172.16.1.0/24",
+                        "gateway": None,
+                        "floating": ["172.16.1.131", "172.16.1.254"],
+                        "public": True
+                    }
+                },
+                "net04": {
+                    "L3": {
+                        "nameservers": [
+                            "8.8.4.4",
+                            "8.8.8.8"
+                        ],
+                        "cidr": "192.168.111.0/24",
+                        "gateway": None,
+                        "floating": [],
+                        "public": False
+                    }
+                }
+            },
+            "L2": {
+                "phys_nets": {
+                    "physnet2": {
+                        "bridge": "br-prv",
+                        "vlan_range": []
+                    },
+                    "physnet1": {
+                        "bridge": "br-ex",
+                        "vlan_range": [1000, 2999]
+                    }
+                },
+                "base_mac": "fa:16:3e:00:00:00",
+                "segmentation_type": "vlan"
+            }
+        }
 
         return nets
 

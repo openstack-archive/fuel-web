@@ -40,3 +40,41 @@ class TestHandlers(BaseIntegrationTest):
             IPNetwork('192.168.1.0/8'),
             IPNetwork('192.168.1.0/24')
         ), True)
+
+        self.assertEqual(nm.is_range_intersection(
+            IPRange('192.168.0.0', '192.168.255.255'),
+            IPNetwork('192.168.1.0/24')
+        ), True)
+        self.assertEqual(nm.is_range_intersection(
+            IPRange('164.174.47.1', '191.0.0.0'),
+            IPNetwork('192.168.1.0/24')
+        ), False)
+        self.assertEqual(nm.is_range_intersection(
+            IPRange('192.168.0.0', '192.168.255.255'),
+            IPRange('164.174.47.1', '191.0.0.0')
+        ), False)
+        self.assertEqual(nm.is_range_intersection(
+            IPNetwork('192.168.1.0/8'),
+            IPNetwork('192.168.1.0/24')
+        ), True)
+        self.assertEqual(nm.is_range_intersection(
+            IPRange('192.168.0.0', '192.168.130.255'),
+            IPRange('192.168.128.0', '192.168.255.255'),
+        ), True)
+
+        self.assertEqual(nm.is_cidr_intersection(
+            IPNetwork('192.168.0.0/20'),
+            IPNetwork('192.168.1.0/24')
+        ), True)
+        self.assertEqual(nm.is_cidr_intersection(
+            IPNetwork('164.164.0.0/14'),
+            IPNetwork('192.168.1.0/24')
+        ), False)
+        self.assertEqual(nm.is_cidr_intersection(
+            IPNetwork('164.174.47.0/25'),
+            IPNetwork('164.174.47.128/25')
+        ), False)
+        self.assertEqual(nm.is_cidr_intersection(
+            IPNetwork('192.168.1.0/8'),
+            IPNetwork('192.168.1.0/24')
+        ), True)

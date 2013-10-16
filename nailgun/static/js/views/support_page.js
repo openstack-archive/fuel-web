@@ -39,9 +39,7 @@ function(commonViews, models, supportPageTemplate) {
             if (_.isUndefined(task) || task.get('progress') < 100 ) {
                 this.registerDeferred(this.timeout = $.timeout(this.updateInterval).done(_.bind(this.update, this)));
             } else {
-                this.renderDumpTaskResult(task);
-                this.$('.download-logs').removeClass('hide');
-                this.$('.download-logs-progress').addClass('hide');
+                this.render();
             }
         },
         update: function() {
@@ -50,53 +48,33 @@ function(commonViews, models, supportPageTemplate) {
         downloadLogs: function() {
             var task = new models.LogsPackage();
             task.save({}, {method: 'PUT'});
-            this.$('.download-logs').addClass('hide');
-            this.$('.download-logs-progress').removeClass('hide');
-            this.$('.donwload-logs-link').addClass('hide');
-            this.$('.download-logs-error').addClass('hide');
-            // Reset logsPackageTasks to ignoring previous state
+            this.$('.download-logs, .donwload-logs-link, .download-logs-error').addClass('hide');
+            this.$('.genereate-logs').removeClass('hide');
             this.logsPackageTasks.reset();
             this.logsPackageTasks.fetch();
             this.scheduleUpdate();
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.model = new models.FuelKey();
-            this.model.fetch();
-            this.model.on('change', this.renderRegistrationLink, this);
+            this.fuelKey = new models.FuelKey();
+            this.fuelKey.fetch();
+            this.fuelKey.on('change', this.render, this);
             this.logsPackageTasks = new models.Tasks();
             // Check for task was created earlier
             this.logsPackageTasks.once('sync', this.checkCompletedTask, this);
-            this.logsPackageTasks.fetch();
+            this.logsPackageTasks.deferred = this.logsPackageTasks.fetch();
         },
         checkCompletedTask: function() {
+            this.logsPackageTasks.deferred = null;
             var task = this.logsPackageTasks.findTask({name: 'dump'});
-            if (_.isUndefined(task) || task.get('progress') < 100 ) {
-                this.$('.genereate-logs').addClass('hide');
-                this.$('.download-logs').removeClass('hide');
-                this.$('.download-logs-progress').addClass('hide');
-            } else if (task.get('progress') < 100) {
+            if (!_.isUndefined(task) && task.get('progress') < 100) {
                 this.scheduleUpdate();
             } else {
-                this.renderDumpTaskResult(task);
-            }
-            this.$('.download-logs').removeClass('hide');
-            this.$('.download-logs-progress').addClass('hide');
-        },
-        renderRegistrationLink: function() {
-            this.$('.registration-link').attr('href', 'http://fuel.mirantis.com/create-subscriber/?key=' + this.model.get('key'));
-        },
-        renderDumpTaskResult: function(task) {
-            if (task.get('status') == 'error') {
-                this.$('.download-logs-error').text(task.get('message'));
-                this.$('.download-logs-error').removeClass('hide');
-            } else {
-                this.$('.donwload-logs-link').removeClass('hide');
-                this.$('.donwload-logs-link > a').attr('href', task.get('message'));
+                this.render();
             }
         },
         render: function() {
-            this.$el.html(this.template());
+            this.$el.html(this.template({tasks: this.logsPackageTasks, fuelKey: this.fuelKey}));
             return this;
         }
     });

@@ -73,7 +73,7 @@ class TestHandlers(BaseIntegrationTest):
 
             'management_interface': 'eth0.101',
             'fixed_interface': 'eth0.103',
-            'admin_interface': 'eth0',
+            'admin_interface': 'eth1',
             'storage_interface': 'eth0.102',
             'public_interface': 'eth0.100',
             'floating_interface': 'eth0.100',
@@ -91,13 +91,22 @@ class TestHandlers(BaseIntegrationTest):
         nodes_db = sorted(cluster_db.nodes, key=lambda n: n.id)
         assigned_ips = {}
         i = 0
+        admin_ips = [
+            '10.20.0.139/24',
+            '10.20.0.138/24',
+            '10.20.0.135/24',
+            '10.20.0.133/24',
+            '10.20.0.131/24',
+            '10.20.0.130/24']
         for node in nodes_db:
             node_id = node.id
+            admin_ip = admin_ips.pop()
             for role in sorted(node.roles + node.pending_roles):
                 assigned_ips[node_id] = {}
                 assigned_ips[node_id]['internal'] = '192.168.0.%d' % (i + 3)
                 assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
                 assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 2)
+                assigned_ips[node_id]['admin'] = admin_ip
 
                 nodes_list.append({
                     'role': role,
@@ -154,30 +163,25 @@ class TestHandlers(BaseIntegrationTest):
                         'eth0.100': {
                             'interface': 'eth0.100',
                             'ipaddr': ['%s/24' % ips['public']],
-                            'gateway': '172.16.0.1',
-                            '_name': 'public'},
+                            'gateway': '172.16.0.1'},
                         'eth0.101': {
                             'interface': 'eth0.101',
-                            'ipaddr': ['%s/24' % ips['internal']],
-                            '_name': 'management'},
+                            'ipaddr': ['%s/24' % ips['internal']]},
                         'eth0.102': {
                             'interface': 'eth0.102',
-                            'ipaddr': ['%s/24' % ips['storage']],
-                            '_name': 'storage'},
+                            'ipaddr': ['%s/24' % ips['storage']]},
                         'eth0.103': {
                             'interface': 'eth0.103',
-                            'ipaddr': 'none',
-                            '_name': 'fixed'},
+                            'ipaddr': 'none'},
                         'lo': {
                             'interface': 'lo',
                             'ipaddr': ['127.0.0.1/8']},
                         'eth1': {
                             'interface': 'eth1',
-                            'ipaddr': 'none'},
+                            'ipaddr': [ips['admin']]},
                         'eth0': {
                             'interface': 'eth0',
-                            'ipaddr': 'dhcp',
-                            '_name': 'admin'}}}
+                            'ipaddr': 'none'}}}
 
                 individual_atts.update(common_attrs)
                 individual_atts['glance']['image_cache_max_size'] = str(
@@ -209,6 +213,8 @@ class TestHandlers(BaseIntegrationTest):
                 'profile': cluster_attrs['cobbler']['profile'],
                 'power_type': 'ssh',
                 'power_user': 'root',
+                'kernel_options': {
+                    'netcfg/choose_interface': 'eth1'},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
                 'name': TaskHelper.make_slave_name(n.id),
@@ -286,6 +292,7 @@ class TestHandlers(BaseIntegrationTest):
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
         self.assertEquals(len(args), 2)
         self.assertEquals(len(args[1]), 2)
+
         self.datadiff(args[1][0], provision_msg)
         self.datadiff(args[1][1], deployment_msg)
 

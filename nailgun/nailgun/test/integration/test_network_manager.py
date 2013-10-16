@@ -400,6 +400,10 @@ class TestNetworkManager(BaseIntegrationTest):
             headers=self.default_headers
         )
         networks_data = json.loads(resp.body)
+        networks_data["networks"] = [
+            n for n in networks_data["networks"]
+            if n["name"] != "fuelweb_admin"
+        ]
         same_vlan_nets = filter(
             lambda n: n['vlan_start'] == same_vlan, networks_data['networks'])
         different_vlan_nets = filter(

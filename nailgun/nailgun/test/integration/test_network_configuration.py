@@ -84,6 +84,18 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
             self.cluster.net_manager,
             new_net_manager['net_manager'])
 
+    def test_change_dns_nameservers(self):
+        new_dns_nameservers = {'dns_nameservers': [
+            "208.67.222.222",
+            "208.67.220.220"
+        ]}
+        self.put(self.cluster.id, new_dns_nameservers)
+
+        self.db.refresh(self.cluster)
+        self.assertEquals(
+            self.cluster.dns_nameservers,
+            new_dns_nameservers['dns_nameservers'])
+
     def test_do_not_update_net_manager_if_validation_is_failed(self):
         self.db.query(NetworkGroup).filter(
             not_(NetworkGroup.name == "fuelweb_admin")

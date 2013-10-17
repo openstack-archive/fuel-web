@@ -1,3 +1,6 @@
+<% if (disabled && release) { %>
+  <div class="alert" style="margin-bottom: 10px">Additional services are not available in <%- release.get('name') %></div>
+<% } %>
 <form class="form-horizontal" style="margin:0" onsubmit="return false">
   <fieldset>
     <div class="control-group">

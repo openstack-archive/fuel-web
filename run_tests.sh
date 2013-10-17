@@ -188,8 +188,8 @@ function run_ui_tests {
     done
     ./manage.py dropdb >> /dev/null
     rm $test_server_log_file
-    )
     return $result
+    )
 }
 
 if [ $just_ui_tests -eq 1 ]; then

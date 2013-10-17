@@ -421,7 +421,7 @@ class Environment(object):
             "172.16.0.0/24",
             "172.16.1.0/24",
             "192.168.0.0/24",
-            "192.168.0.0/24",
+            "192.168.1.0/24",
             "10.0.0.0/24"
         )
         nets = {'networks': [{
@@ -438,80 +438,6 @@ class Environment(object):
             lambda net: net['name'] == 'public',
             nets['networks'])[0]
         public['netmask'] = '255.255.255.0'
-
-        return nets
-
-    def generate_ui_neutron_networks(self, cluster_id):
-        start_id = self.db.query(NetworkGroup.id).order_by(
-            NetworkGroup.id
-        ).first()
-        start_id = 0 if not start_id else start_id[-1] + 1
-        net_names = (
-            "public",
-            "management",
-            "storage"
-        )
-        net_cidrs = (
-            "172.16.1.0/24",
-            "192.168.0.0/24",
-            "192.168.1.0/24"
-        )
-        nets = {'networks': [{
-            "network_size": 256,
-            "name": nd[0],
-            "amount": 1,
-            "cluster_id": cluster_id,
-            "vlan_start": 100 + i,
-            "cidr": nd[1],
-            "id": start_id + i
-        } for i, nd in enumerate(zip(net_names, net_cidrs))]}
-
-        public = filter(
-            lambda net: net['name'] == 'public',
-            nets['networks'])[0]
-        public['netmask'] = '255.255.255.0'
-        public['gateway'] = '172.16.1.1'
-
-        nets['neutron_parameters'] = {
-            "segmentation_type": "vlan",
-            "predefined_networks": {
-                "net04_ext": {
-                    "L3": {
-                        "nameservers": [],
-                        "cidr": "172.16.1.0/24",
-                        "gateway": None,
-                        "floating": ["172.16.1.131", "172.16.1.254"],
-                        "public": True
-                    }
-                },
-                "net04": {
-                    "L3": {
-                        "nameservers": [
-                            "8.8.4.4",
-                            "8.8.8.8"
-                        ],
-                        "cidr": "192.168.111.0/24",
-                        "gateway": "192.168.111.1",
-                        "floating": [],
-                        "public": False
-                    }
-                }
-            },
-            "L2": {
-                "phys_nets": {
-                    "physnet2": {
-                        "bridge": "br-prv",
-                        "vlan_range": []
-                    },
-                    "physnet1": {
-                        "bridge": "br-ex",
-                        "vlan_range": [1000, 2999]
-                    }
-                },
-                "base_mac": "fa:16:3e:00:00:00",
-                "segmentation_type": "vlan"
-            }
-        }
 
         return nets
 
@@ -770,6 +696,61 @@ class Environment(object):
             if time.time() - start_time > timeout:
                 raise TimeoutError(error_message)
             time.sleep(0.1)
+
+    def _api_get(self, method, args, expect_errors=False):
+        return self.app.get(
+            reverse(method,
+                    kwargs=args),
+            headers=self.default_headers,
+            expect_errors=expect_errors)
+
+    def _api_put(self, method, args, data, expect_errors=False):
+        return self.app.put(
+            reverse(method,
+                    kwargs=args),
+            json.dumps(data),
+            headers=self.default_headers,
+            expect_errors=expect_errors)
+
+    def nova_networks_get(self, cluster_id, expect_errors=False):
+        return self._api_get('NovaNetworkConfigurationHandler',
+                             {'cluster_id': cluster_id},
+                             expect_errors)
+
+    def nova_networks_put(self, cluster_id, networks, expect_errors=False):
+        return self._api_put('NovaNetworkConfigurationHandler',
+                             {'cluster_id': cluster_id},
+                             networks,
+                             expect_errors)
+
+    def neutron_networks_get(self, cluster_id, expect_errors=False):
+        return self._api_get('NeutronNetworkConfigurationHandler',
+                             {'cluster_id': cluster_id},
+                             expect_errors)
+
+    def neutron_networks_put(self, cluster_id, networks, expect_errors=False):
+        return self._api_put('NeutronNetworkConfigurationHandler',
+                             {'cluster_id': cluster_id},
+                             networks,
+                             expect_errors)
+
+    def cluster_changes_put(self, cluster_id, expect_errors=False):
+        return self._api_put('ClusterChangesHandler',
+                             {'cluster_id': cluster_id},
+                             [],
+                             expect_errors)
+
+    def node_nics_get(self, node_id, expect_errors=False):
+        return self._api_get('NodeNICsHandler',
+                             {'node_id': node_id},
+                             expect_errors)
+
+    def node_collection_nics_put(self, node_id, interfaces,
+                                 expect_errors=False):
+        return self._api_put('NodeCollectionNICsHandler',
+                             {'node_id': node_id},
+                             interfaces,
+                             expect_errors)
 
 
 class BaseTestCase(TestCase):

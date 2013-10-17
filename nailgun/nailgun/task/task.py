@@ -527,7 +527,7 @@ class CheckNetworksTask(object):
             db().add(task)
             db().commit()
             full_err_msg = "\n".join(err_msgs)
-            raise errors.NetworkCheckError(full_err_msg)
+            raise errors.NetworkCheckError(full_err_msg, add_client=False)
 
     @classmethod
     def neutron_check(cls, task, data, check_admin_untagged):

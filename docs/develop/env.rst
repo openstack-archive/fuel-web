@@ -52,12 +52,10 @@ Setup for Nailgun Unit Tests
 
 #. Run the Nailgun backend unit tests::
 
-    cd nailgun
     ./run_tests.sh --no-jslint --no-ui-tests
 
 #. Run the Nailgun flake8 test::
 
-    cd nailgun
     ./run_tests.sh --flake8
 
 Setup for Web UI Tests
@@ -78,7 +76,6 @@ Setup for Web UI Tests
 #. Run full Web UI test suite (this will wipe your Nailgun database in
    PostgreSQL)::
 
-    cd nailgun
     ./run_tests.sh --jslint
     ./run_tests.sh --ui-tests
 

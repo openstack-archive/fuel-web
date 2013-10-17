@@ -580,19 +580,34 @@ define(['utils'], function(utils) {
         }
     });
 
+    models.NovaNetworkConfiguration = Backbone.Model.extend({
+        constructorName: 'NovaNetworkConfiguration',
+        validate: function(attrs) {
+            var errors = {};
+            _.each(attrs.nameservers, function(nameserver, index) {
+                if (utils.validateIP(nameserver)) {
+                    errors['nameserver-' + index] = 'Invalid nameserver';
+                }
+            });
+            return _.isEmpty(errors) ? null : errors;
+        }
+    });
+
     models.NetworkConfiguration = Backbone.Model.extend({
         constructorName: 'NetworkConfiguration',
         urlRoot: '/api/clusters',
         parse: function(response) {
             response.networks = new models.Networks(response.networks);
             response.neutron_parameters = new models.NeutronConfiguration(response.neutron_parameters);
+            response.dns_nameservers = new models.NovaNetworkConfiguration(response.dns_nameservers);
             return response;
         },
         toJSON: function() {
             return {
                 net_manager: this.get('net_manager'),
                 networks: this.get('networks').toJSON(),
-                neutron_parameters: this.get('neutron_parameters').toJSON()
+                neutron_parameters: this.get('neutron_parameters').toJSON(),
+                dns_nameservers: this.get('dns_nameservers').toJSON()
             };
         },
         isNew: function() {

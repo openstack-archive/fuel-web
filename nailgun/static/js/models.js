@@ -439,15 +439,32 @@ define(['utils'], function(utils) {
                 } else if (attribute == 'cidr') {
                     errors = _.extend(errors, utils.validateCidr(attrs.cidr));
                 } else if (attribute == 'vlan_start') {
-                    if (!_.isNull(attrs.vlan_start) || (attrs.name == 'fixed' && options.net_manager == 'VlanManager')) {
+                    if (!_.isNull(attrs.vlan_start) || (attrs.name == 'fixed' && options.networkConfiguration.get('net_manager') == 'VlanManager')) {
                         if (!utils.isNaturalNumber(attrs.vlan_start) || attrs.vlan_start < 1 || attrs.vlan_start > 4094) {
                             errors.vlan_start = 'Invalid VLAN ID';
-                        } else if (options.forbiddenVlans && _.contains(options.forbiddenVlans, attrs.vlan_start)) {
-                            errors.vlan_start = 'This VLAN ID is used by other networks. Please choose another ID';
-                        } else if (options.net_provider == 'neutron' && options.neutronParameters.get('segmentation_type') == 'vlan') {
-                            var vlanIdRange = options.neutronParameters.get('L2').phys_nets.physnet2.vlan_range;
-                            if (attrs.vlan_start >= vlanIdRange[0] && attrs.vlan_start <= vlanIdRange[1]) {
-                                errors.vlan_start = 'This VLAN ID reserved for private networks. Please choose another ID';
+                        } else {
+                            var currentVlan = options.networkConfiguration.get('networks').findWhere({name: attrs.name}).get('vlan_start');
+                            var forbiddenVlans = _.without(options.networkConfiguration.get('networks').pluck('vlan_start'), null, currentVlan);
+                            if (_.contains(forbiddenVlans, attrs.vlan_start)) {
+                                errors.vlan_start = 'This VLAN ID is used by other networks. Please choose another ID';
+                            } else if (options.net_provider == 'neutron' && options.networkConfiguration.get('neutron_parameters').get('segmentation_type') == 'vlan') {
+                                var vlanIdRange = options.networkConfiguration.get('neutron_parameters').get('L2').phys_nets.physnet2.vlan_range;
+                                if (attrs.vlan_start >= vlanIdRange[0] && attrs.vlan_start <= vlanIdRange[1]) {
+                                    errors.vlan_start = 'This VLAN ID reserved for private networks. Please choose another ID';
+                                }
+                            } else if (options.networkConfiguration.get('net_manager') == 'VlanManager') {
+                                if (attrs.name != 'fixed' ) {
+                                    var fixedNetwork = options.networkConfiguration.get('networks').findWhere({name: 'fixed'});
+                                    if (utils.validateVlanRange(fixedNetwork.get('vlan_start'), fixedNetwork.get('vlan_start') + fixedNetwork.get('amount') -1, attrs.vlan_start)) {
+                                        errors.vlan_start = 'This VLAN ID reserved for VM networks (fixed). Please choose another ID';
+                                    }
+                                } else {
+                                    _.each(forbiddenVlans, function(vlan) {
+                                        if (utils.validateVlanRange(attrs.vlan_start, attrs.vlan_start + attrs.amount -1, vlan)) {
+                                            errors.vlan_start = 'There is an intersection with VLAN ID of other networks. Please choose another ID';
+                                        }
+                                    });
+                                }
                             }
                         }
                     }
@@ -487,8 +504,8 @@ define(['utils'], function(utils) {
             _.each(attrs, function(configuration, title) {
                 if (title == 'L2') {
                     // ID range validation
-                    var id_range = configuration.tunnel_id_ranges || configuration.phys_nets.physnet2.vlan_range;
-                    var maxId = configuration.tunnel_id_ranges ? 65535 : 4094;
+                    var id_range = attrs.segmentation_type == 'gre' ? configuration.tunnel_id_ranges : configuration.phys_nets.physnet2.vlan_range;
+                    var maxId = attrs.segmentation_type == 'gre' ? 65535 : 4094;
                     if (!_.compact(id_range).length) {
                         errors.id_range = 'Invalid ID range';
                     } else {
@@ -500,6 +517,14 @@ define(['utils'], function(utils) {
                         }
                         if (_.isNull(id_range[1]) || !utils.isNaturalNumber(id_range[1]) || id_range[1] < 2 || id_range[1] > maxId) {
                             errors.id_end = 'Invalid ID range end';
+                        }
+                        if (attrs.segmentation_type == 'vlan') {
+                            var vlanRange = configuration.phys_nets.physnet2.vlan_range;
+                            _.each(options.networkVlans, function(vlan) {
+                                if (utils.validateVlanRange(vlanRange[0], vlanRange[1], vlan)) {
+                                    errors.id_range = 'There is an intersection with VLAN ID of other networks. Please set another ID range';
+                                }
+                            });
                         }
                     }
                     // base_mac validation

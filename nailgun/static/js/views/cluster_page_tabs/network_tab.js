@@ -40,7 +40,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         defaultButtonsState: function(validationErrors) {
             this.$('.btn.verify-networks-btn').attr('disabled', validationErrors);
-            this.$('.btn.btn-revert-changes').attr('disabled', !this.hasChanges);
+            this.$('.btn.btn-revert-changes').attr('disabled', !this.hasChanges && !validationErrors);
             this.$('.btn.apply-btn').attr('disabled', !this.hasChanges || validationErrors);
         },
         disableControls: function() {
@@ -66,9 +66,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.checkForChanges();
             this.networkConfiguration.get('networks').invoke('set', {}, { // trigger validation check
                 validate: true,
-                net_manager: this.networkConfiguration.get('net_manager'),
                 net_provider: this.model.get('net_provider'),
-                neutronParameters: this.networkConfiguration.get('neutron_parameters')
+                networkConfiguration: this.networkConfiguration
             });
             this.page.removeFinishedTasks();
         },
@@ -320,11 +319,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             }, {
                 validate: true,
                 net_provider: this.tab.model.get('net_provider'),
-                net_manager: this.tab.networkConfiguration.get('net_manager'),
-                forbiddenVlans: _.map(this.tab.networkConfiguration.get('networks').filter(function(network) {
-                    return _.contains(_.without(['public', 'storage', 'management'], this.network.get('name')), network.get('name'));
-                }, this), function(network) {return network.get('vlan_start');}),
-                neutronParameters: this.tab.networkConfiguration.get('neutron_parameters')
+                networkConfiguration: this.tab.networkConfiguration
             });
         },
         setIPRangeFocus: function(e) {
@@ -411,7 +406,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 predefined_networks: predefined_networks
             }, {
                 validate: true,
-                publicCidr: this.tab.networkConfiguration.get('networks').findWhere({name: 'public'}).get('cidr')
+                publicCidr: this.tab.networkConfiguration.get('networks').findWhere({name: 'public'}).get('cidr'),
+                networkVlans: _.compact(this.tab.networkConfiguration.get('networks').pluck('vlan_start'))
             });
             this.tab.checkForChanges();
             this.tab.page.removeFinishedTasks();

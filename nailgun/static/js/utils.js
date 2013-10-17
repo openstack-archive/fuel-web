@@ -153,6 +153,9 @@ define(['require'], function(require) {
             /*jslint bitwise: false*/
             return result;
 
+        },
+        validateVlanRange: function(vlanStart, vlanEnd, vlan) {
+            return vlan >= vlanStart && vlan <= vlanEnd;
         }
     };
 

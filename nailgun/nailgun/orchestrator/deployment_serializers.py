@@ -768,7 +768,7 @@ class NeutronMethods(object):
 
         # Fill up all about fuelweb-admin network.
         attrs['endpoints'][node.admin_interface.name] = {
-            "IP": cls.get_admin_ip(node)
+            "IP": [cls.get_admin_ip(node)]
         }
         attrs['roles']['fw-admin'] = node.admin_interface.name
 

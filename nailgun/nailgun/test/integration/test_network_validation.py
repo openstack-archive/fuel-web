@@ -15,6 +15,7 @@
 #    under the License.
 
 import json
+from netaddr import IPAddress
 from netaddr import IPNetwork
 
 from nailgun.api.models import NetworkGroup
@@ -24,6 +25,25 @@ from nailgun.test.base import reverse
 
 class TestNovaHandlers(BaseIntegrationTest):
 
+    def setUp(self):
+        super(TestNovaHandlers, self).setUp()
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"pending_addition": True},
+            ]
+        )
+        self.cluster = self.env.clusters[0]
+        resp = self.get_networks(self.cluster.id)
+        self.nets = json.loads(resp.body)
+
+    def get_networks(self, cluster_id, expect_errors=False):
+        return self.app.get(
+            reverse('NovaNetworkConfigurationHandler',
+                    kwargs={'cluster_id': cluster_id}),
+            headers=self.default_headers,
+            expect_errors=expect_errors)
+
     def update_networks(self, cluster_id, networks, expect_errors=False):
         return self.app.put(
             reverse('NovaNetworkConfigurationHandler',
@@ -32,41 +52,30 @@ class TestNovaHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=expect_errors)
 
-    def test_network_checking(self):
-        self.env.create(
-            cluster_kwargs={},
-            nodes_kwargs=[
-                {"pending_addition": True},
-            ]
-        )
-        cluster = self.env.clusters[0]
+    def find_net_by_name(self, name):
+        for net in self.nets['networks']:
+            if net['name'] == name:
+                return net
 
-        nets = self.env.generate_ui_networks(
-            cluster.id
-        )
-        resp = self.update_networks(cluster.id, nets)
+    def test_network_checking(self):
+        resp = self.update_networks(self.cluster.id, self.nets)
         self.assertEquals(resp.status, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
+
         ngs_created = self.db.query(NetworkGroup).filter(
-            NetworkGroup.name.in_([n['name'] for n in nets['networks']])
+            NetworkGroup.name.in_([n['name'] for n in self.nets['networks']])
         ).all()
-        self.assertEquals(len(ngs_created), len(nets['networks']))
+        self.assertEquals(len(ngs_created), len(self.nets['networks']))
 
     def test_network_checking_fails_if_admin_intersection(self):
-        self.env.create(
-            cluster_kwargs={},
-            nodes_kwargs=[
-                {"pending_addition": True},
-            ]
-        )
-        cluster = self.env.clusters[0]
-        nets = self.env.generate_ui_networks(cluster.id)
         admin_ng = self.env.network_manager.get_admin_network_group()
-        nets['networks'][-1]["cidr"] = admin_ng.cidr
-        resp = self.update_networks(cluster.id, nets, expect_errors=True)
+        self.find_net_by_name('fixed')["cidr"] = admin_ng.cidr
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
         self.assertEquals(resp.status, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
@@ -74,30 +83,19 @@ class TestNovaHandlers(BaseIntegrationTest):
         self.assertEquals(task['name'], 'check_networks')
         self.assertEquals(
             task['message'],
-            "Intersection with admin "
-            "network(s) '{0}' found".format(
-                admin_ng.cidr
-            )
+            "Address space intersection between networks: "
+            "admin (PXE), fixed."
         )
 
     def test_network_checking_fails_if_admin_intersection_ip_range(self):
-        self.env.create(
-            cluster_kwargs={},
-            nodes_kwargs=[
-                {"pending_addition": True},
-            ]
-        )
-        cluster = self.env.clusters[0]
-        nets = self.env.generate_ui_networks(cluster.id)
         admin_ng = self.env.network_manager.get_admin_network_group()
-        base = IPNetwork(admin_ng.cidr)
-        base.prefixlen += 1
-        start_range = str(base[0])
-        end_range = str(base[-1])
-        nets['networks'][1]['ip_ranges'] = [
-            [start_range, end_range]
+        cidr = IPNetwork(admin_ng.cidr)
+        self.find_net_by_name('public')['ip_ranges'] = [
+            [str(IPAddress(cidr.first)), str(IPAddress(cidr.last))]
         ]
-        resp = self.update_networks(cluster.id, nets, expect_errors=True)
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
         self.assertEquals(resp.status, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
@@ -105,29 +103,17 @@ class TestNovaHandlers(BaseIntegrationTest):
         self.assertEquals(task['name'], 'check_networks')
         self.assertEquals(
             task['message'],
-            "IP range {0} - {1} in {2} network intersects with admin "
-            "range of {3}".format(
-                start_range, end_range,
-                nets['networks'][1]['name'],
-                admin_ng.cidr
-            )
+            "Address space intersection between networks: "
+            "admin (PXE), public."
         )
 
     def test_network_checking_fails_if_amount_flatdhcp(self):
-        self.env.create(
-            cluster_kwargs={},
-            nodes_kwargs=[
-                {"pending_addition": True},
-            ]
-        )
-        cluster = self.env.clusters[0]
+        net = self.find_net_by_name('management')
+        net["amount"] = 2
+        net["cidr"] = "10.10.0.0/23"
 
-        nets = self.env.generate_ui_networks(
-            cluster.id
-        )
-        nets['networks'][-1]["amount"] = 2
-        nets['networks'][-1]["cidr"] = "10.0.0.0/23"
-        resp = self.update_networks(cluster.id, nets, expect_errors=True)
+        resp = self.update_networks(self.cluster.id, {'networks': [net]},
+                                    expect_errors=True)
         self.assertEquals(resp.status, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
@@ -135,29 +121,20 @@ class TestNovaHandlers(BaseIntegrationTest):
         self.assertEquals(task['name'], 'check_networks')
         self.assertEquals(
             task['message'],
-            "Network amount for '{0}' is more than 1 "
-            "while using FlatDHCP manager.".format(
-                nets['networks'][-1]["name"]))
+            "Network amount for 'management' is more than 1 "
+            "while using FlatDHCP manager."
+        )
 
     def test_fails_if_netmask_for_public_network_not_set_or_not_valid(self):
-        self.env.create(
-            cluster_kwargs={},
-            nodes_kwargs=[
-                {"pending_addition": True}])
-        cluster = self.env.clusters[0]
+        net_without_netmask = self.find_net_by_name('public')
+        net_with_invalid_netmask = self.find_net_by_name('public')
 
-        net_without_netmask = self.env.generate_ui_networks(
-            cluster.id)
+        net_without_netmask['netmask'] = None
+        net_with_invalid_netmask['netmask'] = '255.255.255.2'
 
-        net_with_invalid_netmask = self.env.generate_ui_networks(
-            cluster.id)
-
-        del net_without_netmask['networks'][1]['netmask']
-        net_with_invalid_netmask['networks'][1]['netmask'] = '255.255.255.2'
-
-        for nets in [net_without_netmask, net_with_invalid_netmask]:
-            resp = self.update_networks(cluster.id, nets, expect_errors=True)
-
+        for net in [net_without_netmask, net_with_invalid_netmask]:
+            resp = self.update_networks(self.cluster.id, {'networks': [net]},
+                                        expect_errors=True)
             self.assertEquals(resp.status, 202)
             task = json.loads(resp.body)
             self.assertEquals(task['status'], 'error')
@@ -165,6 +142,91 @@ class TestNovaHandlers(BaseIntegrationTest):
             self.assertEquals(task['name'], 'check_networks')
             self.assertEquals(
                 task['message'], 'Invalid netmask for public network')
+
+    def test_network_checking_fails_if_networks_cidr_intersection(self):
+        self.find_net_by_name('management')["cidr"] = \
+            self.find_net_by_name('storage')["cidr"]
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Address space intersection between "
+            "networks: management, storage."
+        )
+
+    def test_network_checking_fails_if_networks_cidr_range_intersection(self):
+        self.find_net_by_name('public')["ip_ranges"] = \
+            [['192.18.17.65', '192.18.17.143']]
+        self.find_net_by_name('management')["cidr"] = '192.18.17.0/25'
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Address space intersection between "
+            "networks: public, management."
+        )
+
+    def test_network_checking_no_public_floating_ranges_intersection(self):
+        self.find_net_by_name('public')["ip_ranges"] = \
+            [['192.18.17.5', '192.18.17.43'],
+             ['192.18.17.59', '192.18.17.90']]
+        self.find_net_by_name('floating')["ip_ranges"] = \
+            [['192.18.17.125', '192.18.17.143'],
+             ['192.18.17.159', '192.18.17.190']]
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+
+    def test_network_checking_fails_if_public_ranges_intersection(self):
+        self.find_net_by_name('public')["ip_ranges"] = \
+            [['192.18.17.65', '192.18.17.143'],
+             ['192.18.17.129', '192.18.17.190']]
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Address space intersection between ranges of public network."
+        )
+
+    def test_network_checking_fails_if_floating_ranges_intersection(self):
+        self.find_net_by_name('floating')["ip_ranges"] = \
+            [['192.18.17.65', '192.18.17.143'],
+             ['192.18.17.129', '192.18.17.190']]
+
+        resp = self.update_networks(self.cluster.id, self.nets,
+                                    expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Address space intersection between ranges of floating network."
+        )
 
 
 class TestNeutronHandlersGre(BaseIntegrationTest):

@@ -108,16 +108,9 @@ casper.then(function() {
             'vlanEnd':'',
             'validationMessage': 'if amount more than 4095 - VLAN ID'
         },
-
         {
             'amount': '2',
             'vlanStart': '4093',
-            'vlanEnd':'4094',
-            'validationMessage': ''
-        },
-        {
-            'amount': '4094',
-            'vlanStart': '1',
             'vlanEnd':'4094',
             'validationMessage': ''
         },
@@ -164,6 +157,9 @@ casper.then(function() {
         this.fill('.networks-table', {
             'fixed-amount': initialAmountValue,
             'fixed-vlan_range-start': initialVlanIDValue
+        });
+	this.evaluate(function() {
+            $('input[name=fixed-amount]').keyup();
         });
         this.click('.net-manager input[type=radio]:not(:checked)');
     });

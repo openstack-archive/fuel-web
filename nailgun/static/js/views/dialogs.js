@@ -452,6 +452,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterAdditionalServicesPane = views.WizardPane.extend({
         title: 'Additional Services',
+        releaseDependent: true,
         template: _.template(clusterAdditionalServicesPaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
@@ -465,6 +466,15 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 return (new $.Deferred()).reject();
             }
             return (new $.Deferred()).resolve();
+        },
+        render: function() {
+            var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
+            var disabled = !release || release.get('operating_system') == 'RHEL'; // no Savanna & Murano for RHOS for now
+            this.$el.html(this.template({disabled: disabled, release: release}));
+            if (disabled) {
+                this.$('input[type=checkbox]').prop('disabled', true);
+            }
+            return this;
         }
     });
 

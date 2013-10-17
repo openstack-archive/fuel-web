@@ -61,7 +61,7 @@ class TestHandlers(BaseIntegrationTest):
 
             'fixed_network_range': '10.0.0.0/16',
             'management_network_range': '192.168.0.0/24',
-            'floating_network_range': ['172.16.0.128-172.16.0.255'],
+            'floating_network_range': ['172.16.0.128-172.16.0.254'],
             'storage_network_range': '192.168.1.0/24',
 
             'mp': [{'weight': '1', 'point': '1'},
@@ -97,7 +97,7 @@ class TestHandlers(BaseIntegrationTest):
                 assigned_ips[node_id] = {}
                 assigned_ips[node_id]['internal'] = '192.168.0.%d' % (i + 3)
                 assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
-                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 2)
+                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 3)
 
                 nodes_list.append({
                     'role': role,

@@ -102,13 +102,10 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
         )
 
     def test_do_not_update_net_manager_if_validation_is_failed(self):
-        self.db.query(NetworkGroup).filter(
-            not_(NetworkGroup.name == "fuelweb_admin")
-        ).first()
         new_net_manager = {'net_manager': 'VlanManager',
                            'networks': [{'id': 500, 'vlan_start': 500}]}
-        self.put(self.cluster.id, new_net_manager, expect_errors=True)
 
+        self.put(self.cluster.id, new_net_manager, expect_errors=True)
         self.db.refresh(self.cluster)
         self.assertNotEquals(
             self.cluster.net_manager,

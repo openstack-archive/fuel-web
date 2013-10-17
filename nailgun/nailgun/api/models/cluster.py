@@ -237,6 +237,15 @@ class Cluster(Base):
             netmanager.assign_admin_ips(
                 node.id, len(node.meta.get('interfaces', [])))
 
+    @property
+    def network_manager(self):
+        if self.net_provider == 'neutron':
+            from nailgun.network.neutron import NeutronManager
+            return NeutronManager
+        else:
+            from nailgun.network.manager import NetworkManager
+            return NetworkManager
+
 
 class AttributesGenerators(object):
     @classmethod

@@ -142,14 +142,15 @@ Please wait...")
             #                   'gateway': '0.0.0.0'}]
             try:
                 dhcptimeout = 5
-                with timeout.wait_for_true(dhcp_checker.utils.IfaceState,
-                                           [self.activeiface],
-                                           timeout=dhcptimeout) as iface:
-                    dhcp_server_data = timeout.wait_for_true(
+                with timeout.run_with_timeout(dhcp_checker.utils.IfaceState,
+                                              [self.activeiface],
+                                              timeout=dhcptimeout) as iface:
+                    dhcp_server_data = timeout.run_with_timeout(
                         dhcp_checker.api.check_dhcp_on_eth,
                         [iface, dhcptimeout], timeout=dhcptimeout)
-            except timeout.TimeoutError:
+            except (KeyboardInterupt, timeout.TimeoutError):
                 log.debug("DHCP scan timed out")
+                log.warning(traceback.format_exc())
                 dhcp_server_data = []
 
             num_dhcp = len(dhcp_server_data)

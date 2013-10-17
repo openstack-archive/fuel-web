@@ -96,10 +96,8 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         self.env.wait_error(task, 30)
         self.assertIn(
             task.message,
-            "Intersection with admin "
-            "network(s) '{0}' found".format(
-                admin_ng.cidr
-            )
+            "Address space intersection between networks: "
+            "admin (PXE), fixed."
         )
         self.assertEquals(mocked_rpc.called, False)
 

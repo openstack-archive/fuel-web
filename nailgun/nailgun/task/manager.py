@@ -277,9 +277,6 @@ class DeploymentTaskManager(TaskManager):
             net_serializer = NeutronNetworkConfigurationSerializer
 
         network_info = net_serializer.serialize_for_cluster(self.cluster)
-        network_info["networks"] = [
-            n for n in network_info["networks"] if n["name"] != "fuelweb_admin"
-        ]
 
         check_networks = supertask.create_subtask('check_networks')
         self._call_silently(

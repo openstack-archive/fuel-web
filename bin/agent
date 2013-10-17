@@ -171,11 +171,8 @@ class NodeAgent
 
     begin
       (@os[:network][:interfaces] or {} rescue {}).each do |int, intinfo|
-        next if int =~ /^lo[:]?/
-        next if int =~ /^vir/
-        next if int =~ /^vnet/
-        next if int =~ /^br/
-        next if int =~ /\d+\.\d+$/
+        # Send info about physical interfaces only
+        next if intinfo[:type] != "eth"
         int_meta = {:name => int}
         (intinfo[:addresses] or {} rescue {}).each do |addr, addrinfo|
           if (addrinfo[:family] rescue nil) =~ /lladdr/

@@ -324,29 +324,38 @@ class Environment(object):
             self._add_interfaces_to_node(node_id)
 
     def _create_interfaces_from_meta(self, node):
+        # Create interfaces from meta
         for interface in node.meta['interfaces']:
+            interface = NodeNICInterface(
+                mac=interface.get('mac'),
+                name=interface.get('name'),
+                ip_addr=interface.get('ip'),
+                netmask=interface.get('netmask'))
+
+            self.db.add(interface)
+            node.interfaces.append(interface)
+
+        # If node in a cluster then add
+        # allowed_networks for all interfaces
+        # and assigned_networks for first interface
+        if node.cluster_id:
             ng_ids = [ng.id for ng in
                       self.network_manager.get_all_cluster_networkgroups(node)]
             allowed_networks = list(self.db.query(NetworkGroup).filter(
                 NetworkGroup.id.in_(ng_ids)))
 
-            interface = NodeNICInterface(
-                mac=interface.get('mac'),
-                name=interface.get('name'),
-                ip_addr=interface.get('ip'),
-                netmask=interface.get('netmask'),
-                allowed_networks=allowed_networks,
-                assigned_networks=allowed_networks)
-            self.db.add(interface)
-            node.interfaces.append(interface)
+            for interface in node.interfaces:
+                interface.allowed_networks = allowed_networks
+
+            node.interfaces[0].assigned_networks = allowed_networks
 
         self.db.commit()
         # At least one interface should have
-        # ip same as mac in meta
+        # same ip as mac in meta
         if node.interfaces and not \
            filter(lambda i: node.mac == i.mac, node.interfaces):
-            node.interfaces[0].mac = node.mac
 
+            node.interfaces[0].mac = node.mac
             self.db.commit()
 
     def _add_interfaces_to_node(self, node_id, count=1):

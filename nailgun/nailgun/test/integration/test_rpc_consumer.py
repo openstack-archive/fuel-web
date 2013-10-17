@@ -411,11 +411,6 @@ class TestVerifyNetworks(BaseIntegrationTest):
         cluster_db = self.env.clusters[0]
         node1, node2, node3 = self.env.nodes
 
-        # Node should has at least one mac which
-        # equal node's mac field
-        node2.mac = mac
-        self.env.db.commit()
-
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)},
                      {'iface': 'eth1', 'vlans': [106]},
                      {'iface': 'eth2', 'vlans': [107]}]

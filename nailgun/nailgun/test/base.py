@@ -454,9 +454,9 @@ class Environment(object):
                     "cidr": "172.16.0.0/24",
                     "netmask": "255.255.255.0",
                     "gateway": "172.16.0.1",
-                    "ip_range": ["172.16.0.128", "172.16.0.255"],
+                    "ip_range": ["172.16.0.128", "172.16.0.254"],
                     "vlan_start": 100,
-                    "network_size": 128
+                    "network_size": 256
                 },
                 {
                     "name": "public",
@@ -471,7 +471,7 @@ class Environment(object):
                     "cidr": "192.168.0.0/24",
                     "netmask": "255.255.255.0",
                     "gateway": "192.168.0.1",
-                    "ip_range": ["192.168.0.2", "192.168.0.255"],
+                    "ip_range": ["192.168.0.2", "192.168.0.254"],
                     "vlan_start": 101
                 },
                 {
@@ -479,7 +479,7 @@ class Environment(object):
                     "cidr": "192.168.1.0/24",
                     "netmask": "255.255.255.0",
                     "gateway": "192.168.1.1",
-                    "ip_range": ["192.168.1.1", "192.168.1.255"],
+                    "ip_range": ["192.168.1.1", "192.168.1.254"],
                     "vlan_start": 102
                 },
                 {
@@ -487,7 +487,7 @@ class Environment(object):
                     "cidr": "10.0.0.0/16",
                     "netmask": "255.255.0.0",
                     "gateway": "10.0.0.1",
-                    "ip_range": ["10.0.0.1", "10.0.255.255"],
+                    "ip_range": ["10.0.0.2", "10.0.255.254"],
                     "vlan_start": 103
                 }
             ],

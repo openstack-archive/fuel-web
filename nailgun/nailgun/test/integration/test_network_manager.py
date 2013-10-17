@@ -409,7 +409,8 @@ class TestNetworkManager(BaseIntegrationTest):
         different_vlan_nets = filter(
             lambda n: n['vlan_start'] != same_vlan, networks_data['networks'])
         different_vlan_nets[0]['vlan_start'] = same_vlan
-        same_vlan_nets_count_expect = len(same_vlan_nets) + 1
+        same_vlan_nets_count_expect = \
+            len(same_vlan_nets) if same_vlan_nets else 1
         resp = self.app.put(
             reverse(
                 'NovaNetworkConfigurationHandler',

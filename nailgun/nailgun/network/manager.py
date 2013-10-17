@@ -600,17 +600,14 @@ class NetworkManager(object):
         ips = self._get_ips_except_admin(node_id=node_id)
         network_data = []
         network_ids = []
-        for i in ips:
-            net = db().query(Network).get(i.network)
-            #
+        for ip in ips:
+            net = db().query(Network).get(ip.network)
             interface = self._get_interface_by_network_name(
-                node_db.id,
-                net.name
-            )
+                node_db.id, net.name)
 
-            # Get prefix from netmask instead of cidr
-            # for public network
             if net.name == 'public':
+                # Get prefix from netmask instead of cidr
+                # for public network
                 network_group = db().query(NetworkGroup).get(
                     net.network_group_id)
 
@@ -625,7 +622,7 @@ class NetworkManager(object):
             network_data.append({
                 'name': net.name,
                 'vlan': net.vlan_id,
-                'ip': i.ip_addr + '/' + prefix,
+                'ip': ip.ip_addr + '/' + prefix,
                 'netmask': netmask,
                 'brd': str(IPNetwork(net.cidr).broadcast),
                 'gateway': net.gateway,
@@ -675,7 +672,6 @@ class NetworkManager(object):
         network_data = []
         network_ids = []
         for ip in ips_db:
-            #
             net = ip.network_data
             interface = self._get_interface_by_network_name(
                 node_db,
@@ -886,11 +882,23 @@ class NetworkManager(object):
         """
         return self.get_all_cluster_networkgroups(node)
 
-    def _get_admin_network(self, node):
-        """Node contain mac address which sent ohai,
-        when node was loaded. By this mac address
-        we can identify interface name for admin network.
+    def get_admin_ips_for_interfaces(self, node):
+        """Returns mapping admin {"inteface name" => "admin ip"}
         """
+        admin_net_id = self.get_admin_network_id()
+        admin_ips = set([
+            i.ip_addr for i in db().query(IPAddr).
+            order_by(IPAddr.id).
+            filter_by(node=node.id).
+            filter_by(network=admin_net_id)])
+
+        interfaces_names = sorted(set([
+            interface.name for interface in node.interfaces]))
+
+        return dict(zip(interfaces_names, admin_ips))
+
+    def _get_admin_network(self, node):
+        """Returns dict with admin network."""
         return {
             'name': 'admin',
             'dev': node.admin_interface.name

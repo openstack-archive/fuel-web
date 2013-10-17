@@ -394,16 +394,28 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.assertEqual(task.result, {})
 
     def test_verify_networks_resp_incomplete_network_data_error(self):
+        # One node has single interface
+        meta = self.env.default_metadata()
+        mac = '02:07:43:78:4F:58'
+        self.env.set_interfaces_in_meta(
+            meta, [{'name': 'eth0', 'mac': mac}])
+
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
                 {"api": False, 'name': 'node1'},
-                {"api": False, 'name': 'node2'},
+                {"api": False, 'name': 'node2', 'meta': meta},
                 {"api": False, 'name': 'node3'}
             ]
         )
         cluster_db = self.env.clusters[0]
         node1, node2, node3 = self.env.nodes
+
+        # Node should has at least one mac which
+        # equal node's mac field
+        node2.mac = mac
+        self.env.db.commit()
+
         nets_sent = [{'iface': 'eth0', 'vlans': range(100, 105)},
                      {'iface': 'eth1', 'vlans': [106]},
                      {'iface': 'eth2', 'vlans': [107]}]
@@ -441,6 +453,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                         'name': node2.name, 'mac': 'unknown',
                         'absent_vlans': nets_sent[2]['vlans']}
                        ]
+
         self.assertEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_incomplete_network_data_on_first_node(self):

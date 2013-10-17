@@ -248,9 +248,8 @@ class Environment(object):
             node.attributes.volumes = node.volume_manager.gen_volumes_info()
             self.db.add(node)
             self.db.commit()
-            self._set_interfaces_if_not_set_in_meta(
-                node.id,
-                kwargs.get('meta', None))
+            if node.meta and node.meta.get('interfaces'):
+                self._create_interfaces_from_meta(node)
 
             self.nodes.append(node)
 
@@ -323,6 +322,32 @@ class Environment(object):
     def _set_interfaces_if_not_set_in_meta(self, node_id, meta):
         if not meta or not 'interfaces' in meta:
             self._add_interfaces_to_node(node_id)
+
+    def _create_interfaces_from_meta(self, node):
+        for interface in node.meta['interfaces']:
+            ng_ids = [ng.id for ng in
+                      self.network_manager.get_all_cluster_networkgroups(node)]
+            allowed_networks = list(self.db.query(NetworkGroup).filter(
+                NetworkGroup.id.in_(ng_ids)))
+
+            interface = NodeNICInterface(
+                mac=interface.get('mac'),
+                name=interface.get('name'),
+                ip_addr=interface.get('ip'),
+                netmask=interface.get('netmask'),
+                allowed_networks=allowed_networks,
+                assigned_networks=allowed_networks)
+            self.db.add(interface)
+            node.interfaces.append(interface)
+
+        self.db.commit()
+        # At least one interface should have
+        # ip same as mac in meta
+        if node.interfaces and not \
+           filter(lambda i: node.mac == i.mac, node.interfaces):
+            node.interfaces[0].mac = node.mac
+
+            self.db.commit()
 
     def _add_interfaces_to_node(self, node_id, count=1):
         interfaces = []

@@ -265,17 +265,22 @@ class Cluster(Base):
         from nailgun.network.manager import NetworkManager
         from nailgun.task.helpers import TaskHelper
 
-        nodes = set(TaskHelper.nodes_to_deploy(self) +
-                    TaskHelper.nodes_in_provisioning(self))
+        nodes = sorted(set(
+            TaskHelper.nodes_to_deploy(self) +
+            TaskHelper.nodes_in_provisioning(self)), key=lambda node: node.id)
 
         TaskHelper.update_slave_nodes_fqdn(nodes)
 
-        nodes_ids = sorted([n.id for n in nodes])
+        nodes_ids = [n.id for n in nodes]
         netmanager = NetworkManager()
         if nodes_ids:
             netmanager.assign_ips(nodes_ids, 'management')
             netmanager.assign_ips(nodes_ids, 'public')
             netmanager.assign_ips(nodes_ids, 'storage')
+
+            for node in nodes:
+                netmanager.assign_admin_ips(
+                    node.id, len(node.meta.get('interfaces', [])))
 
     def prepare_for_provisioning(self):
         from nailgun.network.manager import NetworkManager
@@ -342,8 +347,6 @@ class Node(Base):
 
     @property
     def network_data(self):
-        # It is required for integration tests; to get info about nets
-        #   which must be created on target node
         from nailgun.network.manager import NetworkManager
         netmanager = NetworkManager()
         return netmanager.get_node_networks(self.id)

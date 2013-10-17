@@ -101,6 +101,7 @@ class NovaOrchestratorSerializer(object):
         attrs['deployment_id'] = cluster.id
         attrs['master_ip'] = settings.MASTER_IP
         attrs['novanetwork_parameters'] = cls.novanetwork_attrs(cluster)
+        attrs['dns_nameservers'] = cluster.dns_nameservers
         attrs.update(cls.network_ranges(cluster))
 
         return attrs

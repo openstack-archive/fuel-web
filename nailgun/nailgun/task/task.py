@@ -17,7 +17,11 @@
 import shlex
 import subprocess
 
+from itertools import combinations
+from itertools import product
+
 import netaddr
+
 from sqlalchemy import func
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import joinedload
@@ -416,122 +420,137 @@ class CheckNetworksTask(object):
         else:
             netmanager = task.cluster.net_manager
 
+        # collect Network Groups data
+        admin_ng = db().query(NetworkGroup).filter_by(
+            name="fuelweb_admin"
+        ).first()
+        net = dict(admin_ng.__dict__)
+        net.update(ip_ranges=[[r.first, r.last] for r in admin_ng.ip_ranges],
+                   name='admin (PXE)')  # change Admin name for UI
+        networks = [net]
+        for ng in task.cluster.network_groups:
+            net = dict(ng.__dict__)
+            net.update(ip_ranges=[[r.first, r.last] for r in ng.ip_ranges])
+            networks.append(net)
+        # merge with data['networks']
         if 'networks' in data:
-            networks = data['networks']
-        else:
-            networks = map(lambda x: x.__dict__, task.cluster.network_groups)
+            for data_net in data['networks']:
+                for net in networks:
+                    if data_net['id'] == net['id']:
+                        net.update(data_net)
+                        break
+                else:
+                    raise errors.NetworkCheckError(
+                        u"Invalid network ID: {0}".format(data_net['id']),
+                        add_client=False)
 
-        result = []
-        err_msgs = []
-
-        # checking if there are untagged
-        # networks on the same interface
-        # (main) as admin network
+        # check if there are untagged networks on the same interface
         if check_admin_untagged:
-            untagged_nets = set(
-                n["id"] for n in filter(
-                    lambda n: (n["vlan_start"] is None), networks))
-            if untagged_nets:
+            untagged_nets = set([n['name'] for n in networks
+                                if n['vlan_start'] is None])
+            # check only if we have 2 or more untagged networks
+            pub_flt = set(['public', 'floating'])
+            if len(untagged_nets) >= 2 and untagged_nets != pub_flt:
                 logger.info(
                     "Untagged networks found, "
-                    "checking admin network intersection...")
-                admin_interfaces = map(lambda node: node.admin_interface,
-                                       task.cluster.nodes)
+                    "checking intersection between them...")
+                interfaces = []
+                for node in task.cluster.nodes:
+                    for iface in node.interfaces:
+                        interfaces.append(iface)
                 found_intersection = []
 
-                for iface in admin_interfaces:
-                    nets = dict(
-                        (n.id, n.name)
-                        for n in iface.assigned_networks)
-
-                    err_nets = set(nets.keys()) & untagged_nets
-                    if err_nets:
+                for iface in interfaces:
+                    # network name is changed for Admin on UI
+                    nets = [[ng['name'] for ng in networks
+                             if n.id == ng['id']][0]
+                            for n in iface.assigned_networks]
+                    crossed_nets = set(nets) & untagged_nets
+                    if len(crossed_nets) > 1 and \
+                            crossed_nets != pub_flt:
                         err_net_names = [
-                            '"{0}"'.format(nets[i]) for i in err_nets]
+                            '"{0}"'.format(i) for i in crossed_nets]
                         found_intersection.append(
                             [iface.node.name, err_net_names])
 
                 if found_intersection:
                     nodes_with_errors = [
                         u'Node "{0}": {1}'.format(
-                            name,
-                            ", ".join(_networks)
-                        ) for name, _networks in found_intersection]
+                            int_node,
+                            ", ".join(int_nets)
+                        ) for int_node, int_nets in found_intersection]
                     err_msg = u"Some untagged networks are " \
-                              "assigned to the same physical interface as " \
-                              "admin (PXE) network. You can whether turn " \
-                              "on tagging for these OpenStack " \
-                              "networks or move them to another physical " \
-                              "interface:\n{0}".format("\n".join(
-                                  nodes_with_errors))
+                              "assigned to the same physical interface. " \
+                              "You should assign them to " \
+                              "different physical interfaces:\n{0}". \
+                        format("\n".join(nodes_with_errors))
                     raise errors.NetworkCheckError(err_msg, add_client=False)
 
+        result = []
+        err_msgs = []
         net_man = NetworkManager()
-        admin_ng = net_man.get_admin_network_group()
-        admin_range = netaddr.IPNetwork(admin_ng.cidr)
-        for ng in networks:
-            net_errors = []
-            sub_ranges = []
-            ng_db = db().query(NetworkGroup).get(ng['id'])
-            if not ng_db:
-                net_errors.append("id")
-                err_msgs.append(u"Invalid network ID: {0}".format(ng['id']))
-            else:
-                if ng.get('cidr'):
-                    fnet = netaddr.IPNetwork(ng['cidr'])
-                    if net_man.is_range_intersection(fnet, admin_range):
-                        net_errors.append("cidr")
-                        err_msgs.append(
-                            u"Intersection with admin "
-                            "network(s) '{0}' found".format(
-                                admin_ng.cidr
-                            )
-                        )
-                    if fnet.size < ng['network_size'] * ng['amount']:
-                        net_errors.append("cidr")
-                        err_msgs.append(
-                            u"CIDR size for network '{0}' "
-                            "is less than required".format(
-                                ng.get('name') or ng_db.name or ng_db.id
-                            )
-                        )
-                # Check for intersection with Admin network
-                if 'ip_ranges' in ng:
-                    for k, v in enumerate(ng['ip_ranges']):
-                        ip_range = netaddr.IPRange(v[0], v[1])
-                        if net_man.is_range_intersection(admin_range,
-                                                         ip_range):
-                            net_errors.append("cidr")
-                            err_msgs.append(
-                                u"IP range {0} - {1} in {2} network intersects"
-                                " with admin range of {3}".format(
-                                    v[0], v[1],
-                                    ng.get('name') or ng_db.name or ng_db.id,
-                                    admin_ng.cidr
-                                )
-                            )
-                            sub_ranges.append(k)
 
-                if ng.get('amount') > 1 and netmanager == 'FlatDHCPManager':
-                    net_errors.append("amount")
+        def expose_error_messages():
+            if err_msgs:
+                task.result = result
+                db().add(task)
+                db().commit()
+                full_err_msg = "\n".join(err_msgs)
+                raise errors.NetworkCheckError(full_err_msg, add_client=False)
+
+        # check each network group has not more than 1 network
+        # in case of FlatDHCPManager
+        for ng in networks:
+            if ng.get('amount') > 1 and netmanager == 'FlatDHCPManager':
+                err_msgs.append(
+                    u"Network amount for '{0}' is more than 1 "
+                    "while using FlatDHCP manager.".format(
+                        ng.get('name') or ng.get('id')
+                    )
+                )
+                result.append({"id": int(ng["id"]),
+                               "range_errors": [],
+                               "errors": ["amount"]})
+        expose_error_messages()
+
+        # check intersection of networks address spaces
+        # for all networks
+        def get_addr_space(ng):
+            if ng['name'] in ['public', 'floating']:
+                return [netaddr.IPRange(v[0], v[1])
+                        for v in ng['ip_ranges']]
+            else:
+                return [netaddr.IPNetwork(ng['cidr'])]
+
+        for ngs in combinations(networks, 2):
+            all_addrs = [get_addr_space(ng) for ng in ngs]
+            for addrs in product(all_addrs[0], all_addrs[1]):
+                if net_man.is_range_intersection(addrs[0], addrs[1]):
                     err_msgs.append(
-                        u"Network amount for '{0}' is more than 1 "
-                        "while using FlatDHCP manager.".format(
-                            ng.get('name') or ng_db.name or ng_db.id
+                        u"Address space intersection between "
+                        "networks: {0}.".format(
+                            ", ".join([ngs[0]['name'], ngs[1]['name']])
                         )
                     )
-            if net_errors:
-                result.append({
-                    "id": int(ng["id"]),
-                    "range_errors": sub_ranges,
-                    "errors": net_errors
-                })
-        if err_msgs:
-            task.result = result
-            db().add(task)
-            db().commit()
-            full_err_msg = "\n".join(err_msgs)
-            raise errors.NetworkCheckError(full_err_msg, add_client=False)
+                    result.append({
+                        "id": [int(ngs[0]["id"]), int(ngs[1]["id"])],
+                        "range_errors": [str(addrs[0]), str(addrs[1])],
+                        "errors": ["cidr"]
+                    })
+        expose_error_messages()
+
+        # check intersection of networks address spaces inside
+        # Public and Floating network
+        for ng in networks:
+            if ng['name'] in ['public', 'floating']:
+                nets = [netaddr.IPRange(v[0], v[1])
+                        for v in ng['ip_ranges']]
+                for npair in combinations(nets, 2):
+                    if net_man.is_range_intersection(npair[0], npair[1]):
+                        raise errors.NetworkCheckError(
+                            u"Address space intersection between ranges "
+                            "of {0} network.".format(ng['name']),
+                            add_client=False)
 
     @classmethod
     def neutron_check_config(cls, task, data):

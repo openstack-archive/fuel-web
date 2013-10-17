@@ -1564,21 +1564,21 @@ label.node-checkbox {
   margin: 7px 0 5px 0;
 }
 
-.networks-table, .neutron-parameters  {
+.networks-table, .neutron-parameters, .nova-nameservers  {
   width: 100%;
   margin-bottom: 10px;
 }
 
-.networks-table > div, .neutron-parameters > div {
+.networks-table > div, .neutron-parameters > div, .nova-nameservers > div {
   padding-left: 3px;
 }
 
-.networks-table .range-row-header, .neutron-parameters .range-row-header {
+.networks-table .range-row-header, .neutron-parameters .range-row-header, .nova-nameservers .range-row-header {
   height: 23px;
   font-weight: bold;
 }
 
-.networks-table .range-row-header > div, .neutron-parameters .range-row-header > div {
+.networks-table .range-row-header > div, .neutron-parameters .range-row-header > div, .nova-nameservers .range-row-header > div {
   float: left;
   margin-left: 10px;
   font-size: 11px;
@@ -1586,7 +1586,7 @@ label.node-checkbox {
   width: 220px;
 }
 
-.networks-table .range-row label, .neutron-parameters .range-row label {
+.networks-table .range-row label, .neutron-parameters .range-row label, .nova-nameservers .range-row label {
   display: inline-block;
   margin-bottom: 0;
   float: left;
@@ -1596,7 +1596,7 @@ label.node-checkbox {
   width: 133px;
 }
 
-.networks-table .range-row-header > div:first-child, .neutron-parameters .range-row-header > div:first-child {
+.networks-table .range-row-header > div:first-child, .neutron-parameters .range-row-header > div:first-child, .nova-nameservers .range-row-header > div:first-child {
   margin-left: 202px;
 }
 
@@ -1636,11 +1636,11 @@ input.vlan-tagging {
   padding: 0;
 }
 
-.networks-table div.error, .neutron-parameters div.error {
+.networks-table div.error, .neutron-parameters div.error, .nova-nameservers div.error {
   float: left;
 }
 
-.networks-table .error .help-inline, .neutron-parameters .error .help-inline {
+.networks-table .error .help-inline, .neutron-parameters .error .help-inline, .nova-nameservers .error .help-inline {
   display: block;
   padding-top: 5px;
   max-width: 540px;

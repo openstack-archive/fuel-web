@@ -21,7 +21,7 @@ casper.then(function() {
     this.test.comment('Testing cluster networks: layout rendered');
     this.test.assertEvalEquals(function() {return $('.net-manager input[type=radio]').length}, 2, 'Network manager options are presented');
     this.test.assertExists('.net-manager input[value=FlatDHCPManager]:checked', 'Flat DHCP manager is chosen');
-    this.test.assertEvalEquals(function() {return $('legend.networks').length}, 5, 'All networks are presented');
+    this.test.assertEvalEquals(function() {return $('legend.networks:not(.dns-servers)').length}, 5, 'All networks are presented');
     this.test.assertDoesntExist('.verify-networks-btn:disabled', 'Verify networks button is enabled');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled');
 });

@@ -11,10 +11,12 @@
     <div class="span10">
       <h4>Register FUEL</h4>
       <p>
-        Registering will ensure that you receive important notifications about issues and new versions of Fuel.  In addition, you will receive access to our basic support services for the next 30 days!
+        Registering will ensure that you receive important notifications about issues and new versions of Fuel. In addition, you will receive access to our basic support services for the next 30 days!
       </p>
       <p>
-        <a class="btn registration-link" href="#support" target="_blank">Register Fuel</a>
+        <% var registerUrl = !_.isUndefined(fuelKey.get('key')) ? 'http://fuel.mirantis.com/create-subscriber/?key=' + fuelKey.get('key') : '/';
+        %>
+        <a class="btn registration-link" href="<%- registerUrl %>" target="_blank">Register Fuel</a>
       </p>
     </div>
   </div>
@@ -46,15 +48,27 @@
         If you have encountered some bugs or errors while using Fuel, you may also need to provide the support team with Fuel logs. You can download them by clicking the button below.
       </p>
       <p>
-         <button class="btn download-logs-progress disabled"><span class="icon-process animate-spin"></span>Loading...</button>
-         <button class="btn download-logs hide">Generate diagnostic snapshot</button>
-        <span class="genereate-logs hide">
-          <span class="icon-process animate-spin"></span>Generating logs snapshot
-        </span>
-        <span class="donwload-logs-link hide" style="margin-left: 10px;">
-          <a href="/"><i class="icon-install"></i>Diagnostic Snapshot</a>
-        </span>
-        <span class="error download-logs-error hide"></span>
+          <%  var task = this.logsPackageTasks.findTask({name: 'dump'});
+              var taskCompleted = !_.isUndefined(task) && task.get('progress') == 100;
+          %>
+
+          <% if (!_.isNull(tasks.deferred)) { %>
+            <button class="btn download-logs-progress disabled">Loading...</button>
+          <% } else { %>
+            <button class="btn download-logs">Generate diagnostic snapshot</button>
+          <% } %>
+
+          <button class="btn genereate-logs hide disabled">Generating logs snapshot...</button>
+          
+          <% if (taskCompleted && task.get('status') == 'ready') { %>
+          <span class="donwload-logs-link" style="margin-left: 10px;">
+            <a href="<%- task.get('message') %>"><i class="icon-install"></i>Diagnostic Snapshot</a>
+          </span>
+          <% } %>
+
+          <% if (taskCompleted && task.get('status') == 'error') { %>
+          <span class="error download-logs-error"><%- task.get('message') %></span>
+          <% } %>
       </p>
     </div>
   </div>

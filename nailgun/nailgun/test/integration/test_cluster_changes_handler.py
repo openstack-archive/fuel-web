@@ -70,6 +70,10 @@ class TestHandlers(BaseIntegrationTest):
                 'network_manager': 'FlatDHCPManager',
                 'network_size': 256
             },
+            'dns_nameservers': [
+                "8.8.8.8",
+                "8.8.4.4"
+            ],
 
             'management_interface': 'eth0.101',
             'fixed_interface': 'eth0.103',

@@ -193,6 +193,10 @@ class Cluster(Base):
         cascade="delete",
         order_by="NetworkGroup.id"
     )
+    dns_nameservers = Column(JSON, default=[
+        "8.8.8.8",
+        "8.8.4.4"
+    ])
     replaced_deployment_info = Column(JSON, default={})
     replaced_provisioning_info = Column(JSON, default={})
     is_customized = Column(Boolean, default=False)
@@ -576,11 +580,20 @@ class NetworkConfiguration(object):
     def update(cls, cluster, network_configuration):
         from nailgun.network.manager import NetworkManager
         network_manager = NetworkManager()
+
         if 'net_manager' in network_configuration:
             setattr(
                 cluster,
                 'net_manager',
-                network_configuration['net_manager'])
+                network_configuration['net_manager']
+            )
+
+        if 'dns_nameservers' in network_configuration:
+            setattr(
+                cluster,
+                'dns_nameservers',
+                network_configuration['dns_nameservers']['nameservers']
+            )
 
         if 'networks' in network_configuration:
             for ng in network_configuration['networks']:

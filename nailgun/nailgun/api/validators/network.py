@@ -58,6 +58,26 @@ class NovaNetworkConfigurationValidator(BasicValidator):
                     )
         return d
 
+    @classmethod
+    def validate_dns_servers_update(cls, data):
+        d = cls.validate_json(data)
+
+        dns_servers = d['dns_nameservers'].get("nameservers", [])
+
+        if not isinstance(dns_servers, list):
+            raise errors.InvalidData(
+                "It's expected to receive array of DNS servers, "
+                "not a single object",
+                log_message=True
+            )
+        if len(dns_servers) < 2:
+            raise errors.InvalidData(
+                "There should be at least two DNS servers",
+                log_message=True
+            )
+
+        return d
+
 
 class NeutronNetworkConfigurationValidator(NovaNetworkConfigurationValidator):
     # TODO(enchantner): Implement validation logic

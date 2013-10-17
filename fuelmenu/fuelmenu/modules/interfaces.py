@@ -146,13 +146,16 @@ class interfaces(urwid.WidgetWrap):
                                         "Please wait...")
             self.parent.refreshScreen()
             try:
-                with dhcp_checker.utils.IfaceState(self.activeiface) as iface:
-                    dhcptimeout = 5
-                    dhcp_server_data = timeout.wait_for_true(
+                dhcptimeout = 5
+                with timeout.run_with_timeout(dhcp_checker.utils.IfaceState,
+                                              [self.activeiface],
+                                              timeout=dhcptimeout) as iface:
+                    dhcp_server_data = timeout.run_with_timeout(
                         dhcp_checker.api.check_dhcp_on_eth,
                         [iface, dhcptimeout], timeout=dhcptimeout)
-            except timeout.TimeoutError:
-                self.log.info("DHCP scan timed out")
+            except (KeyboardInterupt, timeout.TimeoutError):
+                self.log.debug("DHCP scan timed out")
+                self.log.warning(traceback.format_exc())
                 dhcp_server_data = []
             except Exception:
                 self.log.warning("dhcp_checker failed to check on %s"

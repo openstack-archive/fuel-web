@@ -1,17 +1,28 @@
+import signal
 import time
+import thread
+from threading import Timer
 
 
 class TimeoutError(Exception):
     pass
 
 
-def wait_for_true(check, args=[], kwargs={},
-                  timeout=60, error_message='Timeout error'):
-    start_time = time.time()
-    while True:
+def handler(signum, frame):
+    raise TimeoutError('Timeout error')
+
+
+def run_with_timeout(check, args=None, kwargs=None, timeout=60, default=False):
+    args = args if args else []
+    kwargs = kwargs if kwargs else dict()
+    if not timeout:
+        return check(*args, **kwargs)
+    try:
+        timeout_timer = Timer(timeout, thread.interrupt_main)
+        timeout_timer.start()
         result = check(*args, **kwargs)
-        if result:
-            return result
-        if time.time() - start_time > timeout:
-            raise TimeoutError(error_message)
-        time.sleep(0.1)
+        return result
+    except KeyboardInterrupt:
+        return default
+    finally:
+        timeout_timer.cancel()

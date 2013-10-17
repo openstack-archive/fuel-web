@@ -418,12 +418,8 @@ class CheckNetworksTask(object):
         else:
             networks = map(lambda x: x.__dict__, task.cluster.network_groups)
 
-        result = []
-        err_msgs = []
-
-        # checking if there are untagged
-        # networks on the same interface
-        # (main) as admin network
+        # check if there are untagged networks on the same interface
+        # as Admin network
         if check_admin_untagged:
             untagged_nets = set(
                 n["id"] for n in filter(
@@ -463,7 +459,21 @@ class CheckNetworksTask(object):
                                   nodes_with_errors))
                     raise errors.NetworkCheckError(err_msg, add_client=False)
 
-        admin_ng = NetworkManager().get_admin_network_group()
+        result = []
+        err_msgs = []
+        net_man = NetworkManager()
+
+        def expose_error_messages():
+            if err_msgs:
+                task.result = result
+                db().add(task)
+                db().commit()
+                full_err_msg = "\n".join(err_msgs)
+                raise errors.NetworkCheckError(full_err_msg, add_client=False)
+
+        # Check for intersection of address spaces between Admin network and
+        # all other networks
+        admin_ng = net_man.get_admin_network_group()
         admin_range = netaddr.IPNetwork(admin_ng.cidr)
         for ng in networks:
             net_errors = []
@@ -475,7 +485,7 @@ class CheckNetworksTask(object):
             else:
                 if ng.get('cidr'):
                     fnet = netaddr.IPNetwork(ng['cidr'])
-                    if NetworkManager().is_range_in_cidr(fnet, admin_range):
+                    if net_man.is_range_in_cidr(fnet, admin_range):
                         net_errors.append("cidr")
                         err_msgs.append(
                             "Intersection with admin "
@@ -491,11 +501,10 @@ class CheckNetworksTask(object):
                                 ng.get('name') or ng_db.name or ng_db.id
                             )
                         )
-                # Check for intersection with Admin network
                 if 'ip_ranges' in ng:
                     for k, v in enumerate(ng['ip_ranges']):
                         ip_range = netaddr.IPRange(v[0], v[1])
-                        if NetworkManager().is_range_in_cidr(admin_range,
+                        if net_man.is_range_in_cidr(admin_range,
                                                              ip_range):
                             net_errors.append("cidr")
                             err_msgs.append(
@@ -522,12 +531,64 @@ class CheckNetworksTask(object):
                     "range_errors": sub_ranges,
                     "errors": net_errors
                 })
-        if err_msgs:
-            task.result = result
-            db().add(task)
-            db().commit()
-            full_err_msg = "\n".join(err_msgs)
-            raise errors.NetworkCheckError(full_err_msg, add_client=False)
+        expose_error_messages()
+
+        # check intersection of networks address spaces
+        # for all except admin network
+        ng_names = {ng['id']: (ng.get('name') or
+                               db().query(NetworkGroup).get(ng['id']).name)
+                    for ng in networks}
+        ngs = list(networks)
+        for ng1 in networks:
+            ngs.remove(ng1)
+            if ng_names[ng1['id']] in ['public', 'floating']:
+                ng1nets = [netaddr.IPRange(v[0], v[1])
+                           for v in ng1['ip_ranges']]
+            else:
+                ng1nets = [netaddr.IPNetwork(ng1['cidr'])]
+            for ng2 in ngs:
+                net_errors = []
+                if ng_names[ng2['id']] in ['public', 'floating']:
+                    ng2nets = [netaddr.IPRange(v[0], v[1])
+                               for v in ng2['ip_ranges']]
+                else:
+                    ng2nets = [netaddr.IPNetwork(ng2['cidr'])]
+                for net1 in ng1nets:
+                    for net2 in ng2nets:
+                        if net_man.is_range_intersection(net1, net2):
+                            net_errors.append("cidr")
+                            err_msgs.append(
+                                "Address space intersection between "
+                                "networks: {0}.".format(
+                                    ", ".join([ng_names[ng1['id']],
+                                               ng_names[ng2['id']]])
+                                )
+                            )
+                            sub_ranges.append(str(net1))
+                            sub_ranges.append(str(net2))
+                if net_errors:
+                    result.append({
+                        "id": int(ng["id"]),
+                        "range_errors": sub_ranges,
+                        "errors": net_errors
+                    })
+        expose_error_messages()
+
+        # check intersection of networks address spaces inside
+        # Public and Floating network
+        for ng in networks:
+            if ng_names[ng['id']] in ['public', 'floating']:
+                nets1 = [netaddr.IPRange(v[0], v[1])
+                         for v in ng['ip_ranges']]
+                nets2 = list(nets1)
+                for n1 in nets1:
+                    nets2.remove(n1)
+                    for n2 in nets2:
+                        if net_man.is_range_intersection(n1, n2):
+                            raise errors.NetworkCheckError(
+                                "Address space intersection between ranges "
+                                "of {0} network.".format(ng_names[ng['id']]),
+                                add_client=False)
 
     @classmethod
     def neutron_check(cls, task, data, check_admin_untagged):

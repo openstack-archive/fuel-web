@@ -24,12 +24,26 @@ import shutil
 import sys
 from time import sleep
 import urllib2
+import yaml
 
 ROOT = "http://127.0.0.1:8000"
+
 API_ROOT = ROOT + "/api/v1/"
 DEBUG = False
 JSON = False
-passive_arguments = ["rel", "env", "action", "debug", "json", "net"]
+YAML = False
+DEFAULT_SERIALIZER = "yaml"
+SERIALIZERS = {
+    "json": {
+        "w": lambda d: json.dumps(d, indent=4),
+        "r": lambda d: json.loads(d)
+    },
+    "yaml": {
+        "w": lambda d: yaml.safe_dump(d, default_flow_style=False),
+        "r": lambda d: yaml.load(d)
+    }
+}
+PASSIVE_ARGUMENTS = ["rel", "env", "action", "debug", "json", "net", "yaml"]
 
 
 class DeployProgressError(Exception):
@@ -59,6 +73,13 @@ def recur_get(multi_level_dict, key_chain):
         return recur_get(multi_level_dict[key_chain[0]], key_chain[1:])
 
 
+def print_formatted(data):
+    if JSON:
+        print(json.dumps(data, indent=4))
+    elif YAML:
+        print(yaml.safe_dump(data))
+
+
 def format_table(data, acceptable_keys=None, subdict_keys=None):
     """Format list of dicts to ascii table
 
@@ -68,9 +89,6 @@ def format_table(data, acceptable_keys=None, subdict_keys=None):
                                     which are applied to dictionaries
                                     to extract values
     """
-    if JSON:
-        print(json.dumps(data, indent=4))
-        exit(0)
     if subdict_keys:
         for key_chain in subdict_keys:
             for data_dict in data:
@@ -183,8 +201,10 @@ def json_api_post_request(api, data):
 
 
 def has_arguments(params):
+    """Checks whether params has some initialized attributes
+    """
     current_arguments = [v for k, v in params.__dict__.iteritems()
-                         if k not in passive_arguments]
+                         if k not in PASSIVE_ARGUMENTS]
     return any(current_arguments)
 
 
@@ -242,8 +262,8 @@ def release(params):
             )]
         else:
             data = json_api_get_request("releases/")
-        if params.json:
-            print(json.dumps(data, indent=4))
+        if JSON or YAML:
+            print_formatted(data)
         else:
             print(format_table(data, acceptable_keys=acceptable_keys))
     elif params.config:
@@ -275,8 +295,8 @@ def release(params):
             "redhat/setup/",
             data
         )
-        if params.json:
-            print(json.dumps(release_response, indent=4))
+        if JSON or YAML:
+            print_formatted(release_response)
         else:
             print(
                 "Credentials for release with id={0}"
@@ -301,8 +321,8 @@ def role(params):
                 metadata.get("conflicts", ["-"])
             )
         } for role_name, metadata in data["roles_metadata"].iteritems()]
-    if params.json:
-        print(json.dumps(roles, indent=4))
+    if JSON or YAML:
+        print_formatted(roles)
     else:
         print(format_table(roles, acceptable_keys=acceptable_keys))
 
@@ -319,8 +339,11 @@ def environment(params):
                 lambda x: x[u"id"] == int(params.env),
                 data
             )
-        print(format_table(data, acceptable_keys=acceptable_keys,
-                           subdict_keys=[("release", u"id")]))
+        if JSON or YAML:
+            print_formatted(data)
+        else:
+            print(format_table(data, acceptable_keys=acceptable_keys,
+                               subdict_keys=[("release", u"id")]))
     elif params.create:
         check_for_attributes(params, ["ename", "rel"])
         data = {
@@ -347,8 +370,8 @@ def environment(params):
                 "clusters/{0}/".format(cluster_id),
                 data
             )
-        if params.json:
-            print(json.dumps(cluster_response, indent=4))
+        if JSON or YAML:
+            print_formatted(cluster_response)
         else:
             print(
                 "Environment with id={id}, mode={mode}"
@@ -368,8 +391,8 @@ def environment(params):
                 "clusters/{0}/".format(params.env),
                 data
             )
-            if params.json:
-                print(json.dumps(put_response, indent=4))
+            if JSON or YAML:
+                print_formatted(put_response)
             else:
                 if params.ename:
                     print(
@@ -392,8 +415,8 @@ def environment(params):
         delete_response = json_api_delete_request(
             "clusters/{0}/".format(params.env)
         )
-        if params.json:
-            print(json.dumps(delete_response, indent=4))
+        if JSON or YAML:
+            print_formatted(delete_response)
         else:
             print(
                 "Environment with id={0} was deleted."
@@ -421,8 +444,8 @@ def node(params):
             node_ids
         )
         put_response = json_api_put_request("nodes/", data)
-        if params.json:
-            print(json.dumps(put_response, indent=4))
+        if JSON or YAML:
+            print_formatted(put_response)
         else:
             print(
                 "Nodes {0} with roles {1} "
@@ -449,8 +472,8 @@ def node(params):
             node_ids
         )
         put_response = json_api_put_request("nodes/", data)
-        if params.json:
-            print(json.dumps(put_response, indent=4))
+        if JSON or YAML:
+            print_formatted(put_response)
         else:
             print(
                 "Nodes with ids {0} were removed from environment with id {1}."
@@ -573,47 +596,41 @@ def get_node_attribute(params, node_id, upload_attribute, attributes):
 
 
 def upload_node_attribute(url, node_id, node_dir_path, attribute):
-    data = read_json(
+    data = read_from_file(
         os.path.join(
             node_dir_path,
-            attribute + ".json"
+            attribute
         )
-    )
+    )[0]
     if attribute == "interfaces":
         url = "nodes/interfaces"
         data = [{
             "interfaces": data,
             "id": node_id
         }]
-    put_response = json_api_put_request(
+    json_api_put_request(
         url,
         data
     )
-    if JSON:
-        print(json.dumps(put_response, indent=4))
-    else:
-        print("{0} configuration uploaded.".format(attribute))
+    print("{0} configuration uploaded.".format(attribute))
 
 
 def write_node_attribute(url, node_dir_path, attribute):
     attribute_path = os.path.join(
         node_dir_path,
-        attribute + ".json"
+        attribute
     )
     get_response = json_api_get_request(url)
     if os.path.exists(attribute_path):
         os.remove(attribute_path)
-    write_json(
+    attribute_path = write_to_file(
         attribute_path,
         get_response
     )
-    if JSON:
-        print(json.dumps(get_response, indent=4))
-    else:
-        print(
-            "{0} configuration downloaded to {1}."
-            .format(attribute, attribute_path)
-        )
+    print(
+        "{0} configuration downloaded to {1}"
+        .format(attribute, attribute_path)
+    )
 
 
 def network(params):
@@ -628,22 +645,26 @@ def network(params):
     network_data = json_api_get_request(network_url)
     network_file_path = os.path.join(
         os.path.abspath(params.dir or os.path.curdir),
-        "network_{0}.json".format(params.env)
+        "network_{0}".format(params.env)
     )
     if params.upload:
+        data, network_file_path = read_from_file(network_file_path)
         put_response = json_api_put_request(
             network_url,
-            read_json(network_file_path)
+            data
         )
-        if params.json:
-            print(json.dumps(put_response, indent=4))
+        if JSON or YAML:
+            print_formatted(put_response)
         else:
-            print("Network configuration uploaded.")
+            print(
+                "Network configuration from {0} uploaded."
+                .format(network_file_path)
+            )
     elif params.verify:
         verify_url = network_url + "/verify"
         put_response = json_api_put_request(verify_url, network_data)
-        if params.json:
-            print(json.dumps(put_response, indent=4))
+        if JSON or YAML:
+            print_formatted(put_response)
         else:
             print(
                 "Verification status is '{status}'. message: {message}"
@@ -651,15 +672,16 @@ def network(params):
             )
     else:
         if params.download:
-            write_json(network_file_path, network_data)
+            network_file_path = write_to_file(network_file_path,
+                                              network_data)
             print(
                 "Network configuration for environment with id={0}"
                 " downloaded to {1}"
                 .format(params.env, network_file_path)
             )
         else:
-            if params.json:
-                print(json.dumps(network_data, indent=4))
+            if JSON or YAML:
+                print_formatted(network_data)
 
 
 def settings(params):
@@ -671,15 +693,16 @@ def settings(params):
     settings_data = json_api_get_request(settings_url)
     settings_file_path = os.path.join(
         os.path.abspath(params.dir or os.path.curdir),
-        "settings_{0}.json".format(params.env)
+        "settings_{0}".format(params.env)
     )
     if params.upload:
+        data, settings_file_path = read_from_file(settings_file_path)
         put_response = json_api_put_request(
             settings_url,
-            read_json(settings_file_path)
+            data
         )
-        if params.json:
-            print(json.dumps(put_response, indent=4))
+        if JSON or YAML:
+            print_formatted(put_response)
         else:
             print(
                 "Settings configuration from {0} uploaded."
@@ -688,9 +711,9 @@ def settings(params):
     elif params.default:
         default_url = settings_url + "/defaults"
         get_response = json_api_get_request(default_url)
-        write_json(settings_file_path, get_response)
-        if params.json:
-            print(json.dumps(get_response, indent=4))
+        settings_file_path = write_to_file(settings_file_path, get_response)
+        if JSON or YAML:
+            print_formatted(get_response)
         else:
             print(
                 "Default settings configuration downloaded to {0}."
@@ -698,15 +721,18 @@ def settings(params):
             )
     else:
         if params.download:
-            write_json(settings_file_path, settings_data)
+            settings_file_path = write_to_file(
+                settings_file_path,
+                settings_data
+            )
             print(
                 "Settings configuration for environment with id={0}"
                 " downloaded to {1}"
                 .format(params.env, settings_file_path)
             )
         else:
-            if params.json:
-                print(json.dumps(settings_data, indent=4))
+            if JSON or YAML:
+                print_formatted(settings_data)
 
 
 def task(params):
@@ -719,8 +745,8 @@ def task(params):
             lambda tid: json_api_delete_request("tasks/{0}/".format(tid)),
             task_ids
         )
-        if params.json:
-            print(json.dumps(delete_response, indent=4))
+        if JSON or YAML:
+            print_formatted(delete_response)
         else:
             print(
                 "Tasks with id's {0} deleted."
@@ -729,8 +755,8 @@ def task(params):
     else:
         acceptable_keys = ["id", "status", "name", "cluster", "progress"]
         tasks = json_api_get_request("tasks/")
-        if params.json:
-            print(json.dumps(tasks, indent=4))
+        if JSON or YAML:
+            print_formatted(tasks)
         else:
             print(
                 format_table(tasks, acceptable_keys=acceptable_keys)
@@ -794,8 +820,8 @@ def deploy(params):
         "clusters/{0}/changes".format(params.env),
         {}
     )
-    if params.json:
-        print(json.dumps(put_response, indent=4))
+    if JSON or YAML:
+        print_formatted(put_response)
     else:
         print_deploy_progress(params.env)
 
@@ -904,17 +930,13 @@ def fact(params, info_type):
         facts = json_api_get_request(facts_default_url)
         write_facts_to_dir(facts, dir_name)
     elif params.upload:
-        put_response = json_api_put_request(
+        json_api_put_request(
             facts_url,
             read_deployment_info(dir_name)
             if info_type == "deployment" else
             read_provisioning_info(dir_name)
         )
-
-        if params.json:
-            print(json.dumps(put_response, indent=4))
-        else:
-            print("{0} facts uploaded to {1}.".format(info_type, dir_name))
+        print("{0} facts uploaded from {1}.".format(info_type, dir_name))
     elif params.delete:
         json_api_delete_request(facts_url)
         print("{0} facts deleted.".format(info_type))
@@ -929,18 +951,57 @@ def fact(params, info_type):
         if params.download:
             write_facts_to_dir(facts, dir_name)
         else:
-            if params.json:
-                print(json.dumps(facts, indent=4))
+            if JSON or YAML:
+                print_formatted(facts)
 
 
-def write_json(path, data):
-    with open(path, "w+") as json_file:
-            json_file.write(json.dumps(data, indent=4))
+def prepare_path(path):
+    if JSON:
+        format = "json"
+    elif YAML:
+        format = "yaml"
+    else:
+        format = DEFAULT_SERIALIZER
+    return "{0}.{1}".format(path, format), SERIALIZERS[format]
 
 
-def read_json(path):
-        with open(path, "r") as json_file:
-            return json.loads(json_file.read())
+def write_to_file(path, data):
+    full_path, serializer = prepare_path(path)
+    with open(full_path, "w+") as file_to_write:
+        file_to_write.write(serializer["w"](data))
+    return full_path
+
+
+def is_file_exists(path):
+    dir_path_list = path.split(os.path.sep)
+    name = dir_path_list.pop(-1)
+    folder_path = os.path.sep.join(dir_path_list)
+    files_with_extensions = filter(
+        lambda x: len(x) > 1 and x[0] != '',
+        map(
+            lambda x: str.split(x, "."),
+            os.listdir(folder_path)
+        )
+    )
+    if not files_with_extensions:
+        return False
+    else:
+        return name in map(
+            lambda x: x[0],
+            files_with_extensions
+        )
+
+
+def read_from_file(path):
+    full_path, serializer = prepare_path(path)
+    try:
+        with open(full_path, "r") as file_to_read:
+            return serializer["r"](file_to_read.read()), full_path
+    except IOError:
+        print_error(
+            "File {0} doesn't exist. Try checking serialization format."
+            .format(full_path)
+        )
 
 
 def folder_or_one_up(dir_path):
@@ -951,21 +1012,31 @@ def folder_or_one_up(dir_path):
     return dir_path
 
 
+def listdir_without_extensions(dir_path):
+    return filter(
+        lambda f: f != "",
+        map(
+            lambda f: f.split(".")[0],
+            os.listdir(dir_path)
+        )
+    )
+
+
 def read_provisioning_info(dir_name):
     dir_name = folder_or_one_up(dir_name)
-    if "engine.json" not in os.listdir(dir_name):
+    if not any(map(lambda f: "engine" in f, os.listdir(dir_name))):
         print_error(
-            "engine.json was not found in {0}"
+            "engine file was not found in {0}"
             .format(dir_name)
         )
     try:
         node_facts = map(
-            read_json,
-            [os.path.join(dir_name, json_file)
-             for json_file in os.listdir(dir_name)
-             if json_file.endswith('.json') and json_file != "engine.json"]
+            lambda f: read_from_file(f)[0],
+            [os.path.join(dir_name, fact_file)
+             for fact_file in listdir_without_extensions(dir_name)
+             if "engine" != fact_file]
         )
-        engine = read_json(os.path.join(dir_name, "engine.json"))
+        engine, _ = read_from_file(os.path.join(dir_name, "engine"))
         return {
             "engine": engine,
             "nodes": node_facts
@@ -981,10 +1052,9 @@ def read_deployment_info(dir_name):
     dir_name = folder_or_one_up(dir_name)
     try:
         return map(
-            read_json,
+            lambda f: read_from_file(f)[0],
             [os.path.join(dir_name, json_file)
-             for json_file in os.listdir(dir_name)
-             if json_file.endswith('.json')]
+             for json_file in listdir_without_extensions(dir_name)]
         )
     except OSError:
         print_error(
@@ -1000,28 +1070,23 @@ def write_facts_to_dir(facts, dir_name):
     os.makedirs(dir_name)
     print("directory {0} was created".format(dir_name))
     if isinstance(facts, dict):
-        engine_fd = open(os.path.join(dir_name, "engine.json"), "w+")
-        engine_fd.write(json.dumps(facts["engine"], indent=4))
-        print("Created {0}".format(engine_fd.name))
-        engine_fd.close()
+        engine_file_path = os.path.join(dir_name, "engine")
+        engine_file_path = write_to_file(engine_file_path, facts["engine"])
+        print("Created {0}".format(engine_file_path))
         facts = facts["nodes"]
-        name_template = "{name}.json"
+        name_template = "{name}"
     else:
-        name_template = "{role}_{uid}.json"
+        name_template = "{role}_{uid}"
     for _fact in facts:
-        fd = open(
-            os.path.join(
-                dir_name,
-                name_template.format(**_fact)
-            ),
-            "w+"
+        fact_path = os.path.join(
+            dir_name,
+            name_template.format(**_fact)
         )
-        fd.write(json.dumps(_fact, indent=4))
-        print("Created {0}".format(fd.name))
-        fd.close()
+        fact_path = write_to_file(fact_path, _fact)
+        print("Created {0}".format(fact_path))
 
 
-def parse_node_ids(x):
+def parse_ids(x):
     """Parse arguments with commas and spaces
 
     :returns: list of lists with numbers
@@ -1273,7 +1338,7 @@ actions = {
                 "dest": "node",
                 "action": "store",
                 "nargs": '+',
-                "type": parse_node_ids,
+                "type": parse_ids,
                 "help": "Node id.",
                 "default": None
             }
@@ -1332,25 +1397,19 @@ actions = {
     },
     "task": {
         "action": task,
-        "args": [{
-            "args": ["-d", "--delete"],
-            "params": {
-                "dest": "delete",
-                "action": "store_true",
-                "help": "delete",
-                "default": False
-            }
-        }, {
-            "args": ["--id", "--task-id"],
-            "params": {
-                "dest": "tid",
-                "action": "store",
-                "nargs": '+',
-                "type": parse_node_ids,
-                "help": "Task id.",
-                "default": None
-            }
-        }]
+        "args": [
+            get_delete_arg("Delete task with some task-id."),
+            {
+                "args": ["--tid", "--task-id"],
+                "params": {
+                    "dest": "tid",
+                    "action": "store",
+                    "nargs": '+',
+                    "type": parse_ids,
+                    "help": "Task id.",
+                    "default": None
+                }
+            }]
     },
     "snapshot": {
         "action": snapshot,
@@ -1401,7 +1460,7 @@ def prepare_args():
         sys.argv
     )
     # move --json and --debug flags before any action
-    for flag in ["--json", "--debug"]:
+    for flag in ["--json", "--debug", "--yaml"]:
         if flag in sys.argv:
             sys.argv.remove(flag)
             sys.argv.insert(1, flag)
@@ -1454,6 +1513,12 @@ if __name__ == '__main__':
                         help="prints to only json to stdout",
                         default=False
                         )
+    parser.add_argument("--yaml",
+                        dest="yaml",
+                        action="store_true",
+                        help="prints to only yaml to stdout",
+                        default=False
+                        )
     parser.add_argument("--debug",
                         dest="debug",
                         action="store_true",
@@ -1484,6 +1549,7 @@ if __name__ == '__main__':
     sys.argv.pop(1)
     DEBUG = parsed_params.debug
     JSON = parsed_params.json
+    YAML = parsed_params.yaml
     if parsed_params.action not in actions:
         parser.print_help()
         sys.exit(0)

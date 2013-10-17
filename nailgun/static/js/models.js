@@ -377,7 +377,8 @@ define(['utils'], function(utils) {
                     'public': ['ip_ranges', 'vlan_start', 'netmask', 'gateway'],
                     'management': ['cidr', 'vlan_start'],
                     'storage': ['cidr', 'vlan_start'],
-                    'fixed': ['cidr', 'amount', 'network_size', 'vlan_start']
+                    'fixed': ['cidr', 'amount', 'network_size', 'vlan_start'],
+                    'fuelweb_admin': []
                 };
             }
             if (provider == 'neutron') {
@@ -385,7 +386,8 @@ define(['utils'], function(utils) {
                     'public': ['cidr', 'vlan_start', 'gateway'],
                     'management': ['cidr', 'vlan_start'],
                     'storage': ['cidr', 'vlan_start'],
-                    'private': []
+                    'private': [],
+                    'fuelweb_admin': []
                 };
             }
             return attributes[this.get('name')] || ['vlan_start'];

@@ -131,7 +131,14 @@ class NovaNetworkConfigurationHandler(JSONHandler):
         if task.status != 'error':
             try:
                 if 'networks' in data:
-                    self.validator.validate_networks_update(json.dumps(data))
+                    self.validator.validate_networks_update(
+                        json.dumps(data)
+                    )
+
+                if 'dns_nameservers' in data:
+                    self.validator.validate_dns_servers_update(
+                        json.dumps(data)
+                    )
 
                 NetworkConfiguration.update(cluster, data)
             except web.webapi.badrequest as exc:

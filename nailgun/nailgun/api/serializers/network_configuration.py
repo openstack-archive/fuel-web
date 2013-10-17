@@ -49,6 +49,10 @@ class NovaNetworkConfigurationSerializer(BasicSerializer):
                 net_manager.get_admin_network_group()
             )
         )
+        if cluster.dns_nameservers:
+            result['dns_nameservers'] = {
+                "nameservers": cluster.dns_nameservers
+            }
 
         if cluster.is_ha_mode:
             nw_metadata = cluster.release.networks_metadata["nova_network"]

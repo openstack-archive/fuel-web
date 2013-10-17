@@ -20,6 +20,7 @@ import shutil
 from nailgun.api.models import IPAddr
 from nailgun.api.models import Task
 from nailgun.db import db
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
@@ -300,3 +301,12 @@ class TaskHelper(object):
             status="error",
             progress=100,
             msg=str(message))
+
+    @staticmethod
+    def expose_network_check_error_messages(task, result, err_messages):
+        if err_messages:
+            task.result = result
+            db().add(task)
+            db().commit()
+            full_err_msg = "\n".join(err_messages)
+            raise errors.NetworkCheckError(full_err_msg, add_client=False)

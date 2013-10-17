@@ -371,6 +371,7 @@ class TestHandlers(BaseIntegrationTest):
         net_data = {
             "networks": [{
                 'id': public_network.id,
+                'gateway': '240.0.1.1',
                 'ip_ranges': [[
                     '240.0.1.2',
                     '240.0.1.3']]}]}
@@ -521,18 +522,13 @@ class TestHandlers(BaseIntegrationTest):
         cluster_id = self.env.clusters[0].id
         node_db = self.env.nodes[0]
 
-        nets = self.env.generate_ui_networks(cluster_id)
+        resp = self.env.nova_networks_get(cluster_id)
+        nets = json.loads(resp.body)
         for net in nets["networks"]:
             if net["name"] in ["public", "floating"]:
                 net["vlan_start"] = None
 
-        resp = self.app.put(
-            reverse('NovaNetworkConfigurationHandler', kwargs={
-                'cluster_id': cluster_id
-            }),
-            json.dumps(nets),
-            headers=self.default_headers
-        )
+        self.env.nova_networks_put(cluster_id, nets)
 
         main_iface_db = node_db.admin_interface
 
@@ -555,10 +551,8 @@ class TestHandlers(BaseIntegrationTest):
 
         ifaces = json.loads(resp.body)
 
-        wrong_nets = filter(
-            lambda nic: (nic["name"] in ["public", "floating"]),
-            ifaces[0]["assigned_networks"]
-        )
+        wrong_nets = [nic for nic in ifaces[0]["assigned_networks"]
+                      if nic["name"] in ["public", "floating"]]
 
         map(
             ifaces[0]["assigned_networks"].remove,

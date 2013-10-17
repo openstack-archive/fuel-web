@@ -1409,6 +1409,7 @@ label.node-checkbox {
   margin: 0;
   line-height: 40px;
   height: 40px;
+  overflow: hidden;
 }
 
 .table-releases-box {
@@ -1509,6 +1510,7 @@ label.node-checkbox {
   content: '\2713';
   margin-left: -20px;
   margin-right: 3px;
+  line-height: 0;
 }
 
 .loading {

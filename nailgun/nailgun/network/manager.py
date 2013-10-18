@@ -546,8 +546,15 @@ class NetworkManager(object):
         :type  node: Node
         """
         for nic in node.interfaces:
+
+            if nic == node.admin_interface:
+                nic.allowed_networks.append(
+                    self.get_admin_network_group()
+                )
+
             for ng in self.get_cluster_networkgroups_by_node(node):
                 nic.allowed_networks.append(ng)
+
         db().commit()
 
     def assign_networks_by_default(self, node):
@@ -558,8 +565,14 @@ class NetworkManager(object):
 
     def assign_networks_to_main_interface(self, node):
         self.clear_assigned_networks(node)
+
         for ng in self.get_cluster_networkgroups_by_node(node):
             node.admin_interface.assigned_networks.append(ng)
+
+        node.admin_interface.assigned_networks.append(
+            self.get_admin_network_group()
+        )
+
         db().commit()
 
     def assign_networks_neutron(self, node):
@@ -581,6 +594,10 @@ class NetworkManager(object):
         [ifaces[0].assigned_networks.append(ng)
          for ng in self.get_cluster_networkgroups_by_node(node)
          if ng.name != 'private']
+
+        node.admin_interface.assigned_networks.append(
+            self.get_admin_network_group()
+        )
 
         db().commit()
 
@@ -869,12 +886,16 @@ class NetworkManager(object):
         """Assign all network groups on admin interface
         by default
         """
-        return self.get_all_cluster_networkgroups(node) \
-            if nic == node.admin_interface else []
+        return (
+            [self.get_admin_network_group()] +
+            self.get_all_cluster_networkgroups(node)
+        ) if nic == node.admin_interface else []
 
     def get_all_cluster_networkgroups(self, node):
         if node.cluster:
-            return node.cluster.network_groups
+            return db().query(NetworkGroup).filter_by(
+                cluster_id=node.cluster.id
+            ).order_by(NetworkGroup.id).all()
         return []
 
     def get_allowed_nic_networkgroups(self, node):

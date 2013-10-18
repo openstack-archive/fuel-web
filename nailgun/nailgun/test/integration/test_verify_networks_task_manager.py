@@ -90,7 +90,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         admin_ng = self.env.network_manager.get_admin_network_group()
 
-        nets['networks'][-1]['cidr'] = admin_ng.cidr
+        nets['networks'][-2]['cidr'] = admin_ng.cidr
 
         task = self.env.launch_verify_networks(nets)
         self.env.wait_error(task, 30)

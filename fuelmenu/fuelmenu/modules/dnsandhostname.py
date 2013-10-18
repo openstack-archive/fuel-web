@@ -119,9 +119,13 @@ class dnsandhostname(urwid.WidgetWrap):
                                   socket.gethostname(),
                                   socket.gethostname().split('.')[0]))
 
-    def fixEtcResolv(self):
+    def setEtcResolv(self, nameserver="default"):
+        if nameserver == "default":
+            ns = DEFAULTS['DNS_UPSTREAM']['value']
+        else:
+            ns = nameserver
         with open("/etc/resolv.conf", "w") as fh:
-            fh.write("nameserver 127.0.0.1\n")
+            fh.write("nameserver %s\n" % ns)
             fh.close()
 
     def check(self, args):
@@ -231,8 +235,12 @@ class dnsandhostname(urwid.WidgetWrap):
         f.close()
         with open("/etc/hosts", "w") as etchosts:
             for line in lines:
-                if responses["HOSTNAME"] in line \
-                        or self.oldsettings["HOSTNAME"] in line:
+                if "localhost" in line:
+                    etchosts.write(line)
+                elif responses["HOSTNAME"] in line \
+                        or self.oldsettings["HOSTNAME"] \
+                        or self.netsettings[self.parent.managediface]['addr'] \
+                        in line:
                     continue
                 else:
                     etchosts.write(line)
@@ -250,7 +258,6 @@ class dnsandhostname(urwid.WidgetWrap):
                                      responses['DNS_DOMAIN'],
                                      responses["HOSTNAME"]))
             etchosts.close()
-        self.fixEtcResolv()
         #Write dnsmasq upstream server
         with open('/etc/dnsmasq.upstream', 'w') as f:
             nameservers = responses['DNS_UPSTREAM'].replace(',', ' ')

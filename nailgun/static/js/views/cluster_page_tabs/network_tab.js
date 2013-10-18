@@ -122,21 +122,25 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 this.disableControls();
                 this.filterEmptyIpRanges();
                 deferred = Backbone.sync('update', this.networkConfiguration, {url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
-                    .always(_.bind(function() {
-                        this.model.fetch();
-                        this.model.fetchRelated('tasks');
-                    }, this))
                     .done(_.bind(function(task) {
                         if (task && task.status == 'error') {
-                            this.defaultButtonsState(false);
+                            this.page.removeFinishedTasks().always(_.bind(function() {
+                                this.defaultButtonsState(false);
+                                this.model.fetch();
+                                this.model.fetchRelated('tasks');
+                            }, this));
                         } else {
                             this.hasChanges = false;
                             this.model.set({networkConfiguration: new models.NetworkConfiguration(this.networkConfiguration.toJSON(), {parse: true})});
+                            this.model.fetch();
+                            this.model.fetchRelated('tasks');
                         }
                     }, this))
                     .fail(_.bind(function() {
-                        this.defaultButtonsState(false);
                         utils.showErrorDialog({title: 'Networks'});
+                        this.defaultButtonsState(false);
+                        this.model.fetch();
+                        this.model.fetchRelated('tasks');
                     }, this));
             } else {
                 deferred = new $.Deferred();

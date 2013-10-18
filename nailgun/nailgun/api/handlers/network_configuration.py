@@ -174,6 +174,12 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
             ]
         cluster = self.get_object_or_404(Cluster, cluster_id)
 
+        if 'networks' in data:
+            data["networks"] = [
+                n for n in data["networks"] if
+                'name' in n and n["name"] != "fuelweb_admin"
+            ]
+
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 

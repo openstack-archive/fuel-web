@@ -310,10 +310,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             var fixedNetworkOnVlanManager = this.tab.networkConfiguration.get('net_manager') == 'VlanManager' && this.network.get('name') == 'fixed';
             this.network.set({
                 ip_ranges: ip_ranges,
-                cidr: this.$('.cidr input').val(),
+                cidr: $.trim(this.$('.cidr input').val()),
                 vlan_start: fixedNetworkOnVlanManager || this.$('.use-vlan-tagging:checked').length ? Number(this.$('.vlan_start input').val()) : null,
-                netmask: this.$('.netmask input').val(),
-                gateway: this.$('.gateway input').val(),
+                netmask: $.trim(this.$('.netmask input').val()),
+                gateway: $.trim(this.$('.gateway input').val()),
                 amount: fixedNetworkOnVlanManager ? Number(this.$('input[name=fixed-amount]').val()) : 1,
                 network_size: fixedNetworkOnVlanManager ? Number(this.$('.network_size select').val()) : utils.calculateNetworkSize(this.$('.cidr input').val())
             }, {
@@ -386,7 +386,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$('.help-inline').text('');
 
             var l2 = _.cloneDeep(this.neutronParameters.get('L2'));
-            l2.base_mac = this.$('input[name=base_mac]').val();
+            l2.base_mac = $.trim(this.$('input[name=base_mac]').val());
             var idRange = [Number(this.$('input[name=id_start]').val()), Number(this.$('input[name=id_end]').val())];
             if (this.neutronParameters.get('segmentation_type') == 'gre') {
                 l2.tunnel_id_ranges = idRange;
@@ -395,11 +395,11 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             }
 
             var predefined_networks = _.cloneDeep(this.neutronParameters.get('predefined_networks'));
-            predefined_networks.net04_ext.L3.floating = [this.$('input[name=floating_start]').val(), this.$('input[name=floating_end]').val()];
-            predefined_networks.net04_ext.L3.cidr = this.$('input[name=cidr-ext]').val();
-            predefined_networks.net04.L3.cidr = this.$('input[name=cidr-int]').val();
-            predefined_networks.net04.L3.gateway = this.$('input[name=gateway]').val();
-            predefined_networks.net04.L3.nameservers = [this.$('input[name=nameserver-0]').val(), this.$('input[name=nameserver-1]').val()];
+            predefined_networks.net04_ext.L3.floating = [$.trim(this.$('input[name=floating_start]').val()), $.trim(this.$('input[name=floating_end]').val())];
+            predefined_networks.net04_ext.L3.cidr = $.trim(this.$('input[name=cidr-ext]').val());
+            predefined_networks.net04.L3.cidr = $.trim(this.$('input[name=cidr-int]').val());
+            predefined_networks.net04.L3.gateway = $.trim(this.$('input[name=gateway]').val());
+            predefined_networks.net04.L3.nameservers = [$.trim(this.$('input[name=nameserver-0]').val()), $.trim(this.$('input[name=nameserver-1]').val())];
 
             this.neutronParameters.set({
                 L2: l2,

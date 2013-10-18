@@ -475,7 +475,7 @@ define(['utils'], function(utils) {
                 } else if (attribute == 'gateway') {
                     if (utils.validateIP(attrs.gateway)) {
                         errors.gateway = 'Invalid gateway';
-                    } else if (attrs.name == 'public' && !utils.validateIpCorrespondsToCIDR(attrs.cidr, attrs.gateway)) {
+                    } else if (options.net_provider == 'neutron' && attrs.name == 'public' && !utils.validateIpCorrespondsToCIDR(attrs.cidr, attrs.gateway)) {
                         errors.gateway = 'Gateway is out of Public IP range';
                     }
                 } else if (attribute == 'amount') {

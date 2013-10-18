@@ -703,6 +703,7 @@ class Environment(object):
                 headers=self.default_headers
             )
             self.tester.assertEquals(200, resp.status)
+            print resp.body
             response = json.loads(resp.body)
             task_uuid = response['uuid']
             return self.db.query(Task).filter_by(uuid=task_uuid).first()

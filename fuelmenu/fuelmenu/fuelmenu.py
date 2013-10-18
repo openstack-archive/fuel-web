@@ -242,6 +242,9 @@ class FuelSetup(object):
         #Initialize each module completely before any events are handled
         for child in reversed(self.choices):
             self.setChildScreen(name=child)
+        #Prepare DNS for resolution
+        dnsobj = self.children[int(self.choices.index("DNS & Hostname"))] 
+        dnsobj.setEtcResolv()
 
         self.mainloop.run()
 
@@ -254,7 +257,7 @@ class FuelSetup(object):
         #Fix /etc/hosts and /etc/resolv.conf before quitting
         dnsobj = self.children[int(self.choices.index("DNS & Hostname"))]
         dnsobj.fixEtcHosts()
-        dnsobj.fixEtcResolv()
+        dnsobj.setEtcResolv('127.0.0.1')
 
         raise urwid.ExitMainLoop()
 

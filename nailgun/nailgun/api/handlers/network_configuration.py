@@ -65,6 +65,7 @@ class NovaNetworkConfigurationVerifyHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "nova_network")
 
         try:
             data = self.validator.validate_networks_update(web.data())
@@ -109,6 +110,7 @@ class NovaNetworkConfigurationHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "nova_network")
         return self.serializer.serialize_for_cluster(cluster)
 
     def PUT(self, cluster_id):
@@ -118,6 +120,7 @@ class NovaNetworkConfigurationHandler(JSONHandler):
         """
         data = json.loads(web.data())
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "nova_network")
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
@@ -157,12 +160,14 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "neutron")
         return self.serializer.serialize_for_cluster(cluster)
 
     @content_json
     def PUT(self, cluster_id):
         data = json.loads(web.data())
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "neutron")
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
@@ -196,3 +201,12 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
 class NeutronNetworkConfigurationVerifyHandler(
         NovaNetworkConfigurationVerifyHandler):
     validator = NeutronNetworkConfigurationValidator
+
+    @content_json
+    def PUT(self, cluster_id):
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "neutron")
+        super(
+            NeutronNetworkConfigurationVerifyHandler,
+            self
+        ).PUT(cluster_id)

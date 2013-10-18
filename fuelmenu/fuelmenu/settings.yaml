@@ -2,7 +2,9 @@ HOSTNAME: "fuel"
 DNS_DOMAIN: "domain.tld"
 DNS_SEARCH: "domain.tld"
 DNS_UPSTREAM: "8.8.8.8"
-
+NTP1: "0.pool.ntp.org"
+NTP2: "1.pool.ntp.org"
+NTP3: "2.pool.ntp.org"
 ADMIN_NETWORK:
   interface: "eth0"
   ipaddress: "10.20.0.2"

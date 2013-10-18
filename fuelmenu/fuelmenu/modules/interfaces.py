@@ -13,22 +13,27 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import dhcp_checker.api
+import dhcp_checker.utils
+from fuelmenu.common import dialog
+from fuelmenu.common.errors import BadIPException
+from fuelmenu.common import network
+from fuelmenu.common import puppet
+from fuelmenu.common import replace
+from fuelmenu.common import timeout
+import fuelmenu.common.urwidwrapper as widget
+import logging
+import netaddr
+import netifaces
+import re
+import socket
+import struct
+import subprocess
+import traceback
 import urwid
 import urwid.raw_display
 import urwid.web_display
-import logging
-import sys
-import copy
-import socket
-import struct
-import re
-import netaddr
-import netifaces
-import dhcp_checker.api
-import dhcp_checker.utils
-from fuelmenu.settings import *
-from fuelmenu.common import network, puppet, replace, dialog, timeout
-from fuelmenu.common.urwidwrapper import *
+
 blank = urwid.Divider()
 
 
@@ -38,26 +43,26 @@ fields = ["blank", "ifname", "onboot", "bootproto", "ipaddr", "netmask",
 
 DEFAULTS = \
     {
-        "ifname": {"label":   "Interface name:",
+        "ifname": {"label": "Interface name:",
                    "tooltip": "Interface system identifier",
-                   "value":   "locked"},
-        "onboot": {"label":   "Enabled on boot:",
+                   "value": "locked"},
+        "onboot": {"label": "Enabled on boot:",
                    "tooltip": "",
-                   "value":   "radio"},
-        "bootproto": {"label":   "Configuration via DHCP:",
+                   "value": "radio"},
+        "bootproto": {"label": "Configuration via DHCP:",
                       "tooltip": "",
-                      "value":   "radio",
+                      "value": "radio",
                       "choices": ["DHCP", "Static"]},
-        "ipaddr": {"label":   "IP address:",
+        "ipaddr": {"label": "IP address:",
                    "tooltip": "Manual IP address (example 192.168.1.2)",
-                   "value":    ""},
-        "netmask": {"label":   "Netmask:",
+                   "value": ""},
+        "netmask": {"label": "Netmask:",
                     "tooltip": "Manual netmask (example 255.255.255.0)",
-                    "value":   "255.255.255.0"},
-        "gateway": {"label":   "Default Gateway:",
+                    "value": "255.255.255.0"},
+        "gateway": {"label": "Default Gateway:",
                     "tooltip": "Manual gateway to access Internet (example "
                     "192.168.1.1)",
-                    "value":   ""},
+                    "value": ""},
     }
 
 
@@ -114,7 +119,7 @@ class interfaces(urwid.WidgetWrap):
                                   socket.gethostname().split(".")[0]))
 
     def check(self, args):
-        """Validate that all fields have valid values and some sanity checks"""
+        """Validate that all fields have valid values and sanity checks."""
         #Get field information
         responses = dict()
         self.parent.footer.set_text("Checking data...")
@@ -153,7 +158,7 @@ class interfaces(urwid.WidgetWrap):
                     dhcp_server_data = timeout.run_with_timeout(
                         dhcp_checker.api.check_dhcp_on_eth,
                         [iface, dhcptimeout], timeout=dhcptimeout)
-            except (KeyboardInterupt, timeout.TimeoutError):
+            except (KeyboardInterrupt, timeout.TimeoutError):
                 self.log.debug("DHCP scan timed out")
                 self.log.warning(traceback.format_exc())
                 dhcp_server_data = []
@@ -171,12 +176,14 @@ class interfaces(urwid.WidgetWrap):
                 dhcp_info.append(urwid.Padding(
                                  urwid.Text(("header", "!!! WARNING !!!")),
                                  "center"))
-                dhcp_info.append(TextLabel("Unable to detect DHCP server on "
-                                 "interface %s." % (self.activeiface) +
-                                 "\nDHCP will be set up in the background, "
-                                 "but may not receive an IP address. You may "
-                                 "want to check your DHCP connection manually "
-                                 "using the Shell Login menu to the left."))
+                dhcp_info.append(
+                    widget.TextLabel(
+                        "Unable to detect DHCP server" +
+                        "on interface %s." % (self.activeiface) +
+                        "\nDHCP will be set up in the background, " +
+                        "but may not receive an IP address. You may " +
+                        "want to check your DHCP connection manually " +
+                        "using the Shell Login menu to the left."))
                 dialog.display_dialog(self, urwid.Pile(dhcp_info),
                                       "DHCP Servers Found on %s"
                                       % self.activeiface)
@@ -186,33 +193,34 @@ class interfaces(urwid.WidgetWrap):
         elif responses["bootproto"] == "none":
             try:
                 if netaddr.valid_ipv4(responses["ipaddr"]):
-                    ipaddr = netaddr.IPAddress(responses["ipaddr"])
+                    if not netaddr.IPAddress(responses["ipaddr"]):
+                        raise BadIPException("Not a valid IP address")
                 else:
-                    raise Exception("")
-            except:
+                    raise BadIPException("Not a valid IP address")
+            except Exception:
                 errors.append("Not a valid IP address: %s" %
                               responses["ipaddr"])
             try:
                 if netaddr.valid_ipv4(responses["netmask"]):
                     netmask = netaddr.IPAddress(responses["netmask"])
                     if netmask.is_netmask is False:
-                        raise Exception("")
+                        raise BadIPException("Not a valid IP address")
                 else:
-                    raise Exception("")
-            except:
+                    raise BadIPException("Not a valid IP address")
+            except Exception:
                 errors.append("Not a valid netmask: %s" % responses["netmask"])
             try:
                 if len(responses["gateway"]) > 0:
                     #Check if gateway is valid
                     if netaddr.valid_ipv4(responses["gateway"]) is False:
-                        raise Exception("Gateway IP address is not valid")
+                        raise BadIPException("Gateway IP address is not valid")
                     #Check if gateway is in same subnet
                     if network.inSameSubnet(responses["ipaddr"],
                                             responses["gateway"],
                                             responses["netmask"]) is False:
-                        raise Exception("Gateway IP is not in same "
-                                        "subnet as IP address")
-            except Exception, e:
+                        raise BadIPException("Gateway IP is not in same "
+                                             "subnet as IP address")
+            except Exception as e:
                 errors.append(e)
         if len(errors) > 0:
             self.parent.footer.set_text("Errors: %s First error: %s" % (
@@ -272,7 +280,7 @@ class interfaces(urwid.WidgetWrap):
                                   % gateway)
             self.fixEtcHosts()
 
-        except Exception, e:
+        except Exception as e:
             self.log.error(e)
             self.parent.footer.set_text("Error applying changes. Check logs "
                                         "for details.")
@@ -286,8 +294,7 @@ class interfaces(urwid.WidgetWrap):
         return True
 
     def getNetwork(self):
-        """Uses netifaces module to get addr, broadcast, netmask about
-           network interfaces"""
+        """Returns addr, broadcast, netmask for each network interface."""
         for iface in netifaces.interfaces():
             if 'lo' in iface or 'vir' in iface:
                 if iface != "virbr2-nic":
@@ -296,7 +303,7 @@ class interfaces(urwid.WidgetWrap):
                 self.netsettings.update({iface: netifaces.ifaddresses(iface)[
                     netifaces.AF_INET][0]})
                 self.netsettings[iface]["onboot"] = "Yes"
-            except:
+            except Exception:
                 #Interface is down, so mark it onboot=no
                 self.netsettings.update({iface: {"addr": "", "netmask": "",
                                         "onboot": "no"}})
@@ -310,7 +317,7 @@ class interfaces(urwid.WidgetWrap):
                 with open("/sys/class/net/%s/operstate" % iface) as f:
                     content = f.readlines()
                     self.netsettings[iface]["link"] = content[0].strip()
-            except:
+            except Exception:
                 self.netsettings[iface]["link"] = "unknown"
             #Change unknown link state to up if interface has an IP
             if self.netsettings[iface]["link"] == "unknown":
@@ -329,7 +336,7 @@ class interfaces(urwid.WidgetWrap):
                                 line.split('=').strip()
                             break
 
-            except:
+            except Exception:
                 #Check for dhclient process running for this interface
                 if self.getDHCP(iface):
                     self.netsettings[iface]['bootproto'] = "dhcp"
@@ -337,8 +344,7 @@ class interfaces(urwid.WidgetWrap):
                     self.netsettings[iface]['bootproto'] = "none"
 
     def getDHCP(self, iface):
-        """Returns True if the interface has a dhclient process running"""
-        import subprocess
+        """Returns True if the interface has a dhclient process running."""
         noout = open('/dev/null', 'w')
         dhclient_running = subprocess.call(["pgrep", "-f", "dhclient.*%s" %
                                            (iface)], stdout=noout,
@@ -355,7 +361,7 @@ class interfaces(urwid.WidgetWrap):
                 return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
 
     def radioSelectIface(self, current, state, user_data=None):
-        """Update network details and display information"""
+        """Update network details and display information."""
         ### This makes no sense, but urwid returns the previous object.
         ### The previous object has True state, which is wrong.
         ### Somewhere in current.group a RadioButton is set to True.
@@ -371,7 +377,7 @@ class interfaces(urwid.WidgetWrap):
         return
 
     def radioSelectExtIf(self, current, state, user_data=None):
-        """Update network details and display information"""
+        """Update network details and display information."""
         ### This makes no sense, but urwid returns the previous object.
         ### The previous object has True state, which is wrong.
         ### Somewhere in current.group a RadioButton is set to True.
@@ -450,15 +456,16 @@ class interfaces(urwid.WidgetWrap):
 
     def screenUI(self):
         #Define your text labels, text fields, and buttons first
-        text1 = TextLabel("Network interface setup")
+        text1 = widget.TextLabel("Network interface setup")
 
         #Current network settings
-        self.net_text1 = TextLabel("")
-        self.net_text2 = TextLabel("")
-        self.net_text3 = TextLabel("")
-        self.net_choices = ChoicesGroup(self, sorted(self.netsettings.keys()),
-                                        default_value=self.activeiface,
-                                        fn=self.radioSelectIface)
+        self.net_text1 = widget.TextLabel("")
+        self.net_text2 = widget.TextLabel("")
+        self.net_text3 = widget.TextLabel("")
+        self.net_choices = widget.ChoicesGroup(self,
+                                               sorted(self.netsettings.keys()),
+                                               default_value=self.activeiface,
+                                               fn=self.radioSelectIface)
 
         self.edits = []
         toolbar = self.parent.footer
@@ -467,16 +474,16 @@ class interfaces(urwid.WidgetWrap):
             if key == "blank":
                 self.edits.append(blank)
             elif DEFAULTS[key]["value"] == "radio":
-                label = TextLabel(DEFAULTS[key]["label"])
+                label = widget.TextLabel(DEFAULTS[key]["label"])
                 if "choices" in DEFAULTS[key]:
                     choices_list = DEFAULTS[key]["choices"]
                 else:
                     choices_list = ["Yes", "No"]
-                choices = ChoicesGroup(self, choices_list,
-                                       default_value="Yes",
-                                       fn=self.radioSelectExtIf)
-                columns = Columns([('weight', 2, label),
-                                   ('weight', 3, choices)])
+                choices = widget.ChoicesGroup(self, choices_list,
+                                              default_value="Yes",
+                                              fn=self.radioSelectExtIf)
+                columns = widget.Columns([('weight', 2, label),
+                                         ('weight', 3, choices)])
                 #Attach choices rb_group so we can use it later
                 columns.rb_group = choices.rb_group
                 self.edits.append(columns)
@@ -485,16 +492,17 @@ class interfaces(urwid.WidgetWrap):
                 default = DEFAULTS[key]["value"]
                 tooltip = DEFAULTS[key]["tooltip"]
                 disabled = True if key == "ifname" else False
-                self.edits.append(TextField(key, caption, 23, default, tooltip,
-                                  toolbar, disabled=disabled))
+                self.edits.append(widget.TextField(key, caption, 23, default,
+                                  tooltip, toolbar, disabled=disabled))
 
         #Button to check
-        button_check = Button("Check", self.check)
+        button_check = widget.Button("Check", self.check)
         #Button to apply (and check again)
-        button_apply = Button("Apply", self.apply)
+        button_apply = widget.Button("Apply", self.apply)
 
         #Wrap buttons into Columns so it doesn't expand and look ugly
-        check_col = Columns([button_check, button_apply, ('weight', 3, blank)])
+        check_col = widget.Columns([button_check, button_apply,
+                                   ('weight', 3, blank)])
 
         self.listbox_content = [text1, blank]
         self.listbox_content.extend([self.net_choices, self.net_text1,

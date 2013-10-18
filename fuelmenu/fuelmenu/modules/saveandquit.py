@@ -13,13 +13,13 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from fuelmenu.common import dialog
+import fuelmenu.common.urwidwrapper as widget
+import time
 import urwid
 import urwid.raw_display
 import urwid.web_display
-from fuelmenu.common.urwidwrapper import *
-from fuelmenu.common import dialog
-import subprocess
-import time
+
 blank = urwid.Divider()
 
 
@@ -49,8 +49,8 @@ class saveandquit():
             #show pop up with more details
             msg = "ERROR: Module %s failed to save. Go back" % (modulename)\
                   + " and fix any mistakes or choose Quit without Saving."
-            diag = dialog.display_dialog(self, TextLabel(msg),
-                                         "Error saving changes!")
+            dialog.display_dialog(self, widget.TextLabel(msg),
+                                  "Error saving changes!")
             return False
 
     def quit_without_saving(self, args):
@@ -62,11 +62,11 @@ class saveandquit():
     def screenUI(self):
         #Define your text labels, text fields, and buttons first
         text1 = urwid.Text("Save configuration before you quit?")
-        saveandcontinue_button = Button("Save and Continue",
-                                        self.save_and_continue)
-        saveandquit_button = Button("Save and Quit", self.save_and_quit)
-        quitwithoutsaving_button = Button("Quit without saving",
-                                          self.quit_without_saving)
+        saveandcontinue_button = widget.Button("Save and Continue",
+                                               self.save_and_continue)
+        saveandquit_button = widget.Button("Save and Quit", self.save_and_quit)
+        quitwithoutsaving_button = widget.Button("Quit without saving",
+                                                 self.quit_without_saving)
         #Build all of these into a list
         listbox_content = [text1, blank, saveandcontinue_button,
                            saveandquit_button, quitwithoutsaving_button]

@@ -12,15 +12,12 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-import yaml
-import ConfigParser
-import collections
-import os
 try:
     from collections import OrderedDict
-except:
+except Exception:
     # python 2.6 or earlier use backport
     from ordereddict import OrderedDict
+import os
 
 
 class NailyFacterSettings(object):

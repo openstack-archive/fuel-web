@@ -13,22 +13,16 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from fuelmenu.common import dialog
+from fuelmenu.common import nailyfactersettings
+import fuelmenu.common.urwidwrapper as widget
+from fuelmenu.settings import Settings
+import logging
+import re
+import subprocess
 import urwid
 import urwid.raw_display
 import urwid.web_display
-import logging
-import sys
-import re
-import copy
-import socket
-import struct
-import netaddr
-import netifaces
-import subprocess
-from fuelmenu.settings import *
-from fuelmenu.common import network, puppet, replace, \
-    nailyfactersettings, dialog
-from fuelmenu.common.urwidwrapper import *
 log = logging.getLogger('fuelmenu.mirrors')
 blank = urwid.Divider()
 
@@ -60,7 +54,7 @@ class ntpsetup(urwid.WidgetWrap):
         self.screen = None
 
     def check(self, args):
-        """Validate that all fields have valid values and some sanity checks"""
+        """Validate that all fields have valid values and sanity checks."""
         self.parent.footer.set_text("Checking data...")
         self.parent.refreshScreen()
         #Get field information
@@ -82,8 +76,8 @@ class ntpsetup(urwid.WidgetWrap):
                   + "deployment due to time synchronization issues. These "\
                   + "problems are exacerbated in virtualized deployments."
 
-            diag = dialog.display_dialog(
-                self, TextLabel(msg), "Empty NTP Warning")
+            dialog.display_dialog(
+                self, widget.TextLabel(msg), "Empty NTP Warning")
 
         for ntpfield, ntpvalue in responses.iteritems():
             #NTP must be under 255 chars
@@ -104,14 +98,15 @@ class ntpsetup(urwid.WidgetWrap):
                     if not self.checkNTP(ntpvalue):
                         errors.append("%s unable to perform NTP."
                                       % DEFAULTS[ntpfield]['label'])
-                except Exception, e:
+                except Exception as e:
                     errors.append(e)
                     errors.append("%s unable to perform NTP: %s"
                                   % DEFAULTS[ntpfield]['label'])
 
         if len(errors) > 0:
-            self.parent.footer.set_text("Error: %s" % (errors[0]))
-            log.error("Errors: %s %s" % (len(errors), errors))
+            self.parent.footer.set_text(
+                "Errors: %s First error: %s" % (len(errors), errors[0]))
+            log.warning("Errors: %s %s" % (len(errors), errors))
             return False
         else:
             self.parent.footer.set_text("No errors found.")
@@ -130,19 +125,17 @@ class ntpsetup(urwid.WidgetWrap):
         if len(responses['NTP1']) > 0:
             #Stop ntpd, run ntpdate, start ntpd
             noout = open('/dev/null', 'w')
-            retcode = subprocess.call(["service", "ntpd", "stop"],
-                                      stdout=noout, stderr=noout)
-            retcode = subprocess.call(["ntpdate", "-t5", responses['NTP1']],
-                                      stdout=noout, stderr=noout)
-            retcode = subprocess.call(["service", "ntpd", "start"],
-                                      stdout=noout, stderr=noout)
+            subprocess.call(["service", "ntpd", "stop"],
+                            stdout=noout, stderr=noout)
+            subprocess.call(["ntpdate", "-t5", responses['NTP1']],
+                            stdout=noout, stderr=noout)
+            subprocess.call(["service", "ntpd", "start"],
+                            stdout=noout, stderr=noout)
         return True
 
     def cancel(self, button):
         for index, fieldname in enumerate(fields):
-            if fieldname == "blank":
-                pass
-            else:
+            if fieldname != "blank":
                 self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
 
     def load(self):
@@ -159,7 +152,7 @@ class ntpsetup(urwid.WidgetWrap):
                     DEFAULTS[setting]["value"] = oldsettings[part1][part2]
                 else:
                     DEFAULTS[setting]["value"] = oldsettings[setting]
-            except:
+            except Exception:
                 log.warning("No setting named %s found." % setting)
                 continue
         return oldsettings
@@ -225,31 +218,32 @@ class ntpsetup(urwid.WidgetWrap):
             if key == "blank":
                 self.edits.append(blank)
             elif DEFAULTS[key]["value"] == "radio":
-                label = TextLabel(DEFAULTS[key]["label"])
-                choices = ChoicesGroup(self, ["Yes", "No"],
-                                       default_value="Yes",
-                                       fn=self.radioSelectIface)
-                self.edits.append(Columns([label, choices]))
+                label = widget.TextLabel(DEFAULTS[key]["label"])
+                choices = widget.ChoicesGroup(self, ["Yes", "No"],
+                                              default_value="Yes",
+                                              fn=self.radioSelectIface)
+                self.edits.append(widget.Columns([label, choices]))
             else:
                 caption = DEFAULTS[key]["label"]
                 default = DEFAULTS[key]["value"]
                 tooltip = DEFAULTS[key]["tooltip"]
                 self.edits.append(
-                    TextField(key, caption, 23, default, tooltip, toolbar))
+                    widget.TextField(key, caption, 23, default, tooltip,
+                                     toolbar))
 
         #Button to check
-        button_check = Button("Check", self.check)
+        button_check = widget.Button("Check", self.check)
         #Button to revert to previously saved settings
-        button_cancel = Button("Cancel", self.cancel)
+        button_cancel = widget.Button("Cancel", self.cancel)
         #Button to apply (and check again)
-        button_apply = Button("Apply", self.apply)
+        button_apply = widget.Button("Apply", self.apply)
 
         #Wrap buttons into Columns so it doesn't expand and look ugly
         if self.parent.globalsave:
-            check_col = Columns([button_check])
+            check_col = widget.Columns([button_check])
         else:
-            check_col = Columns([button_check, button_cancel,
-                                 button_apply, ('weight', 2, blank)])
+            check_col = widget.Columns([button_check, button_cancel,
+                                       button_apply, ('weight', 2, blank)])
 
         self.listbox_content = [text1, blank, text2, blank]
         self.listbox_content.extend(self.edits)

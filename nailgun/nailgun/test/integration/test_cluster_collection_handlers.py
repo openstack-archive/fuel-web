@@ -36,7 +36,7 @@ class TestHandlers(BaseIntegrationTest):
                     {"cluster_id": cluster_id}),
             headers=self.default_headers,
         ).body)["networks"]
-        return sorted(nets, key=lambda n: n['vlan_start'])
+        return nets
 
     def test_cluster_list_empty(self):
         resp = self.app.get(

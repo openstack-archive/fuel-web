@@ -187,8 +187,12 @@ class Cluster(Base):
     # During cluster deletion sqlalchemy engine will set null
     # into cluster foreign key column of notification entity
     notifications = relationship("Notification", backref="cluster")
-    network_groups = relationship("NetworkGroup", backref="cluster",
-                                  cascade="delete")
+    network_groups = relationship(
+        "NetworkGroup",
+        backref="cluster",
+        cascade="delete",
+        order_by="NetworkGroup.id"
+    )
     replaced_deployment_info = Column(JSON, default={})
     replaced_provisioning_info = Column(JSON, default={})
     is_customized = Column(Boolean, default=False)

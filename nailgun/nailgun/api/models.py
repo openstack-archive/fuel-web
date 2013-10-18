@@ -546,7 +546,7 @@ class NetworkGroup(Base):
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     network_size = Column(Integer, default=256)
     amount = Column(Integer, default=1)
-    vlan_start = Column(Integer, default=1)
+    vlan_start = Column(Integer)
     networks = relationship("Network", cascade="delete",
                             backref="network_group")
     cidr = Column(String(25))

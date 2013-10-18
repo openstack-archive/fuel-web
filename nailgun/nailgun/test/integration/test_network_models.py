@@ -107,7 +107,7 @@ class TestNetworkModels(BaseIntegrationTest):
                           kw['vlan_start'] + kw['amount'] - 1)
         self.assertEquals(all(x.name == kw['name'] for x in nets_db), True)
         vlans_db = self.db.query(Vlan).all()
-        self.assertEquals(len(vlans_db), kw['amount'] + 1)  # + 1 for admin net
+        self.assertEquals(len(vlans_db), kw['amount'])
 
     def test_network_group_slices_cidr_for_networks(self):
         cluster = self.env.create_cluster(api=False)

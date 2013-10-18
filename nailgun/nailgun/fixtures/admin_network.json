@@ -12,18 +12,11 @@
     },
     {
         "pk": 1,
-        "model": "nailgun.vlan",
-        "fields": {
-        }
-    },
-    {
-        "pk": 1,
         "model": "nailgun.network",
         "fields": {
             "name": "fuelweb_admin",
             "network_group": 1,
-            "cidr": "{{settings.ADMIN_NETWORK['cidr']}}",
-            "vlan": 1
+            "cidr": "{{settings.ADMIN_NETWORK['cidr']}}"
         }
     },
     {

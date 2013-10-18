@@ -289,6 +289,13 @@
                         }
                     },
                     "common": {
+                        "debug": {
+                            "value": false,
+                            "label": "OpenStack debug logging",
+                            "description": "Debug logging mode provides more information, but requires more disk space.",
+                            "weight": 20,
+                            "type": "checkbox"
+                        },
                         "auto_assign_floating_ip": {
                             "value": false,
                             "label": "Auto assign floating IP",
@@ -311,21 +318,21 @@
                                 }
                             ],
                             "label": "Hypervisor type",
-                            "weight": 10,
+                            "weight": 30,
                             "type": "radio"
                         },
                         "start_guests_on_host_boot": {
                             "value": true,
                             "label": "Start guests on host boot",
                             "description": "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots.",
-                            "weight": 50,
+                            "weight": 60,
                             "type": "checkbox"
                         },
                         "use_cow_images": {
                             "value": true,
                             "label": "Use qcow format for images",
                             "description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.",
-                            "weight": 30,
+                            "weight": 50,
                             "type": "checkbox"
                         },
                         "compute_scheduler_driver": {
@@ -343,14 +350,14 @@
                                 }
                             ],
                             "label": "Scheduler driver",
-                            "weight": 20,
+                            "weight": 40,
                             "type": "radio"
                         },
                         "auth_key": {
                             "value": "",
                             "label": "Public Key",
                             "description": "Public key(s) to include in authorized_keys on deployed nodes",
-                            "weight": 60,
+                            "weight": 70,
                             "type": "text"
                         }
                     },
@@ -725,6 +732,13 @@
                         }
                     },
                     "common": {
+                        "debug": {
+                            "value": false,
+                            "label": "OpenStack debug logging",
+                            "description": "Debug logging mode provides more information, but requires more disk space.",
+                            "weight": 20,
+                            "type": "checkbox"
+                        },
                         "auto_assign_floating_ip": {
                             "value": false,
                             "label": "Auto assign floating IP",
@@ -747,21 +761,21 @@
                                 }
                             ],
                             "label": "Hypervisor type",
-                            "weight": 10,
+                            "weight": 30,
                             "type": "radio"
                         },
                         "start_guests_on_host_boot": {
                             "value": true,
                             "label": "Start guests on host boot",
                             "description": "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots.",
-                            "weight": 50,
+                            "weight": 70,
                             "type": "checkbox"
                         },
                         "use_cow_images": {
                             "value": true,
                             "label": "Use qcow format for images",
                             "description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.",
-                            "weight": 30,
+                            "weight": 50,
                             "type": "checkbox"
                         },
                         "compute_scheduler_driver": {
@@ -779,14 +793,14 @@
                                 }
                             ],
                             "label": "Scheduler driver",
-                            "weight": 20,
+                            "weight": 60,
                             "type": "radio"
                         },
                         "auth_key": {
                             "value": "",
                             "label": "Public Key",
                             "description": "Public key(s) to include in authorized_keys on deployed nodes",
-                            "weight": 60,
+                            "weight": 80,
                             "type": "text"
                         }
                     },
@@ -1208,6 +1222,13 @@
                         }
                     },
                     "common": {
+                        "debug": {
+                            "value": false,
+                            "label": "OpenStack debug logging",
+                            "description": "Debug logging mode provides more information, but requires more disk space.",
+                            "weight": 20,
+                            "type": "checkbox"
+                        },
                         "auto_assign_floating_ip": {
                             "value": false,
                             "label": "Auto assign floating IP",
@@ -1230,21 +1251,21 @@
                                 }
                             ],
                             "label": "Hypervisor type",
-                            "weight": 10,
+                            "weight": 30,
                             "type": "radio"
                         },
                         "start_guests_on_host_boot": {
                             "value": true,
                             "label": "Start guests on host boot",
                             "description": "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots.",
-                            "weight": 50,
+                            "weight": 60,
                             "type": "checkbox"
                         },
                         "use_cow_images": {
                             "value": true,
                             "label": "Use qcow format for images",
                             "description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.",
-                            "weight": 30,
+                            "weight": 50,
                             "type": "checkbox"
                         },
                         "compute_scheduler_driver": {
@@ -1262,14 +1283,14 @@
                                 }
                             ],
                             "label": "Scheduler driver",
-                            "weight": 20,
+                            "weight": 70,
                             "type": "radio"
                         },
                         "auth_key": {
                             "value": "",
                             "label": "Public Key",
                             "description": "Public key(s) to include in authorized_keys on deployed nodes",
-                            "weight": 60,
+                            "weight": 80,
                             "type": "text"
                         }
                     },

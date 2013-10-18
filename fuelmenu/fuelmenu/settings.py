@@ -12,25 +12,25 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import yaml
 import collections
 try:
     from collections import OrderedDict
-except:
+except Exception:
     # python 2.6 or earlier use backport
     from ordereddict import OrderedDict
+import yaml
 
 
 def construct_ordered_mapping(self, node, deep=False):
     if not isinstance(node, yaml.MappingNode):
-        raise ConstructorError(None, None,
-                               "expected a mapping node, but found %s" %
-                               node.id, node.start_mark)
+        raise yaml.ConstructorError(None, None,
+                                    "expected a mapping node, but found %s" %
+                                    node.id, node.start_mark)
     mapping = OrderedDict()
     for key_node, value_node in node.value:
         key = self.construct_object(key_node, deep=deep)
         if not isinstance(key, collections.Hashable):
-            raise ConstructorError(
+            raise yaml.ConstructorError(
                 "while constructing a mapping", node.start_mark,
                 "found unhashable key", key_node.start_mark)
         value = self.construct_object(value_node, deep=deep)
@@ -86,7 +86,7 @@ class Settings():
             infile = file(yamlfile, 'r')
             settings = yaml.load(infile)
             return settings
-        except:
+        except Exception:
             if yamlfile is not None:
                 import logging
                 logging.error("Unable to read YAML: %s" % yamlfile)
@@ -102,7 +102,6 @@ class Settings():
         return True
 
 if __name__ == '__main__':
-    import textwrap
 
     sample = """
     one:
@@ -122,4 +121,4 @@ if __name__ == '__main__':
     yaml.dump(data, outfile, default_flow_style=False)
 
     #assert type(data) is OrderedDict
-    print data.items()
+    print(data.items())

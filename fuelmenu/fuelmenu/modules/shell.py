@@ -13,11 +13,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import fuelmenu.common.urwidwrapper as widget
+import subprocess
 import urwid
 import urwid.raw_display
 import urwid.web_display
-from fuelmenu.common.urwidwrapper import *
-import subprocess
 
 blank = urwid.Divider()
 
@@ -47,7 +47,7 @@ class shell():
     def screenUI(self):
         #Define your text labels, text fields, and buttons first
         text1 = urwid.Text("Press the button below to enter a shell login.")
-        login_button = Button("Shell Login", self.start_shell)
+        login_button = widget.Button("Shell Login", self.start_shell)
         #Build all of these into a list
         listbox_content = [text1, blank, login_button]
 

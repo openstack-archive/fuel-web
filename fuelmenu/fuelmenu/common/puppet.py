@@ -12,9 +12,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import subprocess
-import sys
 import logging
+import subprocess
 
 #Python 2.6 hack to add check_output command
 
@@ -39,7 +38,7 @@ itwill be overridden.')
 def puppetApply(classname, name=None, params=None):
     #name should be a string
     #params should be a dict
-    '''Runs puppet apply -e "classname {'name': params}" '''
+    '''Runs puppet apply -e "classname {'name': params}".'''
     log = logging
     log.info("Puppet start")
 

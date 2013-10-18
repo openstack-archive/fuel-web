@@ -104,6 +104,21 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEquals(mgmt_ng.cidr, cidr)
         self.assertEquals(mgmt_ng.netmask, '255.255.255.128')
 
+    def test_wrong_net_provider(self):
+        resp = self.app.put(
+            reverse(
+                'NeutronNetworkConfigurationHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            json.dumps({}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(
+            resp.body,
+            u"Wrong net provider - environment uses 'nova_network'"
+        )
+
     def test_do_not_update_net_manager_if_validation_is_failed(self):
         new_net_manager = {'net_manager': 'VlanManager',
                            'networks': [{'id': 500, 'vlan_start': 500}]}

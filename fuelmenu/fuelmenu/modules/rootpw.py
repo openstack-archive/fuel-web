@@ -13,18 +13,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import crypt
+import fuelmenu.common.urwidwrapper as widget
+import logging
+import subprocess
 import urwid
 import urwid.raw_display
 import urwid.web_display
-import logging
-import sys
-import re
-import crypt
-import subprocess
-from fuelmenu.settings import *
-from fuelmenu.common import network, puppet, replace, \
-    nailyfactersettings, dialog
-from fuelmenu.common.urwidwrapper import *
+
 log = logging.getLogger('fuelmenu.rootpw')
 blank = urwid.Divider()
 
@@ -50,7 +46,7 @@ class rootpw(urwid.WidgetWrap):
         self.screen = None
 
     def check(self, args):
-        """Validate that all fields have valid values and some sanity checks"""
+        """Validate that all fields have valid values and sanity checks."""
         self.parent.footer.set_text("Checking data...")
         self.parent.refreshScreen()
         #Get field information
@@ -75,7 +71,8 @@ class rootpw(urwid.WidgetWrap):
 
         #password needs to be in ASCII character set
         try:
-            asciipw = responses["PASSWORD"].decode('ascii')
+            if responses["PASSWORD"].decode('ascii'):
+                pass
         except UnicodeDecodeError:
             errors.append("Password contains non-ASCII characters.")
 
@@ -106,9 +103,9 @@ class rootpw(urwid.WidgetWrap):
         try:
             #clear any locks first
             noout = open('/dev/null', 'w')
-            noop = subprocess.call(["rm", "-f", "/etc/passwd.lock",
-                                    "/etc/shadow.lock"], stdout=noout,
-                                   stderr=noout)
+            subprocess.call(["rm", "-f", "/etc/passwd.lock",
+                             "/etc/shadow.lock"], stdout=noout,
+                            stderr=noout)
             retcode = subprocess.call(["usermod", "-p", hashed, "root"],
                                       stdout=noout,
                                       stderr=noout)
@@ -155,22 +152,22 @@ class rootpw(urwid.WidgetWrap):
                 tooltip = DEFAULTS[key]["tooltip"]
                 ispassword = "PASSWORD" in key.upper()
                 self.edits.append(
-                    TextField(key, caption, 23, default, tooltip, toolbar,
-                              ispassword=ispassword))
+                    widget.TextField(key, caption, 23, default, tooltip,
+                                     toolbar, ispassword=ispassword))
 
         #Button to check
-        button_check = Button("Check", self.check)
+        button_check = widget.Button("Check", self.check)
         #Button to revert to previously saved settings
-        button_cancel = Button("Cancel", self.cancel)
+        button_cancel = widget.Button("Cancel", self.cancel)
         #Button to apply (and check again)
-        button_apply = Button("Apply", self.apply)
+        button_apply = widget.Button("Apply", self.apply)
 
         #Wrap buttons into Columns so it doesn't expand and look ugly
         if self.parent.globalsave:
-            check_col = Columns([button_check])
+            check_col = widget.Columns([button_check])
         else:
-            check_col = Columns([button_check, button_cancel,
-                                 button_apply, ('weight', 2, blank)])
+            check_col = widget.Columns([button_check, button_cancel,
+                                        button_apply, ('weight', 2, blank)])
 
         #Build all of these into a list
         self.listbox_content = [text1, blank, text2, blank]

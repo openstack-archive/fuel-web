@@ -13,19 +13,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import fuelmenu.common.urwidwrapper as widget
 import urwid
 import urwid.raw_display
 import urwid.web_display
-import logging
-import sys
-import copy
-import socket
-import struct
-import re
-import netaddr
-sys.path.append("/home/mmosesohn/git/fuel/iso/fuelmenu")
-from fuelmenu.settings import *
-from fuelmenu.common.urwidwrapper import *
 blank = urwid.Divider()
 
 
@@ -44,7 +35,7 @@ class ModalDialog(urwid.WidgetWrap):
             body = urwid.Text(body)
         self.title = title
         bodybox = urwid.LineBox(urwid.Pile([body, blank,
-                                Button("Close", self.close)]), title)
+                                widget.Button("Close", self.close)]), title)
         overlay = urwid.Overlay(urwid.Filler(bodybox), previous_widget,
                                 'center', ('relative', 80), 'middle',
                                 ('relative', 80))

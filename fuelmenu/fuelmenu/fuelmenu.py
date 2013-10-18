@@ -14,7 +14,7 @@
 # under the License.
 import logging
 import operator
-from optparse import OptionParser, OptionGroup
+from optparse import OptionParser
 import os
 import subprocess
 import sys
@@ -38,7 +38,7 @@ class Loader(object):
         self.parent = parent
 
     def load_modules(self, module_dir):
-        if not module_dir in sys.path:
+        if module_dir not in sys.path:
             sys.path.append(module_dir)
 
         modules = [os.path.splitext(f)[0] for f in os.listdir(module_dir)
@@ -102,7 +102,7 @@ class FuelSetup(object):
                     item.set_attr_map({None: 'header'})
                 else:
                     item.set_attr_map({None: None})
-            except Exception, e:
+            except Exception as e:
                 log.info("%s" % item)
                 log.error("%s" % e)
         self.setChildScreen(name=choice)
@@ -159,16 +159,13 @@ class FuelSetup(object):
     def main(self):
         #Disable kernel print messages. They make our UI ugly
         noout = open('/dev/null', 'w')
-        retcode = subprocess.call(["sysctl", "-w",  "kernel.printk=4 1 1 7"],
-                                  stdout=noout,
-                                  stderr=noout)
+        subprocess.call(["sysctl", "-w", "kernel.printk=4 1 1 7"],
+                        stdout=noout, stderr=noout)
 
         text_header = (u"Fuel %s setup "
                        u"Use Up/Down/Left/Right to navigate.  F8 exits."
                        % version)
         text_footer = (u"Status messages go here.")
-
-        blank = urwid.Divider()
 
         #Top and bottom lines of frame
         self.header = urwid.AttrWrap(urwid.Text(text_header), 'header')
@@ -242,19 +239,21 @@ class FuelSetup(object):
         #Initialize each module completely before any events are handled
         for child in reversed(self.choices):
             self.setChildScreen(name=child)
+        #Prepare DNS for resolution
+        dnsobj = self.children[int(self.choices.index("DNS & Hostname"))]
+        dnsobj.setEtcResolv()
 
         self.mainloop.run()
 
     def exit_program(self, button):
         #return kernel logging to normal
         noout = open('/dev/null', 'w')
-        retcode = subprocess.call(["sysctl", "-w",  "kernel.printk=7 4 1 7"],
-                                  stdout=noout,
-                                  stderr=noout)
+        subprocess.call(["sysctl", "-w", "kernel.printk=7 4 1 7"],
+                        stdout=noout, stderr=noout)
         #Fix /etc/hosts and /etc/resolv.conf before quitting
         dnsobj = self.children[int(self.choices.index("DNS & Hostname"))]
         dnsobj.fixEtcHosts()
-        dnsobj.fixEtcResolv()
+        dnsobj.setEtcResolv('127.0.0.1')
 
         raise urwid.ExitMainLoop()
 
@@ -286,14 +285,14 @@ def setup():
     # try to handle short web requests quickly
     if urwid.web_display.handle_short_request():
         return
-    fm = FuelSetup()
+    FuelSetup()
 
 
 def save_only(iface):
-    import common.network as network
     from common import nailyfactersettings
-    from settings import Settings
+    import common.network as network
     import netifaces
+    from settings import Settings
     #Naily.facts translation map from astute.yaml format
     facter_translate = \
         {
@@ -310,13 +309,13 @@ def save_only(iface):
     try:
         ip = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]['addr']
         netmask = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]['netmask']
-    except:
-        print "Interface %s does is missing either IP address or netmask" \
-            % (iface)
+    except Exception:
+        print("Interface %s does is missing either IP address or netmask"
+              % (iface))
         sys.exit(1)
     net_ip_list = network.getNetwork(ip, netmask)
     try:
-        half = int(len(net_ip_list)/2)
+        half = int(len(net_ip_list) / 2)
         #In most cases, skip 10.XXX.0.1
         static_pool = list(net_ip_list[1:half])
         dhcp_pool = list(net_ip_list[half:])
@@ -324,8 +323,8 @@ def save_only(iface):
         static_end = str(static_pool[-1])
         dynamic_start = str(dhcp_pool[0])
         dynamic_end = str(dhcp_pool[-1])
-    except:
-        print "Unable to define DHCP pools"
+    except Exception:
+        print("Unable to define DHCP pools")
         sys.exit(1)
     settings = \
         {
@@ -359,7 +358,7 @@ def save_only(iface):
 
 def main(*args, **kwargs):
     if urwid.VERSION < (1, 1, 0):
-        print "This program requires urwid 1.1.0 or greater."
+        print("This program requires urwid 1.1.0 or greater.")
 
     parser = OptionParser()
     parser.add_option("-s", "--save-only", dest="save_only",

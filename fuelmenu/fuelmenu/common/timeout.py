@@ -1,5 +1,3 @@
-import signal
-import time
 import thread
 from threading import Timer
 

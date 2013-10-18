@@ -423,6 +423,13 @@
                             "description": "Requires at least two Ceph-OSD nodes, incompatible with Swift",
                             "weight": 40,
                             "type": "checkbox"
+                        },
+                        "osd_pool_size": {
+                            "value": "2",
+                            "label": "Ceph object replication factor",
+                            "description": "Defines the number of object replicas in Ceph pools. At least that many Ceph-OSD nodes must be deployed.",
+                            "weight": 70,
+                            "type": "text"
                         }
                     }
                 },
@@ -862,7 +869,8 @@
                         "volumes_lvm": true,
                         "volumes_ceph": false,
                         "images_ceph": false,
-                        "objects_ceph": false
+                        "objects_ceph": false,
+                        "osd_pool_size": "2"
                     },
                     "mysql": {
                         "root_password": {
@@ -1356,6 +1364,13 @@
                             "description": "Requires at least two Ceph-OSD nodes, incompatible with Swift",
                             "weight": 40,
                             "type": "checkbox"
+                        },
+                        "osd_pool_size": {
+                            "value": "2",
+                            "label": "Ceph object replication factor",
+                            "description": "Defines the number of object replicas in Ceph pools. At least that many Ceph-OSD nodes must be deployed.",
+                            "weight": 70,
+                            "type": "text"
                         }
                     }
                 },

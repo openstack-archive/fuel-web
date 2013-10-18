@@ -73,6 +73,7 @@ class NovaNetworkConfigurationVerifyHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "nova_network")
 
         try:
             data = self.validator.validate_networks_update(web.data())
@@ -118,6 +119,7 @@ class NovaNetworkConfigurationHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "nova_network")
         return self.serializer.serialize_for_cluster(cluster)
 
     def PUT(self, cluster_id):
@@ -132,6 +134,7 @@ class NovaNetworkConfigurationHandler(JSONHandler):
             ]
 
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "nova_network")
 
         check_if_network_configuration_locked(cluster)
 
@@ -180,6 +183,7 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "neutron")
         return self.serializer.serialize_for_cluster(cluster)
 
     @content_json
@@ -190,6 +194,7 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
             ]
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "neutron")
 
         check_if_network_configuration_locked(cluster)
 
@@ -225,3 +230,12 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
 class NeutronNetworkConfigurationVerifyHandler(
         NovaNetworkConfigurationVerifyHandler):
     validator = NeutronNetworkConfigurationValidator
+
+    @content_json
+    def PUT(self, cluster_id):
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster, "neutron")
+        super(
+            NeutronNetworkConfigurationVerifyHandler,
+            self
+        ).PUT(cluster_id)

@@ -320,10 +320,14 @@ define(['utils'], function(utils) {
         constructorName: 'Interface',
         parse: function(response) {
             response.assigned_networks = new models.InterfaceNetworks(response.assigned_networks);
+            response.allowed_networks = new models.InterfaceNetworks(response.allowed_networks);
             return response;
         },
         toJSON: function(options) {
-            return _.extend(this.constructor.__super__.toJSON.call(this, options), {assigned_networks: this.get('assigned_networks').toJSON()});
+            return _.extend(this.constructor.__super__.toJSON.call(this, options), {
+                assigned_networks: this.get('assigned_networks').toJSON(),
+                allowed_networks: this.get('allowed_networks').toJSON()
+            });
         }
     });
 

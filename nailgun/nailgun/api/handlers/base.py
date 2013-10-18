@@ -138,3 +138,11 @@ class JSONHandler(object):
             if log_get:
                 getattr(logger, log_get[0])(log_get[1])
         return obj
+
+    def check_net_provider(self, cluster, provider):
+        if cluster.net_provider != provider:
+            raise web.badrequest(
+                u"Wrong net provider - environment uses '{0}'".format(
+                    cluster.net_provider
+                )
+            )

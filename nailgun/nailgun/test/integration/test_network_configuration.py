@@ -22,6 +22,7 @@ from nailgun.api.models import Cluster
 from nailgun.api.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import reverse
 
 
 class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
@@ -103,6 +104,21 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                    if ng.name == 'management'][0]
         self.assertEquals(mgmt_ng.cidr, cidr)
         self.assertEquals(mgmt_ng.netmask, '255.255.255.128')
+
+    def test_wrong_net_provider(self):
+        resp = self.app.put(
+            reverse(
+                'NeutronNetworkConfigurationHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            json.dumps({}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(
+            resp.body,
+            u"Wrong net provider - environment uses 'nova_network'"
+        )
 
     def test_do_not_update_net_manager_if_validation_is_failed(self):
         new_net_manager = {'net_manager': 'VlanManager',
@@ -415,7 +431,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEquals(publ_ng.cidr, '172.16.0.0/24')
 
     def test_admin_public_untagged_others_tagged(self):
-        resp = self.env.nova_networks_get(self.cluster.id)
+        resp = self.env.neutron_networks_get(self.cluster.id)
         data = json.loads(resp.body)
         for net in data['networks']:
             if net['name'] in ('fuelweb_admin', 'public',):

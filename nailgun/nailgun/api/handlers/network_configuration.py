@@ -49,31 +49,26 @@ from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
 
-def check_if_network_configuration_locked(cluster):
-    if cluster.are_attributes_locked:
-        error = web.forbidden()
-        error.data = "Network configuration can't be changed " \
-                     "after, or in deploy."
-        raise error
-
-
-class NovaNetworkConfigurationVerifyHandler(JSONHandler):
-    """Network configuration verify handler
+class ProviderHandler(JSONHandler):
+    """Base class for network configuration handlers
     """
 
-    validator = NovaNetworkConfigurationValidator
+    def check_net_provider(self, cluster):
+        if cluster.net_provider != self.provider:
+            raise web.badrequest(
+                u"Wrong net provider - environment uses '{0}'".format(
+                    cluster.net_provider
+                )
+            )
 
-    @content_json
-    def PUT(self, cluster_id):
-        """:IMPORTANT: this method should be rewritten to be more RESTful
+    def check_if_network_configuration_locked(self, cluster):
+        if cluster.are_attributes_locked:
+            error = web.forbidden()
+            error.data = "Network configuration can't be changed " \
+                         "after, or in deploy."
+            raise error
 
-        :returns: JSONized Task object.
-        :http: * 202 (network checking task failed)
-               * 200 (network verification task started)
-               * 404 (cluster not found in db)
-        """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
-
+    def launch_verify(self, cluster):
         try:
             data = self.validator.validate_networks_update(web.data())
         except web.webapi.badrequest as exc:
@@ -104,12 +99,34 @@ class NovaNetworkConfigurationVerifyHandler(JSONHandler):
         return TaskHandler.render(task)
 
 
-class NovaNetworkConfigurationHandler(JSONHandler):
+class NovaNetworkConfigurationVerifyHandler(ProviderHandler):
+    """Network configuration verify handler
+    """
+
+    validator = NovaNetworkConfigurationValidator
+    provider = "nova_network"
+
+    @content_json
+    def PUT(self, cluster_id):
+        """:IMPORTANT: this method should be rewritten to be more RESTful
+
+        :returns: JSONized Task object.
+        :http: * 202 (network checking task failed)
+               * 200 (network verification task started)
+               * 404 (cluster not found in db)
+        """
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster)
+        return self.launch_verify(cluster)
+
+
+class NovaNetworkConfigurationHandler(ProviderHandler):
     """Network configuration handler
     """
 
     validator = NovaNetworkConfigurationValidator
     serializer = NovaNetworkConfigurationSerializer
+    provider = "nova_network"
 
     @content_json
     def GET(self, cluster_id):
@@ -118,6 +135,7 @@ class NovaNetworkConfigurationHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
     def PUT(self, cluster_id):
@@ -132,8 +150,9 @@ class NovaNetworkConfigurationHandler(JSONHandler):
             ]
 
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster)
 
-        check_if_network_configuration_locked(cluster)
+        self.check_if_network_configuration_locked(cluster)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
@@ -166,12 +185,13 @@ class NovaNetworkConfigurationHandler(JSONHandler):
         raise web.accepted(data=data)
 
 
-class NeutronNetworkConfigurationHandler(JSONHandler):
+class NeutronNetworkConfigurationHandler(ProviderHandler):
     """Neutron Network configuration handler
     """
 
     validator = NeutronNetworkConfigurationValidator
     serializer = NeutronNetworkConfigurationSerializer
+    provider = "neutron"
 
     @content_json
     def GET(self, cluster_id):
@@ -180,6 +200,7 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
     @content_json
@@ -190,8 +211,9 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
             ]
         cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster)
 
-        check_if_network_configuration_locked(cluster)
+        self.check_if_network_configuration_locked(cluster)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
@@ -226,3 +248,10 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
 class NeutronNetworkConfigurationVerifyHandler(
         NovaNetworkConfigurationVerifyHandler):
     validator = NeutronNetworkConfigurationValidator
+    provider = "neutron"
+
+    @content_json
+    def PUT(self, cluster_id):
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+        self.check_net_provider(cluster)
+        return self.launch_verify(cluster)

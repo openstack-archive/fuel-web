@@ -117,6 +117,10 @@ class NovaNetworkConfigurationHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         data = json.loads(web.data())
+        data["networks"] = [
+            n for n in data["networks"] if n["name"] != "fuelweb_admin"
+        ]
+
         cluster = self.get_object_or_404(Cluster, cluster_id)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
@@ -162,6 +166,9 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
     @content_json
     def PUT(self, cluster_id):
         data = json.loads(web.data())
+        data["networks"] = [
+            n for n in data["networks"] if n["name"] != "fuelweb_admin"
+        ]
         cluster = self.get_object_or_404(Cluster, cluster_id)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)

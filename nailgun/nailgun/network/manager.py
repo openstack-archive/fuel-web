@@ -601,6 +601,36 @@ class NetworkManager(object):
 
         db().commit()
 
+    def get_default_networks_assignment(self, node):
+        nics = []
+        for nic in node.interfaces:
+            nic_dict = {
+                "id": nic.id,
+                "name": nic.name,
+                "mac": nic.mac,
+                "max_speed": nic.max_speed,
+                "current_speed": nic.current_speed
+            }
+
+            assigned_ngs = self.get_default_nic_networkgroups(
+                node, nic)
+
+            for ng in assigned_ngs:
+                nic_dict.setdefault('assigned_networks', []).append(
+                    {'id': ng.id, 'name': ng.name})
+
+            allowed_ngs = self.get_allowed_nic_networkgroups(
+                node,
+                nic
+            )
+
+            for ng in allowed_ngs:
+                nic_dict.setdefault('allowed_networks', []).append(
+                    {'id': ng.id, 'name': ng.name})
+
+            nics.append(nic_dict)
+        return nics
+
     def get_node_networks(self, node_id):
         """Method for receiving network data for a given node.
 
@@ -898,10 +928,13 @@ class NetworkManager(object):
             ).order_by(NetworkGroup.id).all()
         return []
 
-    def get_allowed_nic_networkgroups(self, node):
+    def get_allowed_nic_networkgroups(self, node, nic):
         """Get all allowed network groups
         """
-        return self.get_all_cluster_networkgroups(node)
+        ngs = self.get_all_cluster_networkgroups(node)
+        if nic == node.admin_interface:
+            ngs.append(self.get_admin_network_group())
+        return ngs
 
     def get_admin_ips_for_interfaces(self, node):
         """Returns mapping admin {"inteface name" => "admin ip"}

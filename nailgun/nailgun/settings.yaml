@@ -175,6 +175,18 @@ LOGS:
     <<: *remote_syslog_log_format
     <<: *install_log_group
     path: 'install/ks-post.log'
+  - id: 'install/debootstrap-ubuntu'
+    name: "debootstrap"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *install_log_group
+    path: "debootstrap.log"
+  - id: 'install/in-target-ubuntu'
+    name: "in-target"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *install_log_group
+    path: "in-target.log"
 # Bootstrap node logs.
   - id: 'bootstrap/dmesg'
     name: "dmesg"

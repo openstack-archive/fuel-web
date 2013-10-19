@@ -782,7 +782,9 @@ class CheckBeforeDeploymentTask(object):
     def __check_ceph(cls, task):
         storage = task.cluster.attributes.merged_attrs()['storage']
         for option in storage:
-            if '_ceph' in option and storage[option]['value'] is True:
+            if '_ceph' in option and\
+               storage[option] and\
+               storage[option]['value'] is True:
                 cls.__check_ceph_osds(task)
                 return
 

@@ -250,12 +250,27 @@ def release(params):
         check_for_attributes(params, ["rel", "username", "password"])
         data = {
             "release_id": params.rel,
-            "license_type": "rhsm",
             "username": params.username,
-            "password": params.password,
-            "satellite": "",
-            "activation_key": ""
+            "password": params.password
         }
+        satellite_flags = [params.satellite_server_hostname,
+                           params.activation_key]
+        if not any(satellite_flags):
+            data.update({
+                "license_type": "rhsm",
+                "satellite": "",
+                "activation_key": ""
+            })
+        elif all(satellite_flags):
+            data.update({
+                "license_type": "rhn",
+                "satellite": params.satellite_server_hostname,
+                "activation_key": params.activation_key
+            })
+        else:
+            print_error('RedHat satellite settings requires both a '
+                        '"--satellite-server-hostname" and '
+                        'a "--activation-key" flags.')
         release_response = json_api_post_request(
             "redhat/setup/",
             data
@@ -1144,7 +1159,7 @@ actions = {
                 "default": False
             }
         }, {
-            "args": ["-U", "--user", "--user-name"],
+            "args": ["-U", "--user", "--username"],
             "params": {
                 "dest": "username",
                 "action": "store",
@@ -1159,6 +1174,24 @@ actions = {
                 "action": "store",
                 "type": str,
                 "help": "Password for release credentials",
+                "default": None
+            }
+        }, {
+            "args": ["--satellite-server-hostname"],
+            "params": {
+                "dest": "satellite_server_hostname",
+                "action": "store",
+                "type": str,
+                "help": "Satellite server hostname",
+                "default": None
+            }
+        }, {
+            "args": ["--activation-key"],
+            "params": {
+                "dest": "activation_key",
+                "action": "store",
+                "type": str,
+                "help": "activation key",
                 "default": None
             }
         }]

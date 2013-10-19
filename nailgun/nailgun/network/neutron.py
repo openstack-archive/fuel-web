@@ -111,12 +111,12 @@ class NeutronManager(NetworkManager):
     def _generate_l3(self, cluster):
         return {}
 
-    def get_default_nic_networkgroups(self, node, nic):
-        """Assign all network groups on admin interface
-        by default
+    def get_allowed_nic_networkgroups(self, node, nic):
+        """Get all allowed network groups
         """
-        return self.get_all_cluster_networkgroups(node) \
-            if nic == node.admin_interface else []
+        if nic == node.admin_interface:
+            return [self.get_admin_network_group()]
+        return self.get_all_cluster_networkgroups(node)
 
     def allow_network_assignment_to_all_interfaces(self, node):
         """Method adds all network groups from cluster
@@ -138,6 +138,58 @@ class NeutronManager(NetworkManager):
                 nic.allowed_networks.append(ng)
 
         db().commit()
+
+    def get_default_networks_assignment(self, node):
+        nics = []
+
+        already_assigned = []
+        for i, nic in enumerate(node.interfaces):
+            nic_dict = {
+                "id": nic.id,
+                "name": nic.name,
+                "mac": nic.mac,
+                "max_speed": nic.max_speed,
+                "current_speed": nic.current_speed
+            }
+            if nic == node.admin_interface:
+                admin_ng = self.get_admin_network_group()
+                assigned_ngs = [admin_ng]
+                already_assigned.append(admin_ng.name)
+            else:
+                if node.cluster.net_segment_type == 'vlan' \
+                        and not "private" in already_assigned:
+                    assigned_ngs = filter(
+                        lambda ng: ng.name == "private",
+                        node.cluster.network_groups
+                    )
+                    already_assigned.append("private")
+                else:
+                    assigned_ngs = filter(
+                        lambda ng: (
+                            ng.name != "private" and
+                            ng.name not in already_assigned
+                        ),
+                        node.cluster.network_groups
+                    )
+                    already_assigned.extend([
+                        ng.name for ng in assigned_ngs
+                    ])
+
+            for ng in assigned_ngs:
+                nic_dict.setdefault('assigned_networks', []).append(
+                    {'id': ng.id, 'name': ng.name})
+
+            allowed_ngs = self.get_allowed_nic_networkgroups(
+                node,
+                nic
+            )
+
+            for ng in allowed_ngs:
+                nic_dict.setdefault('allowed_networks', []).append(
+                    {'id': ng.id, 'name': ng.name})
+
+            nics.append(nic_dict)
+        return nics
 
     # TODO(enchantner): refactor and DRY
     def create_network_groups(self, cluster_id):

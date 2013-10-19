@@ -316,6 +316,12 @@
                         "max_speed": 100,
                         "name": "eth0",
                         "current_speed": 10
+                    },
+                    {
+                        "mac": "54:78:EA:05:17:BA",
+                        "max_speed": 100,
+                        "name": "eth1",
+                        "current_speed": 20
                     }
                 ],
                 "disks": [

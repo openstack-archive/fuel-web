@@ -528,38 +528,12 @@ class NodeNICsDefaultHandler(JSONHandler):
         return default_nets
 
     def get_default(self, node):
-        nics = []
-
         if node.cluster and node.cluster.net_provider == 'neutron':
             network_manager = NeutronManager()
         else:
             network_manager = NetworkManager()
 
-        for nic in node.interfaces:
-            nic_dict = {
-                "id": nic.id,
-                "name": nic.name,
-                "mac": nic.mac,
-                "max_speed": nic.max_speed,
-                "current_speed": nic.current_speed
-            }
-
-            assigned_ngs = network_manager.get_default_nic_networkgroups(
-                node, nic)
-
-            for ng in assigned_ngs:
-                nic_dict.setdefault('assigned_networks', []).append(
-                    {'id': ng.id, 'name': ng.name})
-
-            allowed_ngs = network_manager.get_allowed_nic_networkgroups(
-                node)
-
-            for ng in allowed_ngs:
-                nic_dict.setdefault('allowed_networks', []).append(
-                    {'id': ng.id, 'name': ng.name})
-
-            nics.append(nic_dict)
-        return nics
+        return network_manager.get_default_networks_assignment(node)
 
 
 class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):

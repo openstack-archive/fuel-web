@@ -609,7 +609,7 @@ class NailgunReceiver(object):
 
         nodes_uids = [node['uid'] for node in nodes]
         nodes_db = db().query(Node).filter(Node.id.in_(nodes_uids)).all()
-        nodes_map = dict((node.id, node) for node in nodes_db)
+        nodes_map = dict((str(node.id), node) for node in nodes_db)
 
         macs = [item['addr'] for item in cls._get_master_macs()]
         logger.debug('Mac addr on master node %s', macs)
@@ -618,10 +618,16 @@ class NailgunReceiver(object):
             if node['status'] == 'ready':
                 for row in node.get('data', []):
                     if row['mac'] not in macs:
-                        row['node_name'] = nodes_map[node['uid']].name
-                        message = message_template.format(**row)
-                        messages.append(message)
-                        result[node['uid']].append(row)
+                        node_db = nodes_map.get(node['uid'])
+                        if node_db:
+                            row['node_name'] = node_db.name
+                            message = message_template.format(**row)
+                            messages.append(message)
+                            result[node['uid']].append(row)
+                        else:
+                            logger.warning(
+                                'Received message from nonexistent node. '
+                                'Message %s', row)
         status = status if not messages else "error"
         error_msg = '\n'.join(messages) if messages else error_msg
         logger.debug('Check dhcp message %s', error_msg)

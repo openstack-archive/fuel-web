@@ -21,12 +21,13 @@ define(
     'views/dialogs',
     'text!templates/cluster/network_tab.html',
     'text!templates/cluster/network.html',
+    'text!templates/cluster/nova_nameservers.html',
     'text!templates/cluster/neutron_parameters.html',
     'text!templates/cluster/verify_network_control.html'
 ],
-function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, neutronParametersTemplate, networkTabVerificationControlTemplate) {
+function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, novaNetworkConfigurationTemplate, neutronParametersTemplate, networkTabVerificationControlTemplate) {
     'use strict';
-    var NetworkTab, Network, NeutronConfiguration, NetworkTabVerificationControl;
+    var NetworkTab, Network, NeutronConfiguration, NovaNetworkConfiguration, NetworkTabVerificationControl;
 
     NetworkTab = commonViews.Tab.extend({
         template: _.template(networkTabTemplate),
@@ -56,7 +57,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         checkForChanges: function() {
             this.hasChanges = !_.isEqual(this.model.get('networkConfiguration').toJSON(), this.networkConfiguration.toJSON());
-            this.defaultButtonsState(_.some(this.networkConfiguration.get('networks').models, 'validationError') || !!(this.networkConfiguration.get('neutron_parameters') && this.networkConfiguration.get('neutron_parameters').validationError));
+            var neutronConfigurationErrors = !!(this.networkConfiguration.get('neutron_parameters') && this.networkConfiguration.get('neutron_parameters').validationError);
+            var novaNetworkConfigurationErrors = !!(this.networkConfiguration.get('dns_nameservers') && this.networkConfiguration.get('dns_nameservers').validationError);
+            this.defaultButtonsState(_.some(this.networkConfiguration.get('networks').models, 'validationError') || neutronConfigurationErrors || novaNetworkConfigurationErrors);
         },
         changeManager: function(e) {
             this.$('.net-manager input').attr('checked', function(el, oldAttr) {return !oldAttr;});
@@ -101,7 +104,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 }, this));
         },
         verifyNetworks: function() {
-            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError') && (!this.networkConfiguration.get('neutron_parameters') || !this.networkConfiguration.get('neutron_parameters').validationError)) {
+            var neutronConfigurationErrors = !!(this.networkConfiguration.get('neutron_parameters') && this.networkConfiguration.get('neutron_parameters').validationError);
+            var novaNetworkConfigurationErrors = !!(this.networkConfiguration.get('dns_nameservers') && this.networkConfiguration.get('dns_nameservers').validationError);
+            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError') && !neutronConfigurationErrors && !novaNetworkConfigurationErrors) {
                 this.$('.verify-networks-btn').prop('disabled', true);
                 this.filterEmptyIpRanges();
                 this.page.removeFinishedTasks().always(_.bind(this.startVerification, this));
@@ -118,7 +123,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         applyChanges: function() {
             var deferred;
-            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError') && (!this.networkConfiguration.get('neutron_parameters') || !this.networkConfiguration.get('neutron_parameters').validationError)) {
+            var neutronConfigurationErrors = !!(this.networkConfiguration.get('neutron_parameters') && this.networkConfiguration.get('neutron_parameters').validationError);
+            var novaNetworkConfigurationErrors = !!(this.networkConfiguration.get('dns_nameservers') && this.networkConfiguration.get('dns_nameservers').validationError);
+            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError') && !neutronConfigurationErrors && !novaNetworkConfigurationErrors) {
                 this.disableControls();
                 this.filterEmptyIpRanges();
                 deferred = Backbone.sync('update', this.networkConfiguration, {url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
@@ -229,6 +236,16 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 }, this);
             }
         },
+        renderNovaNetworkConfiguration: function() {
+            if (this.model.get('net_provider') == 'nova_network' && this.networkConfiguration.get('dns_nameservers')) {
+                var novaNetworkConfigurationView = new NovaNetworkConfiguration({
+                    novaNetworkConfiguration: this.networkConfiguration.get('dns_nameservers'),
+                    tab: this
+                });
+                this.registerSubView(novaNetworkConfigurationView);
+                this.$('.nova-nameservers').html(novaNetworkConfigurationView.render().el);
+            }
+        },
         renderNeutronConfiguration: function() {
             if (this.model.get('net_provider') == 'neutron' && this.networkConfiguration.get('neutron_parameters')) {
                 var neutronConfigurationView = new NeutronConfiguration({
@@ -249,6 +266,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 verificationLocked: this.isVerificationLocked()
             }));
             this.renderNetworks();
+            this.renderNovaNetworkConfiguration();
             this.renderNeutronConfiguration();
             this.renderVerificationControl();
             return this;
@@ -374,6 +392,36 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 network: this.network,
                 net_provider: this.tab.model.get('net_provider'),
                 net_manager: this.tab.networkConfiguration.get('net_manager'),
+                locked: this.tab.isLocked()
+            }));
+            return this;
+        }
+    });
+
+    NovaNetworkConfiguration = Backbone.View.extend({
+        template: _.template(novaNetworkConfigurationTemplate),
+        events: {
+            'keyup input[type=text]': 'onChange'
+        },
+        onChange: function(e) {
+            this.$('input[type=text]').removeClass('error');
+            this.$('.help-inline').text('');
+            this.novaNetworkConfiguration.set({nameservers: [$.trim(this.$('input[name=nameserver-0]').val()), $.trim(this.$('input[name=nameserver-1]').val())]}, {validate: true});
+            this.tab.checkForChanges();
+            this.tab.page.removeFinishedTasks();
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+            this.novaNetworkConfiguration.on('invalid', function(model, errors) {
+                this.$('input.error').removeClass('error').find('.help-inline').text('');
+                _.each(errors, _.bind(function(error, field) {
+                    this.$('input[name=' + field + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
+                }, this));
+            }, this);
+        },
+        render: function() {
+            this.$el.html(this.template({
+                nameservers: this.novaNetworkConfiguration.get('nameservers'),
                 locked: this.tab.isLocked()
             }));
             return this;

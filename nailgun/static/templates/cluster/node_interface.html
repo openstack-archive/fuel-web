@@ -16,7 +16,7 @@
             </div><div class="logical-network-group">
           <% } %>
           <div class="logical-network-item" data-name="<%- network.get('name') %>">
-            <div class="name"><%- network.get('name') %></div>
+            <div class="name"><%- network.get('name') == 'fuelweb_admin' ? 'Admin (PXE)' : network.get('name') %></div>
             <div class="id">
             <% var vlanStart = network.vlanStart() %>
             <% if (vlanStart) { %>

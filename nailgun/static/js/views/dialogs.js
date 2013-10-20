@@ -428,9 +428,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     }
                     if (this.$('input[name=glance]:checked').val() == 'ceph' && storageSettings.images_ceph) {
                         storageSettings.images_ceph.value = true;
-                        if (storageSettings.objects_ceph) {
-                            storageSettings.objects_ceph.value = true;
-                        }
                     }
                 }
             } catch(e) {

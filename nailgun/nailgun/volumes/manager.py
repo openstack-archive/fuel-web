@@ -448,6 +448,7 @@ class Disk(object):
             'name': partition_info['id'],
             'file_system': partition_info['file_system'],
             'disk_label': partition_info.get('disk_label'),
+            'partition_guid': partition_info.get('partition_guid'),
             'mount': partition_info['mount']})
 
     def remove_pv(self, name):

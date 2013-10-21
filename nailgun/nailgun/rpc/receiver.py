@@ -569,9 +569,12 @@ class NailgunReceiver(object):
                          ' have incorrect type')
             status = 'error'
             logger.error(error_msg)
-
-        TaskHelper.update_verify_networks(task_uuid, status, progress,
+        if status not in ('ready', 'error'):
+            TaskHelper.update_task_status(task_uuid, status, progress,
                                           error_msg, result)
+        else:
+            TaskHelper.update_verify_networks(task_uuid, status, progress,
+                                              error_msg, result)
 
     @classmethod
     def _master_networks_gen(cls, ifaces):
@@ -631,8 +634,8 @@ class NailgunReceiver(object):
         status = status if not messages else "error"
         error_msg = '\n'.join(messages) if messages else error_msg
         logger.debug('Check dhcp message %s', error_msg)
-        TaskHelper.update_task_status(task_uuid, status, progress,
-                                      error_msg, result)
+        TaskHelper.update_verify_networks(task_uuid, status, progress,
+                                          error_msg, result)
 
     # Red Hat related callbacks
 

@@ -587,6 +587,8 @@ class NeutronMethods(object):
                     attrs['management_vip'] = mgmt_cidr.split('/')[0]
                     break
 
+        attrs.update(cls.network_ranges(cluster))
+
         return attrs
 
     @classmethod

@@ -1032,9 +1032,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     return Backbone.sync('update', new models.NodeInterfaceConfigurations(configuration));
                 }, this))
                 .done(_.bind(function() {
-                    var interfaces = this.interfaces.toJSON();
                     this.nodes.each(function(node) {
-                        node.interfaces = new models.Interfaces(_.cloneDeep(interfaces), {parse: true});
+                        node.interfaces.each(function(ifc, index) {
+                            ifc.set({
+                                assigned_networks: new models.InterfaceNetworks(_.cloneDeep(this.interfaces.at(index).get('assigned_networks').toJSON()))
+                            });
+                        }, this);
                     }, this);
                 }, this))
                 .fail(_.bind(function() {

@@ -168,7 +168,7 @@ class NovaOrchestratorSerializer(object):
             elif net.name == 'public':
                 # We shouldn't pass public_network_range attribute
                 continue
-            else:
+            elif net.cidr:
                 attrs[net_name] = net.cidr
 
         return attrs
@@ -586,6 +586,8 @@ class NeutronMethods(object):
                     )['ip']
                     attrs['management_vip'] = mgmt_cidr.split('/')[0]
                     break
+
+        attrs.update(cls.network_ranges(cluster))
 
         return attrs
 

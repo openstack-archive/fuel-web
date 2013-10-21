@@ -1101,6 +1101,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }));
             if (this.loading && this.loading.state() != 'pending') {
                 this.renderInterfaces();
+                this.checkForChanges();
             }
             return this;
         }

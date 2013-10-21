@@ -36,7 +36,7 @@ class TestHandlers(BaseIntegrationTest):
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
-    def test_deploy_cast_with_right_args(self, mocked_rpc):
+    def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
         self.env.create(
             cluster_kwargs={
                 'mode': 'ha_compact'
@@ -297,6 +297,351 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(len(args), 2)
         self.assertEquals(len(args[1]), 2)
 
+        self.datadiff(args[1][0], provision_msg)
+        self.datadiff(args[1][1], deployment_msg)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_neutron_deploy_cast_with_right_args(self, mocked_rpc):
+        self.env.create(
+            cluster_kwargs={
+                'mode': 'ha_compact',
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller', 'cinder'], 'pending_addition': True},
+                {'roles': ['compute', 'cinder'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['cinder'], 'pending_addition': True}
+            ]
+        )
+
+        cluster_db = self.env.clusters[0]
+
+        common_attrs = {
+            'deployment_mode': 'ha_compact',
+
+            'management_vip': '192.168.0.8',
+            'public_vip': '172.16.0.8',
+
+            'management_network_range': '192.168.0.0/24',
+            'storage_network_range': '192.168.1.0/24',
+
+            'mp': [{'weight': '1', 'point': '1'},
+                   {'weight': '2', 'point': '2'}],
+
+            'quantum': True,
+            'quantum_settings': {},
+
+            'master_ip': '127.0.0.1',
+            'use_cinder': True,
+            'deployment_id': cluster_db.id
+        }
+
+        cluster_attrs = cluster_db.attributes.merged_attrs_values()
+        common_attrs.update(cluster_attrs)
+
+        L2 = {
+            "base_mac": "fa:16:3e:00:00:00",
+            "segmentation_type": "gre",
+            "phys_nets": {
+                "physnet1": {
+                    "bridge": "br-ex",
+                    "vlan_range": None},
+                "physnet2": {
+                    "bridge": "br-prv",
+                    "vlan_range": None}
+            },
+            "tunnel_id_ranges": "2:65535"
+        }
+        L3 = {
+            "use_namespaces": True
+        }
+        predefined_networks = {
+            "net04_ext": {
+                'shared': False,
+                'L2': {
+                    'router_ext': True,
+                    'network_type': 'flat',
+                    'physnet': 'physnet1',
+                    'segment_id': None},
+                'L3': {
+                    'subnet': u'172.16.0.0/24',
+                    'enable_dhcp': False,
+                    'nameservers': [],
+                    'floating': '172.16.0.130:172.16.0.254',
+                    'gateway': '172.16.0.1'},
+                'tenant': 'admin'
+            },
+            "net04": {
+                'shared': False,
+                'L2': {
+                    'router_ext': False,
+                    'network_type': 'gre',
+                    'physnet': 'physnet2',
+                    'segment_id': None},
+                'L3': {
+                    'subnet': u'192.168.111.0/24',
+                    'enable_dhcp': True,
+                    'nameservers': [
+                        '8.8.4.4',
+                        '8.8.8.8'],
+                    'floating': None,
+                    'gateway': '192.168.111.1'},
+                'tenant': 'admin'
+            }
+        }
+        common_attrs['quantum_settings'].update(
+            L2=L2,
+            L3=L3,
+            predefined_networks=predefined_networks)
+
+        # Common attrs calculation
+        nodes_list = []
+        nodes_db = sorted(cluster_db.nodes, key=lambda n: n.id)
+        assigned_ips = {}
+        i = 0
+        admin_ips = [
+            '10.20.0.139/24',
+            '10.20.0.138/24',
+            '10.20.0.135/24',
+            '10.20.0.133/24',
+            '10.20.0.131/24',
+            '10.20.0.130/24']
+        for node in nodes_db:
+            node_id = node.id
+            admin_ip = admin_ips.pop()
+            for role in sorted(node.roles + node.pending_roles):
+                assigned_ips[node_id] = {}
+                assigned_ips[node_id]['management'] = '192.168.0.%d' % (i + 2)
+                assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 2)
+                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 2)
+                assigned_ips[node_id]['admin'] = admin_ip
+
+                nodes_list.append({
+                    'role': role,
+
+                    'internal_address': assigned_ips[node_id]['management'],
+                    'public_address': assigned_ips[node_id]['public'],
+                    'storage_address': assigned_ips[node_id]['storage'],
+
+                    'internal_netmask': '255.255.255.0',
+                    'public_netmask': '255.255.255.0',
+                    'storage_netmask': '255.255.255.0',
+
+                    'uid': str(node_id),
+                    'swift_zone': str(node_id),
+
+                    'name': 'node-%d' % node_id,
+                    'fqdn': 'node-%d.%s' % (node_id, settings.DNS_DOMAIN)})
+            i += 1
+
+        controller_nodes = filter(
+            lambda node: node['role'] == 'controller',
+            deepcopy(nodes_list))
+
+        common_attrs['nodes'] = nodes_list
+        common_attrs['nodes'][0]['role'] = 'primary-controller'
+
+        common_attrs['last_controller'] = controller_nodes[-1]['name']
+
+        # Individual attrs calculation and
+        # merging with common attrs
+        priority_mapping = {
+            'controller': [600, 500, 400],
+            'cinder': 700,
+            'compute': 700
+        }
+
+        deployment_info = []
+        for node in nodes_db:
+            ips = assigned_ips[node.id]
+            for role in sorted(node.roles):
+                priority = priority_mapping[role]
+                if isinstance(priority, list):
+                    priority = priority.pop()
+
+                individual_atts = {
+                    'uid': str(node.id),
+                    'status': node.status,
+                    'role': role,
+                    'online': node.online,
+                    'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
+                    'priority': priority,
+
+                    'network_scheme': {
+                        "version": "1.0",
+                        "provider": "ovs",
+                        "interfaces": {
+                            "eth0": {"mtu": 1500},
+                            "eth1": {"mtu": 1500},
+                            "eth2": {"mtu": 1500},
+                        },
+                        "endpoints": {
+                            "br-mgmt": {"IP": [ips['management'] + "/24"]},
+                            "br-ex": {
+                                "IP": [ips['public'] + "/24"],
+                                "gateway": "172.16.0.1"
+                            },
+                            "br-storage": {"IP": [ips['storage'] + "/24"]},
+                            "eth1": {"IP": [ips['admin']]}
+                        },
+                        "roles": {
+                            "management": "br-mgmt",
+                            "mesh": "br-mgmt",
+                            "ex": "br-ex",
+                            "storage": "br-storage",
+                            "fw-admin": "eth1"
+                        },
+                        "transformations": [
+                            {
+                                "action": "add-br",
+                                "name": "br-ex"},
+                            {
+                                "action": "add-br",
+                                "name": "br-mgmt"},
+                            {
+                                "action": "add-br",
+                                "name": "br-storage"},
+                            {
+                                "action": "add-br",
+                                "name": "br-prv"},
+                            {
+                                "action": "add-br",
+                                "name": u"br-eth0"},
+                            {
+                                "action": "add-port",
+                                "bridge": u"br-eth0",
+                                "name": u"eth0"},
+                            {
+                                "action": "add-patch",
+                                "bridges": [u"br-eth0", "br-storage"],
+                                "tags": [103, 0]},
+                            {
+                                "action": "add-patch",
+                                "bridges": [u"br-eth0", "br-ex"],
+                                "tags": [101, 0]},
+                            {
+                                "action": "add-patch",
+                                "bridges": [u"br-eth0", "br-mgmt"],
+                                "tags": [102, 0]}
+                        ]
+                    }
+                }
+
+                individual_atts.update(common_attrs)
+                individual_atts['glance']['image_cache_max_size'] = str(
+                    manager.gb_to_byte(5)
+                )
+                deployment_info.append(individual_atts)
+
+        controller_nodes = filter(
+            lambda node: node['role'] == 'controller',
+            deployment_info)
+        controller_nodes[0]['role'] = 'primary-controller'
+
+        supertask = self.env.launch_deployment()
+        deploy_task_uuid = [x.uuid for x in supertask.subtasks
+                            if x.name == 'deployment'][0]
+
+        deployment_msg = {'method': 'deploy',
+                          'respond_to': 'deploy_resp',
+                          'args': {}}
+
+        deployment_msg['args']['task_uuid'] = deploy_task_uuid
+        deployment_msg['args']['deployment_info'] = deployment_info
+
+        provision_nodes = []
+        admin_net = self.env.network_manager.get_admin_network()
+
+        for n in sorted(self.env.nodes, key=lambda n: n.id):
+            pnd = {
+                'profile': cluster_attrs['cobbler']['profile'],
+                'power_type': 'ssh',
+                'power_user': 'root',
+                'kernel_options': {
+                    'netcfg/choose_interface': 'eth1'},
+                'power_address': n.ip,
+                'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
+                'name': TaskHelper.make_slave_name(n.id),
+                'hostname': n.fqdn,
+                'name_servers': '\"%s\"' % settings.DNS_SERVERS,
+                'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
+                'netboot_enabled': '1',
+                'ks_meta': {
+                    'puppet_auto_setup': 1,
+                    'puppet_master': settings.PUPPET_MASTER_HOST,
+                    'puppet_version': settings.PUPPET_VERSION,
+                    'puppet_enable': 0,
+                    'mco_auto_setup': 1,
+                    'install_log_2_syslog': 1,
+                    'mco_pskey': settings.MCO_PSKEY,
+                    'mco_vhost': settings.MCO_VHOST,
+                    'mco_host': settings.MCO_HOST,
+                    'mco_user': settings.MCO_USER,
+                    'mco_password': settings.MCO_PASSWORD,
+                    'mco_connector': settings.MCO_CONNECTOR,
+                    'mco_enable': 1,
+                    'ks_spaces': n.attributes.volumes,
+                    'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                }
+            }
+
+            netmanager = NetworkManager()
+            netmanager.assign_admin_ips(
+                n.id,
+                len(n.meta.get('interfaces', []))
+            )
+
+            admin_ips = set([i.ip_addr
+                             for i in self.db.query(IPAddr).
+                             filter_by(node=n.id).
+                             filter_by(network=admin_net.id)])
+
+            for i in n.meta.get('interfaces', []):
+                if 'interfaces' not in pnd:
+                    pnd['interfaces'] = {}
+                pnd['interfaces'][i['name']] = {
+                    'mac_address': i['mac'],
+                    'static': '0',
+                    'netmask': admin_net.network_group.netmask,
+                    'ip_address': admin_ips.pop(),
+                }
+                if 'interfaces_extra' not in pnd:
+                    pnd['interfaces_extra'] = {}
+                pnd['interfaces_extra'][i['name']] = {
+                    'peerdns': 'no',
+                    'onboot': 'no'
+                }
+
+                if i['mac'] == n.mac:
+                    pnd['interfaces'][i['name']]['dns_name'] = n.fqdn
+                    pnd['interfaces_extra'][i['name']]['onboot'] = 'yes'
+
+            provision_nodes.append(pnd)
+
+        provision_task_uuid = filter(
+            lambda t: t.name == 'provision',
+            supertask.subtasks)[0].uuid
+
+        provision_msg = {
+            'method': 'provision',
+            'respond_to': 'provision_resp',
+            'args': {
+                'task_uuid': provision_task_uuid,
+                'provisioning_info': {
+                    'engine': {
+                        'url': settings.COBBLER_URL,
+                        'username': settings.COBBLER_USER,
+                        'password': settings.COBBLER_PASSWORD},
+                    'nodes': provision_nodes}}}
+
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        self.assertEquals(len(args), 2)
+        self.assertEquals(len(args[1]), 2)
         self.datadiff(args[1][0], provision_msg)
         self.datadiff(args[1][1], deployment_msg)
 

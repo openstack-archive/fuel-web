@@ -195,9 +195,18 @@ class dnsandhostname(urwid.WidgetWrap):
 
                 #Try to resolve with first address
                 if not self.checkDNS(DNS_UPSTREAM):
-                    errors.append("IP %s unable to resolve DNS hostname.")
+                    #Warn user that DNS resolution failed, but continue
+                    msg = "Unable to resolve %s.\n\n" % responses['TEST_DNS']\
+                          + "Possible causes for DNS failure include:\n" \
+                          + "* Invalid DNS server\n" \
+                          + "* Invalid gateway\n" \
+                          + "* Other networking issue\n\n" \
+                          + "Fuel Setup can save this configuration, but "\
+                          + "you may want to correct your settings."
+                    diag = dialog.display_dialog(self, TextLabel(msg),
+                                                 "DNS Failure Warning")
+                    self.parent.refreshScreen()
             except Exception, e:
-                errors.append(e)
                 errors.append("Not a valid IP address for External DNS: %s"
                               % responses["DNS_UPSTREAM"])
 
@@ -440,7 +449,7 @@ class dnsandhostname(urwid.WidgetWrap):
         return
 
     def refresh(self):
-        pass
+        self.gateway = self.get_default_gateway_linux()
 
     def screenUI(self):
         #Define your text labels, text fields, and buttons first

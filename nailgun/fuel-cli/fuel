@@ -345,11 +345,11 @@ def environment(params):
             print(format_table(data, acceptable_keys=acceptable_keys,
                                subdict_keys=[("release", u"id")]))
     elif params.create:
-        check_for_attributes(params, ["ename", "rel"])
+        check_for_attributes(params, ["name", "rel"])
         data = {
             "nodes": [],
             "tasks": [],
-            "name": params.ename,
+            "name": params.name,
             "release": int(params.rel)
         }
         if params.net.lower() == "nova":
@@ -380,13 +380,13 @@ def environment(params):
             )
     elif params.set:
         check_for_attributes(params, ["env"])
-        if params.mode or params.ename:
+        if params.mode or params.name:
             data = {}
             if params.mode:
                 data["mode"] = "ha_compact" \
                     if params.mode.lower() == "ha" else "multinode"
-            if params.ename:
-                data["name"] = params.ename
+            if params.name:
+                data["name"] = params.name
             put_response = json_api_put_request(
                 "clusters/{0}/".format(params.env),
                 data
@@ -394,12 +394,12 @@ def environment(params):
             if JSON or YAML:
                 print_formatted(put_response)
             else:
-                if params.ename:
+                if params.name:
                     print(
                         "Environment with id={0} was renamed to {1}"
                         .format(
                             params.env,
-                            params.ename
+                            params.name
                         )
                     )
                 if params.mode:
@@ -1287,7 +1287,7 @@ actions = {
         }, {
             "args": ["--name", "--env-name"],
             "params": {
-                "dest": "ename",
+                "dest": "name",
                 "action": "store",
                 "type": str,
                 "help": "environment name",

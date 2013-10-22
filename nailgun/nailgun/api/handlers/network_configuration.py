@@ -49,6 +49,14 @@ from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
 
+def check_if_network_configuration_locked(cluster):
+    if cluster.are_attributes_locked:
+        error = web.forbidden()
+        error.data = "Network configuration can't be changed " \
+                     "after, or in deploy."
+        raise error
+
+
 class NovaNetworkConfigurationVerifyHandler(JSONHandler):
     """Network configuration verify handler
     """
@@ -125,6 +133,8 @@ class NovaNetworkConfigurationHandler(JSONHandler):
 
         cluster = self.get_object_or_404(Cluster, cluster_id)
 
+        check_if_network_configuration_locked(cluster)
+
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
@@ -180,6 +190,8 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
             ]
         cluster = self.get_object_or_404(Cluster, cluster_id)
+
+        check_if_network_configuration_locked(cluster)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)

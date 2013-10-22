@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import fnmatch
 import os
 import re
 import stat
@@ -81,17 +82,21 @@ class Driver(object):
         return out
 
     def get(self, path, target_path):
+        """target_path must be the directory where to put
+        copied files or directories
+        """
         try:
             if not self.local:
                 with fabric.api.settings(host_string=self.host,
                                          timeout=2, warn_only=True):
                     logger.debug("Getting remote file: %s %s",
                                  path, target_path)
+                    execute("mkdir -p %s" % target_path)
                     return fabric.api.get(path, target_path)
             else:
                 logger.debug("Getting local file: cp -r %s %s",
                              path, target_path)
-                execute("mkdir -p %s" % os.path.dirname(target_path))
+                execute("mkdir -p %s" % target_path)
                 return execute("cp -r %s %s" % (path, target_path))
         except Exception as e:
             logger.error("Error occured: %s", str(e))
@@ -103,10 +108,17 @@ class File(Driver):
         self.path = self.data["path"]
         logger.debug("File to get: %s", self.path)
         self.target_path = os.path.join(
-            self.conf.target, self.host, self.path.lstrip("/"))
+            self.conf.target, self.host,
+            os.path.dirname(self.path).lstrip("/"))
         logger.debug("File to save: %s", self.target_path)
 
     def snapshot(self):
+        """Example:
+        self.conf.target IS /target
+        self.host IS host.domain.tld
+        self.path IS /var/log/somedir
+        self.target_path IS /target/host.domain.tld/var/log
+        """
         self.get(self.path, self.target_path)
 
 
@@ -149,14 +161,36 @@ class Subs(File):
         sedscript.close()
 
     def snapshot(self):
+        """Example:
+        self.conf.target IS /target
+        self.host IS host.domain.tld
+        self.path IS /var/log/somedir (it can be /var/log/somedir*)
+        self.target_path IS /target/host.domain.tld/var/log
+
+        1. we get remote directory host.domain.tld:/var/log/somedir
+        2. we put it into /target/host.domain.tld/var/log
+        3. we walk through /target/host.domain.tld/var/log
+        4. we check fnmatch(/var/log/*, /var/log/somedir)
+        """
+        # 1.
+        # 2.
         super(Subs, self).snapshot()
+        # 3.
         walk = os.walk(self.target_path)
-        if not os.path.isdir(self.target_path):
-            walk = (("/", [], [self.target_path]),)
         for root, _, files in walk:
             for filename in files:
+                # /target/host.domain.tld/var/log/somedir/1/2
                 fullfilename = os.path.join(root, filename)
-                tempfilename = self.command("mktemp").stdout.strip()
+                # 4.
+                # /target/host.domain.tld
+                tgt_host = os.path.join(self.conf.target, self.host)
+                # var/log/somedir/1/2
+                rel_tgt_host = os.path.relpath(fullfilename, tgt_host)
+                # /var/log/somedir/1/2
+                match_orig_path = os.path.join("/", rel_tgt_host)
+                if not fnmatch.fnmatch(match_orig_path, self.path):
+                    continue
+                tempfilename = execute("mktemp")[1].strip()
                 self.sed(fullfilename, tempfilename)
                 execute("mv %s %s" % (tempfilename, fullfilename))
 

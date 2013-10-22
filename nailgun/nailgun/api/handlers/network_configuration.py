@@ -125,6 +125,12 @@ class NovaNetworkConfigurationHandler(JSONHandler):
 
         cluster = self.get_object_or_404(Cluster, cluster_id)
 
+        if cluster.are_attributes_locked:
+            error = web.forbidden()
+            error.data = "Cluster attributes can't be changed " \
+                         "after or in deploy."
+            raise error
+
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
@@ -180,6 +186,12 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
             ]
         cluster = self.get_object_or_404(Cluster, cluster_id)
+
+        if cluster.are_attributes_locked:
+            error = web.forbidden()
+            error.data = "Cluster attributes can't be changed " \
+                         "after or in deploy."
+            raise error
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)

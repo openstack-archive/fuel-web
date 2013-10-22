@@ -125,6 +125,8 @@ class NovaNetworkConfigurationHandler(JSONHandler):
 
         cluster = self.get_object_or_404(Cluster, cluster_id)
 
+        cluster.raise_if_attributes_locked()
+
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
@@ -180,6 +182,8 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
             ]
         cluster = self.get_object_or_404(Cluster, cluster_id)
+
+        cluster.raise_if_attributes_locked()
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)

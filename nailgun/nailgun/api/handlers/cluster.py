@@ -328,6 +328,8 @@ class ClusterAttributesHandler(JSONHandler):
 
         data = self.checked_data()
 
+        cluster.raise_if_attributes_locked()
+
         for key, value in data.iteritems():
             setattr(cluster.attributes, key, value)
         cluster.add_pending_changes("attributes")

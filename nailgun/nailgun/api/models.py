@@ -219,6 +219,18 @@ class Cluster(Base):
     def is_ha_mode(self):
         return self.mode in ('ha_full', 'ha_compact')
 
+    def raise_if_attributes_locked(self):
+        if self.status != "new" or any(
+            map(
+                lambda x: x.name == "deploy" and x.status == "running",
+                self.tasks
+            )
+        ):
+            error = web.forbidden()
+            error.data = "Cluster attributes can't be changed " \
+                         "after or in deploy."
+            raise error
+
     @property
     def full_name(self):
         return '%s (id=%s, mode=%s)' % (self.name, self.id, self.mode)

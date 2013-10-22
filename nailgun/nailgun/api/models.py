@@ -220,6 +220,15 @@ class Cluster(Base):
         return self.mode in ('ha_full', 'ha_compact')
 
     @property
+    def are_attributes_locked(self):
+        return self.status != "new" or any(
+            map(
+                lambda x: x.name == "deploy" and x.status == "running",
+                self.tasks
+            )
+        )
+
+    @property
     def full_name(self):
         return '%s (id=%s, mode=%s)' % (self.name, self.id, self.mode)
 

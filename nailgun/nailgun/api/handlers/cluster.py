@@ -328,6 +328,12 @@ class ClusterAttributesHandler(JSONHandler):
 
         data = self.checked_data()
 
+        if cluster.are_attributes_locked:
+            error = web.forbidden()
+            error.data = "Cluster attributes can't be changed " \
+                         "after, or in deploy."
+            raise error
+
         for key, value in data.iteritems():
             setattr(cluster.attributes, key, value)
         cluster.add_pending_changes("attributes")

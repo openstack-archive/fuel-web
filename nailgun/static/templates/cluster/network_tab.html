@@ -20,6 +20,8 @@
         <% }) %>
       </div>
       <hr>
+    <% } else { %>
+      <span class="network-segment-type">Neutron with <p><%= segment_type %></p> segmentation</span>
     <% } %>
     <div class="networks-table"></div>
     <div class="nova-nameservers"></div>

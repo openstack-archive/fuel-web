@@ -263,7 +263,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 net_manager: this.networkConfiguration.get('net_manager'),
                 hasChanges: this.hasChanges,
                 locked: this.isLocked(),
-                verificationLocked: this.isVerificationLocked()
+                verificationLocked: this.isVerificationLocked(),
+                segment_type: this.model.get("net_segment_type")
             }));
             this.renderNetworks();
             this.renderNovaNetworkConfiguration();

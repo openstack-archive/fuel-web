@@ -322,6 +322,30 @@ DUMP:
     slave:
       - type: file
         path: /etc/astute.yaml
+      - type: file
+        path: /root/ceph*
+      - type: file
+        path: /root/anaconda*
+      - type: file
+        path: /root/*.log
+      - type: file
+        path: /root/*.ks
+      - type: file
+        path: /etc/ceph*
+      - type: file
+        path: /etc/keystone*
+      - type: file
+        path: /etc/nova*
+      - type: file
+        path: /etc/horizon*
+      - type: file
+        path: /etc/cinder*
+      - type: file
+        path: /etc/glance*
+      - type: file
+        path: /etc/swift*
+      - type: file
+        path: /var/log/ceph
       - type: command
         command: df -h
         to_file: df.txt

@@ -54,7 +54,7 @@ class TestNetworkModels(BaseIntegrationTest):
         self.assertEquals(nets_db[0].cidr, kw['cidr'])
 
     @fake_tasks()
-    def test_network_recreating_on_env(self):
+    def test_cluster_locking_after_deployment(self):
         self.env.create(
             cluster_kwargs={
                 "mode": "ha_compact"
@@ -72,17 +72,15 @@ class TestNetworkModels(BaseIntegrationTest):
             self.env.clusters[0].id
         )
 
-        for n in test_nets['networks'][:2]:
-            n["cidr"] = "172.16.0.0/24"
-
         resp = self.app.put(
             reverse(
                 'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': self.env.clusters[0].id}),
             json.dumps(test_nets),
-            headers=self.default_headers
+            headers=self.default_headers,
+            expect_errors=True
         )
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status, 403)
 
     def test_network_group_creates_several_networks(self):
         cluster = self.env.create_cluster(api=False)

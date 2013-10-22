@@ -62,7 +62,7 @@ def load_db_driver(handler):
 
 
 def syncdb():
-    from nailgun.api.models import Base
+    from nailgun.api.models.base import Base
     Base.metadata.create_all(engine)
 
 
@@ -94,7 +94,7 @@ def dropdb():
 def flush():
     """Delete all data from all tables within nailgun metadata
     """
-    from nailgun.api.models import Base
+    from nailgun.api.models.base import Base
     with contextlib.closing(engine.connect()) as con:
         trans = con.begin()
         for table in reversed(Base.metadata.sorted_tables):

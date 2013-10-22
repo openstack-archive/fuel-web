@@ -150,6 +150,15 @@ class Cluster(Base):
     def full_name(self):
         return '%s (id=%s, mode=%s)' % (self.name, self.id, self.mode)
 
+    @property
+    def are_attributes_locked(self):
+        return self.status != "new" or any(
+            map(
+                lambda x: x.name == "deploy" and x.status == "running",
+                self.tasks
+            )
+        )
+
     @classmethod
     def validate(cls, data):
         d = cls.validate_json(data)

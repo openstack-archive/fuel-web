@@ -263,7 +263,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 net_manager: this.networkConfiguration.get('net_manager'),
                 hasChanges: this.hasChanges,
                 locked: this.isLocked(),
-                verificationLocked: this.isVerificationLocked()
+                verificationLocked: this.isVerificationLocked(),
+                segment_type: this.model.get("net_segment_type").toUpperCase()
             }));
             this.renderNetworks();
             this.renderNovaNetworkConfiguration();
@@ -393,6 +394,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 net_provider: this.tab.model.get('net_provider'),
                 net_manager: this.tab.networkConfiguration.get('net_manager'),
                 locked: this.tab.isLocked()
+                
             }));
             return this;
         }

@@ -1560,6 +1560,10 @@ label.node-checkbox {
   height: 16px;
 }
 
+.network-segment-type{
+  font-style: italic;
+}
+
 .network-tab-content .btn-group {
   margin: 7px 0 5px 0;
 }

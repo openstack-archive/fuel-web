@@ -220,6 +220,127 @@ LOGS:
     <<: *remote_syslog_log_format
     <<: *bootstrap_log_group
     path: 'bootstrap/agent.log'
+# Openstack logs
+  - id: 'os/nova-cert'
+    name: "nova-cert"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "nova-cert.log"
+  - id: 'os/nova-consoleauth'
+    name: "nova-consoleauth"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "nova-consoleauth.log"
+  - id: 'os/nova-scheduler'
+    name: "nova-scheduler"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "nova-scheduler.log"
+  - id: 'os/nova-network'
+    name: "nova-network"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "nova-network.log"
+  - id: 'os/nova-compute'
+    name: "nova-compute"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "nova-compute.log"
+  - id: 'os/nova-conductor'
+    name: "nova-conductor"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "nova-conductor.log"
+  - id: 'os/nova-objectstore'
+    name: "nova-objectstore"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "nova-objectstore.log"
+  - id: 'os/keystone'
+    name: "keystone"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "keystone.log"
+  - id: 'os/cinder-api'
+    name: "cinder-api"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "cinder-api.log"
+  - id: 'os/cinder-volume'
+    name: "cinder-volume"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "cinder-volume.log"
+  - id: 'os/cinder-scheduler'
+    name: "cinder-scheduler"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "cinder-scheduler.log"
+  - id: 'os/glance-api'
+    name: "glance-api"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "glance-api.log"
+  - id: 'os/glance-registry'
+    name: "glance-registry"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "glance-registry.log"
+  - id: 'os/quantum-server'
+    name: "quantum-server"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "quantum-server.log"
+  - id: 'os/quantum-ovs-cleanup'
+    name: "quantum-ovs-cleanup"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "quantum-ovs-cleanup.log"
+  - id: 'os/quantum-rescheduling'
+    name: "quantum-rescheduling"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "quantum-rescheduling.log"
+  - id: 'os/quantum-ovs-agent'
+    name: "quantum-ovs-agent"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "quantum-ovs-agent.log"
+  - id: 'os/quantum-l3-agent'
+    name: "quantum-l3-agent"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "quantum-l3-agent.log"
+  - id: 'os/quantum-dhcp-agent'
+    name: "quantum-dhcp-agent"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "quantum-dhcp-agent.log"
+  - id: 'os/quantum-metadata-agent'
+    name: "quantum-metadata-agent"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *os_log_group
+    path: "quantum-metadata-agent.log"
 
 LOGS_TO_PACK_FOR_SUPPORT:
   logs: '/var/log'

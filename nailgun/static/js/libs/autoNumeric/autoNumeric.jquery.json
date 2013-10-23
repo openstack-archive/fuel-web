@@ -1,0 +1,33 @@
+{
+    "name": "autoNumeric",
+    "title": "autoNumeric - Currency formatting made easy",
+    "description": "jQuery plugin that automatically formats currency (money) and numbers as you type on form inputs. It supports most International numeric formats and currency signs including those used in Europe, North and South America, Afirica, Asia and India (lakhs**)..",
+    "keywords": [
+        "currency",
+        "money",
+        "Euro",
+        "Dollar",
+        "number",
+        "numeric",
+        "format",
+        "input",
+		"mask"
+    ],
+    "version": "1.9.12",
+    "author": {
+        "name": "Robert (Bob) Knothe",
+        "url": "https://github.com/BobKnothe/autoNumeric"
+    },
+    "licenses": [
+        {
+            "type": "MIT",
+            "url": "https://github.com/BobKnothe/autoNumeric/blob/master/license.txt"
+        }
+    ],
+    "homepage": "http://www.decorplanit.com/plugin/",
+    "demo": "http://www.decorplanit.com/plugin/",
+    "docs": "http://www.decorplanit.com/plugin/",
+    "dependencies": {
+        "jquery": ">=1.7"
+    }
+}

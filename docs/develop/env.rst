@@ -23,6 +23,40 @@ Clone the Mirantis Fuel repositories from GitHub::
 
 All sections below assume you start in your clone of the fuel-main repository.
 
+Setup Bower
+-----------------------
+
+#. Bower is a package manager for the web. You need the latest node version for it.
+The nodejs package depends on a couple of other packages, be sure that you have the repository component universe enabled.
+
+    # in /etc/apt/sources.list
+    deb http://archive.ubuntu.com/ubuntu quantal main restricted universe
+    deb http://security.ubuntu.com/ubuntu quantal-security main restricted universe
+    deb http://archive.ubuntu.com/ubuntu quantal-updates main restricted universe
+    
+After enabling it run
+    sudo apt-get update
+
+#. In order to get a more recent nodejs version you need to add a personal package archive (ppa)
+and update the package index files.
+
+    sudo apt-get install python-software-properties
+    sudo add-apt-repository ppa:chris-lea/node.js
+    sudo apt-get update
+    sudo apt-get install nodejs
+    
+#. Install the node package manager
+    sudo apt-get install npm
+    
+#. Installing Bower
+    npm install -g bower
+    
+#. All Bower config is in bower.json file.
+Run
+    bower install
+
+to install packages    
+
 Setup for Nailgun Unit Tests
 ----------------------------
 

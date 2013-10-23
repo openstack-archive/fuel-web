@@ -1,0 +1,14 @@
+{
+  "name": "backbone.js",
+  "_cacheHeaders": {
+    "ETag": "\"10b9995464f5eddeeace62cf3e8995ea\"",
+    "Content-Length": "59581",
+    "Content-Type": "text/plain; charset=utf-8",
+    "Content-Disposition": "inline"
+  },
+  "_release": "e-tag:10b999546",
+  "main": "index.js",
+  "_source": "https://raw.github.com/vkramskikh/backbone/1319260e947b1210c5ec49abbb94da82806f2c75/backbone.js",
+  "_target": "*",
+  "_originalSource": "https://raw.github.com/vkramskikh/backbone/1319260e947b1210c5ec49abbb94da82806f2c75/backbone.js"
+}

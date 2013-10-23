@@ -110,6 +110,8 @@
       this.rejectRegisteredDeferreds();
       this.deferreds = {};
 
+      this.unstickit();
+
       _(this.subViews).invoke('_tearDown');
       this.subViews = {};
     }

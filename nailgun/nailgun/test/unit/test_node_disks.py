@@ -410,6 +410,30 @@ class TestVolumeManager(BaseIntegrationTest):
         self.assertEquals(
             vg_size, disk_sum_size - os_size - reserved_size - sum_lvm_meta)
 
+    def all_free_space_except_os_disks_for_volume(self, volume_manager,
+                                                  volume_name):
+        spaces = volume_manager.volumes
+        reserved_size = self.reserved_size(spaces)
+        disk_sum_size = sum([disk['size'] for disk in only_disks(spaces)])
+        boot_data_size = volume_manager.call_generator('calc_boot_size') + \
+            volume_manager.call_generator('calc_boot_records_size')
+        vg_size = 0
+        sum_lvm_meta = 0
+
+        for disk in only_disks(spaces):
+            for volume in disk['volumes']:
+                # Exclude disks with OS vg as Ceph won't be there
+                if volume.get('vg') == 'os' and volume.get('size', 0) > 0:
+                    disk_sum_size -= (disk['size'] - boot_data_size)
+                if volume.get('vg') == volume_name or \
+                   volume.get('name') == volume_name:
+                    vg_size += volume['size']
+                    vg_size -= volume.get('lvm_meta_size', 0)
+                    sum_lvm_meta += volume.get('lvm_meta_size', 0)
+
+        self.assertEquals(
+            vg_size, disk_sum_size - reserved_size - sum_lvm_meta)
+
     def logical_volume_sizes_should_equal_all_phisical_volumes(self, spaces):
         vg_sizes = {}
         for vg in only_vg(spaces):
@@ -474,12 +498,19 @@ class TestVolumeManager(BaseIntegrationTest):
             node.volume_manager.volumes, 'cinder')
         self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
 
-    def test_allocates_all_free_space_for_ceph_for_ceph_role(self):
+    def test_allocates_space_single_disk_for_ceph_for_ceph_role(self):
         node = self.create_node('ceph-osd')
+        self.update_node_with_single_disk(node, 20000)
         self.should_contain_os_with_minimal_size(node.volume_manager)
         self.all_free_space_except_os_for_volume(
             node.volume_manager.volumes, 'ceph')
         self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+
+    def test_allocates_full_disks_for_ceph_for_ceph_role(self):
+        node = self.create_node('ceph-osd')
+        self.should_contain_os_with_minimal_size(node.volume_manager)
+        self.all_free_space_except_os_disks_for_volume(
+            node.volume_manager, 'ceph')
 
     def should_allocates_same_size(self, volumes, same_size_volume_names):
         disks = only_disks(volumes)
@@ -505,7 +536,10 @@ class TestVolumeManager(BaseIntegrationTest):
         sum_pv_size = sum([volume['size'] for volume in actual_pv_volumes])
         average_size = sum_pv_size / len(actual_pv_volumes)
         for pv in actual_pv_volumes:
-            self.assertEqual(pv['size'], average_size)
+            # In cases where all volumes are created on one disk and
+            # that disk has an odd-numbered size the volume sizes will
+            # differ by 1.
+            self.assertAlmostEqual(pv['size'], average_size, delta=1)
 
     def test_multirole_controller_ceph(self):
         node = self.create_node('controller', 'ceph-osd')

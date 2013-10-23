@@ -1,0 +1,26 @@
+{
+  "name": "fuel-web",
+  "version": "3.0.1",
+  "homepage": "https://github.com/stackforge/fuel-web",
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules"
+  ],
+  "dependencies": {
+    "jquery": "1.9.1",
+    "autoNumeric": "http://github.com/BobKnothe/autoNumeric/zipball/1.9.12",
+    "requirejs-text": "2.0.5",
+    "Coccyx.js": "https://raw.github.com/vkramskikh/coccyx/b72b5ff632ff88ce90f1e6a5b28421967f1763bc/Coccyx.js",
+    "backbone.js": "https://raw.github.com/vkramskikh/backbone/1319260e947b1210c5ec49abbb94da82806f2c75/backbone.js",
+    "bootstrap-custom": "https://raw.github.com/SteAle/custom/master/bootstrap.min.js",
+    "jquery.timeout-1.1.0.js": "http://jquery-timeout.googlecode.com/files/jquery.timeout-1.1.0.js",
+    "lodash": "1.1.1",
+    "requirejs": "2.1.4",
+    "retina.js": "1.1.0",
+    "backbone.stickit": "https://raw.github.com/NYTimes/backbone.stickit/master/backbone.stickit.js",
+    "jquery-ui-custom": "https://raw.github.com/SteAle/custom/master/jquery-ui-1.10.2.custom.js",
+    "jquery.checkbox": "https://raw.github.com/SteAle/custom/master/jquery-ui-1.10.2.custom.js"
+  }
+}

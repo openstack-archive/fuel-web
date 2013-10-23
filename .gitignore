@@ -20,6 +20,7 @@ dist
 nosetests.xml
 nailgun.log
 lock
+nailgun/static/js/libs
 
 .idea
 .DS_Store

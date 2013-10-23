@@ -160,6 +160,10 @@ function(models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage,
                 return originalSync.apply(this, args);
             };
 
+            window.Coccyx.addTearDownCallback(function() {
+                this.unstickit();
+            });
+
             window.isWebkit = navigator.userAgent.indexOf('AppleWebKit/') !== -1;
 
             var app = new AppRouter();

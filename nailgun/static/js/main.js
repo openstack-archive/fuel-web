@@ -26,6 +26,7 @@ requirejs.config({
         utils: 'js/utils',
         lodash: 'js/libs/lodash',
         backbone: 'js/libs/backbone',
+        stickit: 'js/libs/backbone.stickit',
         coccyx: 'js/libs/coccyx',
         bootstrap: 'js/libs/bootstrap.min',
         text: 'js/libs/text',
@@ -43,8 +44,11 @@ requirejs.config({
             deps: ['lodash', 'jquery'],
             exports: 'Backbone'
         },
+        stickit: {
+            deps: ['backbone']
+        },
         coccyx: {
-            deps: ['lodash', 'backbone']
+            deps: ['backbone']
         },
         bootstrap: {
             deps: ['jquery']
@@ -62,7 +66,7 @@ requirejs.config({
             deps: ['jquery']
         },
         app: {
-            deps: ['jquery', 'lodash', 'backbone', 'coccyx', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric']
+            deps: ['jquery', 'lodash', 'backbone', 'stickit', 'coccyx', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric']
         }
     }
 });

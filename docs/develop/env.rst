@@ -99,6 +99,10 @@ Running Nailgun in Fake Mode
 
     python manage.py run -p 8000 --fake-tasks-amqp | egrep --line-buffered -v '^$|HTTP' >> /var/log/nailgun.log 2>&1 &
 
+#. (optional) To create a compressed version of UI and put it into static_compressed dir::
+
+    r.js -o build.js dir=static_compressed
+
 Astute and Naily
 ----------------
 

@@ -30,6 +30,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
         template: _.template(logsTabTemplate),
         logEntryTemplate: _.template(logEntryTemplate),
         lastLogLevel: 'INFO',
+        lastSource: '',
         events: {
             'click .show-logs-btn:not(.disabled)': 'onShowButtonClick',
             'click .show-more-entries': 'onShowMoreClick',
@@ -128,13 +129,18 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                             option.attr('selected', 'selected');
                         }
                         el.append(option);
-                    });
+                    }, this);
                 }
             }, this);
         },
-        updateLevels: function() {
+        updateLevels: function(e) {
             var input = this.$('select[name=level]');
             var chosenSourceId = this.$('select[name=source]').val();
+            if (e) {
+                this.lastSource = chosenSourceId;
+            } else {
+                this.$('select[name=source]').val(this.lastSource);
+            }
             if (chosenSourceId) {
                 input.html('').attr('disabled', false);
                 var source = this.sources.get(chosenSourceId);

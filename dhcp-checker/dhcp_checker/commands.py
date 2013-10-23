@@ -13,8 +13,8 @@
 #    under the License.
 import json
 
-from cliff import lister
 from cliff import command
+from cliff import lister
 from dhcp_checker import api
 
 

@@ -138,7 +138,7 @@
                     "ceph-osd": [
                         {"allocate_size": "min", "id": "os"},
                         {"allocate_size": "min", "id": "cephjournal"},
-                        {"allocate_size": "all", "id": "ceph"}],
+                        {"allocate_size": "full-disk", "id": "ceph"}],
                     "cinder": [
                         {"allocate_size": "min", "id": "os"},
                         {"allocate_size": "all", "id": "cinder"}],
@@ -1081,7 +1081,7 @@
                     "ceph-osd": [
                         {"allocate_size": "min", "id": "os"},
                         {"allocate_size": "min", "id": "cephjournal"},
-                        {"allocate_size": "all", "id": "ceph"}],
+                        {"allocate_size": "full-disk", "id": "ceph"}],
                     "cinder": [
                         {"allocate_size": "min", "id": "os"},
                         {"allocate_size": "all", "id": "cinder"}],

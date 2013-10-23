@@ -740,6 +740,24 @@ class VolumeManager(object):
                                                    size_to_allocation)
             not_allocated_size -= size_to_allocation
 
+    def _allocate_full_disk(self, volume_info):
+        """Allocate full disks for a volume."""
+        self.__logger('Allocate full disk for volume %s ' % (volume_info))
+
+        # If there is only one disk this 'full-disk' volume should be
+        # treated as an 'all' volume
+        if len(self.disks) == 1:
+            volume_info['_allocate_size'] = 'all'
+            return
+
+        for disk in self.disks:
+            existing_volumes = [v for v in disk.volumes if not is_service(v)
+                                and v['size'] > 0]
+            if len(existing_volumes) > 0:
+                self._get_allocator(disk, volume_info)(volume_info, 0)
+            else:
+                self._get_allocator(disk, volume_info)(volume_info)
+
     def _get_allocator(self, disk, volume_info):
         """Returns disk method for volume allocation
         """
@@ -768,6 +786,10 @@ class VolumeManager(object):
         for volume in self._min_size_volumes:
             min_size = self.expand_generators(volume)['min_size']
             self._allocate_size_for_volume(volume, min_size)
+
+        # Allocate volumes which prefer an entire disk
+        for volume in self._full_disk_volumes:
+            self._allocate_full_disk(volume)
 
         # Then allocate volumes which required
         # all free space
@@ -803,6 +825,12 @@ class VolumeManager(object):
     def _all_size_volumes(self):
         return filter(
             lambda volume: volume['_allocate_size'] == 'all',
+            self.allowed_volumes)
+
+    @property
+    def _full_disk_volumes(self):
+        return filter(
+            lambda volume: volume['_allocate_size'] == 'full-disk',
             self.allowed_volumes)
 
     def expand_generators(self, cdict):

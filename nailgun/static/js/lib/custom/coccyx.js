@@ -126,6 +126,6 @@
     });
     _.extend(root.View.prototype, coccyxViewExtensions);
   }
-
+  
   coccyxify(Backbone);
 })();

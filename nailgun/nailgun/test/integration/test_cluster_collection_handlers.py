@@ -204,22 +204,6 @@ class TestHandlers(BaseIntegrationTest):
         ]
         self.assertItemsEqual(expected, obtained)
 
-    def test_network_validation_on_cluster_creation(self):
-        cluster = self.env.create_cluster(api=True)
-        nets = self.env.generate_ui_networks(cluster["id"])
-        nets['networks'][-1]["network_size"] = 16
-        nets['networks'][-1]["amount"] = 3
-        resp = self.app.put(
-            reverse('NovaNetworkConfigurationHandler',
-                    kwargs={'cluster_id': cluster['id']}),
-            json.dumps(nets),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-        self.assertEquals(202, resp.status)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-
     @patch('nailgun.rpc.cast')
     def test_verify_networks(self, mocked_rpc):
         cluster = self.env.create_cluster(api=True)

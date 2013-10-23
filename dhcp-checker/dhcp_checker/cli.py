@@ -15,10 +15,11 @@ import os
 #explicitly set editor for cmd2, will throw a lot of which /usr/bin/.. thrash
 #this is known bug fixed in cmd2==0.6.6
 os.environ['EDITOR'] = '/usr/bin/nano'
+import logging
 import sys
+
 from cliff.app import App
 from cliff.commandmanager import CommandManager
-import logging
 
 
 class DhcpApp(App):

@@ -13,13 +13,13 @@
 #    under the License.
 
 import itertools
-import multiprocessing
 import logging
+import multiprocessing
 
 logging.getLogger('scapy.runtime').setLevel(logging.ERROR)
 
-from scapy import all as scapy
 from dhcp_checker import utils
+from scapy import all as scapy
 
 
 CONCURRENCY_LIMIT = 10
@@ -53,6 +53,7 @@ def check_dhcp_on_eth(iface, timeout):
         scapy.DHCP(options=dhcp_options))
     ans, unans = scapy.srp(dhcp_discover, multi=True,
                            nofilter=1, timeout=timeout, verbose=0)
+
     return ans
 
 
@@ -76,7 +77,7 @@ def check_dhcp(ifaces, timeout=5, repeat=2):
 
 
 def check_dhcp_with_vlans(config, timeout=5, repeat=2):
-    """
+    """Provide config of {iface: [vlans..]} pairs
     @config - {'eth0': (100, 101), 'eth1': (100, 102)}
     @ifaces - string : eth0, eth1
     @vlans - iterable (100, 101, 102)

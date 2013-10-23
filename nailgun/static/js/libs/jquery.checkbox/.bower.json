@@ -1,0 +1,14 @@
+{
+  "name": "jquery-ui-custom",
+  "_cacheHeaders": {
+    "ETag": "\"57f3dfc93f296f89cf52d3d40d0c1c56\"",
+    "Content-Length": "110854",
+    "Content-Type": "text/plain; charset=utf-8",
+    "Content-Disposition": "inline"
+  },
+  "_release": "e-tag:57f3dfc93",
+  "main": "index.js",
+  "_source": "https://raw.github.com/SteAle/custom/master/jquery-ui-1.10.2.custom.js",
+  "_target": "*",
+  "_originalSource": "https://raw.github.com/SteAle/custom/master/jquery-ui-1.10.2.custom.js"
+}

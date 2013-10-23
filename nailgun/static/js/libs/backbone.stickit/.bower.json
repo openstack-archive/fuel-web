@@ -1,0 +1,14 @@
+{
+  "name": "backbone.stickit",
+  "_cacheHeaders": {
+    "ETag": "\"bb36ce3cb2609a63e2b9386efb02c011\"",
+    "Content-Length": "19828",
+    "Content-Type": "text/plain; charset=utf-8",
+    "Content-Disposition": "inline"
+  },
+  "_release": "e-tag:bb36ce3cb",
+  "main": "index.js",
+  "_source": "https://raw.github.com/NYTimes/backbone.stickit/master/backbone.stickit.js",
+  "_target": "*",
+  "_originalSource": "https://raw.github.com/NYTimes/backbone.stickit/master/backbone.stickit.js"
+}

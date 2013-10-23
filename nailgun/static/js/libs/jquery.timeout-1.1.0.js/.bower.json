@@ -1,0 +1,13 @@
+{
+  "name": "jquery.timeout-1.1.0.js",
+  "_cacheHeaders": {
+    "Last-Modified": "Sat, 20 Aug 2011 16:23:20 GMT",
+    "Content-Length": "1835",
+    "Content-Type": "text/plain; charset=us-ascii",
+    "Content-Disposition": "attachment; filename=\"jquery.timeout-1.1.0.js\""
+  },
+  "main": "index.js",
+  "_source": "http://jquery-timeout.googlecode.com/files/jquery.timeout-1.1.0.js",
+  "_target": "*",
+  "_originalSource": "http://jquery-timeout.googlecode.com/files/jquery.timeout-1.1.0.js"
+}

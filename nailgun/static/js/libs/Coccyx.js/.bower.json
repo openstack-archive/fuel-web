@@ -1,0 +1,14 @@
+{
+  "name": "Coccyx.js",
+  "_cacheHeaders": {
+    "ETag": "\"02a9a3c887f5d079246e9d8fd71c76bd\"",
+    "Content-Length": "4191",
+    "Content-Type": "text/plain; charset=utf-8",
+    "Content-Disposition": "inline"
+  },
+  "_release": "e-tag:02a9a3c88",
+  "main": "index.js",
+  "_source": "https://raw.github.com/vkramskikh/coccyx/b72b5ff632ff88ce90f1e6a5b28421967f1763bc/Coccyx.js",
+  "_target": "*",
+  "_originalSource": "https://raw.github.com/vkramskikh/coccyx/b72b5ff632ff88ce90f1e6a5b28421967f1763bc/Coccyx.js"
+}

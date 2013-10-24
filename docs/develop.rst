@@ -13,3 +13,4 @@
    develop/fuel_settings
    develop/puppet_tips
    develop/pxe_deployment
+   develop/ostf_contributors_guide

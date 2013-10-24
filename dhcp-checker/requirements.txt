@@ -1,0 +1,2 @@
+cliff-tablib
+hg+http://hg.secdev.org/scapy

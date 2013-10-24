@@ -1,51 +1,43 @@
-<%
-  var nodeClass = '';
-  if (node.get('pending_deletion')) {
-    nodeClass = 'delete';
-  } else if (node.get('pending_addition')) {
-    nodeClass = 'new';
-  } else if (!node.get('online')) {
-    nodeClass = 'offline';
-  }
-%>
-<div class="node-box node-<%- nodeClass || node.get('status') %>">
-  <div class="node-content">
-    <div class="node-logo <%- node.get('manufacturer') ? 'manufacturer-' + node.get('manufacturer').toLowerCase() : '' %>"></div>
-    <div class="node-details"></div>
-    <div class="node-hardware">
-      <ul>
-      <li>CPU: <%= node.resource('cores') || '?' %></li>
-      <li>HDD: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?GB' %></li>
-      <li>RAM: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?GB' %></li>
-      </ul>
-    </div>
-    <div class="node-status"></div>
-    <div class="node-button">
-      <% if (!locked && !edit && node.get('cluster') && (node.get('pending_addition') || node.canDiscardDeletion() || node.get('pending_roles').length)) { %>
-        <% var btnClass = node.get('pending_addition') ? 'addition' : node.get('pending_deletion') ? 'deletion' : 'role-changes' %>
-        <% var btnTitle = node.get('pending_addition') ? 'Addition' : node.get('pending_deletion') ? 'Deletion' : 'Role Changes' %>
-        <button class="btn btn-link btn-discard-node-changes btn-discard-<%= btnClass %>" title="Discard <%= btnTitle %>"><i class="icon-back-in-time"></i></button>
-      <% } else if (node.get('cluster')) { %>
-        <button class="btn btn-link btn-view-logs" title="View Logs"><i class="icon-logs"></i></button>
-      <% } %>
-    </div>
-    <div class="node-name">
-      <div class="name enable-selection">
-        <% if (renaming) { %>
-          <input type="text"  value="<%- node.get('name') || '' %>" />
-        <% } else { %>
-          <p <%= renameable ? 'class="node-renameable"  title="Edit Name"' : '' %>><%- node.get('name') || node.get('mac') %></p>
-        <% } %>
+<div class="node">
+  <div class="node-box">
+    <div class="node-content">
+      <div class="node-logo <%- node.get('manufacturer') ? 'manufacturer-' + node.get('manufacturer').toLowerCase() : '' %>"></div>
+      <div class="node-details"></div>
+      <div class="node-hardware">
+        <ul>
+        <li><%- $.t('cluster_page.nodes_tab.cpu', {defaultValue: 'CPU'}) %>: <%= node.resource('cores') || '?' %></li>
+        <li><%- $.t('cluster_page.nodes_tab.hdd', {defaultValue: 'HDD'}) %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('cluster_page.nodes_tab.gb', {defaultValue: 'GB'}) %></li>
+        <li><%- $.t('cluster_page.nodes_tab.ram', {defaultValue: 'RAM'}) %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('cluster_page.nodes_tab.gb', {defaultValue: 'GB'}) %></li>
+        </ul>
       </div>
-      <div class="roles"></div>
+      <div class="node-status">
+        <div class="progress"><div class="bar"></div></div>
+        <i></i>
+        <span class="node-status-label"></span>
+      </div>
+      <div class="node-button">
+          <button class="" title=""><i class=""></i></button>
+      </div>
+      <div class="node-name">
+        <div class="name enable-selection">
+          <% if (renaming) { %>
+            <input type="text"  value="<%- node.get('name') || '' %>" />
+          <% } else { %>
+            <p <%- renameable ? 'class="node-renameable"  title="' + $.t('cluster_page.nodes_tab.node.edit_name', {defaultValue: 'Edit Name'}) + '"' : '' %>><%- node.get('name') || node.get('mac') %></p>
+          <% } %>
+        </div>
+        <div class="role-list">
+          <ul class="roles"></ul>
+          <ul class="pending-roles"></ul>
+        </div>
+      </div>
     </div>
+    <label class="node-checkbox">
+      <div class="custom-tumbler">
+        <% var disabledNode = ((!node.get('online') || node.get('status') == 'error') && !node.get('cluster')) || node.get('pending_deletion') || edit || locked %>
+        <input type="checkbox" value="<%- node.id %>" <%= checked || edit ? 'checked' : '' %> <%= disabledNode ? 'disabled' : '' %> />
+        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+      </div>
+    </label>
   </div>
-  <label class="node-checkbox">
-    <div class="custom-tumbler">
-      <% var disabledNode = ((!node.get('online') || node.get('status') == 'error') && !node.get('cluster')) || node.get('pending_deletion') || edit || locked %>
-      <input type="checkbox" value="<%- node.id %>" <%= checked || edit ? 'checked' : '' %> <%= disabledNode ? 'disabled' : '' %> />
-      <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-    </div>
-  </label>
 </div>
-

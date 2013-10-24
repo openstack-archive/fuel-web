@@ -32,26 +32,28 @@ function(commonViews, models, supportPageTemplate) {
             'click .download-logs': 'downloadLogs'
         },
         scheduleUpdate: function() {
-            var task = this.logsPackageTasks.findTask({name: 'dump'});
+            var task = this.task || this.logsPackageTasks.findTask({name: 'dump'});
             if (this.timeout) {
                 this.timeout.clear();
             }
-            if (_.isUndefined(task) || task.get('progress') < 100 ) {
+            if (!task || !task.get('progress') || task.get('progress') < 100 ) {
                 this.registerDeferred(this.timeout = $.timeout(this.updateInterval).done(_.bind(this.update, this)));
             } else {
                 this.render();
             }
         },
         update: function() {
-            this.registerDeferred(this.logsPackageTasks.fetch().always(_.bind(this.scheduleUpdate, this)));
+            if (!this.task) {
+                this.registerDeferred(this.logsPackageTasks.fetch().always(_.bind(this.scheduleUpdate, this)));
+            } else {
+                this.registerDeferred(this.task.fetch({url: '/api/tasks/'+this.task.id}).always(_.bind(this.scheduleUpdate, this)));
+            }
         },
         downloadLogs: function() {
-            var task = new models.LogsPackage();
-            task.save({}, {method: 'PUT'});
+            this.task = new models.LogsPackage();
+            this.task.save({}, {method: 'PUT'});
             this.$('.download-logs, .donwload-logs-link, .download-logs-error').addClass('hide');
             this.$('.genereate-logs').removeClass('hide');
-            this.logsPackageTasks.reset();
-            this.logsPackageTasks.fetch();
             this.scheduleUpdate();
         },
         initialize: function(options) {
@@ -59,6 +61,7 @@ function(commonViews, models, supportPageTemplate) {
             this.fuelKey = new models.FuelKey();
             this.fuelKey.fetch();
             this.fuelKey.on('change', this.render, this);
+            this.task = null;
             this.logsPackageTasks = new models.Tasks();
             // Check for task was created earlier
             this.logsPackageTasks.once('sync', this.checkCompletedTask, this);
@@ -70,11 +73,12 @@ function(commonViews, models, supportPageTemplate) {
             if (!_.isUndefined(task) && task.get('progress') < 100) {
                 this.scheduleUpdate();
             } else {
+                this.task = task;
                 this.render();
             }
         },
         render: function() {
-            this.$el.html(this.template({tasks: this.logsPackageTasks, fuelKey: this.fuelKey}));
+            this.$el.html(this.template({tasks: this.logsPackageTasks, task: this.task, fuelKey: this.fuelKey}));
             return this;
         }
     });

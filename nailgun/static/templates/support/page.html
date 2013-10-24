@@ -48,8 +48,8 @@
         If you have encountered some bugs or errors while using Fuel, you may also need to provide the support team with Fuel logs. You can download them by clicking the button below.
       </p>
       <p>
-          <%  var task = this.logsPackageTasks.findTask({name: 'dump'});
-              var taskCompleted = !_.isUndefined(task) && task.get('progress') == 100;
+          <%
+              var taskCompleted = task && task.get('progress') == 100;
           %>
 
           <% if (!_.isNull(tasks.deferred)) { %>

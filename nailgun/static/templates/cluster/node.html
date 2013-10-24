@@ -37,7 +37,10 @@
           <p <%= renameable ? 'class="node-renameable"  title="Edit Name"' : '' %>><%- node.get('name') || node.get('mac') %></p>
         <% } %>
       </div>
-      <div class="roles"></div>
+      <div class="role-list">
+        <ul class="roles"></ul>
+        <ul class="pending-roles"></ul>
+      </div>
     </div>
   </div>
   <label class="node-checkbox">
@@ -48,4 +51,3 @@
     </div>
   </label>
 </div>
-

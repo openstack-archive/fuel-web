@@ -319,6 +319,8 @@ DUMP:
       - type: command
         command: brctl show
         to_file: brctl_show.txt
+      - type: dir
+        path: /etc/sysconfig/network-scripts
     slave:
       - type: file
         path: /etc/astute.yaml
@@ -364,3 +366,9 @@ DUMP:
       - type: command
         command: brctl show
         to_file: brctl_show.txt
+      - type: dir
+        path: /etc/sysconfig/network-scripts
+      - type: dir
+        path: /etc/network/interfaces.d
+      - type: file
+        path: /etc/network/interfaces

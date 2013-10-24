@@ -437,10 +437,6 @@ class NodeAgent
       @node_state = "discover" if system_type == "bootstrap"
     end
   end
-
-  def prevent_discover?
-    File.exist?('/var/run/nodiscover')
-  end
 end
 
 def write_data_to_file(logger, filename, data)
@@ -470,6 +466,11 @@ end
 logger = Logger.new(STDOUT)
 logger.level = Logger::DEBUG
 
+if File.exist?('/var/run/nodiscover')
+  logger.info("Discover prevented by /var/run/nodiscover presence.")
+  exit 1
+end
+
 begin
   logger.info("Trying to load agent config #{AGENT_CONFIG}")
   url = YAML.load_file(AGENT_CONFIG)['url']
@@ -478,16 +479,12 @@ rescue Exception => e
   logger.info("Could not get url from configuration file: #{e.message}, trying other ways..")
 end
 
-agent = NodeAgent.new(logger, url)
-if agent.prevent_discover?
-  logger.info("Discover prevented by /var/run/nodiscover presence.")
-  exit 1
-end
-agent.update_state
-
 sleep_time = rand(30)
 logger.debug("Sleep for #{sleep_time} seconds before sending request")
 sleep(sleep_time)
+
+agent = NodeAgent.new(logger, url)
+agent.update_state
 
 begin
   post_res = agent.post

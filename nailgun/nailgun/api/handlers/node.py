@@ -485,6 +485,21 @@ class NodeNICsHandler(JSONHandler):
         node = self.get_object_or_404(Node, node_id)
         return self.render(node)['interfaces']
 
+    @content_json
+    def PUT(self, node_id):
+        """:returns: Collection of JSONized Node objects.
+        :http: * 200 (nodes are successfully updated)
+               * 400 (invalid nodes data specified)
+        """
+        interfaces_data = self.validator.validate_json(web.data())
+        node_data = {'id': node_id, 'interfaces': interfaces_data}
+        self.validator.validate(node_data)
+
+        network_manager = NetworkManager()
+        network_manager._update_attrs(node_data)
+        node = self.get_object_or_404(Node, node_id)
+        return self.render(node)['interfaces']
+
 
 class NodeCollectionNICsHandler(JSONHandler):
     """Node collection network interfaces handler

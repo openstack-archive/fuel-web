@@ -19,9 +19,10 @@ define(
     'views/common',
     'views/dialogs',
     'text!templates/release/list.html',
-    'text!templates/release/release.html'
+    'text!templates/release/release.html',
+    'text!templates/release/download-progress.html'
 ],
-function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate) {
+function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate, downloadProgressTemplate) {
     'use strict';
 
     var ReleasesPage, Release;
@@ -65,6 +66,25 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
         'events': {
             'click .btn-rhel-setup': 'showRhelLicenseCredentials'
         },
+        bindings: {
+           '.release-status': {
+               observe: 'state',
+                 onGet: 'formatReleaseStatusContent',
+                 updateMethod: 'html'
+             },
+         },
+         formatReleaseStatusContent:function(value, options){
+            if (!_.isUndefined(value)){
+                if (value=="downloading"){
+                    return downloadProgressTemplate;
+                }
+                else{
+                    var stateMessages = {'available': 'Active', 'error': 'Error', 'not_available': 'Not available', 'downloading': 'Downloading'};
+                    var state = stateMessages[value];
+                    return '<span class="'+value+'">'+state +'</span>';
+                }
+            }
+         },
         showRhelLicenseCredentials: function() {
             var dialog = new dialogViews.RhelCredentialsDialog({release: this.release});
             this.registerSubView(dialog);
@@ -99,7 +119,6 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
             _.defaults(this, options);
             this.page.tasks.each(this.bindTaskEvents, this);
             this.page.tasks.on('add', this.onNewTask, this);
-            this.release.on('change', this.render, this);
         },
         bindTaskEvents: function(task) {
             if (task.get('name') == 'redhat_setup' && task.releaseId() == this.release.id) {
@@ -122,6 +141,7 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
             this.$el.html(this.template({release: this.release}));
             this.updateProgress();
             this.updateErrorMessage();
+            this.stickit(this.release);
             return this;
         }
     });

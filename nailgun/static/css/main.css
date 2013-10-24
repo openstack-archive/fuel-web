@@ -4026,7 +4026,7 @@ div.create-cluster-form .radio-checkbox-group label {
   width: 170px;
 }
 
-.download_progress .progress {
+.release-download-progress .progress {
   background-image: linear-gradient(to bottom, #435267, #aaaaaa);
   background-image: -webkit-linear-gradient(top, #435267, #aaaaaa);
   background-image: -moz-linear-gradient(top, #435267, #aaaaaa);

@@ -32,7 +32,7 @@
     <div class="node-name">
       <div class="name enable-selection">
         <% if (renaming) { %>
-          <input type="text" class="input-medium" value="<%- node.get('name') || '' %>" />
+          <input type="text"  value="<%- node.get('name') || '' %>" />
         <% } else { %>
           <p <%= renameable ? 'class="node-renameable"  title="Edit Name"' : '' %>><%- node.get('name') || node.get('mac') %></p>
         <% } %>

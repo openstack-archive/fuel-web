@@ -18,18 +18,18 @@ os.environ['EDITOR'] = '/usr/bin/nano'
 import logging
 import sys
 
-from cliff.app import App
-from cliff.commandmanager import CommandManager
+from cliff import app
+from cliff import commandmanager
 
 
-class DhcpApp(App):
+class DhcpApp(app.App):
     DEFAULT_VERBOSE_LEVEL = 0
 
     def __init__(self):
         super(DhcpApp, self).__init__(
             description='Dhcp check application',
             version='0.1',
-            command_manager=CommandManager('dhcp.check'),
+            command_manager=commandmanager.CommandManager('dhcp.check'),
         )
 
     def configure_logging(self):

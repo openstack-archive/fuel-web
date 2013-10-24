@@ -16,9 +16,8 @@ import setuptools
 
 
 setuptools.setup(
-    name="dhcp_checker",
+    name="nailgun-net-check",
     version='0.1',
-    description="Utils for detecting dhcp servers and some other stuff",
     author="Mirantis Inc",
     classifiers=[
         "License :: OSI Approved :: MIT License",
@@ -30,18 +29,13 @@ setuptools.setup(
         "Topic :: Software Development :: Testing"
     ],
     install_requires=[
-        'cliff-tablib'
+        'argparse'
     ],
     include_package_data=True,
-    packages=['dhcp_checker'],
+    packages=['net_check'],
     entry_points={
         'console_scripts': [
-            'dhcpcheck = dhcp_checker.cli:main'
-        ],
-        'dhcp.check': [
-            'discover = dhcp_checker.commands:ListDhcpServers',
-            'request = dhcp_checker.commands:ListDhcpAssignment',
-            'vlans = dhcp_checker.commands:DhcpWithVlansCheck'
+            'net_probe.py = net_check.api:main'
         ],
     },
 )

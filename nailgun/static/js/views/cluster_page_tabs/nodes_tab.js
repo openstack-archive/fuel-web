@@ -988,7 +988,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         template: _.template(editNodeInterfacesScreenTemplate),
         events: {
             'click .btn-defaults': 'loadDefaults',
-            'click .btn-revert-changes': 'revertChanges',
+            'click .btn-revert-changes:not(:disabled)': 'revertChanges',
             'click .btn-apply:not(:disabled)': 'applyChanges',
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
@@ -1001,8 +1001,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !noChanges;
         },
         isLocked: function() {
-            var forbiddenNodes = _.union(this.nodes.where({pending_addition: true}), this.nodes.where({status: 'error'})).length;
-            return !forbiddenNodes || this.constructor.__super__.isLocked.apply(this);
+            var forbiddenNodes = this.nodes.filter(function(node) {return node.get('pending_addition') || node.get('status') == 'error';});
+            return !forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
             this.$('.btn-apply, .btn-revert-changes').attr('disabled', this.isLocked() || !this.hasChanges());
@@ -1010,13 +1010,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         loadDefaults: function() {
             this.disableControls(true);
             this.interfaces.fetch({url: _.result(this.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true})
-                .done(_.bind(function() {
+                .always(_.bind(function() {
                     this.disableControls(false);
-                    this.checkForChanges();
                 }, this))
+                .done(_.bind(this.checkForChanges, this))
                 .fail(_.bind(function() {
-                    this.disableControls(false);
-                    utils.showErrorDialog({title: 'Unable to load default settings'});
+                    utils.showErrorDialog({title: 'Unable to load default configuration'});
                 }, this));
         },
         revertChanges: function() {
@@ -1025,20 +1024,14 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         applyChanges: function() {
             this.disableControls(true);
             return $.when.apply($, this.nodes.map(function(node) {
-                    var configuration = new models.NodeInterfaceConfiguration({id: node.id, interfaces: this.interfaces});
-                    configuration.get('interfaces').each(function(ifc, index) {
-                        ifc.set({id: node.interfaces.at(index).id}, {silent: true});
-                    }, this);
-                    return Backbone.sync('update', new models.NodeInterfaceConfigurations(configuration));
-                }, this))
-                .done(_.bind(function() {
-                    this.nodes.each(function(node) {
-                        node.interfaces.each(function(ifc, index) {
-                            ifc.set({
-                                assigned_networks: new models.InterfaceNetworks(_.cloneDeep(this.interfaces.at(index).get('assigned_networks').toJSON()))
-                            });
+                    var interfaces = new models.Interfaces(node.interfaces.toJSON(), {parse: true});
+                    interfaces.toJSON = _.bind(function() {
+                        return interfaces.map(function(ifc, index) {
+                            ifc.set({assigned_networks: this.interfaces.at(index).get('assigned_networks').toJSON()});
+                            return _.pick(ifc.attributes, 'id', 'assigned_networks');
                         }, this);
                     }, this);
+                    return Backbone.sync('update', interfaces, {url: _.result(node, 'url') + '/interfaces'});
                 }, this))
                 .fail(_.bind(function() {
                     utils.showErrorDialog({title: 'Interfaces configuration'});
@@ -1060,9 +1053,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     return node.interfaces.fetch({url: _.result(node, 'url') + '/interfaces'});
                 }, this))
                 .done(_.bind(function() {
-                    this.interfaces = new models.Interfaces(_.cloneDeep(this.nodes.at(0).interfaces.toJSON()), {parse: true});
-                    this.interfaces.on('reset', this.renderInterfaces, this);
-                    this.interfaces.on('reset', this.checkForChanges, this);
+                    this.interfaces = new models.Interfaces(this.nodes.at(0).interfaces.toJSON(), {parse: true});
+                    this.interfaces.on('reset', this.render, this);
                     var networkConfiguration = new models.NetworkConfiguration();
                     this.loading = networkConfiguration
                         .fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
@@ -1076,8 +1068,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                             models.InterfaceNetwork.prototype.amount = function() {
                                 return networkConfiguration.get('networks').findWhere({name: this.get('name')}).get('amount');
                             };
-                            this.checkForChanges();
-                            this.renderInterfaces();
+                            this.render();
                         }, this))
                         .fail(_.bind(this.goToNodeList, this));
                 }, this));

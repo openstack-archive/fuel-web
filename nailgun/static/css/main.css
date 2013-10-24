@@ -1625,7 +1625,7 @@ label.node-checkbox {
 }
 
 input.vlan-tagging {
-  width: 176px;
+  width: 172px;
 }
 
 .networks-table .range-row, .neutron-parameters .range-row {

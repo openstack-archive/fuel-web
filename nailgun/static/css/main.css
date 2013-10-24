@@ -656,7 +656,9 @@ label.node-checkbox {
 
 .node-name > .name input {
   font-size: 12px;
-  height: 11px;
+  margin: 0px;
+  height: 18px;
+  padding: 0px 6px 0px 6px;
 }
 
 .nodes-management-panel > .cluster-actions {

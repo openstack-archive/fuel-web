@@ -36,22 +36,28 @@ function(commonViews, models, supportPageTemplate) {
             if (this.timeout) {
                 this.timeout.clear();
             }
-            if (_.isUndefined(task) || task.get('progress') < 100 ) {
+            if (!task || task.get('progress') < 100) {
                 this.registerDeferred(this.timeout = $.timeout(this.updateInterval).done(_.bind(this.update, this)));
             } else {
                 this.render();
             }
         },
         update: function() {
-            this.registerDeferred(this.logsPackageTasks.fetch().always(_.bind(this.scheduleUpdate, this)));
+            var task = this.logsPackageTasks.findTask({name: 'dump'});
+            if (task) {
+                this.registerDeferred(task.fetch().always(_.bind(this.scheduleUpdate, this)));
+            }
         },
         downloadLogs: function() {
             var task = new models.LogsPackage();
-            task.save({}, {method: 'PUT'});
+            this.logsPackageTasks.reset()
+            task.save({}, {method: 'PUT'}).always(
+                _.bind(function() {
+                    this.logsPackageTasks.fetch().done(_.bind(this.scheduleUpdate, this));
+                }, this));
             this.$('.download-logs, .donwload-logs-link, .download-logs-error').addClass('hide');
             this.$('.genereate-logs').removeClass('hide');
-            this.logsPackageTasks.reset();
-            this.logsPackageTasks.fetch();
+            this.render();
             this.scheduleUpdate();
         },
         initialize: function(options) {
@@ -67,7 +73,7 @@ function(commonViews, models, supportPageTemplate) {
         checkCompletedTask: function() {
             this.logsPackageTasks.deferred = null;
             var task = this.logsPackageTasks.findTask({name: 'dump'});
-            if (!_.isUndefined(task) && task.get('progress') < 100) {
+            if (task && task.get('progress') < 100) {
                 this.scheduleUpdate();
             } else {
                 this.render();

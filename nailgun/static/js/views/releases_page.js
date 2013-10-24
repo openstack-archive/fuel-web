@@ -65,6 +65,40 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
         'events': {
             'click .btn-rhel-setup': 'showRhelLicenseCredentials'
         },
+        releaseBindings: {
+           '.release-download-progress': {
+                observe: 'state',
+                visible: function(value) {
+                    return value == 'downloading';
+                }
+            },
+            '.release-state': {
+                observe: 'state',
+                visible: function(value) {
+                    return value != '';
+                },
+                updateView: true,
+                onGet: function(value) {
+                    return {available: 'Active', error: 'Error', not_available: 'Not available'}[value] || '';
+                },
+                attributes: [{name: 'class'}]
+            }
+        },
+        taskBindings: {
+           '.release-download-progress .bar-title span': {
+                observe: 'progress',
+                onGet: function(value) {
+                    return value + '%';
+                }
+            },
+           '.release-download-progress .bar': {
+                observe: 'progress',
+                update: function($el, value) {
+                    $el.css('width', value + '%');
+                }
+            },
+           '.release-error': 'message'
+        },
         showRhelLicenseCredentials: function() {
             var dialog = new dialogViews.RhelCredentialsDialog({release: this.release});
             this.registerSubView(dialog);
@@ -75,53 +109,41 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
             if (setupTask) {
                 if (setupTask.get('status') == 'ready') {
                     setupTask.destroy();
-                } else {
-                    this.updateErrorMessage();
                 }
                 this.release.fetch();
                 app.navbar.refresh();
-            }
-        },
-        updateProgress: function() {
-            var task = this.page.tasks.findTask({name: 'redhat_setup', status: 'running', release: this.release.id});
-            if (task) {
-                this.$('.bar').css('width', task.get('progress') + '%');
-                this.$('.bar-title span').text(task.get('progress') + '%');
-            }
-        },
-        updateErrorMessage: function() {
-            var setupTask = this.page.tasks.findTask({name: 'redhat_setup', status: 'error', release: this.release.id});
-            if (setupTask) {
-                this.$('div.error').html(utils.urlify(setupTask.get('message')));
             }
         },
         initialize: function(options) {
             _.defaults(this, options);
             this.page.tasks.each(this.bindTaskEvents, this);
             this.page.tasks.on('add', this.onNewTask, this);
-            this.release.on('change', this.render, this);
         },
         bindTaskEvents: function(task) {
             if (task.get('name') == 'redhat_setup' && task.releaseId() == this.release.id) {
                 if (task.get('status') == 'running') {
                     task.on('change:status', this.checkForSetupCompletion, this);
-                    task.on('change:progress', this.updateProgress, this);
                 }
                 return task;
             }
             return null;
         },
+        setupTaskBindings: function(task) {
+            if (task.get('name') == 'redhat_setup' && task.releaseId() == this.release.id) {
+                this.stickit(task, this.taskBindings);
+            }
+        },
         onNewTask: function(task) {
             if (this.bindTaskEvents(task)) {
+                this.setupTaskBindings(task);
                 this.checkForSetupCompletion();
-                this.updateProgress();
             }
         },
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({release: this.release}));
-            this.updateProgress();
-            this.updateErrorMessage();
+            this.stickit(this.release, this.releaseBindings);
+            this.page.tasks.each(this.setupTaskBindings, this);
             return this;
         }
     });

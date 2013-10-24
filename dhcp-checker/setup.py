@@ -19,8 +19,7 @@ setuptools.setup(
     name="dhcp_checker",
     version='0.1',
     description="Utils for detecting dhcp servers and some other stuff",
-    author="Dmitry Shulyak",
-    author_email="yashulyak@gmail.com",
+    author="Mirantis Inc",
     classifiers=[
         "License :: OSI Approved :: MIT License",
         "Development Status :: 5 - Production/Stable",
@@ -43,6 +42,7 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'dhcpcheck = dhcp_checker.cli:main',
+            'net_probe.py = net_check.api:main'
         ],
         'dhcp.check': [
             'discover = dhcp_checker.commands:ListDhcpServers',

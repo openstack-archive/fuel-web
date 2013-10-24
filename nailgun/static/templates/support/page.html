@@ -48,18 +48,21 @@
         If you have encountered some bugs or errors while using Fuel, you may also need to provide the support team with Fuel logs. You can download them by clicking the button below.
       </p>
       <p>
-          <%  var task = this.logsPackageTasks.findTask({name: 'dump'});
-              var taskCompleted = !_.isUndefined(task) && task.get('progress') == 100;
+          <%
+              var task = tasks.findTask({name: 'dump'});
+              var taskCompleted = task && task.get('progress') == 100;
           %>
 
           <% if (!_.isNull(tasks.deferred)) { %>
             <button class="btn download-logs-progress disabled">Loading...</button>
           <% } else { %>
+            <% if (!task || taskCompleted) { %>
             <button class="btn download-logs">Generate diagnostic snapshot</button>
+            <% } %>
           <% } %>
 
-          <button class="btn genereate-logs hide disabled">Generating logs snapshot...</button>
-          
+          <button class="btn hide genereting-logs disabled">Generating logs snapshot...</button>
+
           <% if (taskCompleted && task.get('status') == 'ready') { %>
           <span class="donwload-logs-link" style="margin-left: 10px;">
             <a href="<%- task.get('message') %>"><i class="icon-install"></i>Diagnostic Snapshot</a>

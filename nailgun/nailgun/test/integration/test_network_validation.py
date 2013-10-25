@@ -326,10 +326,10 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         self.assertEquals(task['name'], 'deploy')
         self.assertEquals(
             task['message'].find(
-                "Some untagged networks are "
+                u"Some untagged networks are "
                 "assigned to the same physical interface. "
-                "You should assign them to "
-                "different physical interfaces:"),
+                "You must move them to "
+                "any other physical interface. Affected:"),
             0
         )
 

@@ -31,6 +31,18 @@ function(commonViews, models, supportPageTemplate) {
         events: {
             'click .download-logs': 'downloadLogs'
         },
+        bindings:{
+            '.registration-link': {
+                attributes: [{
+                    name: 'href',
+                    observe: 'key',
+                    onGet: 'formatFuelKey'
+                }]
+            }
+        },
+        formatFuelKey:function(value){
+            return !_.isUndefined(value) ? 'http://fuel.mirantis.com/create-subscriber/?key=' + value : '/';
+        },
         scheduleUpdate: function() {
             var task = this.logsPackageTasks.findTask({name: 'dump'});
             if (this.timeout) {
@@ -74,7 +86,8 @@ function(commonViews, models, supportPageTemplate) {
             }
         },
         render: function() {
-            this.$el.html(this.template({tasks: this.logsPackageTasks, fuelKey: this.fuelKey}));
+            this.$el.html(this.template({tasks: this.logsPackageTasks}));
+            this.stickit(this.fuelKey);
             return this;
         }
     });

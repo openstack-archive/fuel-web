@@ -138,11 +138,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function() {
             this.nodes.on('resize', this.render, this);
             if (this instanceof AddNodesScreen || this instanceof EditNodesScreen) {
-                this.nodes.parse = function(response) {
-                    return _.map(response, function(node) {
-                       return _.omit(node, 'pending_roles');
-                    });
-                };
                 this.model.on('change:status', _.bind(function() {app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});}, this));
             }
             this.scheduleUpdate();
@@ -206,6 +201,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
             };
             this.constructor.__super__.initialize.apply(this, arguments);
+            this.nodes.parse = function(response) {
+                return _.map(response, function(node) {
+                    return _.omit(node, 'pending_roles');
+                });
+            };
             this.nodes.fetch().done(_.bind(function() {
                 this.nodes.each(function(node) {node.set({pending_roles: []}, {silent: true});});
                 this.render();
@@ -222,6 +222,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.nodes.cluster = this.model;
             this.nodes.fetch = function(options) {
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: this.cluster.id}}, options));
+            };
+            this.nodes.parse = function(response) {
+                return _.map(_.filter(response, function(node) {return _.contains(nodeIds, node.id);}), function(node) {
+                    return _.omit(node, 'pending_roles');
+                });
             };
             this.constructor.__super__.initialize.apply(this, arguments);
         },

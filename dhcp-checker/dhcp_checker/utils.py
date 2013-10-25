@@ -11,9 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-import subprocess
 import functools
 import re
+import subprocess
 import sys
 
 from scapy import all as scapy
@@ -161,7 +161,7 @@ class VlansContext(object):
     """
 
     def __init__(self, config):
-        """
+        """Initialize VlansContext
         @config - list or tuple of (iface, vlan) pairs
         """
         self.config = config

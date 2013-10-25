@@ -2753,6 +2753,7 @@ input.vlan-tagging {
   margin-top: -1px;
   line-height: 26px;
   padding-right: 1px;
+  min-width: 15px;
 }
 
 .statistic .stat-title {

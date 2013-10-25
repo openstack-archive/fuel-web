@@ -100,18 +100,29 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
     views.NodesStats = Backbone.View.extend({
         template: _.template(nodesStatsTemplate),
         bindings: {
-            '.total-nodes-count': 'total',
+            '.total-nodes-count': {
+                observe: 'total',
+                updateMethod: 'html',
+                onGet: 'returnValueOrNonBreakingSpace'
+            },
             '.total-nodes-title': {
                 observe: 'total',
                 onGet: 'formatTitle',
                 updateMethod: 'html'
             },
-            '.unallocated-nodes-count': 'unallocated',
+            '.unallocated-nodes-count': {
+                observe: 'unallocated',
+                updateMethod: 'html',
+                onGet: 'returnValueOrNonBreakingSpace'
+            },
             '.unallocated-nodes-title': {
                 observe: 'unallocated',
                 onGet: 'formatTitle',
                 updateMethod: 'html'
             }
+        },
+        returnValueOrNonBreakingSpace: function(value) {
+            return value || '&nbsp;';
         },
         formatTitle: function(value, options) {
             return !_.isUndefined(value) ? options.observe + '<br>' + 'node' + (value == 1 ? '' : 's') : '';

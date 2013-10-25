@@ -165,10 +165,8 @@ class NovaOrchestratorSerializer(object):
 
             if net.name == 'floating':
                 attrs[net_name] = cls.get_ip_ranges_first_last(net)
-            elif net.name == 'public':
-                # We shouldn't pass public_network_range attribute
-                continue
-            else:
+            # We shouldn't pass public_network_range attribute
+            elif net.name != 'public' and net.cidr:
                 attrs[net_name] = net.cidr
 
         return attrs
@@ -586,6 +584,8 @@ class NeutronMethods(object):
                     )['ip']
                     attrs['management_vip'] = mgmt_cidr.split('/')[0]
                     break
+
+        attrs.update(cls.network_ranges(cluster))
 
         return attrs
 

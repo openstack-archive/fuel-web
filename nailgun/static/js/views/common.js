@@ -100,7 +100,13 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
     views.NodesStats = Backbone.View.extend({
         template: _.template(nodesStatsTemplate),
         bindings: {
-            '.total-nodes-count': 'total',
+            '.total-nodes-count': {
+                observe: 'total',
+                updateMethod: 'html',
+                onGet: function(value){
+                    return value || '';
+                }
+            },
             '.total-nodes-title': {
                 observe: 'total',
                 onGet: 'formatTitle',

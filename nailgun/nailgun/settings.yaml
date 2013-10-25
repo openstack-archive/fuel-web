@@ -144,7 +144,7 @@ LOGS:
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *main_install_log_group
-    path: 'puppet-agent.log'
+    path: 'puppet-apply.log'
   - id: 'install/anaconda'
     name: "anaconda"
     <<: *remote_log_type

@@ -31,6 +31,17 @@ function(commonViews, models, supportPageTemplate) {
         events: {
             'click .download-logs': 'downloadLogs'
         },
+        bindings: {
+            '.registration-link': {
+                attributes: [{
+                    name: 'href',
+                    observe: 'key',
+                    onGet: function(value) {
+                        return !_.isUndefined(value) ? 'http://fuel.mirantis.com/create-subscriber/?key=' + value : '/';
+                    }
+                }]
+            }
+        },
         scheduleUpdate: function() {
             var task = this.logsPackageTasks.findTask({name: 'dump'});
             if (this.timeout) {
@@ -58,7 +69,6 @@ function(commonViews, models, supportPageTemplate) {
             _.defaults(this, options);
             this.fuelKey = new models.FuelKey();
             this.fuelKey.fetch();
-            this.fuelKey.on('change', this.render, this);
             this.logsPackageTasks = new models.Tasks();
             // Check for task was created earlier
             this.logsPackageTasks.once('sync', this.checkCompletedTask, this);
@@ -74,7 +84,8 @@ function(commonViews, models, supportPageTemplate) {
             }
         },
         render: function() {
-            this.$el.html(this.template({tasks: this.logsPackageTasks, fuelKey: this.fuelKey}));
+            this.$el.html(this.template({tasks: this.logsPackageTasks}));
+            this.stickit(this.fuelKey);
             return this;
         }
     });

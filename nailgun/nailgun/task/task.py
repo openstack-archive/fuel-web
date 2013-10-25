@@ -857,8 +857,8 @@ class CheckNetworksTask(object):
                     ) for name, _networks in found_intersection]
                 err_msg = u"Some untagged networks are " \
                           "assigned to the same physical interface. " \
-                          "You should assign them to " \
-                          "different physical interfaces:\n{0}". \
+                          "You must move them to " \
+                          "any other physical interface. Affected:\n{0}". \
                     format("\n".join(nodes_with_errors))
                 raise errors.NetworkCheckError(err_msg, add_client=False)
 

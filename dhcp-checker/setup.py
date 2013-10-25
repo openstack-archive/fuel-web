@@ -39,7 +39,7 @@ setuptools.setup(
         'cliff-tablib',
     ],
     include_package_data=True,
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=['tests']),
     entry_points={
         'console_scripts': [
             'dhcpcheck = dhcp_checker.cli:main',

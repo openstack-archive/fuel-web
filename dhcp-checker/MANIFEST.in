@@ -1,1 +1,2 @@
+recursive-exclude dhcp_checker tests
 recursive-include dhcp_checker *

@@ -997,6 +997,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-apply:not(:disabled)': 'applyChanges',
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
+        disableControls: function(disable) {
+            this.updateButtonsState(disable || this.isLocked());
+        },
         hasChanges: function() {
             var noChanges = true;
             var networks = this.interfaces.getAssignedNetworks();
@@ -1010,15 +1013,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
-            this.$('.btn-apply, .btn-revert-changes').attr('disabled', this.isLocked() || !this.hasChanges());
+            this.updateButtonsState(this.isLocked() || !this.hasChanges());
+            this.loadDefaultsButton.set('disabled', this.isLocked());
         },
         loadDefaults: function() {
             this.disableControls(true);
             this.interfaces.fetch({url: _.result(this.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true})
-                .always(_.bind(function() {
-                    this.disableControls(false);
-                }, this))
-                .done(_.bind(this.checkForChanges, this))
                 .fail(_.bind(function() {
                     utils.showErrorDialog({title: 'Unable to load default configuration'});
                 }, this));
@@ -1027,7 +1027,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.interfaces.reset(_.cloneDeep(this.nodes.at(0).interfaces.toJSON()), {parse: true});
         },
         applyChanges: function() {
-            this.disableControls(true);
             return $.when.apply($, this.nodes.map(function(node) {
                     var interfaces = new models.Interfaces(node.interfaces.toJSON(), {parse: true});
                     interfaces.toJSON = _.bind(function() {
@@ -1040,11 +1039,26 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this))
                 .fail(_.bind(function() {
                     utils.showErrorDialog({title: 'Interfaces configuration'});
-                }, this))
-                .always(_.bind(function() {
-                    this.disableControls(false);
-                    this.checkForChanges();
                 }, this));
+        },
+        setupButtonsBindings: function() {
+            var configObject = {
+                attributes: [{
+                    name: 'disabled',
+                    observe: 'disabled',
+                    onGet: function(value) {
+                        return _.isUndefined(value) ? false : value;
+                    }
+                }]
+            };
+            this.stickit(this.loadDefaultsButton, {'.btn-defaults': configObject});
+            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': configObject});
+            this.stickit(this.applyChangesButton, {'.btn-apply': configObject});
+        },
+        updateButtonsState: function(state) {
+            this.applyChangesButton.set('disabled', state);
+            this.cancelChangesButton.set('disabled', state);
+            this.loadDefaultsButton.set('disabled',  state);
         },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
@@ -1052,6 +1066,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.model.on('change:status', function() {
                     this.revertChanges();
                     this.render();
+                    this.checkForChanges();
                 }, this);
                 $.when.apply($, this.nodes.map(function(node) {
                     node.interfaces = new models.Interfaces();
@@ -1060,6 +1075,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 .done(_.bind(function() {
                     this.interfaces = new models.Interfaces(this.nodes.at(0).interfaces.toJSON(), {parse: true});
                     this.interfaces.on('reset', this.render, this);
+                    this.interfaces.on('sync', this.checkForChanges, this);
                     var networkConfiguration = new models.NetworkConfiguration();
                     this.loading = networkConfiguration
                         .fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
@@ -1080,6 +1096,15 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             } else {
                 this.goToNodeList();
             }
+            this.loadDefaultsButton = new Backbone.Model({
+                'disabled': false
+            });
+            this.cancelChangesButton = new Backbone.Model({
+                'disabled': true
+            });
+            this.applyChangesButton = new Backbone.Model({
+                'disabled': true
+            });
         },
         renderInterfaces: function() {
             this.tearDownRegisteredSubViews();
@@ -1099,6 +1124,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.renderInterfaces();
                 this.checkForChanges();
             }
+            this.setupButtonsBindings();
             return this;
         }
     });

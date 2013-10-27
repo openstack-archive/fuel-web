@@ -99,20 +99,6 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
 
     views.NodesStats = Backbone.View.extend({
         template: _.template(nodesStatsTemplate),
-        bindings: {
-            '.total-nodes-count': 'total',
-            '.total-nodes-title': {
-                observe: 'total',
-                onGet: 'formatTitle',
-                updateMethod: 'html'
-            },
-            '.unallocated-nodes-count': 'unallocated',
-            '.unallocated-nodes-title': {
-                observe: 'unallocated',
-                onGet: 'formatTitle',
-                updateMethod: 'html'
-            }
-        },
         formatTitle: function(value, options) {
             return !_.isUndefined(value) ? options.observe + '<br>' + 'node' + (value == 1 ? '' : 's') : '';
         },
@@ -121,7 +107,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         },
         render: function() {
             this.$el.html(this.template({stats: this.statistics}));
-            this.stickit(this.statistics);
+            rivets.bind(this.$el, {stats: this.statistics});
             return this;
         }
     });

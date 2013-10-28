@@ -15,6 +15,7 @@
 **/
 define(
 [
+    'rivets',
     'models',
     'views/common',
     'views/cluster_page',
@@ -25,7 +26,7 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(rivets, models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -163,6 +164,23 @@ function(models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage,
             window.Coccyx.addTearDownCallback(function() {
                 this.unstickit();
             });
+
+            window.rivets = rivets;
+
+            rivets.adapters[':'] = {
+                subscribe: function(obj, keypath, callback) {
+                    obj.on('change:' + keypath, callback);
+                },
+               unsubscribe: function(obj, keypath, callback) {
+                    obj.off('change:' + keypath, callback);
+               },
+                read: function(obj, keypath) {
+                    return obj.get(keypath);
+                },
+                publish: function(obj, keypath, value) {
+                    obj.set(keypath, value);
+                }
+            };
 
             window.isWebkit = navigator.userAgent.indexOf('AppleWebKit/') !== -1;
 

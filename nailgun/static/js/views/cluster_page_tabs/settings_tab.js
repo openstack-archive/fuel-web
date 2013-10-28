@@ -12,166 +12,162 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations
  * under the License.
-**/
+ **/
 define(
-[
-    'utils',
-    'models',
-    'views/common',
-    'views/dialogs',
-    'text!templates/cluster/settings_tab.html',
-    'text!templates/cluster/settings_group.html'
-],
-function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsGroupTemplate) {
-    'use strict';
-    var SettingsTab, SettingGroup;
+    [
+        'utils',
+        'models',
+        'views/common',
+        'views/dialogs',
+        'text!templates/cluster/settings_tab.html',
+        'text!templates/cluster/settings_group.html'
+    ],
+    function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsGroupTemplate) {
+        'use strict';
+        var SettingsTab, SettingGroup;
 
-    SettingsTab = commonViews.Tab.extend({
-        template: _.template(settingsTabTemplate),
-        hasChanges: false,
-        events: {
-            'click .btn-apply-changes:not([disabled])': 'applyChanges',
-            'click .btn-revert-changes:not([disabled])': 'revertChanges',
-            'click .btn-load-defaults:not([disabled])': 'loadDefaults'
-        },
-        defaultButtonsState: function(buttonState) {
-            this.$('.btn:not(.btn-load-defaults)').attr('disabled', buttonState);
-            this.$('.btn-load-defaults').attr('disabled', false);
-        },
-        disableControls: function() {
-            this.$('.btn, input, select').attr('disabled', true);
-        },
-        isLocked: function() {
-            return this.model.get('status') != 'new' || !!this.model.task('deploy', 'running');
-        },
-        checkForChanges: function() {
-            var equal = _.isEqual(this.settings, this.previousSettings);
-            this.defaultButtonsState(equal);
-            this.hasChanges = !equal;
-        },
-        applyChanges: function() {
-            this.disableControls();
-            return this.model.get('settings').save({editable: this.settings}, {patch: true, wait: true, url: _.result(this.model, 'url') + '/attributes'})
-                .always(_.bind(function() {
-                    this.render();
-                    this.model.fetch();
-                }, this))
-                .done(_.bind(this.setInitialData, this))
-                .fail(_.bind(function() {
-                    this.defaultButtonsState(false);
-                    utils.showErrorDialog({title: 'OpenStack Settings'});
-                }, this));
-        },
-        revertChanges: function() {
-            this.settings = _.cloneDeep(this.previousSettings);
-            this.hasChanges = false;
-            this.render();
-        },
-        loadDefaults: function() {
-            var defaults = new models.Settings();
-            this.disableControls();
-            defaults.fetch({url: _.result(this.model, 'url') + '/attributes/defaults'}).always(_.bind(function() {
-                this.settings = defaults.get('editable');
-                this.render();
-                this.checkForChanges();
-            }, this));
-        },
-        setInitialData: function() {
-            this.settings = _.cloneDeep(this.model.get('settings').get('editable'));
-            this.previousSettings = _.cloneDeep(this.settings);
-            this.hasChanges = false;
-        },
-        render: function() {
-            this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({cluster: this.model, locked: this.isLocked()}));
-            if (this.model.get('settings').deferred.state() != 'pending') {
-                this.$('.settings').html('');
-                var settingGroups = _.keys(this.settings);
-                var order = this.model.get('settings').preferredOrder;
-                settingGroups.sort(function(a, b) {
-                    return _.indexOf(order, a) - _.indexOf(order, b);
-                });
-                _.each(settingGroups, function(settingGroup) {
-                    var settingGroupView = new SettingGroup({
-                        legend: settingGroup,
-                        settings: this.settings[settingGroup],
-                        tab: this
-                    });
-                    this.registerSubView(settingGroupView);
-                    this.$('.settings').append(settingGroupView.render().el);
-                }, this);
-            }
-            return this;
-        },
-        bindTaskEvents: function(task) {
-            return task.get('name') == 'deploy' ? task.on('change:status', this.render, this) : null;
-        },
-        onNewTask: function(task) {
-            return this.bindTaskEvents(task) && this.render();
-        },
-        initialize: function(options) {
-            this.model.on('change:status', this.render, this);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
-            if (!this.model.get('settings')) {
-                this.model.set({'settings': new models.Settings()}, {silent: true});
-                this.model.get('settings').deferred = this.model.get('settings').fetch({url: _.result(this.model, 'url') + '/attributes'});
-                this.model.get('settings').deferred
-                    .done(_.bind(function() {
-                        this.setInitialData();
+        SettingsTab = commonViews.Tab.extend({
+            template: _.template(settingsTabTemplate),
+            hasChanges: function() {
+                return !_.isEqual(this.settings.attributes, this.previousSettings);
+            },
+            events: {
+                'click .btn-apply-changes:not([disabled])': 'applyChanges',
+                'click .btn-revert-changes:not([disabled])': 'revertChanges',
+                'click .btn-load-defaults:not([disabled])': 'loadDefaults'
+            },
+            defaultButtonsState: function(buttonState) {
+                this.$('.btn:not(.btn-load-defaults)').attr('disabled', buttonState);
+                this.$('.btn-load-defaults').attr('disabled', false);
+            },
+            disableControls: function() {
+                this.$('.btn, input, select').attr('disabled', true);
+            },
+            isLocked: function() {
+                return this.model.get('status') != 'new' || !!this.model.task('deploy', 'running');
+            },
+            checkForChanges: function() {
+                this.defaultButtonsState(!this.hasChanges());
+            },
+            applyChanges: function() {
+                this.disableControls();
+                return this.model.get('settings').save({editable: _.cloneDeep(this.settings.attributes)}, {patch: true, wait: true, url: _.result(this.model, 'url') + '/attributes'})
+                    .done(_.bind(this.setInitialData, this))
+                    .always(_.bind(function() {
                         this.render();
+                        this.model.fetch();
+                    }, this))
+                    .fail(_.bind(function() {
+                        this.defaultButtonsState(false);
+                        utils.showErrorDialog({title: 'OpenStack Settings'});
                     }, this));
-            } else {
+            },
+            revertChanges: function() {
                 this.setInitialData();
-            }
-        }
-    });
+                this.render();
+            },
+            loadDefaults: function() {
+                var defaults = new models.Settings();
+                this.disableControls();
+                defaults.fetch({url: _.result(this.model, 'url') + '/attributes/defaults'}).always(_.bind(function() {
+                    this.settings = new models.Settings(defaults.get('editable'));
+                    this.render();
+                    this.checkForChanges();
+                }, this));
+            },
+            setInitialData: function() {
+                this.previousSettings = _.cloneDeep(this.model.get('settings').get('editable'));
+                this.settings = new models.Settings(this.previousSettings);
+                // some hacks until settings dependecies are implemented
+                this.settings.on('change:additional_components.murano.value', _.bind(function(model, value) {this.settings.set({'additional_components.heat.value': value});}, this));
+                this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
+                this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
+                this.settings.on('change', _.bind(this.checkForChanges, this));
+            },
+            composeBindings: function() {
+                this.bindings = {};
+//            rivets.bind(this.$el, {settAttr: this.settings.attributes});
+                _.each(this.settings.attributes, function(settingsGroup, attr) {
+                    _.each(settingsGroup, function(setting, settingTitle) {
+//                    rivets.bind(this.$el, {
+//                        attr: attr,
+//                        settingName: settingTitle
+//                    });
 
-    SettingGroup = Backbone.View.extend({
-        template: _.template(settingsGroupTemplate),
-        className: 'fieldset-group wrapper',
-        events: {
-            'keyup input[type=text], input[type=password]': 'makeChanges',
-            'change input[type=checkbox]:not(.show-password), input[type=radio]': 'makeChanges',
-            'click span.add-on': 'showPassword'
-        },
-        makeChanges: function(e) {
-            var target = $(e.currentTarget);
-            var settingName = target.attr('name');
-            var settingGroup = target.parents('.settings-group').data('settings-group');
-            var setting = this.tab.settings[settingGroup][settingName];
-            setting.value = setting.type == 'checkbox' ? target.is(':checked') : target.val();
-            // some hacks until settings dependecies are implemented
-            if (settingName == 'murano') {
-                this.tab.settings[settingGroup].heat.value = setting.value;
-            } else if (settingGroup == 'storage' && this.tab.model.get('mode') != 'multinode') {
-                if (settingName == 'objects_ceph' && setting.value) {
-                    this.tab.settings[settingGroup].images_ceph.value = setting.value;
-                    this.$('input[name=images_ceph]').prop('checked', setting.value);
-                } else if (settingName == 'images_ceph' && !setting.value) {
-                    this.tab.settings[settingGroup].objects_ceph.value = setting.value;
-                    this.$('input[name=objects_ceph]').prop('checked', setting.value);
+//                    this.bindings['input[name=' + settingTitle + ']'] = attr + '.' + settingTitle + '.value';
+                    }, this);
+                }, this);
+            },
+            render: function() {
+                this.tearDownRegisteredSubViews();
+                this.$el.html(this.template({cluster: this.model, locked: this.isLocked()}));
+                if (this.model.get('settings').deferred.state() != 'pending') {
+                    this.$('.settings').html('');
+                    var settingGroups = _.keys(this.settings.attributes);
+                    var order = this.model.get('settings').preferredOrder;
+                    settingGroups.sort(function(a, b) {
+                        return _.indexOf(order, a) - _.indexOf(order, b);
+                    });
+
+//                rivets.bind(playersList,{settingsGroup:settingGroups});
+
+                    _.each(settingGroups, function(settingGroup) {
+                        var settingGroupView = new SettingGroup({
+                            settings: this.settings.get(settingGroup),
+                            legend: settingGroup,
+                            locked: this.isLocked()
+                        });
+                        this.registerSubView(settingGroupView);
+                        this.$('.settings').append(settingGroupView.render().el);
+                    }, this);
+                }
+                if (this.settings) {
+                    this.composeBindings();
+//                this.stickit(this.settings);
+                }
+                return this;
+            },
+            bindTaskEvents: function(task) {
+                return task.get('name') == 'deploy' ? task.on('change:status', this.render, this) : null;
+            },
+            onNewTask: function(task) {
+                return this.bindTaskEvents(task) && this.render();
+            },
+            initialize: function(options) {
+                this.model.on('change:status', this.render, this);
+                this.model.get('tasks').each(this.bindTaskEvents, this);
+                this.model.get('tasks').on('add', this.onNewTask, this);
+                if (!this.model.get('settings')) {
+                    this.model.set({'settings': new models.Settings()}, {silent: true});
+                    this.model.get('settings').deferred = this.model.get('settings').fetch({url: _.result(this.model, 'url') + '/attributes'});
+                    this.model.get('settings').deferred
+                        .done(_.bind(function() {
+                            this.setInitialData();
+                            this.render();
+                        }, this));
+                } else {
+                    this.setInitialData();
                 }
             }
-            this.tab.checkForChanges();
-        },
-        showPassword: function(e) {
-            var input = this.$(e.currentTarget).prev();
-            input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
-            this.$(e.currentTarget).find('i').toggle();
-        },
-        initialize: function(options) {
-            _.defaults(this, options);
-        },
-        render: function() {
-            this.$el.html(this.template({
-                settings: this.settings,
-                legend: this.legend,
-                locked: this.tab.isLocked()
-            }));
-            return this;
-        }
-    });
+        });
 
-    return SettingsTab;
-});
+        SettingGroup = Backbone.View.extend({
+            template: _.template(settingsGroupTemplate),
+            className: 'fieldset-group wrapper',
+            events: {
+                'click span.add-on': 'showPassword'
+            },
+            showPassword: function(e) {
+                var input = this.$(e.currentTarget).prev();
+                input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
+                this.$(e.currentTarget).find('i').toggle();
+            },
+            render: function() {
+                this.$el.html(this.template(this.options));
+                rivets.bind(this.$el, {settings: new Backbone.Model(this.options)});
+                return this;
+            }
+        });
+
+        return SettingsTab;
+    });

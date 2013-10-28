@@ -19,6 +19,7 @@ from functools import partial
 from itertools import chain
 import json
 import math
+from operator import itemgetter
 import os
 import shutil
 import sys
@@ -26,8 +27,10 @@ from time import sleep
 import urllib2
 import yaml
 
-ROOT = "http://127.0.0.1:8000"
+#ROOT = "http://127.0.0.1:8000"
+ROOT = "http://10.20.0.2:8000"
 
+OSTF_ROOT = ROOT + "/ostf/"
 API_ROOT = ROOT + "/api/v1/"
 DEBUG = False
 JSON = False
@@ -165,15 +168,16 @@ def json_api_put_request(api, data):
             print_error(str(e) + "\n")
 
 
-def json_api_get_request(api):
+def json_api_get_request(api, ostf=False):
     """Make GET request to specific API
     """
+    url = (OSTF_ROOT if ostf else API_ROOT) + api
     print_debug(
         "GET {0}"
-        .format(API_ROOT + api)
+        .format(url)
     )
     try:
-        request = urllib2.urlopen(API_ROOT + api)
+        request = urllib2.urlopen(url)
         return json.loads(
             request.read()
         )
@@ -181,20 +185,28 @@ def json_api_get_request(api):
         print_error(str(e) + "\n")
 
 
-def json_api_post_request(api, data):
+def json_api_post_request(api, data, ostf=False):
     """Make POST request to specific API with some data
     """
+    url = (OSTF_ROOT if ostf else API_ROOT) + api
     data_json = json.dumps(data)
     print_debug(
         "POST {0} data={1}"
-        .format(API_ROOT + api, data_json)
+        .format(url, data_json)
+    )
+    request = urllib2.Request(
+        url=url,
+        data=data_json,
+        headers={
+            'Content-Type': 'application/json',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
     )
     try:
         return json.loads(
-            urllib2.urlopen(
-                url=API_ROOT + api,
-                data=data_json
-            ).read()
+            urllib2.urlopen(request)
+            .read()
         )
     except urllib2.HTTPError as e:
             print_error(str(e) + "\n")
@@ -890,16 +902,16 @@ def print_deploy_progress(env):
             sleep(0.25)
             stdscr.refresh()
     except DeployProgressError as e:
-        close_curses(curses)
+        close_curses()
         print(e.message)
     finally:
-        close_curses(curses)
+        close_curses()
 
 
-def close_curses(curses_window):
-    curses_window.echo()
-    curses_window.nocbreak()
-    curses_window.endwin()
+def close_curses():
+    curses.echo()
+    curses.nocbreak()
+    curses.endwin()
 
 
 def provisioning(params):
@@ -956,6 +968,78 @@ def fact(params, info_type):
         else:
             if JSON or YAML:
                 print_formatted(facts)
+
+
+def healthcheck(params):
+    """Run health check on environment
+    """
+    check_for_attributes(params, ["env"])
+    test_sets = json_api_get_request(
+        'testsets/{0}'.format(params.env),
+        ostf=True
+    )
+    if params.check:
+        tests_data = map(
+            lambda testset: {
+                "testset": testset,
+                "metadata": {
+                    "config": {},
+                    "cluster_id": params.env
+                }
+            },
+            list(params.check)
+        )
+        json_api_post_request(
+            "testruns",
+            tests_data,
+            ostf=True
+        )
+        tests_state = json_api_get_request(
+            "testruns/last/{0}".format(params.env),
+            ostf=True
+        )
+        if JSON or YAML:
+            print_formatted(tests_state)
+        else:
+            print_health_check(params)
+    else:
+        if JSON or YAML:
+            print_formatted(test_sets)
+        else:
+            print(format_table(test_sets))
+
+
+def print_health_check(params):
+        acceptable_keys = ["status", "taken", "step", "testset",
+                           "name", "duration", "message"]
+        stdscr = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        tests_states = [{"status": "not finished"}]
+        try:
+            while not all(map(
+                    lambda t: t["status"] == "finished",
+                    tests_states
+            )):
+                tests_states = json_api_get_request(
+                    "testruns/last/{0}".format(params.env),
+                    ostf=True
+                )
+                all_tests = chain(
+                    *map(
+                        itemgetter("tests"),
+                        filter(
+                            lambda x: x["testset"] in params.check,
+                            tests_states
+                        )
+                    )
+                )
+                ft = format_table(all_tests, acceptable_keys=acceptable_keys)
+                stdscr.addstr(0, 0, ft)
+                sleep(1)
+                stdscr.refresh()
+        finally:
+            close_curses()
 
 
 def prepare_path(path):
@@ -1423,6 +1507,22 @@ actions = {
     "deploy": {
         "action": deploy,
         "args": []
+    },
+    "health": {
+        "action": healthcheck,
+        "args": [
+            get_list_arg("List all available checks"),
+            {
+                "args": ["--check"],
+                "params": {
+                    "dest": "check",
+                    "type": lambda v: v.split(','),
+                    "action": SetAction,
+                    "help": "Run check for some id.",
+                    "default": None
+                }
+            }
+        ]
     }
 }
 

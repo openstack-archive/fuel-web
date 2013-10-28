@@ -91,7 +91,7 @@ class TestDriver(TestCase):
 
         driver = shotgun.driver.Driver({"host": "remote_host"}, None)
         driver.get(remote_path, target_path)
-        mexecute.assert_called_with("mkdir -p %s" % target_path)
+        mexecute.assert_called_with("mkdir -p '%s'" % target_path)
         mfabget.assert_called_with(remote_path, target_path)
         mfabset.assert_called_with(
             host_string="remote_host", timeout=2, warn_only=True)
@@ -100,8 +100,8 @@ class TestDriver(TestCase):
         driver = shotgun.driver.Driver({}, None)
         driver.get(remote_path, target_path)
         assert mexecute.mock_calls == [
-            call("mkdir -p %s" % target_path),
-            call("cp -r %s %s" % (remote_path, target_path))
+            call("mkdir -p '%s'" % target_path),
+            call("cp -r '%s' '%s'" % (remote_path, target_path))
         ]
 
 
@@ -151,21 +151,21 @@ class TestSubs(TestCase):
         mntemp.return_value = self.sedscript
 
         subs_driver = shotgun.driver.Subs(self.data, self.conf)
-        subs_driver.sed("from_file", "to_file")
+        subs_driver.sed("from_file", "to_file", subs_driver.subs)
         assert self.sedscript.write.mock_calls == [
             call("s/%s/%s/g\n" % (old, new))
             for old, new in self.data["subs"].iteritems()]
         shotgun.driver.execute.assert_called_with(
-            "cat from_file | sed -f SEDSCRIPT", to_filename="to_file")
+            "cat 'from_file' | sed -f 'SEDSCRIPT'", to_filename="to_file")
 
-        subs_driver.sed("from_file.gz", "to_file.gz")
+        subs_driver.sed("from_file.gz", "to_file.gz", subs_driver.subs)
         shotgun.driver.execute.assert_called_with(
-            "cat from_file.gz | gunzip -c | sed -f SEDSCRIPT | gzip -c",
+            "cat 'from_file.gz' | gunzip -c | sed -f 'SEDSCRIPT' | gzip -c",
             to_filename="to_file.gz")
 
-        subs_driver.sed("from_file.bz2", "to_file.bz2")
+        subs_driver.sed("from_file.bz2", "to_file.bz2", subs_driver.subs)
         shotgun.driver.execute.assert_called_with(
-            "cat from_file.bz2 | bunzip2 -c | sed -f SEDSCRIPT | bzip2 -c",
+            "cat 'from_file.bz2' | bunzip2 -c | sed -f 'SEDSCRIPT' | bzip2 -c",
             to_filename="to_file.bz2")
 
     @patch('shotgun.driver.os.walk')
@@ -219,9 +219,10 @@ class TestSubs(TestCase):
                     continue
                 tempfilename = "STDOUT"
                 execute_calls.append(call("mktemp"))
-                sed_calls.append(call(fullfilename, tempfilename))
+                sed_calls.append(call(fullfilename, tempfilename,
+                                 subs_driver.subs))
                 execute_calls.append(
-                    call("mv %s %s" % (tempfilename, fullfilename)))
+                    call("mv -f '%s' '%s'" % (tempfilename, fullfilename)))
 
         assert msed.mock_calls == sed_calls
         assert mexecute.mock_calls == execute_calls

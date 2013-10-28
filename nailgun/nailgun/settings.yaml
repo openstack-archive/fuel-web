@@ -247,6 +247,7 @@ DUMP:
   target: "/var/www/nailgun/dump/fuel-snapshot"
   lastdump: "/var/www/nailgun/dump/last"
   timestamp: True
+  subs: {}
   dump_roles:
     master:
       - localhost
@@ -258,24 +259,23 @@ DUMP:
         dbname: nailgun
         username: nailgun
         password: nailgun
-      - type: dir
+      - type: subs
         path: /etc/nailgun
-      - type: dir
+      - type: subs
         path: /etc/naily
-      - type: dir
+      - type: subs
         path: /var/log/nailgun
-      - type: dir
+      - type: subs
         path: /var/log/naily
-      - type: dir
+      - type: subs
         path: /var/log/cobbler
-      - type: dir
+      - type: subs
         path: /var/log/puppet
       - type: subs
         path: /var/log/remote
-        subs: {}
-      - type: file
+      - type: subs
         path: /var/log/ostf.log
-      - type: file
+      - type: subs
         path: /var/log/ostf-stdout.log
       - type: command
         command: df -h
@@ -322,31 +322,31 @@ DUMP:
       - type: dir
         path: /etc/sysconfig/network-scripts
     slave:
-      - type: file
+      - type: subs
         path: /etc/astute.yaml
-      - type: file
+      - type: subs
         path: /root/ceph*
-      - type: file
+      - type: subs
         path: /root/anaconda*
       - type: file
         path: /root/*.log
       - type: file
         path: /root/*.ks
-      - type: file
+      - type: subs
         path: /etc/ceph*
-      - type: file
+      - type: subs
         path: /etc/keystone*
-      - type: file
+      - type: subs
         path: /etc/nova*
-      - type: file
+      - type: subs
         path: /etc/horizon*
-      - type: file
+      - type: subs
         path: /etc/cinder*
-      - type: file
+      - type: subs
         path: /etc/glance*
-      - type: file
+      - type: subs
         path: /etc/swift*
-      - type: file
+      - type: subs
         path: /var/log/ceph
       - type: command
         command: df -h

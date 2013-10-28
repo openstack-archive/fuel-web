@@ -14,6 +14,7 @@
 
 import time
 
+from shotgun.logger import logger
 from shotgun import settings
 
 
@@ -44,5 +45,10 @@ class Config(object):
         for role, hosts in self.data["dump_roles"].iteritems():
             for host in hosts:
                 for obj in self.data["dump_objects"].get(role, []):
+                    if obj["type"] in ("subs", "postgres"):
+                        if "subs" not in obj:
+                            obj["subs"] = {}
+                        obj["subs"].update(self.data["subs"])
                     obj["host"] = host
+                    logger.debug("Object to dump: %s", str(obj))
                     yield obj

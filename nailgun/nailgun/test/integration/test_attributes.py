@@ -175,21 +175,95 @@ class TestAttributes(BaseIntegrationTest):
         cluster_db = self.db.query(Cluster).get(cluster['id'])
         orig_attrs = cluster_db.attributes.merged_attrs()
         attrs = cluster_db.attributes.merged_attrs_values()
-        for group, group_attrs in orig_attrs.iteritems():
-            for attr, orig_value in group_attrs.iteritems():
-                if group == 'common':
-                    value = attrs[attr]
-                elif group == 'additional_components':
-                    for c, val in group_attrs.iteritems():
-                        self.assertIn(c, attrs)
-                        self.assertEquals(val["value"], attrs[c]["enabled"])
-                    continue
-                else:
-                    value = attrs[group][attr]
-                if isinstance(orig_value, dict) and 'value' in orig_value:
-                    self.assertEquals(orig_value['value'], value)
-                else:
-                    self.assertEquals(orig_value, value)
+
+        def func(struct):
+            if isinstance(struct, (dict,)) and "value" in struct:
+                return struct["value"]
+            return struct
+
+        orig_attrs = Attributes.traverse(orig_attrs, func)
+        if 'common' in orig_attrs:
+            orig_attrs.update(orig_attrs.pop('common'))
+        if 'additional_components' in orig_attrs:
+            addcomps = orig_attrs['additional_components']
+            for comp, enabled in addcomps.iteritems():
+                orig_attrs.setdefault(comp, {}).update({
+                    "enabled": enabled
+                })
+            orig_attrs.pop('additional_components')
+
+        self.assertEquals(attrs, orig_attrs)
+
+    def test_attributes_obscure(self):
+        self.env.create_cluster(api=True)
+        self.env.create_cluster(api=True)
+
+        obscure = []
+
+        def func(struct):
+            if (isinstance(struct, (dict,)) and
+                struct.get('obscure', False) and
+                    'value' in struct):
+                    obscure.append(struct['value'])
+            return struct
+
+        for cluster in self.db.query(Cluster):
+            attrs = cluster.attributes.merged_attrs()
+            Attributes.traverse(attrs, func)
+
+        self.assertEquals(sorted(obscure), sorted(Attributes.obscure()))
+
+    def test_attributes_traverse(self):
+        orig = {
+            "key0": {
+                "key00": {
+                    "key000": "value001",
+                    "key001": "value001",
+                    "subs": True,
+                    "obscure": True,
+                    "value": "secret00"
+                }
+            },
+            "key1": {
+                "key10": {
+                    "key100": {
+                        "key1000": "value1000",
+                        "key1001": "value1001",
+                        "subs": True,
+                        "obscure": False,
+                        "value": "secret1000"
+                    },
+                    "key101": "value101"
+                }
+            }
+        }
+
+        def func_subs(struct):
+            if isinstance(struct, (dict,)) and "value" in struct:
+                return struct["value"]
+            return struct
+
+        orig_subs = {
+            "key0": {
+                "key00": "secret00"
+            },
+            "key1": {
+                "key10": {
+                    "key100": "secret1000",
+                    "key101": "value101"
+                }
+            }
+        }
+        self.assertEquals(Attributes.traverse(orig, func_subs), orig_subs)
+
+        obscure = []
+
+        def func_obscure(struct):
+            if isinstance(struct, (dict,)) and struct.get("obscure", False):
+                obscure.append(struct["value"])
+            return struct
+        Attributes.traverse(orig, func_obscure)
+        self.assertEquals(sorted(obscure), sorted(["secret00"]))
 
     def _compare(self, d1, d2):
         if isinstance(d1, dict) and isinstance(d2, dict):

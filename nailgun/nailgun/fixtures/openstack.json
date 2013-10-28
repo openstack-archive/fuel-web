@@ -262,11 +262,12 @@
                             "type": "text"
                         },
                         "password": {
-                            "value": "admin",
+                            "value": "@dminMe",
                             "label": "password",
                             "description": "Password for Administrator",
                             "weight": 20,
-                            "type": "password"
+                            "type": "password",
+                            "obscure": true
                         }
                     },
                     "additional_components": {
@@ -440,71 +441,119 @@
                 "generated": {
                     "mysql": {
                         "root_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "keystone": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "admin_token": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "glance": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "nova": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "state_path": "{{settings.NOVA_STATE_PATH}}"
                     },
                     "rabbit": {
                         "password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "swift": {
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "cinder": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "savanna": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "murano": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "heat": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "rabbit_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "rabbit_user": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "base_syslog": {
@@ -526,17 +575,26 @@
                     "quantum_settings": {
                         "database": {
                             "passwd": {
-                                "generator": "password"
+                                "value": {
+                                    "generator": "password"
+                                },
+                                "obscure": true
                             }
                         },
                         "keystone": {
                             "admin_password": {
-                                "generator": "password"
+                                "value": {
+                                    "generator": "password"
+                                },
+                                "obscure": true
                             }
                         },
                         "metadata": {
                             "metadata_proxy_shared_secret": {
-                                "generator": "password"
+                                "value": {
+                                    "generator": "password"
+                                },
+                                "obscure": true
                             }
                         }
                     }
@@ -741,7 +799,8 @@
                             "label": "password",
                             "description": "Password for Administrator",
                             "weight": 20,
-                            "type": "password"
+                            "type": "password",
+                            "obscure": true
                         }
                     },
                     "common": {
@@ -881,49 +940,80 @@
                     "mysql": {
                         "root_password": {
                             "generator": "password"
-                        }
+                        },
+                        "obscure": true
                     },
                     "keystone": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "admin_token": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "glance": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "nova": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "state_path": "{{settings.NOVA_STATE_PATH}}"
                     },
                     "rabbit": {
                         "password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "swift": {
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "cinder": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "base_syslog": {
@@ -1213,7 +1303,8 @@
                             "label": "password",
                             "description": "Password for Administrator",
                             "weight": 20,
-                            "type": "password"
+                            "type": "password",
+                            "obscure": true
                         }
                     },
                     "additional_components": {
@@ -1387,50 +1478,83 @@
                 "generated": {
                     "mysql": {
                         "root_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "keystone": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "admin_token": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "glance": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "nova": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "state_path": "{{settings.NOVA_STATE_PATH}}"
                     },
                     "rabbit": {
                         "password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "swift": {
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "cinder": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "user_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "base_syslog": {
@@ -1451,39 +1575,63 @@
                     },
                     "savanna": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "murano": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "heat": {
                         "db_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "rabbit_password": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         },
                         "rabbit_user": {
-                            "generator": "password"
+                            "value": {
+                                "generator": "password"
+                            },
+                            "obscure": true
                         }
                     },
                     "quantum_settings": {
                         "database": {
                             "passwd": {
-                                "generator": "password"
+                                "value": {
+                                    "generator": "password"
+                                },
+                                "obscure": true
                             }
                         },
                         "keystone": {
                             "admin_password": {
-                                "generator": "password"
+                                "value": {
+                                    "generator": "password"
+                                },
+                                "obscure": true
                             }
                         },
                         "metadata": {
                             "metadata_proxy_shared_secret": {
-                                "generator": "password"
+                                "value": {
+                                    "generator": "password"
+                                },
+                                "obscure": true
                             }
                         }
                     }

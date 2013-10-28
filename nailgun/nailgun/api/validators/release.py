@@ -46,7 +46,8 @@ class ReleaseValidator(BasicValidator):
             )
         if "networks_metadata" in d:
             # TODO(enchantner): additional validation
-            for network in d["networks_metadata"]["nova_network"]:
+            meta = d["networks_metadata"]["nova_network"]
+            for network in meta["networks"]:
                 if "name" not in network:
                     raise errors.InvalidData(
                         "Invalid network data: %s" % str(network),

@@ -144,28 +144,28 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                     'uid': node_uids[0],
                     'internal_address': '192.168.0.2',
                     'public_address': '172.16.0.2',
-                    'storage_address': '192.168.1.1'}},
+                    'storage_address': '192.168.1.2'}},
             {
                 'roles': ['compute', 'cinder'],
                 'attrs': {
                     'uid': node_uids[1],
                     'internal_address': '192.168.0.3',
                     'public_address': '172.16.0.3',
-                    'storage_address': '192.168.1.2'}},
+                    'storage_address': '192.168.1.3'}},
             {
                 'roles': ['compute'],
                 'attrs': {
                     'uid': node_uids[2],
                     'internal_address': '192.168.0.4',
                     'public_address': '172.16.0.4',
-                    'storage_address': '192.168.1.3'}},
+                    'storage_address': '192.168.1.4'}},
             {
                 'roles': ['cinder'],
                 'attrs': {
                     'uid': node_uids[3],
                     'internal_address': '192.168.0.5',
                     'public_address': '172.16.0.5',
-                    'storage_address': '192.168.1.4'}}]
+                    'storage_address': '192.168.1.5'}}]
 
         for expected in expected_list:
             attrs = expected['attrs']
@@ -253,14 +253,14 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'ipaddr': [
                     '192.168.0.2/24',
                     '172.16.0.2/24',
-                    '192.168.1.1/24'],
+                    '192.168.1.2/24'],
                 'gateway': '172.16.0.1'},
             'eth1': {
                 'interface': 'eth1',
                 'ipaddr': [
                     '10.20.0.130/24']}}
 
-        self.assertEquals(expected_interfaces, interfaces)
+        self.datadiff(expected_interfaces, interfaces)
 
 
 class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):

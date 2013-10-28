@@ -524,49 +524,56 @@ class Environment(object):
 
     def get_default_networks_metadata(self):
         return {
-            "nova_network": [
-                {
-                    "name": "floating",
-                    "cidr": "172.16.0.0/24",
-                    "netmask": "255.255.255.0",
-                    "gateway": "172.16.0.1",
-                    "ip_range": ["172.16.0.128", "172.16.0.254"],
-                    "vlan_start": 100,
-                    "network_size": 256
-                },
-                {
-                    "name": "public",
-                    "cidr": "172.16.0.0/24",
-                    "netmask": "255.255.255.0",
-                    "gateway": "172.16.0.1",
-                    "ip_range": ["172.16.0.2", "172.16.0.127"],
-                    "vlan_start": 100
-                },
-                {
-                    "name": "management",
-                    "cidr": "192.168.0.0/24",
-                    "netmask": "255.255.255.0",
-                    "gateway": "192.168.0.1",
-                    "ip_range": ["192.168.0.2", "192.168.0.254"],
-                    "vlan_start": 101
-                },
-                {
-                    "name": "storage",
-                    "cidr": "192.168.1.0/24",
-                    "netmask": "255.255.255.0",
-                    "gateway": "192.168.1.1",
-                    "ip_range": ["192.168.1.1", "192.168.1.254"],
-                    "vlan_start": 102
-                },
-                {
-                    "name": "fixed",
-                    "cidr": "10.0.0.0/16",
-                    "netmask": "255.255.0.0",
-                    "gateway": "10.0.0.1",
-                    "ip_range": ["10.0.0.2", "10.0.255.254"],
-                    "vlan_start": 103
-                }
-            ],
+            "nova_network": {
+                "networks": [
+                    {
+                        "name": "floating",
+                        "cidr": "172.16.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "172.16.0.1",
+                        "ip_range": ["172.16.0.128", "172.16.0.254"],
+                        "vlan_start": 100,
+                        "network_size": 256,
+                        "assign_vip": False
+                    },
+                    {
+                        "name": "public",
+                        "cidr": "172.16.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "172.16.0.1",
+                        "ip_range": ["172.16.0.2", "172.16.0.127"],
+                        "vlan_start": 100,
+                        "assign_vip": True
+                    },
+                    {
+                        "name": "management",
+                        "cidr": "192.168.0.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "192.168.0.1",
+                        "ip_range": ["192.168.0.1", "192.168.0.254"],
+                        "vlan_start": 101,
+                        "assign_vip": True
+                    },
+                    {
+                        "name": "storage",
+                        "cidr": "192.168.1.0/24",
+                        "netmask": "255.255.255.0",
+                        "gateway": "192.168.1.1",
+                        "ip_range": ["192.168.1.1", "192.168.1.254"],
+                        "vlan_start": 102,
+                        "assign_vip": False
+                    },
+                    {
+                        "name": "fixed",
+                        "cidr": "10.0.0.0/16",
+                        "netmask": "255.255.0.0",
+                        "gateway": "10.0.0.1",
+                        "ip_range": ["10.0.0.2", "10.0.255.254"],
+                        "vlan_start": 103,
+                        "assign_vip": False
+                    }
+                ]
+            },
             "neutron": {
                 "networks": [
                     {

@@ -55,11 +55,47 @@ class TestHandlers(BaseIntegrationTest):
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
-                    "nova_network": [
-                        {"name": "floating", "access": "public"},
-                        {"name": "fixed", "access": "private10"},
-                        {"name": "storage", "access": "private192"}
-                    ]
+                    "nova_network": {
+                        "networks": [
+                            {
+                                "name": "floating",
+                                "cidr": "172.16.0.0/24",
+                                "netmask": "255.255.255.0",
+                                "gateway": "172.16.0.1",
+                                "ip_range": [
+                                    "172.16.0.128",
+                                    "172.16.0.254"
+                                ],
+                                "vlan_start": 100,
+                                "network_size": 256,
+                                "assign_vip": False
+                            },
+                            {
+                                "name": "storage",
+                                "cidr": "192.168.1.0/24",
+                                "netmask": "255.255.255.0",
+                                "gateway": "192.168.1.1",
+                                "ip_range": [
+                                    "192.168.1.1",
+                                    "192.168.1.254"
+                                ],
+                                "vlan_start": 102,
+                                "assign_vip": False
+                            },
+                            {
+                                "name": "fixed",
+                                "cidr": "10.0.0.0/16",
+                                "netmask": "255.255.0.0",
+                                "gateway": "10.0.0.1",
+                                "ip_range": [
+                                    "10.0.0.2",
+                                    "10.0.255.254"
+                                ],
+                                "vlan_start": 103,
+                                "assign_vip": False
+                            }
+                        ]
+                    }
                 }
             }),
             headers=self.default_headers
@@ -74,9 +110,22 @@ class TestHandlers(BaseIntegrationTest):
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
-                    "nova_network": [
-                        {"name": "fixed", "access": "private10"}
-                    ]
+                    "nova_network": {
+                        "networks": [
+                            {
+                                "name": "fixed",
+                                "cidr": "10.0.0.0/16",
+                                "netmask": "255.255.0.0",
+                                "gateway": "10.0.0.1",
+                                "ip_range": [
+                                    "10.0.0.2",
+                                    "10.0.255.254"
+                                ],
+                                "vlan_start": 103,
+                                "assign_vip": False
+                            }
+                        ]
+                    }
                 }
             }),
             headers=self.default_headers,
@@ -103,11 +152,47 @@ class TestHandlers(BaseIntegrationTest):
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
-                    "nova_network": [
-                        {"name": "floating", "access": "public"},
-                        {"name": "fixed", "access": "private10"},
-                        {"name": "storage", "access": "private192"}
-                    ]
+                    "nova_network": {
+                        "networks": [
+                            {
+                                "name": "floating",
+                                "cidr": "172.16.0.0/24",
+                                "netmask": "255.255.255.0",
+                                "gateway": "172.16.0.1",
+                                "ip_range": [
+                                    "172.16.0.128",
+                                    "172.16.0.254"
+                                ],
+                                "vlan_start": 100,
+                                "network_size": 256,
+                                "assign_vip": False
+                            },
+                            {
+                                "name": "storage",
+                                "cidr": "192.168.1.0/24",
+                                "netmask": "255.255.255.0",
+                                "gateway": "192.168.1.1",
+                                "ip_range": [
+                                    "192.168.1.1",
+                                    "192.168.1.254"
+                                ],
+                                "vlan_start": 102,
+                                "assign_vip": False
+                            },
+                            {
+                                "name": "fixed",
+                                "cidr": "10.0.0.0/16",
+                                "netmask": "255.255.0.0",
+                                "gateway": "10.0.0.1",
+                                "ip_range": [
+                                    "10.0.0.2",
+                                    "10.0.255.254"
+                                ],
+                                "vlan_start": 103,
+                                "assign_vip": False
+                            }
+                        ]
+                    }
                 }
             }),
             headers=self.default_headers
@@ -122,9 +207,22 @@ class TestHandlers(BaseIntegrationTest):
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
-                    "nova_network": [
-                        {"name": "fixed", "access": "private10"}
-                    ]
+                    "nova_network": {
+                        "networks": [
+                            {
+                                "name": "fixed",
+                                "cidr": "10.0.0.0/16",
+                                "netmask": "255.255.0.0",
+                                "gateway": "10.0.0.1",
+                                "ip_range": [
+                                    "10.0.0.2",
+                                    "10.0.255.254"
+                                ],
+                                "vlan_start": 103,
+                                "assign_vip": False
+                            }
+                        ]
+                    }
                 }
             }),
             headers=self.default_headers,

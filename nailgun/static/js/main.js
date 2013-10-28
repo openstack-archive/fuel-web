@@ -24,9 +24,10 @@ requirejs.config({
         'jquery-ui': 'js/libs/jquery-ui-1.10.2.custom',
         'jquery-autoNumeric': 'js/libs/autoNumeric',
         utils: 'js/utils',
-        lodash: 'js/libs/lodash',
+        underscore: 'js/libs/lodash',
         backbone: 'js/libs/backbone',
         stickit: 'js/libs/backbone.stickit',
+        deepModel: 'js/libs/deep-model',
         coccyx: 'js/libs/coccyx',
         bootstrap: 'js/libs/bootstrap.min',
         text: 'js/libs/text',
@@ -37,14 +38,17 @@ requirejs.config({
         views: 'js/views'
     },
     shim: {
-        lodash: {
+        underscore: {
             exports: '_'
         },
         backbone: {
-            deps: ['lodash', 'jquery'],
+            deps: ['underscore', 'jquery'],
             exports: 'Backbone'
         },
         stickit: {
+            deps: ['backbone']
+        },
+        deepModel: {
             deps: ['backbone']
         },
         coccyx: {
@@ -66,7 +70,7 @@ requirejs.config({
             deps: ['jquery']
         },
         app: {
-            deps: ['jquery', 'lodash', 'backbone', 'stickit', 'coccyx', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric']
+            deps: ['jquery', 'underscore', 'backbone', 'stickit', 'deepModel', 'coccyx', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric']
         }
     }
 });

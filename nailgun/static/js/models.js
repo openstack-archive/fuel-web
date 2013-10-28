@@ -245,7 +245,7 @@ define(['utils'], function(utils) {
         }
     });
 
-    models.Settings = Backbone.Model.extend({
+    models.Settings = Backbone.DeepModel.extend({
         constructorName: 'Settings',
         urlRoot: '/api/clusters/',
         isNew: function() {

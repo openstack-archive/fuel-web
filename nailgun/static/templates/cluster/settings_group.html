@@ -9,7 +9,7 @@
       <label class="parameter-box clearfix">
         <div class="parameter-control">
           <div class="custom-tumbler">
-            <input type="checkbox" name="<%- settingName %>" <%= setting.value ? 'checked' : '' %> <%= disabled %> />
+            <input type="checkbox" name="<%- settingName %>" <%= disabled %> />
             <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
           </div>
         </div>
@@ -23,7 +23,7 @@
         <label class="parameter-box clearfix">
           <div class="parameter-control">
             <div class="custom-tumbler">
-              <input type="radio" name="<%- settingName %>" value="<%- option['data'] %>" <%= option['data'] == setting.value ? 'checked' : '' %> <%= disabled %> />
+              <input type="radio" name="<%- settingName %>" value="<%- option['data'] %>" <%= disabled %> />
               <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
           </div>
@@ -37,7 +37,7 @@
       <label class="parameter-box clearfix">
         <div class="openstack-sub-title parameter-name"><%- setting.label %></div>
         <div class="parameter-control <%= setting.type == 'password' ? 'input-append' : '' %>">
-          <input type="<%= setting.type %>" class="<%= setting.type == 'password' ? 'input-append' : '' %>" name="<%- settingName %>" value="<%- setting.value %>" <%= disabled %> />
+          <input type="<%= setting.type %>" class="<%= setting.type == 'password' ? 'input-append' : '' %>" name="<%- settingName %>" value="" <%= disabled %> />
           <% if (setting.type == 'password') { %>
             <span class="add-on"><i class="icon-eye"></i><i class="icon-eye-off hide"></i></span>
           <% } %>

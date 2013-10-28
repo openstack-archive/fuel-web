@@ -573,8 +573,24 @@ class NailgunReceiver(object):
             TaskHelper.update_task_status(task_uuid, status, progress,
                                           error_msg, result)
         else:
+            modified = cls._modify_response(result)
             TaskHelper.update_verify_networks(task_uuid, status, progress,
-                                              error_msg, result)
+                                              error_msg, modified)
+
+    @classmethod
+    def _modify_response(cls, result):
+        """Helper method for response modification
+        it is best to use 0 as flag for untagged check, and modify response
+        only for ui
+        """
+        modified = []
+        for item in result:
+            if item.get('absent_vlans'):
+                check = lambda i: i if i else 'untagged'
+                item['absent_vlans'] = [check(i) for i in item['absent_vlans']]
+            modified.append(item)
+        return modified
+
 
     @classmethod
     def _master_networks_gen(cls, ifaces):

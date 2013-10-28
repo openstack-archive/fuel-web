@@ -568,10 +568,10 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.assertEqual(task.status, "error")
         error_nodes = [{'uid': node1.id, 'interface': 'eth0',
                         'name': node1.name, 'mac': node1.interfaces[0].mac,
-                        'absent_vlans': nets_sent[0]['vlans']},
+                        'absent_vlans': ['untagged']},
                        {'uid': node2.id, 'interface': 'eth0',
                         'name': node2.name, 'mac': node2.interfaces[0].mac,
-                        'absent_vlans': nets_sent[0]['vlans']}]
+                        'absent_vlans': ['untagged']}]
         self.assertEqual(task.result, error_nodes)
 
     def test_verify_networks_resp_partially_without_vlans(self):

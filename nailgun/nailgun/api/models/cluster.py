@@ -267,41 +267,69 @@ class Attributes(Base):
     generated = Column(JSON)
 
     def generate_fields(self):
-        self.generated = self.traverse(self.generated)
+        def func(struct):
+            if isinstance(struct, (dict,)) and "generator" in struct:
+                try:
+                    generator = getattr(
+                        AttributesGenerators,
+                        struct["generator"]
+                    )
+                except AttributeError:
+                    logger.error("Attribute error: %s" % struct["generator"])
+                    raise
+                else:
+                    return generator(struct.get("generator_arg"))
+            return struct
+        self.generated = self.traverse(self.generated, func)
         db().add(self)
         db().commit()
 
     @classmethod
-    def traverse(cls, cdict):
-        new_dict = {}
-        if cdict:
-            for i, val in cdict.iteritems():
-                if isinstance(val, (str, unicode, int, float)):
-                    new_dict[i] = val
-                elif isinstance(val, dict) and "generator" in val:
-                    try:
-                        generator = getattr(
-                            AttributesGenerators,
-                            val["generator"]
-                        )
-                    except AttributeError:
-                        logger.error("Attribute error: %s" % val["generator"])
-                        raise
-                    else:
-                        new_dict[i] = generator(val.get("generator_arg"))
-                else:
-                    new_dict[i] = cls.traverse(val)
-        return new_dict
+    def obscure(cls):
+        values = []
+
+        def func(struct):
+            if (isinstance(struct, (dict,)) and
+                struct.get('obscure', False) and
+                    'value' in struct):
+                    values.append(struct['value'])
+            return struct
+
+        for cluster in db().query(Cluster):
+            attrs = cluster.attributes.merged_attrs()
+            cls.traverse(attrs, func)
+        return values
+
+    @classmethod
+    def traverse(cls, struct, func=None):
+        if not func:
+            func = lambda x: x
+        mod_struct = func(struct)
+        new_struct = None
+        if isinstance(mod_struct, (str, unicode, int, float)):
+            new_struct = mod_struct
+        elif isinstance(mod_struct, (list,)):
+            new_struct = []
+            for item in mod_struct:
+                new_struct.append(cls.traverse(item, func))
+        elif isinstance(mod_struct, (dict,)):
+            new_struct = {}
+            for key, val in mod_struct.iteritems():
+                new_struct[key] = cls.traverse(val, func)
+        return new_struct
 
     def merged_attrs(self):
         return self._dict_merge(self.generated, self.editable)
 
     def merged_attrs_values(self):
+        def func(struct):
+            if isinstance(struct, (dict,)) and "value" in struct:
+                return struct["value"]
+            return struct
+
         attrs = self.merged_attrs()
-        for group_attrs in attrs.itervalues():
-            for attr, value in group_attrs.iteritems():
-                if isinstance(value, dict) and 'value' in value:
-                    group_attrs[attr] = value['value']
+        attrs = self.traverse(attrs, func)
+
         if 'common' in attrs:
             attrs.update(attrs.pop('common'))
         if 'additional_components' in attrs:

@@ -23,6 +23,7 @@ from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import object_mapper
 
+from nailgun.api.models import Attributes
 from nailgun.api.models import CapacityLog
 from nailgun.api.models import Cluster
 from nailgun.api.models import NetworkGroup
@@ -1039,14 +1040,17 @@ class DumpTask(object):
         """
         here we try to filter out sensitive data from logs
         """
+        logger.debug("Getting redhat parameters to filter them out")
         rh_accounts = db().query(RedHatAccount).all()
-        for num, obj in enumerate(dump_conf['dump_objects']['master']):
-            if obj['type'] == 'subs' and obj['path'] == '/var/log/remote':
-                for fieldname in ("username", "password"):
-                    for fieldvalue in [getattr(acc, fieldname)
-                                       for acc in rh_accounts]:
-                        obj['subs'][fieldvalue] = ('substituted_{0}'
-                                                   ''.format(fieldname))
+        for fieldname in ("username", "password"):
+            for obscure in [getattr(acc, fieldname)
+                            for acc in rh_accounts]:
+                dump_conf['subs'].update({obscure: "OBSCURE_PARAMETER"})
+
+        logger.debug("Getting obscure parameters to filter them out")
+        for obscure in Attributes.obscure():
+            dump_conf["subs"].update({obscure: "OBSCURE_PARAMETER"})
+
         logger.debug("Dump conf: %s", str(dump_conf))
         return dump_conf
 

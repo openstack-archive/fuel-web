@@ -51,8 +51,8 @@ class Driver(object):
         }.get(driver_type, cls)(data, conf)
 
     def __init__(self, data, conf):
-        logger.debug("Initializing driver %s: host=%s",
-                     self.__class__.__name__, data.get("host"))
+        logger.debug("Initializing driver {0}: host={1}".format(
+                     self.__class__.__name__, data.get("host")))
         self.data = data
         self.host = self.data.get("host", "localhost")
         self.local = is_local(self.host)
@@ -68,17 +68,18 @@ class Driver(object):
                 with fabric.api.settings(host_string=self.host,
                                          timeout=2, warn_only=True):
                     logger.debug("Running remote command: "
-                                 "host: %s command: %s", self.host, command)
+                                 "host: {0} command: {1}".format(
+                                     self.host, command))
                     output = fabric.api.run(command, pty=True)
                     out.stdout = output
                     out.return_code = output.return_code
                     out.stderr = output.stderr
             else:
-                logger.debug("Running local command: %s", command)
+                logger.debug("Running local command: {0}".format(command))
                 out.return_code, out.stdout, out.stderr = execute(command)
-            logger.debug("Stderr: %s", out.stderr)
+            logger.debug("Stderr: {0}".format(out.stderr))
         except Exception as e:
-            logger.error("Error occured: %s", str(e))
+            logger.error("Error occured: {0}".format(str(e)))
         return out
 
     def get(self, path, target_path):
@@ -89,28 +90,28 @@ class Driver(object):
             if not self.local:
                 with fabric.api.settings(host_string=self.host,
                                          timeout=2, warn_only=True):
-                    logger.debug("Getting remote file: %s %s",
-                                 path, target_path)
-                    execute("mkdir -p %s" % target_path)
+                    logger.debug("Getting remote file: {0} {1}".format(
+                                 path, target_path))
+                    execute("mkdir -p '{0}'".format(target_path))
                     return fabric.api.get(path, target_path)
             else:
-                logger.debug("Getting local file: cp -r %s %s",
-                             path, target_path)
-                execute("mkdir -p %s" % target_path)
-                return execute("cp -r %s %s" % (path, target_path))
+                logger.debug("Getting local file: cp -r {0} {1}".format(
+                             path, target_path))
+                execute("mkdir -p '{0}'".format(target_path))
+                return execute("cp -r '{0}' '{1}'".format(path, target_path))
         except Exception as e:
-            logger.error("Error occured: %s", str(e))
+            logger.error("Error occured: {0}".format(str(e)))
 
 
 class File(Driver):
     def __init__(self, data, conf):
         super(File, self).__init__(data, conf)
         self.path = self.data["path"]
-        logger.debug("File to get: %s", self.path)
+        logger.debug("File to get: {0}".format(self.path))
         self.target_path = str(os.path.join(
             self.conf.target, self.host,
             os.path.dirname(self.path).lstrip("/")))
-        logger.debug("File to save: %s", self.target_path)
+        logger.debug("File to save: {0}".format(self.target_path))
 
     def snapshot(self):
         """Example:
@@ -130,32 +131,35 @@ class Subs(File):
         super(Subs, self).__init__(data, conf)
         self.subs = self.data["subs"]
 
-    def decompress(self, filename):
+    @classmethod
+    def decompress(cls, filename):
         if re.search(ur".+\.gz$", filename):
             return "gunzip -c"
         elif re.search(ur".+\.bz2$", filename):
             return "bunzip2 -c"
         return ""
 
-    def compress(self, filename):
+    @classmethod
+    def compress(cls, filename):
         if re.search(ur".+\.gz$", filename):
             return "gzip -c"
         elif re.search(ur".+\.bz2$", filename):
             return "bzip2 -c"
         return ""
 
-    def sed(self, from_filename, to_filename, gz=False):
+    @classmethod
+    def sed(cls, from_filename, to_filename, subs, gz=False):
         sedscript = tempfile.NamedTemporaryFile()
-        logger.debug("Sed script: %s", sedscript.name)
-        for orig, new in self.subs.iteritems():
-            logger.debug("Sed script: s/%s/%s/g", orig, new)
-            sedscript.write("s/%s/%s/g\n" % (orig, new))
+        logger.debug("Sed script: {0}".format(sedscript.name))
+        for orig, new in subs.iteritems():
+            logger.debug("Sed script: s/{0}/{1}/g".format(orig, new))
+            sedscript.write("s/{0}/{1}/g\n".format(orig, new))
             sedscript.flush()
         command = " | ".join(filter(lambda x: x != "", [
-            "cat %s" % from_filename,
-            self.decompress(from_filename),
-            "sed -f %s" % sedscript.name,
-            self.compress(from_filename),
+            "cat '{0}'".format(from_filename),
+            cls.decompress(from_filename),
+            "sed -f '{0}'".format(sedscript.name),
+            cls.compress(from_filename),
         ]))
         execute(command, to_filename=to_filename)
         sedscript.close()
@@ -191,8 +195,8 @@ class Subs(File):
                 if not fnmatch.fnmatch(match_orig_path, self.path):
                     continue
                 tempfilename = execute("mktemp")[1].strip()
-                self.sed(fullfilename, tempfilename)
-                execute("mv -f %s %s" % (tempfilename, fullfilename))
+                self.sed(fullfilename, tempfilename, self.subs)
+                execute("mv -f '{0}' '{1}'".format(tempfilename, fullfilename))
 
 
 class Postgres(Driver):
@@ -202,6 +206,7 @@ class Postgres(Driver):
         self.dbname = self.data["dbname"]
         self.username = self.data.get("username", "postgres")
         self.password = self.data.get("password")
+        self.subs = self.data.get("subs", {})
         self.target_path = str(os.path.join(self.conf.target,
                                self.host, "pg_dump"))
 
@@ -214,7 +219,7 @@ class Postgres(Driver):
                 fo.seek(0)
                 auth = False
                 for line in fo:
-                    if re.search(ur"^%s$" % authline, line):
+                    if re.search(ur"^{0}$".format(authline), line):
                         auth = True
                         break
                 if not auth:
@@ -222,15 +227,15 @@ class Postgres(Driver):
                     fo.write("{0}\n".format(authline))
             os.chmod(os.path.expanduser("~/.pgpass"),
                      stat.S_IRUSR + stat.S_IWUSR)
-        temp = self.command("mktemp").stdout.strip()
-        self.command("pg_dump -h {dbhost} -U {username} -w "
-                     "-f {file} {dbname}".format(
-                         dbhost=self.dbhost, username=self.username,
-                         file=temp, dbname=self.dbname))
-        execute("mkdir -p %s" % self.target_path)
-        dump_basename = "%s_%s.sql" % (self.dbhost, self.dbname)
-        execute("mv -f %s %s" %
-                (temp, os.path.join(self.target_path, dump_basename)))
+        temp = execute("mktemp")[1].strip()
+        execute("pg_dump -h {dbhost} -U {username} -w "
+                "-f {file} {dbname}".format(
+                    dbhost=self.dbhost, username=self.username,
+                    file=temp, dbname=self.dbname))
+        execute("mkdir -p '{0}'".format(self.target_path))
+        dump_basename = "{0}_{1}.sql".format(self.dbhost, self.dbname)
+        Subs.sed(temp, os.path.join(self.target_path, dump_basename),
+                 self.subs)
 
 
 class Command(Driver):

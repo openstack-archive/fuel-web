@@ -31,6 +31,7 @@ requirejs.config({
         bootstrap: 'js/libs/bootstrap.min',
         text: 'js/libs/text',
         retina: 'js/libs/retina',
+        rivets: 'js/libs/rivets',
         app: 'js/app',
         models: 'js/models',
         collections: 'js/collections',
@@ -50,6 +51,9 @@ requirejs.config({
         coccyx: {
             deps: ['backbone']
         },
+        rivets: {
+           deps: ['lodash', 'jquery']
+        },
         bootstrap: {
             deps: ['jquery']
         },
@@ -66,7 +70,7 @@ requirejs.config({
             deps: ['jquery']
         },
         app: {
-            deps: ['jquery', 'lodash', 'backbone', 'stickit', 'coccyx', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric']
+            deps: ['jquery', 'lodash', 'backbone', 'stickit', 'coccyx', 'bootstrap', 'retina', 'rivets', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric']
         }
     }
 });

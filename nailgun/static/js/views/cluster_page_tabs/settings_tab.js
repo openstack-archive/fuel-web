@@ -81,6 +81,19 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.previousSettings = _.cloneDeep(this.settings);
             this.hasChanges = false;
         },
+            composeBindings: function() {
+//            rivets.bind(this.$el, {settAttr: this.settings.attributes});
+                _.each(this.settings.attributes, function(settingsGroup, attr) {
+                    _.each(settingsGroup, function(setting, settingTitle) {
+//                    rivets.bind(this.$el, {
+//                        attr: attr,
+//                        settingName: settingTitle
+//                    });
+
+//                    this.bindings['input[name=' + settingTitle + ']'] = attr + '.' + settingTitle + '.value';
+                    }, this);
+                }, this);
+            },
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({cluster: this.model, locked: this.isLocked()}));
@@ -101,36 +114,39 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     this.$('.settings').append(settingGroupView.render().el);
                 }, this);
             }
-            return this;
-        },
-        bindTaskEvents: function(task) {
-            return task.get('name') == 'deploy' ? task.on('change:status', this.render, this) : null;
-        },
-        onNewTask: function(task) {
-            return this.bindTaskEvents(task) && this.render();
-        },
-        initialize: function(options) {
-            this.model.on('change:status', this.render, this);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
-            if (!this.model.get('settings')) {
-                this.model.set({'settings': new models.Settings()}, {silent: true});
-                this.model.get('settings').deferred = this.model.get('settings').fetch({url: _.result(this.model, 'url') + '/attributes'});
-                this.model.get('settings').deferred
-                    .done(_.bind(function() {
-                        this.setInitialData();
-                        this.render();
-                    }, this));
-            } else {
-                this.setInitialData();
+                if (this.settings) {
+                    this.composeBindings();
+                }
+                return this;
+            },
+            bindTaskEvents: function(task) {
+                return task.get('name') == 'deploy' ? task.on('change:status', this.render, this) : null;
+            },
+            onNewTask: function(task) {
+                return this.bindTaskEvents(task) && this.render();
+            },
+            initialize: function(options) {
+                this.model.on('change:status', this.render, this);
+                this.model.get('tasks').each(this.bindTaskEvents, this);
+                this.model.get('tasks').on('add', this.onNewTask, this);
+                if (!this.model.get('settings')) {
+                    this.model.set({'settings': new models.Settings()}, {silent: true});
+                    this.model.get('settings').deferred = this.model.get('settings').fetch({url: _.result(this.model, 'url') + '/attributes'});
+                    this.model.get('settings').deferred
+                        .done(_.bind(function() {
+                            this.setInitialData();
+                            this.render();
+                        }, this));
+                } else {
+                    this.setInitialData();
+                }
             }
-        }
-    });
+        });
 
-    SettingGroup = Backbone.View.extend({
-        template: _.template(settingsGroupTemplate),
-        className: 'fieldset-group wrapper',
-        events: {
+        SettingGroup = Backbone.View.extend({
+            template: _.template(settingsGroupTemplate),
+            className: 'fieldset-group wrapper',
+            events: {
             'keyup input[type=text], input[type=password]': 'makeChanges',
             'change input[type=checkbox]:not(.show-password), input[type=radio]': 'makeChanges',
             'click span.add-on': 'showPassword'
@@ -169,6 +185,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 legend: this.legend,
                 locked: this.tab.isLocked()
             }));
+            rivets.bind(this.$el, {settings: new Backbone.Model(this.options)});
             return this;
         }
     });

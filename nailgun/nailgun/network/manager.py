@@ -138,7 +138,7 @@ class NetworkManager(object):
         networks_metadata = \
             cluster_db.release.networks_metadata["nova_network"]
 
-        for network in networks_metadata:
+        for network in networks_metadata["networks"]:
             new_ip_range = IPAddrRange(
                 first=network["ip_range"][0],
                 last=network["ip_range"][1]
@@ -385,6 +385,7 @@ class NetworkManager(object):
             ne_db = IPAddr(network=network.id, ip_addr=vip)
             db().add(ne_db)
             db().commit()
+
         return vip
 
     def clear_vlans(self):
@@ -439,7 +440,7 @@ class NetworkManager(object):
         for ip_addr in ifilter(
             lambda ip: db().query(IPAddr).filter_by(
                 ip_addr=str(ip)
-            ).first() is None and not ip == network_group.gateway,
+            ).first() is None and not str(ip) == network_group.gateway,
             chain(*[
                 IPRange(ir.first, ir.last)
                 for ir in network_group.ip_ranges

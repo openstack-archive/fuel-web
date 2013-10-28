@@ -56,7 +56,7 @@ class NovaNetworkConfigurationSerializer(BasicSerializer):
 
         if cluster.is_ha_mode:
             nw_metadata = cluster.release.networks_metadata["nova_network"]
-            for network in nw_metadata:
+            for network in nw_metadata["networks"]:
                 if network.get("assign_vip") is not False:
                     result['{0}_vip'.format(
                         network["name"]

@@ -55,11 +55,13 @@ class TestHandlers(BaseIntegrationTest):
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
-                    "nova_network": [
-                        {"name": "floating", "access": "public"},
-                        {"name": "fixed", "access": "private10"},
-                        {"name": "storage", "access": "private192"}
-                    ]
+                    "nova_network": {
+                        "networks": [
+                            {"name": "floating", "access": "public"},
+                            {"name": "fixed", "access": "private10"},
+                            {"name": "storage", "access": "private192"}
+                        ]
+                    }
                 }
             }),
             headers=self.default_headers
@@ -74,9 +76,11 @@ class TestHandlers(BaseIntegrationTest):
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
-                    "nova_network": [
-                        {"name": "fixed", "access": "private10"}
-                    ]
+                    "nova_network": {
+                        "networks": [
+                            {"name": "fixed", "access": "private10"}
+                        ]
+                    }
                 }
             }),
             headers=self.default_headers,
@@ -103,11 +107,13 @@ class TestHandlers(BaseIntegrationTest):
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
-                    "nova_network": [
-                        {"name": "floating", "access": "public"},
-                        {"name": "fixed", "access": "private10"},
-                        {"name": "storage", "access": "private192"}
-                    ]
+                    "nova_network": {
+                        "networks": [
+                            {"name": "floating", "access": "public"},
+                            {"name": "fixed", "access": "private10"},
+                            {"name": "storage", "access": "private192"}
+                        ]
+                    }
                 }
             }),
             headers=self.default_headers
@@ -122,9 +128,11 @@ class TestHandlers(BaseIntegrationTest):
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
-                    "nova_network": [
-                        {"name": "fixed", "access": "private10"}
-                    ]
+                    "nova_network": {
+                        "networks": [
+                            {"name": "fixed", "access": "private10"}
+                        ]
+                    }
                 }
             }),
             headers=self.default_headers,

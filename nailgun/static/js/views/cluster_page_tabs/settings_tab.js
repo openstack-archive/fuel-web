@@ -28,7 +28,9 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
 
     SettingsTab = commonViews.Tab.extend({
         template: _.template(settingsTabTemplate),
-        hasChanges: false,
+        hasChanges: function() {
+            return !_.isEqual(this.settings.attributes, this.previousSettings);
+        },
         events: {
             'click .btn-apply-changes:not([disabled])': 'applyChanges',
             'click .btn-revert-changes:not([disabled])': 'revertChanges',
@@ -45,61 +47,74 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             return this.model.get('status') != 'new' || !!this.model.task('deploy', 'running');
         },
         checkForChanges: function() {
-            var equal = _.isEqual(this.settings, this.previousSettings);
-            this.defaultButtonsState(equal);
-            this.hasChanges = !equal;
+            this.defaultButtonsState(!this.hasChanges());
         },
         applyChanges: function() {
             this.disableControls();
-            return this.model.get('settings').save({editable: this.settings}, {patch: true, wait: true, url: _.result(this.model, 'url') + '/attributes'})
+            return this.model.get('settings').save({editable: _.cloneDeep(this.settings.attributes)}, {patch: true, wait: true, url: _.result(this.model, 'url') + '/attributes'})
+                .done(_.bind(this.setInitialData, this))
                 .always(_.bind(function() {
                     this.render();
                     this.model.fetch();
                 }, this))
-                .done(_.bind(this.setInitialData, this))
                 .fail(_.bind(function() {
                     this.defaultButtonsState(false);
                     utils.showErrorDialog({title: 'OpenStack Settings'});
                 }, this));
         },
         revertChanges: function() {
-            this.settings = _.cloneDeep(this.previousSettings);
-            this.hasChanges = false;
+            this.setInitialData();
             this.render();
         },
         loadDefaults: function() {
             var defaults = new models.Settings();
             this.disableControls();
             defaults.fetch({url: _.result(this.model, 'url') + '/attributes/defaults'}).always(_.bind(function() {
-                this.settings = defaults.get('editable');
+                this.settings = new models.Settings(defaults.get('editable'));
                 this.render();
                 this.checkForChanges();
             }, this));
         },
         setInitialData: function() {
-            this.settings = _.cloneDeep(this.model.get('settings').get('editable'));
-            this.previousSettings = _.cloneDeep(this.settings);
-            this.hasChanges = false;
+            this.previousSettings = _.cloneDeep(this.model.get('settings').get('editable'));
+            this.settings = new models.Settings(this.previousSettings);
+            // some hacks until settings dependecies are implemented
+            this.settings.on('change:additional_components.murano.value', _.bind(function(model, value) {this.settings.set({'additional_components.heat.value': value});}, this));
+            this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
+            this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
+            this.settings.on('change', _.bind(this.checkForChanges, this));
+        },
+        composeBindings: function() {
+            this.bindings = {};
+            _.each(this.settings.attributes, function(settingsGroup, attr) {
+                _.each(settingsGroup, function(setting, settingTitle) {
+                    this.bindings['input[name=' + settingTitle + ']'] = attr + '.' + settingTitle + '.value';
+                }, this);
+            }, this);
         },
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({cluster: this.model, locked: this.isLocked()}));
             if (this.model.get('settings').deferred.state() != 'pending') {
                 this.$('.settings').html('');
-                var settingGroups = _.keys(this.settings);
+                var settingGroups = _.keys(this.settings.attributes);
                 var order = this.model.get('settings').preferredOrder;
                 settingGroups.sort(function(a, b) {
                     return _.indexOf(order, a) - _.indexOf(order, b);
                 });
                 _.each(settingGroups, function(settingGroup) {
                     var settingGroupView = new SettingGroup({
+                        settings: this.settings.get(settingGroup),
                         legend: settingGroup,
-                        settings: this.settings[settingGroup],
-                        tab: this
+                        locked: this.isLocked()
                     });
                     this.registerSubView(settingGroupView);
                     this.$('.settings').append(settingGroupView.render().el);
                 }, this);
+            }
+            if (this.settings) {
+                this.composeBindings();
+                this.stickit(this.settings);
             }
             return this;
         },
@@ -131,44 +146,15 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         template: _.template(settingsGroupTemplate),
         className: 'fieldset-group wrapper',
         events: {
-            'keyup input[type=text], input[type=password]': 'makeChanges',
-            'change input[type=checkbox]:not(.show-password), input[type=radio]': 'makeChanges',
             'click span.add-on': 'showPassword'
-        },
-        makeChanges: function(e) {
-            var target = $(e.currentTarget);
-            var settingName = target.attr('name');
-            var settingGroup = target.parents('.settings-group').data('settings-group');
-            var setting = this.tab.settings[settingGroup][settingName];
-            setting.value = setting.type == 'checkbox' ? target.is(':checked') : target.val();
-            // some hacks until settings dependecies are implemented
-            if (settingName == 'murano') {
-                this.tab.settings[settingGroup].heat.value = setting.value;
-            } else if (settingGroup == 'storage' && this.tab.model.get('mode') != 'multinode') {
-                if (settingName == 'objects_ceph' && setting.value) {
-                    this.tab.settings[settingGroup].images_ceph.value = setting.value;
-                    this.$('input[name=images_ceph]').prop('checked', setting.value);
-                } else if (settingName == 'images_ceph' && !setting.value) {
-                    this.tab.settings[settingGroup].objects_ceph.value = setting.value;
-                    this.$('input[name=objects_ceph]').prop('checked', setting.value);
-                }
-            }
-            this.tab.checkForChanges();
         },
         showPassword: function(e) {
             var input = this.$(e.currentTarget).prev();
             input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
             this.$(e.currentTarget).find('i').toggle();
         },
-        initialize: function(options) {
-            _.defaults(this, options);
-        },
         render: function() {
-            this.$el.html(this.template({
-                settings: this.settings,
-                legend: this.legend,
-                locked: this.tab.isLocked()
-            }));
+            this.$el.html(this.template(this.options));
             return this;
         }
     });

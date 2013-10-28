@@ -153,7 +153,8 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 deferred
                     .done(_.bind(function() {
                         this.collection.add(cluster);
-                        var settings = new models.Settings({}, {url: _.result(cluster, 'url') + '/attributes'});
+                        var settings = new models.Settings();
+                        settings.url = _.result(cluster, 'url') + '/attributes';
                         settings.fetch()
                             .then(_.bind(function() {
                                 return $.when.apply($, _.invoke(this.panes, 'beforeSettingsSaving', settings));

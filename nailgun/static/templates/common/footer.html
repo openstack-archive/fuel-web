@@ -4,4 +4,16 @@
   <% if (version) { %>
     <div class="footer-version pull-right">Version: <%- version || '' %></div>
   <% } %>
+  <div class="footer-lang pull-right">
+    <div class="dropdown dropup">
+      <a class="dropdown-toggle current-locale" data-toggle="dropdown" href="#"><%- currentLocale.name %></a>
+      <ul class="dropdown-menu locales">
+        <% _.each(locales, function(locale) { %>
+          <li>
+            <a data-locale="<%- locale.locale %>"><%- locale.name %></a>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+  </div>
 </div>

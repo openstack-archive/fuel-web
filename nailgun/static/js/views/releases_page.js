@@ -55,6 +55,7 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
                 this.registerSubView(releaseView);
                 this.$('.releases-table tbody').append(releaseView.render().el);
             }, this);
+            this.$el.i18n();
             return this;
         }
     });

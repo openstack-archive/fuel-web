@@ -3,7 +3,7 @@
 <div class="cluster-hardware">
   <% if (!nodes.deferred || nodes.deferred.state() == 'resolved') { %>
     <div class="row-fluid">
-      <div class="span6">Nodes:</div>
+      <div class="span6" data-i18n="clusters_page.nodes">Nodes:</div>
       <div class="span4"><%= nodes.length %></div>
       <% if (nodes.length) { %>
         <div class="span6">CPU (cores):</div>
@@ -24,7 +24,7 @@
       <div class="bar" style="width:0"></div>
     </div>
   <% } else { %>
-    <% var statuses = {'new': 'New', 'deployment': 'Deploying', 'operational': 'Operational', 'error': 'Error', 'remove': 'Removing'} %>
+    <% var statuses = {'new': $.t('clusters_page.stat_new', {defaultValue: 'New'}), 'deployment': $.t('clusters_page.stat_deploying', {defaultValue: 'Deploying'}), 'operational': $.t('clusters_page.stat_operational', {defaultValue: 'Operational'}), 'error': $.t('clusters_page.stat_error', {defaultValue: 'Error'}), 'remove': $.t('clusters_page.stat_removing', {defaultValue: 'Removing'}) } %>
     <%= statuses[cluster.get('status')] %>
   <% } %>
 </div>

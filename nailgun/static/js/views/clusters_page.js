@@ -37,6 +37,7 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
             var clustersView = new ClusterList({collection: this.collection});
             this.registerSubView(clustersView);
             this.$('.cluster-list').html(clustersView.render().el);
+            this.$el.i18n();
             return this;
         }
     });

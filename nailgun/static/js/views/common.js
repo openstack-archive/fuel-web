@@ -245,6 +245,21 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
 
     views.Footer = Backbone.View.extend({
         template: _.template(footerTemplate),
+        events: {
+            'click .footer-lang li a': 'setLocale'
+        },
+        locales: [
+            {name: 'EN', locale: 'en-US'},
+            {name: 'CN', locale: 'zh-CN'}
+        ],
+        setLocale: function(e) {
+            var newLocale = _.find(this.locales, {locale: $(e.currentTarget).data('locale')});
+            $.i18n.setLng(newLocale.locale);
+            window.location.reload();
+        },
+        getCurrentLocale: function() {
+            return _.find(this.locales, {locale: $.i18n.lng()}) || this.locales[0];
+        },
         initialize: function(options) {
             $.ajax({url: '/api/version'}).done(_.bind(function(data) {
                 this.version = data.release;
@@ -252,7 +267,11 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             }, this));
         },
         render: function() {
-            this.$el.html(this.template({version: this.version}));
+            this.$el.html(this.template({
+                version: this.version,
+                locales: this.locales,
+                currentLocale: this.getCurrentLocale()
+            }));
             return this;
         }
     });

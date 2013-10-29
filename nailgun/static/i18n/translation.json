@@ -1,0 +1,344 @@
+{
+    "en-US": {
+        "translation": {
+            "navbar": {
+                "stats": {
+                    "total": ["Total", "node"],
+                    "total_plural": ["Total", "nodes"],
+                    "unallocated": ["Unallocated", "node"],
+                    "unallocated_plural": ["Unallocated", "nodes"]
+                }
+            }
+        }
+    },
+    "zh-CN": {
+        "translation": {
+            "navbar": {
+                "Environments": "环境",
+                "Releases": "版本",
+                "Support": "支持",
+                "stats": {
+                    "total": "全部节点",
+                    "unallocated": "未分配节点"
+                }
+            },
+            "breadcrumb": {
+                "Home": "首页",
+                "Environments": "环境",
+                "Releases": "版本",
+                "Support": "支持",
+                "Notifications": "通知"
+            },
+            "notifications_page": {
+                "title": "通知"
+            },
+            "notifications_popover": {
+                "view_all": "查看全部",
+                "no_notifications_text": "没有通知可显示"
+            },
+            "support_page": {
+                "title": "支持",
+                "contact_text": "欢迎提出反馈和改进意见，请点击下面的按钮，我们将尽快回复您。",
+                "irc_text": "如果您有任何问题，可通过IRC（freenode.net网络的 #fuel 频道）联系开发者。",
+                "log_text": "如果您在使用Fuel Web的过程中遇到任何错误或异常，可能需要将日志提交给支持团队，请点击按钮下载：",
+                "contact_support": "联系支持",
+                "download_logs": "下载日志"
+            },
+            "release_page": {
+                "title": "版本",
+                "name": "名称",
+                "version": "发布",
+                "status": "状态",
+                "actions": "操作",
+                "alert": "没有版本可用",
+                "configure": "配置",
+                "active": "活动",
+                "error": "错误",
+                "not_available": "不可用",
+                "downloading": "下载中",
+                "progress": "下载："
+            },
+            "clusters_page": {
+                "title":"我的OpenStack环境",
+                "create-cluster-text": "新建OpenStack环境",
+                "nodes": "节点：",
+                "stat_new": "新建",
+                "stat_deploying": "部署中",
+                "stat_operational": "可操作",
+                "stat_error": "错误",
+                "stat_removing": "移除中"
+            },
+            "cluster_page": {
+                "deploy_changes": "部署变更",
+                "deployment_mode": "部署模式：",
+                "openstack_release": "OpenStack版本：",
+                "environment_status": "环境状态：",
+                "mode_singlenode": "单节点",
+                "mode_multinode": "多节点",
+                "mode_multinode_with_HA": "HA多节点",
+                "type_compute_and_cinder": "计算和存储",
+                "type_compute_only": "仅计算",
+                "type_cinder_only": "仅存储",
+                "add": "增加",
+                "delete": "删除",
+                "controllers": "控制器",
+                "computes": "计算",
+                "cinders": "存储",
+                "no_nodes_text": "该类型的节点不存在",
+                "error": "错误",
+                "success": "成功",
+
+                "network_tab": {
+                    "title": "网络设置",
+                    "flatdhcp_manager": "FlatDHCP管理",
+                    "vlan_manager": "VLAN管理",
+                    "bt_verify_networks": "验证网络",
+                    "bt_cancel_changes": "取消变更",
+                    "bt_save_settings": "保存设置",
+                    "step_0": "完成网络验证3个步骤:",
+                    "step_1": "1. 每个节点启动测试监听帧",
+                    "step_2": "2. 每个节点发送802.1Q封装的UDP帧",
+                    "step_3": "3. 每个节点从其它节点注册测试帧",
+                    "ip_range": "IP范围",
+                    "netmask": "网络掩码",
+                    "vlan_id": "VLAN ID",
+                    "gateway": "网关",
+                    "cidr": "CIDR",
+                    "nubmer_of_networks": "网络数量",
+                    "size_of_networks": "网络大小",
+                    "vlan_id_range": "VLAN ID范围",
+                    "use_vlan_tagging": "使用VLAN标记",
+                    "start": "开始",
+                    "end": "结束",
+                    "vm_networks_fixed": "虚机网络（固定）",
+                    "public": "公开",
+                    "floating": "浮动",
+                    "management": "管理",
+                    "storage": "存储",
+                    "alert_success": "验证成功。网络配置正确。"
+                },
+
+                "settings_tab": {
+                    "title": "OpenStack设置",
+                    "bt_load_defaults": "加载默认配置",
+                    "bt_cancel_changes": "取消变更",
+                    "bt_save_settings": "保存设置",
+                    "access": "访问",
+                    "syslog": "系统日志",
+                    "common": "通用",
+                    "username": "用户名",
+                    "password": "密码",
+                    "tenant": "tenant",
+                    "email": "电子邮件",
+                    "Hostname": "主机名",
+                    "Port": "端口",
+                    "Syslog transport protocol": "系统日志传输协议",
+                    "Hypervisor type": "管理器类型",
+                    "Scheduler driver": "调度器驱动",
+                    "Filter scheduler": "过滤器调度器",
+                    "Simple scheduler": "简单调度器",
+                    "Use qcow format for images": "为映像使用qcow格式",
+                    "Auto assign floating IP": "自动分配浮动IP",
+                    "Start guests on host boot": "主机启动时运行客户机",
+                    "Public Key": "公开密钥",
+                    "Username for Administrator": "管理员用户名",
+                    "Password for Administrator": "管理员密码",
+                    "Tenant (project) name for Administrator": "管理员Tenant(项目)名称",
+                    "Email address for Administrator": "管理员电子邮件",
+                    "Remote syslog hostname": "远程系统日志主机名",
+                    "Remote syslog port": "远程系统日志端口",
+                    "Choose this type of hypervisor if you run OpenStack on hardware": "如果在硬件上运行OpenStack，选择该类型的管理器",
+                    "Choose this type of hypervisor if you run OpenStack on virtual hosts.": "如果在虚拟机上运行OpenStack，选择该类型的管理器"
+                },
+
+                "logs_tab": {
+                    "title": "日志",
+                    "logs": "日志",
+                    "node": "节点",
+                    "source": "来源",
+                    "level": "级别",
+                    "show": "显示",
+                    "alert_log": "无法获取日志",
+                    "alert_source": "无法获取日志来源",
+                    "date": "日期",
+                    "message": "消息",
+                    "bottom_text": "前面的一些行被忽略。显示更多行：",
+                    "all": "全部",
+                    "no_log_text": "当前过滤器没有找到任何日志。"
+                },
+
+                "healthcheck_tab": {
+                    "title": "OpenStack健康检查",
+                    "select_all": "选择全部",
+                    "bt_run_tests": "运行测试",
+                    "bt_stop_tests": "停止测试",
+                    "alert_deploy": "在测试之前必须先部署新的OpenStack环境",
+                    "alert_not_available": "OSTF服务不可用"
+                },
+
+                "actions_tab": {
+                    "title": "动作",
+                    "rename_environment": "重命名环境",
+                    "delete_environment": "删除环境",
+                    "bt_rename": "重命名",
+                    "bt_delete": "删除",
+                    "alert_delete": "清除每个节点并放回未分配节点池"
+                },
+
+                "nodes_tab": {
+                    "add": "增加",
+                    "delete": "删除",
+                    "controller": "控制器",
+                    "compute": "计算",
+                    "cinder": "存储",
+                    "nodes": "节点",
+                    "apply": "应用",
+                    "cancel": "取消",
+                    "discovered": "在线",
+                    "offline": "离线",
+                    "error": "错误",
+                    "select_all": "选择全部",
+                    "view_logs": "查看日志",
+                    "pending_addition": "等待增加",
+                    "pending_deletion": "等待删除",
+                    "ready": "已就绪",
+                    "installing": "正在安装",
+                    "is_installed": "已安装",
+                    "installing_openstack": "正在安装OpenStack",
+                    "bt_return": "返回节点列表",
+                    "bt_load_defaults": "恢复默认",
+                    "bt_cancel_changes": "取消变更",
+                    "bt_apply": "应用",
+                    "configure": "配置",
+                    "node_interfaces": "节点 接口",
+                    "node_disks": "节点 磁盘",
+                    "speed": "速度：",
+                    "public": "公共",
+                    "floating": "浮动",
+                    "storage": "存储",
+                    "management": "管理",
+                    "fixed": "固定",
+                    "alert_drag_and_drop": "使用拖拽在物理接口之间移动逻辑网络",
+                    "total_space": "全部空间：",
+                    "unallocated": "未分配",
+                    "disk_information": "磁盘信息",
+                    "volume_groups": "卷组",
+                    "use_all_allowed_space": "使用全部可用空间"
+                }
+            },
+            "dialog": {
+                "dismiss_settings": {
+                    "title": "确认",
+                    "important": "重要",
+                    "bt_stay": "留在本页",
+                    "bt_leave": "离开并放弃变更",
+                    "default_msg": "设置变更未保存，您想放弃变更并离开么？",
+                    "verify_msg": "正在进行网络验证，您应该保存变更或留在本页"
+                },
+
+                "rhel_license": {
+                    "title": "红帽企业版Linux账户设置",
+                    "alert_text": "安装红帽版的OpenStack平台, 你首先必须下载RHOS和RHEL并缓存在Fuel的主节点上。请选择你的订阅并在下面输入你的凭据开始下载。",
+                    "bt_cancel": "取消",
+                    "redhat_username": "红帽账户",
+                    "redhat_password": "红帽密码",
+                    "satellite_server_hostname": "satellite服务器主机名",
+                    "activation_key": "激活码"
+                },
+
+                "create_cluster": {
+                    "title": "新建OpenStack环境",
+                    "name": "名称",
+                    "openstack_release": "OpenStack版本",
+                    "alert_text": "在部署红帽的openstack时，首先必须先下载RHOS和RHEL并缓存在Fuel的主节点上。你可以通过版本页面或则选择你的订阅类型并输入你的凭证。RHEL和RHOS将自动下载并缓存到你的创建的环境中。",
+                    "bt_cancel": "取消",
+                    "bt_create": "创建"
+                },
+
+                "remove_cluster": {
+                    "title": "删除环境",
+                    "important": "重要",
+                    "bt_cancel": "取消",
+                    "bt_delete": "删除",
+                    "text1": "有动作未完成，删除环境可能失败，并导致状态不混乱。",
+                    "text2": "每个节点都将被删除并放回未非配节点池。"
+                },
+
+                "change_cluster_mode": {
+                    "title": "变更环境模式",
+                    "deployment_mode": "部署模式：",
+                    "single_node": "单节点",
+                    "multi_node": "多节点",
+                    "multi_node_with_ha": "HA多节点",
+                    "single_node_text": "如果你想试用OpenStack，这个是一个简单的配置。你将获得一个安装OpenStack所有组件的功能齐全的私有云。这个节点同时也包含计算节点的角色。",
+                    "multi_node_text": "在这个配置中，OpenStack控制节点部署从计算节点和存储节点分离出来。此模式假定有一个控制节点，一个或多个计算和存储节点存在。你可以添加更多的节点来扩展你的云。",
+                    "ha_text": "这个配置需要多个OpenStack控制节点(3+)和所有OpenStack高可用组件，包括MySQL/Galera,RabbitMQ,Cinder,以及OpenStack的API服务。如果想建立一个生产级或者更多节点的OpenStack云，请选择这个配置。",
+                    "bt_cancel": "取消",
+                    "bt_apply": "应用"
+                },
+
+                "show_node": {
+                    "label_manufacturer": "设备：",
+                    "label_mac_address": "MAC地址：",
+                    "system": "系统",
+                    "memory": "内存",
+                    "disks": "磁盘",
+                    "interfaces": "接口",
+                    "bt_close": "关闭",
+                    "bt_network_configuration": "网络配置",
+                    "bt_disk_configuration": "磁盘配置",
+                    "product": "产品",
+                    "family": "系列",
+                    "version": "版本",
+                    "serial": "序列号",
+                    "manufacturer": "设备",
+                    "real": "物理",
+                    "total": "全部",
+                    "model": "模块",
+                    "frequency": "频率",
+                    "slots": "插槽",
+                    "maximum capacity": "最大负载",
+                    "type": "类型",
+                    "size": "大小",
+                    "name": "名称",
+                    "disk": "磁盘",
+                    "max speed": "最大速度",
+                    "current speed": "当前速度",
+                    "netmask": "网络掩码"
+                },
+
+                "discard_changes": {
+                    "title": "放弃变更",
+                    "added": "增加：",
+                    "deleted": "删除：",
+                    "node": "节点",
+                    "controller": "控制",
+                    "compute": "计算",
+                    "cinder": "存储",
+                    "bt_cancel": "取消",
+                    "bt_discard": "放弃",
+                    "alert_text": "确定要放弃所有变更吗？"
+                },
+
+                "display_changes": {
+                    "title": "部署变更",
+                    "added": "增加：",
+                    "node": "节点",
+                    "controller": "控制",
+                    "compute": "计算",
+                    "cinder": "存储",
+                    "changed": "变更：",
+                    "deleted": "删除：",
+                    "bt_cancel": "取消",
+                    "bt_deploy": "部署",
+                    "openstack_settings": "OpenStack设置",
+                    "network_settings": "网络设置",
+                    "disks_text": "以下节点的磁盘配置变更：",
+                    "alert_text": "一些节点状态错误，需要重新部署。",
+                    "warning_controller": "部署后的环境将不包含足够数量的控制器，也许不可使用。",
+                    "warning_compute": "建议部署计算节点。"
+                }
+            }
+        }
+    }
+}

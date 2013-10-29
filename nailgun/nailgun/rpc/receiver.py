@@ -16,7 +16,7 @@
 
 import collections
 import itertools
-import json
+import anyjson as json
 import netifaces
 import os
 import traceback

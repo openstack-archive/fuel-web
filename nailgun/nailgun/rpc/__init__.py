@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
+import anyjson as json
 
 from kombu import Connection
 from kombu import Exchange
@@ -62,7 +62,7 @@ nailgun_queue = Queue(
 def cast(name, message):
     logger.debug(
         "RPC cast to orchestrator:\n{0}".format(
-            json.dumps(message, indent=4)
+            json.dumps(message)
         )
     )
     with Connection(conn_str) as conn:

@@ -19,7 +19,7 @@ Handlers dealing with logs
 """
 
 from itertools import dropwhile
-import json
+import anyjson as json
 import logging
 import os
 import re

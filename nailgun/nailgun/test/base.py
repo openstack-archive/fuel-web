@@ -23,7 +23,7 @@ except ImportError:
 from datetime import datetime
 from functools import partial
 from itertools import izip
-import json
+import anyjson as json
 import logging
 import mock
 from netaddr import IPNetwork
@@ -630,7 +630,7 @@ class Environment(object):
         for fxtr_path in self.fxtr_paths_by_names(fxtr_names):
             with open(fxtr_path, "r") as fxtr_file:
                 try:
-                    data.extend(json.load(fxtr_file))
+                    data.extend(json.loads(fxtr_file.read()))
                 except Exception as exc:
                     logging.error(
                         'Error "%s" occurred while loading '

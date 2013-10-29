@@ -19,7 +19,7 @@ Handlers dealing with plugins
 """
 
 
-import json
+import anyjson as json
 import web
 
 from nailgun.api.handlers.base import content_json

@@ -15,7 +15,7 @@
 #    under the License.
 
 import gzip
-import json
+import anyjson as json
 import os
 import shutil
 from StringIO import StringIO

@@ -15,7 +15,7 @@
 #    under the License.
 
 import base64
-import json
+import anyjson as json
 from mock import patch
 
 from nailgun.test.base import BaseTestCase

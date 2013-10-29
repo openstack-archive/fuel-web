@@ -14,7 +14,7 @@
 
 import csv
 from hashlib import md5
-import json
+import anyjson as json
 from mock import patch
 from StringIO import StringIO
 

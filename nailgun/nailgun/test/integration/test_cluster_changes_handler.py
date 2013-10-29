@@ -16,7 +16,7 @@
 
 from copy import deepcopy
 from itertools import izip
-import json
+import anyjson as json
 from mock import patch
 
 

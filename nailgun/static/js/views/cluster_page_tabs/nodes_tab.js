@@ -759,6 +759,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-apply:not(:disabled)': 'applyChanges',
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
+        disableControls: function(disable) {
+            this.updateButtonsState(disable || this.isLocked());
+        },
         hasChanges: function() {
             var noChanges = true;
             var disks = this.disks.toJSON();
@@ -769,7 +772,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         hasValidationErrors: function() {
             var result = false;
-            this.disks.each(function(disk) {result = result || _.some(disk.get('volumes').models, 'validationError');}, this);
+            this.disks.each(function(disk) {result = result || disk.validationError || _.some(disk.get('volumes').models, 'validationError');}, this);
             return result;
         },
         isLocked: function() {
@@ -777,11 +780,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !forbiddenNodes || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
-            var hasChanges = this.hasChanges();
-            var hasValidationErrors = this.hasValidationErrors();
-            this.$('.btn-apply').attr('disabled', !hasChanges || hasValidationErrors);
-            this.$('.btn-revert-changes').attr('disabled', !hasChanges && !hasValidationErrors);
-            this.$('.btn-defaults').attr('disabled', this.isLocked());
+            this.updateButtonsState(this.isLocked());
+            this.applyChangesButton.set('disabled', this.isLocked() || !this.hasChanges() || this.hasValidationErrors());
+            this.cancelChangesButton.set('disabled', this.isLocked() || (!this.hasChanges() && !this.hasValidationErrors()));
         },
         loadDefaults: function() {
             this.disableControls(true);
@@ -829,6 +830,25 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.volumesColors[volume.get('name')] = colors[index];
             }, this);
         },
+        setupButtonsBindings: function() {
+            var configObject = {
+                attributes: [{
+                    name: 'disabled',
+                    observe: 'disabled',
+                    onGet: function(value) {
+                        return _.isUndefined(value) ? false : value;
+                    }
+                }]
+            };
+            this.stickit(this.loadDefaultsButton, {'.btn-defaults': configObject});
+            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': configObject});
+            this.stickit(this.applyChangesButton, {'.btn-apply': configObject});
+        },
+        updateButtonsState: function(state) {
+            this.applyChangesButton.set('disabled', state);
+            this.cancelChangesButton.set('disabled', state);
+            this.loadDefaultsButton.set('disabled',  state);
+        },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
@@ -850,6 +870,15 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             } else {
                 this.goToNodeList();
             }
+            this.loadDefaultsButton = new Backbone.Model({
+                'disabled': false
+            });
+            this.cancelChangesButton = new Backbone.Model({
+                'disabled': true
+            });
+            this.applyChangesButton = new Backbone.Model({
+                'disabled': true
+            });
         },
         renderDisks: function() {
             this.tearDownRegisteredSubViews();
@@ -873,6 +902,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.renderDisks();
                 this.checkForChanges();
             }
+            this.setupButtonsBindings();
             return this;
         }
     });
@@ -896,8 +926,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'keyup input': 'updateDisks',
             'click .use-all-allowed': 'useAllAllowedSpace'
         },
+        bindings: {
+            '.disk-form': {
+                observe: 'visible',
+                visible: true,
+                visibleFn: function($el, isVisible, options) {
+                    isVisible ? $el.collapse('show') : $el.collapse('hide');
+                }
+            }
+        },
         toggleEditDiskForm: function(e) {
-            this.$('.disk-form').collapse('toggle');
+            //this.$('.disk-form').collapse('toggle');
+            this.disk.set('visible', !this.disk.get('visible'));
             this.checkForGroupsDeletionAvailability();
         },
         getVolumeMinimum: function(name) {
@@ -936,6 +976,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         initialize: function(options) {
             _.defaults(this, options);
+            this.disk.set('visible', false);
             this.disk.on('invalid', function(model, error) {
                 this.$('.disk-visual').addClass('invalid');
                 this.$('input').addClass('error');
@@ -983,6 +1024,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.applyColors();
             this.renderVisualGraph();
             this.$('input').autoNumeric('init', {mDec: 0});
+            this.stickit(this.disk);
             return this;
         }
     });

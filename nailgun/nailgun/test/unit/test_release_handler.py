@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
+import ujson as json
 
 from nailgun.api.models import Release
 from nailgun.test.base import BaseIntegrationTest

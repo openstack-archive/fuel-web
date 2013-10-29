@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from mock import patch
+import ujson as json
 
 import nailgun
 from nailgun.api.models import Cluster

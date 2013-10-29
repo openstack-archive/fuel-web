@@ -16,10 +16,10 @@
 
 import collections
 import itertools
-import json
 import netifaces
 import os
 import traceback
+import ujson as json
 
 from sqlalchemy import or_
 

@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from jsonschema import validate
+import ujson as json
 
 from nailgun.errors import errors
 

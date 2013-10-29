@@ -285,7 +285,7 @@ class Attributes(Base):
         new_dict = {}
         if cdict:
             for i, val in cdict.iteritems():
-                if isinstance(val, (str, unicode, int, float)):
+                if isinstance(val, (str, unicode, int, float, long)):
                     new_dict[i] = val
                 elif isinstance(val, dict) and "generator" in val:
                     try:

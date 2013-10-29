@@ -16,7 +16,7 @@
 
 from datetime import datetime
 from decorator import decorator
-import json
+import ujson as json
 
 import web
 

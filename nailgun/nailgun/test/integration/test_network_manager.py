@@ -15,7 +15,7 @@
 #    under the License.
 
 import itertools
-import json
+import ujson as json
 
 from copy import deepcopy
 from mock import Mock

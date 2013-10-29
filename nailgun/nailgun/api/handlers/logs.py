@@ -19,12 +19,11 @@ Handlers dealing with logs
 """
 
 from itertools import dropwhile
-import json
 import logging
 import os
 import re
 import time
-
+import ujson as json
 import web
 
 from nailgun.api.handlers.base import content_json

@@ -19,7 +19,7 @@ Product registration handlers
 """
 
 import base64
-import json
+import ujson as json
 
 
 from nailgun.api.handlers.base import content_json

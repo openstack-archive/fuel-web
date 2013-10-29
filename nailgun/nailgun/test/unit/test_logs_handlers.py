@@ -15,13 +15,13 @@
 #    under the License.
 
 import gzip
-import json
 import os
 import shutil
 from StringIO import StringIO
 import tarfile
 import tempfile
 import time
+import ujson as json
 import unittest
 
 from mock import Mock

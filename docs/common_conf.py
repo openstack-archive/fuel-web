@@ -52,7 +52,7 @@ pdf_language = "en"
 # or just use 'any'
 pdf_breakside = 'any'
 
-# Insert footnotes where they are defined instead of 
+# Insert footnotes where they are defined instead of
 # at the end.
 pdf_inline_footnotes = True
 
@@ -71,7 +71,7 @@ pdf_use_coverpage = True
 # Name of the cover page template to use
 #pdf_cover_template = 'sphinxcover.tmpl'
 
-# Documents to append as an appendix to all manuals.    
+# Documents to append as an appendix to all manuals.
 #pdf_appendices = []
 
 # Enable experimental feature to split table cells. Use it

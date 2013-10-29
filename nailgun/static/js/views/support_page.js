@@ -91,7 +91,7 @@ function(commonViews, models, supportPageTemplate) {
             }
         },
         render: function() {
-            this.$el.html(this.template({tasks: this.logsPackageTasks}));
+            this.$el.html(this.template({tasks: this.logsPackageTasks})).i18n();
             this.stickit(this.fuelKey);
             return this;
         }

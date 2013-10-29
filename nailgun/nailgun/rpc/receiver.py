@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ujson as json
 import collections
 import itertools
-import json
 import netifaces
 import os
 import traceback

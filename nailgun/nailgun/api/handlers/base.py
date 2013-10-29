@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ujson as json
 from datetime import datetime
 from decorator import decorator
-import json
 
 import web
 

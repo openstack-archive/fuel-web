@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ujson as json
 import itertools
-import json
 
 from copy import deepcopy
 from mock import Mock

@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
+import ujson as json
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -96,11 +96,11 @@ class TestHandlers(BaseIntegrationTest):
             {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
                              'current_speed': '100'}]},
             {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
-                             'max_speed': 10.0}]},
+                             'max_speed': 10.01}]},
             {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
                              'max_speed': '100'}]},
             {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
-                             'current_speed': 10.0}]}
+                             'current_speed': 10.01}]}
         ]
         for nic_meta in meta_clean_list:
             meta = self.env.default_metadata()

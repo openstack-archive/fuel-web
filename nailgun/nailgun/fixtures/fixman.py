@@ -14,10 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ujson as json
 from datetime import datetime
 import itertools
 import jinja2
-import json
 import os.path
 import Queue
 import StringIO
@@ -48,8 +48,8 @@ def template_fixture(fileobj, **kwargs):
 
 def upload_fixture(fileobj):
     db.expunge_all()
-    fixture = json.load(
-        template_fixture(fileobj)
+    fixture = json.loads(
+        template_fixture(fileobj).read()
     )
 
     queue = Queue.Queue()
@@ -202,4 +202,4 @@ def dump_fixture(model_name):
                         list, dict, str, unicode, int, float, bool)):
                     value = ""
                 obj_dump['fields'][field] = value
-    sys.stdout.write(json.dumps(dump, indent=4))
+    sys.stdout.write(json.dumps(dump))

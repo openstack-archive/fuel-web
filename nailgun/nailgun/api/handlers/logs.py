@@ -18,8 +18,8 @@
 Handlers dealing with logs
 """
 
+import ujson as json
 from itertools import dropwhile
-import json
 import logging
 import os
 import re

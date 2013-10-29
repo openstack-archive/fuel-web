@@ -19,7 +19,7 @@ Classes for working with disks and volumes.
 All sizes in megabytes.
 '''
 
-import json
+import ujson as json
 
 from copy import deepcopy
 from functools import partial
@@ -526,7 +526,7 @@ class Disk(object):
         return json.dumps(self.render())
 
     def __str__(self):
-        return json.dumps(self.render(), indent=4)
+        return json.dumps(self.render())
 
 
 class VolumeManager(object):
@@ -840,7 +840,7 @@ class VolumeManager(object):
         new_dict = {}
         if isinstance(cdict, dict):
             for i, val in cdict.iteritems():
-                if type(val) in (str, unicode, int, float):
+                if type(val) in (str, unicode, int, float, long):
                     new_dict[i] = val
                 elif isinstance(val, dict):
                     if "generator" in val:

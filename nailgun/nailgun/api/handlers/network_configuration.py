@@ -18,7 +18,7 @@
 Handlers dealing with network configurations
 """
 
-import json
+import ujson as json
 import traceback
 import web
 

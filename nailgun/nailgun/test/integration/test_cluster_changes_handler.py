@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ujson as json
 from copy import deepcopy
 from itertools import izip
-import json
 from mock import patch
 
 

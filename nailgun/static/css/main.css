@@ -84,6 +84,14 @@ h6.page-title {
   width: 1030px;
 }
 
+.footer-lang {
+  display: block;
+  padding: 14px 0px 0px 5px;
+  color: #7789a0;
+  font-size: 11px;
+  margin-top: 0px;
+}
+
 /*  Navigation */
 .navigation-bar {
   margin-top: -1px;

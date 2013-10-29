@@ -32,7 +32,7 @@ function process_option {
     -J|--no-jslint) no_jslint=1;;
     -U|--no-ui-tests) no_ui_tests=1;;
     -I|--integration) integration_tests=1;;
-    -u|--unit) unit_tests=1;;
+    -n|--unit) unit_tests=1;;
     -x|--xunit) xunit=1;;
     -c|--clean) clean=1;;
     ui_tests*) ui_test_files="$ui_test_files $1";;
@@ -92,9 +92,7 @@ function run_flake8 {
   # H802 - first line of git commit commentary should be less than 50 characters
   # __init__.py - excluded because it doesn't comply with pep8 standard
   flake_status=0
-  flake8 --exclude=__init__.py --ignore=H302,H802 --show-source --show-pep8 --count shotgun nailgun || flake_status=1
-  pep8 --exclude=welcome.py bin dhcp-checker fuelmenu || flake_status=1
-  [[ $flake_status = 0 ]] || return 1
+  flake8 --exclude=__init__.py,welcome.py --ignore=H302,H802 --show-source --show-pep8 --count . || return 1
   echo "Flake8 check passed successfully."
 }
 
@@ -197,7 +195,7 @@ if [ $just_ui_tests -eq 1 ]; then
     exit
 fi
 
-function run_tests {
+function run_nailgun_tests {
   clean
   (
   cd nailgun
@@ -215,7 +213,7 @@ function run_tests {
 
 function run_integration_tests {
     noseargs="nailgun/test/integration"
-    run_tests
+    run_nailgun_tests
 }
 
 if [ $integration_tests -eq 1 ]; then
@@ -224,8 +222,7 @@ if [ $integration_tests -eq 1 ]; then
 fi
 
 function run_unit_tests {
-    noseargs="nailgun/test/unit"
-    run_tests
+    nosetests $noseopts $test_args --verbosity=2 shotgun nailgun/nailgun/test/unit
 }
 
 if [ $unit_tests -eq 1 ]; then
@@ -242,7 +239,9 @@ function drop_db {
   exit 1
 }
 
-run_tests || errors+=' unittests'
+run_unit_tests || errors+=' unittests'
+
+run_integration_tests || errors+=' integration'
 
 if [ "$noseargs" == "$default_noseargs" ]; then
   if [ $no_flake8 -eq 0 ]; then

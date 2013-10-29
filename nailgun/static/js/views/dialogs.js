@@ -407,7 +407,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var disabled = !release || release.get('operating_system') == 'RHEL'; // no Neutron for RHOS for now
             this.$el.html(this.template({disabled: disabled, release: release}));
             if (disabled) {
-                this.$('input[value^=neutron]').prop('disabled', true);
+                this.$('input[value=neutron-gre]').prop('disabled', true); //enabling Neutron+vlan
             }
             this.$('input[name=manager]:first').prop('checked', true);
             return this;

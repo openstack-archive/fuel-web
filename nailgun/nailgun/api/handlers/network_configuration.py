@@ -18,8 +18,8 @@
 Handlers dealing with network configurations
 """
 
-import json
 import traceback
+import ujson as json
 import web
 
 from nailgun.api.handlers.base import build_json_response

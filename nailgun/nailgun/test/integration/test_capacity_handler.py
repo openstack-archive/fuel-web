@@ -14,9 +14,9 @@
 
 import csv
 from hashlib import md5
-import json
 from mock import patch
 from StringIO import StringIO
+import ujson as json
 
 from nailgun.api.models import Task
 from nailgun.test.base import BaseIntegrationTest

@@ -18,8 +18,8 @@
 Handlers dealing with clusters
 """
 
-import json
 import traceback
+import ujson as json
 import web
 
 from nailgun.api.handlers.base import content_json
@@ -221,8 +221,7 @@ class ClusterCollectionHandler(JSONHandler):
                     netmanager.assign_networks_by_default(node)
 
             raise web.webapi.created(json.dumps(
-                ClusterHandler.render(cluster),
-                indent=4
+                ClusterHandler.render(cluster)
             ))
         except (
             errors.OutOfVLANs,
@@ -274,7 +273,7 @@ class ClusterChangesHandler(JSONHandler):
             network_info = net_serializer.serialize_for_cluster(cluster)
             logger.info(
                 u"Network info:\n{0}".format(
-                    json.dumps(network_info, indent=4)
+                    json.dumps(network_info)
                 )
             )
             task_manager = DeploymentTaskManager(

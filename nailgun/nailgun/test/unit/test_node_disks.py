@@ -15,7 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
-import json
+import ujson as json
 
 from nailgun.errors import errors
 from nailgun.test.base import BaseIntegrationTest

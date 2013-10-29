@@ -16,8 +16,8 @@
 
 from copy import deepcopy
 from itertools import izip
-import json
 from mock import patch
+import ujson as json
 
 
 import nailgun

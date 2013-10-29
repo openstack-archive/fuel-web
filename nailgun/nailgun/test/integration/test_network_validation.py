@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from netaddr import IPNetwork
+import ujson as json
 
 from nailgun.api.models import NetworkGroup
 from nailgun.test.base import BaseIntegrationTest

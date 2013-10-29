@@ -18,8 +18,7 @@
 Handlers dealing with releases
 """
 
-import json
-
+import ujson as json
 import web
 
 from nailgun.api.handlers.base import content_json
@@ -118,6 +117,5 @@ class ReleaseCollectionHandler(JSONHandler):
         db().add(release)
         db().commit()
         raise web.webapi.created(json.dumps(
-            ReleaseHandler.render(release),
-            indent=4
+            ReleaseHandler.render(release)
         ))

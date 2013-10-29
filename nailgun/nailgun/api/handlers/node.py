@@ -19,8 +19,8 @@ Handlers dealing with nodes
 """
 
 from datetime import datetime
-import json
 import traceback
+import ujson as json
 
 from sqlalchemy.orm import joinedload
 
@@ -312,8 +312,7 @@ class NodeCollectionHandler(JSONHandler):
             node_id=node.id
         )
         raise web.webapi.created(json.dumps(
-            NodeHandler.render(node),
-            indent=4
+            NodeHandler.render(node)
         ))
 
     @content_json

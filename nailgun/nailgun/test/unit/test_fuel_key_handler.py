@@ -15,8 +15,8 @@
 #    under the License.
 
 import base64
-import json
 from mock import patch
+import ujson as json
 
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import reverse

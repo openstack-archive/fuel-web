@@ -19,7 +19,7 @@ Classes for working with disks and volumes.
 All sizes in megabytes.
 '''
 
-import json
+import anyjson as json
 
 from copy import deepcopy
 from functools import partial
@@ -526,7 +526,7 @@ class Disk(object):
         return json.dumps(self.render())
 
     def __str__(self):
-        return json.dumps(self.render(), indent=4)
+        return json.dumps(self.render())
 
 
 class VolumeManager(object):

@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
+import anyjson as json
 
 from mock import patch
 from sqlalchemy.sql import not_

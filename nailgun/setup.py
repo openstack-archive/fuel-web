@@ -42,7 +42,8 @@ requires = [
     'jsonschema==2.0.0',
     'Shotgun==0.1.0',
     'netifaces==0.8',
-    'psycopg2==2.4.6'
+    'psycopg2==2.4.6',
+    'anyjson==0.3.1'
 ]
 
 major_version = '0.1'

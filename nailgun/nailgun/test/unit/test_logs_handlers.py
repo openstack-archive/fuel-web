@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import anyjson as json
 import gzip
-import json
 import os
 import shutil
 from StringIO import StringIO

@@ -18,7 +18,7 @@
 Handlers dealing with releases
 """
 
-import json
+import anyjson as json
 
 import web
 
@@ -118,6 +118,5 @@ class ReleaseCollectionHandler(JSONHandler):
         db().add(release)
         db().commit()
         raise web.webapi.created(json.dumps(
-            ReleaseHandler.render(release),
-            indent=4
+            ReleaseHandler.render(release)
         ))

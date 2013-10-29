@@ -14,8 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import anyjson as json
 import base64
-import json
 from mock import patch
 
 from nailgun.test.base import BaseTestCase

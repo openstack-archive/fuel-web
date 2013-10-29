@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
+import anyjson as json
 import uuid
 
 from nailgun.api.models import Notification

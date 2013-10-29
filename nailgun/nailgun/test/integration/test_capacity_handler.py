@@ -12,9 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import anyjson as json
 import csv
 from hashlib import md5
-import json
 from mock import patch
 from StringIO import StringIO
 

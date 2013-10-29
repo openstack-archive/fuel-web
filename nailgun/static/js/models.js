@@ -263,7 +263,10 @@ define(['utils', 'deepModel'], function(utils) {
             return response;
         },
         toJSON: function(options) {
-            return _.extend(this.constructor.__super__.toJSON.call(this, options), {volumes: this.get('volumes').toJSON()});
+            var result = this.constructor.__super__.toJSON.call(this, options);
+            result = _.omit(result, 'visible');
+            _.extend(result, {volumes: this.get('volumes').toJSON()});
+            return result;
         },
         getUnallocatedSpace: function(options) {
             options = options || {};

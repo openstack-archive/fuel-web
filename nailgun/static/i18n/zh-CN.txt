@@ -1,0 +1,30 @@
+# translations for "OpenStack Settings" page
+
+
+Choose this type of hypervisor if you run OpenStack on virtual hosts.
+如果您在虚拟机上运行OpenStack请选择该类型的管理器。
+
+
+Currently the most advanced OpenStack scheduler. See the OpenStack documentation for details.
+当前最高级的OpenStack调度器。详情见OpenStack文档。
+
+
+This is 'naive' scheduler which tries to find the least loaded host
+这是原生调度器，尝试找到最少的已加载主机
+
+
+For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.
+大多数情况下您需要qcow格式。如果设置为false，将使用原始映像格式运行虚机。基于原始格式的OpenStack当前不支持快照。
+
+
+If true, OpenStack will automatically assign a floating IP to a new instance
+OpenStack将自动给新实例分配浮动IP
+
+Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots.
+在主机重启时是否需要重启客户机。 如果启用，此选项会导致nova-compute启动时无条件的重启客户机。如果客户机为停止状态，则启动它。如果是运行状态，则重启。
+
+
+Public key(s) to include in authorized_keys on deployed nodes
+部署节点时包含在authorized_keys中的公钥
+
+

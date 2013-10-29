@@ -88,7 +88,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var commonViews = require('views/common'); // avoid circular dependencies
             this.rhelCredentialsForm = new commonViews.RhelCredentialsForm(_.extend({dialog: this}, options));
             this.registerSubView(this.rhelCredentialsForm);
-            this.$('.credentials').html('').append(this.rhelCredentialsForm.render().el);
+            this.$('.credentials').html('').append(this.rhelCredentialsForm.render().el).i18n();
         }
     };
 
@@ -529,6 +529,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             this.tearDownRegisteredSubViews();
             this.constructor.__super__.render.call(this);
             this.renderRhelCredentialsForm({redHatAccount: this.redHatAccount});
+            this.$el.i18n();
             return this;
         }
     }, rhelCredentialsMixin));

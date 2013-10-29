@@ -4,4 +4,11 @@
   <% if (version) { %>
     <div class="footer-version pull-right">Version: <%- version || '' %></div>
   <% } %>
+  <div class="footer-lang pull-right">
+    <div class="dropdown dropup">
+      <a class="dropdown-toggle current-locale" data-toggle="dropdown" href="#"></a>
+      <ul class="dropdown-menu locales" role="menu" aria-labelledby="dLabel">
+      </ul>
+    </div>
+  </div>
 </div>

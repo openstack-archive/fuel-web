@@ -3824,6 +3824,10 @@ hr.slim {
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#b0b0b0', endColorstr='#a0a0a0',GradientType=0 ) !important; /* IE6-8 */
 }
 
+.disk-visual.invalid .close-btn {
+  display: none !important;
+}
+
 .unallocated .node-content .toggle-volume {
   color: #555555;
   text-shadow: 1px 0 0 rgba(255,255,255,.3);

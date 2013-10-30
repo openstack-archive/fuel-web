@@ -26,7 +26,16 @@ from time import sleep
 import urllib2
 import yaml
 
-ROOT = "http://127.0.0.1:8000"
+path_to_config = "/etc/fuel-cli.yaml"
+if os.path.exists(path_to_config):
+    with open(path_to_config, "r") as fh:
+        config = yaml.load(fh.read())
+    ROOT = "http://{0}:{1}".format(
+        config["LISTEN_ADDRESS"],
+        config["LISTEN_PORT"]
+    )
+else:
+    ROOT = "http://127.0.0.1:8000"
 
 API_ROOT = ROOT + "/api/v1/"
 DEBUG = False

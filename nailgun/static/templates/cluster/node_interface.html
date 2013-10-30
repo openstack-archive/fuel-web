@@ -1,5 +1,5 @@
 <!-- network block start -->
-<div class="physical-network-box">
+<div class="physical-network-box" data-name="<%- ifc.get('name') %>">
   <div class="network-box-name"><%- ifc.get('name') %></div>
   <div class="network-box-item">
 
@@ -15,7 +15,7 @@
           <% if (network.get('name') != 'floating') { %>
             </div><div class="logical-network-group">
           <% } %>
-          <div class="logical-network-item" data-name="<%- network.get('name') %>">
+          <div class="logical-network-item  <%- (_.contains(ifc.get('allowed_networks').invoke('get', 'name'), 'fuelweb_admin')) ? 'disabled' : '' %>" data-name="<%- network.get('name') %>">
             <div class="name"><%- network.get('name') == 'fuelweb_admin' ? 'Admin (PXE)' : network.get('name') %></div>
             <div class="id">
             <% var vlanStart = network.vlanStart() %>
@@ -35,3 +35,4 @@
   </div>
 </div>
 <!-- network block end -->
+<div class="network-box-error-message common enable-selection"></div>

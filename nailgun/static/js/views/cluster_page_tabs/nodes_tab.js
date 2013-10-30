@@ -98,6 +98,30 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         isLocked: function() {
             return !!this.model.task('deploy', 'running');
+        },
+        initButtons: function() {
+            this.loadDefaultsButton = new Backbone.Model({disabled: false});
+            this.cancelChangesButton = new Backbone.Model({disabled: true});
+            this.applyChangesButton = new Backbone.Model({disabled: true});
+        },
+        setupButtonsBindings: function() {
+            var bindings = {
+                attributes: [{
+                    name: 'disabled',
+                    observe: 'disabled',
+                    onGet: function(value) {
+                        return _.isUndefined(value) ? false : value;
+                    }
+                }]
+            };
+            this.stickit(this.loadDefaultsButton, {'.btn-defaults': bindings});
+            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': bindings});
+            this.stickit(this.applyChangesButton, {'.btn-apply': bindings});
+        },
+        updateButtonsState: function(state) {
+            this.applyChangesButton.set('disabled', state);
+            this.cancelChangesButton.set('disabled', state);
+            this.loadDefaultsButton.set('disabled',  state);
         }
     });
 
@@ -828,25 +852,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.volumesColors[volume.get('name')] = colors[index];
             }, this);
         },
-        setupButtonsBindings: function() {
-            var bindings = {
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled',
-                    onGet: function(value) {
-                        return _.isUndefined(value) ? false : value;
-                    }
-                }]
-            };
-            this.stickit(this.loadDefaultsButton, {'.btn-defaults': bindings});
-            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': bindings});
-            this.stickit(this.applyChangesButton, {'.btn-apply': bindings});
-        },
-        updateButtonsState: function(state) {
-            this.applyChangesButton.set('disabled', state);
-            this.cancelChangesButton.set('disabled', state);
-            this.loadDefaultsButton.set('disabled',  state);
-        },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
@@ -868,9 +873,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             } else {
                 this.goToNodeList();
             }
-            this.loadDefaultsButton = new Backbone.Model({disabled: false});
-            this.cancelChangesButton = new Backbone.Model({disabled: true});
-            this.applyChangesButton = new Backbone.Model({disabled: true});
+            this.initButtons();
         },
         renderDisks: function() {
             this.tearDownRegisteredSubViews();
@@ -1099,25 +1102,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     utils.showErrorDialog({title: 'Interfaces configuration'});
                 }, this));
         },
-        setupButtonsBindings: function() {
-            var bindings = {
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled',
-                    onGet: function(value) {
-                        return _.isUndefined(value) ? false : value;
-                    }
-                }]
-            };
-            this.stickit(this.loadDefaultsButton, {'.btn-defaults': bindings});
-            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': bindings});
-            this.stickit(this.applyChangesButton, {'.btn-apply': bindings});
-        },
-        updateButtonsState: function(state) {
-            this.applyChangesButton.set('disabled', state);
-            this.cancelChangesButton.set('disabled', state);
-            this.loadDefaultsButton.set('disabled',  state);
-        },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
@@ -1154,9 +1138,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             } else {
                 this.goToNodeList();
             }
-            this.loadDefaultsButton = new Backbone.Model({disabled: false});
-            this.cancelChangesButton = new Backbone.Model({disabled: true});
-            this.applyChangesButton = new Backbone.Model({disabled: true});
+            this.initButtons();
         },
         renderInterfaces: function() {
             this.tearDownRegisteredSubViews();
@@ -1193,47 +1175,38 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'sortdeactivate .logical-network-box': 'dragDeactivate',
             'sortover .logical-network-box': 'updateDropTarget'
         },
-        dragStart: function(event, ui) {
-            var networkNames = $(ui.item).find('.logical-network-item').map(function(index, el) {return $(el).data('name');}).get();
-            this.screen.draggedNetworks = this.model.get('assigned_networks').filter(function(network) {return _.contains(networkNames, network.get('name'));});
+        dragStart: function (event, ui) {
+            var networkNames = $(ui.item).find('.logical-network-item').map(function (index, el) {
+                return $(el).data('name');
+            }).get();
+            this.screen.draggedNetworks = this.model.get('assigned_networks').filter(function (network) {
+                return _.contains(networkNames, network.get('name'));
+            });
             if (event.type == 'sortstart') {
                 this.updateDropTarget();
-            } else if (event.type == 'sortremove' && this.screen.dropTarget.draggedNetworksAllowed()) {
+            } else if (event.type == 'sortremove') {
                 this.model.get('assigned_networks').remove(this.screen.draggedNetworks);
             }
         },
-        dragStop: function(event, ui) {
-            if (event.type == 'sortreceive' && this.draggedNetworksAllowed()) {
+        dragStop: function (event, ui) {
+            if (event.type == 'sortreceive') {
                 this.model.get('assigned_networks').add(this.screen.draggedNetworks);
             }
             this.render();
             this.screen.draggedNetworks = null;
         },
-        dragActivate: function(event) {
-            if (!this.draggedNetworksAllowed()) {
-                this.$('.physical-network-box').addClass('nodrag');
-            }
-        },
-        dragDeactivate: function(event) {
-            this.$('.physical-network-box').removeClass('nodrag');
-        },
-        updateDropTarget: function(event) {
+        updateDropTarget: function (event) {
             this.screen.dropTarget = this;
         },
-        draggedNetworksAllowed: function() {
-            var dragged = _.invoke(this.screen.draggedNetworks, 'get', 'name');
-            var allowed = this.model.get('allowed_networks').pluck('name');
-            return _.intersection(dragged, allowed).length == dragged.length;
-        },
-        checkIfEmpty: function() {
+        checkIfEmpty: function () {
             this.$('.network-help-message').toggle(!this.model.get('assigned_networks').length && !this.screen.isLocked());
         },
-        initialize: function(options) {
+        initialize: function (options) {
             _.defaults(this, options);
             this.model.get('assigned_networks').on('add remove', this.checkIfEmpty, this);
             this.model.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
         },
-        render: function() {
+        render: function () {
             this.$el.html(this.template(_.extend({ifc: this.model}, this.templateHelpers)));
             this.checkIfEmpty();
             this.$('.logical-network-box').sortable({
@@ -1242,6 +1215,17 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 containment: this.screen.$('.node-networks'),
                 disabled: this.screen.isLocked()
             }).disableSelection();
+            var validationResult = this.model.validate({}, {assignedNetworksModels: this.model.get('assigned_networks')});
+            if (validationResult.length > 0) {
+                validationResult.forEach(function (error) {
+                    this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
+                        .addClass('nodrag')
+                        .next('.network-box-error-message').text(error);
+                }, this);
+            }
+            if (this.$(".physical-network-box.nodrag").length > 0) {
+                this.screen.applyChangesButton.set('disabled', true);
+            }
             return this;
         }
     });

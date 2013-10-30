@@ -332,6 +332,30 @@ define(['utils', 'deepModel'], function(utils) {
                 assigned_networks: this.get('assigned_networks').toJSON(),
                 allowed_networks: this.get('allowed_networks').toJSON()
             });
+        },
+        validate: function() {
+            var errors = [],
+                assignedNetworks = this.get('assigned_networks'),
+                allowedNames = this.get('allowed_networks').pluck('name');
+            if (_.contains(allowedNames, 'fuelweb_admin') && allowedNames.length == 1 && assignedNetworks.length > 1) {
+                errors.push('Admin network should be assigned to the dedicated interface where no one other network is assigned too');
+            }
+            if (assignedNetworks.where({'name':'private'}).length > 0 && assignedNetworks.length > 1) {
+                errors.push('Private network can not be assigned on the one interface with any other networks');
+            }
+            var vlanStartResult = assignedNetworks.invoke('vlanStart'),
+                noVlanStartLength = _.reject(vlanStartResult).length,
+                assignedNetworksWithoutPublicFloatingLength = _.without(assignedNetworks.pluck('name'), 'public', 'floating').length,
+                allowedEmptyVlanStartNumber = 1;
+                if (assignedNetworksWithoutPublicFloatingLength < assignedNetworks.length){
+                    if (_.isEmpty(_.filter(_.invoke(assignedNetworks.where({'name': 'public'}), 'vlanStart')))){
+                        allowedEmptyVlanStartNumber = 2;
+                    }
+                }
+                if (noVlanStartLength > allowedEmptyVlanStartNumber) {
+                    errors.push('Untagged networks can not be assigned to one interface');
+                }
+            return errors;
         }
     });
 

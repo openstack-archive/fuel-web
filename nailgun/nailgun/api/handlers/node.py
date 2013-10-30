@@ -487,7 +487,7 @@ class NodeNICsHandler(JSONHandler):
 
     @content_json
     def PUT(self, node_id):
-        """:returns: Collection of JSONized Node objects.
+        """:returns: Collection of JSONized Node interfaces.
         :http: * 200 (nodes are successfully updated)
                * 400 (invalid nodes data specified)
         """
@@ -495,8 +495,10 @@ class NodeNICsHandler(JSONHandler):
         node_data = {'id': node_id, 'interfaces': interfaces_data}
         self.validator.validate(node_data)
 
-        network_manager = NetworkManager()
+        node = self.get_object_or_404(Node, node_id)
+        network_manager = node.cluster.network_manager()
         network_manager._update_attrs(node_data)
+
         node = self.get_object_or_404(Node, node_id)
         return self.render(node)['interfaces']
 

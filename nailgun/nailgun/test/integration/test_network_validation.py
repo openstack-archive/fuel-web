@@ -128,7 +128,6 @@ class TestNovaHandlers(BaseIntegrationTest):
         )
 
     def test_network_checking_fails_if_untagged_intersection(self):
-        self.find_net_by_name('public')["vlan_start"] = None
         self.find_net_by_name('management')["vlan_start"] = None
         self.env.nova_networks_put(self.cluster.id, self.nets)
 
@@ -144,7 +143,7 @@ class TestNovaHandlers(BaseIntegrationTest):
             'Some untagged networks are assigned to the same physical '
             'interface. You should assign them to different physical '
             'interfaces. Affected:\n'
-            '"management", "public" networks at node "None"'
+            '"floating", "management", "public" networks at node "None"'
         )
 
 

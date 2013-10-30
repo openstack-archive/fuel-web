@@ -102,6 +102,7 @@ class NodeHandler(JSONHandler):
                     network_manager.clear_assigned_networks(node)
                     network_manager.clear_all_allowed_networks(node.id)
                 if node.cluster_id:
+                    network_manager = node.cluster.network_manager()
                     network_manager.assign_networks_by_default(node)
                     network_manager.allow_network_assignment_to_all_interfaces(
                         node
@@ -276,6 +277,7 @@ class NodeCollectionHandler(JSONHandler):
             network_manager.update_interfaces_info(node)
 
         if node.cluster_id:
+            network_manager = node.cluster.network_manager()
             network_manager.assign_networks_by_default(node)
             network_manager.allow_network_assignment_to_all_interfaces(node)
 
@@ -353,14 +355,11 @@ class NodeCollectionHandler(JSONHandler):
             else:
                 cluster = node.cluster
 
-            if cluster and cluster.net_provider == "nova_network":
-                network_manager = NetworkManager()
-            elif cluster and cluster.net_provider == "neutron":
-                network_manager = NeutronManager()
+            if cluster:
+                network_manager = cluster.network_manager()
             # essential rollback - we can't avoid it now
-            elif not cluster:
+            else:
                 network_manager = NetworkManager()
-            # /Choosing network manager
 
             if nd.get("pending_roles") == [] and node.cluster:
                 node.cluster.clear_pending_changes(node_id=node.id)

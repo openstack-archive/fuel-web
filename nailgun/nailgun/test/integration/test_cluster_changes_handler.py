@@ -871,55 +871,35 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.env.nova_networks_get(cluster_id)
         nets = json.loads(resp.body)
         for net in nets["networks"]:
-            if net["name"] in ["public", "floating"]:
+            if net["name"] in ["management", ]:
                 net["vlan_start"] = None
 
         self.env.nova_networks_put(cluster_id, nets)
 
-        main_iface_db = node_db.admin_interface
+        resp = self.app.get(reverse('NodeNICsHandler',
+                                    kwargs={'node_id': node_db.id}),
+                            headers=self.default_headers)
+        nics = json.loads(resp.body)
 
-        assigned_net_names = [
-            n.name
-            for n in main_iface_db.assigned_networks
-        ]
-        self.assertIn("public", assigned_net_names)
-        self.assertIn("floating", assigned_net_names)
+        for nic in nics:
+            for net in nic['assigned_networks']:
+                if net['name'] == 'fuelweb_admin':
+                    admin_nic = nic
+                else:
+                    other_nic = nic
+                    if net['name'] == 'management':
+                        mgmt = net
+        other_nic['assigned_networks'].remove(mgmt)
+        admin_nic['assigned_networks'].append(mgmt)
+
+        resp = self.app.put(reverse('NodeNICsHandler',
+                                    kwargs={'node_id': node_db.id}),
+                            json.dumps(nics),
+                            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
 
         supertask = self.env.launch_deployment()
         self.env.wait_error(supertask)
-
-        resp = self.app.get(
-            reverse('NodeNICsHandler', kwargs={
-                'node_id': node_db.id
-            }),
-            headers=self.default_headers
-        )
-
-        ifaces = json.loads(resp.body)
-
-        wrong_nets = [nic for nic in ifaces[0]["assigned_networks"]
-                      if nic["name"] in ["public", "floating"]]
-
-        map(
-            ifaces[0]["assigned_networks"].remove,
-            wrong_nets
-        )
-
-        map(
-            ifaces[1]["assigned_networks"].append,
-            wrong_nets
-        )
-
-        resp = self.app.put(
-            reverse('NodeCollectionNICsHandler', kwargs={
-                'node_id': node_db.id
-            }),
-            json.dumps([{"interfaces": ifaces, "id": node_db.id}]),
-            headers=self.default_headers
-        )
-
-        supertask = self.env.launch_deployment()
-        self.env.wait_ready(supertask)
 
     def datadiff(self, node1, node2, path=None):
         if path is None:

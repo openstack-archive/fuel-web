@@ -136,7 +136,7 @@ class TestMultiprocMap(unittest.TestCase):
 class TestIfaceStateHelper(unittest.TestCase):
 
     def test_iface_is_up(self, command, iface_state):
-        iface_value = iter(('UP',)*3)
+        iface_value = iter(('UP',) * 3)
         iface_state.side_effect = lambda *args, **kwargs: next(iface_value)
         with utils.IfaceState('eth1') as iface:
             self.assertEqual(iface, 'eth1')
@@ -155,7 +155,7 @@ class TestIfaceStateHelper(unittest.TestCase):
                           call('ifconfig', 'eth1', 'down')])
 
     def test_iface_cant_ifup(self, command, iface_state):
-        iface_value = iter(('DOWN',)*10)
+        iface_value = iter(('DOWN',) * 10)
         iface_state.side_effect = lambda *args, **kwargs: next(iface_value)
 
         def test_raises():

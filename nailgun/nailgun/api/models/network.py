@@ -69,6 +69,7 @@ class Network(Base):
 
 
 class NetworkGroup(Base):
+    _meta = None
     __tablename__ = 'network_groups'
     NAMES = (
         # Node networks
@@ -117,6 +118,22 @@ class NetworkGroup(Base):
         ]
         return vlans
 
+    @property
+    def meta(self):
+        if not self._meta:
+            meta = self.cluster.release.networks_metadata[
+                self.cluster.net_provider
+            ]["networks"]
+            net = [
+                n for n in meta
+                if n["name"] == self.name
+            ]
+            if not net:
+                self._meta = {}
+            else:
+                self._meta = net[0]
+        return self._meta
+
 
 class NetworkConfiguration(object):
     @classmethod
@@ -150,13 +167,14 @@ class NetworkConfiguration(object):
                         cls._set_ip_ranges(ng['id'], value)
                     else:
                         if key == 'cidr' and \
-                                not ng['name'] in ('public', 'floating'):
+                                ng_db.meta.get("notation") == "cidr":
                             network_manager.update_range_mask_from_cidr(
                                 ng_db, value)
 
                         setattr(ng_db, key, value)
 
-                network_manager.create_networks(ng_db)
+                if ng_db.meta.get("notation"):
+                    network_manager.create_networks(ng_db)
                 ng_db.cluster.add_pending_changes('networks')
 
     @classmethod

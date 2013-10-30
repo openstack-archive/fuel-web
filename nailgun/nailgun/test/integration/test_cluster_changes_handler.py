@@ -871,22 +871,16 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.env.nova_networks_get(cluster_id)
         nets = json.loads(resp.body)
         for net in nets["networks"]:
-            if net["name"] in ["public", "floating"]:
+            if net["name"] in ["management",]:
                 net["vlan_start"] = None
 
         self.env.nova_networks_put(cluster_id, nets)
 
         main_iface_db = node_db.admin_interface
+        other_iface_db = [nic for nic in node_db.interfaces
+                          if nic != main_iface_db][0]
 
-        assigned_net_names = [
-            n.name
-            for n in main_iface_db.assigned_networks
-        ]
-        self.assertIn("public", assigned_net_names)
-        self.assertIn("floating", assigned_net_names)
-
-        supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask)
+        other_iface_db.remove()
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={
@@ -897,18 +891,12 @@ class TestHandlers(BaseIntegrationTest):
 
         ifaces = json.loads(resp.body)
 
-        wrong_nets = [nic for nic in ifaces[0]["assigned_networks"]
-                      if nic["name"] in ["public", "floating"]]
+        supertask = self.env.launch_deployment()
+        self.env.wait_error(supertask)
 
-        map(
-            ifaces[0]["assigned_networks"].remove,
-            wrong_nets
-        )
-
-        map(
-            ifaces[1]["assigned_networks"].append,
-            wrong_nets
-        )
+        for net in nets["networks"]:
+            if net["name"] in ["management",]:
+                net["vlan_start"] = 111
 
         resp = self.app.put(
             reverse('NodeCollectionNICsHandler', kwargs={

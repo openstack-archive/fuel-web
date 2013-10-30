@@ -567,12 +567,24 @@ class NetworkManager(object):
     def assign_networks_to_main_interface(self, node):
         self.clear_assigned_networks(node)
 
-        for ng in self.get_cluster_networkgroups_by_node(node):
-            node.admin_interface.assigned_networks.append(ng)
+        # ifaces = [iface for iface in node.interfaces
+        #           if iface.id != node.admin_interface.id]
+        # if not ifaces:
+        #     ifaces = [node.admin_interface]
+        #
+        # for ng in self.get_cluster_networkgroups_by_node(node):
+        #     if ng.name not in ['public', 'floating']:
+        #         node.admin_interface.assigned_networks.append(ng)
+        #     else:
+        #         ifaces[0].assigned_networks.append(ng)
+        #
+        # node.admin_interface.assigned_networks.append(
+        #     self.get_admin_network_group()
+        # )
 
-        node.admin_interface.assigned_networks.append(
-            self.get_admin_network_group()
-        )
+        for nic in node.interfaces:
+            [nic.assigned_networks.append(ng)
+             for ng in self.get_default_nic_networkgroups(node, nic)]
 
         db().commit()
 
@@ -593,8 +605,8 @@ class NetworkManager(object):
                     ifaces.pop(0)
         # assign all remaining networks
         [ifaces[0].assigned_networks.append(ng)
-         for ng in self.get_cluster_networkgroups_by_node(node)
-         if ng.name != 'private']
+        for ng in self.get_cluster_networkgroups_by_node(node)
+        if ng.name != 'private']
 
         node.admin_interface.assigned_networks.append(
             self.get_admin_network_group()
@@ -914,13 +926,24 @@ class NetworkManager(object):
             map(db().delete, interfaces_to_delete)
 
     def get_default_nic_networkgroups(self, node, nic):
-        """Assign all network groups on admin interface
-        by default
+        """Assign all network groups except public and floating
+        to admin interface by default
         """
-        return (
-            [self.get_admin_network_group()] +
-            self.get_all_cluster_networkgroups(node)
-        ) if nic == node.admin_interface else []
+        if len(node.interfaces) < 2:
+            return (
+                [self.get_admin_network_group()] +
+                self.get_all_cluster_networkgroups(node)
+            ) if nic == node.admin_interface else []
+
+        if nic == node.admin_interface:
+            return [self.get_admin_network_group()]
+        # return get_all_cluster_networkgroups() for the first non-admin NIC
+        # and [] for other NICs
+        for n in node.interfaces:
+            if n == nic:
+                return self.get_all_cluster_networkgroups(node)
+            if n != node.admin_interface:
+                return []
 
     def get_all_cluster_networkgroups(self, node):
         if node.cluster:

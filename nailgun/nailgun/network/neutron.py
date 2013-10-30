@@ -231,7 +231,10 @@ class NeutronManager(NetworkManager):
         for network in networks_list:
             free_vlans = _free_vlans()
             vlan_start = public_vlan if network.get("use_public_vlan") \
-                else free_vlans[0]
+                else free_vlans[0] if "vlan_start" not in network \
+                else network.get("vlan_start")
+            if vlan_start and vlan_start not in (free_vlans or public_vlan):
+                vlan_start = free_vlans[0]
 
             logger.debug("Found free vlan: %s", vlan_start)
             pool = network.get('pool')

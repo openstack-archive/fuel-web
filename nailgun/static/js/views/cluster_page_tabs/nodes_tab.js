@@ -1028,10 +1028,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         applyChanges: function() {
             return $.when.apply($, this.nodes.map(function(node) {
-                    var interfaces = new models.Interfaces(node.interfaces.toJSON(), {parse: true});
+                    node.interfaces.each(function(ifc, index) {
+                        ifc.set({assigned_networks: new models.InterfaceNetworks(this.interfaces.at(index).get('assigned_networks').toJSON())});
+                    }, this);
+                    var interfaces = new models.Interfaces(node.interfaces.toJSON());
                     interfaces.toJSON = _.bind(function() {
                         return interfaces.map(function(ifc, index) {
-                            ifc.set({assigned_networks: this.interfaces.at(index).get('assigned_networks').toJSON()});
                             return _.pick(ifc.attributes, 'id', 'assigned_networks');
                         }, this);
                     }, this);

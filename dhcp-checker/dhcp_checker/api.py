@@ -73,7 +73,7 @@ def check_dhcp(ifaces, timeout=5, repeat=2):
                          else len(ifaces_filtered))
     pool = multiprocessing.Pool(concurrency_limit)
     return itertools.chain(*pool.map(check_dhcp_on_eth, (
-        (iface, timeout) for iface in ifaces_filtered*repeat)))
+        (iface, timeout) for iface in ifaces_filtered * repeat)))
 
 
 def check_dhcp_with_vlans(config, timeout=5, repeat=2):

@@ -360,19 +360,15 @@ class NetworkDeploymentSerializer(object):
         # Addresses
         for node in DeploymentMultiSerializer.get_all_nodes(cluster):
             netw_data = node.network_data
-            addresses = {
-                'internal_address': cls.get_addr(netw_data,
-                                                 'management')['ip'],
-                'internal_netmask': cls.get_addr(netw_data,
-                                                 'management')['netmask'],
-                'storage_address': cls.get_addr(netw_data,
-                                                'storage')['ip'],
-                'storage_netmask': cls.get_addr(netw_data,
-                                                'storage')['netmask'],
-                'public_address': cls.get_addr(netw_data,
-                                               'public')['ip'],
-                'public_netmask': cls.get_addr(netw_data,
-                                               'public')['netmask']}
+
+            addresses = {}
+            for net in node.cluster.network_groups:
+                if net.meta.get('render_addr_mask'):
+                    addresses.update(cls.get_addr_mask(
+                        netw_data,
+                        net.name,
+                        net.meta.get('render_addr_mask')))
+
             [n.update(addresses) for n in attrs['nodes']
              if n['uid'] == str(node.id)]
 
@@ -400,11 +396,9 @@ class NetworkDeploymentSerializer(object):
         attrs = {}
         for net in ng_db:
             net_name = net.name + '_network_range'
-
-            if net.name == 'floating':
+            if net.meta.get("render_type") == 'ip_ranges':
                 attrs[net_name] = cls.get_ip_ranges_first_last(net)
-            # We shouldn't pass public_network_range attribute
-            elif net.name != 'public' and net.cidr:
+            elif net.meta.get("render_type") == 'cidr' and net.cidr:
                 attrs[net_name] = net.cidr
 
         return attrs
@@ -419,21 +413,21 @@ class NetworkDeploymentSerializer(object):
         ]
 
     @classmethod
-    def get_addr(cls, network_data, name):
+    def get_addr_mask(cls, network_data, net_name, render_name):
         """Get addr for network by name
         """
         nets = filter(
-            lambda net: net['name'] == name,
+            lambda net: net['name'] == net_name,
             network_data)
 
         if not nets or 'ip' not in nets[0]:
             raise errors.CanNotFindNetworkForNode(
-                'Cannot find network with name: %s' % name)
+                'Cannot find network with name: %s' % net_name)
 
         net = nets[0]['ip']
         return {
-            'ip': str(IPNetwork(net).ip),
-            'netmask': str(IPNetwork(net).netmask)
+            render_name + '_address': str(IPNetwork(net).ip),
+            render_name + '_netmask': str(IPNetwork(net).netmask)
         }
 
     @staticmethod

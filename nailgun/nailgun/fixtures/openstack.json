@@ -48,6 +48,9 @@
                             "ip_range": ["172.16.0.128", "172.16.0.254"],
                             "vlan_start": null,
                             "use_gateway": false,
+                            "notation": "ip_ranges",
+                            "render_type": "ip_ranges",
+                            "render_addr_mask": null,
                             "assign_vip": false
                         },
                         {
@@ -58,6 +61,9 @@
                             "ip_range": ["172.16.0.2", "172.16.0.127"],
                             "vlan_start": null,
                             "use_gateway": true,
+                            "notation": "ip_ranges",
+                            "render_type": null,
+                            "render_addr_mask": "public",
                             "assign_vip": true
                         },
                         {
@@ -68,6 +74,9 @@
                             "ip_range": ["192.168.0.2", "192.168.0.254"],
                             "vlan_start": 101,
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "internal",
                             "assign_vip": true
                         },
                         {
@@ -78,6 +87,9 @@
                             "ip_range": ["192.168.1.2", "192.168.1.254"],
                             "vlan_start": 102,
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "storage",
                             "assign_vip": false
                         },
                         {
@@ -89,6 +101,9 @@
                             "network_size": 256,
                             "vlan_start": 103,
                             "use_gateway": true,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": null,
                             "assign_vip": false
                         }
                     ]
@@ -101,18 +116,27 @@
                             "ip_range": ["172.16.0.2", "172.16.0.126"],
                             "vlan_start": null,
                             "use_gateway": true,
+                            "notation": "ip_ranges",
+                            "render_type": null,
+                            "render_addr_mask": "public",
                             "assign_vip": true
                         },
                         {
                             "name": "management",
                             "pool": ["192.168.0.0/24"],
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "internal",
                             "assign_vip": true
                         },
                         {
                             "name": "storage",
                             "pool": ["192.168.1.0/24"],
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "storage",
                             "assign_vip": false
                         }
                     ],
@@ -618,6 +642,9 @@
                             "ip_range": ["172.16.0.128", "172.16.0.254"],
                             "vlan_start": null,
                             "use_gateway": false,
+                            "notation": "ip_ranges",
+                            "render_type": "ip_ranges",
+                            "render_addr_mask": null,
                             "assign_vip": false
                         },
                         {
@@ -628,6 +655,9 @@
                             "ip_range": ["172.16.0.2", "172.16.0.127"],
                             "vlan_start": null,
                             "use_gateway": true,
+                            "notation": "ip_ranges",
+                            "render_type": null,
+                            "render_addr_mask": "public",
                             "assign_vip": true
                         },
                         {
@@ -638,6 +668,9 @@
                             "ip_range": ["192.168.0.2", "192.168.0.254"],
                             "vlan_start": 101,
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "internal",
                             "assign_vip": true
                         },
                         {
@@ -648,6 +681,9 @@
                             "ip_range": ["192.168.1.2", "192.168.1.254"],
                             "vlan_start": 102,
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "storage",
                             "assign_vip": false
                         },
                         {
@@ -659,6 +695,9 @@
                             "network_size": 256,
                             "vlan_start": 103,
                             "use_gateway": true,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": null,
                             "assign_vip": false
                         }
                     ]
@@ -1029,6 +1068,9 @@
                             "ip_range": ["172.16.0.128", "172.16.0.254"],
                             "vlan_start": null,
                             "use_gateway": false,
+                            "notation": "ip_ranges",
+                            "render_type": "ip_ranges",
+                            "render_addr_mask": null,
                             "assign_vip": false
                         },
                         {
@@ -1039,6 +1081,9 @@
                             "ip_range": ["172.16.0.2", "172.16.0.127"],
                             "vlan_start": null,
                             "use_gateway": true,
+                            "notation": "ip_ranges",
+                            "render_type": null,
+                            "render_addr_mask": "public",
                             "assign_vip": true
                         },
                         {
@@ -1049,6 +1094,9 @@
                             "ip_range": ["192.168.0.2", "192.168.0.254"],
                             "vlan_start": 101,
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "internal",
                             "assign_vip": true
                         },
                         {
@@ -1059,6 +1107,9 @@
                             "ip_range": ["192.168.1.2", "192.168.1.254"],
                             "vlan_start": 102,
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "storage",
                             "assign_vip": false
                         },
                         {
@@ -1070,6 +1121,9 @@
                             "network_size": 256,
                             "vlan_start": 103,
                             "use_gateway": true,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": null,
                             "assign_vip": false
                         }
                     ]
@@ -1082,18 +1136,27 @@
                             "ip_range": ["172.16.0.2", "172.16.0.126"],
                             "vlan_start": null,
                             "use_gateway": true,
+                            "notation": "ip_ranges",
+                            "render_type": null,
+                            "render_addr_mask": "public",
                             "assign_vip": true
                         },
                         {
                             "name": "management",
                             "pool": ["192.168.0.0/24"],
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "internal",
                             "assign_vip": true
                         },
                         {
                             "name": "storage",
                             "pool": ["192.168.1.0/24"],
                             "use_gateway": false,
+                            "notation": "cidr",
+                            "render_type": "cidr",
+                            "render_addr_mask": "storage",
                             "assign_vip": false
                         }
                     ],

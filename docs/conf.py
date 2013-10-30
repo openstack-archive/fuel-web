@@ -11,7 +11,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.abspath('.'), "..", "nailgun"))
 autodoc_default_flags = ['members']
@@ -35,7 +36,7 @@ extensions = [
     'sphinxcontrib.plantuml',
     'nailgun.autoapidoc'
 ]
-plantuml = ['java','-jar','plantuml.jar']
+plantuml = ['java', '-jar', 'plantuml.jar']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -236,10 +237,10 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-  ('index', 'scaffold', u'scaffold Documentation',
-   u'Mike Scherbakov', 'scaffold', 'One line description of project.',
-   'Miscellaneous'),
+texinfo_documents = [(
+    'index', 'scaffold', u'scaffold Documentation',
+    u'Mike Scherbakov', 'scaffold', 'One line description of project.',
+    'Miscellaneous'),
 ]
 
 # Documents to append as an appendix to all manuals.

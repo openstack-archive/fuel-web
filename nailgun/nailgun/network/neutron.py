@@ -111,6 +111,32 @@ class NeutronManager(NetworkManager):
     def _generate_l3(self, cluster):
         return {}
 
+    def assign_networks_by_default(self, node):
+        self.clear_assigned_networks(node)
+        # exclude admin interface if it is not only the interface
+        ifaces = [iface for iface in node.interfaces
+                  if iface.id != node.admin_interface.id]
+        if not ifaces:
+            ifaces = [node.admin_interface]
+        # assign private network for vlan
+        if node.cluster.net_segment_type == 'vlan':
+            ng_prv = [ng for ng in self.get_cluster_networkgroups_by_node(node)
+                      if ng.name == 'private']
+            if ng_prv:
+                ifaces[0].assigned_networks.append(ng_prv[0])
+                if len(ifaces) > 1:
+                    ifaces.pop(0)
+        # assign all remaining networks
+        map(ifaces[0].assigned_networks.append,
+            filter(lambda ng: ng.name != 'private',
+                   self.get_cluster_networkgroups_by_node(node)))
+
+        node.admin_interface.assigned_networks.append(
+            self.get_admin_network_group()
+        )
+
+        db().commit()
+
     def get_allowed_nic_networkgroups(self, node, nic):
         """Get all allowed network groups
         """
@@ -226,12 +252,12 @@ class NeutronManager(NetworkManager):
                 raise errors.OutOfVLANs()
             return sorted(list(free_vlans))
 
-        public_vlan = _free_vlans()[0]
-        used_vlans.append(public_vlan)
         for network in networks_list:
             free_vlans = _free_vlans()
-            vlan_start = public_vlan if network.get("use_public_vlan") \
-                else free_vlans[0]
+            vlan_start = free_vlans[0] if "vlan_start" not in network \
+                else network.get("vlan_start")
+            if vlan_start and vlan_start not in free_vlans:
+                vlan_start = free_vlans[0]
 
             logger.debug("Found free vlan: %s", vlan_start)
             pool = network.get('pool')
@@ -304,7 +330,7 @@ class NeutronManager(NetworkManager):
                 name="private",
                 cluster_id=cluster_id,
                 netmask='32',
-                vlan_start=0,
+                vlan_start=None,
                 amount=1
             )
             db().add(private_network_group)

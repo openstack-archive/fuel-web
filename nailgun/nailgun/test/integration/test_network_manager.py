@@ -181,7 +181,8 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertEquals(
             self.db.query(
                 NodeNICInterface).get(admin_nic.id).assigned_networks,
-            [])
+            self.env.network_manager.get_default_nic_networkgroups(
+                node_db, admin_nic))
 
     def test_assign_vip_is_idempotent(self):
         cluster = self.env.create_cluster(api=True)

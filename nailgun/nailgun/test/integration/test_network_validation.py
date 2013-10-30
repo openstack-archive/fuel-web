@@ -129,7 +129,6 @@ class TestNovaHandlers(BaseIntegrationTest):
         )
 
     def test_network_checking_fails_if_untagged_intersection(self):
-        self.find_net_by_name('public')["vlan_start"] = None
         self.find_net_by_name('management')["vlan_start"] = None
         self.env.nova_networks_put(self.cluster.id, self.nets)
 
@@ -145,7 +144,7 @@ class TestNovaHandlers(BaseIntegrationTest):
             'Some untagged networks are assigned to the same physical '
             'interface. You should assign them to different physical '
             'interfaces. Affected:\n'
-            '"management", "public" networks at node "None"'
+            '"floating", "management", "public" networks at node "None"'
         )
 
 
@@ -497,20 +496,18 @@ class TestNeutronHandlersVlan(BaseIntegrationTest):
         self.assertEquals(len(ngs_created), len(self.nets['networks']))
 
     def test_network_checking_failed_if_private_paired_w_other_network(self):
-        node_db = self.env.nodes[0]
-        resp = self.env.node_nics_get(node_db.id)
-
+        resp = self.env.node_nics_get(self.env.nodes[0].id)
         ifaces = json.loads(resp.body)
-        priv_net = filter(
-            lambda nic: (nic["name"] in ["private"]),
-            ifaces[1]["assigned_networks"]
-        )
-        ifaces[1]["assigned_networks"].remove(priv_net[0])
-        ifaces[2]["assigned_networks"].append(priv_net[0])
+        priv_net = ifaces[1]["assigned_networks"][0]
+        # only 'private' should be here in default configuration
+        self.assertEquals(priv_net["name"], "private")
+
+        ifaces[1]["assigned_networks"].remove(priv_net)
+        ifaces[2]["assigned_networks"].append(priv_net)
 
         self.env.node_collection_nics_put(
-            node_db.id,
-            [{"interfaces": ifaces, "id": node_db.id}])
+            self.env.nodes[0].id,
+            [{"interfaces": ifaces, "id": self.env.nodes[0].id}])
 
         resp = self.env.cluster_changes_put(self.cluster.id)
         self.assertEquals(resp.status, 200)

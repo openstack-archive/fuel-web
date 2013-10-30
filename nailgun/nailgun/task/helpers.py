@@ -239,6 +239,9 @@ class TaskHelper(object):
                 # present). If cluster is not "valid", we should also set
                 # its status to "error" even if it is deployed successfully.
                 # This method is also would be affected by web.ctx.orm issue.
+                for n in cluster.nodes:
+                    if n.status == 'deploying':
+                        n.status = 'ready'
                 cls.__set_cluster_status(cluster, 'operational')
                 cluster.clear_pending_changes()
             elif task.status == 'error':

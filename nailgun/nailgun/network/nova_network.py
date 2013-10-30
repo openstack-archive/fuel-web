@@ -181,9 +181,8 @@ class NovaNetworkManager(NetworkManager):
                         cls._set_ip_ranges(ng['id'], value)
                     else:
                         if key == 'cidr' and \
-                                not ng['name'] in ('public', 'floating'):
-                            cls.update_range_mask_from_cidr(
-                                ng_db, value)
+                                ng_db.meta.get("notation") == "cidr":
+                            cls.update_range_mask_from_cidr(ng_db, value)
 
                         setattr(ng_db, key, value)
 

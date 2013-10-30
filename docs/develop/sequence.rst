@@ -81,14 +81,14 @@ Details on Cluster Provisioning & Deployment (via Facter extension)
     Astute --> Naily: provisioned
     Naily --> Nailgun: provisioned
     Nailgun --> WebUser: status on UI
-    Astute -> MC: Create /etc/naily.facts
+    Astute -> MC: Create /etc/astute.yaml
 
     Astute -> MC: run puppet
     MC -> Puppet: runonce
     Puppet -> Puppet_master: get modules,class
     Puppet_master --> Puppet: modules, class
     Puppet -> Facter: get facts
-    Facter --> Puppet: set of facts
+    Facter --> Puppet: set facts and parse astute.yaml
 
     Puppet -> Puppet: applies $role
     Puppet --> MC: done
@@ -103,17 +103,13 @@ Astute uses `MCollective direct addressing mode <http://www.devco.net/archives/2
 to check if all required nodes are available,
 include puppet agent on them. If some nodes are not ready yet, Astute waits for a few seconds and does request again.
 When nodes are booted in target OS,
-Astute uses naily_fact MCollective plugin to post data to a special file /etc/naily.fact on target system.
+
+Astute uses upload_file MCollective plugin to push data to a special file */etc/astute.yaml* on the target system.
 Data include role and all other variables needed for deployment. Then, Astute calls puppetd MCollective plugin 
 to start deployment. Puppet is started on nodes, and requests Puppet master for modules and manifests.
-site.pp on Master node defines one common class for every node.
+*site.pp* on Master node defines one common class for every node.
 Accordingly, puppet agent starts its run. Modules contain facter extension, which runs before deployment. Extension
-reads facts from /etc/naily.fact placed by mcollective, and extends Facter data with these facts, which can be
-easily used in Puppet modules. Case structure in running class chooses appropriate class to import, based on $role
-variable, received from /etc/naily.fact. It loads and starts to execute. All variables from file are available
-like ordinary facts from Facter.
-
-It is possible to use the system without Nailgun and Naily: user creates a YAML file with all required
-data, and calls Astute binary script. Script loads data from YAML and instantiates Astute instance
-the same way as it's instanciated from Naily.
-
+reads data from */etc/astute.yaml* placed by mcollective, and extends Facter data with it as a single fact, which is then parsed
+by *parseyaml* function to create *$::fuel_settings* data structure. This structure contains all variables as hash key and supports
+embedding of other rich structures such as nodes hash or arrays. Case structure in running class chooses appropriate class to import, based on *role*
+and *deployment_mode* variables found in */etc/astute.yaml*.

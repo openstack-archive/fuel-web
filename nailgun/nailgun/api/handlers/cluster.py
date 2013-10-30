@@ -96,7 +96,7 @@ class ClusterHandler(JSONHandler):
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
         data = self.checked_data(cluster_id=cluster_id)
-        network_manager = NetworkManager()
+        network_manager = cluster.network_manager()
 
         for key, value in data.iteritems():
             if key == "nodes":
@@ -196,10 +196,7 @@ class ClusterCollectionHandler(JSONHandler):
         )
         attributes.generate_fields()
 
-        if cluster.net_provider == 'nova_network':
-            netmanager = NetworkManager()
-        elif cluster.net_provider == 'neutron':
-            netmanager = NeutronManager()
+        netmanager = cluster.network_manager()
 
         try:
             netmanager.create_network_groups(cluster.id)

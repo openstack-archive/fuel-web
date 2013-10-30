@@ -169,14 +169,14 @@ class TestHandlers(BaseIntegrationTest):
             {
                 'release': release.id,
                 'name': u'floating',
-                'vlan_id': 100,
+                'vlan_id': None,
                 'cidr': '172.16.0.0/24',
                 'gateway': '172.16.0.1'
             },
             {
                 'release': release.id,
                 'name': u'public',
-                'vlan_id': 100,
+                'vlan_id': None,
                 'cidr': '172.16.0.0/24',
                 'gateway': '172.16.0.1'
             },

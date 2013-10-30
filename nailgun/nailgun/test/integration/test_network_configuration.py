@@ -160,6 +160,15 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             'Invalid network ID: 500'
         )
 
+    def test_admin_public_floating_untagged_others_tagged(self):
+        resp = self.env.nova_networks_get(self.cluster.id)
+        data = json.loads(resp.body)
+        for net in data['networks']:
+            if net['name'] in ('fuelweb_admin', 'public', 'floating'):
+                self.assertIsNone(net['vlan_start'])
+            else:
+                self.assertIsNotNone(net['vlan_start'])
+
 
 class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def setUp(self):
@@ -341,6 +350,15 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         publ_ng = filter(lambda ng: ng.name == 'public',
                          self.cluster.network_groups)[0]
         self.assertEquals(publ_ng.cidr, '172.16.0.0/24')
+
+    def test_admin_public_untagged_others_tagged(self):
+        resp = self.env.nova_networks_get(self.cluster.id)
+        data = json.loads(resp.body)
+        for net in data['networks']:
+            if net['name'] in ('fuelweb_admin', 'public',):
+                self.assertIsNone(net['vlan_start'])
+            else:
+                self.assertIsNotNone(net['vlan_start'])
 
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):

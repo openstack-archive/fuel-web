@@ -284,20 +284,20 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Check VlanID field validation');
     var initialVlanIDValue = this.evaluate(function(initialValue) {
-        return __utils__.getFieldValue('public-vlan_start');
+        return __utils__.getFieldValue('management-vlan_start');
     });
 
     function testVlanID (fixtures, negativeTests) {
         casper.each(fixtures, function(self, fixture) {
             self.then(function() {
-                this.fill('.networks-table', {'public-vlan_start': fixture});
+                this.fill('.networks-table', {'management-vlan_start': fixture});
                 this.evaluate(function() {
-                    $('input[name=public-vlan_start]').keyup();
+                    $('input[name=management-vlan_start]').keyup();
                 });
                 if (negativeTests) {
-                    this.test.assertExists('input[name=public-vlan_start].error', 'Field validation has worked properly in case of ' + fixture + ' value');
+                    this.test.assertExists('input[name=management-vlan_start].error', 'Field validation has worked properly in case of ' + fixture + ' value');
                 } else {
-                    this.test.assertDoesntExist('input[name=public-vlan_start].error', 'No validation errors in case of ' + fixture + ' value');
+                    this.test.assertDoesntExist('input[name=management-vlan_start].error', 'No validation errors in case of ' + fixture + ' value');
                 }
             });
         });
@@ -306,9 +306,9 @@ casper.then(function() {
     testVlanID (['1', '4094', '2000'], false);
 
     casper.then(function() {
-        this.fill('.networks-table', {'public-vlan_start': initialVlanIDValue});
+        this.fill('.networks-table', {'management-vlan_start': initialVlanIDValue});
         this.evaluate(function() {
-            $('input[name=public-vlan_start]').keyup();
+            $('input[name=management-vlan_start]').keyup();
         });
     });
 });

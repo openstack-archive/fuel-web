@@ -91,7 +91,8 @@ class TestHandlers(BaseIntegrationTest):
                             "cluster_id": clstr.id,
                             "vlan_start": 101,
                             "cidr": "192.168.0.0/16",
-                            "gateway": "192.168.0.1"
+                            "gateway": "192.168.0.1",
+                            "notation": "ip_ranges"
                         }
                     ]
                 }

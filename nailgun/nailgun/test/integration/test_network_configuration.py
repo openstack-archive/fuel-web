@@ -208,6 +208,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                 if n['name'] == 'public'][0]
         cidr = publ['cidr'].partition('/')[0] + '/23'
         publ['cidr'] = cidr
+        publ['network_size'] = 512
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEquals(202, resp.status)

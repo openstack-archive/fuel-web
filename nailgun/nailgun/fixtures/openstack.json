@@ -46,7 +46,7 @@
                             "netmask": "255.255.255.0",
                             "gateway": "172.16.0.1",
                             "ip_range": ["172.16.0.128", "172.16.0.254"],
-                            "vlan_start": 100,
+                            "vlan_start": null,
                             "network_size": 256,
                             "assign_vip": false
                         },
@@ -56,7 +56,7 @@
                             "netmask": "255.255.255.0",
                             "gateway": "172.16.0.1",
                             "ip_range": ["172.16.0.2", "172.16.0.127"],
-                            "vlan_start": 100,
+                            "vlan_start": null,
                             "assign_vip": true
                         },
                         {
@@ -92,7 +92,8 @@
                     "networks": [
                         {
                             "name": "public",
-                            "pool": ["172.16.0.0/12"]
+                            "pool": ["172.16.0.0/12"],
+                            "vlan_start": null
                         },
                         {
                             "name": "management",
@@ -587,7 +588,7 @@
                             "netmask": "255.255.255.0",
                             "gateway": "172.16.0.1",
                             "ip_range": ["172.16.0.128", "172.16.0.254"],
-                            "vlan_start": 100,
+                            "vlan_start": null,
                             "network_size": 256,
                             "assign_vip": false
                         },
@@ -597,7 +598,7 @@
                             "netmask": "255.255.255.0",
                             "gateway": "172.16.0.1",
                             "ip_range": ["172.16.0.2", "172.16.0.127"],
-                            "vlan_start": 100,
+                            "vlan_start": null,
                             "assign_vip": true
                         },
                         {
@@ -993,7 +994,7 @@
                             "netmask": "255.255.255.0",
                             "gateway": "172.16.0.1",
                             "ip_range": ["172.16.0.128", "172.16.0.254"],
-                            "vlan_start": 100,
+                            "vlan_start": null,
                             "network_size": 256,
                             "assign_vip": false
                         },
@@ -1003,7 +1004,7 @@
                             "netmask": "255.255.255.0",
                             "gateway": "172.16.0.1",
                             "ip_range": ["172.16.0.2", "172.16.0.127"],
-                            "vlan_start": 100,
+                            "vlan_start": null,
                             "assign_vip": true
                         },
                         {
@@ -1039,7 +1040,8 @@
                     "networks": [
                         {
                             "name": "public",
-                            "pool": ["172.16.0.0/12"]
+                            "pool": ["172.16.0.0/12"],
+                            "vlan_start": null
                         },
                         {
                             "name": "management",

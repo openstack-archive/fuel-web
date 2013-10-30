@@ -458,7 +458,7 @@ class Environment(object):
                         "netmask": "255.255.255.0",
                         "gateway": "172.16.0.1",
                         "ip_range": ["172.16.0.128", "172.16.0.254"],
-                        "vlan_start": 100,
+                        "vlan_start": None,
                         "network_size": 256,
                         "assign_vip": False
                     },
@@ -468,7 +468,7 @@ class Environment(object):
                         "netmask": "255.255.255.0",
                         "gateway": "172.16.0.1",
                         "ip_range": ["172.16.0.2", "172.16.0.127"],
-                        "vlan_start": 100,
+                        "vlan_start": None,
                         "assign_vip": True
                     },
                     {
@@ -504,7 +504,8 @@ class Environment(object):
                 "networks": [
                     {
                         "name": "public",
-                        "pool": ["172.16.0.0/12"]
+                        "pool": ["172.16.0.0/12"],
+                        "vlan_start": None
                     },
                     {
                         "name": "management",

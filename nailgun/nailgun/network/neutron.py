@@ -367,7 +367,7 @@ class NeutronManager(NetworkManager):
                         cls._set_ip_ranges(ng['id'], value)
                     else:
                         if key == 'cidr' and \
-                                ng['name'] not in ('private', 'public'):
+                                ng_db.meta.get("notation") == "cidr":
                             cls.update_range_mask_from_cidr(ng_db, value)
 
                         setattr(ng_db, key, value)
@@ -379,7 +379,7 @@ class NeutronManager(NetworkManager):
                         pre_nets = network_configuration[
                             'neutron_parameters']['predefined_networks']
                         pre_nets['net04_ext']['L3']['gateway'] = ng['gateway']
-                if ng['name'] != 'private':
+                if ng_db.meta.get("notation"):
                     cls.create_networks(ng_db)
                 ng_db.cluster.add_pending_changes('networks')
 

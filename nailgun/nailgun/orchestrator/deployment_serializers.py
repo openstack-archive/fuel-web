@@ -163,10 +163,19 @@ class NovaOrchestratorSerializer(object):
         for net in ng_db:
             net_name = net.name + '_network_range'
 
-            if net.name == 'floating':
+            if "render_type" in net.meta:
+                if net.meta["render_type"] is None:
+                    continue
+            else:
+                if "notation" in net.meta:
+                    net.meta["render_type"] = net.meta["notation"]
+                else:
+                    net.meta["render_type"] = "cidr"
+
+            if net.meta["render_type"] == 'ip_ranges':
                 attrs[net_name] = cls.get_ip_ranges_first_last(net)
             # We shouldn't pass public_network_range attribute
-            elif net.name != 'public' and net.cidr:
+            elif net.meta["render_type"] == 'cidr' and net.cidr:
                 attrs[net_name] = net.cidr
 
         return attrs

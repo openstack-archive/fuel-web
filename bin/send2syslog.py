@@ -14,16 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import sys
-import signal
-import string
-import re
 import json
-import time
 import logging
 from logging.handlers import SysLogHandler
-from optparse import OptionParser, OptionGroup
+from optparse import OptionParser
+import os
+import re
+import signal
+import sys
+import time
 
 
 # Add syslog levels to logging module.
@@ -96,7 +95,7 @@ main_logger.setLevel(logging.NOTSET)
 
 
 class WatchedFile:
-    """ WatchedFile(filename) => Object that read lines from file if exist. """
+    """WatchedFile(filename) => Object that read lines from file if exist."""
 
     def __init__(self, name):
         self.name = name
@@ -117,7 +116,7 @@ class WatchedFile:
             self.close()
 
     def readLines(self):
-        """Return list of last append lines from file if exist. """
+        """Return list of last append lines from file if exist."""
 
         self._checkRewrite()
         if not self.fo:
@@ -134,7 +133,7 @@ class WatchedFile:
 
 
 class WatchedGroup:
-    """ Can send data from group of specified files to specified servers. """
+    """Can send data from group of specified files to specified servers."""
 
     def __init__(self, servers, files, name):
         self.servers = servers
@@ -172,7 +171,7 @@ class WatchedGroup:
             self.watchedfiles.append(WatchedFile(name))
 
     def send(self):
-        """ Send append data from files to servers. """
+        """Send append data from files to servers."""
 
         for watchedfile in self.watchedfiles:
             for line in watchedfile.readLines():
@@ -209,7 +208,7 @@ class WatchedGroup:
 
 
 def sig_handler(signum, frame):
-    """ Send all new data when signal arrived. """
+    """Send all new data when signal arrived."""
 
     if not sending_in_progress:
         send_all()
@@ -219,16 +218,16 @@ def sig_handler(signum, frame):
 
 
 def send_all():
-    """ Send any updates. """
+    """Send any updates."""
 
-    sending_in_progress = 1
+    #sending_in_progress = 1
     for group in watchlist:
         group.send()
-    sending_in_progress = 0
+    #sending_in_progress = 0
 
 
 def main_loop():
-    """ Periodicaly call sendlogs() for each group in watchlist. """
+    """Periodicaly call sendlogs() for each group in watchlist."""
 
     signal.signal(signal.SIGINT, sig_handler)
     signal.signal(signal.SIGTERM, sig_handler)
@@ -241,13 +240,13 @@ def main_loop():
 
 
 class Config:
-    """ Collection of config generation methods.
+    """Collection of config generation methods.
     Usage: config = Config.getConfig()
     """
 
     @classmethod
     def getConfig(cls):
-        """ Generate config from command line arguments and config file. """
+        """Generate config from command line arguments and config file."""
 
         # example_config = {
         #       "daemon": True,
@@ -285,7 +284,7 @@ class Config:
                     fo = open(cmdline.config_file, 'r')
                 parsed_config = json.load(fo)
                 if cmdline.debug:
-                    print parsed_config
+                    print(parsed_config)
             except IOError:  # Raised if IO operations failed.
                 main_logger.error("Can not read config file %s\n" %
                                   cmdline.config_file)
@@ -321,7 +320,7 @@ class Config:
 
     @staticmethod
     def _getHostname():
-        """ Generate hostname by BOOTIF kernel option or use os.uname()."""
+        """Generate hostname by BOOTIF kernel option or use os.uname()."""
 
         with open('/proc/cmdline') as fo:
             cpu_cmdline = fo.readline().strip()
@@ -333,7 +332,7 @@ class Config:
 
     @staticmethod
     def cmdlineParse():
-        """ Parse command line config options. """
+        """Parse command line config options."""
 
         parser = OptionParser()
         parser.add_option("-c", "--config", dest="config_file", metavar="FILE",
@@ -383,7 +382,7 @@ class Config:
 
     @staticmethod
     def _checkType(value, value_type, value_name='', msg=None):
-        """ Check correctness of type of value and exit if not. """
+        """Check correctness of type of value and exit if not."""
 
         if not isinstance(value, value_type):
             message = msg or "Value %r in config have type %r but"\
@@ -394,7 +393,7 @@ class Config:
 
     @classmethod
     def configValidate(cls, config):
-        """ Validate types and names of data items in config. """
+        """Validate types and names of data items in config."""
 
         cls._checkType(config, dict, msg='Config must be a dict.')
         for key in ("daemon", "run_once", "debug"):

@@ -759,17 +759,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-apply:not(:disabled)': 'applyChanges',
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
+        disableControls: function(disable) {
+            this.updateButtonsState(disable || this.isLocked());
+        },
         hasChanges: function() {
-            var noChanges = true;
             var disks = this.disks.toJSON();
-            this.nodes.each(function(node) {
-                noChanges = noChanges && _.isEqual(disks, node.disks.toJSON());
-            }, this);
-            return !noChanges;
+            return !this.nodes.reduce(function(result, node) {
+                return result && _.isEqual(disks, node.disks.toJSON());
+            }, true);
         },
         hasValidationErrors: function() {
             var result = false;
-            this.disks.each(function(disk) {result = result || _.some(disk.get('volumes').models, 'validationError');}, this);
+            this.disks.each(function(disk) {result = result || disk.validationError || _.some(disk.get('volumes').models, 'validationError');}, this);
             return result;
         },
         isLocked: function() {
@@ -777,11 +778,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !forbiddenNodes || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
-            var hasChanges = this.hasChanges();
-            var hasValidationErrors = this.hasValidationErrors();
-            this.$('.btn-apply').attr('disabled', !hasChanges || hasValidationErrors);
-            this.$('.btn-revert-changes').attr('disabled', !hasChanges && !hasValidationErrors);
-            this.$('.btn-defaults').attr('disabled', this.isLocked());
+            this.updateButtonsState(this.isLocked());
+            this.applyChangesButton.set('disabled', this.isLocked() || !this.hasChanges() || this.hasValidationErrors());
+            this.cancelChangesButton.set('disabled', this.isLocked() || (!this.hasChanges() && !this.hasValidationErrors()));
         },
         loadDefaults: function() {
             this.disableControls(true);
@@ -829,6 +828,25 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.volumesColors[volume.get('name')] = colors[index];
             }, this);
         },
+        setupButtonsBindings: function() {
+            var bindings = {
+                attributes: [{
+                    name: 'disabled',
+                    observe: 'disabled',
+                    onGet: function(value) {
+                        return _.isUndefined(value) ? false : value;
+                    }
+                }]
+            };
+            this.stickit(this.loadDefaultsButton, {'.btn-defaults': bindings});
+            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': bindings});
+            this.stickit(this.applyChangesButton, {'.btn-apply': bindings});
+        },
+        updateButtonsState: function(state) {
+            this.applyChangesButton.set('disabled', state);
+            this.cancelChangesButton.set('disabled', state);
+            this.loadDefaultsButton.set('disabled',  state);
+        },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
@@ -850,6 +868,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             } else {
                 this.goToNodeList();
             }
+            this.loadDefaultsButton = new Backbone.Model({disabled: false});
+            this.cancelChangesButton = new Backbone.Model({disabled: true});
+            this.applyChangesButton = new Backbone.Model({disabled: true});
         },
         renderDisks: function() {
             this.tearDownRegisteredSubViews();
@@ -873,6 +894,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.renderDisks();
                 this.checkForChanges();
             }
+            this.setupButtonsBindings();
             return this;
         }
     });
@@ -893,12 +915,19 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         events: {
             'click .toggle-volume': 'toggleEditDiskForm',
             'click .close-btn': 'deleteVolume',
-            'keyup input': 'updateDisks',
             'click .use-all-allowed': 'useAllAllowedSpace'
         },
+        diskFormBindings: {
+            '.disk-form': {
+                observe: 'visible',
+                visible: true,
+                visibleFn: function($el, isVisible, options) {
+                    $el.collapse(isVisible ? 'show' : 'hide');
+                }
+            }
+        },
         toggleEditDiskForm: function(e) {
-            this.$('.disk-form').collapse('toggle');
-            this.checkForGroupsDeletionAvailability();
+            this.diskForm.set({visible: !this.diskForm.get('visible')});
         },
         getVolumeMinimum: function(name) {
             return this.screen.volumes.findWhere({name: name}).get('min_size');
@@ -906,21 +935,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         checkForGroupsDeletionAvailability: function() {
             this.disk.get('volumes').each(function(volume) {
                 var name = volume.get('name');
-                this.$('.disk-visual .' + name + ' .close-btn').toggle(!this.screen.isLocked() && volume.getMinimalSize(this.getVolumeMinimum(name)) <= 0 && this.$('.disk-form').hasClass('in'));
+                this.$('.disk-visual .' + name + ' .close-btn').toggle(!this.screen.isLocked() && this.diskForm.get('visible') && volume.getMinimalSize(this.getVolumeMinimum(name)) <= 0);
             }, this);
-        },
-        validateVolume: function (volume) {
-            var name = volume.get('name');
-            volume.set({size: Number((this.$('input[name=' + name + ']').val()).replace(/,/g, ''))}, {validate: true, minimum: this.getVolumeMinimum(name)});
         },
         updateDisk: function() {
             this.$('.disk-visual').removeClass('invalid');
             this.$('input').removeClass('error').parents('.volume-group').next().text('');
             this.$('.volume-group-error-message.common').text('');
-            this.disk.get('volumes').each(this.validateVolume, this); // volumes validation (minimum)
+            this.disk.get('volumes').each(function(volume) {
+                volume.set({size: volume.get('size')}, {validate: true, minimum: this.getVolumeMinimum(volume.get('name'))});
+            }, this); // volumes validation (minimum)
             this.disk.set({volumes: this.disk.get('volumes')}, {validate: true}); // disk validation (maximum)
             this.renderVisualGraph();
-            this.checkForGroupsDeletionAvailability();
         },
         updateDisks: function(e) {
             this.updateDisk();
@@ -928,20 +954,27 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.screen.checkForChanges();
         },
         deleteVolume: function(e) {
-            this.$('input[name=' + this.$(e.currentTarget).parents('.volume-group').data('volume') + ']').val(0).trigger('keyup');
+            var volumeName = this.$(e.currentTarget).parents('.volume-group').data('volume');
+            var volume = this.disk.get('volumes').findWhere({name: volumeName});
+            volume.set({size: 0});
         },
         useAllAllowedSpace: function(e) {
             var volumeName = this.$(e.currentTarget).parents('.volume-group').data('volume');
-            this.$('input[name=' + volumeName + ']').val(_.max([0, this.disk.getUnallocatedSpace({skip: volumeName})])).trigger('keyup');
+            var volume = this.disk.get('volumes').findWhere({name: volumeName});
+            volume.set({size: _.max([0, this.disk.getUnallocatedSpace({skip: volumeName})])});
         },
         initialize: function(options) {
             _.defaults(this, options);
+            this.diskForm = new Backbone.Model({visible: false});
+            this.diskForm.on('change:visible', this.checkForGroupsDeletionAvailability, this);
             this.disk.on('invalid', function(model, error) {
                 this.$('.disk-visual').addClass('invalid');
                 this.$('input').addClass('error');
                 this.$('.volume-group-error-message.common').text(error);
             }, this);
             this.disk.get('volumes').each(function(volume) {
+                volume.on('change:size', this.updateDisks, this);
+                volume.on('change:size', this.checkForGroupsDeletionAvailability, this);
                 volume.on('invalid', function(model, error) {
                     this.$('.disk-visual').addClass('invalid');
                     this.$('input[name=' + volume.get('name') + ']').addClass('error').parents('.volume-group').next().text(error);
@@ -972,6 +1005,22 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.$('.disk-visual .' + name + ', .volume-group-box-flag.' + name).attr('style', this.volumeStylesTemplate({startColor: _.first(colors), endColor: _.last(colors)}));
             }, this);
         },
+        setupVolumesBindings: function() {
+            this.disk.get('volumes').each(function(volume) {
+                var bindings = {};
+                bindings['input[name=' + volume.get('name') + ']'] = {
+                    events: ['keyup'],
+                    observe: 'size',
+                    getVal: function($el) {
+                        return Number($el.autoNumeric('get'));
+                    },
+                    update: function($el, value) {
+                        $el.autoNumeric('set', value);
+                    }
+                };
+                this.stickit(volume, bindings);
+            }, this);
+        },
         render: function() {
             this.$el.html(this.template(_.extend({
                 diskMetaData: this.diskMetaData,
@@ -983,6 +1032,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.applyColors();
             this.renderVisualGraph();
             this.$('input').autoNumeric('init', {mDec: 0});
+            this.stickit(this.diskForm, this.diskFormBindings);
+            this.setupVolumesBindings();
             return this;
         }
     });
@@ -1044,7 +1095,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this));
         },
         setupButtonsBindings: function() {
-            var configObject = {
+            var bindings = {
                 attributes: [{
                     name: 'disabled',
                     observe: 'disabled',
@@ -1053,9 +1104,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     }
                 }]
             };
-            this.stickit(this.loadDefaultsButton, {'.btn-defaults': configObject});
-            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': configObject});
-            this.stickit(this.applyChangesButton, {'.btn-apply': configObject});
+            this.stickit(this.loadDefaultsButton, {'.btn-defaults': bindings});
+            this.stickit(this.cancelChangesButton, {'.btn-revert-changes': bindings});
+            this.stickit(this.applyChangesButton, {'.btn-apply': bindings});
         },
         updateButtonsState: function(state) {
             this.applyChangesButton.set('disabled', state);
@@ -1098,15 +1149,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             } else {
                 this.goToNodeList();
             }
-            this.loadDefaultsButton = new Backbone.Model({
-                'disabled': false
-            });
-            this.cancelChangesButton = new Backbone.Model({
-                'disabled': true
-            });
-            this.applyChangesButton = new Backbone.Model({
-                'disabled': true
-            });
+            this.loadDefaultsButton = new Backbone.Model({disabled: false});
+            this.cancelChangesButton = new Backbone.Model({disabled: true});
+            this.applyChangesButton = new Backbone.Model({disabled: true});
         },
         renderInterfaces: function() {
             this.tearDownRegisteredSubViews();

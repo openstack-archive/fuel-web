@@ -46,9 +46,9 @@ class TestClusterHandlers(BaseIntegrationTest):
 
         for resp_nic in response:
             if resp_nic['mac'] == mac:
-                self.assertGreater(len(resp_nic['assigned_networks']), 0)
+                self.assertEquals(len(resp_nic['assigned_networks']), 1)
             else:
-                self.assertEquals(resp_nic['assigned_networks'], [])
+                self.assertGreater(len(resp_nic['assigned_networks']), 0)
 
     def test_allowed_networks_when_node_added(self):
         mac = '123'
@@ -132,9 +132,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         response = json.loads(resp.body)
         for resp_nic in response:
             if resp_nic['mac'] == mac:
-                self.assertGreater(len(resp_nic['assigned_networks']), 0)
+                self.assertEquals(len(resp_nic['assigned_networks']), 1)
             else:
-                self.assertEquals(resp_nic['assigned_networks'], [])
+                self.assertGreater(len(resp_nic['assigned_networks']), 0)
             self.assertGreater(len(resp_nic['allowed_networks']), 0)
 
     def test_network_assignment_when_node_added(self):
@@ -160,9 +160,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         response = json.loads(resp.body)
         for resp_nic in response:
             if resp_nic['mac'] == mac:
-                self.assertGreater(len(resp_nic['assigned_networks']), 0)
+                self.assertEquals(len(resp_nic['assigned_networks']), 1)
             else:
-                self.assertEquals(resp_nic['assigned_networks'], [])
+                self.assertGreater(len(resp_nic['assigned_networks']), 0)
             self.assertGreater(len(resp_nic['allowed_networks']), 0)
 
     def test_assignment_is_removed_when_delete_node_from_cluster(self):

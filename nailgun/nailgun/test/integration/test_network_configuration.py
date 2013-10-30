@@ -25,32 +25,27 @@ from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
 
-class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
+class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def setUp(self):
-        super(TestNetworkConfigurationHandlerMultinodeMode, self).setUp()
+        super(TestNovaNetworkConfigurationHandlerMultinode, self).setUp()
         cluster = self.env.create_cluster(api=True)
         self.cluster = self.db.query(Cluster).get(cluster['id'])
 
-    def put(self, cluster_id, data, expect_errors=False):
-        url = reverse(
-            'NovaNetworkConfigurationHandler',
-            kwargs={'cluster_id': cluster_id})
-        return self.app.put(
-            url, json.dumps(data),
-            headers=self.default_headers,
-            expect_errors=expect_errors)
+    def novanet_put(self, cluster_id, data, expect_errors=False):
+        return self.app.put(reverse('NovaNetworkConfigurationHandler',
+                                    kwargs={'cluster_id': cluster_id}),
+                            json.dumps(data),
+                            headers=self.default_headers,
+                            expect_errors=expect_errors)
 
-    def get(self, cluster_id, expect_errors=False):
-        url = reverse(
-            'NovaNetworkConfigurationHandler',
-            kwargs={'cluster_id': cluster_id})
-        return self.app.get(
-            url,
-            headers=self.default_headers,
-            expect_errors=expect_errors)
+    def novanet_get(self, cluster_id, expect_errors=False):
+        return self.app.get(reverse('NovaNetworkConfigurationHandler',
+                                    kwargs={'cluster_id': cluster_id}),
+                            headers=self.default_headers,
+                            expect_errors=expect_errors)
 
     def test_get_request_should_return_net_manager_and_networks(self):
-        response = self.get(self.cluster.id)
+        response = self.novanet_get(self.cluster.id)
         data = json.loads(response.body)
         cluster = self.db.query(Cluster).get(self.cluster.id)
 
@@ -72,12 +67,12 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
                 self.assertEquals(network[key], getattr(network_group, key))
 
     def test_not_found_cluster(self):
-        resp = self.get(self.cluster.id + 999, expect_errors=True)
+        resp = self.novanet_get(self.cluster.id + 999, expect_errors=True)
         self.assertEquals(404, resp.status)
 
     def test_change_net_manager(self):
         new_net_manager = {'net_manager': 'VlanManager'}
-        self.put(self.cluster.id, new_net_manager)
+        self.novanet_put(self.cluster.id, new_net_manager)
 
         self.db.refresh(self.cluster)
         self.assertEquals(
@@ -93,7 +88,7 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
                 ]
             }
         }
-        self.put(self.cluster.id, new_dns_nameservers)
+        self.novanet_put(self.cluster.id, new_dns_nameservers)
 
         self.db.refresh(self.cluster)
         self.assertEquals(
@@ -101,13 +96,30 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
             new_dns_nameservers['dns_nameservers']['nameservers']
         )
 
+    def test_refresh_mask_on_cidr_change(self):
+        response = self.novanet_get(self.cluster.id)
+        data = json.loads(response.body)
+
+        mgmt = [n for n in data['networks']
+                if n['name'] == 'management'][0]
+        cidr = mgmt['cidr'].partition('/')[0] + '/23'
+        mgmt['cidr'] = cidr
+
+        self.novanet_put(self.cluster.id, data)
+
+        self.db.refresh(self.cluster)
+        mgmt_ng = [ng for ng in self.cluster.network_groups
+                   if ng.name == 'management'][0]
+        self.assertEquals(mgmt_ng.cidr, cidr)
+        self.assertEquals(mgmt_ng.netmask, '255.255.254.0')
+
     def test_do_not_update_net_manager_if_validation_is_failed(self):
         self.db.query(NetworkGroup).filter(
             not_(NetworkGroup.name == "fuelweb_admin")
         ).first()
         new_net_manager = {'net_manager': 'VlanManager',
                            'networks': [{'id': 500, 'vlan_start': 500}]}
-        self.put(self.cluster.id, new_net_manager, expect_errors=True)
+        self.novanet_put(self.cluster.id, new_net_manager, expect_errors=True)
 
         self.db.refresh(self.cluster)
         self.assertNotEquals(
@@ -120,11 +132,10 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
         ).first()
         self.assertIsNotNone(network)
         new_vlan_id = 500  # non-used vlan id
-        new_nets = {'networks': [{
-            'id': network.id,
-            'vlan_start': new_vlan_id}]}
+        new_nets = {'networks': [{'id': network.id,
+                                  'vlan_start': new_vlan_id}]}
 
-        resp = self.put(self.cluster.id, new_nets)
+        resp = self.novanet_put(self.cluster.id, new_nets)
         self.assertEquals(resp.status, 202)
         self.db.refresh(network)
         self.assertEquals(len(network.networks), 1)
@@ -137,7 +148,7 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
         new_vlan_id = 500  # non-used vlan id
         new_net = {'net_manager': 'VlanManager',
                    'networks': [{'id': network.id, 'vlan_start': new_vlan_id}]}
-        self.put(self.cluster.id, new_net)
+        self.novanet_put(self.cluster.id, new_net)
 
         self.db.refresh(self.cluster)
         self.db.refresh(network)
@@ -147,11 +158,10 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
         self.assertEquals(network.networks[0].vlan_id, new_vlan_id)
 
     def test_networks_update_fails_with_wrong_net_id(self):
-        new_nets = {'networks': [{
-            'id': 500,
-            'vlan_start': 500}]}
+        new_nets = {'networks': [{'id': 500,
+                                  'vlan_start': 500}]}
 
-        resp = self.put(self.cluster.id, new_nets, expect_errors=True)
+        resp = self.novanet_put(self.cluster.id, new_nets, expect_errors=True)
         self.assertEquals(202, resp.status)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
@@ -161,9 +171,142 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
         )
 
 
-class TestNetworkConfigurationHandlerHAMode(BaseIntegrationTest):
+class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def setUp(self):
-        super(TestNetworkConfigurationHandlerHAMode, self).setUp()
+        super(TestNeutronNetworkConfigurationHandlerMultinode, self).setUp()
+        cluster = self.env.create_cluster(api=True,
+                                          net_provider='neutron',
+                                          net_segment_type='gre'
+                                          )
+        self.cluster = self.db.query(Cluster).get(cluster['id'])
+
+    def neutron_put(self, cluster_id, data, expect_errors=False):
+        return self.app.put(reverse('NeutronNetworkConfigurationHandler',
+                                    kwargs={'cluster_id': cluster_id}),
+                            json.dumps(data),
+                            headers=self.default_headers,
+                            expect_errors=expect_errors)
+
+    def neutron_get(self, cluster_id, expect_errors=False):
+        return self.app.get(reverse('NeutronNetworkConfigurationHandler',
+                                    kwargs={'cluster_id': cluster_id}),
+                            headers=self.default_headers,
+                            expect_errors=expect_errors)
+
+    def test_get_request_should_return_net_provider_segment_and_networks(self):
+        response = self.neutron_get(self.cluster.id)
+        data = json.loads(response.body)
+        cluster = self.db.query(Cluster).get(self.cluster.id)
+
+        self.assertEquals(data['net_provider'],
+                          self.cluster.net_provider)
+        self.assertEquals(data['net_segment_type'],
+                          self.cluster.net_segment_type)
+        for network_group in cluster.network_groups:
+            network = [i for i in data['networks']
+                       if i['id'] == network_group.id][0]
+
+            keys = [
+                'network_size',
+                'name',
+                'amount',
+                'cluster_id',
+                'vlan_start',
+                'cidr',
+                'id']
+
+            for key in keys:
+                self.assertEquals(network[key], getattr(network_group, key))
+
+    def test_not_found_cluster(self):
+        resp = self.neutron_get(self.cluster.id + 999, expect_errors=True)
+        self.assertEquals(404, resp.status)
+
+    def test_refresh_mask_on_cidr_change(self):
+        response = self.neutron_get(self.cluster.id)
+        data = json.loads(response.body)
+
+        publ = [n for n in data['networks']
+                if n['name'] == 'public'][0]
+        cidr = publ['cidr'].partition('/')[0] + '/23'
+        publ['cidr'] = cidr
+
+        resp = self.neutron_put(self.cluster.id, data)
+        self.assertEquals(202, resp.status)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        self.db.refresh(self.cluster)
+        publ_ng = [ng for ng in self.cluster.network_groups
+                   if ng.name == 'public'][0]
+        self.assertEquals(publ_ng.cidr, cidr)
+        self.assertEquals(publ_ng.netmask, '255.255.254.0')
+
+    def test_do_not_update_net_segmentation_type(self):
+        resp = self.neutron_get(self.cluster.id)
+        data = json.loads(resp.body)
+        data['neutron_parameters']['segmentation_type'] = 'vlan'
+
+        resp = self.neutron_put(self.cluster.id, data, expect_errors=True)
+        self.assertEquals(202, resp.status)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(
+            task['message'],
+            "Change of 'segmentation_type' is prohibited"
+        )
+
+    def test_network_group_update_changes_network(self):
+        resp = self.neutron_get(self.cluster.id)
+        data = json.loads(resp.body)
+        network = self.db.query(NetworkGroup).get(data['networks'][0]['id'])
+        self.assertIsNotNone(network)
+
+        data['networks'][0]['vlan_start'] = 500  # non-used vlan id
+
+        resp = self.neutron_put(self.cluster.id, data)
+        self.assertEquals(resp.status, 202)
+
+        self.db.refresh(network)
+        self.assertEquals(len(network.networks), 1)
+        self.assertEquals(network.networks[0].vlan_id, 500)
+
+    def test_update_networks_fails_if_change_net_segmentation_type(self):
+        resp = self.neutron_get(self.cluster.id)
+        data = json.loads(resp.body)
+        network = self.db.query(NetworkGroup).get(data['networks'][0]['id'])
+        self.assertIsNotNone(network)
+
+        data['networks'][0]['vlan_start'] = 500  # non-used vlan id
+        data['neutron_parameters']['segmentation_type'] = 'vlan'
+
+        resp = self.neutron_put(self.cluster.id, data, expect_errors=True)
+        self.assertEquals(202, resp.status)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(
+            task['message'],
+            "Change of 'segmentation_type' is prohibited"
+        )
+
+    def test_networks_update_fails_with_wrong_net_id(self):
+        new_nets = {'networks': [{'id': 500,
+                                  'name': 'new',
+                                  'vlan_start': 500}]}
+
+        resp = self.neutron_put(self.cluster.id, new_nets, expect_errors=True)
+        self.assertEquals(202, resp.status)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(
+            task['message'],
+            'Invalid network ID: 500'
+        )
+
+
+class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
+    def setUp(self):
+        super(TestNovaNetworkConfigurationHandlerHA, self).setUp()
         cluster = self.env.create_cluster(api=True, mode='ha_compact')
         self.cluster = self.db.query(Cluster).get(cluster['id'])
         self.net_manager = NetworkManager()

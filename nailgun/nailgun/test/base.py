@@ -460,6 +460,9 @@ class Environment(object):
                         "ip_range": ["172.16.0.128", "172.16.0.254"],
                         "vlan_start": None,
                         "network_size": 256,
+                        "notation": "ip_ranges",
+                        "render_type": "ip_ranges",
+                        "render_addr_mask": None,
                         "assign_vip": False
                     },
                     {
@@ -469,6 +472,9 @@ class Environment(object):
                         "gateway": "172.16.0.1",
                         "ip_range": ["172.16.0.2", "172.16.0.127"],
                         "vlan_start": None,
+                        "notation": "ip_ranges",
+                        "render_type": None,
+                        "render_addr_mask": "public",
                         "assign_vip": True
                     },
                     {
@@ -478,6 +484,9 @@ class Environment(object):
                         "gateway": "192.168.0.1",
                         "ip_range": ["192.168.0.1", "192.168.0.254"],
                         "vlan_start": 101,
+                        "notation": "cidr",
+                        "render_type": "cidr",
+                        "render_addr_mask": "internal",
                         "assign_vip": True
                     },
                     {
@@ -487,6 +496,9 @@ class Environment(object):
                         "gateway": "192.168.1.1",
                         "ip_range": ["192.168.1.1", "192.168.1.254"],
                         "vlan_start": 102,
+                        "notation": "cidr",
+                        "render_type": "cidr",
+                        "render_addr_mask": "storage",
                         "assign_vip": False
                     },
                     {
@@ -496,6 +508,9 @@ class Environment(object):
                         "gateway": "10.0.0.1",
                         "ip_range": ["10.0.0.2", "10.0.255.254"],
                         "vlan_start": 103,
+                        "notation": "cidr",
+                        "render_type": "cidr",
+                        "render_addr_mask": None,
                         "assign_vip": False
                     }
                 ]
@@ -507,16 +522,25 @@ class Environment(object):
                         "pool": ["172.16.0.0/24"],
                         "ip_range": ["172.16.0.2", "172.16.0.126"],
                         "vlan_start": None,
+                        "notation": "ip_ranges",
+                        "render_type": None,
+                        "render_addr_mask": "public",
                         "assign_vip": True
                     },
                     {
                         "name": "management",
                         "pool": ["192.168.0.0/24"],
+                        "notation": "cidr",
+                        "render_type": "cidr",
+                        "render_addr_mask": "internal",
                         "assign_vip": True
                     },
                     {
                         "name": "storage",
                         "pool": ["192.168.1.0/24"],
+                        "notation": "cidr",
+                        "render_type": "cidr",
+                        "render_addr_mask": "storage",
                         "assign_vip": False
                     }
                 ],

@@ -46,7 +46,7 @@ from nailgun.logger import logger
 
 class NetworkManager(object):
 
-    def update_ranges_from_cidr(self, network_group, cidr):
+    def update_range_mask_from_cidr(self, network_group, cidr):
         """Update network ranges for cidr
         """
         db().query(IPAddrRange).filter_by(
@@ -57,6 +57,8 @@ class NetworkManager(object):
             network_group_id=network_group.id,
             first=str(new_cidr[2]),
             last=str(new_cidr[-2]))
+
+        network_group.netmask = str(new_cidr.netmask)
 
         db().add(ip_range)
         db().commit()

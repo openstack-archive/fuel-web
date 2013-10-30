@@ -310,6 +310,7 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         for n in self.nets['networks']:
             n['vlan_start'] = None
 
+        print self.nets
         self.update_networks(self.cluster.id, self.nets)
 
         resp = self.app.put(

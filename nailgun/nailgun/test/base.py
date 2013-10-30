@@ -473,7 +473,6 @@ class Environment(object):
         public['gateway'] = '172.16.1.1'
 
         nets['neutron_parameters'] = {
-            "segmentation_type": "vlan",
             "predefined_networks": {
                 "net04_ext": {
                     "L3": {

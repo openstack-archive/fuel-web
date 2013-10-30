@@ -1,5 +1,5 @@
 <!-- network block start -->
-<div class="physical-network-box">
+<div class="physical-network-box" data-name="<%- ifc.get('name') %>">
   <div class="network-box-name"><%- ifc.get('name') %></div>
   <div class="network-box-item">
 
@@ -14,7 +14,7 @@
       <div class="logical-network-group">
         <% ifc.get('assigned_networks').each(function(network) { %>
           <% if (network.get('name') != 'floating') { %>
-            </div><div class="logical-network-group">
+            </div><div class="logical-network-group <%- (_.contains(ifc.get('allowed_networks').invoke('get', 'name'), 'fuelweb_admin') && network.get('name') == 'fuelweb_admin') ? 'disabled' : '' %>">
           <% } %>
           <div class="logical-network-item" data-name="<%- network.get('name') %>">
             <div class="name"><%- network.get('name') == 'fuelweb_admin' ? 'Admin (PXE)' : $.t('cluster_page.nodes_tab.'+network.get('name'), {defaultValue: network.get('name')}) %></div>
@@ -36,3 +36,4 @@
   </div>
 </div>
 <!-- network block end -->
+<div class="network-box-error-message common enable-selection">&nbsp;</div>

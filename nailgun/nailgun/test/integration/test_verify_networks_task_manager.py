@@ -32,9 +32,9 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
 
         super(TestVerifyNetworkTaskManagers, self).setUp()
 
-        meta1 = self.env.generate_interfaces_in_meta(1)
+        meta1 = self.env.generate_interfaces_in_meta(2)
         mac1 = meta1['interfaces'][0]['mac']
-        meta2 = self.env.generate_interfaces_in_meta(1)
+        meta2 = self.env.generate_interfaces_in_meta(2)
         mac2 = meta2['interfaces'][0]['mac']
         self.env.create(
             cluster_kwargs={},
@@ -131,8 +131,8 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         )
         for n in self.env.nodes:
             self.assertIn(
-                '"admin (PXE)", "storage" networks at node "{0}"'.format(
-                    n.name),
+                '"floating", "storage", "public" networks '
+                'at node "{0}"'.format(n.name),
                 task.message
             )
         self.assertEquals(mocked_rpc.called, False)

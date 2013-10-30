@@ -206,7 +206,8 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
 
                 if 'neutron_parameters' in data:
                     self.validator.validate_neutron_params(
-                        json.dumps(data)
+                        json.dumps(data),
+                        cluster_id=cluster_id
                     )
 
                 NeutronNetworkConfiguration.update(cluster, data)

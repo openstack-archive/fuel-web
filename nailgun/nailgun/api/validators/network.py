@@ -16,6 +16,7 @@
 from netaddr import AddrFormatError
 from netaddr import IPNetwork
 
+from nailgun.api.models import Cluster
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
 from nailgun.api.validators.base import BasicValidator
@@ -83,8 +84,20 @@ class NeutronNetworkConfigurationValidator(NovaNetworkConfigurationValidator):
     # TODO(enchantner): Implement validation logic
 
     @classmethod
-    def validate_neutron_params(cls, data):
+    def validate_neutron_params(cls, data, **kwargs):
         d = cls.validate_json(data)
+        np = d.get('neutron_parameters')
+        cluster_id = kwargs.get("cluster_id")
+        if cluster_id:
+            cluster = db().query(Cluster).get(cluster_id)
+            if cluster and cluster.neutron_config:
+                cfg = cluster.neutron_config
+                for k in ("segmentation_type",):
+                    if k in np and getattr(cfg, k) != np[k]:
+                        raise errors.InvalidData(
+                            "Change of '{0}' is prohibited".format(k),
+                            log_message=True
+                        )
         return d
 
 

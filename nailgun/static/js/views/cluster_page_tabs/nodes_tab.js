@@ -1092,6 +1092,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this))
                 .fail(_.bind(function() {
                     utils.showErrorDialog({title: 'Interfaces configuration'});
+                }, this))
+                .always(_.bind(function() {
+                    this.disableControls(false);
+                    this.checkForChanges();
                 }, this));
         },
         setupButtonsBindings: function() {

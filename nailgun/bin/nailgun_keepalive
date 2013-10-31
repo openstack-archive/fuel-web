@@ -1,0 +1,24 @@
+#!/opt/nailgun/bin/python
+
+if __name__ == '__main__':
+    import sys
+
+    from nailgun import db
+    from nailgun import version
+    from nailgun.keepalive import keep_alive
+    from nailgun.logger import logger
+
+    version.log_module_version('KeepAlive')
+
+    try:
+        db.check()
+    except RuntimeError as e:
+        logger.error(str(e))
+        sys.exit(1)
+
+    try:
+        keep_alive.run()
+    except KeyboardInterrupt:
+        pass
+
+    logger.info("KeepAlive is stopped.")

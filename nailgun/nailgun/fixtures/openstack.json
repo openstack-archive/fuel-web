@@ -155,9 +155,8 @@
                         "label": "Ceph",
                         "name": "Ceph",
                         "mount": "none",
-                        "disk_label": "cephosd",
                         "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
-                        "file_system": "xfs"
+                        "file_system": "unformatted"
                     },
                     {
                         "id": "cephjournal",
@@ -166,9 +165,8 @@
                         "name": "Ceph Journal",
                         "label": "Ceph Journal",
                         "mount": "none",
-                        "disk_label": "cephjournal",
                         "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
-                        "file_system": "ext4"
+                        "file_system": "unformatted"
                     },
                     {
                         "id": "os",
@@ -1102,9 +1100,8 @@
                         "label": "Ceph",
                         "name": "Ceph",
                         "mount": "none",
-                        "disk_label": "cephosd",
                         "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
-                        "file_system": "xfs"
+                        "file_system": "unformatted"
                     },
                     {
                         "id": "cephjournal",
@@ -1113,9 +1110,8 @@
                         "name": "Ceph Journal",
                         "label": "Ceph Journal",
                         "mount": "none",
-                        "disk_label": "cephjournal",
                         "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
-                        "file_system": "ext4"
+                        "file_system": "unformatted"
                     },
                     {
                         "id": "os",

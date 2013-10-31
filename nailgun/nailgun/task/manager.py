@@ -378,7 +378,8 @@ class VerifyNetworksTaskManager(TaskManager):
         self._call_silently(
             task,
             tasks.CheckNetworksTask,
-            nets
+            data=nets,
+            check_admin_untagged=True
         )
         db().refresh(task)
 

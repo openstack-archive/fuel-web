@@ -102,14 +102,14 @@ class NetworkCheck(object):
 
             if found_intersection:
                 nodes_with_errors = [
-                    u'Node "{0}": {1}'.format(
+                    u'{1} networks at node "{0}"'.format(
                         int_node,
                         ", ".join(int_nets)
                     ) for int_node, int_nets in found_intersection]
                 self.err_msgs.append(
                     u"Some untagged networks are assigned to the same "
                     u"physical interface. You should assign them to "
-                    u"different physical interfaces:\n{0}".format(
+                    u"different physical interfaces. Affected:\n{0}".format(
                         "\n".join(nodes_with_errors)))
                 self.result.append({"id": [],
                                     "range_errors": [],

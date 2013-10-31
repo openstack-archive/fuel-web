@@ -100,3 +100,9 @@ def flush():
         for table in reversed(Base.metadata.sorted_tables):
             con.execute(table.delete())
         trans.commit()
+
+
+def check():
+    if not engine.dialect.has_table(engine.connect(), "nodes"):
+        raise RuntimeError(
+            "Database tables not created. Try 'manage.py syncdb' first")

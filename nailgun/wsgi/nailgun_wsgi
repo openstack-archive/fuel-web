@@ -1,0 +1,5 @@
+import nailgun.wsgi
+
+app = nailgun.wsgi.build_app()
+wsgifunc = nailgun.wsgi.build_middleware(app.wsgifunc)
+application = app.wsgifunc()

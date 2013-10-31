@@ -1078,6 +1078,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.interfaces.reset(_.cloneDeep(this.nodes.at(0).interfaces.toJSON()), {parse: true});
         },
         applyChanges: function() {
+            this.disableControls(true);
             return $.when.apply($, this.nodes.map(function(node) {
                     node.interfaces.each(function(ifc, index) {
                         ifc.set({assigned_networks: new models.InterfaceNetworks(this.interfaces.at(index).get('assigned_networks').toJSON())});
@@ -1090,12 +1091,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     }, this);
                     return Backbone.sync('update', interfaces, {url: _.result(node, 'url') + '/interfaces'});
                 }, this))
-                .fail(_.bind(function() {
-                    utils.showErrorDialog({title: 'Interfaces configuration'});
-                }, this))
-                .always(_.bind(function() {
-                    this.disableControls(false);
+                .done(_.bind(function(){
                     this.checkForChanges();
+                }, this))
+                .fail(_.bind(function() {
+                    this.checkForChanges();
+                    utils.showErrorDialog({title: 'Interfaces configuration'});
                 }, this));
         },
         setupButtonsBindings: function() {

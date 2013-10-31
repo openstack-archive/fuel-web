@@ -142,7 +142,8 @@ class TestNovaHandlers(BaseIntegrationTest):
             task['message'],
             'Some untagged networks are assigned to the same physical '
             'interface. You should assign them to different physical '
-            'interfaces:\nNode "None": "management", "public"'
+            'interfaces. Affected:\n'
+            '"management", "public" networks at node "None"'
         )
 
 

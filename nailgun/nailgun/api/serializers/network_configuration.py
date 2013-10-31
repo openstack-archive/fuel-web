@@ -19,7 +19,7 @@ from nailgun.network.manager import NetworkManager
 from nailgun.network.neutron import NeutronManager
 
 
-class NovaNetworkConfigurationSerializer(BasicSerializer):
+class NetworkConfigurationSerializer(BasicSerializer):
 
     fields = ('id', 'cluster_id', 'name', 'cidr', 'netmask',
               'gateway', 'vlan_start', 'network_size', 'amount')
@@ -33,6 +33,9 @@ class NovaNetworkConfigurationSerializer(BasicSerializer):
         data_dict.setdefault("netmask", "")
         data_dict.setdefault("gateway", "")
         return data_dict
+
+
+class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
 
     @classmethod
     def serialize_for_cluster(cls, cluster):
@@ -67,20 +70,7 @@ class NovaNetworkConfigurationSerializer(BasicSerializer):
         return result
 
 
-class NeutronNetworkConfigurationSerializer(BasicSerializer):
-
-    fields = ('id', 'cluster_id', 'name', 'cidr', 'netmask', 'gateway',
-              'vlan_start', 'network_size', 'amount')
-
-    @classmethod
-    def serialize_network_group(cls, instance, fields=None):
-        data_dict = BasicSerializer.serialize(instance, fields=cls.fields)
-        data_dict["ip_ranges"] = [
-            [ir.first, ir.last] for ir in instance.ip_ranges
-        ]
-        data_dict.setdefault("netmask", "")
-        data_dict.setdefault("gateway", "")
-        return data_dict
+class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
 
     @classmethod
     def serialize_for_cluster(cls, cluster):

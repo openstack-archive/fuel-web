@@ -49,7 +49,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         beforeTearDown: function() {
             this.$el.modal('hide');
         },
-        displayErrorMessage: function () {
+        displayError: function() {
             var logsLink;
             try {
                 if (app.page.model.constructor == models.Cluster) {
@@ -57,12 +57,13 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     logsLink = '#cluster/' + app.page.model.id + '/logs/' + utils.serializeTabOptions(options);
                 }
             } catch(e) {}
-            this.$('.modal-body').html(this.errorMessageTemplate({logsLink: logsLink}));
+            this.$('.modal-body').removeClass().addClass('modal-body');
+            this.$('.modal-body').html(views.Dialog.prototype.errorMessageTemplate({logsLink: logsLink}));
         },
-        displayInfoMessage: function(options) {
-            this.$el.html(views.Dialog.prototype.template(options));
-            if (options.error) {
-                this.displayErrorMessage();
+        displayErrorMessage: function(options) {
+            this.displayError();
+            if (options.message) {
+                this.$('.text-error').text(options.message);
             }
         },
         initialize: function(options) {
@@ -166,10 +167,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                                 this.$el.modal('hide');
                             }, this))
                             .fail(_.bind(function() {
-                                this.displayInfoMessage({
-                                    title: 'Environment Configuration Error',
-                                    message: 'Your OpenStack environment has been created, but confiugration failed. You can configure it manually.'
-                                });
+                                this.displayErrorMessage({message: 'Your OpenStack environment has been created, but configuration failed. You can configure it manually.'});
                             }, this));
                     }, this))
                     .fail(_.bind(function(response) {
@@ -178,9 +176,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                             this.goToPane(0);
                             cluster.trigger('invalid', cluster, {name: response.responseText});
                         } else if (response.status == 400) {
-                            this.displayInfoMessage({error: false, title: 'Create a new OpenStack environment error', message: response.responseText});
+                            this.displayErrorMessage({message: response.responseText});
                         } else {
-                            this.displayErrorMessage();
+                            this.displayError();
                         }
                     }, this));
             }
@@ -508,7 +506,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                             app.page.update();
                             this.$el.modal('hide');
                         }, this))
-                        .fail(_.bind(this.displayErrorMessage, this));
+                        .fail(_.bind(this.displayError, this));
                 } else {
                     this.$el.modal('hide');
                 }
@@ -568,7 +566,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     this.model.get('nodes').trigger('resize');
                     app.navbar.refresh();
                 }, this))
-                .fail(_.bind(this.displayErrorMessage, this));
+                .fail(_.bind(this.displayError, this));
         },
         render: function() {
             this.constructor.__super__.render.call(this, {cluster: this.model});
@@ -589,7 +587,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     this.$el.modal('hide');
                     app.page.deploymentStarted();
                 }, this))
-                .fail(_.bind(this.displayErrorMessage, this));
+                .fail(_.bind(this.displayError, this));
         },
         render: function() {
             this.constructor.__super__.render.call(this, {
@@ -613,7 +611,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     app.navbar.refresh();
                     app.navigate('#clusters', {trigger: true});
                 }, this))
-                .fail(_.bind(this.displayErrorMessage, this));
+                .fail(_.bind(this.displayError, this));
         },
         render: function() {
             this.constructor.__super__.render.call(this, {cluster: this.model});
@@ -780,7 +778,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         app.navbar.refresh();
                         app.page.removeFinishedTasks();
                     }, this))
-                    .fail(_.bind(this.displayErrorMessage, this));
+                    .fail(_.bind(this.displayError, this));
                 }
         },
         render: function() {

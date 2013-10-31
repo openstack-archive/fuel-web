@@ -81,7 +81,11 @@ if __name__ == "__main__":
           zip_safe=False,
           install_requires=requires,
           include_package_data=True,
-          scripts=['manage.py', 'fuel-cli/fuel'],
+          scripts=['manage.py',
+                   'fuel-cli/fuel',
+                   'bin/nailgun_rpc',
+                   'bin/nailgun_keepalive',
+                   'bin/nailgun_wsgi_path'],
           entry_points={
               'console_scripts': [
                   'nailgun_syncdb = nailgun.db:syncdb',
@@ -91,5 +95,6 @@ if __name__ == "__main__":
                   'nailgun_dump = nailgun.task.task:dump'
               ],
           },
-          data_files=recursive_data_files([('share/nailgun', 'static')])
+          data_files=(recursive_data_files([('share/nailgun', 'static')]) +
+                      [('share', ['wsgi/nailgun_wsgi'])])
           )

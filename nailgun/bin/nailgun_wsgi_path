@@ -1,0 +1,10 @@
+#!/opt/nailgun/bin/python
+
+if __name__ == '__main__':
+    from os.path import dirname, join
+
+    import nailgun
+
+    print join(dirname(dirname(nailgun.__file__)),
+               'share/nailgun_wsgi')
+

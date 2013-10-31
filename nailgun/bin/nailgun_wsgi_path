@@ -1,0 +1,13 @@
+#!/opt/nailgun/bin/python
+
+if __name__ == '__main__':
+    import sys
+    from os.path import dirname, join
+
+    import nailgun
+
+    if sys.version_info < (2, 7):
+        print join(sys.prefix, 'share', 'nailgun_wsgi')
+    else:
+        print join(dirname(dirname(nailgun.__file__)),
+                   'share/nailgun_wsgi')

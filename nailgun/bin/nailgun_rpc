@@ -1,0 +1,27 @@
+#!/opt/nailgun/bin/python
+
+if __name__ == '__main__':
+    import sys
+
+    from nailgun import db
+    from nailgun import version
+    from nailgun.logger import logger
+    from nailgun.rpc import threaded
+
+    version.log_module_version('RPC')
+
+    try:
+        db.check()
+    except RuntimeError as e:
+        logger.error(str(e))
+        sys.exit(1)
+
+    rpc_process = threaded.RPCKombuThread()
+    logger.info("Running RPC consumer...")
+
+    try:
+        rpc_process.run()
+    except KeyboardInterrupt:
+        pass
+
+    logger.info("RPC is stopped.")

@@ -101,6 +101,35 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         )
         self.assertEquals(mocked_rpc.called, False)
 
+    @fake_tasks(fake_rpc=False)
+    def test_network_verify_fails_if_untagged_intersection(self,
+                                                           mocked_rpc,
+                                                           macs_mock):
+        macs_mock.return_value = self.master_macs
+
+        resp = self.app.get(
+            reverse(
+                'NovaNetworkConfigurationHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}
+            ),
+            headers=self.default_headers
+        )
+        self.assertEquals(200, resp.status)
+        nets = json.loads(resp.body)
+
+        nets['networks'][-2]['vlan_start'] = None
+        nets['networks'][-3]['vlan_start'] = None
+
+        task = self.env.launch_verify_networks(nets)
+        self.env.wait_error(task, 30)
+        self.assertIn(
+            "Some untagged networks are assigned to the same physical "
+            "interface. You should assign them to different physical "
+            "interfaces:",
+            task.message
+        )
+        self.assertEquals(mocked_rpc.called, False)
+
     @fake_tasks()
     def test_network_verify_if_old_task_is_running(self,
                                                    macs_mock):

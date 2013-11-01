@@ -15,14 +15,14 @@
   </div>
   <% if (clusterNodesScreen) { %>
     <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-danger btn-delete-nodes hide">Delete</button>
+      <button class="btn btn-danger btn-delete-nodes hide"><i class="icon-trash"></i> Delete</button>
     </div>
     <% var disabled = nodes.cluster.task('deploy', 'running') ? 'disabled' : '' %>
     <div class="cluster-toolbar-item pull-right">
-      <a class="btn btn-success btn-edit-nodes hide" data-action="edit" href="" <%= disabled %>>Edit Roles</a>
+      <a class="btn btn-success btn-edit-nodes hide" data-action="edit" href="" <%= disabled %>><i class="icon-edit"></i> Edit Roles</a>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <<%= locked ? 'div' : 'a' %> class="btn btn-success btn-add-nodes" href="#cluster/<%- cluster.id %>/nodes/add" <%= disabled %>>Add Nodes</<%= locked ? 'div' : 'a' %>>
+      <<%= locked ? 'div' : 'a' %> class="btn btn-success btn-add-nodes" href="#cluster/<%- cluster.id %>/nodes/add" <%= disabled %>><i class="icon-plus"></i> Add Nodes</<%= locked ? 'div' : 'a' %>>
     </div>
     <div class="cluster-toolbar-item pull-right">
       <button class="btn btn-group-congiration btn-configure-interfaces" disabled data-action="interfaces"><i class="icon-attention text-error hide"></i> Configure Interfaces</button>

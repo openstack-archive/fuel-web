@@ -67,6 +67,7 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
         },
         render: function() {
             this.$el.html(this.template({cluster: this.model}));
+            this.$el.i18n();
             return this;
         }
     });

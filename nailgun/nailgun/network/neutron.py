@@ -278,13 +278,14 @@ class NeutronManager(NetworkManager):
                     first=str(new_net[2]),
                     last=str(new_net[-2])
                 )
+            gw = str(new_net[1]) if network.get('use_gateway') else None
 
             nw_group = NetworkGroup(
                 release=cluster_db.release.id,
                 name=network['name'],
                 cidr=str(new_net),
                 netmask=str(new_net.netmask),
-                gateway=str(new_net[1]),
+                gateway=gw,
                 cluster_id=cluster_id,
                 vlan_start=vlan_start,
                 amount=1

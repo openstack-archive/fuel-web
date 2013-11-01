@@ -405,42 +405,6 @@ class Environment(object):
         self.set_admin_ip_for_for_single_interface(meta['interfaces'])
         return meta['interfaces']
 
-    def generate_ui_networks(self, cluster_id):
-        start_id = self.db.query(NetworkGroup.id).order_by(
-            NetworkGroup.id
-        ).first()
-        start_id = 0 if not start_id else start_id[-1] + 1
-        net_names = (
-            "floating",
-            "public",
-            "management",
-            "storage",
-            "fixed"
-        )
-        net_cidrs = (
-            "172.16.0.0/24",
-            "172.16.1.0/24",
-            "192.168.0.0/24",
-            "192.168.1.0/24",
-            "10.0.0.0/24"
-        )
-        nets = {'networks': [{
-            "network_size": 256,
-            "name": nd[0],
-            "amount": 1,
-            "cluster_id": cluster_id,
-            "vlan_start": 100 + i,
-            "cidr": nd[1],
-            "id": start_id + i
-        } for i, nd in enumerate(zip(net_names, net_cidrs))]}
-
-        public = filter(
-            lambda net: net['name'] == 'public',
-            nets['networks'])[0]
-        public['netmask'] = '255.255.255.0'
-
-        return nets
-
     def get_default_roles(self):
         return ['controller', 'compute', 'cinder', 'ceph-osd']
 
@@ -460,6 +424,7 @@ class Environment(object):
                         "ip_range": ["172.16.0.128", "172.16.0.254"],
                         "vlan_start": 100,
                         "network_size": 256,
+                        "use_gateway": True,
                         "assign_vip": False
                     },
                     {
@@ -469,24 +434,27 @@ class Environment(object):
                         "gateway": "172.16.0.1",
                         "ip_range": ["172.16.0.2", "172.16.0.127"],
                         "vlan_start": 100,
+                        "use_gateway": True,
                         "assign_vip": True
                     },
                     {
                         "name": "management",
                         "cidr": "192.168.0.0/24",
                         "netmask": "255.255.255.0",
-                        "gateway": "192.168.0.1",
-                        "ip_range": ["192.168.0.1", "192.168.0.254"],
+                        "gateway": None,
+                        "ip_range": ["192.168.0.2", "192.168.0.254"],
                         "vlan_start": 101,
+                        "use_gateway": False,
                         "assign_vip": True
                     },
                     {
                         "name": "storage",
                         "cidr": "192.168.1.0/24",
                         "netmask": "255.255.255.0",
-                        "gateway": "192.168.1.1",
-                        "ip_range": ["192.168.1.1", "192.168.1.254"],
+                        "gateway": None,
+                        "ip_range": ["192.168.1.2", "192.168.1.254"],
                         "vlan_start": 102,
+                        "use_gateway": False,
                         "assign_vip": False
                     },
                     {
@@ -496,6 +464,7 @@ class Environment(object):
                         "gateway": "10.0.0.1",
                         "ip_range": ["10.0.0.2", "10.0.255.254"],
                         "vlan_start": 103,
+                        "use_gateway": True,
                         "assign_vip": False
                     }
                 ]
@@ -505,15 +474,18 @@ class Environment(object):
                     {
                         "name": "public",
                         "pool": ["172.16.0.0/24"],
-                        "ip_range": ["172.16.0.2", "172.16.0.126"]
+                        "ip_range": ["172.16.0.2", "172.16.0.126"],
+                        "use_gateway": True
                     },
                     {
                         "name": "management",
-                        "pool": ["192.168.0.0/24"]
+                        "pool": ["192.168.0.0/24"],
+                        "use_gateway": False
                     },
                     {
                         "name": "storage",
-                        "pool": ["192.168.1.0/24"]
+                        "pool": ["192.168.1.0/24"],
+                        "use_gateway": False
                     }
                 ],
                 "config": {

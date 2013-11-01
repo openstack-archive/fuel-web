@@ -159,7 +159,7 @@ class NetworkCheck(object):
         pub_gw = netaddr.IPAddress(ng['gateway'])
         try:
             pub_cidr = netaddr.IPNetwork(
-                ng['ip_ranges'][0][0] + '/' + ng['netmask'])
+                str(pub_gw) + '/' + ng['netmask'])
         except (netaddr.AddrFormatError, KeyError):
             self.err_msgs.append(
                 u"Invalid netmask for public network")
@@ -167,16 +167,9 @@ class NetworkCheck(object):
                                 "range_errors": [],
                                 "errors": ["netmask"]})
             self.expose_error_messages()
-        # Check that Public Gateway is in Public CIDR
-        if pub_gw not in pub_cidr:
-            self.err_msgs.append(
-                u"Public gateway is not in public CIDR."
-            )
-            self.result.append({"id": int(ng["id"]),
-                                "range_errors": [],
-                                "errors": ["gateway"]})
         # Check intersection of networks address spaces inside
         # Public and Floating network
+        pub_ranges_err = False
         for ng in self.networks:
             if ng['name'] in ['public', 'floating']:
                 nets = [netaddr.IPRange(v[0], v[1])
@@ -202,15 +195,74 @@ class NetworkCheck(object):
                 # Check that Public IP ranges are in Public CIDR
                 if ng['name'] == 'public':
                     for net in nets:
-                        if net not in pub_cidr:
+                        if net not in pub_cidr and not pub_ranges_err:
+                            pub_ranges_err = True
                             self.err_msgs.append(
-                                u"Public ranges are not in one CIDR."
+                                u"Public ranges and public gateway are not "
+                                u"in one CIDR."
                             )
                             self.result.append({"id": int(ng["id"]),
                                                 "range_errors": [],
                                                 "errors": ["range"]})
         self.expose_error_messages()
         return pub_cidr
+
+    def check_vlan_ids_range_and_intersection(self):
+        # check intersection of networks VLAN IDs ranges
+        # check networks VLAN ID ranges are in allowed range
+        tagged_nets = dict(
+            (n['name'], [int(n['vlan_start']), int(n['amount']) - 1])
+            for n in self.networks if n['vlan_start'] is not None)
+        for name, range in tagged_nets.iteritems():
+            # check VLAN ID range against [2-4094]
+            if range[0] < 2 or range[0] + range[1] > 4094:
+                self.err_msgs.append(
+                    u"VLAN ID(s) is out of range for "
+                    "{0} network.".format(name)
+                )
+                self.result.append({"id": [int(n["id"]) for n in self.networks
+                                           if n['name'] == name][0],
+                                    "range_errors": [],
+                                    "errors": ["vlan"]})
+        for net in combinations(tagged_nets.keys(), 2):
+            # public and floating networks always use the same tags
+            if set(net) == set(['public', 'floating']):
+                continue
+            range1 = tagged_nets[net[0]]
+            range2 = tagged_nets[net[1]]
+            if range1[0] <= range2[0] + range2[1] \
+                    and range2[0] <= range1[0] + range1[1]:
+                self.err_msgs.append(
+                    u"{0} networks use the same VLAN ID(s). "
+                    "You should assign different VLAN IDs "
+                    "to every network.".format(", ".join(net)))
+                self.result.append({"id": [int(n["id"]) for n in self.networks
+                                           if n['name'] in net],
+                                    "range_errors": [],
+                                    "errors": ["vlan"]})
+        self.expose_error_messages()
+
+    def check_networks_amount(self):
+        # check each network group has not more than 1 network
+        # except fixed in case of VLANManager
+        netmanager = self.data.get('net_manager') or self.cluster.net_manager
+        for ng in self.networks:
+            if ng['amount'] > 1:
+                if ng['name'] != 'fixed':
+                    self.err_msgs.append(
+                        u"Network amount for '{0}' is more than 1".format(
+                            ng['name'])
+                    )
+                elif netmanager == 'FlatDHCPManager':
+                    self.err_msgs.append(
+                        u"Network amount for 'fixed' is more than 1 "
+                        "while using FlatDHCP manager."
+                    )
+            if self.err_msgs:
+                self.result.append({"id": int(ng["id"]),
+                                    "range_errors": [],
+                                    "errors": ["amount"]})
+        self.expose_error_messages()
 
     def neutron_check_config(self):
 
@@ -523,6 +575,8 @@ class NetworkCheck(object):
         else:
             pub_cidr = self.check_public_floating_ranges_intersection()
             self.check_net_addr_spaces_intersection(pub_cidr)
+            self.check_networks_amount()
+            self.check_vlan_ids_range_and_intersection()
 
     def check_interface_mapping(self):
         if self.net_provider == 'neutron':

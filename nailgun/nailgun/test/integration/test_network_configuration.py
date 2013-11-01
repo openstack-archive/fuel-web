@@ -160,6 +160,61 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             'Invalid network ID: 500'
         )
 
+    def test_mgmt_storage_networks_have_no_gateway(self):
+        resp = self.env.nova_networks_get(self.cluster.id)
+        self.assertEquals(200, resp.status)
+        data = json.loads(resp.body)
+        for net in data['networks']:
+            if net['name'] in ['management', 'storage']:
+                self.assertIsNone(net['gateway'])
+
+    def test_management_network_has_gw(self):
+        net_meta = self.env.get_default_networks_metadata().copy()
+        mgmt = filter(lambda n: n['name'] == 'management',
+                      net_meta['nova_network']['networks'])[0]
+        mgmt['use_gateway'] = True
+        mgmt['gateway'] = '192.168.0.1'
+
+        def get_new_networks_metadata():
+            return net_meta
+
+        self.env.get_default_networks_metadata = get_new_networks_metadata
+        cluster = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[{"pending_addition": True}]
+        )
+
+        resp = self.env.nova_networks_get(cluster['id'])
+        data = json.loads(resp.body)
+        mgmt = filter(lambda n: n['name'] == 'management',
+                      data['networks'])[0]
+        self.assertEquals(mgmt['gateway'], '192.168.0.1')
+        strg = filter(lambda n: n['name'] == 'storage',
+                      data['networks'])[0]
+        self.assertIsNone(strg['gateway'])
+
+    def test_management_network_gw_set_but_not_in_use(self):
+        net_meta = self.env.get_default_networks_metadata().copy()
+        mgmt = filter(lambda n: n['name'] == 'management',
+                      net_meta['nova_network']['networks'])[0]
+        mgmt['gateway'] = '192.168.0.1'
+        self.assertEquals(mgmt['use_gateway'], False)
+
+        def get_new_networks_metadata():
+            return net_meta
+
+        self.env.get_default_networks_metadata = get_new_networks_metadata
+        cluster = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[{"pending_addition": True}]
+        )
+
+        resp = self.env.nova_networks_get(cluster['id'])
+        data = json.loads(resp.body)
+        for n in data['networks']:
+            if n['name'] in ('management', 'storage'):
+                self.assertIsNone(n['gateway'])
+
 
 class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def setUp(self):
@@ -283,6 +338,39 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             task['message'],
             'Invalid network ID: 500'
         )
+
+    def test_mgmt_storage_networks_have_no_gateway(self):
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.assertEquals(200, resp.status)
+        data = json.loads(resp.body)
+        for net in data['networks']:
+            if net['name'] in ['management', 'storage']:
+                self.assertIsNone(net['gateway'])
+
+    def test_management_network_has_gw(self):
+        net_meta = self.env.get_default_networks_metadata().copy()
+        mgmt = filter(lambda n: n['name'] == 'management',
+                      net_meta['neutron']['networks'])[0]
+        mgmt['use_gateway'] = True
+
+        def get_new_networks_metadata():
+            return net_meta
+
+        self.env.get_default_networks_metadata = get_new_networks_metadata
+        cluster = self.env.create(
+            cluster_kwargs={'net_provider': 'neutron',
+                            'net_segment_type': 'gre'},
+            nodes_kwargs=[{"pending_addition": True}]
+        )
+
+        resp = self.env.neutron_networks_get(cluster['id'])
+        data = json.loads(resp.body)
+        mgmt = filter(lambda n: n['name'] == 'management',
+                      data['networks'])[0]
+        self.assertEquals(mgmt['gateway'], '192.168.0.1')
+        strg = filter(lambda n: n['name'] == 'storage',
+                      data['networks'])[0]
+        self.assertIsNone(strg['gateway'])
 
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):

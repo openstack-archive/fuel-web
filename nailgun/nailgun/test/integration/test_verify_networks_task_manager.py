@@ -95,10 +95,10 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         task = self.env.launch_verify_networks(nets)
         self.env.wait_error(task, 30)
         self.assertIn(
-            task.message,
-            "Address space intersection between networks: "
-            "admin (PXE), fixed."
-        )
+            "Address space intersection between networks:\n",
+            task.message)
+        self.assertIn("admin (PXE)", task.message)
+        self.assertIn("fixed", task.message)
         self.assertEquals(mocked_rpc.called, False)
 
     @fake_tasks(fake_rpc=False)

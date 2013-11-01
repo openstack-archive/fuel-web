@@ -25,7 +25,7 @@ blank = urwid.Divider()
 
 class saveandquit():
     def __init__(self, parent):
-        self.name = "Save & Quit"
+        self.name = "Quit Setup"
         self.priority = 99
         self.visible = True
         self.parent = parent

@@ -23,7 +23,9 @@ import urwid.raw_display
 import urwid.web_display
 
 # set up logging
-logging.basicConfig(filename='/var/log/fuelmenu.log', level=logging.DEBUG)
+logging.basicConfig(filename='/var/log/fuelmenu.log',
+                    format="%(asctime)s %(levelname)s %(message)s",
+                    level=logging.DEBUG)
 log = logging.getLogger('fuelmenu.loader')
 
 
@@ -98,7 +100,8 @@ class FuelSetup(object):
         self.screen.draw_screen(size, self.frame.render(size))
         for item in self.menuitems.body.contents:
             try:
-                if item.original_widget.get_label() == choice:
+                if item.original_widget and \
+                        item.original_widget.get_label() == choice:
                     item.set_attr_map({None: 'header'})
                 else:
                     item.set_attr_map({None: None})

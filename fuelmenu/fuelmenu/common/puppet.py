@@ -60,13 +60,10 @@ def puppetApply(classname, name=None, params=None):
         process = subprocess.Popen(command, stdout=subprocess.PIPE,
                                    stdin=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
-        output, errout = process.communicate(input=' '.join(input))[0]
+        output, errout = process.communicate(input=' '.join(input))
     except Exception as e:
         import traceback
         log.error(traceback.print_exc())
-        log.error(e)
-        log.debug(output)
-        log.debug(e)
         if "err:" in output:
             log.error(e)
             return False

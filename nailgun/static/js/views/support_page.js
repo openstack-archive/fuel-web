@@ -16,7 +16,7 @@
 define(
 [
     'views/common',
-    'models',    
+    'models',
     'text!templates/support/page.html'
 ],
 function(commonViews, models, supportPageTemplate) {

@@ -1,6 +1,6 @@
 <div class="row-fluid">
   <div class="span12">
-    <h3 class="page-title" data-i18n="support_page.title">Support</h3>
+    <h3 class="page-title" data-i18n="support_page.title"></h3>
   </div>
 </div>
 
@@ -9,12 +9,11 @@
   <div class="row-fluid">
     <div class="span2"><div class="img-register-fuel"></div></div>
     <div class="span10">
-      <h4>Register FUEL</h4>
-      <p>
-        Registering will ensure that you receive important notifications about issues and new versions of Fuel. In addition, you will receive access to our basic support services for the next 30 days!
+      <h4 data-i18n="support_page.register_fuel_title"></h4>
+      <p data-i18n="support_page.register_fuel_content">
       </p>
       <p>
-        <a class="btn registration-link" href="" target="_blank">Register Fuel</a>
+        <a class="btn registration-link" href="" target="_blank" data-i18n="support_page.register_fuel_title"></a>
       </p>
     </div>
   </div>
@@ -24,14 +23,15 @@
   <div class="row-fluid">
     <div class="span2"><div class="img-contact-support"></div></div>
     <div class="span10">
-      <h4>Contact Support</h4>
+      <h4 data-i18n="support_page.contact_support"></h4>
       <p data-i18n="support_page.contact_text">
-        Do not hesitate to report a problem or suggest an improvement by clicking the button below. We will get back to you as soon as possible.
-      </p>
-      <p data-i18n="support_page.irc_text">If you have any questions, you can reach out developers at IRC channel <strong>#fuel</strong> on <a href="http://freenode.net" target="_blank">freenode.net</a>.
       </p>
       <p>
-        <a class="btn" href="https://mirantis.zendesk.com/requests/new" target="_blank" data-i18n="support_page.contact_support">Contact support</a>
+        <span data-i18n="support_page.irc_text"></span>
+        <strong>#fuel</strong> on <a href="http://freenode.net" target="_blank">freenode.net</a>.
+      </p>
+      <p>
+        <a class="btn" href="https://mirantis.zendesk.com/requests/new" target="_blank" data-i18n="support_page.contact_support"></a>
       </p>
     </div>
   </div>
@@ -41,9 +41,8 @@
   <div class="row-fluid">
     <div class="span2"><div class="img-download-logs"></div></div>
     <div class="span10">
-      <h4>Download Diagnostic Snapshot</h4>
+      <h4 data-i18n="support_page.download_diagnostic_snapshot_text"></h4>
       <p data-i18n="support_page.log_text">
-        If you have encountered some bugs or errors while using Fuel, you may also need to provide the support team with Fuel logs. You can download them by clicking the button below.
       </p>
       <p>
           <%
@@ -52,18 +51,18 @@
           %>
 
           <% if (!_.isNull(tasks.deferred)) { %>
-            <button class="btn download-logs-progress disabled">Loading...</button>
+            <button class="btn download-logs-progress disabled" data-i18n="loading"></button>
           <% } else { %>
             <% if (!task || taskCompleted) { %>
-            <button class="btn download-logs">Generate diagnostic snapshot</button>
+            <button class="btn download-logs" data-i18n="support_page.gen_diagnostic_snapshot_text"></button>
             <% } %>
           <% } %>
 
-          <button class="btn hide genereting-logs disabled">Generating logs snapshot...</button>
+          <button class="btn hide genereting-logs disabled" data-i18n="support_page.gen_logs_snapshot_text"></button>
 
           <% if (taskCompleted && task.get('status') == 'ready') { %>
           <span class="donwload-logs-link" style="margin-left: 10px;">
-            <a href="<%- task.get('message') %>"><i class="icon-install"></i>Diagnostic Snapshot</a>
+            <a href="<%- task.get('message') %>"><i class="icon-install" data-i18n="support_page.diagnostic_snapshot"></i></a>
           </span>
           <% } %>
 
@@ -79,12 +78,11 @@
   <div class="row-fluid">
     <div class="span2"><div class="img-audit-logs"></div></div>
     <div class="span10">
-      <h4>Capacity Audit</h4>
-      <p>
-         View and download capacity log.
+      <h4 data-i18n="support_page.capacity_audit"></h4>
+      <p data-i18n="support_page.capacity_audit_text">
       </p>
       <p>
-        <a class="btn" href="#capacity">View Capacity Audit</a>
+        <a class="btn" href="#capacity" data-i18n="support_page.view_capacity_audit"></a>
       </p>
     </div>
   </div>

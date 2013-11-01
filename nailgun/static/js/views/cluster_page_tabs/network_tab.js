@@ -336,7 +336,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 cidr: $.trim(this.$('.cidr input').val()),
                 vlan_start: fixedNetworkOnVlanManager || this.$('.use-vlan-tagging:checked').length ? Number(this.$('.vlan_start input').val()) : null,
                 netmask: $.trim(this.$('.netmask input').val()),
-                gateway: $.trim(this.$('.gateway input').val()),
+                gateway: $.trim(this.$('.gateway input').val()) || null,
                 amount: fixedNetworkOnVlanManager ? Number(this.$('input[name=fixed-amount]').val()) : 1,
                 network_size: fixedNetworkOnVlanManager ? Number(this.$('.network_size select').val()) : utils.calculateNetworkSize(this.$('.cidr input').val())
             }, {

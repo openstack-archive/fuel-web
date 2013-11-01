@@ -22,7 +22,6 @@ from nailgun.api.models import Cluster
 from nailgun.api.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
 
 
 class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
@@ -31,26 +30,8 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=True)
         self.cluster = self.db.query(Cluster).get(cluster['id'])
 
-    def put(self, cluster_id, data, expect_errors=False):
-        url = reverse(
-            'NovaNetworkConfigurationHandler',
-            kwargs={'cluster_id': cluster_id})
-        return self.app.put(
-            url, json.dumps(data),
-            headers=self.default_headers,
-            expect_errors=expect_errors)
-
-    def get(self, cluster_id, expect_errors=False):
-        url = reverse(
-            'NovaNetworkConfigurationHandler',
-            kwargs={'cluster_id': cluster_id})
-        return self.app.get(
-            url,
-            headers=self.default_headers,
-            expect_errors=expect_errors)
-
     def test_get_request_should_return_net_manager_and_networks(self):
-        response = self.get(self.cluster.id)
+        response = self.env.nova_networks_get(self.cluster.id)
         data = json.loads(response.body)
         cluster = self.db.query(Cluster).get(self.cluster.id)
 
@@ -72,12 +53,13 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
                 self.assertEquals(network[key], getattr(network_group, key))
 
     def test_not_found_cluster(self):
-        resp = self.get(self.cluster.id + 999, expect_errors=True)
+        resp = self.env.nova_networks_get(self.cluster.id + 999,
+                                          expect_errors=True)
         self.assertEquals(404, resp.status)
 
     def test_change_net_manager(self):
         new_net_manager = {'net_manager': 'VlanManager'}
-        self.put(self.cluster.id, new_net_manager)
+        self.env.nova_networks_put(self.cluster.id, new_net_manager)
 
         self.db.refresh(self.cluster)
         self.assertEquals(
@@ -93,7 +75,7 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
                 ]
             }
         }
-        self.put(self.cluster.id, new_dns_nameservers)
+        self.env.nova_networks_put(self.cluster.id, new_dns_nameservers)
 
         self.db.refresh(self.cluster)
         self.assertEquals(
@@ -105,7 +87,9 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
         new_net_manager = {'net_manager': 'VlanManager',
                            'networks': [{'id': 500, 'vlan_start': 500}]}
 
-        self.put(self.cluster.id, new_net_manager, expect_errors=True)
+        self.env.nova_networks_put(self.cluster.id,
+                                   new_net_manager,
+                                   expect_errors=True)
         self.db.refresh(self.cluster)
         self.assertNotEquals(
             self.cluster.net_manager,
@@ -121,7 +105,7 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
             'id': network.id,
             'vlan_start': new_vlan_id}]}
 
-        resp = self.put(self.cluster.id, new_nets)
+        resp = self.env.nova_networks_put(self.cluster.id, new_nets)
         self.assertEquals(resp.status, 202)
         self.db.refresh(network)
         self.assertEquals(len(network.networks), 1)
@@ -134,7 +118,7 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
         new_vlan_id = 500  # non-used vlan id
         new_net = {'net_manager': 'VlanManager',
                    'networks': [{'id': network.id, 'vlan_start': new_vlan_id}]}
-        self.put(self.cluster.id, new_net)
+        self.env.nova_networks_put(self.cluster.id, new_net)
 
         self.db.refresh(self.cluster)
         self.db.refresh(network)
@@ -148,7 +132,9 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
             'id': 500,
             'vlan_start': 500}]}
 
-        resp = self.put(self.cluster.id, new_nets, expect_errors=True)
+        resp = self.env.nova_networks_put(self.cluster.id,
+                                          new_nets,
+                                          expect_errors=True)
         self.assertEquals(202, resp.status)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
@@ -156,6 +142,14 @@ class TestNetworkConfigurationHandlerMultinodeMode(BaseIntegrationTest):
             task['message'],
             'Invalid network ID: 500'
         )
+
+    def test_mgmt_storage_networks_have_no_gateway(self):
+        resp = self.env.nova_networks_get(self.cluster.id)
+        self.assertEquals(200, resp.status)
+        data = json.loads(resp.body)
+        for net in data['networks']:
+            if net['name'] in ['management', 'storage']:
+                self.assertIsNone(net['gateway'])
 
 
 class TestNetworkConfigurationHandlerHAMode(BaseIntegrationTest):
@@ -166,10 +160,7 @@ class TestNetworkConfigurationHandlerHAMode(BaseIntegrationTest):
         self.net_manager = NetworkManager()
 
     def test_returns_management_vip_and_public_vip(self):
-        url = reverse('NovaNetworkConfigurationHandler',
-                      kwargs={'cluster_id': self.cluster.id})
-
-        resp = json.loads(self.app.get(url, headers=self.default_headers).body)
+        resp = json.loads(self.env.nova_networks_get(self.cluster.id).body)
 
         self.assertEquals(
             resp['management_vip'],

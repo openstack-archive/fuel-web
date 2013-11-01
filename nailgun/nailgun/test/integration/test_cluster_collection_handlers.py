@@ -192,14 +192,14 @@ class TestHandlers(BaseIntegrationTest):
                 'name': u'storage',
                 'vlan_id': 102,
                 'cidr': '192.168.1.0/24',
-                'gateway': '192.168.1.1'
+                'gateway': None
             },
             {
                 'release': release.id,
                 'name': u'management',
                 'vlan_id': 101,
                 'cidr': '192.168.0.0/24',
-                'gateway': '192.168.0.1'
+                'gateway': None
             }
         ]
         self.assertItemsEqual(expected, obtained)

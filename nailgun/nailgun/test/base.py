@@ -475,7 +475,7 @@ class Environment(object):
                         "name": "management",
                         "cidr": "192.168.0.0/24",
                         "netmask": "255.255.255.0",
-                        "gateway": "192.168.0.1",
+                        "gateway": None,
                         "ip_range": ["192.168.0.1", "192.168.0.254"],
                         "vlan_start": 101,
                         "assign_vip": True
@@ -484,7 +484,7 @@ class Environment(object):
                         "name": "storage",
                         "cidr": "192.168.1.0/24",
                         "netmask": "255.255.255.0",
-                        "gateway": "192.168.1.1",
+                        "gateway": None,
                         "ip_range": ["192.168.1.1", "192.168.1.254"],
                         "vlan_start": 102,
                         "assign_vip": False

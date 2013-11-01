@@ -269,8 +269,8 @@ interface first.")
                                   "network.")
 
         if len(errors) > 0:
-            self.parent.footer.set_text("Errors: %s First error: %s"
-                                        % (len(errors), errors[0]))
+            self.parent.footer.set_text("Error %s" % (errors[0]))
+            log.warning("Errors: %s %s" % (len(errors), errors))
             return False
         else:
             self.parent.footer.set_text("No errors found.")

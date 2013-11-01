@@ -1,9 +1,9 @@
 <% var disabled = locked ? 'disabled' : '' %>
 <div class="network-settings wrapper <%= locked ? 'changes-locked' : '' %>">
-  <h3>Network Settings</h3>
+  <h3 data-i18n="cluster_page.network_tab.title">Network Settings</h3>
   <% if (!loading || loading.state() != 'pending') { %>
     <% if (net_provider == 'nova_network') { %>
-      <% var managers = {'FlatDHCPManager': 'FlatDHCP Manager', 'VlanManager': 'VLAN Manager'} %>
+      <% var managers = {'FlatDHCPManager': $.t('cluster_page.network_tab.flatdhcp_manager', {defaultValue: 'FlatDHCP Manager'}), 'VlanManager': $.t('cluster_page.network_tab.vlan_manager', {defaultValue: 'VLAN Manager'}) } %>
       <div class="radio-checkbox-group net-manager">
         <% _.each(_.keys(managers), function(manager) { %>
           <div class="item-box">
@@ -45,9 +45,9 @@
   <div class="row">
     <div class="page-control-box">
       <div class="page-control-button-placeholder">
-        <button class="btn verify-networks-btn" <%= verificationLocked ? 'disabled' : '' %>>Verify Networks</button>
-        <button class="btn btn-revert-changes" <%= locked || !hasChanges? 'disabled' : '' %>>Cancel Changes</button>
-        <button class="btn btn-success apply-btn" <%= locked || !hasChanges ? 'disabled' : '' %>>Save Settings</button>
+        <button data-i18n="cluster_page.network_tab.bt_verify_networks" class="btn verify-networks-btn" <%= verificationLocked ? 'disabled' : '' %>>Verify Networks</button>
+        <button data-i18n="cluster_page.network_tab.bt_cancel_changes" class="btn btn-revert-changes" <%= locked || !hasChanges? 'disabled' : '' %>>Cancel Changes</button>
+        <button data-i18n="cluster_page.network_tab.bt_save_settings" class="btn btn-success apply-btn" <%= locked || !hasChanges ? 'disabled' : '' %>>Save Settings</button>
       </div>
     </div>
   </div>

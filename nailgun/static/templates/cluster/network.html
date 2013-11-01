@@ -2,19 +2,19 @@
 <% if (shownAttributes.length) { %>
 
   <% var networkName = network.get('name') %>
-  <legend class="networks"><%- networkName != 'fixed' ? networkName : 'VM Networks (Fixed)' %></legend>
+  <legend class="networks"><%- networkName != 'fixed' ? $.t('cluster_page.network_tab.'+networkName, {defaultValue: networkName}) : $.t('cluster_page.network_tab.vm_networks_fixed', {defaultValue: 'VM Networks (Fixed)'}) %></legend>
 
   <% var disabled = locked ? 'disabled' : '' %>
   <% var vlanManager = net_manager == 'VlanManager' ? '' : 'hide' %>
   <% var labels = {
-    'ip_ranges': 'IP Range',
-    'vlan_start': 'VLAN ID',
-    'netmask': 'Netmask',
-    'gateway': 'Gateway',
-    'cidr': 'CIDR',
-    'amount': 'Number of Networks',
-    'network_size': 'Size of Networks',
-    'vlan_range': 'VLAN ID range'
+    'ip_ranges': $.t('cluster_page.network_tab.ip_range', {defaultValue: 'IP Range'}),
+    'vlan_start': $.t('cluster_page.network_tab.vlan_id', {defaultValue: 'VLAN ID'}),
+    'netmask': $.t('cluster_page.network_tab.netmask', {defaultValue: 'Netmask'}),
+    'gateway': $.t('cluster_page.network_tab.gateway', {defaultValue: 'Gateway'}),
+    'cidr': $.t('cluster_page.network_tab.cidr', {defaultValue: 'CIDR'}),
+    'amount': $.t('cluster_page.network_tab.nubmer_of_networks', {defaultValue: 'Number of Networks'}),
+    'network_size': $.t('cluster_page.network_tab.size_of_networks', {defaultValue: 'Size of Networks'}),
+    'vlan_range': $.t('cluster_page.network_tab.vlan_id_range', {defaultValue: 'VLAN ID range'})
   } %>
 
   <div data-network-id="<%- network.id %>" class="<%- networkName %>">
@@ -24,7 +24,8 @@
       <% var hidden = _.contains(shownAttributes, attribute) ? '' : 'hide' %>
       <% if (attribute == 'ip_ranges') { %>
         <div class="range-row-header <%= hidden %>">
-          <div>Start</div><div>End</div>
+          <div data-i18n="cluster_page.network_tab.start">Start</div>
+          <div data-i18n="cluster_page.network_tab.end">End</div>
         </div>
         <div class="networks-sub-title parameter-name range-name <%= hidden %>"><%= labels[attribute] %></div>
         <% _.each(network.get(attribute), function(ip_range) { %>
@@ -59,7 +60,8 @@
       <% } else if (attribute == 'vlan_start') { %>
         <% if (net_provider == 'nova_network' && !vlanManager && networkName == 'fixed') { %>
           <div class="range-row-header mini <%= hidden %>">
-            <div>Start</div><div>End</div>
+            <div data-i18n="cluster_page.network_tab.start">Start</div>
+            <div data-i18n="cluster_page.network_tab.end">End</div>
           </div>
           <label class="parameter-box clearfix setting">
             <div class="networks-sub-title parameter-name"><%= labels.vlan_range %></div>
@@ -76,7 +78,7 @@
         <% } else { %>
           <% var vlan = network.get(attribute) %>
           <% var isFloating = networkName == 'floating' ? 'disabled' : '' %>
-          <div class="networks-sub-title parameter-name">Use VLAN Tagging</div>
+          <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.use_vlan_tagging">Use VLAN Tagging</div>
           <div class="range-row clearfix" style="height: 40px">
             <label class="parameter-box clearfix setting">
               <div class="parameter-control">

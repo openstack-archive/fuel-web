@@ -571,6 +571,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             this.constructor.__super__.render.call(this, {cluster: this.model});
+            this.$el.i18n();
             return this;
         }
     });
@@ -616,6 +617,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             this.constructor.__super__.render.call(this, {cluster: this.model});
+            this.$el.i18n();
             return this;
         }
     });
@@ -717,6 +719,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             }).on('hidden', function(e) {
                 e.stopPropagation();
             });
+            this.$el.i18n();
             return this;
         }
     });
@@ -740,6 +743,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 message: this.message || this.defaultMessage,
                 verification: this.verification || false
             });
+            this.$el.i18n();
             return this;
         }
     });

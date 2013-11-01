@@ -116,6 +116,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 this.composeBindings();
                 this.stickit(this.settings);
             }
+            this.$el.i18n();
             return this;
         },
         bindTaskEvents: function(task) {

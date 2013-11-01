@@ -123,7 +123,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             return !_.isUndefined(value) ? value : '\u00A0';
         },
         formatTitle: function(value, options) {
-            return !_.isUndefined(value) ? options.observe + '<br>' + 'node' + (value == 1 ? '' : 's') : '';
+            return !_.isUndefined(value) ? $.t('navbar.stats.' + options.observe, {count: value}) : '';
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -225,6 +225,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
                 this.$el.html('');
                 this.unbindEvents();
             }
+            this.$el.i18n();
             return this;
         }
     });

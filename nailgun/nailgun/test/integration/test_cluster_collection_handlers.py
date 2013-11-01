@@ -192,14 +192,14 @@ class TestHandlers(BaseIntegrationTest):
                 'name': u'storage',
                 'vlan_id': 102,
                 'cidr': '192.168.1.0/24',
-                'gateway': '192.168.1.1'
+                'gateway': None
             },
             {
                 'release': release.id,
                 'name': u'management',
                 'vlan_id': 101,
                 'cidr': '192.168.0.0/24',
-                'gateway': '192.168.0.1'
+                'gateway': None
             }
         ]
         self.assertItemsEqual(expected, obtained)
@@ -207,12 +207,9 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_verify_networks(self, mocked_rpc):
         cluster = self.env.create_cluster(api=True)
-        resp = self.app.put(
-            reverse('NovaNetworkConfigurationHandler',
-                    kwargs={'cluster_id': cluster['id']}),
-            json.dumps(self.env.generate_ui_networks(cluster["id"])),
-            headers=self.default_headers
-        )
+        nets = json.loads(self.env.nova_networks_get(cluster['id']).body)
+
+        resp = self.env.nova_networks_put(cluster['id'], nets)
         self.assertEquals(202, resp.status)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')

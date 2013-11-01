@@ -8,6 +8,23 @@
                     "unallocated": ["Unallocated", "node"],
                     "unallocated_plural": ["Unallocated", "nodes"]
                 }
+            },
+            "support_page": {
+                "title": "Support",
+                "contact_text": "Do not hesitate to report a problem or suggest an improvement by clicking the button below. We will get back to you as soon as possible.",
+                "irc_text": "If you have any questions, you can reach out developers at IRC channel",
+                "log_text": "If you have encountered some bugs or errors while using Fuel, you may also need to provide the support team with Fuel logs. You can download them by clicking the button below.",
+                "contact_support": "Contact support",
+                "register_fuel_title": "Register FUEL",
+                "register_fuel_content": "Registering will ensure that you receive important notifications about issues and new versions of Fuel. In addition, you will receive access to our basic support services for the next 30 days!",
+                "download_diagnostic_snapshot_text": "Download Diagnostic Snapshot",
+                "gen_logs_snapshot_text": "Generating logs snapshot...",
+                "loading": "Loading...",
+                "gen_diagnostic_snapshot_text": "Generate diagnostic snapshot",
+                "diagnostic_snapshot": "Diagnostic Snapshot",
+                "capacity_audit": "Capacity Audit",
+                "capacity_audit_text": "View and download capacity log.",
+                "view_capacity_audit": "View Capacity Audit"
             }
         }
     },

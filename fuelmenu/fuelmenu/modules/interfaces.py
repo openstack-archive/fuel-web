@@ -41,7 +41,7 @@ DEFAULTS = \
         "ifname": {"label":   "Interface name:",
                    "tooltip": "Interface system identifier",
                    "value":   "locked"},
-        "onboot": {"label":   "Enabled on boot:",
+        "onboot": {"label":   "Enable interface:",
                    "tooltip": "",
                    "value":   "radio"},
         "bootproto": {"label":   "Configuration via DHCP:",
@@ -215,8 +215,8 @@ class interfaces(urwid.WidgetWrap):
             except Exception, e:
                 errors.append(e)
         if len(errors) > 0:
-            self.parent.footer.set_text("Errors: %s First error: %s" % (
-                len(errors), errors[0]))
+            self.parent.footer.set_text("Error: %s" % (errors[0]))
+            log.error("Errors: %s %s" % (len(errors), errors))
             return False
         else:
             self.parent.footer.set_text("No errors found.")

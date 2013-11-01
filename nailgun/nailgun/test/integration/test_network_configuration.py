@@ -160,6 +160,14 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             'Invalid network ID: 500'
         )
 
+    def test_mgmt_storage_networks_have_no_gateway(self):
+        resp = self.env.nova_networks_get(self.cluster.id)
+        self.assertEquals(200, resp.status)
+        data = json.loads(resp.body)
+        for net in data['networks']:
+            if net['name'] in ['management', 'storage']:
+                self.assertIsNone(net['gateway'])
+
 
 class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def setUp(self):
@@ -283,6 +291,14 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             task['message'],
             'Invalid network ID: 500'
         )
+
+    def test_mgmt_storage_networks_have_no_gateway(self):
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.assertEquals(200, resp.status)
+        data = json.loads(resp.body)
+        for net in data['networks']:
+            if net['name'] in ['management', 'storage']:
+                self.assertIsNone(net['gateway'])
 
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):

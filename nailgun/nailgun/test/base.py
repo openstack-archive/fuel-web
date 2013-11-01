@@ -405,42 +405,6 @@ class Environment(object):
         self.set_admin_ip_for_for_single_interface(meta['interfaces'])
         return meta['interfaces']
 
-    def generate_ui_networks(self, cluster_id):
-        start_id = self.db.query(NetworkGroup.id).order_by(
-            NetworkGroup.id
-        ).first()
-        start_id = 0 if not start_id else start_id[-1] + 1
-        net_names = (
-            "floating",
-            "public",
-            "management",
-            "storage",
-            "fixed"
-        )
-        net_cidrs = (
-            "172.16.0.0/24",
-            "172.16.1.0/24",
-            "192.168.0.0/24",
-            "192.168.1.0/24",
-            "10.0.0.0/24"
-        )
-        nets = {'networks': [{
-            "network_size": 256,
-            "name": nd[0],
-            "amount": 1,
-            "cluster_id": cluster_id,
-            "vlan_start": 100 + i,
-            "cidr": nd[1],
-            "id": start_id + i
-        } for i, nd in enumerate(zip(net_names, net_cidrs))]}
-
-        public = filter(
-            lambda net: net['name'] == 'public',
-            nets['networks'])[0]
-        public['netmask'] = '255.255.255.0'
-
-        return nets
-
     def get_default_roles(self):
         return ['controller', 'compute', 'cinder', 'ceph-osd']
 
@@ -449,103 +413,8 @@ class Environment(object):
             ('openstack',))[0]['fields']['volumes_metadata']
 
     def get_default_networks_metadata(self):
-        return {
-            "nova_network": {
-                "networks": [
-                    {
-                        "name": "floating",
-                        "cidr": "172.16.0.0/24",
-                        "netmask": "255.255.255.0",
-                        "gateway": "172.16.0.1",
-                        "ip_range": ["172.16.0.128", "172.16.0.254"],
-                        "vlan_start": None,
-                        "network_size": 256,
-                        "assign_vip": False
-                    },
-                    {
-                        "name": "public",
-                        "cidr": "172.16.0.0/24",
-                        "netmask": "255.255.255.0",
-                        "gateway": "172.16.0.1",
-                        "ip_range": ["172.16.0.2", "172.16.0.127"],
-                        "vlan_start": None,
-                        "assign_vip": True
-                    },
-                    {
-                        "name": "management",
-                        "cidr": "192.168.0.0/24",
-                        "netmask": "255.255.255.0",
-                        "gateway": "192.168.0.1",
-                        "ip_range": ["192.168.0.1", "192.168.0.254"],
-                        "vlan_start": 101,
-                        "assign_vip": True
-                    },
-                    {
-                        "name": "storage",
-                        "cidr": "192.168.1.0/24",
-                        "netmask": "255.255.255.0",
-                        "gateway": "192.168.1.1",
-                        "ip_range": ["192.168.1.1", "192.168.1.254"],
-                        "vlan_start": 102,
-                        "assign_vip": False
-                    },
-                    {
-                        "name": "fixed",
-                        "cidr": "10.0.0.0/16",
-                        "netmask": "255.255.0.0",
-                        "gateway": "10.0.0.1",
-                        "ip_range": ["10.0.0.2", "10.0.255.254"],
-                        "vlan_start": 103,
-                        "assign_vip": False
-                    }
-                ]
-            },
-            "neutron": {
-                "networks": [
-                    {
-                        "name": "public",
-                        "pool": ["172.16.0.0/24"],
-                        "ip_range": ["172.16.0.2", "172.16.0.126"],
-                        "vlan_start": None,
-                        "assign_vip": True
-                    },
-                    {
-                        "name": "management",
-                        "pool": ["192.168.0.0/24"],
-                        "assign_vip": True
-                    },
-                    {
-                        "name": "storage",
-                        "pool": ["192.168.1.0/24"],
-                        "assign_vip": False
-                    }
-                ],
-                "config": {
-                    "parameters": {
-                        "amqp": {
-                            "provider": "rabbitmq",
-                            "username": None,
-                            "passwd": "",
-                            "hosts": "hostname1:5672, hostname2:5672"
-                        },
-                        "database": {
-                            "provider": "mysql",
-                            "port": "3306",
-                            "database": None,
-                            "username": None,
-                            "passwd": ""
-                        },
-                        "keystone": {
-                            "admin_user": None,
-                            "admin_password": ""
-                        },
-                        "metadata": {
-                            "metadata_proxy_shared_secret": ""
-                        }
-                    }
-                }
-            }
-        }
+        return self.read_fixtures(
+            ('openstack',))[0]['fields']['networks_metadata']
 
     def get_default_attributes_metadata(self):
         return self.read_fixtures(

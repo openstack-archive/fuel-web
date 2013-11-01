@@ -145,13 +145,14 @@ class NetworkManager(object):
                 first=network["ip_range"][0],
                 last=network["ip_range"][1]
             )
+            gw = network['gateway'] if network.get('use_gateway') else None
 
             nw_group = NetworkGroup(
                 release=cluster_db.release.id,
                 name=network['name'],
                 cidr=network['cidr'],
                 netmask=network['netmask'],
-                gateway=network['gateway'],
+                gateway=gw,
                 cluster_id=cluster_id,
                 vlan_start=network['vlan_start'],
                 amount=1,

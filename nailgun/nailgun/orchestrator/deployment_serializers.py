@@ -26,9 +26,10 @@ from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
-from nailgun.volumes import manager
+from nailgun.volumes import manager as VolumeManager
 
 
 class Priority(object):
@@ -52,59 +53,35 @@ class Priority(object):
         return self.priority
 
 
-class NovaOrchestratorSerializer(object):
-    """Base class for orchestrator searilization."""
-
-    # Merge attributes of nodes with common attributes
-    @classmethod
-    def deep_merge(cls, custom, common):
-        for key, value in common.iteritems():
-            if key in custom and isinstance(custom[key], dict):
-                custom[key].update(value)
-            elif key not in custom:
-                custom[key] = value
+class DeploymentMultiSerializer(object):
 
     @classmethod
     def serialize(cls, cluster):
         """Method generates facts which
         through an orchestrator passes to puppet
         """
-        common_attrs = cls.get_common_attrs(cluster)
         nodes = cls.serialize_nodes(cls.get_nodes_to_deployment(cluster))
-
-        if cluster.net_manager == 'VlanManager':
-            cls.add_vlan_interfaces(nodes)
+        common_attrs = cls.get_common_attrs(cluster)
 
         cls.set_deployment_priorities(nodes)
 
         [cls.deep_merge(node, common_attrs) for node in nodes]
         return nodes
 
-    @classmethod
-    def get_common_attrs(cls, cluster):
-        """Common attributes for all facts
-        """
-        attrs = cls.serialize_cluster_attrs(cluster)
-        attrs['nodes'] = cls.node_list(cls.get_all_nodes(cluster))
+    @staticmethod
+    def deep_merge(custom, common):
+        for key, value in common.iteritems():
+            if key in custom and isinstance(custom[key], dict):
+                custom[key].update(value)
+            elif key not in custom:
+                custom[key] = value
 
-        for node in attrs['nodes']:
-            if node['role'] in 'cinder':
-                attrs['use_cinder'] = True
-
-        return attrs
-
-    @classmethod
-    def serialize_cluster_attrs(cls, cluster):
-        """Cluster attributes."""
-        attrs = cluster.attributes.merged_attrs_values()
-        attrs['deployment_mode'] = cluster.mode
-        attrs['deployment_id'] = cluster.id
-        attrs['master_ip'] = settings.MASTER_IP
-        attrs['novanetwork_parameters'] = cls.novanetwork_attrs(cluster)
-        attrs['dns_nameservers'] = cluster.dns_nameservers
-        attrs.update(cls.network_ranges(cluster))
-
-        return attrs
+    @staticmethod
+    def get_all_nodes(cluster):
+        """All clusters nodes except nodes for deletion."""
+        return db().query(Node).filter(
+            and_(Node.cluster == cluster,
+                 False == Node.pending_deletion)).order_by(Node.id)
 
     @classmethod
     def get_nodes_to_deployment(cls, cluster):
@@ -113,122 +90,20 @@ class NovaOrchestratorSerializer(object):
                       key=lambda node: node.id)
 
     @classmethod
-    def get_all_nodes(cls, cluster):
-        """All clusters nodes except nodes for deletion."""
-        return db().query(Node).filter(
-            and_(Node.cluster == cluster,
-                 False == Node.pending_deletion)).order_by(Node.id)
+    def get_common_attrs(cls, cluster):
+        """Cluster attributes."""
+        attrs = cluster.attributes.merged_attrs_values()
+        attrs['deployment_mode'] = cluster.mode
+        attrs['deployment_id'] = cluster.id
+        attrs['nodes'] = cls.node_list(cls.get_all_nodes(cluster))
 
-    @classmethod
-    def novanetwork_attrs(cls, cluster):
-        """Network configuration
-        """
-        attrs = {}
-        attrs['network_manager'] = cluster.net_manager
+        for node in attrs['nodes']:
+            if node['role'] in 'cinder':
+                attrs['use_cinder'] = True
 
-        fixed_net = db().query(NetworkGroup).filter_by(
-            cluster_id=cluster.id).filter_by(name='fixed').first()
-
-        # network_size is required for all managers, otherwise
-        # puppet will use default (255)
-        attrs['network_size'] = fixed_net.network_size
-        if attrs['network_manager'] == 'VlanManager':
-            attrs['num_networks'] = fixed_net.amount
-            attrs['vlan_start'] = fixed_net.vlan_start
+        NetworkDeploymentSerializer.update_common_attrs(cluster, attrs)
 
         return attrs
-
-    @classmethod
-    def add_vlan_interfaces(cls, nodes):
-        """Assign fixed_interfaces and vlan_interface.
-        They should be equal.
-        """
-        netmanager = NetworkManager()
-        for node in nodes:
-            node_db = db().query(Node).get(node['uid'])
-
-            fixed_interface = netmanager._get_interface_by_network_name(
-                node_db.id, 'fixed')
-
-            node['fixed_interface'] = fixed_interface.name
-            node['vlan_interface'] = fixed_interface.name
-
-    @classmethod
-    def network_ranges(cls, cluster):
-        """Returns ranges for network groups
-        except range for public network
-        """
-        ng_db = db().query(NetworkGroup).filter_by(cluster_id=cluster.id).all()
-        attrs = {}
-        for net in ng_db:
-            net_name = net.name + '_network_range'
-
-            if net.name == 'floating':
-                attrs[net_name] = cls.get_ip_ranges_first_last(net)
-            # We shouldn't pass public_network_range attribute
-            elif net.name != 'public' and net.cidr:
-                attrs[net_name] = net.cidr
-
-        return attrs
-
-    @classmethod
-    def get_ip_ranges_first_last(cls, network_group):
-        """Get all ip ranges in "10.0.0.0-10.0.0.255" format
-        """
-        return [
-            "{0}-{1}".format(ip_range.first, ip_range.last)
-            for ip_range in network_group.ip_ranges
-        ]
-
-    @classmethod
-    def serialize_nodes(cls, nodes):
-        """Serialize node for each role.
-        For example if node has two roles then
-        in orchestrator will be passed two serialized
-        nodes.
-        """
-        serialized_nodes = []
-        for node in nodes:
-            for role in node.all_roles:
-                serialized_nodes.append(cls.serialize_node(node, role))
-        return serialized_nodes
-
-    @classmethod
-    def serialize_node(cls, node, role):
-        """Serialize node, then it will be
-        merged with common attributes
-        """
-        return cls._serialize_node(node, role)
-
-    @classmethod
-    def _serialize_node(cls, node, role):
-        """Serialize node, then it will be
-        merged with common attributes
-        """
-        network_data = node.network_data
-        interfaces = cls.configure_interfaces(node)
-        cls.__add_hw_interfaces(interfaces, node.meta['interfaces'])
-
-        node_attrs = {
-            # Yes, uid is really should be a string
-            'uid': str(node.id),
-            'fqdn': node.fqdn,
-            'status': node.status,
-            'role': role,
-            'glance': {
-                'image_cache_max_size': manager.calc_glance_cache_size(
-                    node.attributes.volumes)
-            },
-            # Interfaces assingment
-            'network_data': interfaces,
-
-            # TODO (eli): need to remove, requried
-            # for fucking fake thread only
-            'online': node.online,
-        }
-        node_attrs.update(cls.interfaces_list(network_data))
-
-        return node_attrs
 
     @classmethod
     def node_list(cls, nodes):
@@ -238,114 +113,15 @@ class NovaOrchestratorSerializer(object):
         node_list = []
 
         for node in nodes:
-            network_data = node.network_data
-
             for role in node.all_roles:
                 node_list.append({
                     # Yes, uid is really should be a string
                     'uid': str(node.id),
                     'fqdn': node.fqdn,
                     'name': TaskHelper.make_slave_name(node.id),
-                    'role': role,
-
-                    # Addresses
-                    'internal_address': cls.get_addr(network_data,
-                                                     'management')['ip'],
-                    'internal_netmask': cls.get_addr(network_data,
-                                                     'management')['netmask'],
-                    'storage_address': cls.get_addr(network_data,
-                                                    'storage')['ip'],
-                    'storage_netmask': cls.get_addr(network_data,
-                                                    'storage')['netmask'],
-                    'public_address': cls.get_addr(network_data,
-                                                   'public')['ip'],
-                    'public_netmask': cls.get_addr(network_data,
-                                                   'public')['netmask']})
+                    'role': role})
 
         return node_list
-
-    @classmethod
-    def get_addr(cls, network_data, name):
-        """Get addr for network by name
-        """
-        nets = filter(
-            lambda net: net['name'] == name,
-            network_data)
-
-        if not nets or 'ip' not in nets[0]:
-            raise errors.CanNotFindNetworkForNode(
-                'Cannot find network with name: %s' % name)
-
-        net = nets[0]['ip']
-        return {
-            'ip': str(IPNetwork(net).ip),
-            'netmask': str(IPNetwork(net).netmask)
-        }
-
-    @classmethod
-    def interfaces_list(cls, network_data):
-        """Generate list of interfaces
-        """
-        interfaces = {}
-        for network in network_data:
-            interfaces['%s_interface' % network['name']] = \
-                cls.__make_interface_name(
-                    network.get('dev'),
-                    network.get('vlan'))
-
-        return interfaces
-
-    @classmethod
-    def configure_interfaces(cls, node):
-        """Configure interfaces
-        """
-        network_data = node.network_data
-        interfaces = {}
-
-        for network in network_data:
-            network_name = network['name']
-
-            # floating and public are on the same interface
-            # so, just skip floating
-            if network_name == 'floating':
-                continue
-
-            name = cls.__make_interface_name(network.get('dev'),
-                                             network.get('vlan'))
-
-            interfaces.setdefault(name, {'interface': name, 'ipaddr': []})
-
-            interface = interfaces[name]
-            if network.get('ip'):
-                interface['ipaddr'].append(network.get('ip'))
-
-            # Add gateway for public
-            if network_name == 'admin':
-                admin_ip_addr = cls.get_admin_ip(node)
-                interface['ipaddr'].append(admin_ip_addr)
-            elif network_name == 'public' and network.get('gateway'):
-                interface['gateway'] = network['gateway']
-
-            if len(interface['ipaddr']) == 0:
-                interface['ipaddr'] = 'none'
-
-        interfaces['lo'] = {'interface': 'lo', 'ipaddr': ['127.0.0.1/8']}
-
-        return interfaces
-
-    @classmethod
-    def get_admin_ip(cls, node):
-        """Getting admin ip and assign prefix from admin network."""
-        network_manager = NetworkManager()
-        admin_ip = network_manager.get_admin_ips_for_interfaces(
-            node)[node.admin_interface.name]
-        admin_ip = IPNetwork(admin_ip)
-
-        # Assign prefix from admin network
-        admin_net = IPNetwork(network_manager.get_admin_network().cidr)
-        admin_ip.prefixlen = admin_net.prefixlen
-
-        return str(admin_ip)
 
     @classmethod
     def by_role(cls, nodes, role):
@@ -368,33 +144,50 @@ class NovaOrchestratorSerializer(object):
             n['priority'] = other_nodes_prior
 
     @classmethod
-    def __make_interface_name(cls, name, vlan):
-        """Make interface name
+    def serialize_nodes(cls, nodes):
+        """Serialize node for each role.
+        For example if node has two roles then
+        in orchestrator will be passed two serialized
+        nodes.
         """
-        if name and vlan:
-            return '.'.join([name, str(vlan)])
-        return name
+        serialized_nodes = []
+        for node in nodes:
+            for role in node.all_roles:
+                serialized_nodes.append(cls.serialize_node(node, role))
+        return serialized_nodes
 
     @classmethod
-    def __add_hw_interfaces(cls, interfaces, hw_interfaces):
-        """Add interfaces which not represents in
-        interfaces list but they are represented on node
+    def serialize_node(cls, node, role):
+        """Serialize node, then it will be
+        merged with common attributes
         """
-        for hw_interface in hw_interfaces:
-            if hw_interface['name'] not in interfaces:
-                interfaces[hw_interface['name']] = {
-                    'interface': hw_interface['name'],
-                    'ipaddr': "none"
-                }
+        node_attrs = {
+            # Yes, uid is really should be a string
+            'uid': str(node.id),
+            'fqdn': node.fqdn,
+            'status': node.status,
+            'role': role,
+            'glance': {
+                'image_cache_max_size': VolumeManager.calc_glance_cache_size(
+                    node.attributes.volumes)
+            },
+            # TODO (eli): need to remove, requried
+            # for fucking fake thread only
+            'online': node.online
+        }
+
+        node_attrs.update(NetworkDeploymentSerializer.node_attrs(node))
+
+        return node_attrs
 
 
-class NovaOrchestratorHASerializer(NovaOrchestratorSerializer):
+class DeploymentHASerializer(DeploymentMultiSerializer):
     """Serializer for ha mode."""
 
     @classmethod
     def serialize(cls, cluster):
         serialized_nodes = super(
-            NovaOrchestratorHASerializer,
+            DeploymentHASerializer,
             cls
         ).serialize(cluster)
         cls.set_primary_controller(serialized_nodes)
@@ -417,7 +210,7 @@ class NovaOrchestratorHASerializer(NovaOrchestratorSerializer):
           redeployed only node which was failed
         """
         nodes = super(
-            NovaOrchestratorHASerializer,
+            DeploymentHASerializer,
             cls
         ).get_nodes_to_deployment(cluster)
 
@@ -426,15 +219,15 @@ class NovaOrchestratorHASerializer(NovaOrchestratorSerializer):
         # if list contain at least one controller
         if cls.has_controller_nodes(nodes):
             # retrive all controllers from cluster
-            controller_nodes = db().query(Node).\
+            controller_nodes = db().query(Node). \
                 filter(or_(
                     Node.role_list.any(name='controller'),
                     Node.pending_role_list.any(name='controller'),
                     Node.role_list.any(name='primary-controller'),
                     Node.pending_role_list.any(name='primary-controller')
-                )).\
-                filter(Node.cluster == cluster).\
-                filter(False == Node.pending_deletion).\
+                )). \
+                filter(Node.cluster == cluster). \
+                filter(False == Node.pending_deletion). \
                 order_by(Node.id).all()
 
         return sorted(set(nodes + controller_nodes),
@@ -458,11 +251,20 @@ class NovaOrchestratorHASerializer(NovaOrchestratorSerializer):
                 controllers[0]['role'] = 'primary-controller'
 
     @classmethod
+    def get_last_controller(cls, nodes):
+        sorted_nodes = sorted(
+            nodes, key=lambda node: int(node['uid']))
+
+        controller_nodes = cls.filter_by_roles(
+            sorted_nodes, ['controller', 'primary-controller'])
+        return {'last_controller': controller_nodes[-1]['name']}
+
+    @classmethod
     def node_list(cls, nodes):
         """Node list
         """
         node_list = super(
-            NovaOrchestratorHASerializer,
+            DeploymentHASerializer,
             cls
         ).node_list(nodes)
 
@@ -476,15 +278,19 @@ class NovaOrchestratorHASerializer(NovaOrchestratorSerializer):
         """Common attributes for all facts
         """
         common_attrs = super(
-            NovaOrchestratorHASerializer,
+            DeploymentHASerializer,
             cls
         ).get_common_attrs(cluster)
 
-        netmanager = NetworkManager()
+        netmanager = cluster.network_manager()
         common_attrs['management_vip'] = netmanager.assign_vip(
             cluster.id, 'management')
         common_attrs['public_vip'] = netmanager.assign_vip(
             cluster.id, 'public')
+
+        common_attrs['mp'] = [
+            {'point': '1', 'weight': '1'},
+            {'point': '2', 'weight': '2'}]
 
         sorted_nodes = sorted(
             common_attrs['nodes'], key=lambda node: int(node['uid']))
@@ -495,10 +301,6 @@ class NovaOrchestratorHASerializer(NovaOrchestratorSerializer):
 
         # Assign primary controller in nodes list
         cls.set_primary_controller(common_attrs['nodes'])
-
-        common_attrs['mp'] = [
-            {'point': '1', 'weight': '1'},
-            {'point': '2', 'weight': '2'}]
 
         return common_attrs
 
@@ -542,40 +344,246 @@ class NovaOrchestratorHASerializer(NovaOrchestratorSerializer):
             n['priority'] = other_nodes_prior
 
 
-class NeutronMethods(object):
-    """Class with methods which should be overrided to make Neutron happy."""
+class NetworkDeploymentSerializer(object):
 
     @classmethod
-    def serialize_node(cls, node, role):
-        """Serialize node, then it will be
-        merged with common attributes
+    def update_common_attrs(cls, cluster, attrs):
+        """Cluster network attributes."""
+        attrs.update({'master_ip': settings.MASTER_IP})
+        attrs.update(cls.network_ranges(cluster))
+        DeploymentMultiSerializer.deep_merge(
+            attrs,
+            cls.get_net_provider_serializer(cluster).network_cluster_attrs(
+                cluster))
+
+        # Addresses
+        for node in DeploymentMultiSerializer.get_all_nodes(cluster):
+            netw_data = node.network_data
+            addresses = {
+                'internal_address': cls.get_addr(netw_data,
+                                                 'management')['ip'],
+                'internal_netmask': cls.get_addr(netw_data,
+                                                 'management')['netmask'],
+                'storage_address': cls.get_addr(netw_data,
+                                                'storage')['ip'],
+                'storage_netmask': cls.get_addr(netw_data,
+                                                'storage')['netmask'],
+                'public_address': cls.get_addr(netw_data,
+                                               'public')['ip'],
+                'public_netmask': cls.get_addr(netw_data,
+                                               'public')['netmask']}
+            [n.update(addresses) for n in attrs['nodes']
+             if n['uid'] == str(node.id)]
+
+    @classmethod
+    def node_attrs(cls, node):
+        """Node network attributes."""
+
+        cluster = node.cluster
+        return cls.get_net_provider_serializer(cluster).\
+            network_node_attrs(cluster, node)
+
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.net_provider == 'nova_network':
+            return NovaNetworkDeploymentSerializer
+        else:
+            return NeutronNetworkDeploymentSerializer
+
+    @classmethod
+    def network_ranges(cls, cluster):
+        """Returns ranges for network groups
+        except range for public network
         """
-        node_attrs = cls._serialize_node(node, role)
-        node_attrs['network_scheme'] = cls.generate_network_scheme(node)
-        for attr in node_attrs.keys()[:]:
-            if attr.endswith("_interface") or attr == 'network_data':
-                del node_attrs[attr]
+        ng_db = db().query(NetworkGroup).filter_by(cluster_id=cluster.id).all()
+        attrs = {}
+        for net in ng_db:
+            net_name = net.name + '_network_range'
 
-        return node_attrs
+            if net.name == 'floating':
+                attrs[net_name] = cls.get_ip_ranges_first_last(net)
+            # We shouldn't pass public_network_range attribute
+            elif net.name != 'public' and net.cidr:
+                attrs[net_name] = net.cidr
+
+        return attrs
 
     @classmethod
-    def _node_has_role_by_name(cls, node, rolename):
-        if rolename in node.pending_roles or rolename in node.roles:
-            return True
-        return False
+    def get_ip_ranges_first_last(cls, network_group):
+        """Get all ip ranges in "10.0.0.0-10.0.0.255" format
+        """
+        return [
+            "{0}-{1}".format(ip_range.first, ip_range.last)
+            for ip_range in network_group.ip_ranges
+        ]
 
     @classmethod
-    def serialize_cluster_attrs(cls, cluster):
+    def get_addr(cls, network_data, name):
+        """Get addr for network by name
+        """
+        nets = filter(
+            lambda net: net['name'] == name,
+            network_data)
+
+        if not nets or 'ip' not in nets[0]:
+            raise errors.CanNotFindNetworkForNode(
+                'Cannot find network with name: %s' % name)
+
+        net = nets[0]['ip']
+        return {
+            'ip': str(IPNetwork(net).ip),
+            'netmask': str(IPNetwork(net).netmask)
+        }
+
+    @staticmethod
+    def get_admin_ip(node):
+        """Getting admin ip and assign prefix from admin network."""
+        network_manager = NetworkManager()
+        admin_ip = network_manager.get_admin_ips_for_interfaces(
+            node)[node.admin_interface.name]
+        admin_ip = IPNetwork(admin_ip)
+
+        # Assign prefix from admin network
+        admin_net = IPNetwork(network_manager.get_admin_network().cidr)
+        admin_ip.prefixlen = admin_net.prefixlen
+
+        return str(admin_ip)
+
+
+class NovaNetworkDeploymentSerializer(object):
+
+    @classmethod
+    def network_cluster_attrs(cls, cluster):
+        return {'novanetwork_parameters': cls.novanetwork_attrs(cluster),
+                'dns_nameservers': cluster.dns_nameservers}
+
+    @classmethod
+    def network_node_attrs(cls, cluster, node):
+        network_data = node.network_data
+        interfaces = cls.configure_interfaces(node)
+        cls.__add_hw_interfaces(interfaces, node.meta['interfaces'])
+
+        # Interfaces assingment
+        attrs = {'network_data': interfaces}
+        attrs.update(cls.interfaces_list(network_data))
+
+        if cluster.net_manager == 'VlanManager':
+            attrs.update(cls.add_vlan_interfaces(node))
+
+        return attrs
+
+    @classmethod
+    def novanetwork_attrs(cls, cluster):
+        """Network configuration
+        """
+        attrs = {'network_manager': cluster.net_manager}
+
+        fixed_net = db().query(NetworkGroup).filter_by(
+            cluster_id=cluster.id).filter_by(name='fixed').first()
+
+        # network_size is required for all managers, otherwise
+        # puppet will use default (255)
+        attrs['network_size'] = fixed_net.network_size
+        if attrs['network_manager'] == 'VlanManager':
+            attrs['num_networks'] = fixed_net.amount
+            attrs['vlan_start'] = fixed_net.vlan_start
+
+        return attrs
+
+    @classmethod
+    def add_vlan_interfaces(cls, node):
+        """Assign fixed_interfaces and vlan_interface.
+        They should be equal.
+        """
+        fixed_interface = NetworkManager()._get_interface_by_network_name(
+            node.id, 'fixed')
+
+        attrs = {'fixed_interface': fixed_interface.name,
+                 'vlan_interface': fixed_interface.name}
+        return attrs
+
+    @classmethod
+    def configure_interfaces(cls, node):
+        """Configure interfaces
+        """
+        network_data = node.network_data
+        interfaces = {}
+
+        for network in network_data:
+            network_name = network['name']
+
+            # floating and public are on the same interface
+            # so, just skip floating
+            if network_name == 'floating':
+                continue
+
+            name = cls.__make_interface_name(network.get('dev'),
+                                             network.get('vlan'))
+
+            interfaces.setdefault(name, {'interface': name, 'ipaddr': []})
+
+            interface = interfaces[name]
+            if network.get('ip'):
+                interface['ipaddr'].append(network.get('ip'))
+
+            # Add gateway for public
+            if network_name == 'admin':
+                admin_ip_addr = NetworkDeploymentSerializer.get_admin_ip(node)
+                interface['ipaddr'].append(admin_ip_addr)
+            elif network_name == 'public' and network.get('gateway'):
+                interface['gateway'] = network['gateway']
+
+            if len(interface['ipaddr']) == 0:
+                interface['ipaddr'] = 'none'
+
+        interfaces['lo'] = {'interface': 'lo', 'ipaddr': ['127.0.0.1/8']}
+
+        return interfaces
+
+    @classmethod
+    def __make_interface_name(cls, name, vlan):
+        """Make interface name
+        """
+        if name and vlan:
+            return '.'.join([name, str(vlan)])
+        return name
+
+    @classmethod
+    def __add_hw_interfaces(cls, interfaces, hw_interfaces):
+        """Add interfaces which not represents in
+        interfaces list but they are represented on node
+        """
+        for hw_interface in hw_interfaces:
+            if hw_interface['name'] not in interfaces:
+                interfaces[hw_interface['name']] = {
+                    'interface': hw_interface['name'],
+                    'ipaddr': "none"
+                }
+
+    @classmethod
+    def interfaces_list(cls, network_data):
+        """Generate list of interfaces
+        """
+        interfaces = {}
+        for network in network_data:
+            interfaces['%s_interface' % network['name']] = \
+                cls.__make_interface_name(
+                    network.get('dev'),
+                    network.get('vlan'))
+
+        return interfaces
+
+
+class NeutronNetworkDeploymentSerializer(object):
+
+    @classmethod
+    def network_cluster_attrs(cls, cluster):
         """Cluster attributes."""
-        attrs = cluster.attributes.merged_attrs_values()
-        attrs['deployment_mode'] = cluster.mode
-        attrs['deployment_id'] = cluster.id
-        attrs['master_ip'] = settings.MASTER_IP
-        cls.deep_merge(attrs['quantum_settings'], cls.neutron_attrs(cluster))
-        attrs['quantum'] = True
+        attrs = {'quantum': True,
+                 'quantum_settings': cls.neutron_attrs(cluster)}
 
         if cluster.mode == 'multinode':
-            nm = NetworkManager()
+            nm = NeutronManager()
             for node in cluster.nodes:
                 if cls._node_has_role_by_name(node, 'controller'):
                     mgmt_cidr = nm.get_node_network_by_netname(
@@ -585,9 +593,22 @@ class NeutronMethods(object):
                     attrs['management_vip'] = mgmt_cidr.split('/')[0]
                     break
 
-        attrs.update(cls.network_ranges(cluster))
-
         return attrs
+
+    @classmethod
+    def network_node_attrs(cls, cluster, node):
+        """Serialize node, then it will be
+        merged with common attributes
+        """
+        node_attrs = {'network_scheme': cls.generate_network_scheme(node)}
+
+        return node_attrs
+
+    @classmethod
+    def _node_has_role_by_name(cls, node, rolename):
+        if rolename in node.pending_roles or rolename in node.roles:
+            return True
+        return False
 
     @classmethod
     def neutron_attrs(cls, cluster):
@@ -769,21 +790,11 @@ class NeutronMethods(object):
 
         # Fill up all about fuelweb-admin network.
         attrs['endpoints'][node.admin_interface.name] = {
-            "IP": [cls.get_admin_ip(node)]
+            "IP": [NetworkDeploymentSerializer.get_admin_ip(node)]
         }
         attrs['roles']['fw-admin'] = node.admin_interface.name
 
         return attrs
-
-
-class NeutronOrchestratorSerializer(NeutronMethods,
-                                    NovaOrchestratorSerializer):
-    """Class for orchestrator searilization with Neutron."""
-
-
-class NeutronOrchestratorHASerializer(NeutronMethods,
-                                      NovaOrchestratorHASerializer):
-    """Class for orchestrator searilization with Neutron and HA."""
 
 
 def serialize(cluster):
@@ -792,15 +803,9 @@ def serialize(cluster):
     cluster.prepare_for_deployment()
 
     if cluster.mode == 'multinode':
-        if cluster.net_provider == 'nova_network':
-            serializer = NovaOrchestratorSerializer
-        else:
-            serializer = NeutronOrchestratorSerializer
+        serializer = DeploymentMultiSerializer
     elif cluster.is_ha_mode:
         # Same serializer for all ha
-        if cluster.net_provider == 'nova_network':
-            serializer = NovaOrchestratorHASerializer
-        else:
-            serializer = NeutronOrchestratorHASerializer
+        serializer = DeploymentHASerializer
 
     return serializer.serialize(cluster)

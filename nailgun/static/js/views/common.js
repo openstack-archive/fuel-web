@@ -102,7 +102,8 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         bindings: {
             '.total-nodes-count': {
                 observe: 'total',
-                onGet: 'returnValueOrNonBreakingSpace'
+                onGet: 'returnValueOrNonBreakingSpace',
+                updateMethod: 'html'
             },
             '.total-nodes-title': {
                 observe: 'total',
@@ -111,7 +112,8 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             },
             '.unallocated-nodes-count': {
                 observe: 'unallocated',
-                onGet: 'returnValueOrNonBreakingSpace'
+                onGet: 'returnValueOrNonBreakingSpace',
+                updateMethod: 'html'
             },
             '.unallocated-nodes-title': {
                 observe: 'unallocated',
@@ -123,7 +125,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             return !_.isUndefined(value) ? value : '\u00A0';
         },
         formatTitle: function(value, options) {
-            return !_.isUndefined(value) ? $.t('navbar.stats.' + options.observe, {count: value}) : '';
+            return !_.isUndefined(value) ? utils.linebreaks(_.escape($.t('navbar.stats.' + options.observe, {count: value}))) : '';
         },
         initialize: function(options) {
             _.defaults(this, options);

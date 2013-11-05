@@ -77,7 +77,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             this.elements = _.isArray(options.elements) ? options.elements : [];
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
-            $.when(this.statistics.deferred = this.statistics.fetch(), this.notifications.deferred = this.notifications.fetch({limit: this.notificationsDisplayCount})).done(_.bind(this.scheduleUpdate, this));
+            this.update();
         },
         render: function() {
             this.tearDownRegisteredSubViews();

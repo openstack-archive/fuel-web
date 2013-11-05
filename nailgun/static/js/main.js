@@ -53,7 +53,8 @@ requirejs.config({
             deps: ['backbone']
         },
         coccyx: {
-            deps: ['backbone']
+            deps: ['backbone'],
+            exports: 'Coccyx'
         },
         bootstrap: {
             deps: ['jquery']

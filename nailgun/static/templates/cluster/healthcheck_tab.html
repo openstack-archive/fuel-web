@@ -1,20 +1,20 @@
 <div class="wrapper">
   <div class="row-fluid page-sub-title">
-    <h3 class="span8">OpenStack Health Check</h3>
+    <h3 class="span8" data-i18n="cluster_page.healthcheck_tab.title">OpenStack Health Check</h3>
     <div class="span2">
       <label class="checkbox pull-right select-all">
-        <input type="checkbox" class="select-all-tumbler">Select All
+        <input type="checkbox" class="select-all-tumbler"><span data-i18n="cluster_page.healthcheck_tab.select_all">Select All</span>
       </label>
     </div>
     <div class="span2">
-      <button class="btn btn-success pull-right action-btn run-tests-btn" disabled>Run Tests</button>
-      <button class="btn btn-danger pull-right action-btn stop-tests-btn hide">Stop Tests</button>
+      <button class="btn btn-success pull-right action-btn run-tests-btn" data-i18n="cluster_page.healthcheck_tab.bt_run_tests" disabled>Run Tests</button>
+      <button class="btn btn-danger pull-right action-btn stop-tests-btn hide" data-i18n="cluster_page.healthcheck_tab.bt_stop_tests">Stop Tests</button>
     </div>
   </div>
   <% if (cluster.get('status') == 'new') { %>
     <div class="row-fluid">
       <div class="span12">
-        <div class="alert">You must deploy your new OpenStack environment before running tests against it.</div>
+        <div class="alert" data-i18n="cluster_page.healthcheck_tab.alert_deploy">You must deploy your new OpenStack environment before running tests against it.</div>
       </div>
     </div>
   <% } %>
@@ -28,6 +28,6 @@
         </div>
       </div>
     </div>
-    <div class="alert hide error-message alert-error">OSTF server is not available.</div>
+    <div class="alert hide error-message alert-error" data-i18n="cluster_page.healthcheck_tab.alert_not_available">OSTF server is not available.</div>
   </div>
 </div>

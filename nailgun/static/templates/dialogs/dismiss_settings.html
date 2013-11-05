@@ -1,16 +1,16 @@
 <div class="modal-header">
   <button type="button" class="close" data-dismiss="modal">&times;</button>
-  <h3>Confirm</h3>
+  <h3 data-i18n="dialog.dismiss_settings.title">Confirm</h3>
 </div>
 <div class="modal-body dismiss-settings-dialog">
   <div class="msg-error">
-    <span class="label label-important">Important</span>
+    <span class="label label-important" data-i18n="dialog.dismiss_settings.important">Important</span>
     <%- message %>
   </div>
 </div>
 <div class="modal-footer">
-  <button class="btn btn-return" data-dismiss="modal">Stay on page</button>
+  <button class="btn btn-return" data-dismiss="modal" data-i18n="dialog.dismiss_settings.bt_stay">Stay on page</button>
   <% if (!verification) { %>
-    <button class="btn btn-danger proceed-btn">Leave page and discard changes</button>
+    <button class="btn btn-danger proceed-btn"data-i18n="dialog.dismiss_settings.bt_leave">Leave page and discard changes</button>
   <% } %>
 </div>

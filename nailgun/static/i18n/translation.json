@@ -112,7 +112,7 @@
                     "bt_verify_networks": "验证网络",
                     "bt_cancel_changes": "取消变更",
                     "bt_save_settings": "保存设置",
-                    "step_0": "完成网络验证3个步骤:",
+                    "step_0": "完成网络验证4个步骤:",
                     "step_1": "1. 每个节点启动测试监听帧",
                     "step_2": "2. 每个节点发送802.1Q封装的UDP帧",
                     "step_3": "3. 每个节点从其它节点注册测试帧",
@@ -240,7 +240,9 @@
                     "unallocated": "未分配",
                     "disk_information": "磁盘信息",
                     "volume_groups": "卷组",
-                    "use_all_allowed_space": "使用全部可用空间"
+                    "use_all_allowed_space": "使用全部可用空间",
+                    "bt_network_configuration": "网络配置",
+                    "bt_disk_configuration": "磁盘配置"
                 }
             },
             "dialog": {
@@ -302,8 +304,6 @@
                     "disks": "磁盘",
                     "interfaces": "接口",
                     "bt_close": "关闭",
-                    "bt_network_configuration": "网络配置",
-                    "bt_disk_configuration": "磁盘配置",
                     "product": "产品",
                     "family": "系列",
                     "version": "版本",
@@ -321,7 +321,9 @@
                     "disk": "磁盘",
                     "max speed": "最大速度",
                     "current speed": "当前速度",
-                    "netmask": "网络掩码"
+                    "netmask": "网络掩码",
+                    "bt_network_configuration": "网络配置",
+                    "bt_disk_configuration": "磁盘配置"
                 },
 
                 "discard_changes": {

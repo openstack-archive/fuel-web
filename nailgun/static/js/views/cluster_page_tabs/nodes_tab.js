@@ -164,6 +164,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.append(this.nodeList.render().el);
             this.nodeList.calculateSelectAllCheckedState();
             this.nodeList.calculateSelectAllDisabledState();
+            this.$el.i18n();
             return this;
         }
     });
@@ -505,6 +506,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.groupNodes();
             $('html').on(this.eventNamespace, _.bind(this.hideSummaryPanel, this));
             Backbone.history.on('route', this.hideSummaryPanel, this);
+            this.$el.i18n();
             return this;
         }
     });
@@ -725,6 +727,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }, this.templateHelpers)));
             this.updateStatus();
             this.updateRoles();
+            this.$el.i18n();
             return this;
         }
     });
@@ -895,6 +898,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.checkForChanges();
             }
             this.setupButtonsBindings();
+            this.$el.i18n();
             return this;
         }
     });
@@ -1177,6 +1181,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.checkForChanges();
             }
             this.setupButtonsBindings();
+            this.$el.i18n();
             return this;
         }
     });
@@ -1242,6 +1247,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 containment: this.screen.$('.node-networks'),
                 disabled: this.screen.isLocked()
             }).disableSelection();
+            this.$el.i18n();
             return this;
         }
     });

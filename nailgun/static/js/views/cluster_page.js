@@ -240,6 +240,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 this.registerSubView(this.tab);
             }
 
+            this.$el.i18n();
             return this;
         }
     });

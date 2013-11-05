@@ -73,6 +73,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 networkConfiguration: this.networkConfiguration
             });
             this.page.removeFinishedTasks();
+            this.$el.i18n();
         },
         updateFloatingVlanFromPublic: function() {
             if (this.model.get('net_provider') == 'nova_network') {
@@ -270,6 +271,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.renderNovaNetworkConfiguration();
             this.renderNeutronConfiguration();
             this.renderVerificationControl();
+            this.$el.i18n();
             return this;
         }
     });

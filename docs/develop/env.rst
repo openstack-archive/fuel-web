@@ -26,18 +26,14 @@ All sections below assume you start in your clone of the fuel-main repository.
 Setup for Nailgun Unit Tests
 ----------------------------
 
-#. Install Python dependencies (fysom has no deb package, and the
-   jsonschema deb is outdated, so these modules have to be installed
-   from PyPi)::
+#. Install Python dependencies. There is a file called "requirements-eggs.txt" 
+   which includes all Python dependencies, so you can install pip and then all
+   of them at once::
 
-    sudo apt-get install python-dev python-pip python-psycopg2 python-jinja2
-    sudo apt-get install python-paste python-yaml python-sqlalchemy python-kombu
-    sudo apt-get install python-crypto python-simplejson python-webpy
-    sudo apt-get install python-nose python-mock python-decorator python-flake8
-    sudo apt-get install python-netaddr python-netifaces
-    sudo easy_install -U setuptools==1.0
+    sudo apt-get install python-dev python-setuptools
     sudo easy_install -U pip==1.2.1
-    sudo pip install fysom jsonschema hacking==0.7 nose-timer
+    sudo pip install -r requirements-eggs.txt
+    sudo pip install nose-timer
 
 #. Install and configure PostgreSQL database::
 

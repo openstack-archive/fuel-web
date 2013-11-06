@@ -105,7 +105,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 _.each(settingGroups, function(settingGroup) {
                     var settingGroupView = new SettingGroup({
                         settings: this.settings.get(settingGroup),
-                        legend: settingGroup,
+                        groupName: settingGroup,
                         locked: this.isLocked()
                     });
                     this.registerSubView(settingGroupView);

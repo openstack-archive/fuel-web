@@ -73,6 +73,17 @@
                     "bt_rename": "Rename",
                     "bt_delete": "Delete",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
+                },
+                "healthcheck_tab": {
+                    "title": "OpenStack Health Check",
+                    "select_all": "Select All",
+                    "bt_run_tests": "Run Tests",
+                    "bt_stop_tests": "Stop Tests",
+                    "alert_deploy": "You must deploy your new OpenStack environment before running tests against it.",
+                    "alert_not_available": "OSTF server is not available.",
+                    "expected_duration": "Expected Duration",
+                    "actual_duration": "Actual Duration",
+                    "status": "Status"
                 }
             },
             "capacity_page": {

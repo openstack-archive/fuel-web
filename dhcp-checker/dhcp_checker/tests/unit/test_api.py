@@ -15,7 +15,6 @@
 import os
 import unittest
 
-import mock
 from mock import patch
 from scapy import all as scapy
 
@@ -68,24 +67,21 @@ class TestDhcpApi(unittest.TestCase):
         response = api.check_dhcp_on_eth('eth1', timeout=5)
         self.assertEqual([], response)
 
-    @patch('dhcp_checker.api.utils')
-    @patch('dhcp_checker.api.check_dhcp_on_eth')
+    @patch('dhcp_checker.api.send_dhcp_discover')
+    @patch('dhcp_checker.api.make_listeners')
     def test_check_dhcp_with_multiple_ifaces(
-            self, dhcp_on_eth_mock, utils_mock):
-        dhcp_on_eth_mock.return_value = [expected_response]
-        # issue with pickling mock
-        dhcp_on_eth_mock.__class__ = mock.MagicMock
-        utils_mock.filtered_ifaces.side_effect = lambda ifaces: ifaces
-        response = api.check_dhcp(['eth1', 'eth2'])
-        self.assertEqual(list(response), [expected_response])
+            self, make_listeners, send_discover):
+        api.check_dhcp(['eth1', 'eth2'])
+        make_listeners.assert_called_once_with(('eth2', 'eth1'))
+        self.assertEqual(send_discover.call_count, 2)
 
-    @patch('dhcp_checker.api.check_dhcp')
-    def test_check_dhcp_with_vlans(self, check_dhcp):
+    @patch('dhcp_checker.api.send_dhcp_discover')
+    @patch('dhcp_checker.api.make_listeners')
+    def test_check_dhcp_with_vlans(self, make_listeners, send_discover):
         config_sample = {
             'eth0': (100, 101),
             'eth1': (100, 102)
         }
-        api.check_dhcp_with_vlans(config_sample)
-        check_dhcp.assert_called_once_with(
-            ['eth1', 'eth1.100', 'eth1.102', 'eth0', 'eth0.100', 'eth0.101'],
-            repeat=2, timeout=5)
+        api.check_dhcp_with_vlans(config_sample, timeout=1)
+        make_listeners.assert_called_once_with(('eth1', 'eth0'))
+        self.assertEqual(send_discover.call_count, 2)

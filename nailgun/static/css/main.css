@@ -440,7 +440,7 @@ h6.page-title {
   margin-bottom: 6px;
   overflow: hidden;
 }
-.node.checked {
+.checked .node {
   background-color: #dedede;
 }
 .node-box {
@@ -535,12 +535,17 @@ label.node-checkbox {
   margin-bottom: 0;
 }
 
+.error label.node-checkbox {
+  cursor: default;
+}
+
 .node-name {/* width: 320px; float: left; */
   -webkit-font-smoothing: antialiased;
   height: 50px;
   display: block;
 }
-.roles {
+
+.role-list {
   cursor: default;
   display: block;
   height: 18px;
@@ -548,65 +553,38 @@ label.node-checkbox {
   margin: 0;
   padding: 0;
   margin-top: -2px;
+  color: #666666;
 }
-.roles > ul {
+.role-list > ul {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
   margin: 0px;
   padding: 0px;
   font-size: 10px;
   text-transform: uppercase;
   margin-top: 1px;
+  float: left;
   -webkit-font-smoothing: antialiased;
-  color: #666666;
 }
-.roles > ul > li {
+.role-list > ul > li {
   display: inline-block;
   float: left;
   margin-right: 3px;
 }
-.roles > ul > li:after {
+.role-list > ul > li:after {
   margin-left: 3px;
   font-weight: 600;
   content: '·';
 }
-.roles > ul > li:last-child:after {
+.role-list > ul > li:last-child:after {
   margin-left: 3px;
   font-weight: 600;
   content: ' ';
 }
-
-.node-status {
-  width: 145px;
-  height: 20px;
-  display: block;
-  overflow: hidden;
-  float: right;
-  text-transform: uppercase;
-  font-size: 10px;
-  margin: 14px 20px 0px 20px;
-  position: relative;
-  cursor: default;
+.role-list > .pending-roles li {
+  color: #468847;
 }
-.node-status > .progress {
-  background-color: #b9bdbf;
-  background-image: none;
-  border-radius: 3px 3px 3px 3px;
-  height: 15px;
-  margin-top: 3px;
-}
-.node-status > .progress > .bar {
-  border-radius: 3px 3px 3px 3px;
-  height: 13px;
-  margin: 1px;
-}
-.node-status > .progress > .bar > p {
-  color: #FFFFFF;
-  font-size: 10px;
-  line-height: 20px;
-  letter-spacing: 0px;
-  margin: -4px 0 0 4px;
-  text-align: left;
-  text-shadow: none;
+.add-nodes-screen .role-list > .pending-roles:empty::before {
+  content: 'unallocated';
 }
 
 .node-button {
@@ -810,21 +788,14 @@ label.node-checkbox {
 .node-delete {
   border-color: #a46161;
 }
-.node-offline {
-  border-сolor: red;
-}
-.node-offline > .node-box,
-.node-offline > .node-box > .node-content,
-.node-offline > .node-box > .node-content > .node-checkbox,
-.node-offline > .node-box > .node-content > .node-checkbox > .node-settings,
-.node-offline > .node-box > .node-content > .node-checkbox > .node-hardware,
-.node-offline > .node-box > .node-content > .node-checkbox > .node-status {
-  opacity: 0.7;
-  cursor: default;
-}
-
-.node-offline > .node-box > .node-content > .node-name > .name,
-.node-offline > .node-box > .node-content > .node-name > .name:hover
+.node-offline,
+.node-offline > .node-content,
+.node-offline > .node-content > .node-checkbox,
+.node-offline > .node-content > .node-checkbox > .node-settings,
+.node-offline > .node-content > .node-checkbox > .node-hardware,
+.node-offline > .node-content > .node-checkbox > .node-status,
+.node-offline > .node-content > .node-name > .name,
+.node-offline > .node-content > .node-name > .name:hover
  {
   opacity: 0.7;
   cursor: default;
@@ -887,96 +858,53 @@ label.node-checkbox {
   border-bottom: 1px dotted #b0b0b0;
 }
 
-.roles .pending {
-  color: #468847;
-}
-
 .node-status i {
-  font-size: 12px;
+  font-size: 11px;
 }
-
-.node-status .logs-link, .node-status .btn-discard-node-changes {
-    display: block;
-    height: 25px;
-    color: #2c67a0 !important;
-    font-size: 9.5px !important;
-    text-transform: uppercase;
-}
-
-.node-status .btn-discard-node-changes {
-    padding: 0;
-}
-
-.breaker {
-  margin: 0px 20px 20px 20px;
-}
-
-.node-status > .msg-offline,
-.node-status > .msg-discover {
-    display: block;
-    height: 25px;
-    font-size: 9.5px;
-    text-transform: uppercase;
-}
-
-.node-status > .msg-warning,
-.node-status > .msg-ok,
-.node-status > .msg-provisioned,
-.node-status > .msg-error {
-    display: block;
-    height: 25px;
-    color: #B44200;
-    font-size: 9.5px;
-    text-transform: uppercase;
-}
-
-.node-status > .msg-warning > i,
-.node-status > .msg-ok > i,
-.node-status > .msg-provisioned > i,
-.node-status > .msg-error > i,
-.node-status > .logs-link > i {
-    font-size: 11px;
-}
-
-.checktoinstall {
+.node-status {
   display: block;
-  background-color: rgba(0, 100, 38, 0.25);
-  width: 172px;
-  height: 86px;
-  float: left;
-  margin-left: -172px;
-  border-radius: 4px;
-  line-height: 52px;
-  font-size: 50px;
-  cursor: pointer;
+  height: 25px;
+  font-size: 9.5px;
+  text-transform: uppercase;
+  width: 145px;
+  overflow: hidden;
+  float: right;
+  margin: 14px 20px 0px 20px;
+  position: relative;
+  cursor: default;
 }
-.checktoinstall > i {
-  margin: 0px 0px 0px 60px;
-  color: rgba(255, 255, 255, 0.65);
+.node-status .progress {
+  background-color: #b9bdbf;
+  background-image: none;
+  border-radius: 3px 3px 3px 3px;
+  height: 15px;
+  margin-top: 3px;
+  position: absolute;
+  width: 100%;
 }
-.checktodelete {
-  display: block;
-  background-color: rgba(121, 0, 0, 0.25);
-  width: 172px;
-  height: 86px;
-  float: left;
-  margin-left: -172px;
-  border-radius: 4px;
-  line-height: 52px;
-  font-size: 50px;
-  cursor: pointer;
+.node-status .bar {
+  border-radius: 3px 3px 3px 3px;
+  height: 13px;
+  margin: 1px;
 }
-.checktodelete > i {
-  margin: 0px 0px 0px 60px;
-  color: rgba(255, 255, 255, 0.65);
+.node-status span {
+  position: relative;
 }
-
-.node-status > .msg-ok {color: #17824b;}
-.node-status > .msg-info {color: #4794cf;}
-.node-status > .msg-error {color: #8b0000;}
-.node-status > .msg-warning {color: #b44200;}
-.node-status > .msg-unimportant {color: #888888;}
-.node-status > .msg-provisioned {color: #0088cc;}
+.node-status.provisioning span, .node-status.deploying span {
+  color: #FFFFFF;
+  font-size: 10px;
+  line-height: 20px;
+  letter-spacing: 0px;
+  text-align: left;
+  text-shadow: none;
+  margin-left: 5px;
+}
+.node-status.msg-ok {color: #17824b;}
+.node-status.msg-info {color: #4794cf;}
+.node-status.msg-error {color: #8b0000;}
+.node-status.msg-warning {color: #b44200;}
+.node-status.msg-unimportant {color: #888888;}
+.node-status.msg-provisioned {color: #0088cc;}
 
 
 .manufacturer-hp:before {

@@ -242,7 +242,20 @@
                     "volume_groups": "卷组",
                     "use_all_allowed_space": "使用全部可用空间",
                     "bt_network_configuration": "网络配置",
-                    "bt_disk_configuration": "磁盘配置"
+                    "bt_disk_configuration": "磁盘配置",
+                    "edit_name": "",
+                    "cpu": "",
+                    "hdd": "",
+                    "ram": "",
+                    "gb": "",
+                    "os": "",
+                    "discard_addition": "",
+                    "discard_deletion": "",
+                    "discard_role_changes": "",
+                    "unallocated_nodes": "",
+                    "no_selected_nodes": "",
+                    "no_nodes_in_environment": "",
+                    "no_nodes_in_fuel": ""
                 }
             },
             "dialog": {
@@ -336,7 +349,8 @@
                     "cinder": "存储",
                     "bt_cancel": "取消",
                     "bt_discard": "放弃",
-                    "alert_text": "确定要放弃所有变更吗？"
+                    "alert_text": "确定要放弃所有变更吗？",
+                    "cant_discard": ""
                 },
 
                 "display_changes": {

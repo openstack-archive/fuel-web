@@ -44,7 +44,19 @@
                 "view_capacity_audit": "View Capacity Audit"
             },
             "release_page": {
-                "title": "Releases"
+                "title": "Releases",
+                "release_name": "OpenStack Release",
+                "release_version": "Version",
+                "release_status": "Status",
+                "release_actions": "Actions",
+                "no_releases_message": "There are no releases available.",
+                "release": {
+                    "configure_button": "Configure",
+                    "active": "Active",
+                    "error": "Error",
+                    "not_available": "Not available",
+                    "download_progress": "Downloading"
+                }
             },
             "clusters_page": {
                 "title": "My OpenStack Environments",
@@ -126,17 +138,19 @@
             },
             "release_page": {
                 "title": "版本",
-                "name": "名称",
-                "version": "发布",
-                "status": "状态",
-                "actions": "操作",
-                "alert": "没有版本可用",
-                "configure": "配置",
-                "active": "活动",
-                "error": "错误",
-                "not_available": "不可用",
-                "downloading": "下载中",
-                "progress": "下载："
+                "release_name": "名称",
+                "release_version": "发布",
+                "release_status": "状态",
+                "release_actions": "操作",
+                "no_releases_message": "没有版本可用",
+                "release": {
+                    "configure_button": "配置",
+                    "progress": "下载",
+                    "active": "活动",
+                    "error": "错误",
+                    "not_available": "不可用",
+                    "download_progress": "下载中"
+                }
             },
             "clusters_page": {
                 "title":"我的OpenStack环境",

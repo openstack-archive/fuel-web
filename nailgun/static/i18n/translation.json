@@ -65,6 +65,14 @@
                     "bt_load_defaults": "Load Defaults",
                     "bt_cancel_changes": "Cancel Changes",
                     "bt_save_settings": "Save Settings"
+                },
+                "actions_tab": {
+                    "title": "Actions",
+                    "rename_environment": "Rename Environment",
+                    "delete_environment": "Delete Environment",
+                    "bt_rename": "Rename",
+                    "bt_delete": "Delete",
+                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
                 }
             },
             "capacity_page": {

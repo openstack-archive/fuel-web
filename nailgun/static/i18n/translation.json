@@ -44,7 +44,18 @@
                 "view_capacity_audit": "View Capacity Audit"
             },
             "release_page": {
-                "title": "Releases"
+                "title": "Releases",
+                "name": "OpenStack Release",
+                "version": "Version",
+                "status": "Status",
+                "actions": "Actions",
+                "alert": "There are no releases available.",
+                "configure": "Configure",
+                "active": "Active",
+                "error": "Error",
+                "not_available": "Not available",
+                "downloading": "Downloading",
+                "progress": "Downloading:"
             },
             "clusters_page": {
                 "title": "My OpenStack Environments",

@@ -29,8 +29,8 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
 
     ClustersPage = commonViews.Page.extend({
         navbarActiveElement: 'clusters',
-        breadcrumbsPath: [['Home', '#'], 'Environments'],
-        title: 'Environments',
+        breadcrumbsPath: [['home', '#'], 'environments'],
+        title: $.t('clusters_page.title'),
         template: _.template(clustersPageTemplate),
         render: function() {
             this.$el.html(this.template({clusters: this.collection}));

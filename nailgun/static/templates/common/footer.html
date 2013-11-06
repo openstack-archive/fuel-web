@@ -6,7 +6,7 @@
   <% } %>
   <div class="footer-lang pull-right">
     <div class="dropdown dropup">
-      <a class="dropdown-toggle current-locale" data-toggle="dropdown" href="#"><%- currentLocale.name %></a>
+      <button class="dropdown-toggle current-locale btn btn-link" data-toggle="dropdown"><%- currentLocale.name %></button>
       <ul class="dropdown-menu locales">
         <% _.each(locales, function(locale) { %>
           <li>

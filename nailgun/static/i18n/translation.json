@@ -1,13 +1,27 @@
 {
     "en-US": {
         "translation": {
+            "common": {
+                "title": "Fuel Dashboard"
+            },
             "navbar": {
+                "environments": "Environments",
+                "releases": "Releases",
+                "support": "Support",
                 "stats": {
                     "total": ["Total", "node"],
                     "total_plural": ["Total", "nodes"],
                     "unallocated": ["Unallocated", "node"],
                     "unallocated_plural": ["Unallocated", "nodes"]
                 }
+            },
+            "breadcrumbs": {
+                "home": "Home",
+                "environments": "Environments",
+                "releases": "Releases",
+                "support": "Support",
+                "notifications": "Notifications",
+                "capacity": "Capacity"
             },
             "support_page": {
                 "title": "Support",
@@ -31,20 +45,20 @@
     "zh-CN": {
         "translation": {
             "navbar": {
-                "Environments": "环境",
-                "Releases": "版本",
-                "Support": "支持",
+                "environments": "环境",
+                "releases": "版本",
+                "support": "支持",
                 "stats": {
                     "total": "全部节点",
                     "unallocated": "未分配节点"
                 }
             },
-            "breadcrumb": {
-                "Home": "首页",
-                "Environments": "环境",
-                "Releases": "版本",
-                "Support": "支持",
-                "Notifications": "通知"
+            "breadcrumbs": {
+                "home": "首页",
+                "environments": "环境",
+                "releases": "版本",
+                "support": "支持",
+                "notifications": "通知"
             },
             "notifications_page": {
                 "title": "通知"
@@ -77,7 +91,7 @@
             },
             "clusters_page": {
                 "title":"我的OpenStack环境",
-                "create-cluster-text": "新建OpenStack环境",
+                "create_cluster_text": "新建OpenStack环境",
                 "nodes": "节点：",
                 "stat_new": "新建",
                 "stat_deploying": "部署中",

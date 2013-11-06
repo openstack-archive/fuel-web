@@ -15,7 +15,7 @@
         </div>
         <div class="openstack-sub-title parameter-name"><%- $.t("cluster_page.settings_tab."+setting.label, {defaultValue: setting.label}) %></div>
       </label>
-      <div class="global-description description"><%-  $.t(setting.description, {defaultValue: setting.description}) %></div>
+      <div class="global-description description"><%- $.t("cluster_page.settings_tab."+settingName+"_description", {defaultValue: setting.description}) %></div>
     <% } else if (setting.type == 'radio') { %>
       <legend class="openstack-sub-title"><%- $.t("cluster_page.settings_tab."+setting.label, {defaultValue: setting.label}) %></legend>
       <div>
@@ -27,10 +27,10 @@
               <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
           </div>
-          <div class="parameter-name"><%- $.t("cluster_page.settings_tab."+option['display_name'], {defaultValue: option['display_name']}) %></div>
+          <div class="parameter-name"><%- $.t("cluster_page.settings_tab."+option['display_name'], {defaultValue: option['display_name']}) %> </div>
         </label>
         <% if (option['description']) { %>
-          <div class="global-description description"><%- $.t("cluster_page.settings_tab."+option['description'], {defaultValue: option['description']}) %></div>
+          <div class="global-description description"><%- $.t("cluster_page.settings_tab."+option['data']+"_description", {defaultValue: setting.description}) %></div>
         <% } else {%>
           <div class="global-description description"></div>
         <% } %>
@@ -47,7 +47,7 @@
           <% } %>
         </div>
         <% if (setting.description) { %>
-          <div class="parameter-description description"><%- $.t("cluster_page.settings_tab."+setting.description, {defaultValue: setting.description}) %></div>
+          <div class="parameter-description description"><%- $.t("cluster_page.settings_tab."+settingName+"_description", {defaultValue: setting.description}) %></div>
         <% } else {%>
           <div class="parameter-description description"></div>
         <% } %>

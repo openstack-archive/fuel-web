@@ -65,6 +65,17 @@
                     "bt_load_defaults": "Load Defaults",
                     "bt_cancel_changes": "Cancel Changes",
                     "bt_save_settings": "Save Settings"
+                },
+                "healthcheck_tab": {
+                    "title": "OpenStack Health Check",
+                    "select_all": "Select All",
+                    "bt_run_tests": "Run Tests",
+                    "bt_stop_tests": "Stop Tests",
+                    "alert_deploy": "You must deploy your new OpenStack environment before running tests against it.",
+                    "alert_not_available": "OSTF server is not available.",
+                    "expected_duration": "Expected Duration",
+                    "actual_duration": "Actual Duration",
+                    "status": "Status"
                 }
             },
             "capacity_page": {

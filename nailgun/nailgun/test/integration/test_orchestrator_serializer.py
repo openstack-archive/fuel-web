@@ -23,13 +23,9 @@ from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
 from nailgun.db import db
 from nailgun.orchestrator.deployment_serializers \
-    import NeutronOrchestratorHASerializer
+    import DeploymentHASerializer
 from nailgun.orchestrator.deployment_serializers \
-    import NeutronOrchestratorSerializer
-from nailgun.orchestrator.deployment_serializers \
-    import NovaOrchestratorHASerializer
-from nailgun.orchestrator.deployment_serializers \
-    import NovaOrchestratorSerializer
+    import DeploymentMultiSerializer
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -80,7 +76,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        return NovaOrchestratorSerializer
+        return DeploymentMultiSerializer
 
     def assert_roles_flattened(self, nodes):
         self.assertEquals(len(nodes), 6)
@@ -119,7 +115,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                           {'image_cache_max_size': '5368709120'})
 
     def test_node_list(self):
-        node_list = self.serializer.node_list(self.cluster.nodes)
+        node_list = self.serializer.get_common_attrs(self.cluster)['nodes']
 
         # Check right nodes count with right roles
         self.assert_roles_flattened(node_list)
@@ -242,7 +238,10 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             network.vlan_id = None
         self.db.commit()
         node_db = sorted(self.cluster.nodes, key=lambda n: n.id)[0]
-        interfaces = self.serializer.configure_interfaces(node_db)
+        from nailgun.orchestrator.deployment_serializers \
+            import NovaNetworkDeploymentSerializer
+        interfaces = NovaNetworkDeploymentSerializer.\
+            configure_interfaces(node_db)
 
         expected_interfaces = {
             'lo': {
@@ -288,7 +287,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        return NovaOrchestratorHASerializer
+        return DeploymentHASerializer
 
     def test_set_deployment_priorities(self):
         nodes = [
@@ -358,7 +357,7 @@ class TestNovaOrchestratorHASerializerRedeploymentErrorNodes(
 
     @property
     def serializer(self):
-        return NovaOrchestratorHASerializer
+        return DeploymentHASerializer
 
     def filter_by_role(self, nodes, role):
         return filter(lambda node: role in node.all_roles, nodes)
@@ -444,7 +443,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        return NeutronOrchestratorSerializer
+        return DeploymentMultiSerializer
 
     def assert_roles_flattened(self, nodes):
         self.assertEquals(len(nodes), 6)
@@ -481,7 +480,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                           'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
 
     def test_node_list(self):
-        node_list = self.serializer.node_list(self.cluster.nodes)
+        node_list = self.serializer.get_common_attrs(self.cluster)['nodes']
 
         # Check right nodes count with right roles
         self.assert_roles_flattened(node_list)
@@ -585,7 +584,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        return NeutronOrchestratorHASerializer
+        return DeploymentHASerializer
 
     def test_node_list(self):
         serialized_nodes = self.serializer.node_list(self.cluster.nodes)
@@ -633,7 +632,7 @@ class TestNeutronOrchestratorHASerializerRedeploymentErrorNodes(
 
     @property
     def serializer(self):
-        return NeutronOrchestratorHASerializer
+        return DeploymentHASerializer
 
     def filter_by_role(self, nodes, role):
         return filter(lambda node: role in node.all_roles, nodes)

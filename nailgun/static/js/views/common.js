@@ -259,9 +259,16 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             window.location.reload();
         },
         getCurrentLocale: function() {
-            return _.find(this.locales, {locale: $.i18n.lng()}) || this.locales[0];
+            return _.find(this.locales, {locale: $.i18n.lng()});
+        },
+        setDefaultLocale: function() {
+            var currentLocale = this.getCurrentLocale();
+            if (!currentLocale) {
+                $.i18n.setLng(this.locales[0].locale);
+            }
         },
         initialize: function(options) {
+            this.setDefaultLocale();
             $.ajax({url: '/api/version'}).done(_.bind(function(data) {
                 this.version = data.release;
                 this.render();

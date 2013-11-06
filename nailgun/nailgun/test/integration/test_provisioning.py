@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import mock
 from mock import patch
 
 from nailgun.test.base import BaseIntegrationTest
@@ -61,16 +60,17 @@ class TestProvisioning(BaseIntegrationTest):
         )
         cluster = self.env.clusters[0]
         cluster.clear_pending_changes()
+        nodes_ids = map(lambda n: n.id, self.env.nodes)
+        self.env.network_manager.assign_ips(nodes_ids, 'management')
+        self.env.network_manager.assign_ips(nodes_ids, 'storage')
+        self.env.network_manager.assign_ips(nodes_ids, 'public')
 
-        self.env.network_manager.assign_ips = mock.MagicMock()
         self.env.launch_deployment()
 
         self.env.refresh_nodes()
         self.assertEquals(self.env.nodes[0].status, 'ready')
-        # FIXME node status is not updated into "provisioning" for fake tasks
-        self.assertEquals(self.env.nodes[1].status, 'discover')
+        self.assertEquals(self.env.nodes[1].status, 'provisioning')
         self.assertEquals(self.env.nodes[2].status, 'provisioning')
-        self.assertEquals(self.env.nodes[3].status, 'provisioned')
+        self.assertEquals(self.env.nodes[3].status, 'provisioning')
         self.assertEquals(self.env.nodes[4].status, 'error')
-        # FIXME node status is not updated into "provisioning" for fake tasks
-        self.assertEquals(self.env.nodes[5].status, 'error')
+        self.assertEquals(self.env.nodes[5].status, 'provisioning')

@@ -41,8 +41,10 @@ class Task(Base):
         'super',
 
         # cluster
-        'deploy',
         'deployment',
+        # For deployment supertask, it contains
+        # two subtasks deployment and provision
+        'deploy',
         'provision',
         'node_deletion',
         'cluster_deletion',

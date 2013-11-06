@@ -71,70 +71,6 @@ class TaskManager(object):
 
 class DeploymentTaskManager(TaskManager):
 
-    def _redhat_messages(self, supertask, nodes_info):
-        account = db().query(RedHatAccount).first()
-        if not account:
-            TaskHelper.update_task_status(
-                supertask.uuid,
-                status="error",
-                progress=100,
-                msg="RHEL account is not found"
-            )
-            return supertask
-
-        rhel_data = {
-            'release_id': supertask.cluster.release.id,
-            'release_name': supertask.cluster.release.name,
-            'redhat': {
-                'license_type': account.license_type,
-                'username': account.username,
-                'password': account.password,
-                'satellite': account.satellite,
-                'activation_key': account.activation_key
-            }
-        }
-
-        subtasks = [
-            supertask.create_subtask('redhat_check_credentials'),
-            supertask.create_subtask('redhat_check_licenses')
-        ]
-
-        map(
-            lambda t: setattr(t, "weight", 0.01),
-            subtasks
-        )
-        db().commit()
-
-        subtask_messages = [
-            self._call_silently(
-                subtasks[0],
-                tasks.RedHatCheckCredentialsTask,
-                rhel_data,
-                method_name='message'
-            ),
-            self._call_silently(
-                subtasks[1],
-                tasks.RedHatCheckLicensesTask,
-                rhel_data,
-                nodes_info,
-                method_name='message'
-            )
-        ]
-
-        for task, message in zip(subtasks, subtask_messages):
-            task.cache = message
-        db().commit()
-
-        map(db().refresh, subtasks)
-
-        for task in subtasks:
-            if task.status == 'error':
-                raise errors.RedHatSetupError(
-                    task.message
-                )
-
-        return subtask_messages
-
     def execute(self):
         logger.info(
             u"Trying to start deployment at cluster '{0}'".format(
@@ -258,6 +194,11 @@ class DeploymentTaskManager(TaskManager):
             db().commit()
             task_messages.append(deployment_message)
 
+        if nodes_to_provision:
+            for node in nodes_to_provision:
+                node.status = 'provisioning'
+                db().commit()
+
         if task_messages:
             rpc.cast('naily', task_messages)
 
@@ -268,6 +209,70 @@ class DeploymentTaskManager(TaskManager):
             )
         )
         return supertask
+
+    def _redhat_messages(self, supertask, nodes_info):
+        account = db().query(RedHatAccount).first()
+        if not account:
+            TaskHelper.update_task_status(
+                supertask.uuid,
+                status="error",
+                progress=100,
+                msg="RHEL account is not found"
+            )
+            return supertask
+
+        rhel_data = {
+            'release_id': supertask.cluster.release.id,
+            'release_name': supertask.cluster.release.name,
+            'redhat': {
+                'license_type': account.license_type,
+                'username': account.username,
+                'password': account.password,
+                'satellite': account.satellite,
+                'activation_key': account.activation_key
+            }
+        }
+
+        subtasks = [
+            supertask.create_subtask('redhat_check_credentials'),
+            supertask.create_subtask('redhat_check_licenses')
+        ]
+
+        map(
+            lambda t: setattr(t, "weight", 0.01),
+            subtasks
+        )
+        db().commit()
+
+        subtask_messages = [
+            self._call_silently(
+                subtasks[0],
+                tasks.RedHatCheckCredentialsTask,
+                rhel_data,
+                method_name='message'
+            ),
+            self._call_silently(
+                subtasks[1],
+                tasks.RedHatCheckLicensesTask,
+                rhel_data,
+                nodes_info,
+                method_name='message'
+            )
+        ]
+
+        for task, message in zip(subtasks, subtask_messages):
+            task.cache = message
+        db().commit()
+
+        map(db().refresh, subtasks)
+
+        for task in subtasks:
+            if task.status == 'error':
+                raise errors.RedHatSetupError(
+                    task.message
+                )
+
+        return subtask_messages
 
     def check_before_deployment(self, supertask):
         # checking admin intersection with untagged

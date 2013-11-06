@@ -99,13 +99,14 @@ class TestTaskManagers(BaseIntegrationTest):
     def test_do_not_redeploy_nodes_in_ready_status(self):
         self.env.create(nodes_kwargs=[
             {"pending_addition": True},
-            {"pending_addition": True}])
+            {"pending_addition": True, 'roles': ['compute']}])
         cluster_db = self.env.clusters[0]
         # Generate ips, fqdns
         cluster_db.prepare_for_deployment()
         # First node with status ready
         # should not be readeployed
         self.env.nodes[0].status = 'ready'
+        self.env.nodes[0].pending_addition = False
         self.db.commit()
 
         cluster_db.clear_pending_changes()
@@ -189,32 +190,40 @@ class TestTaskManagers(BaseIntegrationTest):
                 {"roles": ["compute"], "pending_addition": True}
             ]
         )
+
         supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask, 60)
+        self.env.wait_error(supertask, 4)
         self.env.refresh_nodes()
         self.assertEquals(self.env.nodes[0].status, 'error')
+        self.assertEquals(self.env.nodes[0].error_type, 'provision')
+        self.assertEquals(self.env.nodes[0].needs_redeploy, True)
         self.assertEquals(self.env.nodes[0].needs_reprovision, True)
-        self.assertEquals(self.env.nodes[1].status, 'provisioned')
+
+        for node in self.env.nodes[1:]:
+            self.assertEquals(node.status, 'error')
+            self.assertEquals(node.error_type, 'deploy')
+            self.assertEquals(node.needs_redeploy, True)
+            self.assertEquals(node.needs_reprovision, False)
+
         notif_node = self.db.query(Notification).filter_by(
             topic="error",
             message=u"Failed to deploy node '{0}': {1}".format(
                 self.env.nodes[0].name,
-                self.env.nodes[0].error_msg
-            )
-        ).first()
+                self.env.nodes[0].error_msg)).first()
         self.assertIsNotNone(notif_node)
+
         notif_deploy = self.db.query(Notification).filter_by(
             topic="error",
             message=u"Deployment has failed. "
             "Check these nodes:\n'{0}'".format(
-                self.env.nodes[0].name
-            )
-        ).first()
+                self.env.nodes[0].name)).first()
         self.assertIsNotNone(notif_deploy)
+
         all_notif = self.db.query(Notification).all()
         self.assertEqual(len(all_notif), 2)
+
         supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask, 60)
+        self.env.wait_error(supertask, 4)
 
     def test_deletion_empty_cluster_task_manager(self):
         cluster = self.env.create_cluster(api=True)

@@ -33,11 +33,10 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
         title: $.t('clusters_page.title'),
         template: _.template(clustersPageTemplate),
         render: function() {
-            this.$el.html(this.template({clusters: this.collection}));
+            this.$el.html(this.template({clusters: this.collection})).i18n();
             var clustersView = new ClusterList({collection: this.collection});
             this.registerSubView(clustersView);
             this.$('.cluster-list').html(clustersView.render().el);
-            this.$el.i18n();
             return this;
         }
     });
@@ -120,7 +119,7 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
             this.model.on('change', this.render, this);
         },
         render: function() {
-            this.$el.html(this.template(_.extend({cluster: this.model}, this.templateHelpers)));
+            this.$el.html(this.template(_.extend({cluster: this.model}, this.templateHelpers))).i18n();
             this.updateProgress();
             if (this.model.task('cluster_deletion', ['running', 'ready'])) {
                 this.$el.addClass('disabled-cluster');

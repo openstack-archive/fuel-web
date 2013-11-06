@@ -58,6 +58,14 @@
                 "cluster_status_operational": "Operational",
                 "cluster_status_error": "Error",
                 "cluster_status_removing": "Removing"
+            },
+            "cluster_page": {
+                "settings_tab": {
+                    "title": "OpenStack Settings",
+                    "bt_load_defaults": "Load Defaults",
+                    "bt_cancel_changes": "Cancel Changes",
+                    "bt_save_settings": "Save Settings"
+                }
             }
         }
     },
@@ -176,32 +184,102 @@
                     "bt_load_defaults": "加载默认配置",
                     "bt_cancel_changes": "取消变更",
                     "bt_save_settings": "保存设置",
-                    "access": "访问",
-                    "syslog": "系统日志",
-                    "common": "通用",
-                    "username": "用户名",
-                    "password": "密码",
-                    "tenant": "tenant",
-                    "email": "电子邮件",
-                    "Hostname": "主机名",
-                    "Port": "端口",
-                    "Syslog transport protocol": "系统日志传输协议",
-                    "Hypervisor type": "管理器类型",
-                    "Scheduler driver": "调度器驱动",
-                    "Filter scheduler": "过滤器调度器",
-                    "Simple scheduler": "简单调度器",
-                    "Use qcow format for images": "为映像使用qcow格式",
-                    "Auto assign floating IP": "自动分配浮动IP",
-                    "Start guests on host boot": "主机启动时运行客户机",
-                    "Public Key": "公开密钥",
-                    "Username for Administrator": "管理员用户名",
-                    "Password for Administrator": "管理员密码",
-                    "Tenant (project) name for Administrator": "管理员Tenant(项目)名称",
-                    "Email address for Administrator": "管理员电子邮件",
-                    "Remote syslog hostname": "远程系统日志主机名",
-                    "Remote syslog port": "远程系统日志端口",
-                    "Choose this type of hypervisor if you run OpenStack on hardware": "如果在硬件上运行OpenStack，选择该类型的管理器",
-                    "Choose this type of hypervisor if you run OpenStack on virtual hosts.": "如果在虚拟机上运行OpenStack，选择该类型的管理器"
+                    "access": {
+                        "group_name": "访问",
+                        "user": {
+                            "label": "用户名",
+                            "description": "管理员用户名"
+                        },
+                        "email": {
+                            "label": "电子邮件",
+                            "description": "管理员电子邮件"
+                        },
+                        "tenant": {
+                            "label": "tenant",
+                            "description": "管理员Tenant(项目)名称"
+                        },
+                        "password": {
+                            "label": "密码",
+                            "description": "管理员密码"
+                        }
+                    },
+                    "syslog": {
+                        "group_name": "系统日志",
+                        "syslog_transport": {
+                            "label": "系统日志传输协议",
+                            "values": {
+                                "udp": {
+                                    "label": "UDP",
+                                    "description": ""
+                                },
+                                "tcp": {
+                                    "label": "TCP",
+                                    "description": ""
+                                }
+                            }
+                        },
+                        "syslog_server": {
+                            "label": "Hostname",
+                            "description": "远程系统日志主机名"
+                        },
+                        "syslog_port": {
+                            "label": "端口",
+                            "description": "远程系统日志端口"
+                        }
+                    },
+                    "common": {
+                        "group_name": "通用",
+                        "auto_assign_floating_ip": {
+                            "label": "自动分配浮动IP",
+                            "description": "OpenStack将自动给新实例分配浮动IP"
+                        },
+                        "libvirt_type": {
+                            "label": "管理器类型",
+                            "values": {
+                                "kvm": {
+                                    "label": "KVM",
+                                    "description": "如果在硬件上运行OpenStack，选择该类型的管理器"
+                                },
+                                "qemu": {
+                                    "label": "QEMU",
+                                    "description": "如果您在虚拟机上运行OpenStack请选择该类型的管理器"
+                                }
+                            }
+                        },
+                        "start_guests_on_host_boot": {
+                            "label": "主机启动时运行客户机",
+                            "description": "在主机重启时是否需要重启客户机。 如果启用，此选项会导致nova-compute启动时无条件的重启客户机。如果客户机为停止状态，则启动它。如果是运行状态，则重启"
+                        },
+                        "use_cow_images": {
+                            "label": "为映像使用qcow格式",
+                            "description": "大多数情况下您需要qcow格式。如果设置为false，将使用原始映像格式运行虚机。基于原始格式的OpenStack当前不支持快照"
+                        },
+                        "compute_scheduler_driver": {
+                            "label": "Scheduler driver",
+                            "values": {
+                                "nova": {
+                                    "scheduler": {
+                                        "filter_scheduler": {
+                                            "FilterScheduler": {
+                                                "label": "过滤器调度器",
+                                                "description": "TBD"
+                                            }
+                                        },
+                                        "simple": {
+                                            "SimpleScheduler": {
+                                                "label": "简单调度器",
+                                                "description": "TBD"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "auth_key": {
+                            "label": "公开密钥",
+                            "description": "部署节点时包含在authorized_keys中的公钥"
+                        }
+                    }
                 },
 
                 "logs_tab": {

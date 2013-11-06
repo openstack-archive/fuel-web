@@ -312,12 +312,12 @@
                             "values": [
                                 {
                                     "data": "kvm",
-                                    "display_name": "KVM",
+                                    "label": "KVM",
                                     "description": "Choose this type of hypervisor if you run OpenStack on hardware"
                                 },
                                 {
                                     "data": "qemu",
-                                    "display_name": "QEMU",
+                                    "label": "QEMU",
                                     "description": "Choose this type of hypervisor if you run OpenStack on virtual hosts."
                                 }
                             ],
@@ -344,12 +344,12 @@
                             "values": [
                                 {
                                     "data": "nova.scheduler.filter_scheduler.FilterScheduler",
-                                    "display_name": "Filter scheduler",
+                                    "label": "Filter scheduler",
                                     "description": "Currently the most advanced OpenStack scheduler. See the OpenStack documentation for details."
                                 },
                                 {
                                     "data": "nova.scheduler.simple.SimpleScheduler",
-                                    "display_name": "Simple scheduler",
+                                    "label": "Simple scheduler",
                                     "description": "This is 'naive' scheduler which tries to find the least loaded host"
                                 }
                             ],
@@ -371,12 +371,12 @@
                             "values": [
                                 {
                                     "data": "udp",
-                                    "display_name": "UDP",
+                                    "label": "UDP",
                                     "description": ""
                                 },
                                 {
                                     "data": "tcp",
-                                    "display_name": "TCP",
+                                    "label": "TCP",
                                     "description": ""
                                 }
                             ],
@@ -764,12 +764,12 @@
                             "values": [
                                 {
                                     "data": "kvm",
-                                    "display_name": "KVM",
+                                    "label": "KVM",
                                     "description": "Choose this type of hypervisor if you run OpenStack on hardware"
                                 },
                                 {
                                     "data": "qemu",
-                                    "display_name": "QEMU",
+                                    "label": "QEMU",
                                     "description": "Choose this type of hypervisor if you run OpenStack on virtual hosts."
                                 }
                             ],
@@ -796,12 +796,12 @@
                             "values": [
                                 {
                                     "data": "nova.scheduler.filter_scheduler.FilterScheduler",
-                                    "display_name": "Filter scheduler",
+                                    "label": "Filter scheduler",
                                     "description": "Currently the most advanced OpenStack scheduler. See the OpenStack documentation for details."
                                 },
                                 {
                                     "data": "nova.scheduler.simple.SimpleScheduler",
-                                    "display_name": "Simple scheduler",
+                                    "label": "Simple scheduler",
                                     "description": "This is 'naive' scheduler which tries to find the least loaded host"
                                 }
                             ],
@@ -823,12 +823,12 @@
                             "values": [
                                 {
                                     "data": "udp",
-                                    "display_name": "UDP",
+                                    "label": "UDP",
                                     "description": ""
                                 },
                                 {
                                     "data": "tcp",
-                                    "display_name": "TCP",
+                                    "label": "TCP",
                                     "description": ""
                                 }
                             ],
@@ -1259,12 +1259,12 @@
                             "values": [
                                 {
                                     "data": "kvm",
-                                    "display_name": "KVM",
+                                    "label": "KVM",
                                     "description": "Choose this type of hypervisor if you run OpenStack on hardware"
                                 },
                                 {
                                     "data": "qemu",
-                                    "display_name": "QEMU",
+                                    "label": "QEMU",
                                     "description": "Choose this type of hypervisor if you run OpenStack on virtual hosts."
                                 }
                             ],
@@ -1291,12 +1291,12 @@
                             "values": [
                                 {
                                     "data": "nova.scheduler.filter_scheduler.FilterScheduler",
-                                    "display_name": "Filter scheduler",
+                                    "label": "Filter scheduler",
                                     "description": "Currently the most advanced OpenStack scheduler. See the OpenStack documentation for details."
                                 },
                                 {
                                     "data": "nova.scheduler.simple.SimpleScheduler",
-                                    "display_name": "Simple scheduler",
+                                    "label": "Simple scheduler",
                                     "description": "This is 'naive' scheduler which tries to find the least loaded host"
                                 }
                             ],
@@ -1318,12 +1318,12 @@
                             "values": [
                                 {
                                     "data": "udp",
-                                    "display_name": "UDP",
+                                    "label": "UDP",
                                     "description": ""
                                 },
                                 {
                                     "data": "tcp",
-                                    "display_name": "TCP",
+                                    "label": "TCP",
                                     "description": ""
                                 }
                             ],

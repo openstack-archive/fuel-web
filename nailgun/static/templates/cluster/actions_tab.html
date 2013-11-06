@@ -1,12 +1,12 @@
 <div class="wrapper">
-  <h3 class="span12" data-i18n="cluster_page.actions_tab.title">Actions</h3>
+  <h3 class="span12" data-i18n="cluster_page.actions_tab.title"></h3>
   <div class="row-fluid">
     <div class="span6 action-item-placeholder">
       <form class="rename-cluster-form" onsubmit="return false">
-        <h4 data-i18n="cluster_page.actions_tab.rename_environment">Rename Environment</h4>
+        <h4 data-i18n="cluster_page.actions_tab.rename_environment"></h4>
         <div class="action-item-controls">
           <input type="text" class="input-xlarge" maxlength="50" value="<%- cluster.get('name') %>">
-          <button class="btn btn-success apply-name-btn" style="margin-top: -10px;"><span data-i18n="cluster_page.actions_tab.bt_rename">Rename</span></button>
+          <button class="btn btn-success apply-name-btn" style="margin-top: -10px;"><span data-i18n="cluster_page.actions_tab.bt_rename"></span></button>
         </div>
         <div class="action-item-description">
           <div class="alert alert-error hide"></div>
@@ -15,12 +15,11 @@
     </div>
     <div class="span6 action-item-placeholder">
       <form class="delete-cluster-form" onsubmit="return false">
-        <h4 data-i18n="cluster_page.actions_tab.delete_environment">Delete Environment</h4>
+        <h4 data-i18n="cluster_page.actions_tab.delete_environment"></h4>
         <div class="action-item-description important" data-i18n="cluster_page.actions_tab.alert_delete">
-            Clean up each node and return it to the pool of unallocated nodes.
         </div>
         <div class="action-item-controls">
-          <button class="btn btn-danger delete-cluster-btn" data-i18n="cluster_page.actions_tab.bt_delete">Delete</button>
+          <button class="btn btn-danger delete-cluster-btn" data-i18n="cluster_page.actions_tab.bt_delete"></button>
         </div>
       </form>
     </div>

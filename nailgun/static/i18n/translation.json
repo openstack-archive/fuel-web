@@ -58,6 +58,16 @@
                 "cluster_status_operational": "Operational",
                 "cluster_status_error": "Error",
                 "cluster_status_removing": "Removing"
+            },
+            "cluster_page": {
+                "actions_tab": {
+                    "title": "Actions",
+                    "rename_environment": "Rename Environment",
+                    "delete_environment": "Delete Environment",
+                    "bt_rename": "Rename",
+                    "bt_delete": "Delete",
+                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
+                }
             }
         }
     },

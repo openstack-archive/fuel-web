@@ -9,22 +9,51 @@
                     "unallocated_plural": ["Unallocated", "nodes"]
                 }
             },
-            "support_page": {
-                "title": "Support",
-                "contact_text": "Do not hesitate to report a problem or suggest an improvement by clicking the button below. We will get back to you as soon as possible.",
-                "irc_text": "If you have any questions, you can reach out developers at IRC channel",
-                "log_text": "If you have encountered some bugs or errors while using Fuel, you may also need to provide the support team with Fuel logs. You can download them by clicking the button below.",
-                "contact_support": "Contact support",
-                "register_fuel_title": "Register FUEL",
-                "register_fuel_content": "Registering will ensure that you receive important notifications about issues and new versions of Fuel. In addition, you will receive access to our basic support services for the next 30 days!",
-                "download_diagnostic_snapshot_text": "Download Diagnostic Snapshot",
-                "gen_logs_snapshot_text": "Generating logs snapshot...",
-                "loading": "Loading...",
-                "gen_diagnostic_snapshot_text": "Generate diagnostic snapshot",
-                "diagnostic_snapshot": "Diagnostic Snapshot",
-                "capacity_audit": "Capacity Audit",
-                "capacity_audit_text": "View and download capacity log.",
-                "view_capacity_audit": "View Capacity Audit"
+            "cluster_page":{
+                "settings_tab": {
+                    "title": "OpenStack Settings",
+                    "bt_load_defaults": "Load Defaults",
+                    "bt_cancel_changes": "Cancel Changes",
+                    "bt_save_settings": "Save Settings",
+                    "access": "Access",
+                    "syslog": "Syslog",
+                    "common": "Common",
+                    "username": "username",
+                    "user_description": "Username for Administrator",
+                    "password": "password",
+                    "password_description": "Password for Administrator",
+                    "tenant": "tenant",
+                    "tenant_description": "Tenant (project) name for Administrator",
+                    "email": "email",
+                    "email_description": "Email address for Administrator",
+                    "syslog_server": "Hostname",
+                    "syslog_server_description": "Remote syslog hostname",
+                    "Port": "Port",
+                    "syslog_port_description": "Remote syslog port",
+                    "syslog_transport": "Syslog transport protocol",
+                    "libvirt_type": "Hypervisor type",
+                    "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
+                    "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts",
+                    "compute_scheduler_driver": "Scheduler driver",
+                    "use_cow_images": "Use qcow format for images",
+                    "use_cow_images_description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting",
+                    "auto_assign_floating_ip": "Auto assign floating IP",
+                    "auto_assign_floating_ip_description": "If true, OpenStack will automatically assign a floating IP to a new instance",
+                    "start_guests_on_host_boot": "Start guests on host boot",
+                    "start_guests_on_host_boot_description": "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots",
+                    "auth_key": "Public Key",
+                    "auth_key_description": "Public key(s) to include in authorized_keys on deployed nodes",
+                    "nova": {
+                        "scheduler": {
+                            "simple": {
+                                "SimpleScheduler_description": "This is 'naive' scheduler which tries to find the least loaded host"
+                            },
+                            "filter_scheduler": {
+                                "FilterScheduler_description": "Currently the most advanced OpenStack scheduler. See the OpenStack documentation for details."
+                            }
+                        }
+                    }
+                }
             }
         }
     },
@@ -144,28 +173,40 @@
                     "syslog": "系统日志",
                     "common": "通用",
                     "username": "用户名",
+                    "user_description": "管理员用户名",
                     "password": "密码",
+                    "password_description": "管理员密码",
                     "tenant": "tenant",
+                    "tenant_description": "管理员Tenant(项目)名称",
                     "email": "电子邮件",
-                    "Hostname": "主机名",
+                    "email_description": "管理员电子邮件",
+                    "syslog_server": "主机名",
                     "Port": "端口",
-                    "Syslog transport protocol": "系统日志传输协议",
-                    "Hypervisor type": "管理器类型",
-                    "Scheduler driver": "调度器驱动",
-                    "Filter scheduler": "过滤器调度器",
-                    "Simple scheduler": "简单调度器",
-                    "Use qcow format for images": "为映像使用qcow格式",
-                    "Auto assign floating IP": "自动分配浮动IP",
-                    "Start guests on host boot": "主机启动时运行客户机",
-                    "Public Key": "公开密钥",
-                    "Username for Administrator": "管理员用户名",
-                    "Password for Administrator": "管理员密码",
-                    "Tenant (project) name for Administrator": "管理员Tenant(项目)名称",
-                    "Email address for Administrator": "管理员电子邮件",
-                    "Remote syslog hostname": "远程系统日志主机名",
-                    "Remote syslog port": "远程系统日志端口",
-                    "Choose this type of hypervisor if you run OpenStack on hardware": "如果在硬件上运行OpenStack，选择该类型的管理器",
-                    "Choose this type of hypervisor if you run OpenStack on virtual hosts.": "如果在虚拟机上运行OpenStack，选择该类型的管理器"
+                    "syslog_transport": "系统日志传输协议",
+                    "syslog_server_description": "远程系统日志主机名",
+                    "syslog_port_description": "远程系统日志端口",
+                    "libvirt_type": "管理器类型",
+                    "kvm_description": "如果在硬件上运行OpenStack，选择该类型的管理器",
+                    "qemu_description": "如果您在虚拟机上运行OpenStack请选择该类型的管理器",
+                    "compute_scheduler_driver": "调度器驱动",
+                    "use_cow_images": "为映像使用qcow格式",
+                    "use_cow_images_description": "大多数情况下您需要qcow格式。如果设置为false，将使用原始映像格式运行虚机。基于原始格式的OpenStack当前不支持快照",
+                    "auto_assign_floating_ip": "自动分配浮动IP",
+                    "auto_assign_floating_ip_description": "OpenStack将自动给新实例分配浮动IP",
+                    "start_guests_on_host_boot": "主机启动时运行客户机",
+                    "start_guests_on_host_boot_description": "在主机重启时是否需要重启客户机。 如果启用，此选项会导致nova-compute启动时无条件的重启客户机。如果客户机为停止状态，则启动它。如果是运行状态，则重启",
+                    "auth_key": "公开密钥",
+                    "auth_key_description": "部署节点时包含在authorized_keys中的公钥",
+                    "nova": {
+                        "scheduler": {
+                            "simple": {
+                                "SimpleScheduler_description": "简单调度器"
+                            },
+                            "filter_scheduler": {
+                                "FilterScheduler_description": "过滤器调度器"
+                            }
+                        }
+                    }
                 },
 
                 "logs_tab": {

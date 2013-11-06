@@ -564,9 +564,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         template: _.template(nodeTemplate),
         templateHelpers: _.pick(utils, 'showDiskSize', 'showMemorySize'),
         renaming: false,
-        checked: false,
         events: {
-            'change .node-checkbox input': 'selectNode',
             'click .node-renameable': 'startNodeRenaming',
             'keydown .name input': 'onNodeNameInputKeydown',
             'click .node-details': 'showNodeDetails',
@@ -574,20 +572,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-discard-addition': 'discardAddition',
             'click .btn-discard-deletion': 'discardDeletion',
             'click .btn-view-logs': 'showNodeLogs'
-        },
-        selectNode: function() {
-            this.checked = this.$('.node-checkbox input').is(':checked');
-            this.$el.toggleClass('checked', this.checked);
-            this.group.calculateSelectAllCheckedState();
-            this.group.calculateSelectAllDisabledState();
-            if (!this.checked) {
-                this.node.set({pending_roles: this.initialRoles});
-            }
-            if (this.screen instanceof AddNodesScreen || this.screen instanceof EditNodesScreen) {
-                this.screen.roles.handleChanges();
-            } else {
-                this.screen.updateBatchActionsButtons();
-            }
         },
         bindings: {
             '.roles': {
@@ -599,6 +583,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 observe: 'pending_roles',
                 onGet: 'formatRoleList',
                 updateMethod: 'html'
+            },
+            '.node': {
+                attributes: [{
+                    name: 'class',
+                    observe: 'checked',
+                    onGet: function(value, options) {
+                        return value ? 'node checked' : 'node';
+                    }
+                }]
+            },
+            '.node-checkbox input': {
+                observe: 'checked'
             },
             '.node-status-label': {
                 observe: ['status', 'online', 'pending_addition', 'pending_deletion'],
@@ -745,6 +741,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         formatNodeButtonIcon: function(value, options) {
             return this.hasChanges() && !(this.screen instanceof EditNodesScreen) ? 'icon-back-in-time' : 'icon-logs';
         },
+        onNodeSelection: function() {
+            this.group.calculateSelectAllCheckedState();
+            this.group.calculateSelectAllDisabledState();
+            if (!this.node.get('checked')) {
+                this.node.set({pending_roles: this.initialRoles});
+            }
+            if (this.screen instanceof AddNodesScreen || this.screen instanceof EditNodesScreen) {
+                this.screen.roles.handleChanges();
+            } else {
+                this.screen.updateBatchActionsButtons();
+            }
+        },
         startNodeRenaming: function() {
             if (!this.renameable || this.renaming) {return;}
             $('html').off(this.eventNamespace);
@@ -827,15 +835,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             $('html').off(this.eventNamespace);
         },
         uncheckNode: function() {
-            if (this.node.get('pending_deletion')) {
-                this.checked = false;
-            }
-            this.group.render();
+            this.node.set('checked', false);
         },
         initialize: function(options) {
             _.defaults(this, options);
             this.screen = this.group.nodeList.screen;
             this.eventNamespace = 'click.editnodename' + this.node.id;
+            this.node.set('checked', this.screen instanceof EditNodesScreen);
             this.node.on('change:name', this.render, this);
             this.node.on('change:checked change:online', this.onNodeSelection, this);
             this.node.on('change:pending_deletion', this.uncheckNode, this);
@@ -847,7 +853,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 node: this.node,
                 renaming: this.renaming,
                 renameable: this.renameable,
-                checked: this.checked,
                 edit: this.screen instanceof EditNodesScreen,
                 locked: this.screen.isLocked()
             }, this.templateHelpers)));

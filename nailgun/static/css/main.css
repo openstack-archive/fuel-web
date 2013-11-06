@@ -440,7 +440,7 @@ h6.page-title {
   margin-bottom: 6px;
   overflow: hidden;
 }
-.checked .node {
+.node.checked {
   background-color: #dedede;
 }
 .node-box {

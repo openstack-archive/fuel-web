@@ -12,31 +12,26 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import itertools
 import logging
-import multiprocessing
+import time
 
-logging.getLogger('scapy.runtime').setLevel(logging.ERROR)
+from scapy import config as scapy_config
+
+scapy_config.use_pcap = True
+
+logging.getLogger('scapy.runtime').setLevel(logging.CRITICAL)
 
 from dhcp_checker import utils
+import pcap
 from scapy import all as scapy
 
+LOG = logging.getLogger(__name__)
 
-CONCURRENCY_LIMIT = 10
 
+def _get_dhcp_discover_message(iface):
 
-@utils.multiproc_map
-@utils.single_format
-def check_dhcp_on_eth(iface, timeout):
-    """Check if there is roque dhcp server in network on given iface
-        @iface - name of the ethernet interface
-        @timeout - scapy timeout for waiting on response
-    >>> check_dhcp_on_eth('eth1')
-    """
-
-    scapy.conf.iface = iface
-
-    scapy.conf.checkIPaddr = False
     dhcp_options = [("message-type", "discover"),
                     ("param_req_list", utils.format_options(
                         [1, 2, 3, 4, 5, 6,
@@ -45,19 +40,33 @@ def check_dhcp_on_eth(iface, timeout):
                     "end"]
 
     fam, hw = scapy.get_if_raw_hwaddr(iface)
+
     dhcp_discover = (
         scapy.Ether(src=hw, dst="ff:ff:ff:ff:ff:ff") /
         scapy.IP(src="0.0.0.0", dst="255.255.255.255") /
         scapy.UDP(sport=68, dport=67) /
         scapy.BOOTP(chaddr=hw) /
         scapy.DHCP(options=dhcp_options))
+
+    return dhcp_discover
+
+
+@utils.single_format
+def check_dhcp_on_eth(iface, timeout):
+    """Check if there is roque dhcp server in network on given iface
+        @iface - name of the ethernet interface
+        @timeout - scapy timeout for waiting on response
+    >>> check_dhcp_on_eth('eth1')
+    """
+    scapy.conf.iface = iface
+    scapy.conf.checkIPaddr = False
+    dhcp_discover = _get_dhcp_discover_message(iface)
     ans, unans = scapy.srp(dhcp_discover, multi=True,
                            nofilter=1, timeout=timeout, verbose=0)
 
     return ans
 
 
-@utils.filter_duplicated_results
 def check_dhcp(ifaces, timeout=5, repeat=2):
     """Given list of ifaces. Process them in separate processes
     @ifaces - lsit of ifaces
@@ -65,25 +74,48 @@ def check_dhcp(ifaces, timeout=5, repeat=2):
     @repeat - number of packets sended
     >>> check_dhcp(['eth1', 'eth2'])
     """
-    ifaces_filtered = list(utils.filtered_ifaces(ifaces))
-    if not ifaces_filtered:
-        raise EnvironmentError("No valid interfaces provided.")
-    concurrency_limit = (CONCURRENCY_LIMIT
-                         if len(ifaces_filtered) > CONCURRENCY_LIMIT
-                         else len(ifaces_filtered))
-    pool = multiprocessing.Pool(concurrency_limit)
-    return itertools.chain(*pool.map(check_dhcp_on_eth, (
-        (iface, timeout) for iface in ifaces_filtered * repeat)))
+    config = {}
+    for iface in ifaces:
+        config[iface] = ()
+    return check_dhcp_with_vlans(config, timeout=timeout, repeat=repeat)
 
 
+def send_dhcp_discover(iface):
+    dhcp_discover = _get_dhcp_discover_message(iface)
+    scapy.sendp(dhcp_discover, iface=iface, verbose=0)
+
+
+def make_listeners(ifaces):
+    listeners = []
+    for iface in ifaces:
+        try:
+            listener = pcap.pcap(iface)
+            listener.setfilter('dst port 68')
+            listeners.append(listener)
+        except Exception:
+            LOG.warning(
+                'Spawning listener for {iface} failed.'.format(iface=iface))
+    return listeners
+
+
+@utils.filter_duplicated_results
 def check_dhcp_with_vlans(config, timeout=5, repeat=2):
     """Provide config of {iface: [vlans..]} pairs
     @config - {'eth0': (100, 101), 'eth1': (100, 102)}
-    @ifaces - string : eth0, eth1
-    @vlans - iterable (100, 101, 102)
     """
+    # vifaces - list of pairs ('eth0', ['eth0.100', 'eth0.101'])
     with utils.VlansContext(config) as vifaces:
-        return check_dhcp(list(vifaces), timeout=timeout, repeat=repeat)
+        ifaces, vlans = zip(*vifaces)
+        listeners = make_listeners(ifaces)
+
+        for i in utils.filtered_ifaces(itertools.chain(ifaces, *vlans)):
+            send_dhcp_discover(i)
+
+        time.sleep(timeout)
+
+        for l in listeners:
+            for pkt in l.readpkts():
+                yield utils.format_answer(scapy.Ether(pkt[1]), l.name)
 
 
 @utils.single_format

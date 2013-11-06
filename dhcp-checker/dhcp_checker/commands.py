@@ -11,11 +11,16 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import json
+import logging
 
 from cliff import command
 from cliff import lister
 from dhcp_checker import api
+
+
+LOG = logging.getLogger(__name__)
 
 
 class BaseCommand(command.Command):
@@ -42,6 +47,7 @@ class ListDhcpServers(lister.Lister, BaseCommand):
         return parser
 
     def take_action(self, parsed_args):
+        LOG.info('Starting dhcp discover for {0}'.format(parsed_args.ifaces))
         res = api.check_dhcp(parsed_args.ifaces,
                              timeout=parsed_args.timeout,
                              repeat=parsed_args.repeat)

@@ -15,10 +15,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   end
 
   config.vm.define :develop do |config|
-    config.vm.provision :shell, :path => "test_env/epel_scapy.sh"
     config.vm.network :private_network, ip: "192.168.0.2"
     config.vm.network :private_network, ip: "10.10.0.5"
-    config.vm.provision :shell, :inline => "cd /vagrant && python setup.py develop"
   end
 
    config.vm.define :dhcp2 do |config|

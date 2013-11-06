@@ -15,6 +15,8 @@
 **/
 define(
 [
+    'coccyx',
+    'js/coccyx_mixins',
     'models',
     'views/common',
     'views/cluster_page',
@@ -25,7 +27,7 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -160,7 +162,16 @@ function(models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage,
                 return originalSync.apply(this, args);
             };
 
-            window.Coccyx.addTearDownCallback(function() {
+            // add deferred-related mixins
+            _.extend(Backbone.View.prototype, coccyxMixins);
+
+            // reject deferreds on view teardown
+            Coccyx.addTearDownCallback(function() {
+                this.rejectRegisteredDeferreds();
+            });
+
+            // remove stickit bindings on teardown
+            Coccyx.addTearDownCallback(function() {
                 this.unstickit();
             });
 

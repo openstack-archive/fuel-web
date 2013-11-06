@@ -959,7 +959,10 @@ def healthcheck(params):
     test_sets = json_ostf_get_request(
         'testsets/{0}'.format(params.env)
     )
-    if params.check:
+    if params.list:
+        print_to_output(test_sets, format_table(test_sets))
+    else:
+        params.check = params.check or set(ts["id"] for ts in test_sets)
         tests_data = map(
             lambda testset: {
                 "testset": testset,
@@ -978,26 +981,21 @@ def healthcheck(params):
             "testruns/last/{0}".format(params.env)
         )
         print_to_output(tests_state, params, print_method=print_health_check)
-    else:
-        print_to_output(test_sets, format_table(test_sets))
 
 
 def print_health_check(params):
-    acceptable_keys = ["status", "taken", "step", "testset",
-                       "name", "duration", "message"]
-    stdscr = curses.initscr()
-    curses.noecho()
-    curses.cbreak()
     tests_states = [{"status": "not finished"}]
-    try:
-        while not all(map(
-                lambda t: t["status"] == "finished",
-                tests_states
-        )):
-            tests_states = json_ostf_get_request(
-                "testruns/last/{0}".format(params.env)
-            )
-            all_tests = chain(
+    finished_tests = set()
+    while not all(map(
+            lambda t: t["status"] == "finished",
+            tests_states
+    )):
+        tests_states = json_ostf_get_request(
+            "testruns/last/{0}".format(params.env)
+        )
+        all_finished_tests = filter(
+            lambda t: t["status"] != "wait_running",
+            chain(
                 *map(
                     itemgetter("tests"),
                     filter(
@@ -1006,15 +1004,23 @@ def print_health_check(params):
                     )
                 )
             )
-            ft = format_table(all_tests, acceptable_keys=acceptable_keys)
-            try:
-                stdscr.addstr(0, 0, ft)
-            except curses.error:
-                pass
-            sleep(1)
-            stdscr.refresh()
-    finally:
-        close_curses()
+        )
+
+        new_finished_tests = filter(
+            lambda t: t["name"] not in finished_tests,
+            all_finished_tests
+        )
+        finished_tests.update(
+            map(
+                itemgetter("name"),
+                new_finished_tests
+            )
+        )
+        for test in new_finished_tests:
+            print(
+                "[{status}] '{name}' ({taken:f} s) {message}".format(**test)
+            )
+        sleep(1)
 
 
 def prepare_path(path):

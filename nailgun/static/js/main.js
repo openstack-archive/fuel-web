@@ -73,18 +73,18 @@ requirejs.config({
         },
         'jquery-autoNumeric': {
             deps: ['jquery']
-        },
-        app: {
-            deps: ['jquery', 'underscore', 'backbone', 'stickit', 'deepModel', 'coccyx', 'i18next', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric']
         }
     }
 });
 
-require(['app', 'i18next', 'text!i18n/translation.json'], function (app, i18n, translation) {
+require([
+    'text!i18n/translation.json',
+    'jquery', 'underscore', 'backbone', 'stickit', 'deepModel', 'coccyx', 'i18next', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric',
+    'app'
+], function(translation) {
     'use strict';
+    var app = _.last(arguments);
     $.i18n.init({
         resStore: JSON.parse(translation)
-    }).always(function() {
-        $(document).ready(app.initialize);
-    });
+    }).always(app.initialize);
 });

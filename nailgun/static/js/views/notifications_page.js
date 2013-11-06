@@ -26,8 +26,8 @@ function(utils, models, commonViews, dialogViews, notificationsListTemplate) {
 
     var NotificationsPage = commonViews.Page.extend({
         navbarActiveElement: null,
-        breadcrumbsPath: [['Home', '#'], 'Notifications'],
-        title: 'Notifications',
+        breadcrumbsPath: [['home', '#'], 'notifications'],
+        title: $.t('notifications_page.title'),
         template: _.template(notificationsListTemplate),
         templateHelpers: _.pick(utils, 'urlify'),
         events: {

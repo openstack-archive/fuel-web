@@ -44,9 +44,9 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
         initialize: function() {
             this.content = $('#content');
             this.navbar = new commonViews.Navbar({elements: [
-                ['Environments', '#clusters'],
-                ['Releases', '#releases'],
-                ['Support', '#support']
+                ['environments', '#clusters'],
+                ['releases', '#releases'],
+                ['support', '#support']
             ]});
             this.content.before(this.navbar.render().el);
             this.breadcrumbs = new commonViews.Breadcrumbs();

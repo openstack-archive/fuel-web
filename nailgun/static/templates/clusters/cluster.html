@@ -3,14 +3,14 @@
 <div class="cluster-hardware">
   <% if (!nodes.deferred || nodes.deferred.state() == 'resolved') { %>
     <div class="row-fluid">
-      <div class="span6" data-i18n="clusters_page.nodes">Nodes:</div>
+      <div class="span6" data-i18n="clusters_page.cluster_hardware_nodes"></div>
       <div class="span4"><%= nodes.length %></div>
       <% if (nodes.length) { %>
-        <div class="span6">CPU (cores):</div>
+        <div class="span6" data-i18n="clusters_page.cluster_hardware_cpu"></div>
         <div class="span4"><%= nodes.resources('cores') %></div>
-        <div class="span6">HDD:</div>
+        <div class="span6" data-i18n="clusters_page.cluster_hardware_hdd"></div>
         <div class="span4"><%= nodes.resources('hdd') ? showDiskSize(nodes.resources('hdd')) : '?GB' %></div>
-        <div class="span6">RAM:</div>
+        <div class="span6" data-i18n="clusters_page.cluster_hardware_ram"></div>
         <div class="span4"><%= nodes.resources('ram') ? showMemorySize(nodes.resources('ram')) : '?GB' %></div>
       <% } %>
     </div>
@@ -18,13 +18,12 @@
 </div>
 <div class="cluster-status">
   <% if (cluster.task('cluster_deletion', 'running')) { %>
-    Removing
+    <%- $.t('clusters_page.cluster_status_removing') %>
   <% } else if (cluster.task('deploy', 'running')) { %>
     <div class="cluster-status-deploy">
       <div class="bar" style="width:0"></div>
     </div>
   <% } else { %>
-    <% var statuses = {'new': $.t('clusters_page.stat_new', {defaultValue: 'New'}), 'deployment': $.t('clusters_page.stat_deploying', {defaultValue: 'Deploying'}), 'operational': $.t('clusters_page.stat_operational', {defaultValue: 'Operational'}), 'error': $.t('clusters_page.stat_error', {defaultValue: 'Error'}), 'remove': $.t('clusters_page.stat_removing', {defaultValue: 'Removing'}) } %>
-    <%= statuses[cluster.get('status')] %>
+    <%- $.t('clusters_page.cluster_status_' + cluster.get('status'), {defaultValue: cluster.get('status')}) %>
   <% } %>
 </div>

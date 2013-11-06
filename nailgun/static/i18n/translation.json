@@ -1,13 +1,30 @@
 {
     "en-US": {
         "translation": {
+            "common": {
+                "title": "Fuel Dashboard"
+            },
             "navbar": {
+                "environments": "Environments",
+                "releases": "Releases",
+                "support": "Support",
                 "stats": {
                     "total": ["Total", "node"],
                     "total_plural": ["Total", "nodes"],
                     "unallocated": ["Unallocated", "node"],
                     "unallocated_plural": ["Unallocated", "nodes"]
                 }
+            },
+            "breadcrumbs": {
+                "home": "Home",
+                "environments": "Environments",
+                "releases": "Releases",
+                "support": "Support",
+                "notifications": "Notifications",
+                "capacity": "Capacity"
+            },
+            "notifications_page": {
+                "title": "Notifications"
             },
             "support_page": {
                 "title": "Support",
@@ -25,26 +42,42 @@
                 "capacity_audit": "Capacity Audit",
                 "capacity_audit_text": "View and download capacity log.",
                 "view_capacity_audit": "View Capacity Audit"
+            },
+            "release_page": {
+                "title": "Releases"
+            },
+            "clusters_page": {
+                "title": "My OpenStack Environments",
+                "create_cluster_text": "New OpenStack Environment",
+                "cluster_hardware_nodes": "Nodes",
+                "cluster_hardware_cpu": "CPU (cores)",
+                "cluster_hardware_hdd": "HDD",
+                "cluster_hardware_ram": "RAM",
+                "cluster_status_new": "New",
+                "cluster_status_deploying": "Deploying",
+                "cluster_status_operational": "Operational",
+                "cluster_status_error": "Error",
+                "cluster_status_removing": "Removing"
             }
         }
     },
     "zh-CN": {
         "translation": {
             "navbar": {
-                "Environments": "环境",
-                "Releases": "版本",
-                "Support": "支持",
+                "environments": "环境",
+                "releases": "版本",
+                "support": "支持",
                 "stats": {
                     "total": "全部节点",
                     "unallocated": "未分配节点"
                 }
             },
-            "breadcrumb": {
-                "Home": "首页",
-                "Environments": "环境",
-                "Releases": "版本",
-                "Support": "支持",
-                "Notifications": "通知"
+            "breadcrumbs": {
+                "home": "首页",
+                "environments": "环境",
+                "releases": "版本",
+                "support": "支持",
+                "notifications": "通知"
             },
             "notifications_page": {
                 "title": "通知"
@@ -77,13 +110,16 @@
             },
             "clusters_page": {
                 "title":"我的OpenStack环境",
-                "create-cluster-text": "新建OpenStack环境",
-                "nodes": "节点：",
-                "stat_new": "新建",
-                "stat_deploying": "部署中",
-                "stat_operational": "可操作",
-                "stat_error": "错误",
-                "stat_removing": "移除中"
+                "create_cluster_text": "新建OpenStack环境",
+                "cluster_hardware_nodes": "节点",
+                "cluster_hardware_cpu": "CPU (cores)",
+                "cluster_hardware_hdd": "HDD",
+                "cluster_hardware_ram": "RAM",
+                "cluster_status_new": "新建",
+                "cluster_status_deploying": "部署中",
+                "cluster_status_operational": "可操作",
+                "cluster_status_error": "错误",
+                "cluster_status_removing": "移除中"
             },
             "cluster_page": {
                 "deploy_changes": "部署变更",

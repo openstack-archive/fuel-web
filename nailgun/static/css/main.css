@@ -86,10 +86,15 @@ h6.page-title {
 
 .footer-lang {
   display: block;
-  padding: 14px 0px 0px 5px;
-  color: #7789a0;
+  padding: 10px 0px 0px 5px;
   font-size: 11px;
   margin-top: 0px;
+}
+
+.footer-lang .current-locale {
+  display: inline;
+  font-size: 11px;
+  text-shadow: none;
 }
 
 /*  Navigation */
@@ -965,16 +970,16 @@ label.node-checkbox {
 
 
 .breadcrumb > li {
-    text-shadow: 0 0 0;
+  text-shadow: 0 0 0;
 }
 
 .breadcrumb > li > a {
-    color: #B0B0B0;
-    text-decoration: underline;
+  color: #B0B0B0;
+  text-decoration: underline;
 }
 
 .breadcrumb > li > a:hover {
-    color: #d0d0d0;
+  color: #d0d0d0;
 }
 
 .breadcrumb > .active {
@@ -1224,6 +1229,11 @@ label.node-checkbox {
   min-height: 14px;
   line-height: 18px;
 }
+
+.cluster-hardware > .row-fluid > .span6:after {
+  content: ":";
+}
+
 .cluster-status {
   margin-top: 20px;
   padding-top: 5px;

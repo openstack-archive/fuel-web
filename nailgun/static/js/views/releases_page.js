@@ -28,8 +28,8 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
 
     ReleasesPage = commonViews.Page.extend({
         navbarActiveElement: 'releases',
-        breadcrumbsPath: [['Home', '#'], 'Releases'],
-        title: 'Releases',
+        breadcrumbsPath: [['home', '#'], 'releases'],
+        title: $.t('release_page.title'),
         updateInterval: 5000,
         template: _.template(releasesListTemplate),
         scheduleUpdate: function() {

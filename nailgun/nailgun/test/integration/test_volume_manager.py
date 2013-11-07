@@ -38,15 +38,16 @@ class TestVolumeManagerHelpers(base.BaseIntegrationTest):
         self.assertEqual(len(list(result)), 1)
 
     def test_glance_cache_size_property_more_than_5gb(self):
-        volumes_size = manager.gb_to_byte(120)
+        volumes_size = manager.gb_to_mb(120)
         with patch.object(manager,
                           'find_size_by_name') as get_size:
             get_size.return_value = volumes_size
             result = manager.calc_glance_cache_size(self.volumes)
-        self.assertEqual(result, str(int(volumes_size * 0.1)))
+        self.assertEqual(result,
+                         str(int(manager.mb_to_byte(volumes_size) * 0.1)))
 
     def test_glance_cache_size_property_less_then_5gb(self):
-        volumes_size = manager.gb_to_byte(30)
+        volumes_size = manager.gb_to_mb(30)
         default = manager.gb_to_byte(5)
         with patch.object(manager,
                           'find_size_by_name') as get_size:

@@ -189,9 +189,9 @@ class TestHandlers(BaseIntegrationTest):
 
                 individual_atts.update(common_attrs)
                 individual_atts['glance']['image_cache_max_size'] = str(
-                    manager.gb_to_byte(5)
+                    manager.calc_glance_cache_size(node.attributes.volumes)
                 )
-                deployment_info.append(individual_atts)
+                deployment_info.append(deepcopy(individual_atts))
 
         controller_nodes = filter(
             lambda node: node['role'] == 'controller',
@@ -456,7 +456,6 @@ class TestHandlers(BaseIntegrationTest):
             'cinder': 700,
             'compute': 700
         }
-
         deployment_info = []
         for node in nodes_db:
             ips = assigned_ips[node.id]
@@ -535,9 +534,9 @@ class TestHandlers(BaseIntegrationTest):
 
                 individual_atts.update(common_attrs)
                 individual_atts['glance']['image_cache_max_size'] = str(
-                    manager.gb_to_byte(5)
+                    manager.calc_glance_cache_size(node.attributes.volumes)
                 )
-                deployment_info.append(individual_atts)
+                deployment_info.append(deepcopy(individual_atts))
 
         controller_nodes = filter(
             lambda node: node['role'] == 'controller',
@@ -926,7 +925,6 @@ class TestHandlers(BaseIntegrationTest):
             path = []
 
         print("Path: {0}".format("->".join(path)))
-
         if not isinstance(node1, dict) or not isinstance(node2, dict):
             if isinstance(node1, list):
                 newpath = path[:]

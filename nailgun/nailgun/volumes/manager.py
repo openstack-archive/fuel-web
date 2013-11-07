@@ -58,6 +58,10 @@ def byte_to_megabyte(byte):
     return byte / 1024 ** 2
 
 
+def mb_to_byte(mb):
+    return mb * 1024 * 1024
+
+
 def gb_to_byte(gb):
     return gb * 1024 * 1024 * 1024
 
@@ -115,7 +119,7 @@ def calc_glance_cache_size(volumes):
     """Calculate glance cache size based on formula:
     10%*(/var/lib/glance) if > 5GB else 5GB
     """
-    cache_size_form = lambda size: int(0.1 * size)
+    cache_size_form = lambda size: int(0.1 * mb_to_byte(size))
     cache_min_size = gb_to_byte(5)
     glance_mount_size = find_size_by_name(volumes, 'glance', 'image')
     cache_size = cache_size_form(glance_mount_size)

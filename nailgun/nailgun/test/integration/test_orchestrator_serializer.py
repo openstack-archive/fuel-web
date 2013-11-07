@@ -29,6 +29,7 @@ from nailgun.orchestrator.deployment_serializers \
 from nailgun.settings import settings
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
+from nailgun.volumes import manager
 
 
 class OrchestratorSerializerTestBase(BaseIntegrationTest):
@@ -111,8 +112,10 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertEquals(serialized_data['online'], node_db.online)
         self.assertEquals(serialized_data['fqdn'],
                           'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
-        self.assertEquals(serialized_data['glance'],
-                          {'image_cache_max_size': '5368709120'})
+        self.assertEquals(
+            serialized_data['glance'],
+            {'image_cache_max_size': manager.calc_glance_cache_size(
+                node_db.attributes.volumes)})
 
     def test_node_list(self):
         node_list = self.serializer.get_common_attrs(self.cluster)['nodes']

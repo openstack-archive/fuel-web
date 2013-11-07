@@ -346,6 +346,17 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 net_provider: this.tab.model.get('net_provider'),
                 networkConfiguration: this.tab.networkConfiguration
             });
+            this.validateNeutronFloatingIpRange();
+        },
+        validateNeutronFloatingIpRange: function() {
+            if (this.tab.model.get('net_provider') == 'neutron' && this.network.get('name') == 'public') {
+                this.tab.$('.neutron-parameters input.error').removeClass('error');
+                this.tab.$('.neutron-parameters .help-inline').text('');
+                this.tab.networkConfiguration.get('neutron_parameters').set({}, {
+                    validate: true,
+                    publicCidr: $.trim(this.$('.cidr input').val())
+                });
+            }
         },
         setIPRangeFocus: function(e) {
             this.$(e.currentTarget).next().find('input:first').focus();
@@ -470,7 +481,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         initialize: function(options) {
             _.defaults(this, options);
             this.neutronParameters.on('invalid', function(model, errors) {
-                this.$('input.error').removeClass('error').find('.help-inline').text('');
+                this.$('input.error').removeClass('error');
+                this.$('.help-inline').text('');
                 _.each(_.without(_.keys(errors), 'id_range', 'floating'), _.bind(function(field) {
                     this.$('input[name=' + field + ']')
                         .addClass('error')

@@ -384,15 +384,15 @@ class NetworkManager(object):
     def clear_all_allowed_networks(cls, node_id):
         node_db = db().query(Node).get(node_id)
         for nic in node_db.interfaces:
-            while nic.allowed_networks:
-                nic.allowed_networks.pop()
+            while nic.allowed_networks_list:
+                nic.allowed_networks_list.pop()
         db().commit()
 
     @classmethod
     def clear_assigned_networks(cls, node):
         for nic in node.interfaces:
-            while nic.assigned_networks:
-                nic.assigned_networks.pop()
+            while nic.assigned_networks_list:
+                nic.assigned_networks_list.pop()
         db().commit()
 
     @classmethod
@@ -739,7 +739,7 @@ class NetworkManager(object):
         if not isinstance(node, Node):
             node = db().query(Node).get(node)
         for interface in node.interfaces:
-            for network in interface.assigned_networks:
+            for network in interface.assigned_networks_list:
                 if network.name == network_name:
                     return interface
 
@@ -795,7 +795,7 @@ class NetworkManager(object):
     @classmethod
     def get_node_interface_by_netname(cls, node_id, netname):
         return db().query(NodeNICInterface).join(
-            (NetworkGroup, NodeNICInterface.assigned_networks)
+            (NetworkGroup, NodeNICInterface.assigned_networks_list)
         ).filter(
             NetworkGroup.name == netname
         ).filter(

@@ -772,7 +772,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         trunks = [0]
 
         if use_vlan_splinters == 'hard':
-            for ng in iface.assigned_networks:
+            for ng in iface.assigned_networks_list:
                 if ng.name == 'private':
                     vlan_range = cluster.neutron_config.L2.get(
                         "phys_nets", {}

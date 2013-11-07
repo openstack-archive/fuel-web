@@ -56,7 +56,7 @@ def run_server(func, server_address=('0.0.0.0', 8080)):
     HTTPLoggerMiddleware instead
     """
     global server
-    func = StaticMiddleware(func)
+    func = StaticMiddleware(func, prefix=settings.STATIC_DIR)
     server = WSGIServer(server_address, func)
     print('http://%s:%d/' % server_address)
 

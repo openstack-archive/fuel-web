@@ -50,31 +50,17 @@ class ClusterHandler(JSONHandler):
         "id",
         "name",
         "mode",
+        "changes",
         "status",
         "grouping",
         "is_customized",
         "net_provider",
         "net_segment_type",
-        ("release", "*")
+        "release_id"
     )
 
     model = Cluster
     validator = ClusterValidator
-
-    @classmethod
-    def render(cls, instance, fields=None):
-        json_data = JSONHandler.render(instance, fields=cls.fields)
-        if instance.changes:
-            for i in instance.changes:
-                if not i.node_id:
-                    json_data.setdefault("changes", []).append(i.name)
-                else:
-                    json_data.setdefault("changes", []).append(
-                        [i.name, i.node_id]
-                    )
-        else:
-            json_data["changes"] = []
-        return json_data
 
     @content_json
     def GET(self, cluster_id):

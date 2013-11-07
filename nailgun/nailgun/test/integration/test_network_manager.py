@@ -207,7 +207,7 @@ class TestNetworkManager(BaseIntegrationTest):
         nodes = self.db.query(Node).options(
             joinedload('cluster'),
             joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks')).all()
+            joinedload('interfaces.assigned_networks_list')).all()
 
         ips_mapped = self.env.network_manager.get_grouped_ips_by_node()
         networks_grouped = self.env.network_manager.\
@@ -441,12 +441,12 @@ class TestNovaNetworkManager(BaseIntegrationTest):
         new_main_nic_id = node_db.admin_interface.id
         self.assertEquals(new_main_nic_id, other_iface.id)
         self.assertEquals(
-            other_iface.assigned_networks,
+            other_iface.assigned_networks_list,
             NovaNetworkManager.get_default_nic_networkgroups(
                 node_db, other_iface))
         self.assertEquals(
             self.db.query(
-                NodeNICInterface).get(admin_nic.id).assigned_networks,
+                NodeNICInterface).get(admin_nic.id).assigned_networks_list,
             NovaNetworkManager.get_default_nic_networkgroups(
                 node_db, admin_nic))
 
@@ -495,8 +495,8 @@ class TestNeutronManager(BaseIntegrationTest):
 
         new_main_nic_id = node_db.admin_interface.id
         admin_nets = [n.name for n in self.db.query(
-            NodeNICInterface).get(new_main_nic_id).assigned_networks]
-        other_nets = [n.name for n in other_iface.assigned_networks]
+            NodeNICInterface).get(new_main_nic_id).assigned_networks_list]
+        other_nets = [n.name for n in other_iface.assigned_networks_list]
 
         nics = NeutronManager.get_default_networks_assignment(node_db)
         def_admin_nic = [n for n in nics if n['id'] == new_main_nic_id]

@@ -345,9 +345,9 @@ class Environment(object):
                 NetworkGroup.id.in_(ng_ids)))
 
             for interface in node.interfaces:
-                interface.allowed_networks = allowed_networks
+                interface.allowed_networks_list = allowed_networks
 
-            node.interfaces[0].assigned_networks = allowed_networks
+            node.interfaces[0].assigned_networks_list = allowed_networks
 
         self.db.commit()
         # At least one interface should have

@@ -175,14 +175,15 @@ class TestNetworkManager(BaseIntegrationTest):
         new_main_nic_id = node_db.admin_interface.id
         self.assertEquals(new_main_nic_id, other_iface.id)
         self.assertEquals(
-            other_iface.assigned_networks,
+            other_iface.assigned_networks_list,
             self.env.network_manager.get_default_nic_networkgroups(
                 node_db, other_iface))
         self.assertEquals(
-            self.db.query(
-                NodeNICInterface).get(admin_nic.id).assigned_networks,
-            self.env.network_manager.get_default_nic_networkgroups(
-                node_db, admin_nic))
+            self.db.query(NodeNICInterface).get(
+                admin_nic.id
+            ).assigned_networks_list,
+            []
+        )
 
     def test_assign_vip_is_idempotent(self):
         cluster = self.env.create_cluster(api=True)
@@ -256,7 +257,7 @@ class TestNetworkManager(BaseIntegrationTest):
         nodes = self.db.query(Node).options(
             joinedload('cluster'),
             joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks')).all()
+            joinedload('interfaces.assigned_networks_list')).all()
 
         ips_mapped = self.env.network_manager.get_grouped_ips_by_node()
         networks_grouped = self.env.network_manager.\

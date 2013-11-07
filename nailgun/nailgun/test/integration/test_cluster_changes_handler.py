@@ -79,8 +79,8 @@ class TestHandlers(BaseIntegrationTest):
             'fixed_interface': 'eth0.103',
             'admin_interface': 'eth1',
             'storage_interface': 'eth0.102',
-            'public_interface': 'eth0',
-            'floating_interface': 'eth0',
+            'public_interface': 'eth0.100',
+            'floating_interface': 'eth0.100',
 
             'master_ip': '127.0.0.1',
             'use_cinder': True,
@@ -164,8 +164,8 @@ class TestHandlers(BaseIntegrationTest):
                     'priority': priority,
 
                     'network_data': {
-                        'eth0': {
-                            'interface': 'eth0',
+                        'eth0.100': {
+                            'interface': 'eth0.100',
                             'ipaddr': ['%s/24' % ips['public']],
                             'gateway': '172.16.0.1'},
                         'eth0.101': {
@@ -182,8 +182,10 @@ class TestHandlers(BaseIntegrationTest):
                             'ipaddr': ['127.0.0.1/8']},
                         'eth1': {
                             'interface': 'eth1',
-                            'ipaddr': [ips['admin']]}
-                    }}
+                            'ipaddr': [ips['admin']]},
+                        'eth0': {
+                            'interface': 'eth0',
+                            'ipaddr': 'none'}}}
 
                 individual_atts.update(common_attrs)
                 individual_atts['glance']['image_cache_max_size'] = str(
@@ -211,16 +213,12 @@ class TestHandlers(BaseIntegrationTest):
         admin_net = self.env.network_manager.get_admin_network()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
-            udev_interfaces_mapping = ','.join([
-                '{0}_{1}'.format(i.mac, i.name) for i in n.interfaces])
-
             pnd = {
                 'profile': cluster_attrs['cobbler']['profile'],
                 'power_type': 'ssh',
                 'power_user': 'root',
                 'kernel_options': {
-                    'netcfg/choose_interface': 'eth1',
-                    'udevrules': udev_interfaces_mapping},
+                    'netcfg/choose_interface': 'eth1'},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
                 'name': TaskHelper.make_slave_name(n.id),
@@ -300,6 +298,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(len(args[1]), 2)
 
         self.datadiff(args[1][0], provision_msg)
+
         self.datadiff(args[1][1], deployment_msg)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
@@ -420,7 +419,7 @@ class TestHandlers(BaseIntegrationTest):
                 assigned_ips[node_id] = {}
                 assigned_ips[node_id]['management'] = '192.168.0.%d' % (i + 3)
                 assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
-                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 2)
+                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 3)
                 assigned_ips[node_id]['admin'] = admin_ip
 
                 nodes_list.append({
@@ -520,15 +519,15 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-storage"],
-                                "tags": [101, 0]},
+                                "tags": [103, 0]},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-ex"],
-                                "trunks": [0]},
+                                "tags": [101, 0]},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-mgmt"],
-                                "tags": [100, 0]}
+                                "tags": [102, 0]}
                         ]
                     }
                 }
@@ -643,7 +642,6 @@ class TestHandlers(BaseIntegrationTest):
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
         self.assertEquals(len(args), 2)
         self.assertEquals(len(args[1]), 2)
-
         self.datadiff(args[1][0], provision_msg)
         self.datadiff(args[1][1], deployment_msg)
 
@@ -701,155 +699,6 @@ class TestHandlers(BaseIntegrationTest):
             1][0][1][1]['args']['deployment_info']
         self.assertEquals(len(n_rpc_deploy), 1)
         self.assertEquals(n_rpc_deploy[0]['uid'], str(self.env.nodes[0].id))
-
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_deploy_multinode_neutron_gre_w_custom_public_ranges(self,
-                                                                 mocked_rpc):
-        self.env.create(
-            cluster_kwargs={'net_provider': 'neutron',
-                            'net_segment_type': 'gre'},
-            nodes_kwargs=[{"pending_addition": True},
-                          {"pending_addition": True},
-                          {"pending_addition": True},
-                          {"pending_addition": True},
-                          {"pending_addition": True}]
-        )
-
-        net_data = json.loads(
-            self.env.neutron_networks_get(self.env.clusters[0].id).body)
-        pub = filter(lambda ng: ng['name'] == 'public',
-                     net_data['networks'])[0]
-        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.12'],
-                                  ['172.16.0.20', '172.16.0.22']]})
-
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
-
-        self.env.launch_deployment()
-
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args), 2)
-        self.assertEquals(len(args[1]), 2)
-
-        n_rpc_deploy = args[1][1]['args']['deployment_info']
-        self.assertEquals(len(n_rpc_deploy), 5)
-        pub_ips = ['172.16.0.10', '172.16.0.11', '172.16.0.12',
-                   '172.16.0.20', '172.16.0.21']
-        for n in n_rpc_deploy:
-            for i, n_common_args in enumerate(n['nodes']):
-                self.assertEquals(n_common_args['public_address'], pub_ips[i])
-
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_deploy_ha_neutron_gre_w_custom_public_ranges(self, mocked_rpc):
-        self.env.create(
-            cluster_kwargs={'mode': 'ha_compact',
-                            'net_provider': 'neutron',
-                            'net_segment_type': 'gre'},
-            nodes_kwargs=[{"pending_addition": True},
-                          {"pending_addition": True},
-                          {"pending_addition": True},
-                          {"pending_addition": True},
-                          {"pending_addition": True}]
-        )
-
-        net_data = json.loads(
-            self.env.neutron_networks_get(self.env.clusters[0].id).body)
-        pub = filter(lambda ng: ng['name'] == 'public',
-                     net_data['networks'])[0]
-        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.12'],
-                                  ['172.16.0.20', '172.16.0.22']]})
-
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
-
-        self.env.launch_deployment()
-
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args), 2)
-        self.assertEquals(len(args[1]), 2)
-
-        n_rpc_deploy = args[1][1]['args']['deployment_info']
-        self.assertEquals(len(n_rpc_deploy), 5)
-        pub_ips = ['172.16.0.11', '172.16.0.12',
-                   '172.16.0.20', '172.16.0.21', '172.16.0.22']
-        for n in n_rpc_deploy:
-            self.assertEquals(n['public_vip'], '172.16.0.10')
-            for i, n_common_args in enumerate(n['nodes']):
-                self.assertEquals(n_common_args['public_address'], pub_ips[i])
-
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_deploy_neutron_gre_w_changed_public_cidr(self, mocked_rpc):
-        self.env.create(
-            cluster_kwargs={'net_provider': 'neutron',
-                            'net_segment_type': 'gre'},
-            nodes_kwargs=[{"pending_addition": True},
-                          {"pending_addition": True}]
-        )
-
-        net_data = json.loads(
-            self.env.neutron_networks_get(self.env.clusters[0].id).body)
-        pub = filter(lambda ng: ng['name'] == 'public',
-                     net_data['networks'])[0]
-        pub.update({'ip_ranges': [['172.16.10.10', '172.16.10.122']],
-                    'gateway': '172.16.10.1'})
-        virt_nets = net_data['neutron_parameters']['predefined_networks']
-        virt_nets['net04_ext']['L3']['floating'] = ['172.16.10.130',
-                                                    '172.16.10.254']
-
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
-
-        self.env.launch_deployment()
-
-        args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args), 2)
-        self.assertEquals(len(args[1]), 2)
-
-        n_rpc_deploy = args[1][1]['args']['deployment_info']
-        self.assertEquals(len(n_rpc_deploy), 2)
-        pub_ips = ['172.16.10.10', '172.16.10.11']
-        for n in n_rpc_deploy:
-            for i, n_common_args in enumerate(n['nodes']):
-                self.assertEquals(n_common_args['public_address'], pub_ips[i])
-
-    @fake_tasks(fake_rpc=False, mock_rpc=False)
-    @patch('nailgun.rpc.cast')
-    def test_deploy_neutron_error_not_enough_ip_addresses(self, mocked_rpc):
-        self.env.create(
-            cluster_kwargs={'net_provider': 'neutron',
-                            'net_segment_type': 'gre'},
-            nodes_kwargs=[{"pending_addition": True},
-                          {"pending_addition": True},
-                          {"pending_addition": True}]
-        )
-
-        net_data = json.loads(
-            self.env.neutron_networks_get(self.env.clusters[0].id).body)
-        pub = filter(lambda ng: ng['name'] == 'public',
-                     net_data['networks'])[0]
-        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.11']]})
-
-        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
-
-        task = self.env.launch_deployment()
-
-        self.assertEquals(task.status, 'error')
-        self.assertEquals(
-            task.message,
-            'Not enough IP addresses. Public network must have at least '
-            '3 IP addresses for the current environment.')
 
     def test_occurs_error_not_enough_ip_addresses(self):
         self.env.create(
@@ -1021,35 +870,55 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.env.nova_networks_get(cluster_id)
         nets = json.loads(resp.body)
         for net in nets["networks"]:
-            if net["name"] in ["management", ]:
+            if net["name"] in ["public", "floating"]:
                 net["vlan_start"] = None
 
         self.env.nova_networks_put(cluster_id, nets)
 
-        resp = self.app.get(reverse('NodeNICsHandler',
-                                    kwargs={'node_id': node_db.id}),
-                            headers=self.default_headers)
-        nics = json.loads(resp.body)
+        main_iface_db = node_db.admin_interface
 
-        for nic in nics:
-            for net in nic['assigned_networks']:
-                if net['name'] == 'fuelweb_admin':
-                    admin_nic = nic
-                else:
-                    other_nic = nic
-                    if net['name'] == 'management':
-                        mgmt = net
-        other_nic['assigned_networks'].remove(mgmt)
-        admin_nic['assigned_networks'].append(mgmt)
-
-        resp = self.app.put(reverse('NodeNICsHandler',
-                                    kwargs={'node_id': node_db.id}),
-                            json.dumps(nics),
-                            headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        assigned_net_names = [
+            n.name
+            for n in main_iface_db.assigned_networks_list
+        ]
+        self.assertIn("public", assigned_net_names)
+        self.assertIn("floating", assigned_net_names)
 
         supertask = self.env.launch_deployment()
         self.env.wait_error(supertask)
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={
+                'node_id': node_db.id
+            }),
+            headers=self.default_headers
+        )
+
+        ifaces = json.loads(resp.body)
+
+        wrong_nets = [nic for nic in ifaces[0]["assigned_networks"]
+                      if nic["name"] in ["public", "floating"]]
+
+        map(
+            ifaces[0]["assigned_networks"].remove,
+            wrong_nets
+        )
+
+        map(
+            ifaces[1]["assigned_networks"].append,
+            wrong_nets
+        )
+
+        resp = self.app.put(
+            reverse('NodeCollectionNICsHandler', kwargs={
+                'node_id': node_db.id
+            }),
+            json.dumps([{"interfaces": ifaces, "id": node_db.id}]),
+            headers=self.default_headers
+        )
+
+        supertask = self.env.launch_deployment()
+        self.env.wait_ready(supertask)
 
     def datadiff(self, node1, node2, path=None):
         if path is None:

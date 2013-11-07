@@ -347,7 +347,7 @@ class Environment(object):
             for interface in node.interfaces:
                 interface.allowed_networks = allowed_networks
 
-            node.interfaces[0].assigned_networks = allowed_networks
+            node.interfaces[0].assigned_networks_list = allowed_networks
 
         self.db.commit()
         # At least one interface should have

@@ -1,12 +1,12 @@
 <% var disabled = locked ? 'disabled' : '' %>
 <div>
-  <legend class="networks">Neutron L2 Configuration</legend>
+  <legend class="networks" data-i18n="cluster_page.network_tab.neutron.l2_configuration"></legend>
   <% var l2 = neutronParameters.get('L2') %>
   <div>
     <div class="network-attribute">
-      <div class="range-row-header mini"><div>Start</div><div>End</div></div>
+      <div class="range-row-header mini"><div data-i18n="cluster_page.network_tab.range_start"></div><div data-i18n="cluster_page.network_tab.range_end"></div></div>
       <% var range = neutronParameters.get('segmentation_type') == 'gre' ? l2.tunnel_id_ranges : l2.phys_nets.physnet2.vlan_range %>
-      <div class="networks-sub-title parameter-name"><%= neutronParameters.get('segmentation_type') == 'gre' ? 'Tunnel' : 'VLAN' %> ID range</div>
+      <div class="networks-sub-title parameter-name"><%= neutronParameters.get('segmentation_type') == 'gre' ? 'Tunnel' : 'VLAN' %> <span data-i18n="cluster_page.network_tab.neutron.id_range"></span></div>
       <div class="range-row clearfix">
         <label class="parameter-box clearfix">
           <div class="parameter-control"><input type="text" value="<%- range[0] %>" class="mini"  name="id_start" <%= disabled %> /></div>
@@ -19,7 +19,7 @@
     </div>
     <div class="network-attribute">
       <label class="parameter-box clearfix setting">
-        <div class="networks-sub-title parameter-name">Base MAC address</div>
+        <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.neutron.base_mac"></div>
         <div class="parameter-control"><input type="text" value="<%- l2.base_mac %>" name="base_mac" <%= disabled %> /></div>
         <div class="error"><span class="help-inline"></span></div>
       </label>
@@ -27,20 +27,20 @@
   </div>
 </div>
 <div>
-  <legend class="networks">Neutron L3 Configuration</legend>
+  <legend class="networks" data-i18n="cluster_page.network_tab.neutron.l3_configuration"></legend>
   <div>
-    <div class="range-row-header">External network</div>
+    <div class="range-row-header" data-i18n="cluster_page.network_tab.neutron.external_network"></div>
     <div class="network-attribute">
       <label class="parameter-box clearfix setting">
-        <div class="networks-sub-title parameter-name">CIDR</div>
+        <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.neutron.cidr"></div>
         <div class="parameter-control"><input type="text" value="<%- externalCidr %>" name="cidr-ext" disabled /></div>
         <div class="error"><span class="help-inline"></span></div>
       </label>
     </div>
     <div class="network-attribute">
-      <div class="range-row-header"><div>Start</div><div>End</div></div>
+      <div class="range-row-header"><div data-i18n="cluster_page.network_tab.range_start"></div><div data-i18n="cluster_page.network_tab.range_end"></div></div>
       <% var range = neutronParameters.get('predefined_networks').net04_ext.L3.floating %>
-      <div class="networks-sub-title parameter-name">Floating IP range</div>
+      <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.neutron.floaing_ip"></div>
       <div class="range-row clearfix">
         <label class="parameter-box clearfix">
           <div class="parameter-control"><input type="text" value="<%- range[0] %>" name="floating_start" <%= disabled %> /></div>
@@ -51,24 +51,24 @@
         <div class="error"><span class="help-inline"></span></div>
       </div>
     </div>
-    <div class="range-row-header">Internal network</div>
+    <div class="range-row-header" data-i18n="cluster_page.network_tab.neutron.internal_network"></div>
     <% var internalNetwork = neutronParameters.get('predefined_networks').net04.L3 %>
     <div class="network-attribute">
       <label class="parameter-box clearfix setting">
-        <div class="networks-sub-title parameter-name">CIDR</div>
+        <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.neutron.cidr"></div>
         <div class="parameter-control"><input type="text" value="<%- internalNetwork.cidr %>" name="cidr-int" <%= disabled %> /></div>
         <div class="error"><span class="help-inline"></span></div>
       </label>
     </div>
     <div class="network-attribute">
       <label class="parameter-box clearfix setting">
-        <div class="networks-sub-title parameter-name">Gateway</div>
+        <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.neutron.gateway"></div>
         <div class="parameter-control"><input type="text" value="<%- internalNetwork.gateway %>" name="gateway" <%= disabled %> /></div>
         <div class="error"><span class="help-inline"></span></div>
       </label>
     </div>
     <div class="network-attribute">
-      <div class="networks-sub-title parameter-name">Name servers</div>
+      <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.neutron.name_servers"></div>
       <div class="range-row clearfix">
         <label class="parameter-box clearfix">
           <div class="parameter-control"><input type="text" value="<%- internalNetwork.nameservers[0] %>" class="nameserver" name="nameserver-0" <%= disabled %> /></div>

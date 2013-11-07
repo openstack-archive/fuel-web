@@ -17,7 +17,6 @@
 import os
 import sys
 import web
-from web.httpserver import StaticMiddleware
 from web.httpserver import WSGIServer
 
 curdir = os.path.dirname(__file__)
@@ -56,7 +55,6 @@ def run_server(func, server_address=('0.0.0.0', 8080)):
     HTTPLoggerMiddleware instead
     """
     global server
-    func = StaticMiddleware(func)
     server = WSGIServer(server_address, func)
     print('http://%s:%d/' % server_address)
 

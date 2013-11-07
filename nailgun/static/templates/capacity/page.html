@@ -1,6 +1,6 @@
 <div class="row-fluid">
   <div class="span12">
-    <h3 class="page-title">Capacity Audit</h3>
+    <h3 class="page-title" data-i18n="capacity_page.title"></h3>
   </div>
 </div>
 
@@ -9,7 +9,7 @@
 
   <div class="row-fluid">
     <div class="span12">
-      <h3>License Usage Report</h3>
+      <h3 data-i18n="capacity_page.license_usage"></h3>
     </div>
   </div>
 
@@ -19,8 +19,8 @@
       <table class="table table-bordered table-striped releases-table">
         <thead>
           <tr>
-            <th class="name">Fuel version</th>
-            <th>Fuel UUID</th>
+            <th class="name" data-i18n="capacity_page.fuel_version"></th>
+            <th data-i18n="capacity_page.fuel_uuid"></th>
           </tr>
         </thead>
         <tbody>
@@ -40,8 +40,8 @@
       <table class="table table-bordered table-striped releases-table">
         <thead>
           <tr>
-            <th class="name">Environment Name</th>
-            <th>Node Count</th>
+            <th class="name" data-i18n="capacity_page.env_name"></th>
+            <th data-i18n="capacity_page.node_count"></th>
           </tr>
         </thead>
         <tbody>
@@ -63,8 +63,8 @@
       <table class="table table-bordered table-striped releases-table">
         <thead>
           <tr>
-            <th class="name">Total number of allocated nodes</th>
-            <th>Total number of unallocated nodes</th>
+            <th class="name" data-i18n="capacity_page.total_number_alloc_nodes"></th>
+            <th data-i18n="capacity_page.total_number_unalloc_nodes"></th>
           </tr>
         </thead>
         <tbody>
@@ -84,8 +84,8 @@
       <table class="table table-bordered table-striped releases-table">
         <thead>
           <tr>
-            <th class="name">Node role(s)</th>
-            <th>Number of nodes with this configuration</th>
+            <th class="name" data-i18n="capacity_page.node_role"></th>
+            <th data-i18n="capacity_page.nodes_with_config"></th>
           </tr>
         </thead>
         <tbody>
@@ -103,16 +103,16 @@
 
   <div class="row-fluid">
     <div class="span12">
-        <a href="/api/capacity/csv" class="btn btn-info"><i class="icon-install"></i> Download report</a>
+        <a href="/api/capacity/csv" class="btn btn-info"><i class="icon-install" data-i18n="capacity_page.download_report"></i></a>
     </div>
   </div>
 
-  
-  
+
+
 <% } else { %>
   <div class="row-fluid">
       <div class="span12" align="center">
-        <span class="icon-process animate-spin"></span> Loading...
+        <span class="icon-process animate-spin"></span><span data-i18n="capacity_page.loading"></span>
       </div>
   </div>
 <% } %>

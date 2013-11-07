@@ -53,7 +53,7 @@ function(commonViews, models, capacityPageTemplate) {
             this.scheduleUpdate();
         },
         render: function() {
-            this.$el.html(this.template());
+            this.$el.html(this.template()).i18n();
             return this;
         }
     });

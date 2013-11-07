@@ -1,5 +1,6 @@
 <% if (disabled && release) { %>
-  <div class="alert" style="margin-bottom: 10px">Additional services are not available in <%- release.get('name') %></div>
+  <div class="alert" style="margin-bottom: 10px">
+      <span data-i18n="dialog.create_cluster_wizard.additional_services_alert"></span> <%- release.get('name') %></div>
 <% } %>
 <form class="form-horizontal" style="margin:0" onsubmit="return false">
   <fieldset>

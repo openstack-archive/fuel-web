@@ -66,6 +66,29 @@
                     "bt_cancel_changes": "Cancel Changes",
                     "bt_save_settings": "Save Settings"
                 }
+            },
+            "dialog": {
+                "create_cluster_wizard": {
+                    "title": "Create a new OpenStack environment",
+                    "bt_cancel": "Cancel",
+                    "bt_prev": "Prev",
+                    "bt_next": "Next",
+                    "bt_create": "Create",
+                    "lbl-name": "Name",
+                    "lbl-release": "OpenStack Release",
+                    "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment.",
+                    "storage_cinder": "Cinder",
+                    "storage_cinder_help": "By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor.",
+                    "storage_glance": "Glance",
+                    "storage_glance_help": "By default, Glance image service uses Swift object storage in HA deployment mode, and local storage on the Controller node in simple multi-node mode. Ceph backend requires two or more Ceph-OSD nodes.",
+                    "ready_env_select_deploy": "Your environment is now ready for deployment! You can select",
+                    "ready_or_make_config_choice": "or make additional configuration choices in the Fuel",
+                    "ready_console": "console.",
+                    "ready_deploy": "Deploy Changes",
+                    "ready_env": "Environments",
+                    "additional_services_alert": "Additional services are not available in",
+                    "network_alert": "Neutron is not supported in"
+                }
             }
         }
     },

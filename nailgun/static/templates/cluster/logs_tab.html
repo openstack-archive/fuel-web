@@ -1,10 +1,10 @@
 <div class="wrapper">
-  <h3 class="span12" data-i18n="cluster_page.logs_tab.title">Logs</h3>
+  <h3 class="span12" data-i18n="cluster_page.logs_tab.title"></h3>
 
   <div class="row">
     <div class="filter-bar">
       <div class="filter-bar-item log-type-filter">
-        <div class="filter-bar-label" data-i18n="cluster_page.logs_tab.logs">Logs</div>
+        <div class="filter-bar-label" data-i18n="cluster_page.logs_tab.logs"></div>
         <select name="type" class="filter-bar-dropdown input-medium">
           <% _.each(types, function(type) { %>
             <option value="<%= type[0] %>" <%= chosenType == type[0] ? 'selected' : '' %>><%- type[1] %></option>
@@ -13,7 +13,7 @@
       </div>
 
       <div class="filter-bar-item log-node-filter" style="display:none">
-        <div class="filter-bar-label" data-i18n="cluster_page.logs_tab.node">Node</div>
+        <div class="filter-bar-label" data-i18n="cluster_page.logs_tab.node"></div>
         <select name="node" class="filter-bar-dropdown input-large">
           <% cluster.get('nodes').each(function(node) { %>
             <option value="<%= node.id %>" <%= node.id == chosenNodeId ? 'selected' : '' %>><%- node.get('name') || node.get('mac') %></option>
@@ -22,12 +22,12 @@
       </div>
 
       <div class="filter-bar-item log-source-filter">
-        <div class="filter-bar-label" data-i18n="cluster_page.logs_tab.source">Source</div>
+        <div class="filter-bar-label" data-i18n="cluster_page.logs_tab.source"></div>
         <select name="source" class="filter-bar-dropdown input-medium" disabled></select>
       </div>
 
       <div class="filter-bar-item log-level-filter">
-        <div class="filter-bar-label" data-i18n="cluster_page.logs_tab.level">Min. level</div>
+        <div class="filter-bar-label" data-i18n="cluster_page.logs_tab.min_level">Min. level</div>
         <select name="level" class="filter-bar-dropdown input-small" disabled></select>
       </div>
 
@@ -37,11 +37,11 @@
     </div>
   </div>
 
-  <div class="logs-fetch-error alert alert-error hide" data-i18n="cluster_page.logs_tab.alert_log">
+  <div class="logs-fetch-error alert alert-error hide" data-i18n="cluster_page.logs_tab.log_alert">
     Unable to fetch logs.
   </div>
 
-  <div class="node-sources-error alert alert-error hide" data-i18n="cluster_page.logs_tab.alert_source">
+  <div class="node-sources-error alert alert-error hide" data-i18n="cluster_page.logs_tab.source_alert">
     Unable to fetch log sources.
   </div>
 
@@ -49,25 +49,23 @@
     <thead>
       <tr>
         <th nowrap data-i18n="cluster_page.logs_tab.date">Date</th>
-        <th nowrap data-i18n="cluster_page.logs_tab.level">Level</th>
-        <th data-i18n="cluster_page.logs_tab.message">Message</th>
+        <th nowrap data-i18n="cluster_page.logs_tab.min_level"></th>
+        <th data-i18n="cluster_page.logs_tab.message"></th>
       </tr>
     </thead>
     <tbody class="entries-skipped-msg">
       <tr>
         <td colspan="3">
           <span data-i18n="cluster_page.logs_tab.bottom_text">
-            Some previous lines skipped.
-            Show more lines:
-          </span>
-          <span class="show-all-entries" data-i18n="cluster_page.logs_tab.all">All</span>
+          </span>:
+          <span class="show-all-entries" data-i18n="cluster_page.logs_tab.all_logs"></span>
         </td>
       </tr>
     </tbody>
     <tbody class="log-entries"></tbody>
     <tbody class="no-logs-msg">
       <tr>
-        <td colspan="3" data-i18n="cluster_page.logs_tab.no_log_text">No log entries match current filters.</td>
+        <td colspan="3" data-i18n="cluster_page.logs_tab.no_log_text"></td>
       </tr>
     </tbody>
   </table>

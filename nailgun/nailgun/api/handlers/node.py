@@ -195,7 +195,7 @@ class NodeCollectionHandler(JSONHandler):
         nodes = db().query(Node).options(
             joinedload('cluster'),
             joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks'),
+            joinedload('interfaces.assigned_networks_list'),
             joinedload('role_list'),
             joinedload('pending_role_list'))
         if user_data.cluster_id == '':
@@ -452,7 +452,7 @@ class NodeCollectionHandler(JSONHandler):
         nodes = db().query(Node).options(
             joinedload('cluster'),
             joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks')).\
+            joinedload('interfaces.assigned_networks_list')).\
             filter(Node.id.in_([n.id for n in nodes_updated])).all()
         return self.render(nodes)
 
@@ -462,16 +462,13 @@ class NodeNICsHandler(JSONHandler):
     """
 
     fields = (
-        'id', (
-            'interfaces',
-            'id',
-            'mac',
-            'name',
-            'current_speed',
-            'max_speed',
-            ('assigned_networks', 'id', 'name'),
-            ('allowed_networks', 'id', 'name')
-        )
+        'id',
+        'mac',
+        'name',
+        'current_speed',
+        'max_speed',
+        'assigned_networks',
+        'allowed_networks'
     )
 
     model = NodeNICInterface
@@ -484,7 +481,7 @@ class NodeNICsHandler(JSONHandler):
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(Node, node_id)
-        return self.render(node)['interfaces']
+        return map(self.render, node.interfaces)
 
     @content_json
     def PUT(self, node_id):
@@ -499,7 +496,7 @@ class NodeNICsHandler(JSONHandler):
         network_manager = NetworkManager()
         network_manager._update_attrs(node_data)
         node = self.get_object_or_404(Node, node_id)
-        return self.render(node)['interfaces']
+        return map(self.render, node.interfaces)
 
 
 class NodeCollectionNICsHandler(JSONHandler):
@@ -526,7 +523,12 @@ class NodeCollectionNICsHandler(JSONHandler):
         updated_nodes = db().query(Node).filter(
             Node.id.in_(updated_nodes_ids)
         ).all()
-        return map(self.render, updated_nodes)
+        return [
+            {
+                "id": n.id,
+                "interfaces": map(self.render, n.interfaces)
+            } for n in updated_nodes
+        ]
 
 
 class NodeNICsDefaultHandler(JSONHandler):

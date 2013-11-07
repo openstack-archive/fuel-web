@@ -106,8 +106,8 @@ class Cluster(Base):
     tasks = relationship("Task", backref="cluster", cascade="delete")
     attributes = relationship("Attributes", uselist=False,
                               backref="cluster", cascade="delete")
-    changes = relationship("ClusterChanges", backref="cluster",
-                           cascade="delete")
+    changes_list = relationship("ClusterChanges", backref="cluster",
+                                cascade="delete")
     # We must keep all notifications even if cluster is removed.
     # It is because we want user to be able to see
     # the notification history so that is why we don't use
@@ -142,6 +142,17 @@ class Cluster(Base):
     neutron_config = relationship("NeutronConfig",
                                   backref=backref("cluster"),
                                   uselist=False)
+
+    @property
+    def changes(self):
+        return [
+            {"name": i.name, "node_id": i.node_id}
+            for i in self.changes_list
+        ]
+
+    @changes.setter
+    def changes(self, value):
+        self.changes_list = value
 
     @property
     def is_ha_mode(self):

@@ -62,7 +62,7 @@ class TestClusterChanges(BaseIntegrationTest):
         )
         response = json.loads(resp.body)
         self.assertIn(
-            ["disks", node_db.id],
+            {"name": "disks", "node_id": node_db.id},
             response["changes"]
         )
 

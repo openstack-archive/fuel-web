@@ -771,7 +771,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         iface_attrs['vlan_splinters'] = 'auto'
         trunks = [0]
 
-        for ng in iface.assigned_networks:
+        for ng in iface.assigned_networks_list:
             if ng.name == 'private':
                 vlan_range = cluster.neutron_config.L2.get(
                     "phys_nets", {}).get("physnet2", {}).get("vlan_range", ())

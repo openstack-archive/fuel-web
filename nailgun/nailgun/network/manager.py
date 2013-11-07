@@ -519,14 +519,14 @@ class NetworkManager(object):
     def clear_all_allowed_networks(self, node_id):
         node_db = db().query(Node).get(node_id)
         for nic in node_db.interfaces:
-            while nic.allowed_networks:
-                nic.allowed_networks.pop()
+            while nic.allowed_networks_list:
+                nic.allowed_networks_list.pop()
         db().commit()
 
     def clear_assigned_networks(self, node):
         for nic in node.interfaces:
-            while nic.assigned_networks:
-                nic.assigned_networks.pop()
+            while nic.assigned_networks_list:
+                nic.assigned_networks_list.pop()
         db().commit()
 
     def get_cluster_networkgroups_by_node(self, node):
@@ -549,12 +549,12 @@ class NetworkManager(object):
         for nic in node.interfaces:
 
             if nic == node.admin_interface:
-                nic.allowed_networks.append(
+                nic.allowed_networks_list.append(
                     self.get_admin_network_group()
                 )
 
             for ng in self.get_cluster_networkgroups_by_node(node):
-                nic.allowed_networks.append(ng)
+                nic.allowed_networks_list.append(ng)
 
         db().commit()
 
@@ -568,9 +568,9 @@ class NetworkManager(object):
         self.clear_assigned_networks(node)
 
         for ng in self.get_cluster_networkgroups_by_node(node):
-            node.admin_interface.assigned_networks.append(ng)
+            node.admin_interface.assigned_networks_list.append(ng)
 
-        node.admin_interface.assigned_networks.append(
+        node.admin_interface.assigned_networks_list.append(
             self.get_admin_network_group()
         )
 
@@ -588,15 +588,15 @@ class NetworkManager(object):
             ng_prv = [ng for ng in self.get_cluster_networkgroups_by_node(node)
                       if ng.name == 'private']
             if ng_prv:
-                ifaces[0].assigned_networks.append(ng_prv[0])
+                ifaces[0].assigned_networks_list.append(ng_prv[0])
                 if len(ifaces) > 1:
                     ifaces.pop(0)
         # assign all remaining networks
-        [ifaces[0].assigned_networks.append(ng)
+        [ifaces[0].assigned_networks_list.append(ng)
          for ng in self.get_cluster_networkgroups_by_node(node)
          if ng.name != 'private']
 
-        node.admin_interface.assigned_networks.append(
+        node.admin_interface.assigned_networks_list.append(
             self.get_admin_network_group()
         )
 
@@ -966,7 +966,7 @@ class NetworkManager(object):
         if not isinstance(node, Node):
             node = db().query(Node).get(node)
         for interface in node.interfaces:
-            for network in interface.assigned_networks:
+            for network in interface.assigned_networks_list:
                 if network.name == network_name:
                     return interface
 
@@ -1068,7 +1068,7 @@ class NetworkManager(object):
 
     def get_node_interface_by_netname(self, node_id, netname):
         return db().query(NodeNICInterface).join(
-            (NetworkGroup, NodeNICInterface.assigned_networks)
+            (NetworkGroup, NodeNICInterface.assigned_networks_list)
         ).filter(
             NetworkGroup.name == netname
         ).filter(

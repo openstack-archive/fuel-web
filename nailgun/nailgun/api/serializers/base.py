@@ -32,44 +32,19 @@ class BasicSerializer(object):
         if not use_fields:
             raise ValueError("No fields for serialize")
         for field in use_fields:
-            if isinstance(field, (tuple,)):
-                if field[1] == '*':
-                    subfields = None
-                else:
-                    subfields = field[1:]
-
-                value = getattr(instance, field[0])
-                rel = getattr(
-                    instance.__class__, field[0]).impl.__class__.__name__
-                if value is None:
-                    pass
-                elif rel == 'ScalarObjectAttributeImpl':
-                    handler = cls.handlers[value.__class__.__name__]
-                    data_dict[field[0]] = handler.render(
-                        value, fields=subfields
-                    )
-                elif rel == 'CollectionAttributeImpl':
-                    if not value:
-                        data_dict[field[0]] = []
-                    else:
-                        handler = cls.handlers[value[0].__class__.__name__]
-                        data_dict[field[0]] = [
-                            handler.render(v, fields=subfields) for v in value
-                        ]
+            value = getattr(instance, field)
+            if value is None:
+                data_dict[field] = value
             else:
-                value = getattr(instance, field)
-                if value is None:
-                    data_dict[field] = value
-                else:
-                    f = getattr(instance.__class__, field)
-                    if hasattr(f, "impl"):
-                        rel = f.impl.__class__.__name__
-                        if rel == 'ScalarObjectAttributeImpl':
-                            data_dict[field] = value.id
-                        elif rel == 'CollectionAttributeImpl':
-                            data_dict[field] = [v.id for v in value]
-                        else:
-                            data_dict[field] = value
+                f = getattr(instance.__class__, field)
+                if hasattr(f, "impl"):
+                    rel = f.impl.__class__.__name__
+                    if rel == 'ScalarObjectAttributeImpl':
+                        data_dict[field] = value.id
+                    elif rel == 'CollectionAttributeImpl':
+                        data_dict[field] = [v.id for v in value]
                     else:
                         data_dict[field] = value
+                else:
+                    data_dict[field] = value
         return data_dict

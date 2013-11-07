@@ -880,7 +880,7 @@ class TestHandlers(BaseIntegrationTest):
 
         assigned_net_names = [
             n.name
-            for n in main_iface_db.assigned_networks
+            for n in main_iface_db.assigned_networks_list
         ]
         self.assertIn("public", assigned_net_names)
         self.assertIn("floating", assigned_net_names)

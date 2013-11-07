@@ -30,15 +30,15 @@
       </div>
 
       <div class="verification-text-placeholder">
-          <li><strong data-i18n="cluster_page.network_tab.step_0">Network Verification is done in 4 steps:</strong></li>
-          <li data-i18n="cluster_page.network_tab.step_1">1. Every node starts listening for test frames</li>
-          <li data-i18n="cluster_page.network_tab.step_2">2. Every node sends out 802.1Q tagged UDP frames</li>
-          <li data-i18n="cluster_page.network_tab.step_3">3. Nodes listeners register test frames from other nodes</li>
-          <li>4. Send DHCP discover messages on all available ports.</li>
+          <li><strong data-i18n="cluster_page.network_tab.verify_networks.step_0"></strong></li>
+          <li data-i18n="cluster_page.network_tab.verify_networks.step_1"></li>
+          <li data-i18n="cluster_page.network_tab.verify_networks.step_2"></li>
+          <li data-i18n="cluster_page.network_tab.verify_networks.step_3"></li>
+          <li data-i18n="cluster_page.network_tab.verify_networks.step_4"></li>
       </div>
 
       <% if (cluster.task('verify_networks', 'ready')) { %>
-        <div class="alert alert-success enable-selection" data-i18n="cluster_page.network_tab.alert_success">Verification succeeded. Your network is configured correctly.</div>
+        <div class="alert alert-success enable-selection" data-i18n="cluster_page.network_tab.verify_networks.alert_success"></div>
       <% } else if (task && task.get('status') == 'error') { %>
         <div class="alert alert-error enable-selection">
           Verification failed.<br/>

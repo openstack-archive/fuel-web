@@ -99,7 +99,7 @@ class NetworkCheck(object):
                 # network name is changed for Admin on UI
                 nets = [[ng['name'] for ng in self.networks
                          if n.id == ng['id']][0]
-                        for n in iface.assigned_networks]
+                        for n in iface.assigned_networks_list]
                 crossed_nets = set(nets) & untagged_nets
                 if len(crossed_nets) > 1 and crossed_nets != pub_flt:
                     err_net_names = ['"{0}"'.format(i)
@@ -407,7 +407,7 @@ class NetworkCheck(object):
         for iface in admin_interfaces:
             nets = dict(
                 (n.id, n.name)
-                for n in iface.assigned_networks)
+                for n in iface.assigned_networks_list)
 
             err_nets = set(nets.keys()) & all_roles
             if err_nets:
@@ -436,7 +436,7 @@ class NetworkCheck(object):
             # there should be shorter method to do this !
             for node in self.cluster.nodes:
                 for iface in node.interfaces:
-                    for anet in iface.assigned_networks:
+                    for anet in iface.assigned_networks_list:
                         if anet.name == 'private':
                             private_interfaces.append(iface)
             found_intersection = []
@@ -446,7 +446,7 @@ class NetworkCheck(object):
             for iface in private_interfaces:
                 nets = dict(
                     (n.id, n.name)
-                    for n in iface.assigned_networks)
+                    for n in iface.assigned_networks_list)
 
                 err_nets = set(nets.keys()) & all_roles
                 if err_nets:
@@ -485,7 +485,7 @@ class NetworkCheck(object):
             for iface in interfaces:
                 nets = dict(
                     (n.id, n.name)
-                    for n in iface.assigned_networks)
+                    for n in iface.assigned_networks_list)
 
                 crossed_nets = set(nets.keys()) & untagged_nets
                 if len(crossed_nets) > 1:

@@ -63,29 +63,11 @@ def build_json_response(data):
     return data
 
 
-handlers = {}
-
-
-class HandlerRegistrator(type):
-    def __init__(cls, name, bases, dct):
-        super(HandlerRegistrator, cls).__init__(name, bases, dct)
-        if hasattr(cls, 'model'):
-            key = cls.model.__name__
-            if key in handlers:
-                logger.warning("Handler for %s already registered" % key)
-                return
-            handlers[key] = cls
-
-
 class JSONHandler(object):
-    __metaclass__ = HandlerRegistrator
     validator = BasicValidator
     serializer = BasicSerializer
 
     fields = []
-
-    def __init__(self):
-        self.serializer.load_handlers(handlers)
 
     @classmethod
     def render(cls, instance, fields=None):

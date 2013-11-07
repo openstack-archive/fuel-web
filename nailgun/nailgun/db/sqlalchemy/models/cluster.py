@@ -156,6 +156,17 @@ class Cluster(Base):
         self.changes_list = value
 
     @property
+    def changes(self):
+        return [
+            {"name": i.name, "node_id": i.node_id}
+            for i in self.changes_list
+        ]
+
+    @changes.setter
+    def changes(self, value):
+        self.changes_list = value
+
+    @property
     def is_ha_mode(self):
         return self.mode in ('ha_full', 'ha_compact')
 

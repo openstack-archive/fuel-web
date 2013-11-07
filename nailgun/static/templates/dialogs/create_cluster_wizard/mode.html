@@ -2,7 +2,7 @@
   <fieldset>
     <div class="row-fluid control-group mode-control-group">
       <div class="span5">
-         <% var modes = {'multinode': 'Multi-node', 'ha_compact': 'Multi-node with HA'} %>
+         <% var modes = {'multinode': $.t("dialog.create_cluster_wizard.mode.multinode_label"), 'ha_compact': $.t("dialog.create_cluster_wizard.mode.multinode_ha_label")} %>
         <% _.each(availableModes, function(mode) { %>
           <label class="parameter-box clearfix setting" >
             <div class="parameter-control">

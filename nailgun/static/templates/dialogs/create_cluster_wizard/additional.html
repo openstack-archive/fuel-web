@@ -1,5 +1,7 @@
 <% if (disabled && release) { %>
-  <div class="alert" style="margin-bottom: 10px">Additional services are not available in <%- release.get('name') %></div>
+  <div class="alert" style="margin-bottom: 10px">
+      <%- $.t("dialog.create_cluster_wizard.additional.alert", { releaseName: release.get('name')} ) %>
+  </div>
 <% } %>
 <form class="form-horizontal" style="margin:0" onsubmit="return false">
   <fieldset>
@@ -7,12 +9,12 @@
       <% var services = [
         {
             name: 'savanna',
-            label: 'Install Savanna',
-            description: 'Savanna enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.'
+            label: $.t("dialog.create_cluster_wizard.additional.install_savanna"),
+            description:  $.t("dialog.create_cluster_wizard.additional.install_savanna_description"),
         },{
             name: 'murano',
-            label: 'Install Murano',
-            description: 'Murano enables windows based datacenter services like Active Directory, IIS, Microsoft SQL and ASP.NET to be deployed on OpenStack.'
+            label: $.t("dialog.create_cluster_wizard.additional.install_murano"),
+            description: $.t("dialog.create_cluster_wizard.additional.install_murano_description")
         }
       ] %>
       <% _.each(services, function(service) { %>

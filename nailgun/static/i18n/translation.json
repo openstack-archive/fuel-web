@@ -88,6 +88,64 @@
                 "nodes_with_config": "Number of nodes with this configuration",
                 "download_report": "Download report",
                 "loading": "Loading..."
+            },
+            "dialog": {
+                "create_cluster_wizard": {
+                    "title": "Create a new OpenStack environment",
+                    "cancel": "Cancel",
+                    "prev": "Prev",
+                    "next": "Next",
+                    "create": "Create",
+                    "name_release": {
+                        "title": "Name and Release",
+                        "name": "Name",
+                        "release_label": "OpenStack Release",
+                        "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment."
+                    },
+                    "mode": {
+                        "title": "Deployment Mode",
+                        "multinode_label": "Multi-node",
+                        "multinode_ha_label": "Multi-node with HA"
+                    },
+                    "compute": {
+                        "title": "Compute",
+                        "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
+                        "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts"
+                    },
+                    "network": {
+                        "title": "Network",
+                        "alert": "Neutron is not supported in __releaseName__",
+                        "nova_network": "Nova-Network",
+                        "neutr_gre": "Neutron with GRE segmentation",
+                        "neutr_vlan": "Neutron with VLAN segmentation"
+                    },
+                    "storage": {
+                        "title": "Storage Backends",
+                        "alert": "Ceph is not supported in __releaseName__",
+                        "default": "Default",
+                        "ceph": "Ceph",
+                        "cinder": "Cinder",
+                        "cinder_help": "By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor.",
+                        "glance": "Glance",
+                        "glance_help": "By default, Glance image service uses Swift object storage in HA deployment mode, and local storage on the Controller node in simple multi-node mode. Ceph backend requires two or more Ceph-OSD nodes."
+                    },
+                    "additional": {
+                        "title": "Additional Services",
+                        "alert": "Additional services are not available in __releaseName__",
+                        "install_savanna": "Install Savanna",
+                        "install_savanna_description": "Savanna enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
+                        "install_murano": "Install Murano",
+                        "install_murano_description": "Murano enables windows based datacenter services like Active Directory, IIS, Microsoft SQL and ASP.NET to be deployed on OpenStack."
+                    },
+                    "ready": {
+                        "title": "Finish",
+                        "env_select_deploy": "Your environment is now ready for deployment! You can select",
+                        "or_make_config_choice": "or make additional configuration choices in the Fuel",
+                        "console": "console.",
+                        "deploy": "Deploy Changes",
+                        "env": "Environments"
+                    }
+                }
             }
         }
     },

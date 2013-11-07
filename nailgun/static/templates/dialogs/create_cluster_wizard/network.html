@@ -1,14 +1,16 @@
 <% if (disabled && release) { %>
-  <div class="alert" style="margin:0">Neutron is not supported in <%- release.get('name') %></div>
+  <div class="alert" style="margin:0">
+      <%- $.t("dialog.create_cluster_wizard.network.alert", { releaseName: release.get('name')} ) %>
+  </div>
 <% } %>
 <form class="form-horizontal" onsubmit="return false">
   <fieldset>
     <div class="control-group">
       <% var managers = ['nova-network', 'neutron-gre', 'neutron-vlan'] %>
       <% var descriptions = {
-        'nova-network': 'Nova-Network',
-        'neutron-gre': 'Neutron with GRE segmentation',
-        'neutron-vlan': 'Neutron with VLAN segmentation'
+        'nova-network': $.t("dialog.create_cluster_wizard.network.nova_network"),
+        'neutron-gre': $.t("dialog.create_cluster_wizard.network.neutr_gre"),
+        'neutron-vlan': $.t("dialog.create_cluster_wizard.network.neutr_vlan")
       } %>
       <% _.each(managers, function(manager) { %>
         <label class="parameter-box clearfix">

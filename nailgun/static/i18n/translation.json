@@ -66,6 +66,20 @@
                     "bt_cancel_changes": "Cancel Changes",
                     "bt_save_settings": "Save Settings"
                 }
+            },
+            "capacity_page": {
+                "title": "Capacity Audit",
+                "license_usage": "License Usage Report",
+                "fuel_version": "Fuel version",
+                "fuel_uuid": "Fuel UUID",
+                "env_name": "Environment Name",
+                "node_count": "Node Count",
+                "total_number_alloc_nodes": "Total number of allocated node",
+                "total_number_unalloc_nodes": "Total number of unallocated nodes",
+                "node_role": "Node role(s)",
+                "nodes_with_config": "Number of nodes with this configuration",
+                "download_report": "Download report",
+                "loading": "Loading..."
             }
         }
     },

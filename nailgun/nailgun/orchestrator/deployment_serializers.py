@@ -53,7 +53,23 @@ class Priority(object):
         return self.priority
 
 
-class DeploymentMultiSerializer(object):
+def dict_merge(custom, common):
+    """Merge with one level deep"""
+    for key, value in common.iteritems():
+        if key in custom and isinstance(custom[key], dict):
+            custom[key].update(value)
+        elif key not in custom:
+            custom[key] = value
+
+
+def get_nodes_not_for_deletion(cluster):
+    """All clusters nodes except nodes for deletion."""
+    return db().query(Node).filter(
+        and_(Node.cluster == cluster,
+             False == Node.pending_deletion)).order_by(Node.id)
+
+
+class DeploymentMultinodeSerializer(object):
 
     @classmethod
     def serialize(cls, cluster):
@@ -65,23 +81,8 @@ class DeploymentMultiSerializer(object):
 
         cls.set_deployment_priorities(nodes)
 
-        [cls.deep_merge(node, common_attrs) for node in nodes]
+        [dict_merge(node, common_attrs) for node in nodes]
         return nodes
-
-    @staticmethod
-    def deep_merge(custom, common):
-        for key, value in common.iteritems():
-            if key in custom and isinstance(custom[key], dict):
-                custom[key].update(value)
-            elif key not in custom:
-                custom[key] = value
-
-    @staticmethod
-    def get_all_nodes(cluster):
-        """All clusters nodes except nodes for deletion."""
-        return db().query(Node).filter(
-            and_(Node.cluster == cluster,
-                 False == Node.pending_deletion)).order_by(Node.id)
 
     @classmethod
     def get_nodes_to_deployment(cls, cluster):
@@ -95,13 +96,14 @@ class DeploymentMultiSerializer(object):
         attrs = cluster.attributes.merged_attrs_values()
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
-        attrs['nodes'] = cls.node_list(cls.get_all_nodes(cluster))
+        attrs['nodes'] = cls.node_list(get_nodes_not_for_deletion(cluster))
 
         for node in attrs['nodes']:
             if node['role'] in 'cinder':
                 attrs['use_cinder'] = True
 
-        NetworkDeploymentSerializer.update_common_attrs(cluster, attrs)
+        cls.get_net_provider_serializer(cluster).update_common_attrs(cluster,
+                                                                     attrs)
 
         return attrs
 
@@ -176,12 +178,20 @@ class DeploymentMultiSerializer(object):
             'online': node.online
         }
 
-        node_attrs.update(NetworkDeploymentSerializer.node_attrs(node))
+        node_attrs.update(
+            cls.get_net_provider_serializer(node.cluster).get_node_attrs(node))
 
         return node_attrs
 
+    @classmethod
+    def get_net_provider_serializer(cls, cluster):
+        if cluster.net_provider == 'nova_network':
+            return NovaNetworkDeploymentSerializer
+        else:
+            return NeutronNetworkDeploymentSerializer
 
-class DeploymentHASerializer(DeploymentMultiSerializer):
+
+class DeploymentHASerializer(DeploymentMultinodeSerializer):
     """Serializer for ha mode."""
 
     @classmethod
@@ -352,13 +362,11 @@ class NetworkDeploymentSerializer(object):
         """Cluster network attributes."""
         attrs.update({'master_ip': settings.MASTER_IP})
         attrs.update(cls.network_ranges(cluster))
-        DeploymentMultiSerializer.deep_merge(
-            attrs,
-            cls.get_net_provider_serializer(cluster).network_cluster_attrs(
-                cluster))
+        dict_merge(attrs,
+                   cls.network_provider_cluster_attrs(cluster))
 
         # Addresses
-        for node in DeploymentMultiSerializer.get_all_nodes(cluster):
+        for node in get_nodes_not_for_deletion(cluster):
             netw_data = node.network_data
             addresses = {
                 'internal_address': cls.get_addr(netw_data,
@@ -377,12 +385,17 @@ class NetworkDeploymentSerializer(object):
              if n['uid'] == str(node.id)]
 
     @classmethod
-    def node_attrs(cls, node):
+    def get_node_attrs(cls, node):
         """Node network attributes."""
+        return cls.network_provider_node_attrs(node.cluster, node)
 
-        cluster = node.cluster
-        return cls.get_net_provider_serializer(cluster).\
-            network_node_attrs(cluster, node)
+    @classmethod
+    def network_provider_cluster_attrs(cls, cluster):
+        raise NotImplemented
+
+    @classmethod
+    def network_provider_node_attrs(cls, cluster, node):
+        raise NotImplemented
 
     @classmethod
     def get_net_provider_serializer(cls, cluster):
@@ -439,7 +452,7 @@ class NetworkDeploymentSerializer(object):
     @staticmethod
     def get_admin_ip(node):
         """Getting admin ip and assign prefix from admin network."""
-        network_manager = NetworkManager()
+        network_manager = node.cluster.network_manager()
         admin_ip = network_manager.get_admin_ips_for_interfaces(
             node)[node.admin_interface.name]
         admin_ip = IPNetwork(admin_ip)
@@ -451,15 +464,15 @@ class NetworkDeploymentSerializer(object):
         return str(admin_ip)
 
 
-class NovaNetworkDeploymentSerializer(object):
+class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
-    def network_cluster_attrs(cls, cluster):
+    def network_provider_cluster_attrs(cls, cluster):
         return {'novanetwork_parameters': cls.novanetwork_attrs(cluster),
                 'dns_nameservers': cluster.dns_nameservers}
 
     @classmethod
-    def network_node_attrs(cls, cluster, node):
+    def network_provider_node_attrs(cls, cluster, node):
         network_data = node.network_data
         interfaces = cls.configure_interfaces(node)
         cls.__add_hw_interfaces(interfaces, node.meta['interfaces'])
@@ -529,7 +542,7 @@ class NovaNetworkDeploymentSerializer(object):
 
             # Add gateway for public
             if network_name == 'admin':
-                admin_ip_addr = NetworkDeploymentSerializer.get_admin_ip(node)
+                admin_ip_addr = cls.get_admin_ip(node)
                 interface['ipaddr'].append(admin_ip_addr)
             elif network_name == 'public' and network.get('gateway'):
                 interface['gateway'] = network['gateway']
@@ -575,19 +588,18 @@ class NovaNetworkDeploymentSerializer(object):
         return interfaces
 
 
-class NeutronNetworkDeploymentSerializer(object):
+class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
-    def network_cluster_attrs(cls, cluster):
+    def network_provider_cluster_attrs(cls, cluster):
         """Cluster attributes."""
         attrs = {'quantum': True,
                  'quantum_settings': cls.neutron_attrs(cluster)}
 
         if cluster.mode == 'multinode':
-            nm = NeutronManager()
             for node in cluster.nodes:
                 if cls._node_has_role_by_name(node, 'controller'):
-                    mgmt_cidr = nm.get_node_network_by_netname(
+                    mgmt_cidr = NeutronManager().get_node_network_by_netname(
                         node.id,
                         'management'
                     )['ip']
@@ -597,7 +609,7 @@ class NeutronNetworkDeploymentSerializer(object):
         return attrs
 
     @classmethod
-    def network_node_attrs(cls, cluster, node):
+    def network_provider_node_attrs(cls, cluster, node):
         """Serialize node, then it will be
         merged with common attributes
         """
@@ -731,7 +743,7 @@ class NeutronNetworkDeploymentSerializer(object):
                 'name': iface.name
             })
 
-        nm = NetworkManager()
+        nm = NeutronManager()
         # Populate IP address information to endpoints.
         netgroup_mapping = [
             ('storage', 'br-storage'),
@@ -794,7 +806,7 @@ class NeutronNetworkDeploymentSerializer(object):
 
         # Fill up all about fuelweb-admin network.
         attrs['endpoints'][node.admin_interface.name] = {
-            "IP": [NetworkDeploymentSerializer.get_admin_ip(node)]
+            "IP": [cls.get_admin_ip(node)]
         }
         attrs['roles']['fw-admin'] = node.admin_interface.name
 
@@ -807,7 +819,7 @@ def serialize(cluster):
     cluster.prepare_for_deployment()
 
     if cluster.mode == 'multinode':
-        serializer = DeploymentMultiSerializer
+        serializer = DeploymentMultinodeSerializer
     elif cluster.is_ha_mode:
         # Same serializer for all ha
         serializer = DeploymentHASerializer

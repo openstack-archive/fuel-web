@@ -130,15 +130,15 @@ class NeutronManager(NetworkManager):
             ng_prv = [ng for ng in cls.get_cluster_networkgroups_by_node(node)
                       if ng.name == 'private']
             if ng_prv:
-                ifaces[0].assigned_networks.append(ng_prv[0])
+                ifaces[0].assigned_networks_list.append(ng_prv[0])
                 if len(ifaces) > 1:
                     ifaces.pop(0)
         # assign all remaining networks
-        map(ifaces[0].assigned_networks.append,
+        map(ifaces[0].assigned_networks_list.append,
             filter(lambda ng: ng.name != 'private',
                    cls.get_cluster_networkgroups_by_node(node)))
 
-        node.admin_interface.assigned_networks.append(
+        node.admin_interface.assigned_networks_list.append(
             cls.get_admin_network_group()
         )
 
@@ -164,13 +164,13 @@ class NeutronManager(NetworkManager):
         for nic in node.interfaces:
 
             if nic == node.admin_interface:
-                nic.allowed_networks.append(
+                nic.allowed_networks_list.append(
                     cls.get_admin_network_group()
                 )
                 continue
 
             for ng in cls.get_cluster_networkgroups_by_node(node):
-                nic.allowed_networks.append(ng)
+                nic.allowed_networks_list.append(ng)
 
         db().commit()
 

@@ -164,13 +164,13 @@ class NeutronManager(NetworkManager):
         for nic in node.interfaces:
 
             if nic == node.admin_interface:
-                nic.allowed_networks.append(
+                nic.allowed_networks_list.append(
                     cls.get_admin_network_group()
                 )
                 continue
 
             for ng in cls.get_cluster_networkgroups_by_node(node):
-                nic.allowed_networks.append(ng)
+                nic.allowed_networks_list.append(ng)
 
         db().commit()
 

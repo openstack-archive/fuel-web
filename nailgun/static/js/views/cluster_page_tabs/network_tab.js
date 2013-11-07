@@ -283,8 +283,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             'change select': 'changeNetwork',
             'change .use-vlan-tagging': 'changeNetwork',
             'click .range-name': 'setIPRangeFocus',
-            'click .ip-ranges-add:not(:disabled)': 'addIPRange',
-            'click .ip-ranges-delete:not(:disabled)': 'deleteIPRange'
+            'click .ip-ranges-add:not([disabled])': 'addIPRange',
+            'click .ip-ranges-delete:not([disabled])': 'deleteIPRange'
         },
         setupVlanEnd: function() {
             var vlanEnd = '';

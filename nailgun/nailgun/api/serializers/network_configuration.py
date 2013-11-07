@@ -93,6 +93,17 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
         #                       for ng in cluster.network_groups
         #                       if ng.name != 'private']
 
+        if cluster.is_ha_mode:
+            nw_metadata = cluster.release.networks_metadata["neutron"]
+            for network in nw_metadata["networks"]:
+                if network.get("assign_vip") is not False:
+                    result['{0}_vip'.format(
+                        network["name"]
+                    )] = net_manager.assign_vip(
+                        cluster.id,
+                        network["name"]
+                    )
+
         result['neutron_parameters'] = {
             'predefined_networks': cluster.neutron_config.predefined_networks,
             'L2': cluster.neutron_config.L2,

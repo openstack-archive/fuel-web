@@ -325,8 +325,8 @@ class TestHandlers(BaseIntegrationTest):
         common_attrs = {
             'deployment_mode': 'ha_compact',
 
-            'management_vip': '192.168.0.8',
-            'public_vip': '172.16.0.8',
+            'management_vip': '192.168.0.2',
+            'public_vip': '172.16.0.2',
 
             'management_network_range': '192.168.0.0/24',
             'storage_network_range': '192.168.1.0/24',
@@ -417,9 +417,9 @@ class TestHandlers(BaseIntegrationTest):
             admin_ip = admin_ips.pop()
             for role in sorted(node.roles + node.pending_roles):
                 assigned_ips[node_id] = {}
-                assigned_ips[node_id]['management'] = '192.168.0.%d' % (i + 2)
-                assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 2)
-                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 2)
+                assigned_ips[node_id]['management'] = '192.168.0.%d' % (i + 3)
+                assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
+                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 3)
                 assigned_ips[node_id]['admin'] = admin_ip
 
                 nodes_list.append({

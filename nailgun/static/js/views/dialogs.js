@@ -202,6 +202,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             this.$('.next-pane-btn').toggle(currentStep != totalSteps);
             this.$('.finish-btn').toggle(currentStep == totalSteps);
             this.$('.wizard-footer .btn-success:visible').focus();
+            this.$el.i18n();
             return this;
         }
     });
@@ -220,7 +221,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             return (new $.Deferred()).resolve();
         },
         render: function() {
-            this.$el.html(this.template());
+            this.$el.html(this.template()).i18n();
             return this;
         }
     });
@@ -326,7 +327,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template());
+            this.$el.html(this.template()).i18n();
             this.renderReleases();
             this.renderRhelCredentialsForm({
                 redHatAccount: this.redHatAccount,
@@ -403,7 +404,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             var disabled = !release || release.get('operating_system') == 'RHEL'; // no Neutron for RHOS for now
-            this.$el.html(this.template({disabled: disabled, release: release}));
+            this.$el.html(this.template({disabled: disabled, release: release})).i18n();
             if (disabled) {
                 this.$('input[value^=neutron]').prop('disabled', true);
             }
@@ -437,7 +438,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             var disabled = !release || !_.contains(release.get('roles'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
-            this.$el.html(this.template({disabled: disabled, release: release}));
+            this.$el.html(this.template({disabled: disabled, release: release})).i18n();
             if (disabled) {
                 this.$('input[value=ceph]').prop('disabled', true);
             }
@@ -466,7 +467,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             var disabled = !release || release.get('operating_system') == 'RHEL'; // no Savanna & Murano for RHOS for now
-            this.$el.html(this.template({disabled: disabled, release: release}));
+            this.$el.html(this.template({disabled: disabled, release: release})).i18n();
             if (disabled) {
                 this.$('input[type=checkbox]').prop('disabled', true);
             }

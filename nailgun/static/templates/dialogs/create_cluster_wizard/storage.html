@@ -5,7 +5,7 @@
   <fieldset>
     <div class="row-fluid control-group" style="margin:0">
       <div class="span6">
-        <h5>Cinder</h5>
+        <h5 data-i18n="dialog.create_cluster_wizard.storage_cinder"></h5>
         <% _.each(['Default', 'Ceph'], function(backend) { %>
           <label class="parameter-box clearfix">
             <div class="parameter-control">
@@ -17,13 +17,12 @@
             <div class="parameter-name"><%- backend %></div>
           </label>
 	<% }) %>
-	<p class="help-block">&nbsp;</p>
-	<p class="help-block">
-          By default, Cinder block storage uses LVM volumes shared over iSCSI. Ceph backend requires two or more Ceph-OSD nodes and the KVM hypervisor.
+        <p class="help-block">&nbsp;</p>
+        <p class="help-block" data-i18n="dialog.create_cluster_wizard.storage_cinder_help">
         </p>
       </div>
       <div class="span6">
-        <h5>Glance</h5>
+        <h5 data-i18n="dialog.create_cluster_wizard.storage_glance"></h5>
         <% _.each(['Default', 'Ceph'], function(backend) { %>
           <label class="parameter-box clearfix">
             <div class="parameter-control">
@@ -35,9 +34,8 @@
             <div class="parameter-name"><%- backend %></div>
           </label>
         <% }) %>
-	<p class="help-block">&nbsp;</p>
-	<p class="help-block">
-          By default, Glance image service uses Swift object storage in HA deployment mode, and local storage on the Controller node in simple multi-node mode. Ceph backend requires two or more Ceph-OSD nodes.
+        <p class="help-block">&nbsp;</p>
+        <p class="help-block" data-i18n="dialog.create_cluster_wizard.storage_glance_help">
         </p>
       </div>
     </div>

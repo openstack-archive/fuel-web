@@ -44,7 +44,7 @@ class NeutronNetworkConfiguration(NetworkConfiguration):
                     else:
                         if key == 'cidr' and \
                                 not ng['name'] in ('private',):
-                            network_manager.update_ranges_from_cidr(
+                            network_manager.update_range_mask_from_cidr(
                                 ng_db, value)
 
                         setattr(ng_db, key, value)

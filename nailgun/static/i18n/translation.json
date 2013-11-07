@@ -7,7 +7,14 @@
                 "load_defaults_button": "Load Defaults",
                 "cancel_changes_button": "Cancel Changes",
                 "apply_button": "Apply",
-                "not_available": "N/A"
+                "not_available": "N/A",
+                "network": {
+                    "fixed": "VM Networks (Fixed)",
+                    "public": "Public",
+                    "floating": "Floating",
+                    "management": "Management",
+                    "storage": "Storage"
+                }
             },
             "navbar": {
                 "environments": "Environments",
@@ -107,6 +114,53 @@
                     "bt_rename": "Rename",
                     "bt_delete": "Delete",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
+                },
+                "network_tab": {
+                    "title": "Network Settings",
+                    "flatdhcp_manager": "FlatDHCP Manager",
+                    "vlan_manager": "VLAN Manager",
+                    "verify_networks_button": "Verify Networks",
+                    "cancel_changes_button": "Cancel Changes",
+                    "save_settings_button": "Save Settings",
+                    "neutron_segmentation": "Neutron with __segment_type__ segmentation",
+                    "range_start": "Start",
+                    "range_end": "End",
+                    "verify_networks": {
+                        "step_0": "Network Verification is done in 4 steps:",
+                        "step_1": "1. Every node starts listening for test frames",
+                        "step_2": "2. Every node sends out 802.1Q tagged UDP frames",
+                        "step_3": "3. Nodes listeners register test frames from other nodes",
+                        "step_4": "4. Send DHCP discover messages on all available ports.",
+                        "success_alert": "Verification succeeded. Your network is configured correctly.",
+                        "fail_alert": "Verification failed.",
+                        "node_name": "Node Name",
+                        "node_mac_address": "Node MAC address",
+                        "node_interface": "Node Interface",
+                        "expected_vlan": "Expected VLAN (not received)"
+                    },
+                    "network_parameters": {
+                        "ip_range": "IP Range",
+                        "netmask": "Netmask",
+                        "vlan_id": "VLAN ID",
+                        "gateway": "Gateway",
+                        "cidr": "CIDR",
+                        "nubmer_of_networks": "Number of Networks",
+                        "size_of_networks": "Size of Networks",
+                        "vlan_id_range": "VLAN ID range",
+                        "use_vlan_tagging": "Use VLAN Tagging"
+                    },
+                    "neutron": {
+                        "l2_configuration": "Neutron L2 Configuration",
+                        "l3_configuration": "Neutron L3 Configuration",
+                        "id_range": "ID range",
+                        "base_mac": "Base MAC address",
+                        "external_network": "External network",
+                        "cidr": "CIDR",
+                        "floaing_ip": "Floating IP range",
+                        "internal_network": "Internal network",
+                        "gateway": "Gateway",
+                        "name_servers": "Name servers"
+                    }
                 },
                 "logs_tab": {
                     "title": "Logs",
@@ -273,7 +327,14 @@
                 "cancel_changes_button": "取消变更",
                 "apply_button": "应用",
                 "title": "",
-                "not_available": ""
+                "not_available": "",
+                "network": {
+                    "fixed": "虚机网络（固定）",
+                    "public": "公开",
+                    "floating": "浮动",
+                    "management": "管理",
+                    "storage": "存储"
+                }
             },
             "node_details": {
                 "cpu": "",
@@ -366,30 +427,29 @@
                     "title": "网络设置",
                     "flatdhcp_manager": "FlatDHCP管理",
                     "vlan_manager": "VLAN管理",
-                    "bt_verify_networks": "验证网络",
-                    "bt_cancel_changes": "取消变更",
-                    "bt_save_settings": "保存设置",
-                    "step_0": "完成网络验证4个步骤:",
-                    "step_1": "1. 每个节点启动测试监听帧",
-                    "step_2": "2. 每个节点发送802.1Q封装的UDP帧",
-                    "step_3": "3. 每个节点从其它节点注册测试帧",
-                    "ip_range": "IP范围",
-                    "netmask": "网络掩码",
-                    "vlan_id": "VLAN ID",
-                    "gateway": "网关",
-                    "cidr": "CIDR",
-                    "nubmer_of_networks": "网络数量",
-                    "size_of_networks": "网络大小",
-                    "vlan_id_range": "VLAN ID范围",
-                    "use_vlan_tagging": "使用VLAN标记",
-                    "start": "开始",
-                    "end": "结束",
-                    "vm_networks_fixed": "虚机网络（固定）",
-                    "public": "公开",
-                    "floating": "浮动",
-                    "management": "管理",
-                    "storage": "存储",
-                    "alert_success": "验证成功。网络配置正确。"
+                    "verify_networks_button": "验证网络",
+                    "cancel_changes_button": "取消变更",
+                    "save_settings_button": "保存设置",
+                    "range_start": "开始",
+                    "range_end": "结束",
+                    "verify_networks": {
+                        "step_0": "完成网络验证4个步骤:",
+                        "step_1": "1. 每个节点启动测试监听帧",
+                        "step_2": "2. 每个节点发送802.1Q封装的UDP帧",
+                        "step_3": "3. 每个节点从其它节点注册测试帧",
+                        "success_alert": "验证成功。网络配置正确。"
+                    },
+                    "network_parameters": {
+                        "ip_range": "IP范围",
+                        "netmask": "网络掩码",
+                        "vlan_id": "VLAN ID",
+                        "gateway": "网关",
+                        "cidr": "CIDR",
+                        "nubmer_of_networks": "网络数量",
+                        "size_of_networks": "网络大小",
+                        "vlan_id_range": "VLAN ID范围",
+                        "use_vlan_tagging": "使用VLAN标记"
+                    }
                 },
 
                 "settings_tab": {
@@ -555,11 +615,6 @@
                     "node_interfaces": "节点 接口",
                     "node_disks": "节点 磁盘",
                     "speed": "速度：",
-                    "public": "公共",
-                    "floating": "浮动",
-                    "storage": "存储",
-                    "management": "管理",
-                    "fixed": "固定",
                     "alert_drag_and_drop": "使用拖拽在物理接口之间移动逻辑网络",
                     "total_space": "全部空间：",
                     "unallocated": "未分配",

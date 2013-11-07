@@ -40,10 +40,13 @@ class Task(Base):
     TASK_NAMES = (
         'super',
 
-        # cluster
+        # Cluster changes
+        # For deployment supertask, it contains
+        # two subtasks deployment and provision
         'deploy',
         'deployment',
         'provision',
+
         'node_deletion',
         'cluster_deletion',
         'check_before_deployment',

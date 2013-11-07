@@ -138,6 +138,7 @@ class TestNovaHandlers(BaseIntegrationTest):
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'deploy')
+
         self.assertEquals(
             task['message'],
             'Some untagged networks are assigned to the same physical '

@@ -101,7 +101,8 @@ class Cluster(Base):
     )
     name = Column(Unicode(50), unique=True, nullable=False)
     release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
-    nodes = relationship("Node", backref="cluster", cascade="delete")
+    nodes = relationship(
+        "Node", backref="cluster", cascade="delete", order_by='Node.id')
     tasks = relationship("Task", backref="cluster", cascade="delete")
     attributes = relationship("Attributes", uselist=False,
                               backref="cluster", cascade="delete")

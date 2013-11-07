@@ -29,8 +29,8 @@ from nailgun.db import db
 class NeutronNetworkConfiguration(NetworkConfiguration):
     @classmethod
     def update(cls, cluster, network_configuration):
-        from nailgun.network.neutron import NeutronManager
-        network_manager = NeutronManager()
+        from nailgun.network.neutron import NetworkManager
+        network_manager = NetworkManager
         if 'networks' in network_configuration:
             for ng in network_configuration['networks']:
                 if ng['id'] == network_manager.get_admin_network_group_id():

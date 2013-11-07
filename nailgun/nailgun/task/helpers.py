@@ -396,10 +396,9 @@ class TaskHelper(object):
         """Prepare environment for provisioning,
         update fqdns, assign admin ips
         """
-        netmanager = NetworkManager()
         cls.update_slave_nodes_fqdn(nodes)
         for node in nodes:
-            netmanager.assign_admin_ips(
+            NetworkManager.assign_admin_ips(
                 node.id, len(node.meta.get('interfaces', [])))
 
     @classmethod
@@ -410,7 +409,7 @@ class TaskHelper(object):
         cls.update_slave_nodes_fqdn(nodes)
 
         nodes_ids = [n.id for n in nodes]
-        netmanager = NetworkManager()
+        netmanager = NetworkManager
         if nodes_ids:
             netmanager.assign_ips(nodes_ids, 'management')
             netmanager.assign_ips(nodes_ids, 'public')

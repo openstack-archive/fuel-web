@@ -558,12 +558,16 @@ class TestHandlers(BaseIntegrationTest):
         admin_net = self.env.network_manager.get_admin_network()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
+            udev_interfaces_mapping = ','.join([
+                '{0}_{1}'.format(i.mac, i.name) for i in n.interfaces])
+
             pnd = {
                 'profile': cluster_attrs['cobbler']['profile'],
                 'power_type': 'ssh',
                 'power_user': 'root',
                 'kernel_options': {
-                    'netcfg/choose_interface': 'eth1'},
+                    'netcfg/choose_interface': 'eth1',
+                    'udevrules': udev_interfaces_mapping},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
                 'name': TaskHelper.make_slave_name(n.id),

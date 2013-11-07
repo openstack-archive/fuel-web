@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from copy import deepcopy
 from random import choice
 import string
 
@@ -34,6 +33,7 @@ from nailgun.api.models.release import Release
 from nailgun.db import db
 from nailgun.logger import logger
 from nailgun.settings import settings
+from nailgun.utils import dict_merge
 
 
 class ClusterChanges(Base):
@@ -272,7 +272,7 @@ class Attributes(Base):
         return new_dict
 
     def merged_attrs(self):
-        return self._dict_merge(self.generated, self.editable)
+        return dict_merge(self.generated, self.editable)
 
     def merged_attrs_values(self):
         attrs = self.merged_attrs()
@@ -289,18 +289,3 @@ class Attributes(Base):
                 })
             attrs.pop('additional_components')
         return attrs
-
-    def _dict_merge(self, a, b):
-        '''recursively merges dict's. not just simple a['key'] = b['key'], if
-        both a and bhave a key who's value is a dict then dict_merge is called
-        on both values and the result stored in the returned dictionary.
-        '''
-        if not isinstance(b, dict):
-            return b
-        result = deepcopy(a)
-        for k, v in b.iteritems():
-            if k in result and isinstance(result[k], dict):
-                    result[k] = self._dict_merge(result[k], v)
-            else:
-                result[k] = deepcopy(v)
-        return result

@@ -25,7 +25,7 @@ from nailgun.db import db
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentHASerializer
 from nailgun.orchestrator.deployment_serializers \
-    import DeploymentMultiSerializer
+    import DeploymentMultinodeSerializer
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
@@ -78,7 +78,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        return DeploymentMultiSerializer
+        return DeploymentMultinodeSerializer
 
     def assert_roles_flattened(self, nodes):
         self.assertEquals(len(nodes), 6)
@@ -372,7 +372,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     @property
     def serializer(self):
-        return DeploymentMultiSerializer
+        return DeploymentMultinodeSerializer
 
     def assert_roles_flattened(self, nodes):
         self.assertEquals(len(nodes), 6)

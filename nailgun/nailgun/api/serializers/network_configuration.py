@@ -16,7 +16,6 @@
 
 from nailgun.api.serializers.base import BasicSerializer
 from nailgun.network.manager import NetworkManager
-from nailgun.network.neutron import NeutronManager
 
 
 class NetworkConfigurationSerializer(BasicSerializer):
@@ -83,7 +82,7 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
             cluster.network_groups
         )
 
-        net_manager = NeutronManager
+        net_manager = NetworkManager
         result['networks'].append(
             cls.serialize_network_group(
                 net_manager.get_admin_network_group()

@@ -1,5 +1,7 @@
 <% if (disabled && release) { %>
-  <div class="alert" style="margin:0">Neutron is not supported in <%- release.get('name') %></div>
+  <div class="alert" style="margin:0">
+      <span data-i18n="dialog.create_cluster_wizard.network_alert"></span> <%- release.get('name') %>
+  </div>
 <% } %>
 <form class="form-horizontal" onsubmit="return false">
   <fieldset>

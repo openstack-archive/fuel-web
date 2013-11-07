@@ -102,6 +102,21 @@
                     "bt_delete": "Delete",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
                 },
+                "logs_tab": {
+                    "title": "Logs",
+                    "logs": "Logs",
+                    "node": "Node",
+                    "source": "Source",
+                    "min_level": "Min. level",
+                    "show": "Show",
+                    "log_alert": "Unable to fetch logs.",
+                    "source_alert": "Unable to fetch log sources.",
+                    "date": "Date",
+                    "message": "Message",
+                    "bottom_text": "Some previous lines skipped. Show more lines",
+                    "all_logs": "All",
+                    "no_log_text": "No log entries match current filters."
+                },
                 "healthcheck_tab": {
                     "title": "OpenStack Health Check",
                     "run_tests_button": "Run Tests",
@@ -462,12 +477,12 @@
                     "source": "来源",
                     "level": "级别",
                     "show": "显示",
-                    "alert_log": "无法获取日志",
-                    "alert_source": "无法获取日志来源",
+                    "log_alert": "无法获取日志",
+                    "source_alert": "无法获取日志来源",
                     "date": "日期",
                     "message": "消息",
-                    "bottom_text": "前面的一些行被忽略。显示更多行：",
-                    "all": "全部",
+                    "bottom_text": "前面的一些行被忽略。显示更多行",
+                    "all_logs": "全部",
                     "no_log_text": "当前过滤器没有找到任何日志。"
                 },
 

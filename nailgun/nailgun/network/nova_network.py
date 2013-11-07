@@ -67,7 +67,7 @@ class NovaNetworkManager(NetworkManager):
         cls.clear_assigned_networks(node)
 
         for nic in node.interfaces:
-            map(nic.assigned_networks.append,
+            map(nic.assigned_networks_list.append,
                 cls.get_default_nic_networkgroups(node, nic))
 
         db().commit()
@@ -136,12 +136,12 @@ class NovaNetworkManager(NetworkManager):
         for nic in node.interfaces:
 
             if nic == node.admin_interface:
-                nic.allowed_networks.append(
+                nic.allowed_networks_list.append(
                     cls.get_admin_network_group()
                 )
 
             for ng in cls.get_cluster_networkgroups_by_node(node):
-                nic.allowed_networks.append(ng)
+                nic.allowed_networks_list.append(ng)
 
         db().commit()
 

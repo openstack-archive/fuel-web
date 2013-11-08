@@ -1,12 +1,11 @@
 <h4>Assign Roles</h4>
-<% _.each(roles, function(role) { %>
-
-	<div class="role-container">
-    	<label>
-			<input type="checkbox" value="<%= role %>" />
-			<%= rolesData[role].name %>
-		</label>
-    	<div class="role-conflict <%= role %>"></div>
-    	<div class="role-description"><%= rolesData[role].description %></div>
-	</div>
+<% roles.each(function(role) { %>
+  <div class="role-container">
+    <label>
+      <input type="checkbox" name="<%- role.get('name') %>" />
+      <%- role.get('label') %>
+    </label>
+    <div class="role-conflict <%- role.get('name') %>"></div>
+    <div class="role-description"><%- role.get('description') %></div>
+  </div>
 <% }) %>

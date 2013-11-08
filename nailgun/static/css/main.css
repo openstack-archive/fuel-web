@@ -463,16 +463,6 @@ h6.page-title {
  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e5e6e8', endColorstr='#d1d5d8', GradientType=0 ); /* IE6-8 */
 }
 
-/* chekbox animation
-.node-content:hover > .node-checkbox {
-  margin-left: 0px;
-  -webkit-transition: all 0.3s ease;
-  -moz-transition: all 0.3s ease;
-  -o-transition: all 0.3s ease;
-  -ms-transition: all 0.3s ease;
-}
-*/
-
 .unallocated {
     overflow: hidden;
   background: #afafaf; /* Old browsers */
@@ -516,7 +506,7 @@ label.node-checkbox {
   cursor: default;
 }
 
-.node-name {/* width: 320px; float: left; */
+.node-name {
   -webkit-font-smoothing: antialiased;
   height: 50px;
   display: block;
@@ -531,13 +521,13 @@ label.node-checkbox {
   padding: 0;
   margin-top: -2px;
   color: #666666;
+  font-size: 10px;
+  text-transform: uppercase;
 }
 .role-list > ul {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
   margin: 0px;
   padding: 0px;
-  font-size: 10px;
-  text-transform: uppercase;
   margin-top: 1px;
   float: left;
   -webkit-font-smoothing: antialiased;
@@ -552,6 +542,9 @@ label.node-checkbox {
   font-weight: 600;
   content: '·';
 }
+.role-list > ul > li:empty {
+  display: none;
+}
 .role-list > ul > li:last-child:after {
   margin-left: 3px;
   font-weight: 600;
@@ -559,9 +552,6 @@ label.node-checkbox {
 }
 .role-list > .pending-roles li {
   color: #468847;
-}
-.add-nodes-screen .role-list > .pending-roles:empty::before {
-  content: 'unallocated';
 }
 
 .node-button {
@@ -1449,7 +1439,6 @@ label.node-checkbox {
 .wizard-step-nav-item > .current {
   background-color: #ffffff;
   color: #e98900;
-  /* border-right: 2px solid #000000; */
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
@@ -1460,7 +1449,6 @@ label.node-checkbox {
 .wizard-step-nav-item > .available {
   background-color: none;
   color: #468847;
-  /* border-right: 2px solid #468847; */
   padding-left: -10px;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
@@ -2037,26 +2025,18 @@ input.vlan-tagging {
   background-color: #8a080b;
 }
 
-/*
-.table-logs tbody tr.fatal td {
-  background-color: #ed9a57;
-  color: #ffffff;
-}
-*/
-
 .page-control-box {
-    display: block;
-    margin-left: 20px;
-    padding: 10px 0px 10px 0px;
-    /* min-height: 60px; */
-    height: auto;
-    -webkit-border-radius: 4px;
-    -moz-border-radius: 4px;
-    border-radius: 4px;
-    background-color: #f0f0f0;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,.15);
-    margin: 10px 0px 0px 20px;
-  }
+  display: block;
+  margin-left: 20px;
+  padding: 10px 0px 10px 0px;
+  height: auto;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  background-color: #f0f0f0;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.15);
+  margin: 10px 0px 0px 20px;
+}
 
 .page-control-box:after {
   display: table;
@@ -2085,7 +2065,6 @@ input.vlan-tagging {
 }
 
 .page-control-button-placeholder {
-  /* min-width: 120px; */
   display: inline-block;
   float: right;
   margin: 5px 10px 5px 10px;
@@ -3865,7 +3844,6 @@ hr.slim {
 }
 .unallocated .node-content .volume-group-name, .unallocated .node-content .volume-group-size {
   text-shadow: 1px 0 0 rgba(255,255,255,.3);
-  /*margin-top: 16px;*/
 }
 .volume-group-box {
   display: block;

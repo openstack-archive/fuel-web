@@ -655,14 +655,14 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         if (_.isArray(meta.memory.devices) && meta.memory.devices.length) {
                             var sizes = _.groupBy(_.pluck(meta.memory.devices, 'size'), utils.showMemorySize);
                             summary = _.map(_.keys(sizes).sort(), function(size) {return sizes[size].length + ' x ' + size;}).join(', ');
-                            summary += ', ' + utils.showMemorySize(meta.memory.total) + ' total';
+                            summary += ', ' + utils.showMemorySize(meta.memory.total) + ' ' + $.t('dialog.show_node.total');
                         } else {
-                            summary = utils.showMemorySize(meta.memory.total) + ' total';
+                            summary = utils.showMemorySize(meta.memory.total) + ' ' + $.t('dialog.show_node.total');
                         }
                     } else if (group == 'disks') {
-                        summary = meta.disks.length + ' drive';
-                        summary += meta.disks.length == 1 ? ', ' : 's, ';
-                        summary += utils.showDiskSize(_.reduce(_.pluck(meta.disks, 'size'), function(sum, n) {return sum + n;}, 0)) + ' total';
+                        summary = meta.disks.length + ' ';
+                        summary += $.t('dialog.show_node.drive', {count: meta.disks.length});
+                        summary += ', ' + utils.showDiskSize(_.reduce(_.pluck(meta.disks, 'size'), function(sum, n) {return sum + n;}, 0)) + ' ' + $.t('dialog.show_node.total');
                     } else if (group == 'cpu') {
                         var frequencies = _.groupBy(_.pluck(meta.cpu.spec, 'frequency'), utils.showFrequency);
                         summary = _.map(_.keys(frequencies).sort(), function(frequency) {return frequencies[frequency].length + ' x ' + frequency;}).join(', ');

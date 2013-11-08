@@ -7,9 +7,9 @@
     <div class="row-fluid">
       <div class="span5"><div class="node-image-outline"></div></div>
       <div class="span7">
-        <div><strong data-i18n="dialog.show_node.label_manufacturer">Manufacturer: </strong><%- node.get('manufacturer') ? node.get('manufacturer') : 'N/A' %></div>
-        <div><strong data-i18n="dialog.show_node.label_mac_address">MAC Address: </strong><%- node.get('mac') ? node.get('mac') : 'N/A' %></div>
-        <div><strong>FQDN: </strong><%- (node.get('meta').system || {}).fqdn || node.get('fqdn') || 'N/A' %></div>
+        <div><strong><%- $.t('dialog.show_node.manufacturer_label') %>: </strong><%- node.get('manufacturer') ? node.get('manufacturer') : $.t('common.not_available') %></div>
+        <div><strong><%- $.t('dialog.show_node.mac_address_label') %>: </strong><%- node.get('mac') ? node.get('mac') : $.t('common.not_available') %></div>
+        <div><strong><%- $.t('dialog.show_node.fqdn_label') %>: </strong><%- (node.get('meta').system || {}).fqdn || node.get('fqdn') || $.t('common.not_available') %></div>
       </div>
     </div>
     <div class="accordion" id="nodeDetailsAccordion">
@@ -21,7 +21,7 @@
         <div class="accordion-group">
           <div class="accordion-heading">
             <div class="accordion-toggle" data-group="<%- group %>">
-              <%- $.t('dialog.show_node.'+group, {defaultValue: group}) %>
+              <%- $.t('node_details.' + group, {defaultValue: group}) %>
               <span><%- showSummary(meta, group) %></span>
               <i class="icon-expand pull-right"></i>
             </div>
@@ -33,7 +33,7 @@
                 <% _.each(groupEntries, function(entry) { %>
                   <div class="nested-object">
                     <% _.each(sortEntryProperties(entry), function(propertyName) { %>
-                      <div><label><%- $.t('dialog.show_node.'+showPropertyName(propertyName), {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, entry[propertyName]) %></div>
+                      <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, entry[propertyName]) %></div>
                     <% }) %>
                   </div>
                 <% }) %>
@@ -41,14 +41,14 @@
                 <% var subentries = _.find(_.values(groupEntries), _.isArray) %>
                 <% _.each(groupEntries, function(propertyValue, propertyName) { %>
                   <% if (!_.isArray(propertyValue)) { %>
-                    <div><label><%- $.t('dialog.show_node.'+showPropertyName(propertyName), {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, propertyValue) %></div>
+                    <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, propertyValue) %></div>
                   <% } %>
                 <% }) %>
                 <% if (_.isArray(subentries)) { %>
                   <% _.each(subentries, function(subentry) { %>
                     <div class="nested-object">
                       <% _.each(sortEntryProperties(subentry), function(propertyName) { %>
-                        <div><label><%- $.t('dialog.show_node.'+showPropertyName(propertyName), {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, subentry[propertyName]) %></div>
+                        <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, subentry[propertyName]) %></div>
                       <% }) %>
                     </div>
                   <% }) %>
@@ -74,11 +74,11 @@
 </div>
 <div class="modal-footer">
   <% if (false && node.get('ip')) { %>
-    <button class="btn btn-node-console">SSH Console</button>
+    <button class="btn btn-node-console" data-i18n="dialog.show_node.ssh_console"></button>
   <% } %>
   <% if (node.get('cluster') && !locked) { %>
-    <button class="btn btn-edit-networks" data-dismiss="modal" data-i18n="dialog.show_node.bt_network_configuration">Configure Interfaces</button>
-    <button class="btn btn-edit-disks" data-dismiss="modal" data-i18n="dialog.show_node.bt_disk_configuration">Configure Disks</button>
+    <button class="btn btn-edit-networks" data-dismiss="modal" data-i18n="dialog.show_node.network_configuration_button"></button>
+    <button class="btn btn-edit-disks" data-dismiss="modal" data-i18n="dialog.show_node.disk_configuration_button"></button>
   <% } %>
-  <button class="btn node-modal-close" data-dismiss="modal" data-i18n="dialog.show_node.bt_close">Close</button>
+  <button class="btn node-modal-close" data-dismiss="modal" data-i18n="dialog.show_node.close_button"></button>
 </div>

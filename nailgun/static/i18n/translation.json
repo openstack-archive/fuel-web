@@ -6,7 +6,8 @@
                 "select_all_button": "Select All",
                 "load_defaults_button": "Load Defaults",
                 "cancel_changes_button": "Cancel Changes",
-                "apply_button": "Apply"
+                "apply_button": "Apply",
+                "not_available": "N/A"
             },
             "navbar": {
                 "environments": "Environments",
@@ -203,6 +204,19 @@
                         "deploy": "Deploy Changes",
                         "env": "Environments"
                     }
+                },
+                "show_node": {
+                    "manufacturer_label": "Manufacturer",
+                    "mac_address_label": "MAC Address",
+                    "fqdn_label": "FQDN",
+                    "ssh_console": "SSH console",
+                    "network_configuration_button": "Configure Interfaces",
+                    "disk_configuration_button": "Configure Disks",
+                    "close_button": "Close",
+                    "total": "total",
+                    "bytes": "bytes",
+                    "drive": "drive",
+                    "drive_plural": "drives"
                 }
             }
         }
@@ -213,7 +227,16 @@
                 "select_all_button": "选择全部",
                 "load_defaults_button": "恢复默认",
                 "cancel_changes_button": "取消变更",
-                "apply_button": "应用"
+                "apply_button": "应用",
+                "title": "",
+                "not_available": ""
+            },
+            "node_details": {
+                "cpu": "",
+                "system": "系统",
+                "memory": "内存",
+                "disks": "磁盘",
+                "interfaces": "接口"
             },
             "navbar": {
                 "environments": "环境",
@@ -565,13 +588,10 @@
                 },
 
                 "show_node": {
-                    "label_manufacturer": "设备：",
-                    "label_mac_address": "MAC地址：",
-                    "system": "系统",
-                    "memory": "内存",
-                    "disks": "磁盘",
-                    "interfaces": "接口",
-                    "bt_close": "关闭",
+                    "manufacturer_label": "设备：",
+                    "mac_address_label": "MAC地址：",
+                    "fqdn_label": "",
+                    "close_button": "关闭",
                     "product": "产品",
                     "family": "系列",
                     "version": "版本",
@@ -582,16 +602,22 @@
                     "model": "模块",
                     "frequency": "频率",
                     "slots": "插槽",
-                    "maximum capacity": "最大负载",
+                    "maximum_capacity": "最大负载",
                     "type": "类型",
                     "size": "大小",
                     "name": "名称",
                     "disk": "磁盘",
-                    "max speed": "最大速度",
-                    "current speed": "当前速度",
+                    "max_speed": "最大速度",
+                    "current_speed": "当前速度",
                     "netmask": "网络掩码",
-                    "bt_network_configuration": "网络配置",
-                    "bt_disk_configuration": "磁盘配置"
+                    "network_configuration_button": "网络配置",
+                    "disk_configuration_button": "磁盘配置",
+                    "mac" : "",
+                    "ip" : "",
+                    "bytes": "",
+                    "fqdn": "",
+                    "drive": "",
+                    "drive_plural": ""
                 },
 
                 "discard_changes": {

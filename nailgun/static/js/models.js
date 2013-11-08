@@ -151,6 +151,13 @@ define(['utils', 'deepModel'], function(utils) {
         toJSON: function(options) {
             var result = this.constructor.__super__.toJSON.call(this, options);
             return _.omit(result, 'checked');
+        },
+        isSelectable: function() {
+            return ((this.get('online') && this.get('status') != 'error') || this.get('cluster')) && !this.get('pending_deletion');
+        },
+        hasRole: function(role, onlyDeployedRoles) {
+            var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
+            return _.contains(roles, role);
         }
     });
 

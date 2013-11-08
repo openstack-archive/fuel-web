@@ -159,13 +159,17 @@
                             "discard_deletion": "Discard Deletion",
                             "discard_role_changes": "Discard Role Changes"
                         },
-                        "edit_name": "Edit Name"
+                        "edit_name": "Edit Name",
+                        "unallocated": "unallocated"
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",
                     "no_selected_nodes": "There are no selected nodes to edit.",
+                    "disk_configuration_reset_warning": "Disk configuration will be reset to default after roles change",
                     "no_nodes_in_environment": "To add nodes to the environment, select the Add Nodes option, choose the nodes you want to allocate and assign roles to each.",
-                    "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes."
+                    "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes.",
+                    "one_controller_restriction": "Only one controller can be assigned in a multi-node deployment that is not Highly-Available (HA).",
+                    "incompatible_roles_warning" : "This role cannot be combined with the other roles already selected."
                 },
                 "settings_tab": {
                     "title": "OpenStack Settings"

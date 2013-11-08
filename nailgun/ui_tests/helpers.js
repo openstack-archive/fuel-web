@@ -15,6 +15,10 @@
 **/
 var baseUrl = 'http://127.0.0.1:5544/';
 
+casper.on('page.error', function(msg) {
+    casper.echo(msg, 'ERROR');
+});
+
 casper.loadPage = function(page) {
     return this.thenOpen(baseUrl + page).waitWhileSelector('#content > .loading');
 }

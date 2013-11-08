@@ -25,7 +25,9 @@ function(commonViews, models, supportPageTemplate) {
     var SupportPage = commonViews.Page.extend({
         navbarActiveElement: 'support',
         breadcrumbsPath: [['home', '#'], 'support'],
-        title: $.t('support_page.title'),
+        title: function() {
+            return $.t('support_page.title');
+        },
         updateInterval: 2000,
         template: _.template(supportPageTemplate),
         events: {

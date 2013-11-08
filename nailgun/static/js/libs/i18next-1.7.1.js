@@ -1,20 +1,8 @@
-// i18next, v1.6.3
+// i18next, v1.7.1
 // Copyright (c)2013 Jan Mühlemann (jamuhl).
 // Distributed under MIT license
 // http://i18next.com
-(function (root, factory) {
-    if (typeof exports === 'object') {
-
-      var jquery = require('jquery');
-
-      module.exports = factory(jquery);
-
-    } else if (typeof define === 'function' && define.amd) {
-
-      define(['jquery'], factory);
-
-    } 
-}(this, function ($) {
+(function() {
 
     // add indexOf to non ECMA-262 standard compliant browsers
     if (!Array.prototype.indexOf) {
@@ -81,12 +69,28 @@
         };
     }
 
-    var i18n = {}
-        , resStore = {}
-        , currentLng
-        , replacementCounter = 0
-        , languages = [];
+    var root = this
+      , $ = root.jQuery || root.Zepto
+      , i18n = {}
+      , resStore = {}
+      , currentLng
+      , replacementCounter = 0
+      , languages = []
+      , initialized = false;
 
+
+    // Export the i18next object for **CommonJS**. 
+    // If we're not in CommonJS, add `i18n` to the
+    // global object or to jquery.
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = i18n;
+    } else {
+        if ($) {
+            $.i18n = $.i18n || i18n;
+        }
+        
+        root.i18n = root.i18n || i18n;
+    }
     // defaults
     var o = {
         lng: undefined,
@@ -135,9 +139,12 @@
         cookieExpirationTime: undefined,
         useCookie: true,
         cookieName: 'i18next',
+        cookieDomain: undefined,
     
         postProcess: undefined,
-        parseMissingKey: undefined
+        parseMissingKey: undefined,
+    
+        shortcutFunction: 'sprintf' // or: defaultValue
     };
     function _extend(target, source) {
         if (!source || typeof source === 'function') {
@@ -497,7 +504,7 @@
     }
     
     var _cookie = {
-        create: function(name,value,minutes) {
+        create: function(name,value,minutes,domain) {
             var expires;
             if (minutes) {
                 var date = new Date();
@@ -505,7 +512,8 @@
                 expires = "; expires="+date.toGMTString();
             }
             else expires = "";
-            document.cookie = name+"="+value+expires+"; path=/";
+            domain = (domain)? "domain="+domain+";" : "";
+            document.cookie = name+"="+value+expires+";"+domain+"path=/";
         },
     
         read: function(name) {
@@ -525,7 +533,7 @@
     };
     
     var cookie_noop = {
-        create: function(name,value,minutes) {},
+        create: function(name,value,minutes,domain) {},
         read: function(name) { return null; },
         remove: function(name) {}
     };
@@ -577,6 +585,7 @@
         
         // override defaults with passed in options
         f.extend(o, options);
+        delete o.fixLng; /* passed in each time */
     
         // create namespace object if namespace is passed in as string
         if (typeof o.ns == 'string') {
@@ -595,7 +604,7 @@
         if (!o.lng) o.lng = f.detectLanguage(); 
         if (o.lng) {
             // set cookie with lng set (as detectLanguage will set cookie on need)
-            if (o.useCookie) f.cookie.create(o.cookieName, o.lng, o.cookieExpirationTime);
+            if (o.useCookie) f.cookie.create(o.cookieName, o.lng, o.cookieExpirationTime, o.cookieDomain);
         } else {
             o.lng =  o.fallbackLng;
             if (o.useCookie) f.cookie.remove(o.cookieName);
@@ -604,6 +613,16 @@
         languages = f.toLanguages(o.lng);
         currentLng = languages[0];
         f.log('currentLng set to: ' + currentLng);
+    
+        var lngTranslate = translate;
+        if (options.fixLng) {
+            lngTranslate = function(key, options) {
+                options = options || {};
+                options.lng = options.lng || lngTranslate.lng;
+                return translate(key, options);
+            };
+            lngTranslate.lng = currentLng;
+        }
     
         pluralExtensions.setCurrentLng(currentLng);
     
@@ -619,8 +638,9 @@
         // return immidiatly if res are passed in
         if (o.resStore) {
             resStore = o.resStore;
-            if (cb) cb(translate);
-            if (deferred) deferred.resolve();
+            initialized = true;
+            if (cb) cb(lngTranslate);
+            if (deferred) deferred.resolve(lngTranslate);
             if (deferred) return deferred.promise();
             return;
         }
@@ -640,9 +660,10 @@
         // else load them
         i18n.sync.load(lngsToLoad, o, function(err, store) {
             resStore = store;
+            initialized = true;
     
-            if (cb) cb(translate);
-            if (deferred) deferred.resolve();
+            if (cb) cb(lngTranslate);
+            if (deferred) deferred.resolve(lngTranslate);
         });
     
         if (deferred) return deferred.promise();
@@ -745,8 +766,13 @@
         }
     }
     
-    function setLng(lng, cb) {
-        return init({lng: lng}, cb);
+    function setLng(lng, options, cb) {
+        if (typeof options === 'function') {
+            cb = options;
+            options = {};
+        }
+        options.lng = lng;
+        return init(options, cb);
     }
     
     function lng() {
@@ -787,6 +813,7 @@
     
         function localize(ele, options) {
             var key = ele.attr(o.selectorAttr);
+            if (!key && typeof key !== 'undefined' && key !== false) key = ele.text() || ele.val();
             if (!key) return;
     
             var target = ele
@@ -905,15 +932,23 @@
     function exists(key, options) {
         options = options || {};
     
-        var notFound = options.defaultValue || key
+        var notFound = _getDefaultValue(key, options)
             , found = _find(key, options);
     
         return found !== undefined || found === notFound;
     }
     
     function translate(key, options) {
+        if (!initialized) {
+            f.log('i18next not finished initialization. you might have called t function before loading resources finished.')
+            return options.defaultValue || '';
+        };
         replacementCounter = 0;
         return _translate.apply(null, arguments);
+    }
+    
+    function _getDefaultValue(key, options) {
+        return (options.defaultValue !== undefined) ? options.defaultValue : key;
     }
     
     function _injectSprintfProcessor() {
@@ -931,16 +966,34 @@
         };
     }
     
-    function _translate(key, options) {
-        
+    function _translate(potentialKeys, options) {
         if (typeof options == 'string') {
-            // mh: gettext like sprintf syntax found, automatically create sprintf processor
-            options = _injectSprintfProcessor.apply(null, arguments);
+            if (o.shortcutFunction === 'sprintf') {
+                // mh: gettext like sprintf syntax found, automatically create sprintf processor
+                options = _injectSprintfProcessor.apply(null, arguments);
+            } else if (o.shortcutFunction === 'defaultValue') {
+                options = {
+                    defaultValue: options
+                }
+            }
         } else {
             options = options || {};
-        }         
+        }
     
-        var notFound = options.defaultValue || key
+        if (typeof potentialKeys == 'string') {
+            potentialKeys = [potentialKeys];
+        }
+    
+        var key = null;
+    
+        for (var i = 0; i < potentialKeys.length; i++) {
+            key = potentialKeys[i];
+            if (exists(key)) {
+                break;
+            }
+        }
+    
+        var notFound = _getDefaultValue(key, options)
             , found = _find(key, options)
             , lngs = options.lng ? f.toLanguages(options.lng) : languages
             , ns = options.ns || o.ns.defaultNs
@@ -983,7 +1036,7 @@
             notFound = applyReuse(notFound, options);
     
             if (postProcessor && postProcessors[postProcessor]) {
-                var val = options.defaultValue || key;
+                var val = _getDefaultValue(key, options);
                 found = postProcessors[postProcessor](val, key, options);
             }
         }
@@ -995,7 +1048,7 @@
         options = options || {};
     
         var optionWithoutCount, translated
-            , notFound = options.defaultValue || key
+            , notFound = _getDefaultValue(key, options)
             , lngs = languages;
     
         if (!resStore) { return notFound; } // no resStore to translate from
@@ -1085,12 +1138,11 @@
                         value = 'key \'' + ns + ':' + key + ' (' + l + ')\' ' +
                             'returned a object instead of string.';
                         f.log(value);
-                    } else {
+                    } else if (typeof value !== 'number') {
                         var copy = {}; // apply child translation on a copy
-                        for (var m in value) {
-                            // apply translation on childs
+                        f.each(value, function(m) {
                             copy[m] = _translate(ns + o.nsseparator + key + o.keyseparator + m, options);
-                        }
+                        });
                         value = copy;
                     }
                 }
@@ -2607,9 +2659,4 @@
     i18n.addPostProcessor = addPostProcessor;
     i18n.options = o;
 
-    $.i18n = i18n;
-    $.t = i18n.t;
-        
-    return i18n;
-
-}));
+})();

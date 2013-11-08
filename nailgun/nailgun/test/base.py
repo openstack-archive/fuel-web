@@ -505,15 +505,18 @@ class Environment(object):
                     {
                         "name": "public",
                         "pool": ["172.16.0.0/24"],
-                        "ip_range": ["172.16.0.2", "172.16.0.126"]
+                        "ip_range": ["172.16.0.2", "172.16.0.126"],
+                        "assign_vip": True
                     },
                     {
                         "name": "management",
-                        "pool": ["192.168.0.0/24"]
+                        "pool": ["192.168.0.0/24"],
+                        "assign_vip": True
                     },
                     {
                         "name": "storage",
-                        "pool": ["192.168.1.0/24"]
+                        "pool": ["192.168.1.0/24"],
+                        "assign_vip": False
                     }
                 ],
                 "config": {

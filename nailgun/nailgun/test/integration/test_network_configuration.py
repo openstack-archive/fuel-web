@@ -166,7 +166,8 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         super(TestNeutronNetworkConfigurationHandlerMultinode, self).setUp()
         cluster = self.env.create_cluster(api=True,
                                           net_provider='neutron',
-                                          net_segment_type='gre'
+                                          net_segment_type='gre',
+                                          mode='ha_compact'
                                           )
         self.cluster = self.db.query(Cluster).get(cluster['id'])
 
@@ -194,6 +195,13 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
             for key in keys:
                 self.assertEquals(network[key], getattr(network_group, key))
+
+    def test_get_request_should_return_vips(self):
+        response = self.env.neutron_networks_get(self.cluster.id)
+        data = json.loads(response.body)
+
+        self.assertIn('public_vip', data)
+        self.assertIn('management_vip', data)
 
     def test_not_found_cluster(self):
         resp = self.env.neutron_networks_get(self.cluster.id + 999,

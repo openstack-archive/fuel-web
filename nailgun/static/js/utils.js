@@ -56,22 +56,22 @@ define(['require'], function(require) {
         },
         showBandwidth: function(bandwidth) {
             bandwidth = parseInt(bandwidth, 10);
-            if (!_.isNumber(bandwidth) || _.isNaN(bandwidth)) {return 'N/A';}
+            if (!_.isNumber(bandwidth) || _.isNaN(bandwidth)) {return $.t('common.not_available');}
             return (bandwidth / 1000).toFixed(1) + ' Gbps';
         },
         showFrequency: function(frequency) {
             frequency = parseInt(frequency, 10);
-            if (!_.isNumber(frequency) || _.isNaN(frequency)) {return 'N/A';}
+            if (!_.isNumber(frequency) || _.isNaN(frequency)) {return $.t('common.not_available');}
             var base = 1000;
             var treshold = 1000;
             return(frequency >= treshold ? (frequency / base).toFixed(2) + ' GHz' : frequency + ' MHz');
         },
         showSize: function(bytes, treshold) {
             bytes = parseInt(bytes, 10);
-            if (!_.isNumber(bytes) || _.isNaN(bytes)) {return 'N/A';}
+            if (!_.isNumber(bytes) || _.isNaN(bytes)) {return $.t('common.not_available');}
             var base = 1024;
             treshold = treshold || 256;
-            var units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
+            var units = [$.t('dialog.show_node.bytes'), 'KB', 'MB', 'GB', 'TB'];
             var i, result;
             for (i = 0; i < units.length; i += 1) {
                 result = bytes / Math.pow(base, i);

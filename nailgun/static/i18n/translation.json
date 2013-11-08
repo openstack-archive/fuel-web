@@ -2,7 +2,8 @@
     "en-US": {
         "translation": {
             "common": {
-                "title": "Fuel Dashboard"
+                "title": "Fuel Dashboard",
+                "not_available": "N/A"
             },
             "navbar": {
                 "environments": "Environments",
@@ -88,11 +89,37 @@
                 "nodes_with_config": "Number of nodes with this configuration",
                 "download_report": "Download report",
                 "loading": "Loading..."
+            },
+            "dialog": {
+                "show_node": {
+                    "manufacturer_label": "Manufacturer",
+                    "mac_address_label": "MAC Address",
+                    "fqdn_label": "FQDN",
+                    "ssh_console": "SSH console",
+                    "network_configuration_button": "Configure Interfaces",
+                    "disk_configuration_button": "Configure Disks",
+                    "close_button": "Close",
+                    "total": "total",
+                    "bytes": "bytes",
+                    "drive": "drive",
+                    "drive_plural": "drives"
+                }
             }
         }
     },
     "zh-CN": {
         "translation": {
+            "common": {
+                "title": "",
+                "not_available": ""
+            },
+            "node_details": {
+                "cpu": "",
+                "system": "系统",
+                "memory": "内存",
+                "disks": "磁盘",
+                "interfaces": "接口"
+            },
             "navbar": {
                 "environments": "环境",
                 "releases": "版本",
@@ -446,13 +473,10 @@
                 },
 
                 "show_node": {
-                    "label_manufacturer": "设备：",
-                    "label_mac_address": "MAC地址：",
-                    "system": "系统",
-                    "memory": "内存",
-                    "disks": "磁盘",
-                    "interfaces": "接口",
-                    "bt_close": "关闭",
+                    "manufacturer_label": "设备：",
+                    "mac_address_label": "MAC地址：",
+                    "fqdn_label": "",
+                    "close_button": "关闭",
                     "product": "产品",
                     "family": "系列",
                     "version": "版本",
@@ -471,8 +495,15 @@
                     "max speed": "最大速度",
                     "current speed": "当前速度",
                     "netmask": "网络掩码",
-                    "bt_network_configuration": "网络配置",
-                    "bt_disk_configuration": "磁盘配置"
+                    "network_configuration_button": "网络配置",
+                    "disk_configuration_button": "磁盘配置",
+                    "mac" : "",
+                    "ip" : "",
+                    "bytes": "",
+                    "undefined": "",
+                    "fqdn": "",
+                    "drive": "",
+                    "drive_plural": ""
                 },
 
                 "discard_changes": {

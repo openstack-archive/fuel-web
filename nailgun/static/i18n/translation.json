@@ -7,7 +7,10 @@
                 "load_defaults_button": "Load Defaults",
                 "cancel_changes_button": "Cancel Changes",
                 "apply_button": "Apply",
-                "not_available": "N/A"
+                "not_available": "N/A",
+                "delete_label": "Delete",
+                "apply_changes_button": "Apply Changes",
+                "cancel_button": "Cancel"
             },
             "navbar": {
                 "environments": "Environments",
@@ -89,10 +92,11 @@
                     },
                     "configure_disks": "Configure disks on __count__ node",
                     "configure_disks_plural": "Configure disks on __count__ nodes",
-                    "return_button": "Back To Node List",
-                    "load_defaults_button": "Load Defaults",
-                    "cancel_changes_button": "Cancel Changes",
-                    "apply_button": "Apply"
+                    "group_by": "Group By",
+                    "edit_roles_button": "Edit Roles",
+                    "add_nodes_button": "Add Nodes",
+                    "network_configuration_button": "Configure Interfaces",
+                    "disk_configuration_button": "Configure Disks"
                 },
                 "settings_tab": {
                     "title": "OpenStack Settings",
@@ -105,7 +109,6 @@
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
                     "bt_rename": "Rename",
-                    "bt_delete": "Delete",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
                 },
                 "logs_tab": {
@@ -243,8 +246,6 @@
                     "mac_address_label": "MAC Address",
                     "fqdn_label": "FQDN",
                     "ssh_console": "SSH console",
-                    "network_configuration_button": "Configure Interfaces",
-                    "disk_configuration_button": "Configure Disks",
                     "close_button": "Close",
                     "total": "total",
                     "bytes": "bytes",
@@ -273,7 +274,8 @@
                 "cancel_changes_button": "取消变更",
                 "apply_button": "应用",
                 "title": "",
-                "not_available": ""
+                "not_available": "",
+                "delete_label": "删除"
             },
             "node_details": {
                 "cpu": "",
@@ -524,11 +526,12 @@
                     "rename_environment": "重命名环境",
                     "delete_environment": "删除环境",
                     "bt_rename": "重命名",
-                    "bt_delete": "删除",
                     "alert_delete": "清除每个节点并放回未分配节点池"
                 },
 
                 "nodes_tab": {
+                    "network_configuration_button": "网络配置",
+                    "disk_configuration_button": "磁盘配置",
                     "add": "增加",
                     "delete": "删除",
                     "controller": "控制器",
@@ -566,8 +569,6 @@
                     "disk_information": "磁盘信息",
                     "volume_groups": "卷组",
                     "use_all_allowed_space": "使用全部可用空间",
-                    "bt_network_configuration": "网络配置",
-                    "bt_disk_configuration": "磁盘配置",
                     "edit_name": "",
                     "cpu": "",
                     "hdd": "",
@@ -657,8 +658,6 @@
                     "max_speed": "最大速度",
                     "current_speed": "当前速度",
                     "netmask": "网络掩码",
-                    "network_configuration_button": "网络配置",
-                    "disk_configuration_button": "磁盘配置",
                     "mac" : "",
                     "ip" : "",
                     "bytes": "",

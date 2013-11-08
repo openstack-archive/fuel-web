@@ -60,7 +60,7 @@ class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
         if cluster.is_ha_mode:
             nw_metadata = cluster.release.networks_metadata["nova_network"]
             for network in nw_metadata["networks"]:
-                if network.get("assign_vip") is not False:
+                if network.get("assign_vip"):
                     result['{0}_vip'.format(
                         network["name"]
                     )] = net_manager.assign_vip(
@@ -96,7 +96,7 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
         if cluster.is_ha_mode:
             nw_metadata = cluster.release.networks_metadata["neutron"]
             for network in nw_metadata["networks"]:
-                if network.get("assign_vip") is not False:
+                if network.get("assign_vip"):
                     result['{0}_vip'.format(
                         network["name"]
                     )] = net_manager.assign_vip(

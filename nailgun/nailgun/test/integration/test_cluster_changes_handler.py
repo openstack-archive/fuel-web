@@ -416,7 +416,7 @@ class TestHandlers(BaseIntegrationTest):
                 assigned_ips[node_id] = {}
                 assigned_ips[node_id]['management'] = '192.168.0.%d' % (i + 3)
                 assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
-                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 3)
+                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 2)
                 assigned_ips[node_id]['admin'] = admin_ip
 
                 nodes_list.append({

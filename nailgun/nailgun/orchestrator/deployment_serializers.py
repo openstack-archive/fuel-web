@@ -283,10 +283,11 @@ class DeploymentHASerializer(DeploymentMultiSerializer):
         ).get_common_attrs(cluster)
 
         netmanager = cluster.network_manager()
-        common_attrs['management_vip'] = netmanager.assign_vip(
-            cluster.id, 'management')
-        common_attrs['public_vip'] = netmanager.assign_vip(
-            cluster.id, 'public')
+        nw_metadata = cluster.release.networks_metadata[cluster.net_provider]
+        for ng in nw_metadata["networks"]:
+            if ng.get("assign_vip"):
+                common_attrs[ng['name'] + '_vip'] = netmanager.assign_vip(
+                    cluster.id, ng['name'])
 
         common_attrs['mp'] = [
             {'point': '1', 'weight': '1'},

@@ -380,13 +380,27 @@ class VerifyNetworksTaskManager(TaskManager):
         db().add(task)
         db().commit()
 
-        self._call_silently(
-            task,
-            tasks.CheckNetworksTask,
-            data=nets,
-            check_admin_untagged=True
-        )
-        db().refresh(task)
+        if task.status != 'error':
+            if (
+                task.cluster.status != 'new' and
+                task.cluster.net_provider == 'neutron' and
+                task.cluster.net_segment_type == 'vlan'
+            ):
+                task.status = 'error'
+                task.message = ('Network verification on Neutron with VLAN'
+                                ' segmentation is not implemented yet')
+
+                db().commit()
+            else:
+                self._call_silently(
+                    task,
+                    tasks.CheckNetworksTask,
+                    data=nets,
+                    check_admin_untagged=True
+                )
+                db().refresh(task)
+
+        #disalble neutron with vlan connectivity check after deployment
 
         if task.status != 'error':
             # this one is connected with UI issues - we need to

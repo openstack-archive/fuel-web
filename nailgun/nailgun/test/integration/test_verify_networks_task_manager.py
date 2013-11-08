@@ -166,3 +166,36 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEquals(400, resp.status)
+
+
+class TestVerifyNetworksDisabled(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestVerifyNetworksDisabled, self).setUp()
+        self.env.create(
+            cluster_kwargs={'status': 'operational',
+                            'net_provider': 'neutron',
+                            'net_segment_type': 'vlan'},
+            nodes_kwargs=[
+                {
+                    'api': False,
+                },
+                {
+                    'api': False,
+                },
+            ]
+        )
+        self.cluster = self.env.clusters[0]
+        self.cluster.status = 'operational'
+        self.db.commit()
+
+    @fake_tasks(fake_rpc=False)
+    def test_network_verification_neutron_with_vlan_segmentation(
+            self, mocked_rpc):
+        task = self.env.launch_verify_networks()
+        self.assertEqual(task.status, 'error')
+        self.assertEqual(
+            (u'Network verification on Neutron with VLAN segmentation '
+             u'is not implemented yet'),
+            task.message
+        )

@@ -153,6 +153,89 @@ class TestHandlers(BaseIntegrationTest):
         node = self.db.query(Node).get(node.id)
         self.assertEquals('new', node.manufacturer)
 
+    def test_node_update_empty_mac_or_id(self):
+        node = self.env.create_node(api=False)
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'manufacturer': 'man0'}]),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.body, "Neither MAC nor ID is specified")
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'mac': None,
+                         'manufacturer': 'man1'}]),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.body, "Neither MAC nor ID is specified")
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': None,
+                         'manufacturer': 'man2'}]),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.body, "Neither MAC nor ID is specified")
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'mac': None,
+                         'id': None,
+                         'manufacturer': 'man3'}]),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.body, "Neither MAC nor ID is specified")
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node.id,
+                         'mac': None,
+                         'manufacturer': 'man4'}]),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.body, "Null MAC is specified")
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': None,
+                         'mac': node.mac,
+                         'manufacturer': 'man5'}]),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 200)
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node.id,
+                         'manufacturer': 'man6'}]),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 200)
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'mac': node.mac,
+                         'manufacturer': 'man7'}]),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 200)
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node.id,
+                         'mac': node.mac,
+                         'manufacturer': 'man8'}]),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 200)
+
     def test_node_update_agent_discover(self):
         self.env.create_node(
             api=False,

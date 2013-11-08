@@ -559,7 +559,8 @@ label.node-checkbox {
 .role-list > .pending-roles li {
   color: #468847;
 }
-.add-nodes-screen .role-list > .pending-roles:empty::before {
+.add-nodes-screen .role-list > .pending-roles:empty::before,
+.edit-nodes-screen .role-list > .pending-roles:empty::before{
   content: 'unallocated';
 }
 

@@ -181,13 +181,18 @@ class NodeValidator(BasicValidator):
 
         q = db().query(Node)
         for nd in d:
-            if not "mac" in nd and not "id" in nd:
+            if not nd.get("mac") and not nd.get("id"):
                 raise errors.InvalidData(
-                    "MAC or ID is not specified",
+                    "Neither MAC nor ID is specified",
+                    log_message=True
+                )
+            if "mac" in nd and not nd["mac"]:
+                raise errors.InvalidData(
+                    "Null MAC is specified",
                     log_message=True
                 )
             else:
-                if "mac" in nd:
+                if nd.get("mac"):
                     existent_node = q.filter_by(mac=nd["mac"]).first() \
                         or cls.validate_existent_node_mac_update(nd)
                     if not existent_node:
@@ -195,7 +200,7 @@ class NodeValidator(BasicValidator):
                             "Invalid MAC specified",
                             log_message=True
                         )
-                if "id" in nd:
+                if nd.get("id"):
                     existent_node = q.get(nd["id"])
                     if not existent_node:
                         raise errors.InvalidData(

@@ -181,9 +181,13 @@ class NodeValidator(BasicValidator):
 
         q = db().query(Node)
         for nd in d:
-            if not "mac" in nd and not "id" in nd:
+            if "mac" in nd and not nd["mac"]:
+                nd.pop("mac")
+            if "id" in nd and not nd["id"]:
+                nd.pop("id")
+            if "mac" not in nd and "id" not in nd:
                 raise errors.InvalidData(
-                    "MAC or ID is not specified",
+                    "Neither MAC nor ID is specified",
                     log_message=True
                 )
             else:

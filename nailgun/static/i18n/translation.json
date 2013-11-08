@@ -112,6 +112,31 @@
                 "download_report": "Download report",
                 "loading": "Loading..."
             },
+            "display_changes" :{
+                "title": "Deploy Changes",
+                "added_node": "Added __nodesCount__ node.",
+                "added_node_plural": "Added __nodesCount__ nodes.",
+                "deleted_node": "Deleted __nodesCount__ node.",
+                "deleted_node_plural":  "Deleted __nodesCount__ nodes.",
+                "reconfigured_node": "Reconfigured roles of  __nodesCount__ node.",
+                "reconfigured_node_plural": "Reconfigured roles of  __nodesCount__ nodes.",
+                "settings_changes": {
+                    "attrs": "OpenStack settings",
+                    "networks": "Network settings",
+                    "disks": "Changed disk configuration of the following nodes:"
+                },
+                "warnings": {
+                    "controller": "Environment should have __nodeSize__ controller node",
+                    "controller_plural": "Environment should have __nodeSize__ controller nodes",
+                    "compute": "Compute nodes are recommended for deployment"
+                },
+                "changed_task_name": "Changed __item__",
+                "changed": "Changed",
+                "deleted": "Deleted",
+                "cancel": "Cancel",
+                "deploy": "Deploy",
+                "redeployment_needed": "Some nodes have error status after deployment. Redeployment is needed."
+            },
             "dialog": {
                 "create_cluster_wizard": {
                     "title": "Create a new OpenStack environment",

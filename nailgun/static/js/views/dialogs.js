@@ -597,6 +597,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 cluster: this.model,
                 size: this.model.get('mode') == 'ha_compact' ? 3 : 1
             });
+            this.$el.i18n();
             return this;
         }
     });

@@ -1,7 +1,6 @@
 <label class="node-container node-box">
     <div class="custom-tumbler node-checkbox">
-        <% var disabledNode = ((!node.get('online') || node.get('status') == 'error') && !node.get('cluster')) || node.get('pending_deletion') || edit || locked %>
-        <input type="checkbox" value="<%- node.id %>" <%= disabledNode ? 'disabled' : '' %> />
+        <input type="checkbox" />
         <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
     </div>
     <div class="node-content">
@@ -14,10 +13,7 @@
                     <p class="<%= renameable ? 'node-renameable' : '' %>" title="<%- renameable ? $.t('cluster_page.nodes_tab.node.edit_name') : '' %>"><%- node.get('name') || node.get('mac') %></p>
                 <% } %>
             </div>
-            <div class="role-list">
-                <ul class="roles"></ul>
-                <ul class="pending-roles"></ul>
-            </div>
+            <div class="role-list"></div>
         </div>
         <div class="node-button">
             <button class="" title=""><i class=""></i></button>

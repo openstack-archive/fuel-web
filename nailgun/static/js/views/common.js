@@ -255,7 +255,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         ],
         setLocale: function(e) {
             var newLocale = _.find(this.locales, {locale: $(e.currentTarget).data('locale')});
-            $.i18n.setLng(newLocale.locale);
+            $.i18n.setLng(newLocale.locale, {});
             window.location.reload();
         },
         getCurrentLocale: function() {
@@ -264,7 +264,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         setDefaultLocale: function() {
             var currentLocale = this.getCurrentLocale();
             if (!currentLocale) {
-                $.i18n.setLng(this.locales[0].locale);
+                $.i18n.setLng(this.locales[0].locale, {});
             }
         },
         initialize: function(options) {

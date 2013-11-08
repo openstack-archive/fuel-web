@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
+'use strict';
 requirejs.config({
     baseUrl: 'static',
     urlArgs: '_=' +  (new Date()).getTime(),
@@ -23,7 +24,7 @@ requirejs.config({
         'jquery-timeout': 'js/libs/jquery.timeout',
         'jquery-ui': 'js/libs/jquery-ui-1.10.2.custom',
         'jquery-autoNumeric': 'js/libs/autoNumeric',
-        i18next: 'js/libs/i18next.amd.withJQuery-1.6.3',
+        i18next: 'js/libs/i18next-1.7.1',
         utils: 'js/utils',
         underscore: 'js/libs/lodash',
         backbone: 'js/libs/backbone',
@@ -60,7 +61,10 @@ requirejs.config({
             deps: ['jquery']
         },
         i18next: {
-            deps: ['jquery']
+            deps: ['text!i18n/translation.json', 'jquery'],
+            init: function(translation, $) {
+                $.i18n.init({resStore: JSON.parse(translation)});
+            }
         },
         'jquery-checkbox': {
             deps: ['jquery']
@@ -78,13 +82,8 @@ requirejs.config({
 });
 
 require([
-    'text!i18n/translation.json',
     'jquery', 'underscore', 'backbone', 'stickit', 'deepModel', 'coccyx', 'i18next', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric',
     'app'
-], function(translation) {
-    'use strict';
-    var app = _.last(arguments);
-    $.i18n.init({
-        resStore: JSON.parse(translation)
-    }).always(app.initialize);
+], function() {
+    require('app').initialize();
 });

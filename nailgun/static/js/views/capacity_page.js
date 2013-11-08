@@ -25,7 +25,9 @@ function(commonViews, models, capacityPageTemplate) {
     var CapacityPage = commonViews.Page.extend({
         navbarActiveElement: 'support',
         breadcrumbsPath: [['home', '#'], ['support', '#support'], 'capacity'],
-        title: $.t('capacity_page.title'),
+        title: function() {
+            return $.t('capacity_page.title');
+        },
         updateInterval: 2000,
         template: _.template(capacityPageTemplate),
         events: {

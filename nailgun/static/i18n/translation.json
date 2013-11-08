@@ -88,6 +88,22 @@
                 "nodes_with_config": "Number of nodes with this configuration",
                 "download_report": "Download report",
                 "loading": "Loading..."
+            },
+            "dialog": {
+                "show_node": {
+                    "label_manufacturer": "Manufacturer",
+                    "label_mac_address": "MAC Address",
+                    "label_fqdn": "FQDN",
+                    "undefined": "N/A",
+                    "ssh_console": "SSH console",
+                    "bt_network_configuration": "Configure Interfaces",
+                    "bt_disk_configuration": "Configure Disks",
+                    "bt_close": "Close",
+                    "total": "total",
+                    "bytes": "bytes",
+                    "drive": "drive",
+                    "drives": "drives"
+                }
             }
         }
     },
@@ -448,6 +464,7 @@
                 "show_node": {
                     "label_manufacturer": "设备：",
                     "label_mac_address": "MAC地址：",
+                    "label_fqdn": "",
                     "system": "系统",
                     "memory": "内存",
                     "disks": "磁盘",
@@ -472,7 +489,15 @@
                     "current speed": "当前速度",
                     "netmask": "网络掩码",
                     "bt_network_configuration": "网络配置",
-                    "bt_disk_configuration": "磁盘配置"
+                    "bt_disk_configuration": "磁盘配置",
+                    "mac" : "",
+                    "ip" : "",
+                    "cpu" : "",
+                    "bytes": "",
+                    "undefined": "",
+                    "fqdn": "",
+                    "drive": "",
+                    "drives": ""
                 },
 
                 "discard_changes": {

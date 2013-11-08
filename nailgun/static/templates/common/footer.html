@@ -5,7 +5,7 @@
     <div class="footer-version pull-right">Version: <%- version || '' %></div>
   <% } %>
   <div class="footer-lang pull-right">
-    <div class="dropdown dropup">
+    <div class="dropdown dropup hide">
       <button class="dropdown-toggle current-locale btn btn-link" data-toggle="dropdown"><%- currentLocale.name %></button>
       <ul class="dropdown-menu locales">
         <% _.each(locales, function(locale) { %>

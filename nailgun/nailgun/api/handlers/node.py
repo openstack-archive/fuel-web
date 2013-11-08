@@ -331,7 +331,7 @@ class NodeCollectionHandler(JSONHandler):
         for nd in data:
             is_agent = nd.pop("is_agent") if "is_agent" in nd else False
             node = None
-            if "mac" in nd:
+            if nd.get("mac"):
                 node = q.filter_by(mac=nd["mac"]).first() \
                     or self.validator.validate_existent_node_mac_update(nd)
             else:
@@ -389,7 +389,8 @@ class NodeCollectionHandler(JSONHandler):
                     continue
                 if key == "meta":
                     node.update_meta(value)
-                else:
+                # don't update node ID
+                elif key != "id":
                     setattr(node, key, value)
             db().commit()
             if not node.attributes:

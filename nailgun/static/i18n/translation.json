@@ -11,6 +11,7 @@
                 "delete_button": "Delete",
                 "save_settings_button": "Save Settings",
                 "cancel_button": "Cancel",
+                "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
                 "network": {
                     "fixed": "VM Networks (Fixed)",
@@ -107,6 +108,11 @@
                     "configure_disks": {
                         "title": "Configure disks on __name__",
                         "title_plural": "Configure disks on __count__ nodes"
+                    },
+                    "node_management_panel":{
+                        "group_by": "Group By",
+                        "edit_roles_button": "Edit Roles",
+                        "add_nodes_button": "Add Nodes"
                     },
                     "back_to_nodes_button": "Back To Node List",
                     "discovered": "Discovered",

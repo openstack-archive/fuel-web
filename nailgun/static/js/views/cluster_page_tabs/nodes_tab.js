@@ -102,6 +102,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
     NodeListScreen = Screen.extend({
         constructorName: 'NodeListScreen',
         updateInterval: 20000,
+
         hasChanges: function() {
             return this instanceof ClusterNodesScreen ? false : !_.isEqual(this.nodes.map(function(node) {return node.get('pending_roles') || [];}), this.initialRoles);
         },
@@ -115,23 +116,60 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$('.btn-apply').prop('disabled', !this.hasChanges());
         },
         updateBatchActionsButtons: function() {
-            this.$('.btn-delete-nodes').toggle(!!this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
-            this.$('.btn-add-nodes').css('display', this.$('.node-checkbox input:checked').length ? 'none' : 'block');
+            this.deleteNodesButton.set('isVisible', !!this.$('.node-box:not(.node-delete) input[type=checkbox]:checked').length);
+            this.addNodesButton.set('isVisible', !this.$('.node-checkbox input:checked').length);
             var notDeployedSelectedNodes = this.$('.node-box.node-new:not(.node-offline) .node-checkbox input:checked');
-            this.$('.btn-edit-nodes').toggle(!!notDeployedSelectedNodes.length && notDeployedSelectedNodes.length == this.$('.node-checkbox input:checked').length);
+            this.editRolesButton.set('isVisible', !!notDeployedSelectedNodes.length && notDeployedSelectedNodes.length == this.$('.node-checkbox input:checked').length);
             var nodesIds = notDeployedSelectedNodes.map(function() {return parseInt($(this).val(), 10);}).get().join(',');
             this.$('.btn-edit-nodes').attr('href', '#cluster/' + this.model.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: nodesIds}));
             // check selected nodes for group configuration availability
             var nodeIds = this.$('.node-box:not(.node-delete):not(.node-offline) input[type=checkbox]:checked').map(function() {return parseInt($(this).val(), 10);}).get();
-            this.$('.btn-group-congiration').prop('disabled', !nodeIds.length);
+            this.configureNodesButton.set('disabled', !nodeIds.length);
             var nodes = new models.Nodes(this.nodes.filter(function(node) {return _.contains(nodeIds, node.id);}));
             var noDisksConflict = true;
             nodes.each(function(node) {
                 var noRolesConflict = !_.difference(_.union(nodes.at(0).get('roles'), nodes.at(0).get('pending_roles')), _.union(node.get('roles'), node.get('pending_roles'))).length;
                 noDisksConflict = noDisksConflict && noRolesConflict && _.isEqual(nodes.at(0).resource('disks'), node.resource('disks'));
             });
-            this.$('.btn-configure-disks').toggleClass('conflict', !noDisksConflict);
-            this.$('.btn-configure-interfaces').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);
+
+            this.configureDisks.set('hasWarning', !noDisksConflict);
+            this.configureInterfaces.set('hasWarning', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);
+        },
+        setupButtonsBindings: function() {
+            var isVisibleBindings = {
+                observe: 'isVisible',
+                visible: true
+            };
+            this.stickit(this.addNodesButton, {'.btn-add-nodes' : isVisibleBindings});
+            this.stickit (this.deleteNodesButton, {'.btn-delete-nodes': isVisibleBindings});
+            this.stickit (this.editRolesButton, {'.btn-edit-nodes': isVisibleBindings});
+            var disabledBindings = {
+                attributes: [{
+                    name: 'disabled',
+                    observe: 'disabled',
+                    updateMethod: 'html',
+                    onGet: function(value) {
+                        return _.isUndefined(value) ? false : value;
+                    }
+                }]
+            };
+            this.stickit (this.editRolesButton, {'.btn-edit-nodes': disabledBindings});
+            this.stickit (this.addNodesButton, {'.btn-add-nodes': disabledBindings});
+            this.stickit (this.configureNodesButton, {'.btn-group-congiration': disabledBindings});
+            var hasWarningBindings = {
+                attributes: [{
+                    name: 'class',
+                    observe: 'hasWarning',
+                    updateMethod: 'html',
+                    onGet: function(value, options) {
+                        var val = _.isUndefined(value) ? false : value;
+                        return val ? 'conflict' : '';
+                    }
+                }]
+            };
+            this.stickit (this.configureDisks, {'.btn-configure-disks': hasWarningBindings});
+            this.stickit (this.configureInterfaces, {'.btn-configure-interfaces': hasWarningBindings});
+
         },
         initialize: function() {
             this.nodes.on('resize', this.render, this);
@@ -139,6 +177,26 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.model.on('change:status', _.bind(function() {app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});}, this));
             }
             this.scheduleUpdate();
+            this.addNodesButton = new Backbone.Model({
+                'isVisible': true,
+                'disabled': false
+            });
+            this.deleteNodesButton = new Backbone.Model({
+                'isVisible': false
+            });
+            this.editRolesButton = new Backbone.Model({
+                'isVisible': false,
+                'disabled': true
+            });
+            this.configureNodesButton = new Backbone.Model({
+                'disabled': true
+            });
+            this.configureDisks = new Backbone.Model({
+                'hasWarning': false
+            });
+            this.configureInterfaces = new Backbone.Model({
+                'hasWarning': false
+            });
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -163,6 +221,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.nodeList.calculateSelectAllCheckedState();
             this.nodeList.calculateSelectAllDisabledState();
             this.$el.i18n();
+            this.setupButtonsBindings();
             return this;
         }
     });
@@ -319,6 +378,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 edit: this.screen instanceof EditNodesScreen,
                 locked: this.screen.isLocked()
             }));
+            var isDisabled = !!this.cluster.task('deploy', 'running');
+            this.screen.addNodesButton.set('disabled', isDisabled);
+            this.screen.editRolesButton.set('disabled', isDisabled);
             return this;
         }
     });
@@ -466,7 +528,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             if (attribute == 'roles') {
                 var rolesMetadata = this.screen.tab.model.get('release').get('roles_metadata');
-                this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
+                this.nodeGroups = this.nodes.groupBy(function(node) {return _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
             } else if (attribute == 'hardware') {
                 this.nodeGroups = this.nodes.groupBy(function(node) {
                     return $.t('cluster_page.nodes_tab.hdd', {defaultValue: 'HDD'}) + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.ram', {defaultValue: 'RAM'}) + ': ' + utils.showMemorySize(node.resource('ram'));
@@ -978,7 +1040,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         updateButtonsState: function(state) {
             this.applyChangesButton.set('disabled', state);
             this.cancelChangesButton.set('disabled', state);
-            this.loadDefaultsButton.set('disabled',  state);
+            this.loadDefaultsButton.set('disabled', state);
         },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
@@ -1225,7 +1287,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     }, this);
                     return Backbone.sync('update', interfaces, {url: _.result(node, 'url') + '/interfaces'});
                 }, this))
-                .done(_.bind(function(){
+                .done(_.bind(function() {
                     this.checkForChanges();
                 }, this))
                 .fail(_.bind(function() {

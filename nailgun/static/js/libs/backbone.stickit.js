@@ -232,7 +232,6 @@
   //
   var initializeAttributes = function(view, $el, config, model, modelAttr) {
     var props = ['autofocus', 'autoplay', 'async', 'checked', 'controls', 'defer', 'disabled', 'hidden', 'loop', 'multiple', 'open', 'readonly', 'required', 'scoped', 'selected'];
-
     _.each(config.attributes || [], function(attrConfig) {
       var lastClass = '', observed, updateAttr;
       attrConfig = _.clone(attrConfig);
@@ -240,6 +239,10 @@
       updateAttr = function() {
         var updateType = _.indexOf(props, attrConfig.name, true) > -1 ? 'prop' : 'attr',
           val = getAttr(model, observed, attrConfig, view);
+          // crutch here for our disabled propeties used widely
+          if (($el.prop("tagName") == "A" || $el.prop("tagName") == "DIV") && attrConfig.name == 'disabled') {
+              updateType="attr";
+          }
         // If it is a class then we need to remove the last value and add the new.
         if (attrConfig.name === 'class') {
           $el.removeClass(lastClass).addClass(val);

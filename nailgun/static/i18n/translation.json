@@ -161,6 +161,11 @@
                         },
                         "edit_name": "Edit Name"
                     },
+                    "node_management_panel":{
+                        "group_by": "Group By",
+                        "edit_roles_button": "Edit Roles",
+                        "add_nodes_button": "Add Nodes"
+                    },
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",
                     "no_selected_nodes": "There are no selected nodes to edit.",

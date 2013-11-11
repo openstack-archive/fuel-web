@@ -842,15 +842,24 @@ def get_bar_for_progress(full_width, progress):
 
 
 def print_deploy_progress(deploy_task):
-    stdscr = curses.initscr()
-    scr_width = stdscr.getmaxyx()[1]
-    curses.noecho()
-    curses.cbreak()
     deploy_task_id = deploy_task["id"]
     env = deploy_task["cluster"]
+    try:
+        stdscr = curses.initscr()
+        scr_width = stdscr.getmaxyx()[1]
+        curses.noecho()
+        curses.cbreak()
+        total_progress_bar = partial(get_bar_for_progress, scr_width - 17)
+        node_bar = partial(get_bar_for_progress, scr_width - 28)
+    except curses.error:
+        # print progress using only stdout
+        print(
+            "Deploying changes to environment with id={0}"
+            .format(env)
+        )
+        message_len = 0
+        stdscr = None
     progress = 0
-    total_progress_bar = partial(get_bar_for_progress, scr_width - 17)
-    node_bar = partial(get_bar_for_progress, scr_width - 28)
     nodes = []
     try:
         while progress != 100 or \
@@ -866,31 +875,56 @@ def print_deploy_progress(deploy_task):
                 .format(env)
             )
             nodes.sort(key=lambda n: n.get("id"))
-            stdscr.addstr(0, 0,
-                          "Deploying changes to environment with id={0}"
-                          .format(env)
-                          )
-            stdscr.addstr(1, 0,
-                          "Deployment: {0} {1:4.0%}".format(
-                              total_progress_bar(progress),
-                              progress / 100.0
-                          ))
+            if stdscr is not None:
+                stdscr.addstr(0, 0,
+                              "Deploying changes to environment with id={0}"
+                              .format(env)
+                              )
+                stdscr.addstr(1, 0,
+                              "Deployment: {0} {1:4.0%}".format(
+                                  total_progress_bar(progress),
+                                  progress / 100.0
+                              ))
+            else:
+                deployment_message = "[Deployment: {0:4.0%}]".format(
+                    progress / 100.0
+                )
+                sys.stdout.write(deployment_message)
+                message_len += len(deployment_message)
             for index, _node in enumerate(nodes):
-                stdscr.addstr(index + 2, 0,
-                              "Node{0:3} {1:13}: {2} {3:4.0%}".format(
-                                  _node["id"],
-                                  _node["status"],
-                                  node_bar(_node["progress"]),
-                                  _node["progress"] / 100.0
-                              )
-                              )
-            sleep(0.25)
-            stdscr.refresh()
+                if stdscr is not None:
+                    stdscr.addstr(index + 2, 0,
+                                  "Node{0:3} {1:13}: {2} {3:4.0%}"
+                                  .format(
+                                      _node["id"],
+                                      _node["status"],
+                                      node_bar(_node["progress"]),
+                                      _node["progress"] / 100.0
+                                  )
+                                  )
+                else:
+                    node_message = "[Node{0:2} {1:4.0%}]".format(
+                        _node["id"],
+                        _node["progress"] / 100.0
+                    )
+                    message_len += len(node_message)
+                    sys.stdout.write(
+                        node_message
+                    )
+
+            sleep(0.5)
+            if stdscr is not None:
+                stdscr.refresh()
+            else:
+                sys.stdout.write("\r" * message_len)
     except DeployProgressError as e:
         close_curses()
         print(e.message)
     finally:
-        close_curses()
+        if stdscr is not None:
+            close_curses()
+        else:
+            print("Finished deployment!")
 
 
 def close_curses():
@@ -1018,7 +1052,8 @@ def print_health_check(params):
         )
         for test in new_finished_tests:
             print(
-                "[{0:2} of {1}] [{status}] '{name}' ({taken:.4} s) {message}".format(
+                "[{0:2} of {1}] [{status}] '{name}' "
+                "({taken:.4} s) {message}".format(
                     test_counter,
                     total_tests_count,
                     **test

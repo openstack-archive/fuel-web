@@ -2,7 +2,8 @@
     "en-US": {
         "translation": {
             "common": {
-                "title": "Fuel Dashboard"
+                "title": "Fuel Dashboard",
+                "loading": "Loading..."
             },
             "navbar": {
                 "environments": "Environments",
@@ -36,7 +37,6 @@
                 "register_fuel_content": "Registering will ensure that you receive important notifications about issues and new versions of Fuel. In addition, you will receive access to our basic support services for the next 30 days!",
                 "download_diagnostic_snapshot_text": "Download Diagnostic Snapshot",
                 "gen_logs_snapshot_text": "Generating logs snapshot...",
-                "loading": "Loading...",
                 "gen_diagnostic_snapshot_text": "Generate diagnostic snapshot",
                 "diagnostic_snapshot": "Diagnostic Snapshot",
                 "capacity_audit": "Capacity Audit",
@@ -62,16 +62,16 @@
             "cluster_page": {
                 "settings_tab": {
                     "title": "OpenStack Settings",
-                    "bt_load_defaults": "Load Defaults",
-                    "bt_cancel_changes": "Cancel Changes",
-                    "bt_save_settings": "Save Settings"
+                    "load_defaults": "Load Defaults",
+                    "cancel_changes": "Cancel Changes",
+                    "save_settings": "Save Settings"
                 },
                 "actions_tab": {
                     "title": "Actions",
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
-                    "bt_rename": "Rename",
-                    "bt_delete": "Delete",
+                    "rename_button": "Rename",
+                    "delete_button": "Delete",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
                 }
             },
@@ -86,13 +86,16 @@
                 "total_number_unalloc_nodes": "Total number of unallocated nodes",
                 "node_role": "Node role(s)",
                 "nodes_with_config": "Number of nodes with this configuration",
-                "download_report": "Download report",
-                "loading": "Loading..."
+                "download_report": "Download report"
             }
         }
     },
     "zh-CN": {
         "translation": {
+            "common": {
+                "title": "",
+                "loading": "."
+            },
             "navbar": {
                 "environments": "环境",
                 "releases": "版本",
@@ -107,14 +110,11 @@
                 "environments": "环境",
                 "releases": "版本",
                 "support": "支持",
-                "notifications": "通知"
+                "notifications": "通知",
+                "capacity": ""
             },
             "notifications_page": {
                 "title": "通知"
-            },
-            "notifications_popover": {
-                "view_all": "查看全部",
-                "no_notifications_text": "没有通知可显示"
             },
             "support_page": {
                 "title": "支持",
@@ -122,21 +122,18 @@
                 "irc_text": "如果您有任何问题，可通过IRC（freenode.net网络的 #fuel 频道）联系开发者。",
                 "log_text": "如果您在使用Fuel Web的过程中遇到任何错误或异常，可能需要将日志提交给支持团队，请点击按钮下载：",
                 "contact_support": "联系支持",
-                "download_logs": "下载日志"
+                "register_fuel_title": "",
+                "register_fuel_content": "",
+                "download_diagnostic_snapshot_text": "",
+                "gen_logs_snapshot_text": "",
+                "gen_diagnostic_snapshot_text": "",
+                "diagnostic_snapshot": "",
+                "capacity_audit": "",
+                "capacity_audit_text": "",
+                "view_capacity_audit": ""
             },
             "release_page": {
-                "title": "版本",
-                "name": "名称",
-                "version": "发布",
-                "status": "状态",
-                "actions": "操作",
-                "alert": "没有版本可用",
-                "configure": "配置",
-                "active": "活动",
-                "error": "错误",
-                "not_available": "不可用",
-                "downloading": "下载中",
-                "progress": "下载："
+                "title": "版本"
             },
             "clusters_page": {
                 "title":"我的OpenStack环境",
@@ -175,9 +172,9 @@
                     "title": "网络设置",
                     "flatdhcp_manager": "FlatDHCP管理",
                     "vlan_manager": "VLAN管理",
-                    "bt_verify_networks": "验证网络",
-                    "bt_cancel_changes": "取消变更",
-                    "bt_save_settings": "保存设置",
+                    "verify_networks": "验证网络",
+                    "cancel_changes": "取消变更",
+                    "save_settings": "保存设置",
                     "step_0": "完成网络验证4个步骤:",
                     "step_1": "1. 每个节点启动测试监听帧",
                     "step_2": "2. 每个节点发送802.1Q封装的UDP帧",
@@ -203,9 +200,9 @@
 
                 "settings_tab": {
                     "title": "OpenStack设置",
-                    "bt_load_defaults": "加载默认配置",
-                    "bt_cancel_changes": "取消变更",
-                    "bt_save_settings": "保存设置",
+                    "load_defaults": "加载默认配置",
+                    "cancel_changes": "取消变更",
+                    "save_settings": "保存设置",
                     "access": {
                         "group_name": "访问",
                         "user": {
@@ -323,8 +320,8 @@
                 "healthcheck_tab": {
                     "title": "OpenStack健康检查",
                     "select_all": "选择全部",
-                    "bt_run_tests": "运行测试",
-                    "bt_stop_tests": "停止测试",
+                    "run_tests": "运行测试",
+                    "stop_tests": "停止测试",
                     "alert_deploy": "在测试之前必须先部署新的OpenStack环境",
                     "alert_not_available": "OSTF服务不可用"
                 },
@@ -333,8 +330,8 @@
                     "title": "动作",
                     "rename_environment": "重命名环境",
                     "delete_environment": "删除环境",
-                    "bt_rename": "重命名",
-                    "bt_delete": "删除",
+                    "rename_button": "重命名",
+                    "delete_button": "删除",
                     "alert_delete": "清除每个节点并放回未分配节点池"
                 },
 
@@ -358,10 +355,10 @@
                     "installing": "正在安装",
                     "is_installed": "已安装",
                     "installing_openstack": "正在安装OpenStack",
-                    "bt_return": "返回节点列表",
-                    "bt_load_defaults": "恢复默认",
-                    "bt_cancel_changes": "取消变更",
-                    "bt_apply": "应用",
+                    "return_button": "返回节点列表",
+                    "load_defaults": "恢复默认",
+                    "cancel_changes": "取消变更",
+                    "apply_button": "应用",
                     "configure": "配置",
                     "node_interfaces": "节点 接口",
                     "node_disks": "节点 磁盘",
@@ -377,8 +374,8 @@
                     "disk_information": "磁盘信息",
                     "volume_groups": "卷组",
                     "use_all_allowed_space": "使用全部可用空间",
-                    "bt_network_configuration": "网络配置",
-                    "bt_disk_configuration": "磁盘配置",
+                    "network_configuration_button": "网络配置",
+                    "disk_configuration_button": "磁盘配置",
                     "edit_name": "",
                     "cpu": "",
                     "hdd": "",
@@ -398,8 +395,8 @@
                 "dismiss_settings": {
                     "title": "确认",
                     "important": "重要",
-                    "bt_stay": "留在本页",
-                    "bt_leave": "离开并放弃变更",
+                    "stay_button": "留在本页",
+                    "leave_button": "离开并放弃变更",
                     "default_msg": "设置变更未保存，您想放弃变更并离开么？",
                     "verify_msg": "正在进行网络验证，您应该保存变更或留在本页"
                 },
@@ -507,6 +504,19 @@
                     "warning_controller": "部署后的环境将不包含足够数量的控制器，也许不可使用。",
                     "warning_compute": "建议部署计算节点。"
                 }
+            },
+            "capacity_page": {
+                "title": "",
+                "license_usage": "",
+                "fuel_version": "",
+                "fuel_uuid": "",
+                "env_name": "",
+                "node_count": "",
+                "total_number_alloc_nodes": "",
+                "total_number_unalloc_nodes": "",
+                "node_role": "",
+                "nodes_with_config": "",
+                "download_report": ""
             }
         }
     }

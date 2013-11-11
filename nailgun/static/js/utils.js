@@ -59,6 +59,9 @@ define(['require'], function(require) {
             if (!_.isNumber(bandwidth) || _.isNaN(bandwidth)) {return 'N/A';}
             return (bandwidth / 1000).toFixed(1) + ' Gbps';
         },
+        showNetworkState: function(state) {
+            return state !== 'down' ? 'online' : 'offline';
+        },
         showFrequency: function(frequency) {
             frequency = parseInt(frequency, 10);
             if (!_.isNumber(frequency) || _.isNaN(frequency)) {return 'N/A';}

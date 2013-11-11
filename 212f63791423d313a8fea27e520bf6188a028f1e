@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Approved+1: Dmitry Pyzhov <dpyzhov@mirantis.com>
+Code-Review+2: Dmitry Pyzhov <dpyzhov@mirantis.com>
+Code-Review+1: Andrew Woodward <xarses@gmail.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 11 Nov 2013 09:26:56 +0000
+Reviewed-on: https://review.openstack.org/55233
+Project: stackforge/fuel-web
+Branch: refs/heads/master

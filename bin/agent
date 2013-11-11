@@ -176,6 +176,7 @@ class NodeAgent
         # Exception: eth0.0(example) have "type" => "eth" but it is not physical interface
         next if int =~ /\d+\.\d+$/
         int_meta = {:name => int}
+        int_meta[:state] = intinfo[:state]
         (intinfo[:addresses] or {} rescue {}).each do |addr, addrinfo|
           if (addrinfo[:family] rescue nil) =~ /lladdr/
             int_meta[:mac] = addr

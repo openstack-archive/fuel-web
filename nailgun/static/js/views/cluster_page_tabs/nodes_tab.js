@@ -1318,7 +1318,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
 
     NodeInterface = Backbone.View.extend({
         template: _.template(nodeInterfaceTemplate),
-        templateHelpers: _.pick(utils, 'showBandwidth'),
+        templateHelpers: _.pick(utils, 'showBandwidth', 'showNetworkState'),
         events: {
             'sortremove .logical-network-box': 'dragStart',
             'sortstart .logical-network-box': 'dragStart',

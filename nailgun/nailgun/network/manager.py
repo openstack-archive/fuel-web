@@ -894,6 +894,7 @@ class NetworkManager(object):
         interface.max_speed = interface_attrs.get('max_speed')
         interface.ip_addr = interface_attrs.get('ip')
         interface.netmask = interface_attrs.get('netmask')
+        interface.state = interface_attrs.get('state')
 
     def __delete_not_found_interfaces(self, node, interfaces):
         interfaces_mac_addresses = map(

@@ -16,6 +16,7 @@
 
 from copy import deepcopy
 import json
+import string
 
 from nailgun.errors import errors
 from nailgun.test.base import BaseIntegrationTest
@@ -595,6 +596,26 @@ class TestVolumeManager(BaseIntegrationTest):
                 'is_agent': True}]),
             headers=self.default_headers)
 
+    def add_disk_to_node(self, node, size):
+        new_meta = node.meta.copy()
+        last_disk = [d['name'][-1] for d in new_meta['disks']][-1]
+        new_disk = string.letters.index(last_disk) + 1
+
+        new_meta['disks'].append({
+            # convert mbytes to bytes
+            'size': size * (1024 ** 2),
+            'model': 'SAMSUNG B00B135',
+            'name': 'sd%s' % string.letters[new_disk],
+            'disk': 'disk/id/b00b135'})
+
+        self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{
+                'mac': node.mac,
+                'meta': new_meta,
+                'is_agent': True}]),
+            headers=self.default_headers)
+
     def test_check_disk_space_for_deployment(self):
         volumes_metadata = self.env.get_default_volumes_metadata()
         volumes_roles_mapping = volumes_metadata['volumes_roles_mapping']
@@ -611,6 +632,16 @@ class TestVolumeManager(BaseIntegrationTest):
             self.assertRaises(
                 errors.NotEnoughFreeSpace,
                 node.volume_manager.check_disk_space_for_deployment)
+
+    def test_check_volume_size_for_deployment(self):
+        node = self.create_node('controller', 'ceph-osd')
+        # First disk less than minimum size of all VGs
+        self.update_node_with_single_disk(node, 14384)
+        # Taken entirely by ceph
+        self.add_disk_to_node(node, 65536)
+        self.assertRaises(
+            errors.NotEnoughFreeSpace,
+            node.volume_manager.check_volume_size_for_deployment)
 
 
 class TestDisks(BaseIntegrationTest):

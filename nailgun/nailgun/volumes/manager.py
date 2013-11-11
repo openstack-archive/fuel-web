@@ -636,6 +636,15 @@ class VolumeManager(object):
 
         return size_without_lvm_meta
 
+    def get_total_allocated_size(self, name):
+        size = 0
+        for disk in self.disks:
+            for volume in disk.volumes:
+                if volume.get('name') == name or volume.get('vg') == name:
+                    size += volume['size']
+
+        return size
+
     def call_generator(self, generator, *args):
         generators = {
             # Calculate swap space based on total RAM
@@ -902,6 +911,20 @@ class VolumeManager(object):
 
         if disks_space < minimal_installation_size:
             raise errors.NotEnoughFreeSpace()
+
+    def check_volume_sizes_for_deployment(self):
+        vg_errors = []
+
+        for volume in self.allowed_volumes:
+            vg_size = self.get_total_allocated_size(volume['id'])
+            min_size = self.expand_generators(volume)['min_size']
+            if vg_size < min_size:
+                vg_errors.append([volume['label'], min_size])
+
+        if vg_errors:
+            msgs = ["Volume group '{0}' requires a minimum of {1}MB".format(*v)
+                    for v in vg_errors]
+            raise errors.NotEnoughFreeSpace('\n'.join(msgs))
 
     def __calc_minimal_installation_size(self):
         '''Calc minimal installation size depend on node role

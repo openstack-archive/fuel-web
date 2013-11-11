@@ -168,12 +168,13 @@ class TestHandlers(BaseIntegrationTest):
     def test_NIC_updates_by_agent(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
-            {'name': 'eth0', 'mac': '12345', 'current_speed': 1}])
+            {'name': 'eth0', 'mac': '12345', 'current_speed': 1,
+             'state': 'up'}])
         node = self.env.create_node(api=True, meta=meta)
         new_meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(new_meta, [
             {'name': 'new_nic', 'mac': '12345', 'current_speed': 10,
-             'max_speed': 10}])
+             'max_speed': 10, 'state': 'down'}])
         node_data = {'mac': node['mac'], 'is_agent': True,
                      'meta': new_meta}
         resp = self.app.put(
@@ -193,13 +194,15 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp_nic['mac'], nic['mac'])
         self.assertEquals(resp_nic['current_speed'], nic['current_speed'])
         self.assertEquals(resp_nic['max_speed'], nic['max_speed'])
+        self.assertEquals(resp_nic['state'], nic['state'])
         for conn in ('assigned_networks', 'allowed_networks'):
             self.assertEquals(resp_nic[conn], [])
 
     def test_NIC_adds_by_agent(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
-            {'name': 'eth0', 'mac': '12345', 'current_speed': 1}])
+            {'name': 'eth0', 'mac': '12345', 'current_speed': 1,
+             'state': 'up'}])
         node = self.env.create_node(api=True, meta=meta)
 
         meta['interfaces'].append({'name': 'new_nic', 'mac': '643'})
@@ -227,6 +230,7 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEquals(resp_nic['current_speed'],
                               nic.get('current_speed'))
             self.assertEquals(resp_nic['max_speed'], nic.get('max_speed'))
+            self.assertEquals(resp_nic['state'], nic.get('state'))
             for conn in ('assigned_networks', 'allowed_networks'):
                 self.assertEquals(resp_nic[conn], [])
 

@@ -468,6 +468,7 @@ class NodeNICsHandler(JSONHandler):
             'name',
             'current_speed',
             'max_speed',
+            'state',
             ('assigned_networks', 'id', 'name'),
             ('allowed_networks', 'id', 'name')
         )

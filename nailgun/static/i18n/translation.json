@@ -88,6 +88,19 @@
                 "nodes_with_config": "Number of nodes with this configuration",
                 "download_report": "Download report",
                 "loading": "Loading..."
+            },
+            "dialog": {
+                "rhel_license": {
+                    "title": "Red Hat Enterprise Linux Account Settings",
+                    "alert_text": "To deploy the Red Hat Enterprise Linux OpenStack Platform, you must first download it to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  The RHEL OpenStack Platform will be automatically downloaded and cached after you create the environment.",
+                    "button_cancel": "Cancel",
+                    "button_apply": "Apply",
+                    "rhn_sattelite": "RHN Satellite",
+                    "redhat_username": "Red Hat Username",
+                    "redhat_password": "Red Hat Password",
+                    "satellite_server_hostname": "Satellite Server Hostname",
+                    "activation_key": "Activation Key"
+                }
             }
         }
     },
@@ -407,7 +420,7 @@
                 "rhel_license": {
                     "title": "红帽企业版Linux账户设置",
                     "alert_text": "安装红帽版的OpenStack平台, 你首先必须下载RHOS和RHEL并缓存在Fuel的主节点上。请选择你的订阅并在下面输入你的凭据开始下载。",
-                    "bt_cancel": "取消",
+                    "button_cancel": "取消",
                     "redhat_username": "红帽账户",
                     "redhat_password": "红帽密码",
                     "satellite_server_hostname": "satellite服务器主机名",

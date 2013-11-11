@@ -88,6 +88,16 @@
                 "nodes_with_config": "Number of nodes with this configuration",
                 "download_report": "Download report",
                 "loading": "Loading..."
+            },
+            "dialog": {
+                "dismiss_settings": {
+                    "title": "Confirm",
+                    "important": "Important",
+                    "bt_stay": "Stay on page",
+                    "bt_leave": "Leave page and discard changes",
+                    "default_msg": "Settings were modified but not saved. Do you want to discard your changes and leave the page?",
+                    "verify_msg": "Network verification is in progress. You should save changes or stay on the tab."
+                }
             }
         }
     },

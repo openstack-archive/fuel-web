@@ -726,8 +726,8 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     views.DiscardSettingsChangesDialog = views.Dialog.extend({
         template: _.template(discardSettingsChangesTemplate),
-        defaultMessage: 'Settings were modified but not saved. Do you want to discard your changes and leave the page?',
-        verificationMessage: 'Network verification is in progress. You should save changes or stay on the tab.',
+        defaultMessage: $.t('dialog.dismiss_settings.default_msg'),
+        verificationMessage: $.t('dialog.dismiss_settings.verify_msg'),
         events: {
             'click .proceed-btn': 'proceed'
         },

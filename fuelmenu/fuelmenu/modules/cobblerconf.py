@@ -438,6 +438,12 @@ interface first.")
             return False
 
     def get_default_gateway_linux(self):
+        """Read the default gateway directly from /etc/sysconfig/network."""
+        with open("/etc/sysconfig/network") as fh:
+            for line in fh:
+                fields = line.strip().split('=')
+                if fields[0] == 'GATEWAY':
+                    return str(fields[1])
         """Read the default gateway directly from /proc."""
         with open("/proc/net/route") as fh:
             for line in fh:

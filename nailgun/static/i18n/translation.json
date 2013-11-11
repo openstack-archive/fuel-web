@@ -230,6 +230,14 @@
                     "deploy": "Deploy",
                     "redeployment_needed": "Some nodes have error status after deployment. Redeployment is needed."
                 },
+                "dismiss_settings": {
+                    "title": "Confirm",
+                    "important": "Important",
+                    "stay_button": "Stay on page",
+                    "leave_button": "Leave page and discard changes",
+                    "default_message": "Settings were modified but not saved. Do you want to discard your changes and leave the page?",
+                    "verify_message": "Network verification is in progress. You should save changes or stay on the tab."
+                },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",
                     "mac_address_label": "MAC Address",
@@ -579,10 +587,10 @@
                 "dismiss_settings": {
                     "title": "确认",
                     "important": "重要",
-                    "bt_stay": "留在本页",
-                    "bt_leave": "离开并放弃变更",
-                    "default_msg": "设置变更未保存，您想放弃变更并离开么？",
-                    "verify_msg": "正在进行网络验证，您应该保存变更或留在本页"
+                    "stay_button": "留在本页",
+                    "leave_button": "离开并放弃变更",
+                    "default_message": "设置变更未保存，您想放弃变更并离开么？",
+                    "verify_message": "正在进行网络验证，您应该保存变更或留在本页"
                 },
 
                 "rhel_license": {

@@ -257,3 +257,4 @@ class NodeNICInterface(Base):
         order_by="NetworkGroup.id")
     ip_addr = Column(String(25))
     netmask = Column(String(25))
+    state = Column(String(25))

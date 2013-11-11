@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-#from distutils.core import setup
 from setuptools import setup
 
 setup(
@@ -25,5 +24,5 @@ setup(
     author_email='product@mirantis.com',
     url='http://mirantis.com',
     install_requires=['PyYAML==3.10'],
-    scripts=['fuel']
+    scripts=['python-fuel-client']
 )

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #    Copyright 2013 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,18 +11,3 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-#from distutils.core import setup
-from setuptools import setup
-
-setup(
-    name='fuel-cli',
-    version='0.1',
-    description='Command line interface for Nailgun',
-    long_description="""Command line interface for Nailgun""",
-    author='Mirantis Inc.',
-    author_email='product@mirantis.com',
-    url='http://mirantis.com',
-    install_requires=['PyYAML==3.10'],
-    scripts=['fuel']
-)

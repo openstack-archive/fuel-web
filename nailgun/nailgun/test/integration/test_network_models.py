@@ -68,24 +68,17 @@ class TestNetworkModels(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, 60)
 
-        test_nets = self.env.generate_ui_networks(
-            self.env.clusters[0].id
-        )
+        test_nets = json.loads(
+            self.env.nova_networks_get(self.env.clusters[0].id).body)
 
-        resp_nova_net = self.app.put(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}),
-            json.dumps(test_nets),
-            headers=self.default_headers,
+        resp_nova_net = self.env.nova_networks_put(
+            self.env.clusters[0].id,
+            test_nets,
             expect_errors=True
         )
-        resp_neutron_net = self.app.put(
-            reverse(
-                'NeutronNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}),
-            json.dumps(test_nets),
-            headers=self.default_headers,
+        resp_neutron_net = self.env.neutron_networks_put(
+            self.env.clusters[0].id,
+            test_nets,
             expect_errors=True
         )
         resp_cluster = self.app.put(

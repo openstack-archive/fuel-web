@@ -207,12 +207,9 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_verify_networks(self, mocked_rpc):
         cluster = self.env.create_cluster(api=True)
-        resp = self.app.put(
-            reverse('NovaNetworkConfigurationHandler',
-                    kwargs={'cluster_id': cluster['id']}),
-            json.dumps(self.env.generate_ui_networks(cluster["id"])),
-            headers=self.default_headers
-        )
+        networks = json.loads(self.env.nova_networks_get(cluster['id']).body)
+
+        resp = self.env.nova_networks_put(cluster['id'], networks)
         self.assertEquals(202, resp.status)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')

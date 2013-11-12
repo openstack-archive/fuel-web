@@ -393,12 +393,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]
         same_vlan = 100
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': cluster_db.id}),
-            headers=self.default_headers
-        )
+        resp = self.env.nova_networks_get(cluster_db.id)
         networks_data = json.loads(resp.body)
         networks_data["networks"] = [
             n for n in networks_data["networks"]
@@ -410,20 +405,9 @@ class TestNetworkManager(BaseIntegrationTest):
             lambda n: n['vlan_start'] != same_vlan, networks_data['networks'])
         different_vlan_nets[0]['vlan_start'] = same_vlan
         same_vlan_nets_count_expect = len(same_vlan_nets) + 1
-        resp = self.app.put(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={"cluster_id": cluster_db.id}
-            ),
-            json.dumps(networks_data),
-            headers=self.default_headers
-        )
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': cluster_db.id}),
-            headers=self.default_headers
-        )
+
+        self.env.nova_networks_put(cluster_db.id, networks_data)
+        resp = self.env.nova_networks_get(cluster_db.id)
         networks_data = json.loads(resp.body)['networks']
         same_vlan_nets = [
             net for net in networks_data if net["vlan_start"] == same_vlan

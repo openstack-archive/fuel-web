@@ -1,5 +1,7 @@
 #!/bin/bash
 
+
+
 function usage {
   echo "Usage: $0 [OPTION]..."
   echo "Run tests"

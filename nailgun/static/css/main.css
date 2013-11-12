@@ -478,6 +478,7 @@ h6.page-title {
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   border: 1px solid #f8f9f9;
+  cursor: pointer;
 }
 .node-content:hover {
   /* IE9 SVG, needs conditional override of 'filter' to 'none' */
@@ -601,6 +602,7 @@ label.node-checkbox {
 .node-hardware {
   width: 240px;
   float: right;
+  height: 1px;
 }
 .node-hardware > ul {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
@@ -871,10 +873,10 @@ label.node-checkbox {
   height: 25px;
   font-size: 9.5px;
   text-transform: uppercase;
-  width: 145px;
+  width: auto;
   overflow: hidden;
   float: right;
-  margin: 14px 20px 0px 20px;
+  margin: 14px 120px 0px 20px;
   position: relative;
   cursor: default;
 }

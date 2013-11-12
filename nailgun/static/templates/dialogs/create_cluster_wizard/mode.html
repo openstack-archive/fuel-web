@@ -7,7 +7,7 @@
           <label class="parameter-box clearfix setting" >
             <div class="parameter-control">
               <div class="custom-tumbler">
-                <input type="radio" name="mode" value="<%= mode %>" />
+                <input type="radio" name="mode" value="<%= mode %>" <%- (mode == 'ha_compact') ? 'disabled' : '' %>/>
                 <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
               </div>
             </div>

@@ -19,7 +19,7 @@
         <label class="parameter-box clearfix">
           <div class="parameter-control">
             <div class="custom-tumbler">
-              <input type="checkbox" name="<%= service.name %>" />
+              <input type="checkbox" name="<%= service.name %>" <%- (service.name == 'murano') ? 'disabled' : '' %>/>
               <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
           </div>

@@ -871,10 +871,10 @@ label.node-checkbox {
   height: 25px;
   font-size: 9.5px;
   text-transform: uppercase;
-  width: 145px;
+  width: auto;
   overflow: hidden;
   float: right;
-  margin: 14px 20px 0px 20px;
+  margin: 14px 120px 0px 20px;
   position: relative;
   cursor: default;
 }

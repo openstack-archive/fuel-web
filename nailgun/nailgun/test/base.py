@@ -859,6 +859,10 @@ class BaseIntegrationTest(BaseTestCase):
                         )
 
 
+class BaseUnitTest(BaseTestCase):
+    pass
+
+
 def fake_tasks(fake_rpc=True,
                mock_rpc=True,
                **kwargs):

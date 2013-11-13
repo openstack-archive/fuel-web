@@ -258,8 +258,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.screen.nodeList.groupNodes(grouping);
         },
         showDeleteNodesDialog: function() {
-            var chosenNodesIds = this.screen.$('.node-box:not(.node-delete) .node-checkbox input:checked').map(function() {return parseInt($(this).val(), 10);}).get();
-            var nodes = new models.Nodes(this.nodes.getByIds(chosenNodesIds));
+            var nodes = new models.Nodes(this.nodes.where({pending_deletion: false, checked: true}));
             nodes.cluster = this.nodes.cluster;
             var dialog = new dialogViews.DeleteNodesDialog({nodes: nodes});
             app.page.tab.registerSubView(dialog);
@@ -295,7 +294,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this));
         },
         goToConfigurationScreen: function(e) {
-            var selectedNodesIds = this.screen.$('.node-checkbox input:checked').map(function() {return parseInt($(this).val(), 10);}).get().join(',');
+            var selectedNodesIds  = _.pluck(this.screen.nodes.where({checked: true}), 'id').join(',');
             app.navigate('#cluster/' + this.cluster.id + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
         },
         showUnavailableGroupConfigurationDialog: function (e) {
@@ -638,7 +637,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     }
                 }]
             },
-            '.node-checkbox input': {
+            '.node-container input': {
                 observe: 'checked',
                 stickitChange: true,
                 onSet: function(value) {
@@ -653,7 +652,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 observe: ['status', 'online', 'pending_addition', 'pending_deletion'],
                 onGet: 'formatStatusLabel'
             },
-            '.node-box': {
+            '.node-container': {
                 attributes: [{
                     name: 'class',
                     observe: ['status', 'online', 'pending_addition', 'pending_deletion'],
@@ -733,7 +732,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         formatNodePanelClass: function(value, options) {
             var nodeClass = this.node.get('pending_deletion') ? 'node-delete' : this.node.get('pending_addition') ? 'node-new' : this.node.get('online') ? this.node.get('status') : 'node-offline';
-            return 'node-box ' + nodeClass;
+            return 'node-container ' + nodeClass;
         },
         formatStatusIconClass: function(value, options) {
             var icons = {

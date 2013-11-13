@@ -2,7 +2,8 @@
     "en-US": {
         "translation": {
             "common": {
-                "title": "Fuel Dashboard"
+                "title": "Fuel Dashboard",
+                "select_all_button": "Select All"
             },
             "navbar": {
                 "environments": "Environments",
@@ -85,6 +86,16 @@
                     "bt_rename": "Rename",
                     "bt_delete": "Delete",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
+                },
+                "healthcheck_tab": {
+                    "title": "OpenStack Health Check",
+                    "run_tests_button": "Run Tests",
+                    "stop_tests_button": "Stop Tests",
+                    "deploy_alert": "You must deploy your new OpenStack environment before running tests against it.",
+                    "not_available_alert": "OSTF server is not available.",
+                    "expected_duration": "Expected Duration",
+                    "actual_duration": "Actual Duration",
+                    "status": "Status"
                 }
             },
             "capacity_page": {
@@ -394,11 +405,10 @@
 
                 "healthcheck_tab": {
                     "title": "OpenStack健康检查",
-                    "select_all": "选择全部",
-                    "bt_run_tests": "运行测试",
-                    "bt_stop_tests": "停止测试",
-                    "alert_deploy": "在测试之前必须先部署新的OpenStack环境",
-                    "alert_not_available": "OSTF服务不可用"
+                    "run_tests_button": "运行测试",
+                    "stop_tests_button": "停止测试",
+                    "deploy_alert": "在测试之前必须先部署新的OpenStack环境",
+                    "not_available_alert": "OSTF服务不可用"
                 },
 
                 "actions_tab": {

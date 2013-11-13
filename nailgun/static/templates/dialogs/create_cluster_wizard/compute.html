@@ -3,8 +3,8 @@
     <div class="control-group">
       <% var hypervisors = ['kvm', 'qemu'] %>
       <% var descriptions = {
-        kvm: 'Choose this type of hypervisor if you run OpenStack on hardware',
-        qemu: 'Choose this type of hypervisor if you run OpenStack on virtual hosts'
+        kvm: $.t('dialog.create_cluster_wizard.compute.kvm_description'),
+        qemu: $.t('dialog.create_cluster_wizard.compute.qemu_description')
       } %>
       <% _.each(hypervisors, function(hypervisor) { %>
         <label class="parameter-box clearfix">

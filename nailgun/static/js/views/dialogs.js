@@ -202,6 +202,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             this.$('.next-pane-btn').toggle(currentStep != totalSteps);
             this.$('.finish-btn').toggle(currentStep == totalSteps);
             this.$('.wizard-footer .btn-success:visible').focus();
+            this.$el.i18n();
             return this;
         }
     });
@@ -220,13 +221,13 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             return (new $.Deferred()).resolve();
         },
         render: function() {
-            this.$el.html(this.template());
+            this.$el.html(this.template()).i18n();
             return this;
         }
     });
 
     clusterWizardPanes.ClusterNameAndReleasePane = views.WizardPane.extend(_.extend({
-        title: 'Name and Release',
+        title:'dialog.create_cluster_wizard.name_release.title',
         template: _.template(clusterNameAndReleasePaneTemplate),
         events: {
             'keydown input': 'onInputKeydown',
@@ -326,7 +327,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template());
+            this.$el.html(this.template()).i18n();
             this.renderReleases();
             this.renderRhelCredentialsForm({
                 redHatAccount: this.redHatAccount,
@@ -337,7 +338,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     }, rhelCredentialsMixin));
 
     clusterWizardPanes.ClusterModePane = views.WizardPane.extend({
-        title: 'Deployment Mode',
+        title: 'dialog.create_cluster_wizard.mode.title',
         releaseDependent: true,
         template: _.template(clusterModePaneTemplate),
         events: {
@@ -365,7 +366,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterComputePane = views.WizardPane.extend({
-        title: 'Compute',
+        title: 'dialog.create_cluster_wizard.compute.title',
         template: _.template(clusterComputePaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
@@ -383,7 +384,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterNetworkPane = views.WizardPane.extend({
-        title: 'Network',
+        title: 'dialog.create_cluster_wizard.network.title',
         releaseDependent: true,
         template: _.template(clusterNetworkPaneTemplate),
         beforeClusterCreation: function(cluster) {
@@ -403,7 +404,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             var disabled = !release || release.get('operating_system') == 'RHEL'; // no Neutron for RHOS for now
-            this.$el.html(this.template({disabled: disabled, release: release}));
+            this.$el.html(this.template({disabled: disabled, release: release})).i18n();
             if (disabled) {
                 this.$('input[value^=neutron]').prop('disabled', true);
             }
@@ -413,7 +414,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterStoragePane = views.WizardPane.extend({
-        title: 'Storage Backends',
+        title: 'dialog.create_cluster_wizard.storage.title',
         releaseDependent: true,
         template: _.template(clusterStoragePaneTemplate),
         beforeSettingsSaving: function(settings) {
@@ -437,7 +438,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             var disabled = !release || !_.contains(release.get('roles'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
-            this.$el.html(this.template({disabled: disabled, release: release}));
+            this.$el.html(this.template({disabled: disabled, release: release})).i18n();
             if (disabled) {
                 this.$('input[value=ceph]').prop('disabled', true);
             }
@@ -447,7 +448,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterAdditionalServicesPane = views.WizardPane.extend({
-        title: 'Additional Services',
+        title: 'dialog.create_cluster_wizard.additional.title',
         releaseDependent: true,
         template: _.template(clusterAdditionalServicesPaneTemplate),
         beforeSettingsSaving: function(settings) {
@@ -466,7 +467,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             var disabled = !release || release.get('operating_system') == 'RHEL'; // no Savanna & Murano for RHOS for now
-            this.$el.html(this.template({disabled: disabled, release: release}));
+            this.$el.html(this.template({disabled: disabled, release: release})).i18n();
             if (disabled) {
                 this.$('input[type=checkbox]').prop('disabled', true);
             }
@@ -475,7 +476,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     clusterWizardPanes.ClusterReadyPane = views.WizardPane.extend({
-        title: 'Finish',
+        title: 'dialog.create_cluster_wizard.ready.title',
         template: _.template(clusterReadyPaneTemplate)
     });
 

@@ -96,10 +96,13 @@ class JSONHandler(object):
 
     def checked_data(self, validate_method=None, **kwargs):
         try:
+            data = kwargs.pop('data', web.data())
             if validate_method:
-                data = validate_method(web.data(), **kwargs)
+                method = validate_method
             else:
-                data = self.validator.validate(web.data(), **kwargs)
+                method = self.validator.validate
+
+            valid_data = method(data, **kwargs)
         except (
             errors.InvalidInterfacesInfo,
             errors.InvalidMetadata
@@ -117,7 +120,7 @@ class JSONHandler(object):
             Exception
         ) as exc:
             raise web.badrequest(message=str(exc))
-        return data
+        return valid_data
 
     def get_object_or_404(self, model, *args, **kwargs):
         # should be in ('warning', 'Log message') format
@@ -133,8 +136,25 @@ class JSONHandler(object):
         if not obj:
             if log_404:
                 getattr(logger, log_404[0])(log_404[1])
-            raise web.notfound()
+            raise web.notfound('{0} not found'.format(model.__name__))
         else:
             if log_get:
                 getattr(logger, log_get[0])(log_get[1])
         return obj
+
+    def get_objects_list_or_404(self, model, ids):
+        """Get list of objects
+
+        :param model: model object
+        :param ids: list of ids
+
+        :raises: web.notfound
+        :returns: query object
+        """
+        node_query = db.query(model).filter(model.id.in_(ids))
+        objects_count = node_query.count()
+
+        if len(set(ids)) != objects_count:
+            raise web.notfound('{0} not found'.format(model.__name__))
+
+        return node_query

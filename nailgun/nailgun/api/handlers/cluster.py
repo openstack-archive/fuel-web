@@ -38,8 +38,8 @@ from nailgun.api.validators.cluster import ClusterValidator
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
-from nailgun.task.manager import DeploymentTaskManager
 
 
 class ClusterHandler(JSONHandler):
@@ -272,7 +272,7 @@ class ClusterChangesHandler(JSONHandler):
                     json.dumps(network_info, indent=4)
                 )
             )
-            task_manager = DeploymentTaskManager(
+            task_manager = ApplyChangesTaskManager(
                 cluster_id=cluster.id
             )
             task = task_manager.execute()

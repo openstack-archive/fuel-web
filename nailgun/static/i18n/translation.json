@@ -73,6 +73,13 @@
                     "bt_rename": "Rename",
                     "bt_delete": "Delete",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
+                },
+                "nodes_tab": {
+                    "configure_disks": "Configure disks on",
+                    "return_button": "Back To Node List",
+                    "load_defaults_button": "Load Defaults",
+                    "cancel_changes_button": "Cancel Changes",
+                    "apply_button": "Apply"
                 }
             },
             "capacity_page": {
@@ -358,10 +365,10 @@
                     "installing": "正在安装",
                     "is_installed": "已安装",
                     "installing_openstack": "正在安装OpenStack",
-                    "bt_return": "返回节点列表",
-                    "bt_load_defaults": "恢复默认",
-                    "bt_cancel_changes": "取消变更",
-                    "bt_apply": "应用",
+                    "return_button": "返回节点列表",
+                    "load_defaults_button": "恢复默认",
+                    "cancel_changes_button": "取消变更",
+                    "apply_button": "应用",
                     "configure": "配置",
                     "node_interfaces": "节点 接口",
                     "node_disks": "节点 磁盘",

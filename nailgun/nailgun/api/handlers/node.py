@@ -83,7 +83,8 @@ class NodeHandler(JSONHandler):
         if not node.attributes:
             node.attributes = NodeAttributes(node_id=node.id)
 
-        data = self.checked_data(self.validator.validate_update)
+        data = self.checked_data(
+            validate_method=self.validator.validate_update)
 
         network_manager = NetworkManager()
 
@@ -325,8 +326,7 @@ class NodeCollectionHandler(JSONHandler):
                * 400 (invalid nodes data specified)
         """
         data = self.checked_data(
-            self.validator.validate_collection_update
-        )
+            validate_method=self.validator.validate_collection_update)
 
         q = db().query(Node)
         nodes_updated = []

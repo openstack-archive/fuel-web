@@ -15,16 +15,23 @@
 #    under the License.
 
 import json
+import nailgun
 
+from mock import patch
 from nailgun.api.models import Cluster
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
-class TestHandlers(BaseIntegrationTest):
+def nodes_filter_param(node_ids):
+    return '?nodes={0}'.format(','.join(node_ids))
+
+
+class TestOrchestratorInfoHandlers(BaseIntegrationTest):
 
     def setUp(self):
-        super(TestHandlers, self).setUp()
+        super(TestOrchestratorInfoHandlers, self).setUp()
         self.cluster = self.env.create_cluster(api=False)
 
     def check_info_handler(self, handler_name, get_info):
@@ -68,10 +75,10 @@ class TestHandlers(BaseIntegrationTest):
             lambda: self.cluster.replaced_deployment_info)
 
 
-class TestDefaultOrchestratorHandlers(BaseIntegrationTest):
+class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
 
     def setUp(self):
-        super(TestDefaultOrchestratorHandlers, self).setUp()
+        super(TestDefaultOrchestratorInfoHandlers, self).setUp()
 
         cluster = self.env.create(
             cluster_kwargs={
@@ -112,6 +119,34 @@ class TestDefaultOrchestratorHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status, 200)
         self.assertEqual(3, len(json.loads(resp.body)['nodes']))
 
+    def test_default_provisioning_handler_for_selected_nodes(self):
+        node_ids = [node.uid for node in self.cluster.nodes][:2]
+        url = reverse(
+            'DefaultProvisioningInfo',
+            kwargs={'cluster_id': self.cluster.id}) + \
+            nodes_filter_param(node_ids)
+        resp = self.app.get(url, headers=self.default_headers)
+
+        self.assertEqual(resp.status, 200)
+        data = json.loads(resp.body)['nodes']
+        self.assertEqual(2, len(data))
+        actual_uids = [node['uid'] for node in data]
+        self.assertItemsEqual(actual_uids, node_ids)
+
+    def test_default_deployment_handler_for_selected_nodes(self):
+        node_ids = [node.uid for node in self.cluster.nodes][:2]
+        url = reverse(
+            'DefaultDeploymentInfo',
+            kwargs={'cluster_id': self.cluster.id}) + \
+            nodes_filter_param(node_ids)
+        resp = self.app.get(url, headers=self.default_headers)
+
+        self.assertEqual(resp.status, 200)
+        data = json.loads(resp.body)
+        self.assertEqual(2, len(data))
+        actual_uids = [node['uid'] for node in data]
+        self.assertItemsEqual(actual_uids, node_ids)
+
     def test_cluster_provisioning_customization(self):
         self.customization_handler_helper(
             'ProvisioningInfo',
@@ -123,3 +158,57 @@ class TestDefaultOrchestratorHandlers(BaseIntegrationTest):
             'DeploymentInfo',
             lambda: self.cluster.replaced_deployment_info
         )
+
+
+class TestSelectedNodesAction(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestSelectedNodesAction, self).setUp()
+        self.env.create(
+            cluster_kwargs={
+                'mode': 'ha_compact'},
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['cinder'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['cinder'], 'pending_addition': True}])
+
+        self.cluster = self.env.clusters[0]
+        self.node_uids = [n.uid for n in self.cluster.nodes][:3]
+
+    def send_empty_put(self, url):
+        return self.app.put(
+            url, '', headers=self.default_headers, expect_errors=True)
+
+    @patch('nailgun.rpc.cast')
+    def test_start_provisioning_on_selected_nodes(self, mock_rpc):
+        action_url = reverse(
+            'ProvisionSelectedNodes',
+            kwargs={'cluster_id': self.cluster.id}) + \
+            nodes_filter_param(self.node_uids)
+
+        self.send_empty_put(action_url)
+
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        provisioned_uids = [
+            n['uid'] for n in args[1]['args']['provisioning_info']['nodes']]
+
+        self.assertEqual(3, len(provisioned_uids))
+        self.assertItemsEqual(self.node_uids, provisioned_uids)
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_start_deployment_on_selected_nodes(self, mock_rpc):
+        action_url = reverse(
+            'DeploySelectedNodes',
+            kwargs={'cluster_id': self.cluster.id}) + \
+            nodes_filter_param(self.node_uids)
+
+        self.send_empty_put(action_url)
+
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        deployed_uids = [n['uid'] for n in args[1]['args']['deployment_info']]
+        self.assertEqual(3, len(deployed_uids))
+        self.assertItemsEqual(self.node_uids, deployed_uids)

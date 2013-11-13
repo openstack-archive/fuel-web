@@ -69,19 +69,17 @@ class TaskManager(object):
                 db().commit()
 
 
-class DeploymentTaskManager(TaskManager):
+class ApplyChangesTaskManager(TaskManager):
 
     def execute(self):
         logger.info(
             u"Trying to start deployment at cluster '{0}'".format(
-                self.cluster.name or self.cluster.id,
-            )
-        )
+                self.cluster.name or self.cluster.id))
 
         current_tasks = db().query(Task).filter_by(
             cluster_id=self.cluster.id,
-            name="deploy"
-        )
+            name='deploy')
+
         for task in current_tasks:
             if task.status == "running":
                 raise errors.DeploymentAlreadyStarted()
@@ -104,18 +102,19 @@ class DeploymentTaskManager(TaskManager):
         db().add(self.cluster)
         db().commit()
 
-        supertask = Task(
-            name="deploy",
-            cluster=self.cluster
-        )
+        supertask = Task(name='deploy', cluster=self.cluster)
         db().add(supertask)
         db().commit()
+
+        # Run validation if user didn't redefine
+        # provisioning and deployment information
         if not self.cluster.replaced_provisioning_info \
            and not self.cluster.replaced_deployment_info:
             try:
                 self.check_before_deployment(supertask)
             except errors.CheckBeforeDeploymentError:
                 return supertask
+
         # in case of Red Hat
         if self.cluster.release.operating_system == "RHEL":
             try:
@@ -143,22 +142,17 @@ class DeploymentTaskManager(TaskManager):
         if nodes_to_delete:
             task_deletion = supertask.create_subtask("node_deletion")
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
-            self._call_silently(
-                task_deletion,
-                tasks.DeletionTask
-            )
+            self._call_silently(task_deletion, tasks.DeletionTask)
 
         if nodes_to_provision:
             TaskHelper.update_slave_nodes_fqdn(nodes_to_provision)
             logger.debug("There are nodes to provision: %s",
                          " ".join([n.fqdn for n in nodes_to_provision]))
             task_provision = supertask.create_subtask("provision")
-            # we assume here that task_provision just adds system to
-            # cobbler and reboots it, so it has extremely small weight
-            task_provision.weight = 0.05
             provision_message = self._call_silently(
                 task_provision,
                 tasks.ProvisionTask,
+                nodes_to_provision,
                 method_name='message'
             )
             db().refresh(task_provision)
@@ -181,6 +175,7 @@ class DeploymentTaskManager(TaskManager):
             deployment_message = self._call_silently(
                 task_deployment,
                 tasks.DeploymentTask,
+                nodes_to_deploy,
                 method_name='message'
             )
 
@@ -268,9 +263,7 @@ class DeploymentTaskManager(TaskManager):
 
         for task in subtasks:
             if task.status == 'error':
-                raise errors.RedHatSetupError(
-                    task.message
-                )
+                raise errors.RedHatSetupError(task.message)
 
         return subtask_messages
 
@@ -322,6 +315,69 @@ class DeploymentTaskManager(TaskManager):
         )
         db().delete(check_before)
         db().commit()
+
+
+class ProvisioningTaskManager(TaskManager):
+
+    def execute(self, nodes_to_provision):
+        TaskHelper.update_slave_nodes_fqdn(nodes_to_provision)
+        logger.debug('Nodes to provision: {0}'.format(
+            ' '.join([n.fqdn for n in nodes_to_provision])))
+
+        task_provision = Task(name='provision', cluster=self.cluster)
+        db().add(task_provision)
+        db().commit()
+
+        provision_message = self._call_silently(
+            task_provision,
+            tasks.ProvisionTask,
+            nodes_to_provision,
+            method_name='message'
+        )
+        db().refresh(task_provision)
+
+        task_provision.cache = provision_message
+
+        for node in nodes_to_provision:
+            node.pending_addition = False
+            node.status = 'provisioning'
+            node.progress = 0
+
+        db().commit()
+
+        rpc.cast('naily', provision_message)
+
+        return task_provision
+
+
+class DeploymentTaskManager(TaskManager):
+
+    def execute(self, nodes_to_deployment):
+        TaskHelper.update_slave_nodes_fqdn(nodes_to_deployment)
+        logger.debug('Nodes to deploy: {0}'.format(
+            ' '.join([n.fqdn for n in nodes_to_deployment])))
+        task_deployment = Task(name='deployment', cluster=self.cluster)
+        db().add(task_deployment)
+        db().commit()
+
+        deployment_message = self._call_silently(
+            task_deployment,
+            tasks.DeploymentTask,
+            nodes_to_deployment,
+            method_name='message')
+
+        db().refresh(task_deployment)
+
+        task_deployment.cache = deployment_message
+
+        for node in nodes_to_deployment:
+            node.status = 'deploying'
+            node.progress = 0
+
+        db().commit()
+        rpc.cast('naily', deployment_message)
+
+        return task_deployment
 
 
 class CheckNetworksTaskManager(TaskManager):

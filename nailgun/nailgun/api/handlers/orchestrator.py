@@ -14,18 +14,48 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import traceback
 import web
 
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
+from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.api.models import Cluster
+from nailgun.api.models import Node
+from nailgun.api.validators.node import NodesFilterValidator
 from nailgun.db import db
 from nailgun.logger import logger
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
+from nailgun.task.helpers import TaskHelper
+from nailgun.task.manager import DeploymentTaskManager
+from nailgun.task.manager import ProvisioningTaskManager
 
 
-class DefaultOrchestratorInfo(JSONHandler):
+class NodesFilterMixin(object):
+    validator = NodesFilterValidator
+
+    def get_default_nodes(self, cluster):
+        """Method should be overriden and
+        return list of nodes
+        """
+        raise NotImplementedError('Please Implement this method')
+
+    def get_nodes(self, cluster):
+        """If nodes selected in filter
+        then returns them, else returns
+        default nodes.
+        """
+        nodes = web.input(nodes=None).nodes
+
+        if nodes:
+            node_ids = self.checked_data(data=nodes)
+            return self.get_objects_list_or_404(Node, node_ids)
+
+        return self.get_default_nodes(cluster)
+
+
+class DefaultOrchestratorInfo(NodesFilterMixin, JSONHandler):
     """Base class for default orchestrator data.
     Need to redefine serializer variable
     """
@@ -40,7 +70,8 @@ class DefaultOrchestratorInfo(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
-        return self._serializer.serialize(cluster)
+        nodes = self.get_nodes(cluster)
+        return self._serializer.serialize(cluster, nodes)
 
 
 class OrchestratorInfo(JSONHandler):
@@ -98,10 +129,16 @@ class DefaultProvisioningInfo(DefaultOrchestratorInfo):
 
     _serializer = provisioning_serializers
 
+    def get_default_nodes(self, cluster):
+        return TaskHelper.nodes_to_provision(cluster)
+
 
 class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 
     _serializer = deployment_serializers
+
+    def get_default_nodes(self, cluster):
+        return TaskHelper.nodes_to_deploy(cluster)
 
 
 class ProvisioningInfo(OrchestratorInfo):
@@ -124,3 +161,45 @@ class DeploymentInfo(OrchestratorInfo):
         cluster.replace_deployment_info(data)
         db().commit()
         return cluster.replaced_deployment_info
+
+
+class SelectedNodesBase(NodesFilterMixin, JSONHandler):
+    """Base class for running task manager on selected nodes."""
+
+    @content_json
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 200 (task successfully executed)
+               * 404 (cluster or nodes not found in db)
+               * 400 (failed to execute task)
+        """
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+        nodes = self.get_nodes(cluster)
+
+        try:
+            task_manager = self.task_manager(cluster_id=cluster.id)
+            task = task_manager.execute(nodes)
+        except Exception as exc:
+            logger.warn(u'Cannot execute {0} task nodes: {1}'.format(
+                task_manager.__class__.__name__, traceback.format_exc()))
+            raise web.badrequest(str(exc))
+
+        return TaskHandler.render(task)
+
+
+class ProvisionSelectedNodes(SelectedNodesBase):
+    """Handler for provisioning selected nodes."""
+
+    task_manager = ProvisioningTaskManager
+
+    def get_default_nodes(self, cluster):
+        TaskHelper.nodes_to_provision(cluster)
+
+
+class DeploySelectedNodes(SelectedNodesBase):
+    """Handler for deployment selected nodes."""
+
+    task_manager = DeploymentTaskManager
+
+    def get_default_nodes(self, cluster):
+        TaskHelper.nodes_to_deploy(cluster)

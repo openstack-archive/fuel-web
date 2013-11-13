@@ -103,6 +103,10 @@ class Node(Base):
                               order_by="NodeNICInterface.id")
 
     @property
+    def uid(self):
+        return str(self.id)
+
+    @property
     def offline(self):
         return not self.online
 
@@ -119,12 +123,12 @@ class Node(Base):
     @property
     def needs_reprovision(self):
         return self.status == 'error' and self.error_type == 'provision' and \
-            not self.pending_deletion
+            not self.pending_deletion and self.online
 
     @property
     def needs_redeploy(self):
         return (self.status == 'error' or len(self.pending_roles)) and \
-            not self.pending_deletion
+            not self.pending_deletion and self.online
 
     @property
     def needs_redeletion(self):

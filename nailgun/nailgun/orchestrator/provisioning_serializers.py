@@ -26,10 +26,11 @@ class ProvisioningSerializer(object):
     """Provisioning serializer"""
 
     @classmethod
-    def serialize(cls, cluster):
+    def serialize(cls, cluster, nodes):
         """Serialize cluster for provisioning."""
 
-        serialized_nodes = cls.serialize_nodes(cluster)
+        cluster_attrs = cluster.attributes.merged_attrs_values()
+        serialized_nodes = cls.serialize_nodes(cluster_attrs, nodes)
 
         return {
             'engine': {
@@ -39,13 +40,10 @@ class ProvisioningSerializer(object):
             'nodes': serialized_nodes}
 
     @classmethod
-    def serialize_nodes(cls, cluster):
+    def serialize_nodes(cls, cluster_attrs, nodes):
         """Serialize nodes."""
-        nodes_to_provision = TaskHelper.nodes_to_provision(cluster)
-        cluster_attrs = cluster.attributes.merged_attrs_values()
-
         serialized_nodes = []
-        for node in nodes_to_provision:
+        for node in nodes:
             serialized_node = cls.serialize_node(cluster_attrs, node)
             serialized_nodes.append(serialized_node)
 
@@ -56,6 +54,7 @@ class ProvisioningSerializer(object):
         """Serialize a single node."""
 
         serialized_node = {
+            'uid': node.uid,
             'power_address': node.ip,
             'name': TaskHelper.make_slave_name(node.id),
             'hostname': node.fqdn,
@@ -155,8 +154,8 @@ class ProvisioningSerializer(object):
         return settings.PATH_TO_SSH_KEY
 
 
-def serialize(cluster):
+def serialize(cluster, nodes):
     """Serialize cluster for provisioning."""
-    cluster.prepare_for_provisioning()
+    TaskHelper.prepare_for_provisioning(nodes)
 
-    return ProvisioningSerializer.serialize(cluster)
+    return ProvisioningSerializer.serialize(cluster, nodes)

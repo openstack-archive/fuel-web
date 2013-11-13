@@ -206,38 +206,6 @@ class Cluster(Base):
         map(db().delete, chs.all())
         db().commit()
 
-    def prepare_for_deployment(self):
-        from nailgun.network.manager import NetworkManager
-        from nailgun.task.helpers import TaskHelper
-
-        nodes = sorted(set(
-            TaskHelper.nodes_to_deploy(self) +
-            TaskHelper.nodes_in_provisioning(self)), key=lambda node: node.id)
-
-        TaskHelper.update_slave_nodes_fqdn(nodes)
-
-        nodes_ids = [n.id for n in nodes]
-        netmanager = NetworkManager()
-        if nodes_ids:
-            netmanager.assign_ips(nodes_ids, 'management')
-            netmanager.assign_ips(nodes_ids, 'public')
-            netmanager.assign_ips(nodes_ids, 'storage')
-
-            for node in nodes:
-                netmanager.assign_admin_ips(
-                    node.id, len(node.meta.get('interfaces', [])))
-
-    def prepare_for_provisioning(self):
-        from nailgun.network.manager import NetworkManager
-        from nailgun.task.helpers import TaskHelper
-
-        netmanager = NetworkManager()
-        nodes = TaskHelper.nodes_to_provision(self)
-        TaskHelper.update_slave_nodes_fqdn(nodes)
-        for node in nodes:
-            netmanager.assign_admin_ips(
-                node.id, len(node.meta.get('interfaces', [])))
-
     @property
     def network_manager(self):
         if self.net_provider == 'neutron':

@@ -14,15 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import gzip
 import json
 import os
 import shutil
-from StringIO import StringIO
-import tarfile
 import tempfile
 import time
-import unittest
 
 from mock import Mock
 from mock import patch
@@ -356,69 +352,6 @@ class TestLogs(BaseIntegrationTest):
         )
         tm_patcher.stop()
         self.assertEquals(resp.status, 400)
-
-    @unittest.skip("will be partly moved to shotgun")
-    def test_log_package_handler_old(self):
-        f = tempfile.NamedTemporaryFile(mode='r+b')
-        f.write('testcontent')
-        f.flush()
-        settings.LOGS_TO_PACK_FOR_SUPPORT = {'test': f.name}
-        resp = self.app.get(reverse('LogPackageHandler'))
-        self.assertEquals(200, resp.status)
-        tf = tarfile.open(fileobj=StringIO(resp.body), mode='r:gz')
-        m = tf.extractfile('test')
-        self.assertEquals(m.read(), 'testcontent')
-        f.close()
-        m.close()
-
-    @unittest.skip("will be partly moved to shotgun")
-    def test_log_package_handler_sensitive(self):
-        account = RedHatAccount()
-        account.username = "REDHATUSERNAME"
-        account.password = "REDHATPASSWORD"
-        account.license_type = "rhsm"
-        self.db.add(account)
-        self.db.commit()
-
-        f = tempfile.NamedTemporaryFile(mode='r+b')
-        f.write('begin\nREDHATUSERNAME\nREDHATPASSWORD\nend')
-        f.flush()
-        settings.LOGS_TO_PACK_FOR_SUPPORT = {'test': f.name}
-        resp = self.app.get(reverse('LogPackageHandler'))
-        self.assertEquals(200, resp.status)
-        tf = tarfile.open(fileobj=StringIO(resp.body), mode='r:gz')
-        m = tf.extractfile('test')
-        self.assertEquals(m.read(), 'begin\nusername\npassword\nend')
-        f.close()
-        m.close()
-
-    @unittest.skip("will be partly moved to shotgun")
-    def test_log_package_handler_sensitive_gz(self):
-        account = RedHatAccount()
-        account.username = "REDHATUSERNAME"
-        account.password = "REDHATPASSWORD"
-        account.license_type = "rhsm"
-        self.db.add(account)
-        self.db.commit()
-
-        f = tempfile.NamedTemporaryFile(mode='r+b', suffix='.gz')
-        fgz = gzip.GzipFile(mode='w+b', fileobj=f)
-        fgz.write('begin\nREDHATUSERNAME\nREDHATPASSWORD\nend')
-        fgz.flush()
-        fgz.close()
-
-        settings.LOGS_TO_PACK_FOR_SUPPORT = {'test.gz': f.name}
-        resp = self.app.get(reverse('LogPackageHandler'))
-        self.assertEquals(200, resp.status)
-        tf = tarfile.open(fileobj=StringIO(resp.body), mode='r:gz')
-
-        m = tf.extractfile('test.gz')
-        mgz = gzip.GzipFile(mode='r+b', fileobj=m)
-        self.assertEquals(mgz.read(), 'begin\nusername\npassword\nend')
-        mgz.close()
-
-        f.close()
-        m.close()
 
     def test_log_entry_collection_handler_sensitive(self):
         account = RedHatAccount()

@@ -283,22 +283,34 @@ class NailgunReceiver(object):
 
     @classmethod
     def provision_resp(cls, **kwargs):
-        # For now provision task is nothing more than just adding
-        # system into cobbler and rebooting node. Then we think task
-        # is ready. We don't wait for end of node provisioning.
         logger.info(
             "RPC method provision_resp received: %s" %
-            json.dumps(kwargs)
-        )
+            json.dumps(kwargs))
+
         task_uuid = kwargs.get('task_uuid')
         message = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
+        nodes = kwargs.get('nodes', [])
 
         task = get_task_by_uuid(task_uuid)
-        if not task:
-            logger.warning(u"No task with uuid %s found", task_uuid)
-            return
+
+        for node in nodes:
+            uid = node.get('uid')
+            node_db = db().query(Node).get(uid)
+
+            if not node_db:
+                logger.warn('Task with uid "{0}" not found'.format(uid))
+                continue
+
+            if node.get('status') == 'error':
+                node_db.status = 'error'
+                node_db.progress = 100
+                node_db.error_type = 'provision'
+                node_db.error_msg = node.get('error_msg', 'Unknown error')
+            else:
+                node_db.status = node.get('status')
+                node_db.progress = node.get('progress')
 
         TaskHelper.update_task_status(task.uuid, status, progress, message)
 
@@ -317,16 +329,9 @@ class NailgunReceiver(object):
         ).all()
         for n in error_nodes:
             if names_only:
-                nodes_info.append(
-                    "'{0}'".format(n.name)
-                )
+                nodes_info.append("'{0}'".format(n.name))
             else:
-                nodes_info.append(
-                    u"'{0}': {1}".format(
-                        n.name,
-                        n.error_msg
-                    )
-                )
+                nodes_info.append(u"'{0}': {1}".format(n.name, n.error_msg))
         if nodes_info:
             if names_only:
                 message = u", ".join(nodes_info)

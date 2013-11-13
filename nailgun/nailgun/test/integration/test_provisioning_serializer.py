@@ -37,7 +37,7 @@ class TestProvisioningSerializer(BaseIntegrationTest):
                 {'roles': ['compute'], 'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        serialized_cluster = serialize(cluster_db)
+        serialized_cluster = serialize(cluster_db, cluster_db.nodes)
 
         for node in serialized_cluster['nodes']:
             node_db = db().query(Node).filter_by(fqdn=node['hostname']).first()

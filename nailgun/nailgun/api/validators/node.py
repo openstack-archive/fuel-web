@@ -236,3 +236,21 @@ class NodeDisksValidator(BasicValidator):
             if volumes_size > disk['size']:
                 raise errors.InvalidData(
                     u'Not enough free space on disk: %s' % disk)
+
+
+class NodesFilterValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, nodes):
+        """Used for filtering nodes
+        :param nodes: list of ids in string representation.
+                      Example: "1,99,3,4"
+
+        :returns: list of integers
+        """
+        try:
+            node_ids = set(map(lambda i: int(i), nodes.split(',')))
+        except ValueError:
+            raise errors.InvalidData('Provided id is not integer')
+
+        return node_ids

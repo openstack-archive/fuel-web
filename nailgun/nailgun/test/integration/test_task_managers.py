@@ -14,21 +14,21 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 import json
+import nailgun
+import nailgun.rpc as rpc
 import time
 
 from mock import patch
-
-from nailgun.settings import settings
-
-import nailgun
 from nailgun.api.models import Cluster
 from nailgun.api.models import Node
 from nailgun.api.models import Notification
 from nailgun.api.models import Task
 from nailgun.errors import errors
-import nailgun.rpc as rpc
-from nailgun.task.manager import DeploymentTaskManager
+from nailgun.settings import settings
+from nailgun.task.helpers import TaskHelper
+from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -102,7 +102,7 @@ class TestTaskManagers(BaseIntegrationTest):
             {"pending_addition": True, 'roles': ['compute']}])
         cluster_db = self.env.clusters[0]
         # Generate ips, fqdns
-        cluster_db.prepare_for_deployment()
+        TaskHelper.prepare_for_deployment(cluster_db.nodes)
         # First node with status ready
         # should not be readeployed
         self.env.nodes[0].status = 'ready'
@@ -405,7 +405,7 @@ class TestTaskManagers(BaseIntegrationTest):
     def test_no_node_no_cry(self):
         cluster = self.env.create_cluster(api=True)
         cluster_id = cluster['id']
-        manager = DeploymentTaskManager(cluster_id)
+        manager = ApplyChangesTaskManager(cluster_id)
         task = Task(name='provision', cluster_id=cluster_id)
         self.db.add(task)
         self.db.commit()
@@ -424,7 +424,7 @@ class TestTaskManagers(BaseIntegrationTest):
         )
         cluster_db = self.env.clusters[0]
         cluster_db.clear_pending_changes()
-        manager = DeploymentTaskManager(cluster_db.id)
+        manager = ApplyChangesTaskManager(cluster_db.id)
         self.assertRaises(errors.WrongNodeStatus, manager.execute)
 
     @fake_tasks()

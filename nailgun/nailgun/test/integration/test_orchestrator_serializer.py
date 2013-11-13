@@ -27,6 +27,7 @@ from nailgun.orchestrator.deployment_serializers \
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentMultiSerializer
 from nailgun.settings import settings
+from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 from nailgun.volumes import manager
@@ -72,7 +73,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             nodes_kwargs=node_args)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        cluster_db.prepare_for_deployment()
+        TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     @property
@@ -101,7 +102,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_serialize_node(self):
         node = self.env.create_node(
             api=True, cluster_id=self.cluster.id, pending_addition=True)
-        self.cluster.prepare_for_deployment()
+        TaskHelper.prepare_for_deployment(self.cluster.nodes)
 
         node_db = self.db.query(Node).get(node['id'])
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
@@ -188,7 +189,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.app.put(url, json.dumps(data),
                      headers=self.default_headers,
                      expect_errors=False)
-        facts = self.serializer.serialize(cluster)
+        facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
             self.assertEquals(fact['vlan_interface'], 'eth0')
@@ -227,7 +228,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
             self.db.add(new_ip_range)
         self.db.commit()
-        facts = self.serializer.serialize(self.cluster)
+        facts = self.serializer.serialize(self.cluster, self.cluster.nodes)
 
         for fact in facts:
             self.assertEquals(
@@ -285,7 +286,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
                 {'roles': ['cinder'], 'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        cluster_db.prepare_for_deployment()
+        TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     @property
@@ -345,81 +346,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
              {'point': '2', 'weight': '2'}])
 
 
-class TestNovaOrchestratorHASerializerRedeploymentErrorNodes(
-        OrchestratorSerializerTestBase):
-
-    def create_env(self, nodes):
-        cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'ha_compact'},
-            nodes_kwargs=nodes)
-
-        cluster_db = self.db.query(Cluster).get(cluster['id'])
-        cluster_db.prepare_for_deployment()
-        return cluster_db
-
-    @property
-    def serializer(self):
-        return DeploymentHASerializer
-
-    def filter_by_role(self, nodes, role):
-        return filter(lambda node: role in node.all_roles, nodes)
-
-    def test_redeploy_all_controller_if_single_controller_failed(self):
-        cluster = self.create_env([
-            {'roles': ['controller'], 'status': 'error'},
-            {'roles': ['controller']},
-            {'roles': ['controller', 'cinder']},
-            {'roles': ['compute', 'cinder']},
-            {'roles': ['compute']},
-            {'roles': ['cinder']}])
-
-        nodes = self.serializer.get_nodes_to_deployment(cluster)
-        self.assertEquals(len(nodes), 3)
-
-        controllers = self.filter_by_role(nodes, 'controller')
-        self.assertEquals(len(controllers), 3)
-
-    def test_redeploy_only_compute_cinder(self):
-        cluster = self.create_env([
-            {'roles': ['controller']},
-            {'roles': ['controller']},
-            {'roles': ['controller', 'cinder']},
-            {'roles': ['compute', 'cinder']},
-            {'roles': ['compute'], 'status': 'error'},
-            {'roles': ['cinder'], 'status': 'error'}])
-
-        nodes = self.serializer.get_nodes_to_deployment(cluster)
-        self.assertEquals(len(nodes), 2)
-
-        cinders = self.filter_by_role(nodes, 'cinder')
-        self.assertEquals(len(cinders), 1)
-
-        computes = self.filter_by_role(nodes, 'compute')
-        self.assertEquals(len(computes), 1)
-
-    def test_redeploy_all_controller_and_compute_cinder(self):
-        cluster = self.create_env([
-            {'roles': ['controller'], 'status': 'error'},
-            {'roles': ['controller']},
-            {'roles': ['controller', 'cinder']},
-            {'roles': ['compute', 'cinder']},
-            {'roles': ['compute'], 'status': 'error'},
-            {'roles': ['cinder'], 'status': 'error'}])
-
-        nodes = self.serializer.get_nodes_to_deployment(cluster)
-        self.assertEquals(len(nodes), 5)
-
-        controllers = self.filter_by_role(nodes, 'controller')
-        self.assertEquals(len(controllers), 3)
-
-        cinders = self.filter_by_role(nodes, 'cinder')
-        self.assertEquals(len(cinders), 2)
-
-        computes = self.filter_by_role(nodes, 'compute')
-        self.assertEquals(len(computes), 1)
-
-
 class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def setUp(self):
@@ -441,7 +367,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                  'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        cluster_db.prepare_for_deployment()
+        TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     @property
@@ -470,7 +396,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_serialize_node(self):
         node = self.env.create_node(
             api=True, cluster_id=self.cluster.id, pending_addition=True)
-        self.cluster.prepare_for_deployment()
+        TaskHelper.prepare_for_deployment(self.cluster.nodes)
 
         node_db = self.db.query(Node).get(node['id'])
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
@@ -547,7 +473,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def test_gre_segmentation(self):
         cluster = self.create_env('multinode', 'gre')
-        facts = self.serializer.serialize(cluster)
+        facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
             self.assertEquals(
@@ -582,7 +508,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        cluster_db.prepare_for_deployment()
+        TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     @property
@@ -616,80 +542,3 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
             attrs['mp'],
             [{'point': '1', 'weight': '1'},
              {'point': '2', 'weight': '2'}])
-
-
-class TestNeutronOrchestratorHASerializerRedeploymentErrorNodes(
-        OrchestratorSerializerTestBase):
-
-    def create_env(self, nodes):
-        cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'ha_compact',
-                'net_provider': 'neutron',
-                'net_segment_type': 'vlan'},
-            nodes_kwargs=nodes)
-
-        cluster_db = self.db.query(Cluster).get(cluster['id'])
-        cluster_db.prepare_for_deployment()
-        return cluster_db
-
-    @property
-    def serializer(self):
-        return DeploymentHASerializer
-
-    def filter_by_role(self, nodes, role):
-        return filter(lambda node: role in node.all_roles, nodes)
-
-    def test_redeploy_all_controller_if_single_controller_failed(self):
-        cluster = self.create_env([
-            {'roles': ['controller'], 'status': 'error'},
-            {'roles': ['controller']},
-            {'roles': ['controller', 'cinder']},
-            {'roles': ['compute', 'cinder']},
-            {'roles': ['compute']},
-            {'roles': ['cinder']}])
-
-        nodes = self.serializer.get_nodes_to_deployment(cluster)
-        self.assertEquals(len(nodes), 3)
-
-        controllers = self.filter_by_role(nodes, 'controller')
-        self.assertEquals(len(controllers), 3)
-
-    def test_redeploy_only_compute_cinder(self):
-        cluster = self.create_env([
-            {'roles': ['controller']},
-            {'roles': ['controller']},
-            {'roles': ['controller', 'cinder']},
-            {'roles': ['compute', 'cinder']},
-            {'roles': ['compute'], 'status': 'error'},
-            {'roles': ['cinder'], 'status': 'error'}])
-
-        nodes = self.serializer.get_nodes_to_deployment(cluster)
-        self.assertEquals(len(nodes), 2)
-
-        cinders = self.filter_by_role(nodes, 'cinder')
-        self.assertEquals(len(cinders), 1)
-
-        computes = self.filter_by_role(nodes, 'compute')
-        self.assertEquals(len(computes), 1)
-
-    def test_redeploy_all_controller_and_compute_cinder(self):
-        cluster = self.create_env([
-            {'roles': ['controller'], 'status': 'error'},
-            {'roles': ['controller']},
-            {'roles': ['controller', 'cinder']},
-            {'roles': ['compute', 'cinder']},
-            {'roles': ['compute'], 'status': 'error'},
-            {'roles': ['cinder'], 'status': 'error'}])
-
-        nodes = self.serializer.get_nodes_to_deployment(cluster)
-        self.assertEquals(len(nodes), 5)
-
-        controllers = self.filter_by_role(nodes, 'controller')
-        self.assertEquals(len(controllers), 3)
-
-        cinders = self.filter_by_role(nodes, 'cinder')
-        self.assertEquals(len(cinders), 2)
-
-        computes = self.filter_by_role(nodes, 'compute')
-        self.assertEquals(len(computes), 1)

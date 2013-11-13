@@ -33,7 +33,10 @@ from nailgun.urls import urls
 
 
 def build_app():
-    app = web.application(urls, locals())
+    """Build app and disable debug mode in case of production
+    """
+    web.config.debug = bool(int(settings.DEVELOPMENT))
+    app = web.application(urls(), locals())
     app.add_processor(load_db_driver)
     app.add_processor(forbid_client_caching)
     return app

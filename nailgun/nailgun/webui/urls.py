@@ -24,4 +24,8 @@ urls = (
     r"/", IndexHandler.__name__,
 )
 
-app = web.application(urls, locals())
+_locals = locals()
+
+
+def app():
+    return web.application(urls, _locals)

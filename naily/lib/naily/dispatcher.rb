@@ -84,14 +84,15 @@ module Naily
         Naily.logger.error "Error running provisioning: #{e.message}, trace: #{e.backtrace.inspect}"
         raise StopIteration
       end
+
+      @orchestrator.watch_provision_progress(
+        reporter, data['args']['task_uuid'], data['args']['provisioning_info']['nodes'])
     end
 
     def deploy(data)
       Naily.logger.info("'deploy' method called with data: #{data.inspect}")
 
       reporter = Naily::Reporter.new(@producer, data['respond_to'], data['args']['task_uuid'])
-      @orchestrator.watch_provision_progress(reporter, data['args']['task_uuid'], data['args']['deployment_info'])
-
       begin
         @orchestrator.deploy(reporter, data['args']['task_uuid'], data['args']['deployment_info'])
         reporter.report('status' => 'ready', 'progress' => 100)

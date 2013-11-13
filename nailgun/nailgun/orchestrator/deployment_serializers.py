@@ -18,7 +18,6 @@
 
 from netaddr import IPNetwork
 from sqlalchemy import and_
-from sqlalchemy import or_
 
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
@@ -56,11 +55,11 @@ class Priority(object):
 class DeploymentMultiSerializer(object):
 
     @classmethod
-    def serialize(cls, cluster):
+    def serialize(cls, cluster, nodes):
         """Method generates facts which
         through an orchestrator passes to puppet
         """
-        nodes = cls.serialize_nodes(cls.get_nodes_to_deployment(cluster))
+        nodes = cls.serialize_nodes(nodes)
         common_attrs = cls.get_common_attrs(cluster)
 
         cls.set_deployment_priorities(nodes)
@@ -82,12 +81,6 @@ class DeploymentMultiSerializer(object):
         return db().query(Node).filter(
             and_(Node.cluster == cluster,
                  False == Node.pending_deletion)).order_by(Node.id)
-
-    @classmethod
-    def get_nodes_to_deployment(cls, cluster):
-        """Nodes which need to deploy."""
-        return sorted(TaskHelper.nodes_to_deploy(cluster),
-                      key=lambda node: node.id)
 
     @classmethod
     def get_common_attrs(cls, cluster):
@@ -115,8 +108,7 @@ class DeploymentMultiSerializer(object):
         for node in nodes:
             for role in node.all_roles:
                 node_list.append({
-                    # Yes, uid is really should be a string
-                    'uid': str(node.id),
+                    'uid': node.uid,
                     'fqdn': node.fqdn,
                     'name': TaskHelper.make_slave_name(node.id),
                     'role': role})
@@ -163,7 +155,7 @@ class DeploymentMultiSerializer(object):
         """
         node_attrs = {
             # Yes, uid is really should be a string
-            'uid': str(node.id),
+            'uid': node.uid,
             'fqdn': node.fqdn,
             'status': node.status,
             'role': role,
@@ -185,53 +177,14 @@ class DeploymentHASerializer(DeploymentMultiSerializer):
     """Serializer for ha mode."""
 
     @classmethod
-    def serialize(cls, cluster):
+    def serialize(cls, cluster, nodes):
         serialized_nodes = super(
             DeploymentHASerializer,
             cls
-        ).serialize(cluster)
+        ).serialize(cluster, nodes)
         cls.set_primary_controller(serialized_nodes)
 
         return serialized_nodes
-
-    @classmethod
-    def has_controller_nodes(cls, nodes):
-        for node in nodes:
-            if 'controller' in node.all_roles:
-                return True
-        return False
-
-    @classmethod
-    def get_nodes_to_deployment(cls, cluster):
-        """Get nodes for deployment
-        * in case of failed controller should be redeployed
-          all controllers
-        * in case of failed non-controller should be
-          redeployed only node which was failed
-        """
-        nodes = super(
-            DeploymentHASerializer,
-            cls
-        ).get_nodes_to_deployment(cluster)
-
-        controller_nodes = []
-
-        # if list contain at least one controller
-        if cls.has_controller_nodes(nodes):
-            # retrive all controllers from cluster
-            controller_nodes = db().query(Node). \
-                filter(or_(
-                    Node.role_list.any(name='controller'),
-                    Node.pending_role_list.any(name='controller'),
-                    Node.role_list.any(name='primary-controller'),
-                    Node.pending_role_list.any(name='primary-controller')
-                )). \
-                filter(Node.cluster == cluster). \
-                filter(False == Node.pending_deletion). \
-                order_by(Node.id).all()
-
-        return sorted(set(nodes + controller_nodes),
-                      key=lambda node: node.id)
 
     @classmethod
     def set_primary_controller(cls, nodes):
@@ -374,7 +327,7 @@ class NetworkDeploymentSerializer(object):
                 'public_netmask': cls.get_addr(netw_data,
                                                'public')['netmask']}
             [n.update(addresses) for n in attrs['nodes']
-             if n['uid'] == str(node.id)]
+             if n['uid'] == node.uid]
 
     @classmethod
     def node_attrs(cls, node):
@@ -801,15 +754,14 @@ class NeutronNetworkDeploymentSerializer(object):
         return attrs
 
 
-def serialize(cluster):
+def serialize(cluster, nodes):
     """Serialization depends on deployment mode
     """
-    cluster.prepare_for_deployment()
+    TaskHelper.prepare_for_deployment(cluster.nodes)
 
     if cluster.mode == 'multinode':
         serializer = DeploymentMultiSerializer
     elif cluster.is_ha_mode:
-        # Same serializer for all ha
         serializer = DeploymentHASerializer
 
-    return serializer.serialize(cluster)
+    return serializer.serialize(cluster, nodes)

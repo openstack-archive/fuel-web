@@ -103,6 +103,10 @@ class Node(Base):
                               order_by="NodeNICInterface.id")
 
     @property
+    def uid(self):
+        return str(self.id)
+
+    @property
     def offline(self):
         return not self.online
 

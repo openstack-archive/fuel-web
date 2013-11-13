@@ -101,17 +101,13 @@ class DeploymentTask(object):
 #   those which are prepared for removal.
 
     @classmethod
-    def message(cls, task):
+    def message(cls, task, nodes):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
+        TaskHelper.raise_if_node_offline(nodes)
 
-        task.cluster.prepare_for_deployment()
-        nodes = TaskHelper.nodes_to_deploy(task.cluster)
         nodes_ids = [n.id for n in nodes]
         for n in db().query(Node).filter_by(
                 cluster=task.cluster).order_by(Node.id):
-            # However, we must not pass nodes which are set to be deleted.
-            if n.pending_deletion:
-                continue
 
             if n.id in nodes_ids:
                 if n.pending_roles:
@@ -129,10 +125,10 @@ class DeploymentTask(object):
 
         # here we replace provisioning data if user redefined them
         serialized_cluster = task.cluster.replaced_deployment_info or \
-            deployment_serializers.serialize(task.cluster)
+            deployment_serializers.serialize(task.cluster, nodes)
 
         # After searilization set pending_addition to False
-        for node in db().query(Node).filter(Node.id.in_(nodes_ids)):
+        for node in nodes:
             node.pending_addition = False
         db().commit()
 
@@ -143,43 +139,22 @@ class DeploymentTask(object):
                 'task_uuid': task.uuid,
                 'deployment_info': serialized_cluster}}
 
-    @classmethod
-    def execute(cls, task):
-        logger.debug("DeploymentTask.execute(task=%s)" % task.uuid)
-        message = cls.message(task)
-        task.cache = message
-        db().add(task)
-        db().commit()
-        rpc.cast('naily', message)
-
 
 class ProvisionTask(object):
 
     @classmethod
-    def message(cls, task):
+    def message(cls, task, nodes_to_provisioning):
         logger.debug("ProvisionTask.message(task=%s)" % task.uuid)
-        nodes = TaskHelper.nodes_to_provision(task.cluster)
-        USE_FAKE = settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
+        TaskHelper.raise_if_node_offline(nodes_to_provisioning)
+        serialized_cluster = task.cluster.replaced_provisioning_info or \
+            provisioning_serializers.serialize(
+                task.cluster, nodes_to_provisioning)
 
-        # We need to assign admin ips
-        # and only after that prepare syslog
-        # directories
-        task.cluster.prepare_for_provisioning()
-
-        for node in nodes:
-            if USE_FAKE:
+        for node in nodes_to_provisioning:
+            if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
                 continue
 
-            if node.offline:
-                raise errors.NodeOffline(
-                    u'Node "%s" is offline.'
-                    ' Remove it from environment and try again.' %
-                    node.full_name)
-
             TaskHelper.prepare_syslog_dir(node)
-
-        serialized_cluster = task.cluster.replaced_provisioning_info or \
-            provisioning_serializers.serialize(task.cluster)
 
         message = {
             'method': 'provision',
@@ -189,15 +164,6 @@ class ProvisionTask(object):
                 'provisioning_info': serialized_cluster}}
 
         return message
-
-    @classmethod
-    def execute(cls, task):
-        logger.debug("ProvisionTask.execute(task=%s)" % task.uuid)
-        message = cls.message(task)
-        task.cache = message
-        db().add(task)
-        db().commit()
-        rpc.cast('naily', message)
 
 
 class DeletionTask(object):

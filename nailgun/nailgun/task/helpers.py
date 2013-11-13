@@ -17,6 +17,8 @@
 import os
 import shutil
 
+from sqlalchemy import or_
+
 from nailgun.api.models import IPAddr
 from nailgun.api.models import Node
 from nailgun.api.models import Task
@@ -300,7 +302,7 @@ class TaskHelper(object):
 
     @classmethod
     def nodes_to_deploy(cls, cluster):
-        return sorted(filter(
+        nodes_to_deploy = sorted(filter(
             lambda n: any([
                 n.pending_addition,
                 n.needs_reprovision,
@@ -308,6 +310,11 @@ class TaskHelper(object):
             ]),
             cluster.nodes
         ), key=lambda n: n.id)
+
+        if cluster.is_ha_mode:
+            return cls.__nodes_to_deploy_ha(cluster, nodes_to_deploy)
+
+        return nodes_to_deploy
 
     @classmethod
     def nodes_to_provision(cls, cluster):
@@ -327,6 +334,48 @@ class TaskHelper(object):
         ), key=lambda n: n.id)
 
     @classmethod
+    def __nodes_to_deploy_ha(cls, cluster, nodes):
+        """Get nodes for deployment for ha mode
+        * in case of failed controller should be redeployed
+          all controllers
+        * in case of failed non-controller should be
+          redeployed only node which was failed
+
+        If node list has at least one controller we
+        filter all controllers from the cluster and
+        return them.
+        """
+        controller_nodes = []
+
+        # if list contain at least one controller
+        if cls.__has_controller_nodes(nodes):
+            # retrive all controllers from cluster
+            controller_nodes = db().query(Node). \
+                filter(or_(
+                    Node.role_list.any(name='controller'),
+                    Node.pending_role_list.any(name='controller'),
+                    Node.role_list.any(name='primary-controller'),
+                    Node.pending_role_list.any(name='primary-controller')
+                )). \
+                filter(Node.cluster == cluster). \
+                filter(False == Node.pending_deletion). \
+                order_by(Node.id).all()
+
+        return sorted(set(nodes + controller_nodes),
+                      key=lambda node: node.id)
+
+    @classmethod
+    def __has_controller_nodes(cls, nodes):
+        """Returns True if list of nodes has
+        at least one controller.
+        """
+        for node in nodes:
+            if 'controller' in node.all_roles or \
+               'primary-controller' in node.all_roles:
+                return True
+        return False
+
+    @classmethod
     def set_error(cls, task_uuid, message):
         cls.update_task_status(
             task_uuid,
@@ -342,3 +391,42 @@ class TaskHelper(object):
             db().commit()
             full_err_msg = u"\n".join(err_messages)
             raise errors.NetworkCheckError(full_err_msg, add_client=False)
+
+    @classmethod
+    def prepare_for_provisioning(cls, nodes):
+        """Prepare environment for provisioning,
+        update fqdns, assign admin ips
+        """
+        netmanager = NetworkManager()
+        cls.update_slave_nodes_fqdn(nodes)
+        for node in nodes:
+            netmanager.assign_admin_ips(
+                node.id, len(node.meta.get('interfaces', [])))
+
+    @classmethod
+    def prepare_for_deployment(cls, nodes):
+        """Prepare environment for deployment,
+        assign management, public, storage ips
+        """
+        cls.update_slave_nodes_fqdn(nodes)
+
+        nodes_ids = [n.id for n in nodes]
+        netmanager = NetworkManager()
+        if nodes_ids:
+            netmanager.assign_ips(nodes_ids, 'management')
+            netmanager.assign_ips(nodes_ids, 'public')
+            netmanager.assign_ips(nodes_ids, 'storage')
+
+            for node in nodes:
+                netmanager.assign_admin_ips(
+                    node.id, len(node.meta.get('interfaces', [])))
+
+    @classmethod
+    def raise_if_node_offline(cls, nodes):
+        offline_nodes = filter(lambda n: n.offline, nodes)
+
+        if offline_nodes:
+            node_names = ','.join(map(lambda n: n.full_name, offline_nodes))
+            raise errors.NodeOffline(
+                u'Nodes "%s" are offline.'
+                ' Remove them from environment and try again.' % node_names)

@@ -17,8 +17,10 @@
 from nailgun.api.urls import v1
 from nailgun.webui import urls as webui_urls
 
-urls = (
-    "/api/v1", v1.app,
-    "/api", v1.app,
-    "", webui_urls.app
-)
+
+def urls():
+    return (
+        "/api/v1", v1.app(),
+        "/api", v1.app(),
+        "", webui_urls.app()
+    )

@@ -79,6 +79,7 @@ def appstart(keepalive=False):
         )
         sys.exit(1)
 
+    web.config.debug = bool(int(settings.DEVELOPMENT))
     app = build_app()
 
     from nailgun.keepalive import keep_alive

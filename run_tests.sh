@@ -144,8 +144,20 @@ function run_ui_tests {
         ui_test_files=$ui_tests_dir/test_*.js
     fi
     result=0
+
+    echo -n "Compressing UI... "
+    compressed_static_dir=/tmp/static_compressed
+    rm -rf $compressed_static_dir && mkdir -p $compressed_static_dir
+    r.js -o build.js dir=$compressed_static_dir > /dev/null
+    if [ $? -ne 0 ]; then
+        echo "Failed!"
+        exit 1
+    fi
+    echo "Done"
+    test_server_config=$compressed_static_dir/settings.yaml
+    echo -e "DEVELOPMENT: 0\nSTATIC_DIR: '$compressed_static_dir'" > $compressed_static_dir/settings.yaml
     test_server_port=5544
-    test_server_cmd="./manage.py run --port=$test_server_port --fake-tasks --fake-tasks-tick-count=80 --fake-tasks-tick-interval=1"
+    test_server_cmd="./manage.py run --port=$test_server_port --config=$test_server_config --fake-tasks --fake-tasks-tick-count=80 --fake-tasks-tick-interval=1"
     old_server_pid=`ps aux | grep "$test_server_cmd" | grep -v grep | awk '{ print $2 }'`
     if [ -n "$old_server_pid" ]; then
         kill $old_server_pid

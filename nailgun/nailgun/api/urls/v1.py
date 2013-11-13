@@ -179,4 +179,9 @@ urls = (
 )
 
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]
-app = web.application(urls, locals())
+
+_locals = locals()
+
+
+def app():
+    return web.application(urls, _locals)

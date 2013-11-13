@@ -638,7 +638,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     }
                 }]
             },
-            '.node-checkbox input': {
+            '.node-container input': {
                 observe: 'checked',
                 stickitChange: true,
                 onSet: function(value) {
@@ -653,7 +653,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 observe: ['status', 'online', 'pending_addition', 'pending_deletion'],
                 onGet: 'formatStatusLabel'
             },
-            '.node-box': {
+            '.node-container': {
                 attributes: [{
                     name: 'class',
                     observe: ['status', 'online', 'pending_addition', 'pending_deletion'],
@@ -733,7 +733,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         formatNodePanelClass: function(value, options) {
             var nodeClass = this.node.get('pending_deletion') ? 'node-delete' : this.node.get('pending_addition') ? 'node-new' : this.node.get('online') ? this.node.get('status') : 'node-offline';
-            return 'node-box ' + nodeClass;
+            return 'node-container ' + nodeClass;
         },
         formatStatusIconClass: function(value, options) {
             var icons = {

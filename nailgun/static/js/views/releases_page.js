@@ -89,7 +89,7 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
             var task = this.page.tasks.findTask({name: 'redhat_setup', status: 'running', release: this.release.id});
             if (task) {
                 this.$('.bar').css('width', task.get('progress') + '%');
-                this.$('.bar-title span').text(task.get('progress') + '%');
+                this.$('.bar-title-progress').text(task.get('progress') + '%');
             }
         },
         updateErrorMessage: function() {
@@ -122,7 +122,7 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({release: this.release}));
+            this.$el.html(this.template({release: this.release})).i18n();
             this.updateProgress();
             this.updateErrorMessage();
             return this;

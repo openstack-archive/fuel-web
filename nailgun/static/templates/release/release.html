@@ -9,10 +9,10 @@
       <div class="progress progress-success progress-striped active">
         <div class="bar" style="width: 0%;"></div>
       </div>
-      <div class="bar-title">Downloading: <span>0%</span></div>
+      <div class="bar-title"><span data-i18n="release_page.release.download_progress"></span>: <span class="bar-title-progress">0%</span></div>
     </div>
   <% } else { %>
-    <% var stateMessages = {'available': $.t('release_page.active', {defaultValue: 'Active'}), 'error': $.t('release_page.error', {defaultValue: 'Error'}), 'not_available': $.t('release_page.not_available', {defaultValue: 'Not available'}), 'downloading': $.t('release_page.downloading', {defaultValue: 'Downloading'})};
+    <% var stateMessages = {'available': $.t('release_page.release.active'), 'error': $.t('release_page.release.error'), 'not_available': $.t('release_page.release.not_available'), 'downloading': $.t('release_page.release.download_progress')};
        var state = stateMessages[release.get('state')];
     %>
     <span class="<%- release.get('state') %>"> <%= state %></span>
@@ -20,6 +20,6 @@
 </td>
 <td class="release-actions">
   <% if (release.get('operating_system') == 'RHEL') { %>
-    <button class="btn btn-info btn-rhel-setup" <%= release.get('state') == 'downloading' ? 'disabled' : '' %> ><i class="icon-install"></i>&nbsp;<span data-i18n="release_page.configure">Configure</span></button>
+    <button class="btn btn-info btn-rhel-setup" <%= release.get('state') == 'downloading' ? 'disabled' : '' %> ><i class="icon-install"></i>&nbsp;<span data-i18n="release_page.release.configure_button"></span></button>
   <% } %>
 </td>

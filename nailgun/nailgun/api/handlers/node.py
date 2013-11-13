@@ -324,9 +324,7 @@ class NodeCollectionHandler(JSONHandler):
         :http: * 200 (nodes are successfully updated)
                * 400 (invalid nodes data specified)
         """
-        data = self.checked_data(
-            self.validator.validate_collection_update
-        )
+        data = self.checked_data(self.validator.validate_collection_update)
 
         q = db().query(Node)
         nodes_updated = []

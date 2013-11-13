@@ -25,6 +25,7 @@ from nailgun.api.handlers.cluster import ClusterChangesHandler
 from nailgun.api.handlers.cluster import ClusterCollectionHandler
 from nailgun.api.handlers.cluster import ClusterGeneratedData
 from nailgun.api.handlers.cluster import ClusterHandler
+
 from nailgun.api.handlers.disks import NodeDefaultsDisksHandler
 from nailgun.api.handlers.disks import NodeDisksHandler
 from nailgun.api.handlers.disks import NodeVolumesInformationHandler
@@ -59,7 +60,9 @@ from nailgun.api.handlers.notifications import NotificationHandler
 from nailgun.api.handlers.orchestrator import DefaultDeploymentInfo
 from nailgun.api.handlers.orchestrator import DefaultProvisioningInfo
 from nailgun.api.handlers.orchestrator import DeploymentInfo
+from nailgun.api.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.handlers.orchestrator import ProvisioningInfo
+from nailgun.api.handlers.orchestrator import ProvisionSelectedNodes
 
 from nailgun.api.handlers.plugin import PluginCollectionHandler
 from nailgun.api.handlers.plugin import PluginHandler
@@ -115,6 +118,11 @@ urls = (
     DefaultProvisioningInfo,
     r'/clusters/(?P<cluster_id>\d+)/generated/?$',
     ClusterGeneratedData,
+
+    r'/clusters/(?P<cluster_id>\d+)/provision/?$',
+    ProvisionSelectedNodes,
+    r'/clusters/(?P<cluster_id>\d+)/deploy/?$',
+    DeploySelectedNodes,
 
     r'/nodes/?$',
     NodeCollectionHandler,

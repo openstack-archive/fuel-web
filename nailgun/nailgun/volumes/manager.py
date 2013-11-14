@@ -538,6 +538,8 @@ class VolumeManager(object):
         """Disks and volumes will be set according to node attributes.
         VolumeManager should not make any updates in database.
         """
+        self.node_name = node.name
+
         # Make sure that we don't change volumes directly from manager
         self.volumes = deepcopy(node.attributes.volumes) or []
         # For swap calculation
@@ -638,8 +640,8 @@ class VolumeManager(object):
         generators = {
             # Calculate swap space based on total RAM
             'calc_swap_size': self._calc_swap_size,
-            # root = 10GB
-            'calc_root_size': lambda: gb_to_mb(10),
+            # 15G <= root <= 30G
+            'calc_root_size': self._calc_root_size,
             # boot = 200MB
             'calc_boot_size': lambda: 200,
             # boot records size = 300MB
@@ -674,6 +676,21 @@ class VolumeManager(object):
         self.__logger('Generator %s with args %s returned result: %s' %
                       (generator, args, result))
         return result
+
+    def _calc_root_size(self):
+        try:
+            size = int(self.disks[0].size * 0.2)
+        except IndexError:
+            raise errors.NoHardDrive(
+                "Node {0} seems not to have disks".format(self.node_name),
+                log_level="info"
+            )
+
+        if size < gb_to_mb(15):
+            size = gb_to_mb(15)
+        elif size > gb_to_mb(30):
+            size = gb_to_mb(30)
+        return size
 
     def _calc_total_root_vg(self):
         return self._calc_total_vg('os') - \

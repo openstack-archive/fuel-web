@@ -204,10 +204,11 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         response = self.env.neutron_networks_get(self.cluster.id)
         data = json.loads(response.body)
 
-        publ = [n for n in data['networks']
-                if n['name'] == 'public'][0]
-        cidr = publ['cidr'].partition('/')[0] + '/23'
-        publ['cidr'] = cidr
+        mgmt = [n for n in data['networks']
+                if n['name'] == 'management'][0]
+        cidr = mgmt['cidr'].partition('/')[0] + '/25'
+        mgmt['cidr'] = cidr
+        mgmt['network_size'] = 128
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEquals(202, resp.status)
@@ -215,10 +216,10 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEquals(task['status'], 'ready')
 
         self.db.refresh(self.cluster)
-        publ_ng = [ng for ng in self.cluster.network_groups
-                   if ng.name == 'public'][0]
-        self.assertEquals(publ_ng.cidr, cidr)
-        self.assertEquals(publ_ng.netmask, '255.255.254.0')
+        mgmt_ng = [ng for ng in self.cluster.network_groups
+                   if ng.name == 'management'][0]
+        self.assertEquals(mgmt_ng.cidr, cidr)
+        self.assertEquals(mgmt_ng.netmask, '255.255.255.128')
 
     def test_do_not_update_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
@@ -283,6 +284,63 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             task['message'],
             'Invalid network ID: 500'
         )
+
+    def test_refresh_public_cidr_on_range_gw_change(self):
+        data = json.loads(self.env.neutron_networks_get(self.cluster.id).body)
+        publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
+        self.assertEquals(publ['cidr'], '172.16.0.0/24')
+
+        publ['gateway'] = '199.61.0.1'
+        publ['ip_ranges'] = [['199.61.0.11', '199.61.0.33'],
+                             ['199.61.0.55', '199.61.0.99']]
+        virt_nets = data['neutron_parameters']['predefined_networks']
+        virt_nets['net04_ext']['L3']['floating'] = ['199.61.0.111',
+                                                    '199.61.0.122']
+
+        resp = self.env.neutron_networks_put(self.cluster.id, data)
+        self.assertEquals(202, resp.status)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        self.db.refresh(self.cluster)
+        publ_ng = filter(lambda ng: ng.name == 'public',
+                         self.cluster.network_groups)[0]
+        self.assertEquals(publ_ng.cidr, '199.61.0.0/24')
+
+    def test_refresh_public_cidr_on_netmask_change(self):
+        data = json.loads(self.env.neutron_networks_get(self.cluster.id).body)
+        publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
+        self.assertEquals(publ['cidr'], '172.16.0.0/24')
+
+        publ['netmask'] = '255.255.252.0'
+
+        resp = self.env.neutron_networks_put(self.cluster.id, data)
+        self.assertEquals(202, resp.status)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        self.db.refresh(self.cluster)
+        publ_ng = filter(lambda ng: ng.name == 'public',
+                         self.cluster.network_groups)[0]
+        self.assertEquals(publ_ng.cidr, '172.16.0.0/22')
+
+    def test_do_not_refresh_public_cidr_on_its_change(self):
+        data = json.loads(self.env.neutron_networks_get(self.cluster.id).body)
+        publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
+        self.assertEquals(publ['cidr'], '172.16.0.0/24')
+
+        publ['cidr'] = '199.61.39.160/28'
+
+        # it is OK as public CIDR is ignored and nothing else is changed
+        resp = self.env.neutron_networks_put(self.cluster.id, data)
+        self.assertEquals(202, resp.status)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        self.db.refresh(self.cluster)
+        publ_ng = filter(lambda ng: ng.name == 'public',
+                         self.cluster.network_groups)[0]
+        self.assertEquals(publ_ng.cidr, '172.16.0.0/24')
 
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):

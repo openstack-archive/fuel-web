@@ -86,7 +86,13 @@
                     "configure_interfaces": {
                         "configure_interfaces_on_node": "Configure interfaces on __count__ node",
                         "configure_interfaces_on_node_plural": "Configure interfaces on __count__ nodes"
-                    }
+                    },
+                    "configure_disks": "Configure disks on __count__ node",
+                    "configure_disks_plural": "Configure disks on __count__ nodes",
+                    "return_button": "Back To Node List",
+                    "load_defaults_button": "Load Defaults",
+                    "cancel_changes_button": "Cancel Changes",
+                    "apply_button": "Apply"
                 },
                 "settings_tab": {
                     "title": "OpenStack Settings",
@@ -533,6 +539,9 @@
                     "installing": "正在安装",
                     "is_installed": "已安装",
                     "installing_openstack": "正在安装OpenStack",
+                    "load_defaults_button": "恢复默认",
+                    "cancel_changes_button": "取消变更",
+                    "apply_button": "应用",
                     "back_to_nodes_button": "返回节点列表",
                     "configure": "配置",
                     "node_interfaces": "节点 接口",

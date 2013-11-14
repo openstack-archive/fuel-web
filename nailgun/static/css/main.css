@@ -806,6 +806,24 @@ label.node-checkbox {
   cursor: default;
 }
 
+.node-error {
+  border-size: 2px;
+  border-color: #ae2917;
+}
+
+.node-error > .node-content {
+  background: #eedddd;
+  background: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiA/Pgo8c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgdmlld0JveD0iMCAwIDEgMSIgcHJlc2VydmVBc3BlY3RSYXRpbz0ibm9uZSI+CiAgPGxpbmVhckdyYWRpZW50IGlkPSJncmFkLXVjZ2ctZ2VuZXJhdGVkIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSIgeDE9IjAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiPgogICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iI2VlZGRkZCIgc3RvcC1vcGFjaXR5PSIxIi8+CiAgICA8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiNlM2M5YzkiIHN0b3Atb3BhY2l0eT0iMSIvPgogIDwvbGluZWFyR3JhZGllbnQ+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjEiIGhlaWdodD0iMSIgZmlsbD0idXJsKCNncmFkLXVjZ2ctZ2VuZXJhdGVkKSIgLz4KPC9zdmc+);
+  background: -moz-linear-gradient(top,  #eedddd 0%, #e3c9c9 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#eedddd), color-stop(100%,#e3c9c9));
+  background: -webkit-linear-gradient(top,  #eedddd 0%,#e3c9c9 100%);
+  background: -o-linear-gradient(top,  #eedddd 0%,#e3c9c9 100%);
+  background: -ms-linear-gradient(top,  #eedddd 0%,#e3c9c9 100%);
+  background: linear-gradient(to bottom,  #eedddd 0%,#e3c9c9 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#eedddd', endColorstr='#e3c9c9',GradientType=0 );
+}
+
+
 .node-delete > .node-content > .node-name > .name > p {
   text-decoration: line-through !important;
   cursor: default;
@@ -1146,10 +1164,6 @@ label.node-checkbox {
   inset 0px 0px 0px rgba(255,255,255,.0);
   cursor: pointer;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
-  -webkit-transition: all 0.7s ease;
-  -moz-transition: all 0.7s ease;
-  -o-transition: all 0.7s ease;
-  -ms-transition: all 0.7s ease;
   background-image: -webkit-linear-gradient(top, #f2f4f4, #c4cbcc);
   background-image: -moz-linear-gradient(top, #f2f4f4, #c4cbcc);
   background-image: -o-linear-gradient(top, #f2f4f4, #c4cbcc);
@@ -1157,13 +1171,8 @@ label.node-checkbox {
   background-image: linear-gradient(to bottom, #f2f4f4, #c4cbcc);
 }
 .create-cluster {
-  background-color: rgba(0, 0, 0, 0.1);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.2), 0 1px 1px rgba(0, 0, 0, 0.4) inset;
+  background: none;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
-    -webkit-transition: all 0.7s ease;
-    -moz-transition: all 0.7s ease;
-    -o-transition: all 0.7s ease;
-    -ms-transition: all 0.7s ease;
 }
 
 .create-cluster:hover {
@@ -1172,41 +1181,35 @@ label.node-checkbox {
   inset 0px 0px 0px rgba(255,255,255,.0);
   cursor: pointer;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
-  -webkit-transition: all 0.7s ease;
-    -moz-transition: all 0.7s ease;
-    -o-transition: all 0.7s ease;
-    -ms-transition: all 0.7s ease;
 }
 .create-cluster > .add-icon {
   display: block;
-  height: 120px;
-  margin-top: 15px;
+  height: 116px;
+  margin-top: 20px;
   text-align: center;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .create-cluster > .add-icon > .icon-create {
-  color: #363b44;
-  font-size: 120px;
+  font-size: 110px;
+  color: #909EAE;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+.create-cluster:hover > .add-icon > .icon-create {
+  color: #333333;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .create-cluster-text {
   font-size: 15px;
   text-align: center;
-  color: #798797;
+  color: #909EAE;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
-  -webkit-transition: all 0.7s ease;
-    -moz-transition: all 0.7s ease;
-    -o-transition: all 0.7s ease;
-    -ms-transition: all 0.7s ease;
 }
 .create-cluster:hover > .create-cluster-text {
   color: #333333;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
-  -webkit-transition: all 0.7s ease;
-    -moz-transition: all 0.7s ease;
-    -o-transition: all 0.7s ease;
-    -ms-transition: all 0.7s ease;
 }
 
 .cluster-hardware {

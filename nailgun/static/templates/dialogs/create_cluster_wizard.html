@@ -10,7 +10,7 @@
         <% _(totalSteps).times(function(step) { %>
           <% step++ %>
           <li class="wizard-step <%= step != currentStep ? step <= maxAvailableStep ? 'available' : '' : 'current' %>" data-pane="<%= step - 1 %>">
-            <%- $.t(panes[step - 1].title) || ('Step ' + step)%>
+            <%- $.t(panes[step - 1].title) || ('Step ' + step) %>
           </li>
         <% }) %>
       </ul>
@@ -28,7 +28,7 @@
 
 <div class="modal-footer wizard-footer">
   <button class="btn pull-left" data-dismiss="modal" data-i18n="dialog.create_cluster_wizard.cancel"></button>
-  <button class="btn prev-pane-btn"><i class="icon-prev" data-i18n="dialog.create_cluster_wizard.prev"></i></button>
+  <button class="btn prev-pane-btn"><i class="icon-prev"></i><span data-i18n="dialog.create_cluster_wizard.prev"></span></button>
   <button class="btn btn-success next-pane-btn"><span data-i18n="dialog.create_cluster_wizard.next"></span><i class="icon-next"></i></button>
   <button class="btn btn-success finish-btn" data-i18n="dialog.create_cluster_wizard.create"></button>
 </div>

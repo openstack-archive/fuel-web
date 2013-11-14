@@ -108,7 +108,8 @@ class TestNovaHandlers(BaseIntegrationTest):
             self.assertEquals(task['progress'], 100)
             self.assertEquals(task['name'], 'check_networks')
             self.assertEquals(
-                task['message'], 'Invalid netmask for public network')
+                task['message'],
+                'Invalid gateway or netmask for public network')
 
     def test_network_checking_fails_if_networks_cidr_intersection(self):
         self.find_net_by_name('management')["cidr"] = \
@@ -234,7 +235,8 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         self.assertEquals(task['name'], 'check_networks')
         self.assertEquals(
             task['message'],
-            "Intersection with admin network(s) '10.20.0.0/24' found"
+            "Intersection between network address spaces found:\n"
+            "admin (PXE), storage"
         )
 
     def test_network_checking_fails_if_untagged_intersection(self):
@@ -262,6 +264,9 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         for n in self.nets['networks']:
             if n['name'] == 'public':
                 n['gateway'] = '172.16.10.1'
+        virt_nets = self.nets['neutron_parameters']['predefined_networks']
+        virt_nets['net04_ext']['L3']['floating'] = ['172.16.10.130',
+                                                    '172.16.10.254']
 
         resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
                                              expect_errors=True)
@@ -272,8 +277,7 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         self.assertEquals(task['name'], 'check_networks')
         self.assertEquals(
             task['message'],
-            "Public gateway 172.16.10.1 is not in "
-            "Public address space 172.16.0.0/24."
+            "Public gateway or public ranges are not in one CIDR."
         )
 
     def test_network_checking_fails_if_public_float_range_not_in_cidr(self):
@@ -292,7 +296,7 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         self.assertEquals(
             task['message'],
             "Floating address range 172.16.0.130:172.16.0.254 is not in "
-            "Public address space 172.16.10.0/24."
+            "public address space 172.16.10.0/24."
         )
 
     def test_network_checking_fails_if_network_ranges_intersect(self):
@@ -313,6 +317,99 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
             "management, storage"
         )
 
+    def test_network_checking_fails_if_public_gw_ranges_intersect(self):
+        for n in self.nets['networks']:
+            if n['name'] == 'public':
+                n['gateway'] = '172.16.0.11'
+
+        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
+                                             expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Address intersection between public gateway "
+            "and IP range of public network."
+        )
+
+    def test_network_checking_fails_if_public_ranges_intersect(self):
+        for n in self.nets['networks']:
+            if n['name'] == 'public':
+                n['ip_ranges'] = [['172.16.0.2', '172.16.0.77'],
+                                  ['172.16.0.55', '172.16.0.121']]
+
+        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
+                                             expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Address space intersection between ranges "
+            "of public network."
+        )
+
+    def test_network_checking_fails_if_public_float_ranges_intersect(self):
+        for n in self.nets['networks']:
+            if n['name'] == 'public':
+                n['ip_ranges'] = [['172.16.0.2', '172.16.0.33'],
+                                  ['172.16.0.55', '172.16.0.222']]
+
+        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
+                                             expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "Address space intersection between ranges "
+            "of public and external network."
+        )
+
+    def test_network_checking_fails_if_network_cidr_too_small(self):
+        for n in self.nets['networks']:
+            if n['name'] == 'management':
+                n['cidr'] = '192.168.0.0/25'
+
+        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
+                                             expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "CIDR size for network 'management' "
+            "is less than required"
+        )
+
+    def test_network_checking_fails_on_network_vlan_match(self):
+        for n in self.nets['networks']:
+            if n['name'] in ('management', 'storage'):
+                n['vlan_start'] = '111'
+
+        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
+                                             expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            task['message'],
+            "management, storage networks use the same VLAN tags. "
+            "You should assign different VLAN tag "
+            "to every network."
+        )
+
     def test_network_checking_fails_if_internal_gateway_not_in_cidr(self):
         int = self.nets['neutron_parameters']['predefined_networks']['net04']
         int['L3']['gateway'] = '172.16.10.1'
@@ -327,7 +424,7 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         self.assertEquals(
             task['message'],
             "Internal gateway 172.16.10.1 is not in "
-            "Internal address space 192.168.111.0/24."
+            "internal address space 192.168.111.0/24."
         )
 
     def test_network_checking_fails_if_internal_w_floating_intersection(self):
@@ -344,7 +441,7 @@ class TestNeutronHandlersGre(BaseIntegrationTest):
         self.assertEquals(task['name'], 'check_networks')
         self.assertEquals(
             task['message'],
-            "Intersection between Internal CIDR and Floating range."
+            "Intersection between internal CIDR and floating range."
         )
 
 

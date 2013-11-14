@@ -268,10 +268,16 @@ class NeutronManager(NetworkManager):
             if not new_net:
                 raise errors.NoSuitableCIDR()
 
-            new_ip_range = IPAddrRange(
-                first=str(new_net[2]),
-                last=str(new_net[-2])
-            )
+            if network.get("ip_range"):
+                new_ip_range = IPAddrRange(
+                    first=network["ip_range"][0],
+                    last=network["ip_range"][1]
+                )
+            else:
+                new_ip_range = IPAddrRange(
+                    first=str(new_net[2]),
+                    last=str(new_net[-2])
+                )
 
             nw_group = NetworkGroup(
                 release=cluster_db.release.id,

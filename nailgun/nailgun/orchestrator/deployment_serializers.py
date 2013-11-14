@@ -651,8 +651,11 @@ class NeutronNetworkDeploymentSerializer(object):
             }
         }
 
+        pub = filter(lambda ng: ng.name == 'public', cluster.network_groups)[0]
+
         for net, net_conf in attrs['predefined_networks'].iteritems():
-            net_conf["L3"]["subnet"] = net_conf["L3"].pop("cidr")
+            cidr = net_conf["L3"].pop("cidr")
+            net_conf["L3"]["subnet"] = pub.cidr if net == "net04_ext" else cidr
             net_conf["L3"]["gateway"] = str(
                 IPNetwork(net_conf["L3"]["subnet"])[1]
             )

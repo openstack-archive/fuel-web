@@ -219,8 +219,14 @@ class NodeDisksValidator(BasicValidator):
     def validate(cls, data):
         dict_data = cls.validate_json(data)
         cls.validate_schema(dict_data, disks_simple_format_schema)
+        cls.at_least_one_disk_exists(dict_data)
         cls.sum_of_volumes_not_greater_than_disk_size(dict_data)
         return dict_data
+
+    @classmethod
+    def at_least_one_disk_exists(cls, data):
+        if len(data) < 1:
+            raise errors.InvalidData(u'Node seems not to have disks')
 
     @classmethod
     def sum_of_volumes_not_greater_than_disk_size(cls, data):

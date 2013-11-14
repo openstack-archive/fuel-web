@@ -133,7 +133,7 @@ casper.then(function() {
         this.evaluate(function(vdaDisk) {
             $(vdaDisk + ' .volume-group-box[data-volume=vm] input').keyup();
         },{vdaDisk:vdaDisk});
-        this.fill(vdaDisk + ' .volume-group-box[data-volume=os]', {'os': '20000'});
+        this.fill(vdaDisk + ' .volume-group-box[data-volume=os]', {'os': '50000'});
         this.evaluate(function(vdaDisk) {
             $(vdaDisk + ' .volume-group-box[data-volume=os] input').keyup();
         },{vdaDisk:vdaDisk});

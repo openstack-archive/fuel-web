@@ -43,12 +43,14 @@ class NeutronNetworkConfiguration(NetworkConfiguration):
                         cls._set_ip_ranges(ng['id'], value)
                     else:
                         if key == 'cidr' and \
-                                not ng['name'] in ('private',):
+                                ng['name'] not in ('private', 'public'):
                             network_manager.update_range_mask_from_cidr(
                                 ng_db, value)
 
                         setattr(ng_db, key, value)
 
+                if ng['name'] == 'public':
+                    cls.update_cidr_from_gw_mask(ng_db, ng)
                 if ng['name'] != 'private':
                     network_manager.create_networks(ng_db)
                 ng_db.cluster.add_pending_changes('networks')
@@ -59,6 +61,15 @@ class NeutronNetworkConfiguration(NetworkConfiguration):
                 setattr(cluster.neutron_config, key, value)
             db().add(cluster.neutron_config)
             db().commit()
+
+    @classmethod
+    def update_cidr_from_gw_mask(cls, ng_db, ng):
+        if ng.get('gateway') and ng.get('netmask'):
+            from nailgun.network.checker import calc_cidr_from_gw_mask
+            cidr = calc_cidr_from_gw_mask({'gateway': ng['gateway'],
+                                           'netmask': ng['netmask']})
+            if cidr:
+                setattr(ng_db, 'cidr', str(cidr))
 
 
 class NeutronConfig(Base):

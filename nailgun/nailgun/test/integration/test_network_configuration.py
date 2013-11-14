@@ -204,10 +204,11 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         response = self.env.neutron_networks_get(self.cluster.id)
         data = json.loads(response.body)
 
-        publ = [n for n in data['networks']
-                if n['name'] == 'public'][0]
-        cidr = publ['cidr'].partition('/')[0] + '/23'
-        publ['cidr'] = cidr
+        mgmt = [n for n in data['networks']
+                if n['name'] == 'management'][0]
+        cidr = mgmt['cidr'].partition('/')[0] + '/25'
+        mgmt['cidr'] = cidr
+        mgmt['network_size'] = 128
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEquals(202, resp.status)
@@ -215,10 +216,10 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEquals(task['status'], 'ready')
 
         self.db.refresh(self.cluster)
-        publ_ng = [ng for ng in self.cluster.network_groups
-                   if ng.name == 'public'][0]
-        self.assertEquals(publ_ng.cidr, cidr)
-        self.assertEquals(publ_ng.netmask, '255.255.254.0')
+        mgmt_ng = [ng for ng in self.cluster.network_groups
+                   if ng.name == 'management'][0]
+        self.assertEquals(mgmt_ng.cidr, cidr)
+        self.assertEquals(mgmt_ng.netmask, '255.255.255.128')
 
     def test_do_not_update_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)

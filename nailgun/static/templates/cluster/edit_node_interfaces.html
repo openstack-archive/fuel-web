@@ -1,5 +1,5 @@
 <div class="edit-node-interfaces wrapper <%= locked ? 'changes-locked' : '' %>">
-  <h3 class="span12">Configure interfaces on <%= nodes.length %> node<%= nodes.length == 1 ? '' : 's' %></h3>
+  <h3 class="span12"> <%- $.t('cluster_page.nodes_tab.configure_interfaces.configure_interfaces_on_node', {count: nodes.length}) %></h3>
 
   <div class="row node-networks">
     <div class="span4"></div>
@@ -14,12 +14,12 @@
   <div class="row">
     <div class="page-control-box">
       <div class="back-button pull-left">
-        <button class="btn btn-return" data-i18n="cluster_page.nodes_tab.bt_return">Back To Node List</button>
+        <button class="btn btn-return" data-i18n="cluster_page.nodes_tab.back_to_nodes_button"></button>
       </div>
       <div class="page-control-button-placeholder">
-        <button data-i18n="cluster_page.nodes_tab.bt_load_defaults" class="btn btn-defaults">Load Defaults</button>
-        <button data-i18n="cluster_page.nodes_tab.bt_cancel_changes" class="btn btn-revert-changes">Cancel Changes</button>
-        <button data-i18n="cluster_page.nodes_tab.bt_apply" class="btn btn-success btn-apply">Apply</button>
+        <button data-i18n="common.load_defaults_button" class="btn btn-defaults"></button>
+        <button data-i18n="common.cancel_changes_buttons" class="btn btn-revert-changes"></button>
+        <button data-i18n="common.apply_button" class="btn btn-success btn-apply"></button>
       </div>
     </div>
   </div>

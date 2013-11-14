@@ -3,7 +3,10 @@
         "translation": {
             "common": {
                 "title": "Fuel Dashboard",
-                "select_all_button": "Select All"
+                "select_all_button": "Select All",
+                "load_defaults_button": "Load Defaults",
+                "cancel_changes_button": "Cancel Changes",
+                "apply_button": "Apply"
             },
             "navbar": {
                 "environments": "Environments",
@@ -73,6 +76,13 @@
                 "cluster_status_removing": "Removing"
             },
             "cluster_page": {
+                "nodes_tab": {
+                    "back_to_nodes_button": "Back To Node List",
+                    "configure_interfaces": {
+                        "configure_interfaces_on_node": "Configure interfaces on __count__ node",
+                        "configure_interfaces_on_node_plural": "Configure interfaces on __count__ nodes"
+                    }
+                },
                 "settings_tab": {
                     "title": "OpenStack Settings",
                     "bt_load_defaults": "Load Defaults",
@@ -199,6 +209,12 @@
     },
     "zh-CN": {
         "translation": {
+            "common": {
+                "select_all_button": "选择全部",
+                "load_defaults_button": "恢复默认",
+                "cancel_changes_button": "取消变更",
+                "apply_button": "应用"
+            },
             "navbar": {
                 "environments": "环境",
                 "releases": "版本",
@@ -457,7 +473,6 @@
                     "discovered": "在线",
                     "offline": "离线",
                     "error": "错误",
-                    "select_all": "选择全部",
                     "view_logs": "查看日志",
                     "pending_addition": "等待增加",
                     "pending_deletion": "等待删除",
@@ -465,10 +480,7 @@
                     "installing": "正在安装",
                     "is_installed": "已安装",
                     "installing_openstack": "正在安装OpenStack",
-                    "bt_return": "返回节点列表",
-                    "bt_load_defaults": "恢复默认",
-                    "bt_cancel_changes": "取消变更",
-                    "bt_apply": "应用",
+                    "back_to_nodes_button": "返回节点列表",
                     "configure": "配置",
                     "node_interfaces": "节点 接口",
                     "node_disks": "节点 磁盘",

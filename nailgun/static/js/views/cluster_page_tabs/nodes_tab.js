@@ -792,8 +792,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         updateNode: function(data) {
             this.node.save(data, {patch: true, wait: true})
                 .done(_.bind(function() {
-                    this.screen.tab.model.get('nodes').fetch();
-                    app.page.deploymentControl.render();
+                    this.screen.tab.model.fetch();
+                    this.screen.tab.model.fetchRelated('nodes');
                     app.page.removeFinishedTasks();
                 }, this))
                 .fail(function() {utils.showErrorDialog({title: $.t('dialog.discard_changes.cant_discard', {defaultValue: "Can't discard node changes"})});});

@@ -35,22 +35,30 @@ itwill be overridden.')
     subprocess.check_output = f
 
 
-def puppetApply(classname, name=None, params=None):
+def puppetApply(classes):
     #name should be a string
-    #params should be a dict
+    #params should be a dict or list of dicts
     '''Runs puppet apply -e "classname {'name': params}".'''
     log = logging
     log.info("Puppet start")
 
     command = ["puppet", "apply", "-d", "-v", "--logdest", "/tmp/puppet.log"]
-    input = [classname, "{", '"%s":' % name]
-    #Build params
-    for key, value in params.items():
-        if type(value) == bool:
-            input.extend([key, "=>", '%s,' % str(value).lower()])
+    input = []
+    for cls in classes:
+        if cls['type'] == "resource":
+            input.extend([cls["class"], "{", '"%s":' % cls["name"]])
+        elif cls['type'] == "class":
+            input.extend(["class", "{", '"%s":' % cls["class"]])
         else:
-            input.extend([key, "=>", '"%s",' % value])
-    input.append('}')
+            log.error("Invalid type %s" % cls['type'])
+            return False
+        #Build params
+        for key, value in cls["params"].iteritems():
+            if type(value) == bool:
+                input.extend([key, "=>", '%s,' % str(value).lower()])
+            else:
+                input.extend([key, "=>", '"%s",' % value])
+        input.append('}')
 
     log.debug(' '.join(command))
     log.debug(' '.join(input))

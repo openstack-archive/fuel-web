@@ -153,7 +153,18 @@ define(['require'], function(require) {
             var result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
             /*jslint bitwise: false*/
             return result;
-
+        },
+        composeCidr: function(ip, netmask) {
+            var netmaskInt = this.ipIntRepresentation(netmask);
+            var ipInt = this.ipIntRepresentation(ip);
+            var networkSize = netmaskInt.toString(2).match(/1/g).length;
+            // bitwise operations are exceedingly rare in JS, and those operators usually are a typo for the boolean versions (&&, ||)
+            // so JSLint reports bugs, if an appropriate flag is not set
+            /*jslint bitwise: true*/
+            var networkAddressHex = (0xFFFFFFFF + Number((netmaskInt & ipInt).toString(10)) + 1).toString(16);
+            /*jslint bitwise: false*/
+            var networkAddress = _.map(networkAddressHex.match(/[0-9,a-e]{2}/g), function(n) {return parseInt(n, 16);}).join('.');
+            return networkAddress + '/' + networkSize;
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;

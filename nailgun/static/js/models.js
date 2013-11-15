@@ -391,7 +391,7 @@ define(['utils', 'deepModel'], function(utils) {
             }
             if (provider == 'neutron') {
                 attributes = {
-                    'public': ['cidr', 'vlan_start', 'gateway'],
+                    'public': ['ip_ranges', 'vlan_start', 'netmask', 'gateway'],
                     'management': ['cidr', 'vlan_start'],
                     'storage': ['cidr', 'vlan_start'],
                     'private': [],
@@ -415,6 +415,7 @@ define(['utils', 'deepModel'], function(utils) {
         validate: function(attrs, options) {
             var errors = {};
             _.each(this.getAttributes(options.net_provider), _.bind(function(attribute) {
+                var publicCidr = options.net_provider == 'neutron' && attrs.name == 'public' ? utils.composeCidr(attrs.ip_ranges[0][0], attrs.netmask) : '';
                 if (attribute == 'ip_ranges') {
                     if (_.filter(attrs.ip_ranges, function(range) {return !_.isEqual(range, ['', '']);}).length){
                         _.each(attrs.ip_ranges, _.bind(function(range, index) {
@@ -424,12 +425,12 @@ define(['utils', 'deepModel'], function(utils) {
                                 var end = _.last(range);
                                 if (start == '') {
                                     rangeErrors.start = 'Empty IP range start';
-                                } else if (utils.validateIP(start)) {
+                                } else if (utils.validateIP(start) || (options.net_provider == 'neutron' && attrs.name == 'public' && utils.composeCidr(start, attrs.netmask) != publicCidr)) {
                                     rangeErrors.start = 'Invalid IP range start';
                                 }
                                 if (end == '') {
                                     rangeErrors.end = 'Empty IP range end';
-                                } else if (utils.validateIP(end)) {
+                                } else if (utils.validateIP(end) || (options.net_provider == 'neutron' && attrs.name == 'public' && utils.composeCidr(end, attrs.netmask) != publicCidr)) {
                                     rangeErrors.end = 'Invalid IP range end';
                                 }
                                 if (start != '' && end != '' && !utils.validateIPrange(start, end)) {
@@ -483,7 +484,7 @@ define(['utils', 'deepModel'], function(utils) {
                 } else if (attribute == 'gateway') {
                     if (utils.validateIP(attrs.gateway)) {
                         errors.gateway = 'Invalid gateway';
-                    } else if (options.net_provider == 'neutron' && attrs.name == 'public' && !utils.validateIpCorrespondsToCIDR(attrs.cidr, attrs.gateway)) {
+                    } else if (options.net_provider == 'neutron' && attrs.name == 'public' && !utils.validateIpCorrespondsToCIDR(publicCidr, attrs.gateway)) {
                         errors.gateway = 'Gateway is out of Public IP range';
                     }
                 } else if (attribute == 'amount') {

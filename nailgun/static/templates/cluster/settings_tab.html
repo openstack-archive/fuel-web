@@ -19,9 +19,9 @@
   <div class="row">
     <div class="page-control-box">
       <div class="page-control-button-placeholder">
-        <button data-i18n="cluster_page.settings_tab.bt_load_defaults" class="btn btn-load-defaults"<%= locked || cluster.get('settings').deferred.state() == 'pending' ? ' disabled' : '' %>>Load Defaults</button>
-        <button data-i18n="cluster_page.settings_tab.bt_save_settings" data-i18n="cluster_page.settings_tab.bt_cancel_changes" class="btn btn-revert-changes" disabled>Cancel Changes</button>
-        <button class="btn btn-success btn-apply-changes" disabled>Save Settings</button>
+        <button data-i18n="common.load_defaults_button" class="btn btn-load-defaults"<%= locked || cluster.get('settings').deferred.state() == 'pending' ? ' disabled' : '' %>></button>
+        <button data-i18n="common.cancel_changes_button" class="btn btn-revert-changes" disabled></button>
+        <button data-i18n="common.save_settings_button" class="btn btn-success btn-apply-changes" disabled></button>
       </div>
     </div>
   </div>

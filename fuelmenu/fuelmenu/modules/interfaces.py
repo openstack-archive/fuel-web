@@ -224,7 +224,7 @@ class interfaces(urwid.WidgetWrap):
                 errors.append(e)
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
-            log.error("Errors: %s %s" % (len(errors), errors))
+            self.log.error("Errors: %s %s" % (len(errors), errors))
             return False
         else:
             self.parent.footer.set_text("No errors found.")
@@ -239,7 +239,14 @@ class interfaces(urwid.WidgetWrap):
             return False
 
         self.parent.footer.set_text("Applying changes... (May take up to 20s)")
-        puppetclass = "l23network::l3::ifconfig"
+        puppetclasses = []
+        l23network = {'type': "class",
+                      'class': "l23network",
+                      'params': {'use_ovs': False}}
+        puppetclasses.append(l23network)
+        l3ifconfig = {'type': "resource",
+                      'class': "l23network::l3::ifconfig",
+                      'name': self.activeiface}
         if responses["onboot"].lower() == "no":
             params = {"ipaddr": "none"}
         elif responses["bootproto"] == "dhcp":
@@ -261,8 +268,9 @@ class interfaces(urwid.WidgetWrap):
             expr = '^GATEWAY=.*'
             replace.replaceInFile("/etc/sysconfig/network", expr,
                                   "GATEWAY=")
-        self.log.info("Puppet data: %s %s %s" % (
-                      puppetclass, self.activeiface, params))
+        l3ifconfig['params'] = params
+        puppetclasses.append(l3ifconfig)
+        self.log.info("Puppet data: %s" % (puppetclasses))
         try:
             #Gateway handling so DHCP will set gateway
             if responses["bootproto"] == "dhcp":
@@ -270,7 +278,7 @@ class interfaces(urwid.WidgetWrap):
                 replace.replaceInFile("/etc/sysconfig/network", expr,
                                       "GATEWAY=")
             self.parent.refreshScreen()
-            puppet.puppetApply(puppetclass, self.activeiface, params)
+            puppet.puppetApply(puppetclasses)
             self.getNetwork()
             expr = '^GATEWAY=.*'
             gateway = self.get_default_gateway_linux()

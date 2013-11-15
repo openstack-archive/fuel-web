@@ -66,8 +66,7 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             this.model.on('invalid', this.showValidationError, this);
         },
         render: function() {
-            this.$el.html(this.template({cluster: this.model}));
-            this.$el.i18n();
+            this.$el.html(this.template({cluster: this.model})).i18n();
             return this;
         }
     });

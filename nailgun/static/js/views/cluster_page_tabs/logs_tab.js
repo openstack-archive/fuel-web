@@ -285,7 +285,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                 chosenType: this.chosenType,
                 chosenNodeId: this.chosenNodeId,
                 chosenSourceId: this.chosenSourceId
-            }));
+            })).i18n();
             if (this.reversed) {
                 this.$('.table-logs').append(this.$('.table-logs .entries-skipped-msg').detach());
             }

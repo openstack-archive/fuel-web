@@ -218,14 +218,13 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
                     notifications: this.collection,
                     displayCount: this.navbar.notificationsDisplayCount,
                     showMore: (Backbone.history.getHash() != 'notifications') && this.collection.length
-                }, this.templateHelpers)));
+                }, this.templateHelpers))).i18n();
                 this.markAsRead();
                 this.bindEvents();
             } else {
                 this.$el.html('');
                 this.unbindEvents();
             }
-            this.$el.i18n();
             return this;
         }
     });

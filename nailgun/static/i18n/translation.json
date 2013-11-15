@@ -326,8 +326,6 @@
                 "load_defaults_button": "恢复默认",
                 "cancel_changes_button": "取消变更",
                 "apply_button": "应用",
-                "title": "",
-                "not_available": "",
                 "network": {
                     "fixed": "虚机网络（固定）",
                     "public": "公开",
@@ -337,7 +335,6 @@
                 }
             },
             "node_details": {
-                "cpu": "",
                 "system": "系统",
                 "memory": "内存",
                 "disks": "磁盘",
@@ -422,7 +419,6 @@
                 "no_nodes_text": "该类型的节点不存在",
                 "error": "错误",
                 "success": "成功",
-
                 "network_tab": {
                     "title": "网络设置",
                     "flatdhcp_manager": "FlatDHCP管理",
@@ -451,7 +447,6 @@
                         "use_vlan_tagging": "使用VLAN标记"
                     }
                 },
-
                 "settings_tab": {
                     "title": "OpenStack设置",
                     "bt_load_defaults": "加载默认配置",
@@ -482,12 +477,10 @@
                             "label": "系统日志传输协议",
                             "values": {
                                 "udp": {
-                                    "label": "UDP",
-                                    "description": ""
+                                    "label": "UDP"
                                 },
                                 "tcp": {
-                                    "label": "TCP",
-                                    "description": ""
+                                    "label": "TCP"
                                 }
                             }
                         },
@@ -554,7 +547,6 @@
                         }
                     }
                 },
-
                 "logs_tab": {
                     "title": "日志",
                     "logs": "日志",
@@ -570,7 +562,6 @@
                     "all_logs": "全部",
                     "no_log_text": "当前过滤器没有找到任何日志。"
                 },
-
                 "healthcheck_tab": {
                     "title": "OpenStack健康检查",
                     "run_tests_button": "运行测试",
@@ -578,7 +569,6 @@
                     "deploy_alert": "在测试之前必须先部署新的OpenStack环境",
                     "not_available_alert": "OSTF服务不可用"
                 },
-
                 "actions_tab": {
                     "title": "动作",
                     "rename_environment": "重命名环境",
@@ -587,7 +577,6 @@
                     "bt_delete": "删除",
                     "alert_delete": "清除每个节点并放回未分配节点池"
                 },
-
                 "nodes_tab": {
                     "add": "增加",
                     "delete": "删除",
@@ -622,20 +611,7 @@
                     "volume_groups": "卷组",
                     "use_all_allowed_space": "使用全部可用空间",
                     "bt_network_configuration": "网络配置",
-                    "bt_disk_configuration": "磁盘配置",
-                    "edit_name": "",
-                    "cpu": "",
-                    "hdd": "",
-                    "ram": "",
-                    "gb": "",
-                    "os": "",
-                    "discard_addition": "",
-                    "discard_deletion": "",
-                    "discard_role_changes": "",
-                    "unallocated_nodes": "",
-                    "no_selected_nodes": "",
-                    "no_nodes_in_environment": "",
-                    "no_nodes_in_fuel": ""
+                    "bt_disk_configuration": "磁盘配置"
                 }
             },
             "dialog": {
@@ -647,7 +623,6 @@
                     "default_message": "设置变更未保存，您想放弃变更并离开么？",
                     "verify_message": "正在进行网络验证，您应该保存变更或留在本页"
                 },
-
                 "rhel_license": {
                     "title": "红帽企业版Linux账户设置",
                     "description": "安装红帽版的OpenStack平台, 你首先必须下载RHOS和RHEL并缓存在Fuel的主节点上。请选择你的订阅并在下面输入你的凭据开始下载。",
@@ -657,7 +632,6 @@
                     "satellite_server_hostname": "satellite服务器主机名",
                     "activation_key": "激活码"
                 },
-
                 "create_cluster": {
                     "title": "新建OpenStack环境",
                     "name": "名称",
@@ -666,7 +640,6 @@
                     "bt_cancel": "取消",
                     "bt_create": "创建"
                 },
-
                 "remove_cluster": {
                     "title": "删除环境",
                     "important": "重要",
@@ -675,7 +648,6 @@
                     "text1": "有动作未完成，删除环境可能失败，并导致状态不混乱。",
                     "text2": "每个节点都将被删除并放回未非配节点池。"
                 },
-
                 "change_cluster_mode": {
                     "title": "变更环境模式",
                     "deployment_mode": "部署模式：",
@@ -688,11 +660,9 @@
                     "bt_cancel": "取消",
                     "bt_apply": "应用"
                 },
-
                 "show_node": {
                     "manufacturer_label": "设备：",
                     "mac_address_label": "MAC地址：",
-                    "fqdn_label": "",
                     "close_button": "关闭",
                     "product": "产品",
                     "family": "系列",
@@ -713,15 +683,8 @@
                     "current_speed": "当前速度",
                     "netmask": "网络掩码",
                     "network_configuration_button": "网络配置",
-                    "disk_configuration_button": "磁盘配置",
-                    "mac" : "",
-                    "ip" : "",
-                    "bytes": "",
-                    "fqdn": "",
-                    "drive": "",
-                    "drive_plural": ""
+                    "disk_configuration_button": "磁盘配置"
                 },
-
                 "discard_changes": {
                     "title": "放弃变更",
                     "added": "增加：",
@@ -732,10 +695,8 @@
                     "cinder": "存储",
                     "bt_cancel": "取消",
                     "bt_discard": "放弃",
-                    "alert_text": "确定要放弃所有变更吗？",
-                    "cant_discard": ""
+                    "alert_text": "确定要放弃所有变更吗？"
                 },
-
                 "display_changes": {
                     "title": "部署变更",
                     "added": "增加：",

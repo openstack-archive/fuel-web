@@ -213,7 +213,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 tabs: this.tabs,
                 activeTab: this.activeTab,
                 renaming: this.renaming
-            }));
+            })).i18n();
 
             this.clusterCustomizationMessage = new ClusterCustomizationMessage({model: this.model, page: this});
             this.registerSubView(this.clusterCustomizationMessage);
@@ -240,7 +240,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 this.registerSubView(this.tab);
             }
 
-            this.$el.i18n();
             return this;
         }
     });
@@ -251,7 +250,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.model.on('change:is_customized', this.render, this);
         },
         render: function() {
-            this.$el.html(this.template({cluster: this.model}));
+            this.$el.html(this.template({cluster: this.model})).i18n();
             return this;
         }
     });
@@ -274,7 +273,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         render: function() {
             var task = this.page.tasks.findTask({name: 'redhat_setup', status: 'error', release: this.model.get('release').id}) || this.model.task('deploy');
-            this.$el.html(this.template(_.extend({cluster: this.model, task: task}, this.templateHelpers)));
+            this.$el.html(this.template(_.extend({cluster: this.model, task: task}, this.templateHelpers))).i18n();
             return this;
         }
     });
@@ -323,7 +322,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         render: function() {
             var task = this.getTask();
-            this.$el.html(this.template({cluster: this.model, task: task}));
+            this.$el.html(this.template({cluster: this.model, task: task})).i18n();
             this.updateProgress();
             return this;
         }

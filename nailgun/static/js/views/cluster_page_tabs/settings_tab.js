@@ -94,7 +94,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({cluster: this.model, locked: this.isLocked()}));
+            this.$el.html(this.template({cluster: this.model, locked: this.isLocked()})).i18n();
             if (this.model.get('settings').deferred.state() != 'pending') {
                 this.$('.settings').html('');
                 var settingGroups = _.keys(this.settings.attributes);
@@ -116,7 +116,6 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 this.composeBindings();
                 this.stickit(this.settings);
             }
-            this.$el.i18n();
             return this;
         },
         bindTaskEvents: function(task) {
@@ -155,7 +154,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.$(e.currentTarget).find('i').toggle();
         },
         render: function() {
-            this.$el.html(this.template(this.options));
+            this.$el.html(this.template(this.options)).i18n();
             return this;
         }
     });

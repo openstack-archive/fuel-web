@@ -51,13 +51,12 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({releases: this.collection}));
+            this.$el.html(this.template({releases: this.collection})).i18n();
             this.collection.each(function(release) {
                 var releaseView = new Release({release: release, page: this});
                 this.registerSubView(releaseView);
                 this.$('.releases-table tbody').append(releaseView.render().el);
             }, this);
-            this.$el.i18n();
             return this;
         }
     });

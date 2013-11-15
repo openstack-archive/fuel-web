@@ -73,7 +73,6 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 networkConfiguration: this.networkConfiguration
             });
             this.page.removeFinishedTasks();
-            this.$el.i18n();
         },
         updateFloatingVlanFromPublic: function() {
             if (this.model.get('net_provider') == 'nova_network') {
@@ -266,12 +265,11 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 locked: this.isLocked(),
                 verificationLocked: this.isVerificationLocked(),
                 segment_type: this.model.get("net_segment_type")
-            }));
+            })).i18n();
             this.renderNetworks();
             this.renderNovaNetworkConfiguration();
             this.renderNeutronConfiguration();
             this.renderVerificationControl();
-            this.$el.i18n();
             return this;
         }
     });
@@ -407,7 +405,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 net_provider: this.tab.model.get('net_provider'),
                 net_manager: this.tab.networkConfiguration.get('net_manager'),
                 locked: this.tab.isLocked()
-            }));
+            })).i18n();
             return this;
         }
     });
@@ -437,7 +435,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$el.html(this.template({
                 nameservers: this.novaNetworkConfiguration.get('nameservers'),
                 locked: this.tab.isLocked()
-            }));
+            })).i18n();
             return this;
         }
     });
@@ -505,7 +503,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 neutronParameters: this.neutronParameters,
                 externalCidr: this.tab.networkConfiguration.get('networks').findWhere({name: 'public'}).get('cidr'),
                 locked: this.tab.isLocked()
-            }));
+            })).i18n();
             return this;
         }
     });
@@ -519,7 +517,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$el.html(this.template({
                 cluster: this.cluster,
                 networks: this.networks
-            }));
+            })).i18n();
             return this;
         }
     });

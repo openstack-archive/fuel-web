@@ -71,7 +71,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function(options) {
             this.$el.attr('tabindex', -1);
-            this.$el.html(this.template(options));
+            this.$el.html(this.template(options)).i18n();
             if (!this.modalBound) {
                 this.$el.on('hidden', _.bind(this.tearDown, this));
                 this.$el.on('shown', _.bind(function() {
@@ -202,7 +202,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             this.$('.next-pane-btn').toggle(currentStep != totalSteps);
             this.$('.finish-btn').toggle(currentStep == totalSteps);
             this.$('.wizard-footer .btn-success:visible').focus();
-            this.$el.i18n();
             return this;
         }
     });
@@ -528,7 +527,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             this.tearDownRegisteredSubViews();
             this.constructor.__super__.render.call(this);
             this.renderRhelCredentialsForm({redHatAccount: this.redHatAccount});
-            this.$el.i18n();
             return this;
         }
     }, rhelCredentialsMixin));
@@ -572,7 +570,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             this.constructor.__super__.render.call(this, {cluster: this.model});
-            this.$el.i18n();
             return this;
         }
     });
@@ -597,7 +594,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 cluster: this.model,
                 size: this.model.get('mode') == 'ha_compact' ? 3 : 1
             });
-            this.$el.i18n();
             return this;
         }
     });
@@ -619,7 +615,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             this.constructor.__super__.render.call(this, {cluster: this.model});
-            this.$el.i18n();
             return this;
         }
     });
@@ -721,7 +716,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             }).on('hidden', function(e) {
                 e.stopPropagation();
             });
-            this.$el.i18n();
             return this;
         }
     });
@@ -743,7 +737,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 message: this.message || $.t('dialog.dismiss_settings.default_message'),
                 verification: this.verification || false
             });
-            this.$el.i18n();
             return this;
         }
     });

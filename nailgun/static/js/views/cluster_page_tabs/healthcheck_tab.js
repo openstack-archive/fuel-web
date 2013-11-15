@@ -172,7 +172,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({cluster: this.model}));
+            this.$el.html(this.template({cluster: this.model})).i18n();
             if (this.testsets.deferred.state() != 'pending') {
                 this.$('.testsets').html('');
                 this.testsets.each(function(testset) {
@@ -211,10 +211,10 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             this.testrun.on('change', this.renderTests, this);
         },
         renderTests: function() {
-            this.$('tbody').html(this.testsTemplate(_.extend({testrun: this.testrun, tests: this.tests}, this.templateHelpers)));
+            this.$('tbody').html(this.testsTemplate(_.extend({testrun: this.testrun, tests: this.tests}, this.templateHelpers))).i18n();
         },
         render: function() {
-            this.$el.html(this.template({testset: this.testset}));
+            this.$el.html(this.template({testset: this.testset})).i18n();
             this.renderTests();
             return this;
         }

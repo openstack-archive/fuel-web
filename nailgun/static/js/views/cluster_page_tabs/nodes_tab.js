@@ -162,7 +162,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.append(this.nodeList.render().el);
             this.nodeList.calculateSelectAllCheckedState();
             this.nodeList.calculateSelectAllDisabledState();
-            this.$el.i18n();
             return this;
         }
     });
@@ -318,7 +317,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 cluster: this.cluster,
                 edit: this.screen instanceof EditNodesScreen,
                 locked: this.screen.isLocked()
-            }));
+            })).i18n();
             return this;
         }
     });
@@ -424,7 +423,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.html(this.template({
                 roles: this.roles,
                 rolesData: this.cluster.get('release').get('roles_metadata')
-            }));
+            })).i18n();
             this.defineNodes();
             _.each(this.$('input'), this.calculateInputState, this);
             this.checkForConflicts();
@@ -505,11 +504,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.html(this.template({
                 nodes: this.nodes,
                 edit: this.screen instanceof EditNodesScreen
-            }));
+            })).i18n();
             this.groupNodes();
             $('html').on(this.eventNamespace, _.bind(this.hideSummaryPanel, this));
             Backbone.history.on('route', this.hideSummaryPanel, this);
-            this.$el.i18n();
             return this;
         }
     });
@@ -552,7 +550,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.html(this.template({
                 groupLabel: this.groupLabel,
                 nodes: this.nodes
-            }));
+            })).i18n();
             this.nodes.each(this.renderNode, this);
             this.calculateSelectAllCheckedState();
             this.calculateSelectAllDisabledState();
@@ -855,9 +853,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 renameable: this.renameable,
                 edit: this.screen instanceof EditNodesScreen,
                 locked: this.screen.isLocked()
-            }, this.templateHelpers)));
+            }, this.templateHelpers))).i18n();
             this.stickit(this.node);
-            this.$el.i18n();
             return this;
         }
     });
@@ -1022,13 +1019,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.html(this.template({
                 nodes: this.nodes,
                 locked: this.isLocked()
-            }));
+            })).i18n();
             if (this.loading && this.loading.state() != 'pending') {
                 this.renderDisks();
                 this.checkForChanges();
             }
             this.setupButtonsBindings();
-            this.$el.i18n();
             return this;
         }
     });
@@ -1161,7 +1157,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 disk: this.disk,
                 volumes: this.screen.volumes,
                 locked: this.screen.isLocked()
-            }, this.templateHelpers)));
+            }, this.templateHelpers))).i18n();
             this.$('.disk-form').collapse({toggle: false});
             this.applyColors();
             this.renderVisualGraph();
@@ -1305,13 +1301,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.html(this.template({
                 nodes: this.nodes,
                 locked: this.isLocked()
-            }));
+            })).i18n();
             if (this.loading && this.loading.state() != 'pending') {
                 this.renderInterfaces();
                 this.checkForChanges();
             }
             this.setupButtonsBindings();
-            this.$el.i18n();
             return this;
         }
     });
@@ -1369,7 +1364,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.model.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
         },
         render: function() {
-            this.$el.html(this.template(_.extend({ifc: this.model}, this.templateHelpers)));
+            this.$el.html(this.template(_.extend({ifc: this.model}, this.templateHelpers))).i18n();
             this.checkIfEmpty();
             this.$('.logical-network-box').sortable({
                 connectWith: '.logical-network-box',
@@ -1377,7 +1372,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 containment: this.screen.$('.node-networks'),
                 disabled: this.screen.isLocked()
             }).disableSelection();
-            this.$el.i18n();
             return this;
         }
     });

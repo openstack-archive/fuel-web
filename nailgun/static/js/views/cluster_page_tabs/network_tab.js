@@ -80,13 +80,6 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 networks.findWhere({name: 'floating'}).set({vlan_start: networks.findWhere({name: 'public'}).get('vlan_start')});
             }
         },
-        updateExternalCidrFromPublic: function() {
-            if (this.model.get('net_provider') == 'neutron') {
-                var cidr = this.networkConfiguration.get('networks').findWhere({name: 'public'}).get('cidr');
-                this.networkConfiguration.get('neutron_parameters').get('predefined_networks').net04_ext.L3.cidr = cidr;
-                this.$('input[name=cidr-ext]').val(cidr).trigger('change');
-            }
-        },
         startVerification: function() {
             var task = new models.Task();
             var options = {
@@ -320,7 +313,6 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 this.setupVlanEnd();
             }
             this.tab.updateFloatingVlanFromPublic();
-            this.tab.updateExternalCidrFromPublic();
             this.tab.checkForChanges();
             this.tab.page.removeFinishedTasks();
         },
@@ -331,11 +323,12 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 ip_ranges.push(range);
             });
             var fixedNetworkOnVlanManager = this.tab.networkConfiguration.get('net_manager') == 'VlanManager' && this.network.get('name') == 'fixed';
+            var netmask = $.trim(this.$('.netmask input').val());
             this.network.set({
                 ip_ranges: ip_ranges,
                 cidr: $.trim(this.$('.cidr input').val()),
                 vlan_start: fixedNetworkOnVlanManager || this.$('.use-vlan-tagging:checked').length ? Number(this.$('.vlan_start input').val()) : null,
-                netmask: $.trim(this.$('.netmask input').val()),
+                netmask: netmask,
                 gateway: $.trim(this.$('.gateway input').val()),
                 amount: fixedNetworkOnVlanManager ? Number(this.$('input[name=fixed-amount]').val()) : 1,
                 network_size: fixedNetworkOnVlanManager ? Number(this.$('.network_size select').val()) : utils.calculateNetworkSize(this.$('.cidr input').val())
@@ -344,15 +337,17 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 net_provider: this.tab.model.get('net_provider'),
                 networkConfiguration: this.tab.networkConfiguration
             });
-            this.validateNeutronFloatingIpRange();
+            this.validateNeutronFloatingIpRange(ip_ranges[0][0], netmask);
         },
-        validateNeutronFloatingIpRange: function() {
+        validateNeutronFloatingIpRange: function(ip, netmask) {
             if (this.tab.model.get('net_provider') == 'neutron' && this.network.get('name') == 'public') {
                 this.tab.$('.neutron-parameters input.error').removeClass('error');
                 this.tab.$('.neutron-parameters .help-inline').text('');
-                this.tab.networkConfiguration.get('neutron_parameters').set({}, {
+                var predefined_networks = _.cloneDeep(this.tab.networkConfiguration.get('neutron_parameters').get('predefined_networks'));
+                predefined_networks.net04_ext.L3.floating = [$.trim(this.tab.$('input[name=floating_start]').val()), $.trim(this.tab.$('input[name=floating_end]').val())];
+                this.tab.networkConfiguration.get('neutron_parameters').set({predefined_networks: predefined_networks}, {
                     validate: true,
-                    publicCidr: $.trim(this.$('.cidr input').val())
+                    publicCidr: utils.composeCidr(ip, netmask)
                 });
             }
         },
@@ -465,12 +460,13 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             predefined_networks.net04.L3.gateway = $.trim(this.$('input[name=gateway]').val());
             predefined_networks.net04.L3.nameservers = [$.trim(this.$('input[name=nameserver-0]').val()), $.trim(this.$('input[name=nameserver-1]').val())];
 
+            var publicNetwork = this.tab.networkConfiguration.get('networks').findWhere({name: 'public'});
             this.neutronParameters.set({
                 L2: l2,
                 predefined_networks: predefined_networks
             }, {
                 validate: true,
-                publicCidr: this.tab.networkConfiguration.get('networks').findWhere({name: 'public'}).get('cidr'),
+                publicCidr: utils.composeCidr(publicNetwork.get('ip_ranges')[0][0], publicNetwork.get('netmask')),
                 networkVlans: _.compact(this.tab.networkConfiguration.get('networks').pluck('vlan_start'))
             });
             this.tab.checkForChanges();
@@ -501,7 +497,6 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         render: function() {
             this.$el.html(this.template({
                 neutronParameters: this.neutronParameters,
-                externalCidr: this.tab.networkConfiguration.get('networks').findWhere({name: 'public'}).get('cidr'),
                 locked: this.tab.isLocked()
             })).i18n();
             return this;

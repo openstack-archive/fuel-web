@@ -288,6 +288,13 @@
                             "description": "",
                             "weight": 30,
                             "type": "hidden"
+                        },
+                        "ceilometer": {
+                            "value": false,
+                            "label": "Install Ceilometer",
+                            "description": "If selected, Ceilometer component will be installed",
+                            "weight": 40,
+                            "type": "checkbox"
                         }
                     },
                     "common": {
@@ -502,6 +509,17 @@
                             "generator": "password"
                         },
                         "rabbit_user": {
+                            "generator": "password"
+                        }
+                    },
+                    "ceilometer": {
+                        "db_password": {
+                            "generator": "password"
+                        },
+                        "user_password": {
+                            "generator": "password"
+                        },
+                        "metering_secret": {
                             "generator": "password"
                         }
                     },
@@ -1233,6 +1251,13 @@
                             "description": "",
                             "weight": 30,
                             "type": "hidden"
+                        },
+                        "ceilometer": {
+                            "value": false,
+                            "label": "Install Ceilometer",
+                            "description": "If selected, Ceilometer component will be installed",
+                            "weight": 40,
+                            "type": "checkbox"
                         }
                     },
                     "common": {
@@ -1463,6 +1488,17 @@
                             "generator": "password"
                         },
                         "rabbit_user": {
+                            "generator": "password"
+                        }
+                    },
+                    "ceilometer": {
+                        "db_password": {
+                            "generator": "password"
+                        },
+                        "user_password": {
+                            "generator": "password"
+                        },
+                        "metering_secret": {
                             "generator": "password"
                         }
                     },

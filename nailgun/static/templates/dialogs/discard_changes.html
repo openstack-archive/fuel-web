@@ -1,6 +1,6 @@
 <div class="modal-header">
   <button type="button" class="close" data-dismiss="modal">×</button>
-  <h3 data-i18n="dialog.discard_changes.title">Discard Changes</h3>
+  <h3 data-i18n="dialog.discard_changes.title"></h3>
 </div>
 <div class="modal-body">
   <% var addedNodes = cluster.get('nodes').where({pending_addition: true}).length %>
@@ -19,6 +19,6 @@
   <div class="deploy-task-notice"><i class="icon-attention"></i> <%- $.t("dialog.discard_changes.alert_text", {defaultValue: 'Are you sure you want to discard these changes?'}) %></div>
 </div>
 <div class="modal-footer">
-  <button class="btn" data-dismiss="modal" data-i18n="dialog.discard_changes.bt_cancel">Cancel</button>
-  <button class="btn btn-danger discard-btn" data-dismiss="modal" data-i18n="dialog.discard_changes.bt_discard">Discard</button>
+  <button class="btn" data-dismiss="modal" data-i18n="common.cancel_button"></button>
+  <button class="btn btn-danger discard-btn" data-dismiss="modal" data-i18n="dialog.discard_changes.discard_button"></button>
 </div>

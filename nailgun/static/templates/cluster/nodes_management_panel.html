@@ -25,10 +25,10 @@
       <<%= locked ? 'div' : 'a' %> class="btn btn-success btn-add-nodes" href="#cluster/<%- cluster.id %>/nodes/add" <%= disabled %>><i class="icon-plus"></i> Add Nodes</<%= locked ? 'div' : 'a' %>>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-group-congiration btn-configure-interfaces" disabled data-action="interfaces"><i class="icon-attention text-error hide"></i> <span data-i18n="cluster_page.nodes_tab.bt_network_configuration">Configure Interfaces</span></button>
+      <button class="btn btn-group-congiration btn-configure-interfaces" disabled data-action="interfaces"><i class="icon-attention text-error hide"></i> <span data-i18n="dialog.show_node.network_configuration_button"></span></button>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-group-congiration btn-configure-disks" disabled data-action="disks"><i class="icon-attention text-error hide"></i> <span data-dismiss="modal" data-i18n="cluster_page.nodes_tab.bt_disk_configuration">Configure Disks</span></button>
+      <button class="btn btn-group-congiration btn-configure-disks" disabled data-action="disks"><i class="icon-attention text-error hide"></i> <span data-dismiss="modal" data-i18n="dialog.show_node.disk_configuration_button"></span></button>
     </div>
   <% } else { %>
     <div class="cluster-toolbar-item pull-right">

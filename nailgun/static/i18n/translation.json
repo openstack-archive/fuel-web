@@ -89,14 +89,15 @@
             },
             "cluster_page": {
                 "nodes_tab": {
-                    "back_to_nodes_button": "Back To Node List",
                     "configure_interfaces": {
-                        "configure_interfaces_on_node": "Configure interfaces on __count__ node",
-                        "configure_interfaces_on_node_plural": "Configure interfaces on __count__ nodes"
+                        "title": "Configure interfaces on __name__",
+                        "title_plural": "Configure interfaces on __count__ nodes"
                     },
-                    "configure_disks": "Configure disks on __count__ node",
-                    "configure_disks_plural": "Configure disks on __count__ nodes",
-                    "return_button": "Back To Node List",
+                    "configure_disks": {
+                        "title": "Configure disks on __name__",
+                        "title_plural": "Configure disks on __count__ nodes"
+                    },
+                    "back_to_nodes_button": "Back To Node List",
                     "load_defaults_button": "Load Defaults",
                     "cancel_changes_button": "Cancel Changes",
                     "apply_button": "Apply"

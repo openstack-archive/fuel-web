@@ -388,6 +388,18 @@ class VerifyNetworksTaskManager(TaskManager):
         )
         db().refresh(task)
 
+        #disable neutron with vlan connectivity check after deployment
+        if task.status != 'error':
+            if (
+                task.cluster.status != 'new' and
+                task.cluster.net_provider == 'neutron'
+            ):
+                task.status = 'error'
+                task.message = ('Network verification on Neutron'
+                                ' is not implemented yet')
+
+                db().commit()
+
         if task.status != 'error':
             # this one is connected with UI issues - we need to
             # separate if error happened inside nailgun or somewhere

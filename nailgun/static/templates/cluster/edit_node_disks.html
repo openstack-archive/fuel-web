@@ -1,6 +1,6 @@
 <div class="edit-node-disks wrapper">
   <h3 class="span12">
-    <%- $.t('cluster_page.nodes_tab.edit_node_disks.configure_disks', {count: nodes.length}) %>
+    <%- $.t('cluster_page.nodes_tab.configure_disks.title', {count: nodes.length, name: nodes.length && nodes.at(0).get('name')}) %>
   </h3>
 
   <div class="row node-disks">

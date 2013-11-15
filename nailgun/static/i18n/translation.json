@@ -100,6 +100,14 @@
             },
             "cluster_page": {
                 "nodes_tab": {
+                    "configure_interfaces": {
+                        "title": "Configure interfaces on __name__",
+                        "title_plural": "Configure interfaces on __count__ nodes"
+                    },
+                    "configure_disks": {
+                        "title": "Configure disks on __name__",
+                        "title_plural": "Configure disks on __count__ nodes"
+                    },
                     "back_to_nodes_button": "Back To Node List",
                     "discovered": "Discovered",
                     "offline": "Offline",
@@ -118,17 +126,7 @@
                     "unallocated_nodes": "Unallocated Nodes",
                     "disk_information": "Disk Information",
                     "volume_groups": "Volume Groups",
-                    "use_all_allowed_space": "Use All Allowed Space",
-                    "configure_interfaces": {
-                        "configure_interfaces_on_node": "Configure interfaces on __count__ node",
-                        "configure_interfaces_on_node_plural": "Configure interfaces on __count__ nodes"
-                    },
-                    "configure_disks": "Configure disks on __count__ node",
-                    "configure_disks_plural": "Configure disks on __count__ nodes",
-                    "return_button": "Back To Node List",
-                    "load_defaults_button": "Load Defaults",
-                    "cancel_changes_button": "Cancel Changes",
-                    "apply_button": "Apply"
+                    "use_all_allowed_space": "Use All Allowed Space"
                 },
                 "settings_tab": {
                     "title": "OpenStack Settings"

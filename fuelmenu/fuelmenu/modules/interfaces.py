@@ -143,9 +143,16 @@ class interfaces(urwid.WidgetWrap):
 
         ###Validate each field
         errors = []
-        #Perform checks only if enabled
         if responses["onboot"] == "no":
-            pass
+            numactiveifaces = 0
+            for iface in self.netsettings:
+                if self.netsettings[iface]['addr'] != "":
+                    numactiveifaces += 1
+            if numactiveifaces < 2 and \
+                    self.netsettings[self.activeiface]['addr'] != "":
+                #Block user because puppet l23network fails if all intefaces
+                #are disabled.
+                errors.append("Cannot disable all interfaces.")
         elif responses["bootproto"] == "dhcp":
             self.parent.footer.set_text("Scanning for DHCP servers. "
                                         "Please wait...")
@@ -197,7 +204,7 @@ class interfaces(urwid.WidgetWrap):
                         raise BadIPException("Not a valid IP address")
                 else:
                     raise BadIPException("Not a valid IP address")
-            except Exception:
+            except (BadIPException, Exception):
                 errors.append("Not a valid IP address: %s" %
                               responses["ipaddr"])
             try:
@@ -207,7 +214,7 @@ class interfaces(urwid.WidgetWrap):
                         raise BadIPException("Not a valid IP address")
                 else:
                     raise BadIPException("Not a valid IP address")
-            except Exception:
+            except (BadIPException, Exception):
                 errors.append("Not a valid netmask: %s" % responses["netmask"])
             try:
                 if len(responses["gateway"]) > 0:
@@ -220,7 +227,7 @@ class interfaces(urwid.WidgetWrap):
                                             responses["netmask"]) is False:
                         raise BadIPException("Gateway IP is not in same "
                                              "subnet as IP address")
-            except Exception as e:
+            except (BadIPException, Exception) as e:
                 errors.append(e)
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
@@ -240,10 +247,6 @@ class interfaces(urwid.WidgetWrap):
 
         self.parent.footer.set_text("Applying changes... (May take up to 20s)")
         puppetclasses = []
-        l23network = {'type': "class",
-                      'class': "l23network",
-                      'params': {'use_ovs': False}}
-        puppetclasses.append(l23network)
         l3ifconfig = {'type': "resource",
                       'class': "l23network::l3::ifconfig",
                       'name': self.activeiface}

@@ -21,8 +21,11 @@ from nailgun.errors import errors
 
 class BasicValidator(object):
 
+    model = None
+    schema = None
+
     @classmethod
-    def validate_json(cls, data):
+    def validate_json(cls, data, schema=None):
         if data:
             try:
                 res = json.loads(data)
@@ -31,6 +34,8 @@ class BasicValidator(object):
                     "Invalid json received",
                     log_message=True
                 )
+            if schema:
+                cls.validate_schema(res, schema)
         else:
             raise errors.InvalidData(
                 "Empty request received",

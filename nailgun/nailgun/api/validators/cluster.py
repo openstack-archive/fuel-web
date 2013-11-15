@@ -13,6 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.api.validators.json_schema.cluster \
+    import schema_create
+from nailgun.api.validators.json_schema.cluster \
+    import schema_update
+
 from nailgun.api.models import Cluster
 from nailgun.api.models import Release
 from nailgun.api.validators.base import BasicValidator
@@ -21,10 +26,10 @@ from nailgun.errors import errors
 
 
 class ClusterValidator(BasicValidator):
+
     @classmethod
     def validate(cls, data, **kwargs):
-        d = cls.validate_json(data)
-        cluster_id = kwargs.get("cluster_id") or d.get("id")
+        d = cls.validate_json(data, schema=schema_create)
         if d.get("name"):
             if db().query(Cluster).filter_by(
                 name=d["name"]
@@ -40,15 +45,42 @@ class ClusterValidator(BasicValidator):
                     "Invalid release id",
                     log_message=True
                 )
+        return d
+
+    @classmethod
+    def validate_update(cls, data, **kwargs):
+        d = cls.validate_json(data, schema=schema_update)
+        cluster_id = kwargs.get("cluster_id") or d.get("id")
+        if not cluster_id:
+            raise errors.InvalidData(
+                "Environment ID is not specified",
+                log_message=True
+            )
+
+        new_name = d.get("name")
+        if new_name:
+            if db().query(Cluster).filter_by(
+                name=new_name
+            ).first():
+                raise errors.AlreadyExists(
+                    "Environment with this name already exists",
+                    log_message=True
+                )
+
         if cluster_id:
             cluster = db().query(Cluster).get(cluster_id)
             if cluster:
-                for k in ("net_provider", "net_segment_type"):
+                for k in Cluster._non_updateable:
                     if k in d and getattr(cluster, k) != d[k]:
                         raise errors.InvalidData(
                             "Change of '%s' is prohibited" % k,
                             log_message=True
                         )
+            else:
+                raise errors.InvalidData(
+                    "Invalid environment ID '{0}'".format(cluster_id),
+                    log_message=True
+                )
         return d
 
 

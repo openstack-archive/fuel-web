@@ -81,33 +81,17 @@ class ClusterHandler(JSONHandler):
                * 404 (cluster not found in db)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
-        data = self.checked_data(cluster_id=cluster_id)
-        network_manager = NetworkManager()
+        data = self.checked_data(
+            self.validator.validate_update,
+            cluster_id=cluster_id
+        )
 
         for key, value in data.iteritems():
             if key == "nodes":
-                # TODO(NAME): sepatate nodes
-                #for deletion and addition by set().
-                new_nodes = db().query(Node).filter(
-                    Node.id.in_(value)
-                )
-                nodes_to_remove = [n for n in cluster.nodes
-                                   if n not in new_nodes]
-                nodes_to_add = [n for n in new_nodes
-                                if n not in cluster.nodes]
-                for node in nodes_to_add:
-                    if not node.online:
-                        raise web.badrequest(
-                            "Can not add offline node to cluster")
-                map(cluster.nodes.remove, nodes_to_remove)
-                map(cluster.nodes.append, nodes_to_add)
-                for node in nodes_to_remove:
-                    network_manager.clear_assigned_networks(node)
-                    network_manager.clear_all_allowed_networks(node.id)
-                for node in nodes_to_add:
-                    network_manager.allow_network_assignment_to_all_interfaces(
-                        node)
-                    network_manager.assign_networks_by_default(node)
+                try:
+                    cluster.update_nodes(value)
+                except errors.WrongNodeStatus as exc:
+                    raise web.badrequest(str(exc))
             else:
                 setattr(cluster, key, value)
         db().commit()

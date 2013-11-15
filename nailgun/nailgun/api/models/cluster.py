@@ -15,10 +15,14 @@
 #    under the License.
 
 from copy import deepcopy
+from itertools import imap
 from random import choice
 import string
 
 import web
+
+from sqlalchemy import not_
+from sqlalchemy import or_
 
 from sqlalchemy import Boolean
 from sqlalchemy import Column
@@ -28,10 +32,13 @@ from sqlalchemy import Integer
 from sqlalchemy import Unicode
 from sqlalchemy.orm import relationship, backref
 
+from nailgun.api.models.node import Node
+
 from nailgun.api.models.base import Base
 from nailgun.api.models.fields import JSON
 from nailgun.api.models.release import Release
 from nailgun.db import db
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
 
@@ -54,6 +61,12 @@ class ClusterChanges(Base):
 
 class Cluster(Base):
     __tablename__ = 'clusters'
+
+    _non_updateable = (
+        "net_provider",
+        "net_segment_type"
+    )
+
     MODES = ('multinode', 'ha_full', 'ha_compact')
     STATUSES = ('new', 'deployment', 'operational', 'error', 'remove')
     NET_MANAGERS = ('FlatDHCPManager', 'VlanManager')
@@ -207,6 +220,45 @@ class Cluster(Base):
             ch.node_id = node_id
         db().add(ch)
         db().commit()
+
+    def update_nodes(self, node_id_list):
+        # TODO(meow-nofer): Add yield_per() while refactoring db
+        nodes_to_add = db().query(Node).filter(
+            Node.id.in_(
+                node_id_list
+            ) & or_(
+                not_(
+                    Node.cluster_id == self.id
+                ),
+                (
+                    None == Node.cluster_id
+                )
+            )
+        )
+        nodes_to_remove = db().query(Node).filter(
+            (
+                Node.cluster_id == self.id
+            ) & not_(
+                Node.id.in_(
+                    node_id_list
+                )
+            )
+        )
+
+        if any(imap(lambda n: (not n.online), nodes_to_add)):
+            raise errors.WrongNodeStatus(
+                "Can not add offline node to cluster"
+            )
+
+        for node in nodes_to_remove:
+            self.nodes.remove(node)
+            self.network_manager().clear_assigned_networks(node)
+            self.network_manager().clear_all_allowed_networks(node.id)
+        for node in nodes_to_add:
+            self.nodes.append(node)
+            self.network_manager().allow_network_assignment_to_all_interfaces(
+                node)
+            self.network_manager().assign_networks_by_default(node)
 
     def clear_pending_changes(self, node_id=None):
         chs = db().query(ClusterChanges).filter_by(

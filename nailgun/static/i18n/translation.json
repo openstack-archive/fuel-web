@@ -7,6 +7,10 @@
                 "load_defaults_button": "Load Defaults",
                 "cancel_changes_button": "Cancel Changes",
                 "apply_button": "Apply",
+                "rename_button": "Rename",
+                "delete_button": "Delete",
+                "save_settings_button": "Save Settings",
+                "cancel_button": "Cancel",
                 "not_available": "N/A",
                 "network": {
                     "fixed": "VM Networks (Fixed)",
@@ -15,6 +19,13 @@
                     "management": "Management",
                     "storage": "Storage"
                 }
+            },
+            "node_details": {
+                "cpu": "cpu",
+                "system": "system",
+                "memory": "memory",
+                "disks": "disks",
+                "interfaces": "disks"
             },
             "navbar": {
                 "environments": "Environments",
@@ -90,6 +101,24 @@
             "cluster_page": {
                 "nodes_tab": {
                     "back_to_nodes_button": "Back To Node List",
+                    "discovered": "Discovered",
+                    "offline": "Offline",
+                    "error": "Error",
+                    "view_logs": "View Logs",
+                    "pending_addition": "Pending Addition",
+                    "pending_deletion": "Pending Deletion",
+                    "ready": "Ready",
+                    "installing": "Installing",
+                    "is_installed": "is installed",
+                    "installing_openstack": "Installing OpenStack",
+                    "speed": "Speed:",
+                    "alert_drag_and_drop": "Use drag and drop to move logical networks between physical interfaces",
+                    "total_space": "Total Space:",
+                    "unallocated": "Unallocated",
+                    "unallocated_nodes": "Unallocated Nodes",
+                    "disk_information": "Disk Information",
+                    "volume_groups": "Volume Groups",
+                    "use_all_allowed_space": "Use All Allowed Space",
                     "configure_interfaces": {
                         "configure_interfaces_on_node": "Configure interfaces on __count__ node",
                         "configure_interfaces_on_node_plural": "Configure interfaces on __count__ nodes"
@@ -102,17 +131,12 @@
                     "apply_button": "Apply"
                 },
                 "settings_tab": {
-                    "title": "OpenStack Settings",
-                    "bt_load_defaults": "Load Defaults",
-                    "bt_cancel_changes": "Cancel Changes",
-                    "bt_save_settings": "Save Settings"
+                    "title": "OpenStack Settings"
                 },
                 "actions_tab": {
                     "title": "Actions",
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
-                    "bt_rename": "Rename",
-                    "bt_delete": "Delete",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
                 },
                 "network_tab": {
@@ -120,8 +144,6 @@
                     "flatdhcp_manager": "FlatDHCP Manager",
                     "vlan_manager": "VLAN Manager",
                     "verify_networks_button": "Verify Networks",
-                    "cancel_changes_button": "Cancel Changes",
-                    "save_settings_button": "Save Settings",
                     "neutron_segmentation": "Neutron with __segment_type__ segmentation",
                     "range_start": "Start",
                     "range_end": "End",
@@ -186,7 +208,13 @@
                     "expected_duration": "Expected Duration",
                     "actual_duration": "Actual Duration",
                     "status": "Status"
-                }
+                },
+                "deploy_changes": "Deploy Changes",
+                "deployment_mode": "Environment Deployment Mode:",
+                "openstack_release": "OpenStack Release:",
+                "environment_status": "Environment Status:",
+                "mode_multinode": "Multi-node",
+                "mode_multinode_with_HA": "Multi-node HA"
             },
             "capacity_page": {
                 "title": "Capacity Audit",
@@ -205,7 +233,6 @@
             "dialog": {
                 "create_cluster_wizard": {
                     "title": "Create a new OpenStack environment",
-                    "cancel": "Cancel",
                     "prev": "Prev",
                     "next": "Next",
                     "create": "Create",
@@ -259,6 +286,14 @@
                         "env": "Environments"
                     }
                 },
+                "dismiss_settings": {
+                    "title": "Confirm",
+                    "important": "Important",
+                    "stay_button": "Stay on page",
+                    "leave_button": "Leave page and discard changes",
+                    "default_message": "Settings were modified but not saved. Do you want to discard your changes and leave the page?",
+                    "verify_message": "Network verification is in progress. You should save changes or stay on the tab."
+                },
                 "display_changes": {
                     "title": "Deploy Changes",
                     "added_node": "Added __nodesCount__ node.",
@@ -280,17 +315,8 @@
                     "changed_task_name": "Changed __item__",
                     "changed": "Changed",
                     "deleted": "Deleted",
-                    "cancel": "Cancel",
                     "deploy": "Deploy",
                     "redeployment_needed": "Some nodes have error status after deployment. Redeployment is needed."
-                },
-                "dismiss_settings": {
-                    "title": "Confirm",
-                    "important": "Important",
-                    "stay_button": "Stay on page",
-                    "leave_button": "Leave page and discard changes",
-                    "default_message": "Settings were modified but not saved. Do you want to discard your changes and leave the page?",
-                    "verify_message": "Network verification is in progress. You should save changes or stay on the tab."
                 },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",
@@ -308,13 +334,23 @@
                 "rhel_license": {
                     "title": "Red Hat Enterprise Linux Account Settings",
                     "description": "To deploy the Red Hat Enterprise Linux OpenStack Platform, you must first download it to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  The RHEL OpenStack Platform will be automatically downloaded and cached after you create the environment.",
-                    "cancel_button": "Cancel",
-                    "apply_button": "Apply",
                     "rhn_sattelite": "RHN Satellite",
                     "redhat_username": "Red Hat Username",
                     "redhat_password": "Red Hat Password",
                     "satellite_server_hostname": "Satellite Server Hostname",
                     "activation_key": "Activation Key"
+                },
+                "discard_changes": {
+                    "title": "Discard Changes",
+                    "discard_button": "Discard",
+                    "alert_text": "Are you sure you want to discard these changes?",
+                    "cant_discard": ""
+                },
+                "remove_cluster": {
+                    "title": "Delete Environment",
+                    "important": "Important",
+                    "incomplete_actions_text": "There are incompleted actions. Removing of the environment may fail and lead to inconsistent state.",
+                    "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes."
                 }
             }
         }
@@ -326,6 +362,11 @@
                 "load_defaults_button": "恢复默认",
                 "cancel_changes_button": "取消变更",
                 "apply_button": "应用",
+                "rename_button": "重命名",
+                "delete_button": "删除",
+                "save_settings_button": "保存设置",
+                "cancel_button": "取消",
+                "not_available": "",
                 "network": {
                     "fixed": "虚机网络（固定）",
                     "public": "公开",
@@ -401,6 +442,35 @@
                 "cluster_status_removing": "移除中"
             },
             "cluster_page": {
+                "nodes_tab": {
+                    "back_to_nodes_button": "返回节点列表",
+                    "discovered": "在线",
+                    "offline": "离线",
+                    "error": "错误",
+                    "view_logs": "查看日志",
+                    "pending_addition": "等待增加",
+                    "pending_deletion": "等待删除",
+                    "ready": "已就绪",
+                    "installing": "正在安装",
+                    "is_installed": "已安装",
+                    "installing_openstack": "正在安装OpenStack",
+                    "speed": "速度：",
+                    "alert_drag_and_drop": "使用拖拽在物理接口之间移动逻辑网络",
+                    "total_space": "全部空间：",
+                    "unallocated": "未分配",
+                    "disk_information": "磁盘信息",
+                    "volume_groups": "卷组",
+                    "use_all_allowed_space": "使用全部可用空间"
+                },
+                "settings_tab": {
+                    "title": "OpenStack设置"
+                },
+                "actions_tab": {
+                    "title": "动作",
+                    "rename_environment": "重命名环境",
+                    "delete_environment": "删除环境",
+                    "alert_delete": "清除每个节点并放回未分配节点池"
+                },
                 "deploy_changes": "部署变更",
                 "deployment_mode": "部署模式：",
                 "openstack_release": "OpenStack版本：",
@@ -424,8 +494,6 @@
                     "flatdhcp_manager": "FlatDHCP管理",
                     "vlan_manager": "VLAN管理",
                     "verify_networks_button": "验证网络",
-                    "cancel_changes_button": "取消变更",
-                    "save_settings_button": "保存设置",
                     "range_start": "开始",
                     "range_end": "结束",
                     "verify_networks": {
@@ -445,106 +513,6 @@
                         "size_of_networks": "网络大小",
                         "vlan_id_range": "VLAN ID范围",
                         "use_vlan_tagging": "使用VLAN标记"
-                    }
-                },
-                "settings_tab": {
-                    "title": "OpenStack设置",
-                    "bt_load_defaults": "加载默认配置",
-                    "bt_cancel_changes": "取消变更",
-                    "bt_save_settings": "保存设置",
-                    "access": {
-                        "group_name": "访问",
-                        "user": {
-                            "label": "用户名",
-                            "description": "管理员用户名"
-                        },
-                        "email": {
-                            "label": "电子邮件",
-                            "description": "管理员电子邮件"
-                        },
-                        "tenant": {
-                            "label": "tenant",
-                            "description": "管理员Tenant(项目)名称"
-                        },
-                        "password": {
-                            "label": "密码",
-                            "description": "管理员密码"
-                        }
-                    },
-                    "syslog": {
-                        "group_name": "系统日志",
-                        "syslog_transport": {
-                            "label": "系统日志传输协议",
-                            "values": {
-                                "udp": {
-                                    "label": "UDP"
-                                },
-                                "tcp": {
-                                    "label": "TCP"
-                                }
-                            }
-                        },
-                        "syslog_server": {
-                            "label": "Hostname",
-                            "description": "远程系统日志主机名"
-                        },
-                        "syslog_port": {
-                            "label": "端口",
-                            "description": "远程系统日志端口"
-                        }
-                    },
-                    "common": {
-                        "group_name": "通用",
-                        "auto_assign_floating_ip": {
-                            "label": "自动分配浮动IP",
-                            "description": "OpenStack将自动给新实例分配浮动IP"
-                        },
-                        "libvirt_type": {
-                            "label": "管理器类型",
-                            "values": {
-                                "kvm": {
-                                    "label": "KVM",
-                                    "description": "如果在硬件上运行OpenStack，选择该类型的管理器"
-                                },
-                                "qemu": {
-                                    "label": "QEMU",
-                                    "description": "如果您在虚拟机上运行OpenStack请选择该类型的管理器"
-                                }
-                            }
-                        },
-                        "start_guests_on_host_boot": {
-                            "label": "主机启动时运行客户机",
-                            "description": "在主机重启时是否需要重启客户机。 如果启用，此选项会导致nova-compute启动时无条件的重启客户机。如果客户机为停止状态，则启动它。如果是运行状态，则重启"
-                        },
-                        "use_cow_images": {
-                            "label": "为映像使用qcow格式",
-                            "description": "大多数情况下您需要qcow格式。如果设置为false，将使用原始映像格式运行虚机。基于原始格式的OpenStack当前不支持快照"
-                        },
-                        "compute_scheduler_driver": {
-                            "label": "Scheduler driver",
-                            "values": {
-                                "nova": {
-                                    "scheduler": {
-                                        "filter_scheduler": {
-                                            "FilterScheduler": {
-                                                "label": "过滤器调度器",
-                                                "description": "TBD"
-                                            }
-                                        },
-                                        "simple": {
-                                            "SimpleScheduler": {
-                                                "label": "简单调度器",
-                                                "description": "TBD"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "auth_key": {
-                            "label": "公开密钥",
-                            "description": "部署节点时包含在authorized_keys中的公钥"
-                        }
                     }
                 },
                 "logs_tab": {
@@ -568,50 +536,6 @@
                     "stop_tests_button": "停止测试",
                     "deploy_alert": "在测试之前必须先部署新的OpenStack环境",
                     "not_available_alert": "OSTF服务不可用"
-                },
-                "actions_tab": {
-                    "title": "动作",
-                    "rename_environment": "重命名环境",
-                    "delete_environment": "删除环境",
-                    "bt_rename": "重命名",
-                    "bt_delete": "删除",
-                    "alert_delete": "清除每个节点并放回未分配节点池"
-                },
-                "nodes_tab": {
-                    "add": "增加",
-                    "delete": "删除",
-                    "controller": "控制器",
-                    "compute": "计算",
-                    "cinder": "存储",
-                    "nodes": "节点",
-                    "apply": "应用",
-                    "cancel": "取消",
-                    "discovered": "在线",
-                    "offline": "离线",
-                    "error": "错误",
-                    "view_logs": "查看日志",
-                    "pending_addition": "等待增加",
-                    "pending_deletion": "等待删除",
-                    "ready": "已就绪",
-                    "installing": "正在安装",
-                    "is_installed": "已安装",
-                    "installing_openstack": "正在安装OpenStack",
-                    "load_defaults_button": "恢复默认",
-                    "cancel_changes_button": "取消变更",
-                    "apply_button": "应用",
-                    "back_to_nodes_button": "返回节点列表",
-                    "configure": "配置",
-                    "node_interfaces": "节点 接口",
-                    "node_disks": "节点 磁盘",
-                    "speed": "速度：",
-                    "alert_drag_and_drop": "使用拖拽在物理接口之间移动逻辑网络",
-                    "total_space": "全部空间：",
-                    "unallocated": "未分配",
-                    "disk_information": "磁盘信息",
-                    "volume_groups": "卷组",
-                    "use_all_allowed_space": "使用全部可用空间",
-                    "bt_network_configuration": "网络配置",
-                    "bt_disk_configuration": "磁盘配置"
                 }
             },
             "dialog": {
@@ -623,6 +547,31 @@
                     "default_message": "设置变更未保存，您想放弃变更并离开么？",
                     "verify_message": "正在进行网络验证，您应该保存变更或留在本页"
                 },
+                "display_changes": {
+                    "title": "部署变更",
+                    "added_node": "增加节点：",
+                    "deleted_node": "删除：",
+                    "settings_changes": {
+                        "attrs": "OpenStack设置",
+                        "networks": "网络设置",
+                        "disks": "以下节点的磁盘配置变更："
+                    },
+                    "warnings": {
+                        "controller": "部署后的环境将不包含足够数量的控制器，也许不可使用。",
+                        "compute": "建议部署计算节点。"
+                    },
+                    "changed": "变更：",
+                    "deploy": "部署"
+                },
+                "show_node": {
+                    "manufacturer_label": "设备：",
+                    "mac_address_label": "MAC地址：",
+                    "close_button": "关闭",
+                    "total": "全部",
+                    "network_configuration_button": "网络配置",
+                    "disk_configuration_button": "磁盘配置"
+                },
+
                 "rhel_license": {
                     "title": "红帽企业版Linux账户设置",
                     "description": "安装红帽版的OpenStack平台, 你首先必须下载RHOS和RHEL并缓存在Fuel的主节点上。请选择你的订阅并在下面输入你的凭据开始下载。",
@@ -632,88 +581,17 @@
                     "satellite_server_hostname": "satellite服务器主机名",
                     "activation_key": "激活码"
                 },
-                "create_cluster": {
-                    "title": "新建OpenStack环境",
-                    "name": "名称",
-                    "openstack_release": "OpenStack版本",
-                    "alert_text": "在部署红帽的openstack时，首先必须先下载RHOS和RHEL并缓存在Fuel的主节点上。你可以通过版本页面或则选择你的订阅类型并输入你的凭证。RHEL和RHOS将自动下载并缓存到你的创建的环境中。",
-                    "bt_cancel": "取消",
-                    "bt_create": "创建"
+                "discard_changes": {
+                    "title": "放弃变更",
+                    "discard_button": "放弃",
+                    "alert_text": "确定要放弃所有变更吗？",
+                    "cant_discard": ""
                 },
                 "remove_cluster": {
                     "title": "删除环境",
                     "important": "重要",
-                    "bt_cancel": "取消",
-                    "bt_delete": "删除",
-                    "text1": "有动作未完成，删除环境可能失败，并导致状态不混乱。",
-                    "text2": "每个节点都将被删除并放回未非配节点池。"
-                },
-                "change_cluster_mode": {
-                    "title": "变更环境模式",
-                    "deployment_mode": "部署模式：",
-                    "single_node": "单节点",
-                    "multi_node": "多节点",
-                    "multi_node_with_ha": "HA多节点",
-                    "single_node_text": "如果你想试用OpenStack，这个是一个简单的配置。你将获得一个安装OpenStack所有组件的功能齐全的私有云。这个节点同时也包含计算节点的角色。",
-                    "multi_node_text": "在这个配置中，OpenStack控制节点部署从计算节点和存储节点分离出来。此模式假定有一个控制节点，一个或多个计算和存储节点存在。你可以添加更多的节点来扩展你的云。",
-                    "ha_text": "这个配置需要多个OpenStack控制节点(3+)和所有OpenStack高可用组件，包括MySQL/Galera,RabbitMQ,Cinder,以及OpenStack的API服务。如果想建立一个生产级或者更多节点的OpenStack云，请选择这个配置。",
-                    "bt_cancel": "取消",
-                    "bt_apply": "应用"
-                },
-                "show_node": {
-                    "manufacturer_label": "设备：",
-                    "mac_address_label": "MAC地址：",
-                    "close_button": "关闭",
-                    "product": "产品",
-                    "family": "系列",
-                    "version": "版本",
-                    "serial": "序列号",
-                    "manufacturer": "设备",
-                    "real": "物理",
-                    "total": "全部",
-                    "model": "模块",
-                    "frequency": "频率",
-                    "slots": "插槽",
-                    "maximum_capacity": "最大负载",
-                    "type": "类型",
-                    "size": "大小",
-                    "name": "名称",
-                    "disk": "磁盘",
-                    "max_speed": "最大速度",
-                    "current_speed": "当前速度",
-                    "netmask": "网络掩码",
-                    "network_configuration_button": "网络配置",
-                    "disk_configuration_button": "磁盘配置"
-                },
-                "discard_changes": {
-                    "title": "放弃变更",
-                    "added": "增加：",
-                    "deleted": "删除：",
-                    "node": "节点",
-                    "controller": "控制",
-                    "compute": "计算",
-                    "cinder": "存储",
-                    "bt_cancel": "取消",
-                    "bt_discard": "放弃",
-                    "alert_text": "确定要放弃所有变更吗？"
-                },
-                "display_changes": {
-                    "title": "部署变更",
-                    "added": "增加：",
-                    "node": "节点",
-                    "controller": "控制",
-                    "compute": "计算",
-                    "cinder": "存储",
-                    "changed": "变更：",
-                    "deleted": "删除：",
-                    "bt_cancel": "取消",
-                    "bt_deploy": "部署",
-                    "openstack_settings": "OpenStack设置",
-                    "network_settings": "网络设置",
-                    "disks_text": "以下节点的磁盘配置变更：",
-                    "alert_text": "一些节点状态错误，需要重新部署。",
-                    "warning_controller": "部署后的环境将不包含足够数量的控制器，也许不可使用。",
-                    "warning_compute": "建议部署计算节点。"
+                    "incomplete_actions_text": "有动作未完成，删除环境可能失败，并导致状态不混乱。",
+                    "node_returned_text": "每个节点都将被删除并放回未非配节点池。"
                 }
             }
         }

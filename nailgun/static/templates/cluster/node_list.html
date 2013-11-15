@@ -6,14 +6,14 @@
       <div class="node-list-name">
         <% if (cluster) { %>
           <ul class="cluster-details dropdown-menu">
-            <li><strong data-i18n="cluster_page.openstack_release">OpenStack Release:</strong><%- cluster.get('release').get('name') %></li>
+            <li><strong data-i18n="cluster_page.openstack_release"></strong><%- cluster.get('release').get('name') %></li>
             <li>
               <% var statuses = {'new': $.t('clusters_page.stat_new', {defaultValue: 'New'}), 'deployment': $.t('clusters_page.stat_deploying', {defaultValue: 'Deploying'}), 'operational': $.t('clusters_page.stat_operational', {defaultValue: 'Operational'}), 'error': $.t('clusters_page.stat_error', {defaultValue: 'Error'}), 'remove': $.t('clusters_page.stat_removing', {defaultValue: 'Removing'}) } %>
-              <strong data-i18n="cluster_page.environment_status">Environment Status:</strong><%= statuses[cluster.get('status')] %>
+              <strong data-i18n="cluster_page.environment_status"></strong><%= statuses[cluster.get('status')] %>
             </li>
             <li>
               <% var modes = {'multinode': $.t('cluster_page.mode_multinode', {defaultValue: 'Multi-node'}), 'ha_compact': $.t('cluster_page.mode_multinode_with_HA', {defaultValue: 'Multi-node HA'}) } %>
-              <strong data-i18n="cluster_page.deployment_mode">Environment Deployment Mode:</strong><%= modes[cluster.get('mode')] %>
+              <strong data-i18n="cluster_page.deployment_mode"></strong><%= modes[cluster.get('mode')] %>
             </li>
           </ul>
           <i class="<%= cluster.get('status') == 'error' ? 'icon-attention text-error' : 'icon-info-circled text-info' %> btn-cluster-details"></i>

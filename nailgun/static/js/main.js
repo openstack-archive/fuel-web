@@ -37,7 +37,8 @@ requirejs.config({
         app: 'js/app',
         models: 'js/models',
         collections: 'js/collections',
-        views: 'js/views'
+        views: 'js/views',
+        'less': '/static/less/less'
     },
     shim: {
         underscore: {
@@ -82,8 +83,7 @@ requirejs.config({
 });
 
 require([
-    'jquery', 'underscore', 'backbone', 'stickit', 'deepModel', 'coccyx', 'i18next', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric',
-    'app'
-], function() {
-    require('app').initialize();
+    'app', 'jquery', 'underscore', 'backbone', 'stickit', 'deepModel', 'coccyx', 'i18next', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric', 'less'
+], function(app) {
+   app.initialize();
 });

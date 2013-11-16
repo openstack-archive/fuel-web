@@ -678,8 +678,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             '.bar': {
                 observe: 'progress',
                 update: function($el, value) {
-                    value = _.max([value, 3]);
-                    $el.css('width', value + '%');
+                    value = _.max([value, 3])*1.5;
+                    $el.css('width', value + 'px');
                 }
             },
             '.node-status i': {

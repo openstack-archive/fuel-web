@@ -1,43 +1,39 @@
-<div class="node">
-  <div class="node-box">
-    <div class="node-content">
-      <div class="node-logo <%- node.get('manufacturer') ? 'manufacturer-' + node.get('manufacturer').toLowerCase() : '' %>"></div>
-      <div class="node-details"></div>
-      <div class="node-hardware">
-        <ul>
-        <li><%- $.t('cluster_page.nodes_tab.node.hardware.cpu') %>: <%= node.resource('cores') || '?' %></li>
-        <li><%- $.t('cluster_page.nodes_tab.node.hardware.hdd') %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb') %></li>
-        <li><%- $.t('cluster_page.nodes_tab.node.hardware.ram') %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb') %></li>
-        </ul>
-      </div>
-      <div class="node-status">
-        <div class="progress"><div class="bar"></div></div>
-        <i></i>
-        <span class="node-status-label"></span>
-      </div>
-      <div class="node-button">
-          <button class="" title=""><i class=""></i></button>
-      </div>
-      <div class="node-name">
-        <div class="name enable-selection">
-          <% if (renaming) { %>
-            <input type="text"  value="<%- node.get('name') || '' %>" />
-          <% } else { %>
-            <p class="<%= renameable ? 'node-renameable' : '' %>" title="<%- renameable ? $.t('cluster_page.nodes_tab.node.edit_name') : '' %>"><%- node.get('name') || node.get('mac') %></p>
-          <% } %>
-        </div>
-        <div class="role-list">
-          <ul class="roles"></ul>
-          <ul class="pending-roles"></ul>
-        </div>
-      </div>
-    </div>
-    <label class="node-checkbox">
-      <div class="custom-tumbler">
+<label class="node-container node-box">
+    <div class="custom-tumbler node-checkbox">
         <% var disabledNode = ((!node.get('online') || node.get('status') == 'error') && !node.get('cluster')) || node.get('pending_deletion') || edit || locked %>
         <input type="checkbox" value="<%- node.id %>" <%= disabledNode ? 'disabled' : '' %> />
         <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-      </div>
-    </label>
-  </div>
-</div>
+    </div>
+    <div class="node-content">
+        <div class="node-logo <%- node.get('manufacturer') ? 'manufacturer-' + node.get('manufacturer').toLowerCase() : '' %>"></div>
+        <div class="node-name-roles">
+            <div class="name enable-selection">
+                <% if (renaming) { %>
+                    <input type="text"  value="<%- node.get('name') || '' %>" />
+                <% } else { %>
+                    <p class="<%= renameable ? 'node-renameable' : '' %>" title="<%- renameable ? $.t('cluster_page.nodes_tab.node.edit_name') : '' %>"><%- node.get('name') || node.get('mac') %></p>
+                <% } %>
+            </div>
+            <div class="role-list">
+                <ul class="roles"></ul>
+                <ul class="pending-roles"></ul>
+            </div>
+        </div>
+        <div class="node-button">
+            <button class="" title=""><i class=""></i></button>
+        </div>
+        <div class="node-status">
+            <div class="node-status-container">
+                <div class="progress"><div class="bar"></div></div>
+                <i></i>
+                <span class="node-status-label"></span>
+            </div>
+        </div>
+        <div class="node-details"></div>
+        <div class="node-hardware">
+            <span><%- $.t('cluster_page.nodes_tab.node.hardware.cpu') %>: <%= node.resource('cores') || '?' %></span>
+            <span><%- $.t('cluster_page.nodes_tab.node.hardware.hdd') %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb') %></span>
+            <span><%- $.t('cluster_page.nodes_tab.node.hardware.ram') %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb') %></span>
+        </div>
+    </div>
+</label>

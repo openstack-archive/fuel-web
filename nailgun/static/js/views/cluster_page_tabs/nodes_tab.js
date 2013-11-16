@@ -146,7 +146,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var nodesIds = notDeployedSelectedNodes.map(function() {return parseInt($(this).val(), 10);}).get().join(',');
             this.$('.btn-edit-nodes').attr('href', '#cluster/' + this.model.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: nodesIds}));
             // check selected nodes for group configuration availability
-            var nodeIds = this.$('.node-box:not(.node-delete):not(.node-offline) input[type=checkbox]:checked').map(function() {return parseInt($(this).val(), 10);}).get();
+            var nodeIds = this.$('.node-box:not(.node-offline) input[type=checkbox]:checked').map(function() {return parseInt($(this).val(), 10);}).get();
             this.$('.btn-group-congiration').prop('disabled', !nodeIds.length);
             var nodes = new models.Nodes(this.nodes.filter(function(node) {return _.contains(nodeIds, node.id);}));
             var noDisksConflict = true;
@@ -819,6 +819,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     this.screen.tab.model.fetch();
                     this.screen.tab.model.fetchRelated('nodes');
                     app.page.removeFinishedTasks();
+                    $('.btn-add-nodes').css('display', $('.node-checkbox input:checked').length ? 'none' : 'block');
                 }, this))
                 .fail(function() {utils.showErrorDialog({title: $.t('dialog.discard_changes.cant_discard')});});
         },

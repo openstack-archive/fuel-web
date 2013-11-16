@@ -56,7 +56,7 @@ module.exports = function(grunt) {
                     targetDir: 'static/js/libs/bower',
                     verbose: true,
                     cleanTargetDir: false,
-                    cleanBowerDir: false,
+                    cleanBowerDir: true,
                     layout: "byComponent",
                     bowerOptions: {
                         production: true,
@@ -67,8 +67,22 @@ module.exports = function(grunt) {
         },
         less: {
             all: {
-                src: ['static/js/libs/bower/bootstrap/less/bootstrap.less'],
+                src: [
+                    'static/js/libs/bower/bootstrap/less/bootstrap.less',
+                    'static/less/styles.less'
+                ],
                 dest: 'static/css/less.css'
+            }
+        },
+        watch: {
+            options: {
+                livereload: {
+                    port: 9000
+                }
+            },
+            css: {
+                files: ['static/less/styles.less'],
+                tasks: ['less']
             }
         }
     });
@@ -77,6 +91,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
     grunt.loadNpmTasks('grunt-contrib-less');
+    grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.registerTask('build', ['bower', 'less', 'requirejs']);
     grunt.registerTask('default', ['build']);
 };

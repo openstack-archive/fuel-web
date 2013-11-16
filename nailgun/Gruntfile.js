@@ -56,7 +56,7 @@ module.exports = function(grunt) {
                     targetDir: 'static/js/libs/bower',
                     verbose: true,
                     cleanTargetDir: false,
-                    cleanBowerDir: false,
+                    cleanBowerDir: true,
                     layout: "byComponent",
                     bowerOptions: {
                         production: true,
@@ -67,7 +67,10 @@ module.exports = function(grunt) {
         },
         less: {
             all: {
-                src: ['static/js/libs/bower/bootstrap/less/bootstrap.less'],
+                src: [
+                    'static/js/libs/bower/bootstrap/less/bootstrap.less',
+                    'static/less/styles.less'
+                ],
                 dest: 'static/css/less.css'
             }
         }

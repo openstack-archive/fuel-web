@@ -417,11 +417,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             _.defaults(this, options);
             this.cluster = this.screen.tab.model;
-            this.roles = this.cluster.availableRoles();
         },
         render: function() {
             this.$el.html(this.template({
-                roles: this.roles,
+                roles: this.cluster.get('release').get('roles'),
                 rolesData: this.cluster.get('release').get('roles_metadata')
             })).i18n();
             this.defineNodes();
@@ -482,6 +481,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             _.defaults(this, options);
             this.screen.initialRoles = this.nodes.map(function(node) {return node.get('pending_roles') || [];});
             this.eventNamespace = 'click.click-summary-panel';
+            this.release = new models.Release({id: this.screen.tab.model.get('release_id')});
+            this.release.fetch();
+            this.release.on('sync', this.render, this);
         },
         renderNodeGroups: function() {
             this.$('.nodes').html('');

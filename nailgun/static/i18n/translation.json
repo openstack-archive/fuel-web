@@ -13,6 +13,7 @@
                 "cancel_button": "Cancel",
                 "not_available": "N/A",
                 "network": {
+                    "fuelweb_admin": "Admin (PXE)",
                     "fixed": "VM Networks (Fixed)",
                     "public": "Public",
                     "floating": "Floating",
@@ -21,11 +22,24 @@
                 }
             },
             "node_details": {
-                "cpu": "cpu",
-                "system": "system",
-                "memory": "memory",
-                "disks": "disks",
-                "interfaces": "disks"
+                "cpu": "CPU",
+                "system": "System",
+                "memory": "Memory",
+                "disks": "Disks",
+                "interfaces": "Interfaces"
+            },
+            "cluster": {
+                "status": {
+                    "new": "New",
+                    "deploying": "Deploying",
+                    "operational": "Operational",
+                    "error": "Error",
+                    "removing": "Removing"
+                },
+                "mode": {
+                    "multinode": "Multi-node",
+                    "ha_compact": "Multi-node with HA"
+                }
             },
             "navbar": {
                 "environments": "Environments",
@@ -91,42 +105,49 @@
                 "cluster_hardware_nodes": "Nodes",
                 "cluster_hardware_cpu": "CPU (cores)",
                 "cluster_hardware_hdd": "HDD",
-                "cluster_hardware_ram": "RAM",
-                "cluster_status_new": "New",
-                "cluster_status_deploying": "Deploying",
-                "cluster_status_operational": "Operational",
-                "cluster_status_error": "Error",
-                "cluster_status_removing": "Removing"
+                "cluster_hardware_ram": "RAM"
             },
             "cluster_page": {
                 "nodes_tab": {
                     "configure_interfaces": {
                         "title": "Configure interfaces on __name__",
-                        "title_plural": "Configure interfaces on __count__ nodes"
+                        "title_plural": "Configure interfaces on __count__ nodes",
+                        "speed": "Speed",
+                        "alert_drag_and_drop": "Use drag and drop to move logical networks between physical interfaces"
                     },
                     "configure_disks": {
                         "title": "Configure disks on __name__",
-                        "title_plural": "Configure disks on __count__ nodes"
+                        "title_plural": "Configure disks on __count__ nodes",
+                        "disk_information": "Disk Information",
+                        "volume_groups": "Volume Groups",
+                        "total_space": "Total Space",
+                        "unallocated": "Unallocated",
+                        "use_all_allowed_space": "Use All Allowed Space"
+                    },
+                    "node": {
+                        "hardware": {
+                            "cpu": "CPU",
+                            "hdd": "HDD",
+                            "ram": "RAM"
+                        },
+                        "status": {
+                            "discovered": "Discovered",
+                            "offline": "Offline",
+                            "error": "Error",
+                            "view_logs": "View Logs",
+                            "pending_addition": "Pending Addition",
+                            "pending_deletion": "Pending Deletion",
+                            "ready": "Ready",
+                            "installing_os": "Installing __os__",
+                            "os_is_installed": "__os__ is installed",
+                            "installing_openstack": "Installing OpenStack",
+                            "discard_addition": "Discard Addition",
+                            "discard_deletion": "Discard Deletion",
+                            "discard_role_changes": "Discard Role Changes"
+                        }
                     },
                     "back_to_nodes_button": "Back To Node List",
-                    "discovered": "Discovered",
-                    "offline": "Offline",
-                    "error": "Error",
-                    "view_logs": "View Logs",
-                    "pending_addition": "Pending Addition",
-                    "pending_deletion": "Pending Deletion",
-                    "ready": "Ready",
-                    "installing": "Installing",
-                    "is_installed": "is installed",
-                    "installing_openstack": "Installing OpenStack",
-                    "speed": "Speed:",
-                    "alert_drag_and_drop": "Use drag and drop to move logical networks between physical interfaces",
-                    "total_space": "Total Space:",
-                    "unallocated": "Unallocated",
-                    "unallocated_nodes": "Unallocated Nodes",
-                    "disk_information": "Disk Information",
-                    "volume_groups": "Volume Groups",
-                    "use_all_allowed_space": "Use All Allowed Space"
+                    "unallocated_nodes": "Unallocated Nodes"
                 },
                 "settings_tab": {
                     "title": "OpenStack Settings"
@@ -441,24 +462,32 @@
             },
             "cluster_page": {
                 "nodes_tab": {
-                    "back_to_nodes_button": "返回节点列表",
-                    "discovered": "在线",
-                    "offline": "离线",
-                    "error": "错误",
-                    "view_logs": "查看日志",
-                    "pending_addition": "等待增加",
-                    "pending_deletion": "等待删除",
-                    "ready": "已就绪",
-                    "installing": "正在安装",
-                    "is_installed": "已安装",
-                    "installing_openstack": "正在安装OpenStack",
-                    "speed": "速度：",
-                    "alert_drag_and_drop": "使用拖拽在物理接口之间移动逻辑网络",
-                    "total_space": "全部空间：",
-                    "unallocated": "未分配",
-                    "disk_information": "磁盘信息",
-                    "volume_groups": "卷组",
-                    "use_all_allowed_space": "使用全部可用空间"
+                    "configure_interfaces": {
+                        "speed": "速度",
+                        "alert_drag_and_drop": "使用拖拽在物理接口之间移动逻辑网络"
+                    },
+                    "configure_disks": {
+                        "disk_information": "磁盘信息",
+                        "volume_groups": "卷组",
+                        "total_space": "全部空间",
+                        "unallocated": "未分配",
+                        "use_all_allowed_space": "使用全部可用空间"
+                    },
+                    "node": {
+                        "status": {
+                            "discovered": "在线",
+                            "offline": "离线",
+                            "error": "错误",
+                            "view_logs": "查看日志",
+                            "pending_addition": "等待增加",
+                            "pending_deletion": "等待删除",
+                            "ready": "已就绪",
+                            "installing_os": "正在安装",
+                            "os_is_installed": "已安装",
+                            "installing_openstack": "正在安装OpenStack"
+                        }
+                    },
+                    "back_to_nodes_button": "返回节点列表"
                 },
                 "settings_tab": {
                     "title": "OpenStack设置"

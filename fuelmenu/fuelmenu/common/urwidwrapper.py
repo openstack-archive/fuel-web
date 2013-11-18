@@ -19,7 +19,7 @@ import urwid.web_display
 
 def TextField(keyword, label, width, default_value=None, tooltip=None,
               toolbar=None, disabled=False, ispassword=False):
-    """Returns an Urwid Edit object"""
+    """Returns an Urwid Edit object."""
     if ispassword:
         mask = "*"
     else:
@@ -41,16 +41,15 @@ def TextField(keyword, label, width, default_value=None, tooltip=None,
 
 
 def ChoicesGroup(self, choices, default_value=None, fn=None):
-    """Returns list of RadioButtons and  a horizontal Urwid GridFlow with
-       radio choices on one line."""
+    """Returns list of RadioButtons in a one-line GridFlow."""
     rb_group = []
 
     for txt in choices:
         is_default = True if txt == default_value else False
-        radio_button = urwid.AttrWrap(urwid.RadioButton(rb_group, txt,
-                                      is_default, on_state_change=fn,
-                                      user_data=txt),
-                                      'buttn', 'buttnf')
+        urwid.AttrWrap(urwid.RadioButton(rb_group, txt,
+                       is_default, on_state_change=fn,
+                       user_data=txt),
+                       'buttn', 'buttnf')
     wrapped_choices = urwid.GridFlow(rb_group, 13, 3, 0, 'left')
     #Bundle rb_group so we can use it later easily
     wrapped_choices.rb_group = rb_group
@@ -58,27 +57,27 @@ def ChoicesGroup(self, choices, default_value=None, fn=None):
 
 
 def TextLabel(text):
-    """Returns an Urwid text object"""
+    """Returns an Urwid text object."""
     return urwid.Text(text)
 
 
 def HorizontalGroup(objects, cell_width, align="left"):
-    """Returns a padded Urwid GridFlow object that is left aligned"""
+    """Returns a padded Urwid GridFlow object that is left aligned."""
     return urwid.Padding(urwid.GridFlow(objects, cell_width, 1, 0, align),
                          left=0, right=0, min_width=61)
 
 
 def Columns(objects):
-    """Returns a padded Urwid Columns object that is left aligned.
-       Objects is a list of widgets. Widgets may be optionally specified
-       as a tuple with ('weight', weight, widget) or (width, widget).
-       Tuples without a widget have a weight of 1."""
+    """Returns a padded Urwid Columns object that is left aligned."""
+    #   Objects is a list of widgets. Widgets may be optionally specified
+    #   as a tuple with ('weight', weight, widget) or (width, widget).
+    #   Tuples without a widget have a weight of 1."""
     return urwid.Padding(urwid.Columns(objects, 1),
                          left=0, right=0, min_width=61)
 
 
 def Button(text, fn):
-    """Returns a wrapped Button with reverse focus attribute"""
+    """Returns a wrapped Button with reverse focus attribute."""
     button = urwid.Button(text, fn)
     return urwid.AttrMap(button, None, focus_map='reversed')
 

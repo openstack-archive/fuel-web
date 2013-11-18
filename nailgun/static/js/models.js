@@ -39,7 +39,8 @@ define(['utils', 'deepModel'], function(utils) {
         defaults: function() {
             var defaults = {
                 nodes: new models.Nodes(),
-                tasks: new models.Tasks()
+                tasks: new models.Tasks(),
+                release: new models.Release()
             };
             defaults.nodes.cluster = defaults.tasks.cluster = this;
             return defaults;
@@ -94,13 +95,6 @@ define(['utils', 'deepModel'], function(utils) {
         },
         availableModes: function() {
             return ['multinode', 'ha_compact'];
-        },
-        availableRoles: function() {
-            return this.get('release').get('roles');
-        },
-        parse: function(response) {
-            response.release = new models.Release(response.release);
-            return response;
         },
         fetchRelated: function(related, options) {
             return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));

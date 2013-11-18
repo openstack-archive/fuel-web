@@ -417,11 +417,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             _.defaults(this, options);
             this.cluster = this.screen.tab.model;
-            this.roles = this.cluster.availableRoles();
         },
         render: function() {
             this.$el.html(this.template({
-                roles: this.roles,
+                roles: this.cluster.get('release').get('roles'),
                 rolesData: this.cluster.get('release').get('roles_metadata')
             })).i18n();
             this.defineNodes();
@@ -464,8 +463,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 attribute = this.screen instanceof AddNodesScreen ? 'hardware' : this.screen.tab.model.get('grouping');
             }
             if (attribute == 'roles') {
-                var rolesMetadata = this.screen.tab.model.get('release').get('roles_metadata');
-                this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
+                var rolesMetadata = this.release.get('roles_metadata');
+                if (rolesMetadata) {
+                    this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
+                }
             } else if (attribute == 'hardware') {
                 this.nodeGroups = this.nodes.groupBy(function(node) {
                     return $.t('cluster_page.nodes_tab.hdd', {defaultValue: 'HDD'}) + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.ram', {defaultValue: 'RAM'}) + ': ' + utils.showMemorySize(node.resource('ram'));
@@ -482,6 +483,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             _.defaults(this, options);
             this.screen.initialRoles = this.nodes.map(function(node) {return node.get('pending_roles') || [];});
             this.eventNamespace = 'click.click-summary-panel';
+            this.release = new models.Release({id: this.screen.tab.model.get('release_id')});
+            this.release.fetch();
+            this.release.on('sync', this.render, this);
         },
         renderNodeGroups: function() {
             this.$('.nodes').html('');

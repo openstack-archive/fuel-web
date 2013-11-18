@@ -492,11 +492,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
             } else if (attribute == 'hardware') {
                 this.nodeGroups = this.nodes.groupBy(function(node) {
-                    return $.t('cluster_page.nodes_tab.hdd', {defaultValue: 'HDD'}) + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.ram', {defaultValue: 'RAM'}) + ': ' + utils.showMemorySize(node.resource('ram'));
+                    return $.t('cluster_page.nodes_tab.node.hardware.hdd') + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.node.hardware.ram') + ': ' + utils.showMemorySize(node.resource('ram'));
                 });
             } else {
                 this.nodeGroups = this.nodes.groupBy(function(node) {
-                    return _.union(node.get('roles'), node.get('pending_roles')).join(' + ') + ' + ' + $.t('cluster_page.nodes_tab.hdd', {defaultValue: 'HDD'}) + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.ram', {defaultValue: 'RAM'}) + ': ' + utils.showMemorySize(node.resource('ram'));
+                    return _.union(node.get('roles'), node.get('pending_roles')).join(' + ') + ' + ' + $.t('cluster_page.nodes_tab.node.hardware.hdd') + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.node.hardware.ram') + ': ' + utils.showMemorySize(node.resource('ram'));
                 });
             }
             this.renderNodeGroups();
@@ -735,17 +735,17 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             try {
               operatingSystem = this.node.collection.cluster.get('release').get('operating_system');
             } catch(e){}
-            operatingSystem = operatingSystem || $.t('cluster_page.nodes_tab.os', {defaultValue: 'OS'});
+            operatingSystem = operatingSystem || 'OS';
             var labels = {
-                offline: $.t('cluster_page.nodes_tab.offline', {defaultValue: 'Offline'}),
-                pending_addition: $.t('cluster_page.nodes_tab.pending_addition', {defaultValue: 'Pending Addition'}),
-                pending_deletion: $.t('cluster_page.nodes_tab.pending_deletion', {defaultValue: 'Pending Deletion'}),
-                ready: $.t('cluster_page.nodes_tab.ready', {defaultValue: 'Ready'}),
-                provisioning: $.t('cluster_page.nodes_tab.installing', {defaultValue: 'Installing'}) + ' ' + operatingSystem,
-                provisioned: operatingSystem + ' ' + $.t('cluster_page.nodes_tab.is_installed', {defaultValue: 'is installed'}),
-                deploying: $.t('cluster_page.nodes_tab.installing_openstack', {defaultValue: 'Installing OpenStack'}),
-                error: $.t('cluster_page.nodes_tab.error', {defaultValue: 'Error'}),
-                discover: $.t('cluster_page.nodes_tab.discovered', {defaultValue: 'Discovered'})
+                offline: $.t('cluster_page.nodes_tab.node.status.offline'),
+                pending_addition: $.t('cluster_page.nodes_tab.node.status.pending_addition'),
+                pending_deletion: $.t('cluster_page.nodes_tab.node.status.pending_deletion'),
+                ready: $.t('cluster_page.nodes_tab.node.status.ready'),
+                provisioning: $.t('cluster_page.nodes_tab.node.status.installing_os', {os: operatingSystem}),
+                provisioned: $.t('cluster_page.nodes_tab.node.status.os_is_installed', {os: operatingSystem}),
+                deploying: $.t('cluster_page.nodes_tab.node.status.installing_openstack'),
+                error: $.t('cluster_page.nodes_tab.node.status.error'),
+                discover: $.t('cluster_page.nodes_tab.node.status.discovered')
             };
             return labels[this.defineNodeViewStatus()] || '';
         },
@@ -757,8 +757,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return this.hasChanges() && !(this.screen instanceof EditNodesScreen) ? 'btn btn-link btn-discard-node-changes btn-discard-' + btnClass : 'btn btn-link btn-view-logs';
         },
         formatNodeButtonTitle: function(value, options) {
-            var title = this.node.get('pending_addition') ? $.t('cluster_page.nodes_tab.discard_addition', {defaultValue: 'Discard Addition'}) : this.node.get('pending_deletion') ? $.t('cluster_page.nodes_tab.discard_deletion', {defaultValue: 'Discard Deletion'}) : $.t('cluster_page.nodes_tab.discard_role_changes', {defaultValue: 'Discard Role Changes'});
-            return this.hasChanges() && !(this.screen instanceof EditNodesScreen) ? title : $.t('cluster_page.nodes_tab.view_logs', {defaultValue: 'View Logs'});
+            var title = this.node.get('pending_addition') ? $.t('cluster_page.nodes_tab.node.status.discard_addition') : this.node.get('pending_deletion') ? $.t('cluster_page.nodes_tab.node.status.discard_deletion') : $.t('cluster_page.nodes_tab.node.status.discard_role_changes');
+            return this.hasChanges() && !(this.screen instanceof EditNodesScreen) ? title : $.t('cluster_page.nodes_tab.node.status.view_logs');
         },
         formatNodeButtonIcon: function(value, options) {
             return this.hasChanges() && !(this.screen instanceof EditNodesScreen) ? 'icon-back-in-time' : 'icon-logs';
@@ -820,7 +820,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     this.screen.tab.model.fetchRelated('nodes');
                     app.page.removeFinishedTasks();
                 }, this))
-                .fail(function() {utils.showErrorDialog({title: $.t('dialog.discard_changes.cant_discard', {defaultValue: "Can't discard node changes"})});});
+                .fail(function() {utils.showErrorDialog({title: $.t('dialog.discard_changes.cant_discard')});});
         },
         discardRoleChanges: function() {
             var data = {pending_roles: []};

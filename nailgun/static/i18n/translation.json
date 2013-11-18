@@ -11,21 +11,44 @@
                 "delete_button": "Delete",
                 "save_settings_button": "Save Settings",
                 "cancel_button": "Cancel",
+                "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
-                "network": {
-                    "fixed": "VM Networks (Fixed)",
-                    "public": "Public",
-                    "floating": "Floating",
-                    "management": "Management",
-                    "storage": "Storage"
+                "size": {
+                    "byte": "byte",
+                    "byte_plural": "bytes",
+                    "kb": "KB",
+                    "mb": "MB",
+                    "gb": "GB",
+                    "tb": "TB"
                 }
             },
             "node_details": {
-                "cpu": "cpu",
-                "system": "system",
-                "memory": "memory",
-                "disks": "disks",
-                "interfaces": "disks"
+                "cpu": "CPU",
+                "system": "System",
+                "memory": "Memory",
+                "disks": "Disks",
+                "interfaces": "Interfaces"
+            },
+            "cluster": {
+                "status": {
+                    "new": "New",
+                    "deploying": "Deploying",
+                    "operational": "Operational",
+                    "error": "Error",
+                    "removing": "Removing"
+                },
+                "mode": {
+                    "multinode": "Multi-node",
+                    "ha_compact": "Multi-node with HA"
+                }
+            },
+            "network": {
+                "fuelweb_admin": "Admin (PXE)",
+                "fixed": "VM Networks (Fixed)",
+                "public": "Public",
+                "floating": "Floating",
+                "management": "Management",
+                "storage": "Storage"
             },
             "navbar": {
                 "environments": "Environments",
@@ -91,42 +114,58 @@
                 "cluster_hardware_nodes": "Nodes",
                 "cluster_hardware_cpu": "CPU (cores)",
                 "cluster_hardware_hdd": "HDD",
-                "cluster_hardware_ram": "RAM",
-                "cluster_status_new": "New",
-                "cluster_status_deploying": "Deploying",
-                "cluster_status_operational": "Operational",
-                "cluster_status_error": "Error",
-                "cluster_status_removing": "Removing"
+                "cluster_hardware_ram": "RAM"
             },
             "cluster_page": {
                 "nodes_tab": {
                     "configure_interfaces": {
                         "title": "Configure interfaces on __name__",
-                        "title_plural": "Configure interfaces on __count__ nodes"
+                        "title_plural": "Configure interfaces on __count__ nodes",
+                        "speed": "Speed",
+                        "drag_and_drop_description": "Use drag and drop to move logical networks between physical interfaces"
                     },
                     "configure_disks": {
                         "title": "Configure disks on __name__",
-                        "title_plural": "Configure disks on __count__ nodes"
+                        "title_plural": "Configure disks on __count__ nodes",
+                        "disk_information": "Disk Information",
+                        "volume_groups": "Volume Groups",
+                        "total_space": "Total Space",
+                        "unallocated": "Unallocated",
+                        "use_all_allowed_space": "Use All Allowed Space"
+                    },
+                    "node_management_panel": {
+                        "group_by": "Group By",
+                        "edit_roles_button": "Edit Roles",
+                        "add_nodes_button": "Add Nodes"
+                    },
+                    "node": {
+                        "hardware": {
+                            "cpu": "CPU",
+                            "hdd": "HDD",
+                            "ram": "RAM"
+                        },
+                        "status": {
+                            "discovered": "Discovered",
+                            "offline": "Offline",
+                            "error": "Error",
+                            "view_logs": "View Logs",
+                            "pending_addition": "Pending Addition",
+                            "pending_deletion": "Pending Deletion",
+                            "ready": "Ready",
+                            "installing_os": "Installing __os__",
+                            "os_is_installed": "__os__ is installed",
+                            "installing_openstack": "Installing OpenStack",
+                            "discard_addition": "Discard Addition",
+                            "discard_deletion": "Discard Deletion",
+                            "discard_role_changes": "Discard Role Changes"
+                        },
+                        "edit_name": "Edit Name"
                     },
                     "back_to_nodes_button": "Back To Node List",
-                    "discovered": "Discovered",
-                    "offline": "Offline",
-                    "error": "Error",
-                    "view_logs": "View Logs",
-                    "pending_addition": "Pending Addition",
-                    "pending_deletion": "Pending Deletion",
-                    "ready": "Ready",
-                    "installing": "Installing",
-                    "is_installed": "is installed",
-                    "installing_openstack": "Installing OpenStack",
-                    "speed": "Speed:",
-                    "alert_drag_and_drop": "Use drag and drop to move logical networks between physical interfaces",
-                    "total_space": "Total Space:",
-                    "unallocated": "Unallocated",
                     "unallocated_nodes": "Unallocated Nodes",
-                    "disk_information": "Disk Information",
-                    "volume_groups": "Volume Groups",
-                    "use_all_allowed_space": "Use All Allowed Space"
+                    "no_selected_nodes": "There are no selected nodes to edit.",
+                    "no_nodes_in_environment": "To add nodes to the environment, select the Add Nodes option, choose the nodes you want to allocate and assign roles to each.",
+                    "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes."
                 },
                 "settings_tab": {
                     "title": "OpenStack Settings"
@@ -210,9 +249,7 @@
                 "deploy_changes": "Deploy Changes",
                 "deployment_mode": "Environment Deployment Mode:",
                 "openstack_release": "OpenStack Release:",
-                "environment_status": "Environment Status:",
-                "mode_multinode": "Multi-node",
-                "mode_multinode_with_HA": "Multi-node HA"
+                "environment_status": "Environment Status:"
             },
             "capacity_page": {
                 "title": "Capacity Audit",
@@ -241,9 +278,7 @@
                         "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment."
                     },
                     "mode": {
-                        "title": "Deployment Mode",
-                        "multinode_label": "Multi-node",
-                        "multinode_ha_label": "Multi-node with HA"
+                        "title": "Deployment Mode"
                     },
                     "compute": {
                         "title": "Compute",
@@ -342,7 +377,7 @@
                     "title": "Discard Changes",
                     "discard_button": "Discard",
                     "alert_text": "Are you sure you want to discard these changes?",
-                    "cant_discard": ""
+                    "cant_discard": "Can't discard node changes"
                 },
                 "remove_cluster": {
                     "title": "Delete Environment",
@@ -363,21 +398,33 @@
                 "rename_button": "重命名",
                 "delete_button": "删除",
                 "save_settings_button": "保存设置",
-                "cancel_button": "取消",
-                "not_available": "",
-                "network": {
-                    "fixed": "虚机网络（固定）",
-                    "public": "公开",
-                    "floating": "浮动",
-                    "management": "管理",
-                    "storage": "存储"
-                }
+                "cancel_button": "取消"
             },
             "node_details": {
                 "system": "系统",
                 "memory": "内存",
                 "disks": "磁盘",
                 "interfaces": "接口"
+            },
+            "cluster": {
+                "status": {
+                    "new": "新建",
+                    "deploying": "部署中",
+                    "operational": "可操作",
+                    "error": "错误",
+                    "removing": "移除中"
+                },
+                "mode": {
+                    "multinode": "多节点",
+                    "ha_compact": "HA多节点"
+                }
+            },
+            "network": {
+                "fixed": "虚机网络（固定）",
+                "public": "公开",
+                "floating": "浮动",
+                "management": "管理",
+                "storage": "存储"
             },
             "navbar": {
                 "environments": "环境",
@@ -432,33 +479,36 @@
                 "cluster_hardware_nodes": "节点",
                 "cluster_hardware_cpu": "CPU (cores)",
                 "cluster_hardware_hdd": "HDD",
-                "cluster_hardware_ram": "RAM",
-                "cluster_status_new": "新建",
-                "cluster_status_deploying": "部署中",
-                "cluster_status_operational": "可操作",
-                "cluster_status_error": "错误",
-                "cluster_status_removing": "移除中"
+                "cluster_hardware_ram": "RAM"
             },
             "cluster_page": {
                 "nodes_tab": {
-                    "back_to_nodes_button": "返回节点列表",
-                    "discovered": "在线",
-                    "offline": "离线",
-                    "error": "错误",
-                    "view_logs": "查看日志",
-                    "pending_addition": "等待增加",
-                    "pending_deletion": "等待删除",
-                    "ready": "已就绪",
-                    "installing": "正在安装",
-                    "is_installed": "已安装",
-                    "installing_openstack": "正在安装OpenStack",
-                    "speed": "速度：",
-                    "alert_drag_and_drop": "使用拖拽在物理接口之间移动逻辑网络",
-                    "total_space": "全部空间：",
-                    "unallocated": "未分配",
-                    "disk_information": "磁盘信息",
-                    "volume_groups": "卷组",
-                    "use_all_allowed_space": "使用全部可用空间"
+                    "configure_interfaces": {
+                        "speed": "速度",
+                        "drag_and_drop_description": "使用拖拽在物理接口之间移动逻辑网络"
+                    },
+                    "configure_disks": {
+                        "disk_information": "磁盘信息",
+                        "volume_groups": "卷组",
+                        "total_space": "全部空间",
+                        "unallocated": "未分配",
+                        "use_all_allowed_space": "使用全部可用空间"
+                    },
+                    "node": {
+                        "status": {
+                            "discovered": "在线",
+                            "offline": "离线",
+                            "error": "错误",
+                            "view_logs": "查看日志",
+                            "pending_addition": "等待增加",
+                            "pending_deletion": "等待删除",
+                            "ready": "已就绪",
+                            "installing_os": "正在安装",
+                            "os_is_installed": "已安装",
+                            "installing_openstack": "正在安装OpenStack"
+                        }
+                    },
+                    "back_to_nodes_button": "返回节点列表"
                 },
                 "settings_tab": {
                     "title": "OpenStack设置"
@@ -469,24 +519,6 @@
                     "delete_environment": "删除环境",
                     "alert_delete": "清除每个节点并放回未分配节点池"
                 },
-                "deploy_changes": "部署变更",
-                "deployment_mode": "部署模式：",
-                "openstack_release": "OpenStack版本：",
-                "environment_status": "环境状态：",
-                "mode_singlenode": "单节点",
-                "mode_multinode": "多节点",
-                "mode_multinode_with_HA": "HA多节点",
-                "type_compute_and_cinder": "计算和存储",
-                "type_compute_only": "仅计算",
-                "type_cinder_only": "仅存储",
-                "add": "增加",
-                "delete": "删除",
-                "controllers": "控制器",
-                "computes": "计算",
-                "cinders": "存储",
-                "no_nodes_text": "该类型的节点不存在",
-                "error": "错误",
-                "success": "成功",
                 "network_tab": {
                     "title": "网络设置",
                     "flatdhcp_manager": "FlatDHCP管理",
@@ -534,7 +566,11 @@
                     "stop_tests_button": "停止测试",
                     "deploy_alert": "在测试之前必须先部署新的OpenStack环境",
                     "not_available_alert": "OSTF服务不可用"
-                }
+                },
+                "deploy_changes": "部署变更",
+                "deployment_mode": "部署模式：",
+                "openstack_release": "OpenStack版本：",
+                "environment_status": "环境状态："
             },
             "dialog": {
                 "dismiss_settings": {

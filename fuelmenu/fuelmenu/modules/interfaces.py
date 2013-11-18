@@ -45,8 +45,8 @@ DEFAULTS = \
     {
         "ifname": {"label": "Interface name:",
                    "tooltip": "Interface system identifier",
-                   "value":   "locked"},
-        "onboot": {"label":   "Enable interface:",
+                   "value": "locked"},
+        "onboot": {"label": "Enable interface:",
                    "tooltip": "",
                    "value": "radio"},
         "bootproto": {"label": "Configuration via DHCP:",
@@ -143,9 +143,16 @@ class interfaces(urwid.WidgetWrap):
 
         ###Validate each field
         errors = []
-        #Perform checks only if enabled
         if responses["onboot"] == "no":
-            pass
+            numactiveifaces = 0
+            for iface in self.netsettings:
+                if self.netsettings[iface]['addr'] != "":
+                    numactiveifaces += 1
+            if numactiveifaces < 2 and \
+                    self.netsettings[self.activeiface]['addr'] != "":
+                #Block user because puppet l23network fails if all intefaces
+                #are disabled.
+                errors.append("Cannot disable all interfaces.")
         elif responses["bootproto"] == "dhcp":
             self.parent.footer.set_text("Scanning for DHCP servers. "
                                         "Please wait...")
@@ -197,7 +204,7 @@ class interfaces(urwid.WidgetWrap):
                         raise BadIPException("Not a valid IP address")
                 else:
                     raise BadIPException("Not a valid IP address")
-            except Exception:
+            except (BadIPException, Exception):
                 errors.append("Not a valid IP address: %s" %
                               responses["ipaddr"])
             try:
@@ -207,7 +214,7 @@ class interfaces(urwid.WidgetWrap):
                         raise BadIPException("Not a valid IP address")
                 else:
                     raise BadIPException("Not a valid IP address")
-            except Exception:
+            except (BadIPException, Exception):
                 errors.append("Not a valid netmask: %s" % responses["netmask"])
             try:
                 if len(responses["gateway"]) > 0:
@@ -220,11 +227,11 @@ class interfaces(urwid.WidgetWrap):
                                             responses["netmask"]) is False:
                         raise BadIPException("Gateway IP is not in same "
                                              "subnet as IP address")
-            except Exception as e:
+            except (BadIPException, Exception) as e:
                 errors.append(e)
         if len(errors) > 0:
             self.parent.footer.set_text("Error: %s" % (errors[0]))
-            log.error("Errors: %s %s" % (len(errors), errors))
+            self.log.error("Errors: %s %s" % (len(errors), errors))
             return False
         else:
             self.parent.footer.set_text("No errors found.")
@@ -239,7 +246,10 @@ class interfaces(urwid.WidgetWrap):
             return False
 
         self.parent.footer.set_text("Applying changes... (May take up to 20s)")
-        puppetclass = "l23network::l3::ifconfig"
+        puppetclasses = []
+        l3ifconfig = {'type': "resource",
+                      'class': "l23network::l3::ifconfig",
+                      'name': self.activeiface}
         if responses["onboot"].lower() == "no":
             params = {"ipaddr": "none"}
         elif responses["bootproto"] == "dhcp":
@@ -261,8 +271,9 @@ class interfaces(urwid.WidgetWrap):
             expr = '^GATEWAY=.*'
             replace.replaceInFile("/etc/sysconfig/network", expr,
                                   "GATEWAY=")
-        self.log.info("Puppet data: %s %s %s" % (
-                      puppetclass, self.activeiface, params))
+        l3ifconfig['params'] = params
+        puppetclasses.append(l3ifconfig)
+        self.log.info("Puppet data: %s" % (puppetclasses))
         try:
             #Gateway handling so DHCP will set gateway
             if responses["bootproto"] == "dhcp":
@@ -270,7 +281,7 @@ class interfaces(urwid.WidgetWrap):
                 replace.replaceInFile("/etc/sysconfig/network", expr,
                                       "GATEWAY=")
             self.parent.refreshScreen()
-            puppet.puppetApply(puppetclass, self.activeiface, params)
+            puppet.puppetApply(puppetclasses)
             self.getNetwork()
             expr = '^GATEWAY=.*'
             gateway = self.get_default_gateway_linux()

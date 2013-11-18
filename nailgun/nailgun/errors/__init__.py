@@ -26,6 +26,7 @@ default_messages = {
     "InvalidInterfacesInfo": "Invalid interfaces info",
     "InvalidMetadata": "Invalid metadata specified for node",
     "CannotFindNodeIDForDiscovering": "Cannot find node for discovering",
+    "NoHardDrive": "Cannot find node hard drives",
 
     # deployment errors
     "CheckBeforeDeploymentError": "Pre-Deployment check wasn't successful",

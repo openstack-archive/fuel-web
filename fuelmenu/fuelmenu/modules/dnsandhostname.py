@@ -13,22 +13,21 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from fuelmenu.common import dialog
+from fuelmenu.common import nailyfactersettings
+from fuelmenu.common import replace
+import fuelmenu.common.urwidwrapper as widget
+from fuelmenu.settings import Settings
+import logging
+import netaddr
+import netifaces
+import re
+import socket
+import struct
+import subprocess
 import urwid
 import urwid.raw_display
 import urwid.web_display
-import logging
-import sys
-import re
-import copy
-import socket
-import struct
-import netaddr
-import netifaces
-import subprocess
-from fuelmenu.settings import *
-from fuelmenu.common import network, puppet, replace, \
-    nailyfactersettings, dialog
-from fuelmenu.common.urwidwrapper import *
 log = logging.getLogger('fuelmenu.mirrors')
 blank = urwid.Divider()
 
@@ -129,7 +128,7 @@ class dnsandhostname(urwid.WidgetWrap):
             fh.close()
 
     def check(self, args):
-        """Validate that all fields have valid values and some sanity checks"""
+        """Validate that all fields have valid values through sanity checks."""
         self.parent.footer.set_text("Checking data...")
         self.parent.refreshScreen()
         #Get field information
@@ -177,12 +176,12 @@ class dnsandhostname(urwid.WidgetWrap):
                   + " external data necessary for installation needed for " \
                   + "some OpenStack Releases."
 
-            diag = dialog.display_dialog(
-                self, TextLabel(msg), "Empty DNS Warning")
+            dialog.display_dialog(
+                self, widget.TextLabel(msg), "Empty DNS Warning")
 
         else:
             #external DNS must contain only numbers, periods, and commas
-            #TODO: More serious ip address checking
+            #Needs more serious ip address checking
             if re.match('[^0-9.,]', responses["DNS_UPSTREAM"]):
                 errors.append(
                     "External DNS must contain only IP addresses and commas.")
@@ -207,10 +206,10 @@ class dnsandhostname(urwid.WidgetWrap):
                           + "* Other networking issue\n\n"\
                           + "Fuel Setup can save this configuration, but "\
                           + "you may want to correct your settings."
-                    diag = dialog.display_dialog(self, TextLabel(msg),
-                                                 "DNS Failure Warning")
+                    dialog.display_dialog(self, widget.TextLabel(msg),
+                                          "DNS Failure Warning")
                     self.parent.refreshScreen()
-            except Exception, e:
+            except Exception:
                 errors.append("Not a valid IP address for External DNS: %s"
                               % responses["DNS_UPSTREAM"])
 
@@ -314,14 +313,14 @@ class dnsandhostname(urwid.WidgetWrap):
                     DEFAULTS[setting]["value"] = oldsettings[part1][part2]
                 else:
                     DEFAULTS[setting]["value"] = oldsettings[setting]
-            except:
+            except Exception:
                 log.warning("No setting named %s found." % setting)
                 continue
         #Read hostname if it's already set
         try:
             import os
             oldsettings["HOSTNAME"] = os.uname()[1]
-        except:
+        except Exception:
             log.warning("Unable to look up system hostname")
         return oldsettings
 
@@ -375,9 +374,7 @@ class dnsandhostname(urwid.WidgetWrap):
             return True
 
     def getNetwork(self):
-        """Uses netifaces module to get addr, broadcast, netmask about
-           network interfaces"""
-        import netifaces
+        """Returns addr, broadcast, netmask for each network interface."""
         for iface in netifaces.interfaces():
             if 'lo' in iface or 'vir' in iface:
             #if 'lo' in iface or 'vir' in iface or 'vbox' in iface:
@@ -387,7 +384,7 @@ class dnsandhostname(urwid.WidgetWrap):
                 self.netsettings.update({iface: netifaces.ifaddresses(
                     iface)[netifaces.AF_INET][0]})
                 self.netsettings[iface]["onboot"] = "Yes"
-            except:
+            except Exception:
                 self.netsettings.update({iface: {"addr": "", "netmask": "",
                                                  "onboot": "no"}})
             self.netsettings[iface]['mac'] = netifaces.ifaddresses(
@@ -398,7 +395,7 @@ class dnsandhostname(urwid.WidgetWrap):
                 with open("/sys/class/net/%s/operstate" % iface) as f:
                     content = f.readlines()
                     self.netsettings[iface]["link"] = content[0].strip()
-            except:
+            except Exception:
                 self.netsettings[iface]["link"] = "unknown"
             #Change unknown link state to up if interface has an IP
             if self.netsettings[iface]["link"] == "unknown":
@@ -414,7 +411,7 @@ class dnsandhostname(urwid.WidgetWrap):
                             self.netsettings[
                                 iface]['bootproto'] = line.split('=').strip()
                             break
-            except:
+            except Exception:
             #Let's try checking for dhclient process running for this interface
                 if self.getDHCP(iface):
                     self.netsettings[iface]['bootproto'] = "dhcp"
@@ -422,12 +419,13 @@ class dnsandhostname(urwid.WidgetWrap):
                     self.netsettings[iface]['bootproto'] = "none"
 
     def getDHCP(self, iface):
-        """Returns True if the interface has a dhclient process running"""
+        """Returns True if the interface has a dhclient process running."""
         import subprocess
         noout = open('/dev/null', 'w')
         dhclient_running = subprocess.call(
             ["pgrep", "-f", "dhclient.*%s" % (iface)],
             stdout=noout, stderr=noout)
+        return (dhclient_running == 0)
 
     def get_default_gateway_linux(self):
         """Read the default gateway directly from /proc."""
@@ -440,7 +438,7 @@ class dnsandhostname(urwid.WidgetWrap):
                 return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
 
     def radioSelectIface(self, current, state, user_data=None):
-        """Update network details and display information"""
+        """Update network details and display information."""
         ### This makes no sense, but urwid returns the previous object.
         ### The previous object has True state, which is wrong..
         ### Somewhere in current.group a RadioButton is set to True.
@@ -472,31 +470,31 @@ class dnsandhostname(urwid.WidgetWrap):
             if key == "blank":
                 self.edits.append(blank)
             elif DEFAULTS[key]["value"] == "radio":
-                label = TextLabel(DEFAULTS[key]["label"])
-                choices = ChoicesGroup(self, ["Yes", "No"],
-                                       default_value="Yes",
-                                       fn=self.radioSelectIface)
-                self.edits.append(Columns([label, choices]))
+                label = widget.TextLabel(DEFAULTS[key]["label"])
+                choices = widget.ChoicesGroup(self, ["Yes", "No"],
+                                              default_value="Yes",
+                                              fn=self.radioSelectIface)
+                self.edits.append(widget.Columns([label, choices]))
             else:
                 caption = DEFAULTS[key]["label"]
                 default = DEFAULTS[key]["value"]
                 tooltip = DEFAULTS[key]["tooltip"]
-                self.edits.append(
-                    TextField(key, caption, 23, default, tooltip, toolbar))
+                self.edits.append(widget.TextField(key, caption, 23, default,
+                                  tooltip, toolbar))
 
         #Button to check
-        button_check = Button("Check", self.check)
+        button_check = widget.Button("Check", self.check)
         #Button to revert to previously saved settings
-        button_cancel = Button("Cancel", self.cancel)
+        button_cancel = widget.Button("Cancel", self.cancel)
         #Button to apply (and check again)
-        button_apply = Button("Apply", self.apply)
+        button_apply = widget.Button("Apply", self.apply)
 
         #Wrap buttons into Columns so it doesn't expand and look ugly
         if self.parent.globalsave:
-            check_col = Columns([button_check])
+            check_col = widget.Columns([button_check])
         else:
-            check_col = Columns([button_check, button_cancel,
-                                 button_apply, ('weight', 2, blank)])
+            check_col = widget.Columns([button_check, button_cancel,
+                                       button_apply, ('weight', 2, blank)])
 
         self.listbox_content = [text1, blank, text2, blank]
         self.listbox_content.extend(self.edits)

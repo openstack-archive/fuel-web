@@ -3598,6 +3598,7 @@ hr.slim {
   background: linear-gradient(to bottom,  #d9d9d9 0%,#b4b4b4 100%); /* W3C */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#d9d9d9', endColorstr='#b4b4b4',GradientType=0 ); /* IE6-8 */
 }
+
 .logical-network-item:hover {
   border: 1px solid #777777;
   background-image: -webkit-linear-gradient(bottom, #a7a6a6, #cdcccc);
@@ -3608,6 +3609,14 @@ hr.slim {
   cursor: move;
 }
 
+.logical-network-group.disabled .logical-network-item[data-name=fuelweb_admin]:hover {
+    cursor: not-allowed;
+}
+
+.logical-network-group.disabled .logical-network-item,
+.logical-network-group.disabled .logical-network-item:hover{
+    cursor: default;
+}
 .logical-network-item > .name {
   margin-top: 10px;
   font-size: 14px;
@@ -3956,6 +3965,7 @@ hr.slim {
   box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 6px #d59392;
 }
 
+.network-box-error-message,
 .volume-group-error-message {
   display: block;
   overflow: hidden;

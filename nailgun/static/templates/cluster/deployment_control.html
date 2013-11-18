@@ -9,7 +9,7 @@
 <% } else { %>
   <li class="pull-right deployment-control-box">
     <% var releaseAvailable = cluster.get('release').get('state') == 'available' %>
-    <div class="deployment-control-item-box"><button class="deploy-btn <%= releaseAvailable && (cluster.hasChanges() || cluster.needsRedeployment()) ? '' : 'disabled' %>"><i class="icon-upload-cloud"></i> <%- $.t("cluster_page.deploy_changes", {defaultValue: 'Deploy Changes'}) %></button></div>
+    <div class="deployment-control-item-box"><button class="deploy-btn <%= releaseAvailable && (cluster.hasChanges() || cluster.needsRedeployment()) ? '' : 'disabled' %>"><i class="icon-upload-cloud"></i> <%- $.t("cluster_page.deploy_changes") %></button></div>
     <div class="deployment-control-item-box">
       <% if (cluster.get('nodes').hasChanges()) { %>
         <button class="btn rollback" role="button" title="Discard Changes"><i class="icon-back-in-time"></i></button>

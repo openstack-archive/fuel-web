@@ -2,7 +2,7 @@
 <% if (shownAttributes.length) { %>
 
   <% var networkName = network.get('name') %>
-  <legend class="networks"><%- $.t('common.network.'+networkName) %></legend>
+  <legend class="networks"><%- $.t('network.' + networkName) %></legend>
 
   <% var disabled = locked ? 'disabled' : '' %>
   <% var vlanManager = net_manager == 'VlanManager' ? '' : 'hide' %>

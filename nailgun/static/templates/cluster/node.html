@@ -5,9 +5,9 @@
       <div class="node-details"></div>
       <div class="node-hardware">
         <ul>
-        <li><%- $.t('cluster_page.nodes_tab.cpu', {defaultValue: 'CPU'}) %>: <%= node.resource('cores') || '?' %></li>
-        <li><%- $.t('cluster_page.nodes_tab.hdd', {defaultValue: 'HDD'}) %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('cluster_page.nodes_tab.gb', {defaultValue: 'GB'}) %></li>
-        <li><%- $.t('cluster_page.nodes_tab.ram', {defaultValue: 'RAM'}) %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('cluster_page.nodes_tab.gb', {defaultValue: 'GB'}) %></li>
+        <li><%- $.t('cluster_page.nodes_tab.node.hardware.cpu') %>: <%= node.resource('cores') || '?' %></li>
+        <li><%- $.t('cluster_page.nodes_tab.node.hardware.hdd') %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb') %></li>
+        <li><%- $.t('cluster_page.nodes_tab.node.hardware.ram') %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb') %></li>
         </ul>
       </div>
       <div class="node-status">
@@ -23,7 +23,7 @@
           <% if (renaming) { %>
             <input type="text"  value="<%- node.get('name') || '' %>" />
           <% } else { %>
-            <p class="<%= renameable ? 'node-renameable' : '' %>" title="<%- renameable ? $.t('cluster_page.nodes_tab.node.edit_name', {defaultValue: 'Edit Name'}) : '' %>"><%- node.get('name') || node.get('mac') %></p>
+            <p class="<%= renameable ? 'node-renameable' : '' %>" title="<%- renameable ? $.t('cluster_page.nodes_tab.node.edit_name') : '' %>"><%- node.get('name') || node.get('mac') %></p>
           <% } %>
         </div>
         <div class="role-list">

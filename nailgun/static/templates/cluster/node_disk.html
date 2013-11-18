@@ -1,7 +1,7 @@
 <div class="disk-box disk" data-disk="<%- disk.id %>">
 
   <div class="disk-box-name pull-left"><%- disk.get('name') %> (<%- disk.id %>)</div>
-  <div class="disk-box-size pull-right"><%- $.t('cluster_page.nodes_tab.total_space', {defaultValue:'Total Space:'}) %> <%= showDiskSize(disk.get('size'), 2) %></div>
+  <div class="disk-box-size pull-right"><%- $.t('cluster_page.nodes_tab.configure_disks.total_space') %>: <%= showDiskSize(disk.get('size'), 2) %></div>
 
   <div class="disk-map-short disk-map-full">
     <div class="disk-map-image disk-visual">
@@ -16,7 +16,7 @@
       <% }) %>
       <div class="volume-group unallocated" style="width: 100%">
         <div class="toggle-volume">
-          <div class="volume-group-name" data-i18n="cluster_page.nodes_tab.unallocated"></div>
+          <div class="volume-group-name" data-i18n="cluster_page.nodes_tab.configure_disks.unallocated"></div>
           <div class="volume-group-size"><%= showDiskSize(disk.get('size'), 2) %></div>
         </div>
       </div>
@@ -26,7 +26,7 @@
   <div class="disk-map-details disk-form collapse">
     <div class="disk-info-box">
       <% if (diskMetaData) { %>
-        <div class="disk-box-title" data-i18n="cluster_page.nodes_tab.disk_information"></div>
+        <div class="disk-box-title" data-i18n="cluster_page.nodes_tab.configure_disks.disk_information"></div>
         <% _.each(sortEntryProperties(diskMetaData), function(propertyName) { %>
           <div class="disk-map-details-item">
             <div class="disk-map-details-name"><%- propertyName.replace(/_/g, ' ') %></div>
@@ -37,19 +37,19 @@
     </div>
 
     <div class="disk-utility-box">
-      <div class="disk-box-title" data-i18n="cluster_page.nodes_tab.volume_groups"></div>
+      <div class="disk-box-title" data-i18n="cluster_page.nodes_tab.configure_disks.volume_groups"></div>
       <% volumes.each(function(volume) { %>
         <div class="volume-group-box volume-group" data-volume="<%- volume.get('name') %>">
           <div class="volume-group-box-flag <%- volume.get('name') %>"></div>
           <div class="volume-group-box-name"><%- volume.get('label') %></div>
           <div class="pull-right">
             <% if (!locked) { %>
-              <div class="volume-group-box-edit"><span class="use-all-allowed" data-i18n="cluster_page.nodes_tab.use_all_allowed_space"></span></div>
+              <div class="volume-group-box-edit"><span class="use-all-allowed" data-i18n="cluster_page.nodes_tab.configure_disks.use_all_allowed_space"></span></div>
             <% } %>
             <div class="volume-group-box-input">
               <input id="<%- disk.id + '-' + volume.get('name') %>" class="input-medium" type="text" <%= locked ? 'disabled' : '' %> name="<%- volume.get('name') %>" value="<%- disk.get('volumes').findWhere({name: volume.get('name')}).get('size') || 0 %>" />
             </div>
-            <div class="volume-group-box-sizetype" data-i18n="common.megabyte"></div>
+            <div class="volume-group-box-sizetype" data-i18n="common.size.mb"></div>
           </div>
         </div>
         <div class="volume-group-error-message enable-selection"></div>

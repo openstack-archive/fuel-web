@@ -95,9 +95,6 @@ define(['utils', 'deepModel'], function(utils) {
         availableModes: function() {
             return ['multinode', 'ha_compact'];
         },
-        availableRoles: function() {
-            return this.get('release').get('roles');
-        },
         parse: function(response) {
             response.release = new models.Release(response.release);
             return response;

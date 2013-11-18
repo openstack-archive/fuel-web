@@ -674,7 +674,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             });
         },
         defineNodeViewStatus: function() {
-            return !this.node.get('online') ? $.t('cluster_page.nodes_tab.offline', {defaultValue: 'offline'}) : this.node.get('pending_addition') ? $.t('cluster_page.nodes_tab.pending_addition', {defaultValue: 'pending_addition'}) : this.node.get('pending_deletion') ? $.t('cluster_page.nodes_tab.pending_deletion', {defaultValue: 'pending_deletion'}) : this.node.get('status');
+            return !this.node.get('online') ? 'offline' : this.node.get('pending_addition') ? 'pending_addition' : this.node.get('pending_deletion') ? 'pending_deletion' : this.node.get('status');
         },
         formatNodePanelClass: function(value, options) {
             var nodeClass = this.node.get('pending_deletion') ? 'node-delete' : this.node.get('pending_addition') ? 'node-new' : this.node.get('online') ? this.node.get('status') : 'node-offline';

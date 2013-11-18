@@ -441,11 +441,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             _.defaults(this, options);
             this.cluster = this.screen.tab.model;
-            this.roles = this.cluster.availableRoles();
         },
         render: function() {
             this.$el.html(this.template({
-                roles: this.roles,
+                roles: this.cluster.get('release').get('roles'),
                 rolesData: this.cluster.get('release').get('roles_metadata')
             })).i18n();
             this.defineNodes();

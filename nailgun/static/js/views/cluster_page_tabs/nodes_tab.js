@@ -418,7 +418,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             _.defaults(this, options);
             this.cluster = this.screen.tab.model;
-            this.roles = this.cluster.availableRoles();
+            this.roles = this.cluster.get('release').get('roles');
         },
         render: function() {
             this.$el.html(this.template({

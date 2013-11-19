@@ -377,3 +377,6 @@ def main(*args, **kwargs):
         save_only(options.iface)
     else:
         setup()
+
+if '__main__' == __name__ or urwid.web_display.is_web_request():
+    setup()

@@ -76,24 +76,6 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             self.assertGreaterEqual(disk['size'], 0)
             self.assertEqual(len(disk['volumes']), 0)
 
-    def test_disks_recreation_after_node_agent_request(self):
-        self.env.create_node(api=True)
-        node_db = self.env.nodes[0]
-        response = self.put(node_db.id, [])
-        self.assertEquals(response, [])
-
-        response = self.get(node_db.id)
-        self.assertEquals(response, [])
-
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{"mac": node_db.mac, "is_agent": True}]),
-            headers=self.default_headers)
-        self.assertEquals(200, resp.status)
-
-        response = self.get(node_db.id)
-        self.assertNotEquals(response, [])
-
     def test_volumes_regeneration_after_roles_update(self):
         self.create_node(roles=[], pending_roles=['compute'])
         node_db = self.env.nodes[0]
@@ -204,6 +186,13 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
         for partition_after in partitions_after_update:
             self.assertEquals(partition_after['size'], new_volume_size)
+
+    def test_validator_at_least_one_disk_exists(self):
+        node = self.create_node()
+        response = self.put(node.id, [], True)
+        self.assertEquals(response.status, 400)
+        self.assertRegexpMatches(response.body,
+                                 '^Node seems not to have disks')
 
     def test_validator_not_enough_size_for_volumes(self):
         node = self.create_node()
@@ -585,17 +574,6 @@ class TestVolumeManager(BaseIntegrationTest):
                 'is_agent': True}]),
             headers=self.default_headers)
 
-    def update_node_without_disks(self, node):
-        new_meta = node.meta.copy()
-        new_meta['disks'] = []
-        self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{
-                'mac': node.mac,
-                'meta': new_meta,
-                'is_agent': True}]),
-            headers=self.default_headers)
-
     def test_check_disk_space_for_deployment(self):
         min_size = 100000
 
@@ -637,14 +615,6 @@ class TestVolumeManager(BaseIntegrationTest):
                 vm._VolumeManager__calc_minimal_installation_size(),
                 self.__calc_minimal_installation_size(vm)
             )
-
-    def test_calc_root_size_without_disks(self):
-        node = self.create_node('controller')
-        self.update_node_without_disks(node)
-        self.assertRaises(
-            errors.NoHardDrive,
-            node.volume_manager._calc_root_size
-        )
 
     def __calc_minimal_installation_size(self, volume_manager):
         disks_count = len(filter(lambda disk: disk.size > 0,

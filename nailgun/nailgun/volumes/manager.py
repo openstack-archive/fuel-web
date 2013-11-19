@@ -678,14 +678,7 @@ class VolumeManager(object):
         return result
 
     def _calc_root_size(self):
-        try:
-            size = int(self.disks[0].size * 0.2)
-        except IndexError:
-            raise errors.NoHardDrive(
-                "Node {0} seems not to have disks".format(self.node_name),
-                log_level="info"
-            )
-
+        size = int(self.disks[0].size * 0.2)
         if size < gb_to_mb(15):
             size = gb_to_mb(15)
         elif size > gb_to_mb(50):

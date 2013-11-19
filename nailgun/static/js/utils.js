@@ -71,12 +71,12 @@ define(['require'], function(require) {
             if (!_.isNumber(bytes) || _.isNaN(bytes)) {return $.t('common.not_available');}
             var base = 1024;
             treshold = treshold || 256;
-            var units = [$.t('dialog.show_node.bytes'), 'KB', 'MB', 'GB', 'TB'];
+            var units = ['byte', 'kb', 'mb', 'gb', 'tb'];
             var i, result;
             for (i = 0; i < units.length; i += 1) {
                 result = bytes / Math.pow(base, i);
                 if (result < treshold) {
-                    return (result ? result.toFixed(1) : result) + ' ' + units[i];
+                    return (result ? result.toFixed(1) : result) + ' ' + $.t('common.size.' + units[i], {count: result});
                 }
             }
             return result;

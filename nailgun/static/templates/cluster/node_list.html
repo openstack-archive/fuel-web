@@ -8,34 +8,27 @@
           <ul class="cluster-details dropdown-menu">
             <li><strong data-i18n="cluster_page.openstack_release"></strong><%- cluster.get('release').get('name') %></li>
             <li>
-              <% var statuses = {'new': $.t('clusters_page.stat_new', {defaultValue: 'New'}), 'deployment': $.t('clusters_page.stat_deploying', {defaultValue: 'Deploying'}), 'operational': $.t('clusters_page.stat_operational', {defaultValue: 'Operational'}), 'error': $.t('clusters_page.stat_error', {defaultValue: 'Error'}), 'remove': $.t('clusters_page.stat_removing', {defaultValue: 'Removing'}) } %>
-              <strong data-i18n="cluster_page.environment_status"></strong><%= statuses[cluster.get('status')] %>
+              <strong data-i18n="cluster_page.environment_status"></strong><%- $.t('cluster.status.' + cluster.get('status'), {defaultValue: cluster.get('status')}) %>
             </li>
             <li>
-              <% var modes = {'multinode': $.t('cluster_page.mode_multinode', {defaultValue: 'Multi-node'}), 'ha_compact': $.t('cluster_page.mode_multinode_with_HA', {defaultValue: 'Multi-node HA'}) } %>
-              <strong data-i18n="cluster_page.deployment_mode"></strong><%= modes[cluster.get('mode')] %>
+              <strong data-i18n="cluster_page.deployment_mode"></strong><%- $.t('cluster.mode.' + cluster.get('mode'), {defaultValue: cluster.get('mode')}) %>
             </li>
           </ul>
           <i class="<%= cluster.get('status') == 'error' ? 'icon-attention text-error' : 'icon-info-circled text-info' %> btn-cluster-details"></i>
         <% } %>
-        <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%= cluster ? cluster.get('name') : $.t('cluster_page.nodes_tab.unallocated_nodes', {defaultValue: 'Unallocated Nodes'}) %></span>
+        <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%= cluster ? cluster.get('name') : $.t('cluster_page.nodes_tab.unallocated_nodes') %></span>
       </div>
-      <div class="node-list-name-count ">(<%= nodes.length %> node<%= nodes.length == 1 ? '' : 's' %>)</div>
+      <div class="node-list-name-count">(<%= nodes.length %> node<%= nodes.length == 1 ? '' : 's' %>)</div>
     </div>
   </div>
   <div class="span2 select-all">
-    <label><input type="checkbox" name="select-nodes-common" value="" /><%- $.t('common.select_all_button', {defaultValue: 'Select All'}) %></label>
+    <label><input type="checkbox" name="select-nodes-common" value="" /><%- $.t('common.select_all_button') %></label>
   </div>
 </div>
 <div class="row-fluid">
   <% if (!nodes.deferred || nodes.deferred.state() != 'pending') { %>
     <% if (!nodes.length) { %>
-      <% var descriptions = [
-        $.t('cluster_page.nodes_tab.no_selected_nodes', {defaultValue: 'There are no selected nodes to edit.'}),
-        $.t('cluster_page.nodes_tab.no_nodes_in_environment', {defaultValue: 'To add nodes to the environment, select the Add Nodes option, choose the nodes you want to allocate and assign roles to each.'}),
-        $.t('cluster_page.nodes_tab.no_nodes_in_fuel', {defaultValue: 'A pool of one or more unallocated nodes is needed for this operation.  To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting).  Fuel will automatically provision and discover the nodes.'}),
-      ] %>
-      <div class="alert alert-warning"><%= cluster ?  edit ? descriptions[0] : descriptions[1] : descriptions[2] %></div>
+      <div class="alert alert-warning"><%- cluster ? edit ? $.t('cluster_page.nodes_tab.no_selected_nodes') : $.t('cluster_page.nodes_tab.no_nodes_in_environment') : $.t('cluster_page.nodes_tab.no_nodes_in_fuel') %></div>
     <% } %>
     <div class="nodes"></div>
   <% } else { %>

@@ -18,12 +18,12 @@
 </div>
 <div class="cluster-status">
   <% if (cluster.task('cluster_deletion', 'running')) { %>
-    <%- $.t('clusters_page.cluster_status_removing') %>
+    <%- $.t('cluster.status.removing') %>
   <% } else if (cluster.task('deploy', 'running')) { %>
     <div class="cluster-status-deploy">
       <div class="bar" style="width:0"></div>
     </div>
   <% } else { %>
-    <%- $.t('clusters_page.cluster_status_' + cluster.get('status'), {defaultValue: cluster.get('status')}) %>
+    <%- $.t('cluster.status.' + cluster.get('status'), {defaultValue: cluster.get('status')}) %>
   <% } %>
 </div>

@@ -2,7 +2,7 @@
 
 <div class="cluster-toolbar">
   <div class="cluster-toolbar-item nodes-filter">
-    <label>Group By</label>
+    <label data-i18n="cluster_page.nodes_tab.node_management_panel.group_by"></label>
     <select name="grouping" <%= nodes.length ? '' : 'disabled' %>>
       <% var groupings = cluster.groupings() %>
       <% _.each(_.keys(groupings), function(grouping) { %>
@@ -15,14 +15,14 @@
   </div>
   <% if (clusterNodesScreen) { %>
     <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-danger btn-delete-nodes hide"><i class="icon-trash"></i> Delete</button>
+      <button class="btn btn-danger btn-delete-nodes hide"><i class="icon-trash"></i><span data-i18n="common.delete_button"></span></button>
     </div>
     <% var disabled = nodes.cluster.task('deploy', 'running') ? 'disabled' : '' %>
     <div class="cluster-toolbar-item pull-right">
-      <a class="btn btn-success btn-edit-nodes hide" data-action="edit" href="" <%= disabled %>><i class="icon-edit"></i> Edit Roles</a>
+      <a class="btn btn-success btn-edit-nodes hide" data-action="edit" href="" <%= disabled %>><i class="icon-edit"></i><span data-i18n="cluster_page.nodes_tab.node_management_panel.edit_roles_button"></span></a>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <<%= locked ? 'div' : 'a' %> class="btn btn-success btn-add-nodes" href="#cluster/<%- cluster.id %>/nodes/add" <%= disabled %>><i class="icon-plus"></i> Add Nodes</<%= locked ? 'div' : 'a' %>>
+      <<%= locked ? 'div' : 'a' %> class="btn btn-success btn-add-nodes" href="#cluster/<%- cluster.id %>/nodes/add" <%= disabled %>><i class="icon-plus"></i><span data-i18n="cluster_page.nodes_tab.node_management_panel.add_nodes_button"></span></<%= locked ? 'div' : 'a' %>>
     </div>
     <div class="cluster-toolbar-item pull-right">
       <button class="btn btn-group-congiration btn-configure-interfaces" disabled data-action="interfaces"><i class="icon-attention text-error hide"></i> <span data-i18n="dialog.show_node.network_configuration_button"></span></button>
@@ -32,10 +32,10 @@
     </div>
   <% } else { %>
     <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-success btn-apply" disabled>Apply Changes</button>
+      <button class="btn btn-success btn-apply" disabled data-i18n="common.apply_changes_button"></button>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <a class="btn" href="#cluster/<%- cluster.id %>/nodes">Cancel</a>
+      <a class="btn" href="#cluster/<%- cluster.id %>/nodes" data-i18n="common.cancel_button"></a>
     </div>
   <% } %>
 </div>

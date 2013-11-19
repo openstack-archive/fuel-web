@@ -2,7 +2,6 @@
   <fieldset>
     <div class="row-fluid control-group mode-control-group">
       <div class="span5">
-         <% var modes = {'multinode': $.t("dialog.create_cluster_wizard.mode.multinode_label"), 'ha_compact': $.t("dialog.create_cluster_wizard.mode.multinode_ha_label")} %>
         <% _.each(availableModes, function(mode) { %>
           <label class="parameter-box clearfix setting" >
             <div class="parameter-control">
@@ -11,7 +10,7 @@
                 <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
               </div>
             </div>
-            <div class="openstack-sub-title parameter-name"><%= modes[mode] || mode %></div>
+            <div class="openstack-sub-title parameter-name"><%- $.t('cluster.mode.' + mode) %></div>
           </label>
         <% }) %>
       </div>

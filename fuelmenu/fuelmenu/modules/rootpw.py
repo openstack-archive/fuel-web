@@ -14,7 +14,7 @@
 # under the License.
 
 import crypt
-import fuelmenu.common.urwidwrapper as widget
+from fuelmenu.common.modulehelper import ModuleHelper
 import logging
 import subprocess
 import urwid
@@ -24,18 +24,6 @@ import urwid.web_display
 log = logging.getLogger('fuelmenu.rootpw')
 blank = urwid.Divider()
 
-fields = ["PASSWORD", "CONFIRM_PASSWORD"]
-
-DEFAULTS = \
-    {
-        "PASSWORD": {"label": "Enter password",
-                     "tooltip": "Use ASCII characters only",
-                     "value": ""},
-        "CONFIRM_PASSWORD": {"label": "Confirm password",
-                             "tooltip": "Use ASCII characters only",
-                             "value": ""},
-    }
-
 
 class rootpw(urwid.WidgetWrap):
     def __init__(self, parent):
@@ -43,6 +31,19 @@ class rootpw(urwid.WidgetWrap):
         self.priority = 60
         self.visible = True
         self.parent = parent
+        #UI text
+        self.header_content = ["Set root user password", ""]
+        self.fields = ["PASSWORD", "CONFIRM_PASSWORD"]
+        self.defaults = \
+            {
+                "PASSWORD": {"label": "Enter password",
+                             "tooltip": "Use ASCII characters only",
+                             "value": ""},
+                "CONFIRM_PASSWORD": {"label": "Confirm password",
+                                     "tooltip": "Use ASCII characters only",
+                                     "value": ""},
+            }
+
         self.screen = None
 
     def check(self, args):
@@ -52,7 +53,7 @@ class rootpw(urwid.WidgetWrap):
         #Get field information
         responses = dict()
 
-        for index, fieldname in enumerate(fields):
+        for index, fieldname in enumerate(self.fields):
             if fieldname == "blank":
                 pass
             else:
@@ -89,7 +90,7 @@ class rootpw(urwid.WidgetWrap):
         if responses is False:
             log.error("Check failed. Not applying")
             log.error("%s" % (responses))
-            for index, fieldname in enumerate(fields):
+            for index, fieldname in enumerate(self.fields):
                 if fieldname == "PASSWORD":
                     if self.edits[index].get_edit_text() == "":
                         #Empty password means user didn't enter any text
@@ -126,56 +127,11 @@ class rootpw(urwid.WidgetWrap):
         return True
 
     def cancel(self, button):
-        for index, fieldname in enumerate(fields):
-            if fieldname == "blank":
-                pass
-            else:
-                self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
+        ModuleHelper.cancel(self, button)
 
     def refresh(self):
         pass
 
     def screenUI(self):
-        #Define your text labels, text fields, and buttons first
-        text1 = urwid.Text("Set root user password")
-        text2 = urwid.Text("")
-
-        self.edits = []
-        toolbar = self.parent.footer
-        for key in fields:
-            #Example: key = hostname, label = Hostname, value = fuel-pm
-            if key == "blank":
-                self.edits.append(blank)
-            else:
-                caption = DEFAULTS[key]["label"]
-                default = DEFAULTS[key]["value"]
-                tooltip = DEFAULTS[key]["tooltip"]
-                ispassword = "PASSWORD" in key.upper()
-                self.edits.append(
-                    widget.TextField(key, caption, 23, default, tooltip,
-                                     toolbar, ispassword=ispassword))
-
-        #Button to check
-        button_check = widget.Button("Check", self.check)
-        #Button to revert to previously saved settings
-        button_cancel = widget.Button("Cancel", self.cancel)
-        #Button to apply (and check again)
-        button_apply = widget.Button("Apply", self.apply)
-
-        #Wrap buttons into Columns so it doesn't expand and look ugly
-        if self.parent.globalsave:
-            check_col = widget.Columns([button_check])
-        else:
-            check_col = widget.Columns([button_check, button_cancel,
-                                        button_apply, ('weight', 2, blank)])
-
-        #Build all of these into a list
-        self.listbox_content = [text1, blank, text2, blank]
-        self.listbox_content.extend(self.edits)
-        self.listbox_content.append(blank)
-        self.listbox_content.append(check_col)
-
-        #Add everything into a ListBox and return it
-        self.listwalker = urwid.SimpleListWalker(self.listbox_content)
-        screen = urwid.ListBox(self.listwalker)
-        return screen
+        return ModuleHelper.screenUI(self, self.header_content, self.fields,
+                                     self.defaults)

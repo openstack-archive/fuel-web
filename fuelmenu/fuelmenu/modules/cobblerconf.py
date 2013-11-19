@@ -17,6 +17,7 @@ import dhcp_checker.api
 import dhcp_checker.utils
 from fuelmenu.common import dialog
 from fuelmenu.common.errors import BadIPException
+from fuelmenu.common.modulehelper import ModuleHelper
 from fuelmenu.common import nailyfactersettings
 from fuelmenu.common import network
 from fuelmenu.common import timeout
@@ -24,11 +25,6 @@ import fuelmenu.common.urwidwrapper as widget
 from fuelmenu.settings import Settings
 import logging
 import netaddr
-import netifaces
-import re
-import socket
-import struct
-import subprocess
 import traceback
 import urwid
 import urwid.raw_display
@@ -36,11 +32,6 @@ import urwid.web_display
 log = logging.getLogger('fuelmenu.pxe_setup')
 blank = urwid.Divider()
 
-#Need to define fields in order so it will render correctly
-fields = ["static_label",
-          "ADMIN_NETWORK/static_pool_start", "ADMIN_NETWORK/static_pool_end",
-          "blank", "dynamic_label", "ADMIN_NETWORK/dhcp_pool_start",
-          "ADMIN_NETWORK/dhcp_pool_end"]
 facter_translate = {
     "ADMIN_NETWORK/interface": "internal_interface",
     "ADMIN_NETWORK/ipaddress": "internal_ipaddress",
@@ -49,31 +40,6 @@ facter_translate = {
     "ADMIN_NETWORK/dhcp_pool_end": "dhcp_pool_end",
     "ADMIN_NETWORK/static_pool_start": "static_pool_start",
     "ADMIN_NETWORK/static_pool_end": "static_pool_end",
-}
-
-DEFAULTS = {
-    "ADMIN_NETWORK/dhcp_pool_start": {"label": "DHCP Pool Start",
-                                      "tooltip": "Used for defining IPs for \
-hosts and instance public addresses",
-                                      "value": "10.0.0.130"},
-    "ADMIN_NETWORK/dhcp_pool_end": {"label": "DHCP Pool End",
-                                    "tooltip": "Used for defining IPs for \
-hosts and instance public addresses",
-                                    "value": "10.0.0.254"},
-    "static_label": {"label": "Static pool for installed nodes:",
-                     "tooltip": "",
-                     "value": "label"},
-    "ADMIN_NETWORK/static_pool_start": {"label": "Static Pool Start",
-                                        "tooltip": "Static pool for installed \
-nodes",
-                                        "value": "10.0.0.10"},
-    "ADMIN_NETWORK/static_pool_end": {"label": "Static Pool End",
-                                      "tooltip": "Static pool for installed \
-nodes",
-                                      "value": "10.0.0.120"},
-    "dynamic_label": {"label": "DHCP pool for node discovery:",
-                      "tooltip": "",
-                      "value": "label"},
 }
 
 
@@ -89,6 +55,52 @@ class cobblerconf(urwid.WidgetWrap):
         self.gateway = self.get_default_gateway_linux()
         self.activeiface = sorted(self.netsettings.keys())[0]
         self.parent.managediface = self.activeiface
+
+        #UI text
+        text1 = "Settings for PXE booting of slave nodes."
+        text2 = "Select the interface where PXE will run:"
+        #Placeholder for network settings text
+        self.net_choices = widget.ChoicesGroup(sorted(self.netsettings.keys()),
+                                               default_value=self.activeiface,
+                                               fn=self.radioSelectIface)
+        self.net_text1 = widget.TextLabel("")
+        self.net_text2 = widget.TextLabel("")
+        self.net_text3 = widget.TextLabel("")
+        self.net_text4 = widget.TextLabel("")
+        self.header_content = [text1, text2, self.net_choices, self.net_text1,
+                               self.net_text2, self.net_text3, self.net_text4]
+        self.fields = ["static_label", "ADMIN_NETWORK/static_pool_start",
+                       "ADMIN_NETWORK/static_pool_end", "blank",
+                       "dynamic_label", "ADMIN_NETWORK/dhcp_pool_start",
+                       "ADMIN_NETWORK/dhcp_pool_end"]
+
+        self.defaults = \
+            {
+                "ADMIN_NETWORK/dhcp_pool_start": {"label": "DHCP Pool Start",
+                                                  "tooltip": "Used for \
+defining IPs for hosts and instance public addresses",
+                                                  "value": "10.0.0.130"},
+                "ADMIN_NETWORK/dhcp_pool_end": {"label": "DHCP Pool End",
+                                                "tooltip": "Used for defining \
+IPs for hosts and instance public addresses",
+                                                "value": "10.0.0.254"},
+                "static_label": {"label": "Static pool for installed nodes:",
+                                 "tooltip": "",
+                                 "value": "label"},
+                "ADMIN_NETWORK/static_pool_start": {"label": "Static Pool \
+Start",
+                                                    "tooltip": "Static pool \
+for installed nodes",
+                                                    "value": "10.0.0.10"},
+                "ADMIN_NETWORK/static_pool_end": {"label": "Static Pool End",
+                                                  "tooltip": "Static pool for \
+installed nodes",
+                                                  "value": "10.0.0.120"},
+                "dynamic_label": {"label": "DHCP pool for node discovery:",
+                                  "tooltip": "",
+                                  "value": "label"},
+            }
+
         self.extdhcp = True
         self.oldsettings = self.load()
         self.screen = None
@@ -104,7 +116,7 @@ class cobblerconf(urwid.WidgetWrap):
         #Get field information
         responses = dict()
 
-        for index, fieldname in enumerate(fields):
+        for index, fieldname in enumerate(self.fields):
             if fieldname == "blank" or "label" in fieldname:
                 pass
             else:
@@ -186,7 +198,7 @@ interface first.")
                 #Ensure ADMIN_NETWORK/interface is not running DHCP
                 if self.netsettings[responses[
                         "ADMIN_NETWORK/interface"]]["bootproto"] == "dhcp":
-                    errors.append("%s is running DHCP.Change it to static "
+                    errors.append("%s is running DHCP. Change it to static "
                                   "first." % self.activeiface)
 
                 #Ensure Static Pool Start and Static Pool are valid IPs
@@ -288,32 +300,10 @@ interface first.")
 
         #Always save even if "post"
         self.save(responses)
-        #Need to decide if we are pre-deployment or post-deployment
-        if self.deployment == "post":
-            self.updateCobbler(responses)
         return True
 
-    def updateCobbler(self, params):
-#        patterns = \
-#            {
-#                'cblr_server': '^server: .*',
-#                'cblr_next_server': '^next_server: .*',
-#                'mgmt_if': '^interface=.*',
-#                'domain': '^domain=.*',
-#                'server': '^server=.*',
-#                'dhcp-range': '^dhcp-range=',
-#                'dhcp-option': '^dhcp-option=',
-#                'pxe-service': '^pxe-service=(^,)',
-#                'dhcp-boot': '^dhcp-boot=([^,],{3}),'
-#            }
-        pass
-
     def cancel(self, button):
-        for index, fieldname in enumerate(fields):
-            if fieldname == "blank" or "label" in fieldname:
-                pass
-            else:
-                self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
+        ModuleHelper.cancel(self, button)
         self.setNetworkDetails()
 
     def load(self):
@@ -322,14 +312,14 @@ interface first.")
         oldsettings = defaultsettings.copy()
         oldsettings.update(Settings().read(self.parent.settingsfile))
         log.debug("Old settings %s" % oldsettings)
-        for setting in DEFAULTS.keys():
+        for setting in self.defaults.keys():
             if "label" in setting:
                 continue
             elif "/" in setting:
                 part1, part2 = setting.split("/")
-                DEFAULTS[setting]["value"] = oldsettings[part1][part2]
+                self.defaults[setting]["value"] = oldsettings[part1][part2]
             else:
-                DEFAULTS[setting]["value"] = oldsettings[setting]
+                self.defaults[setting]["value"] = oldsettings[setting]
         if oldsettings["ADMIN_NETWORK"]["interface"] \
                 in self.netsettings.keys():
             self.activeiface = oldsettings["ADMIN_NETWORK"]["interface"]
@@ -337,7 +327,7 @@ interface first.")
 
     def save(self, responses):
         ## Generic settings start ##
-        newsettings = dict()
+        newsettings = ModuleHelper.save(self, responses)
         for setting in responses.keys():
             if "/" in setting:
                 part1, part2 = setting.split("/")
@@ -349,16 +339,10 @@ interface first.")
                 newsettings[setting] = responses[setting]
         ## Generic settings end ##
 
-        ## Need to calculate and set cidr, netmask, size
+        ## Need to calculate and netmask
         newsettings['ADMIN_NETWORK']['netmask'] = self.netsettings[newsettings
                    ['ADMIN_NETWORK']['interface']]["netmask"]
-        newsettings['ADMIN_NETWORK']['cidr'] = network.getCidr(
-            self.netsettings[newsettings['ADMIN_NETWORK']['interface']][
-                "addr"], newsettings['ADMIN_NETWORK']['netmask'])
-        newsettings['ADMIN_NETWORK']['size'] = network.getCidrSize(
-            newsettings['ADMIN_NETWORK']['cidr'])
 
-        log.debug(str(newsettings))
         Settings().write(newsettings,
                          defaultsfile=self.parent.defaultsettingsfile,
                          outfn=self.parent.settingsfile)
@@ -375,79 +359,21 @@ interface first.")
 
         #Set oldsettings to reflect new settings
         self.oldsettings = newsettings
-        #Update DEFAULTS
-        for index, fieldname in enumerate(fields):
+        #Update self.defaults
+        for index, fieldname in enumerate(self.fields):
             if fieldname != "blank" and "label" not in fieldname:
-                DEFAULTS[fieldname]['value'] = responses[fieldname]
+                self.defaults[fieldname]['value'] = responses[fieldname]
 
         self.parent.footer.set_text("Changes saved successfully.")
 
     def getNetwork(self):
-        """Returns addr, broadcast, netmask for each network interface."""
-        for iface in netifaces.interfaces():
-            if 'lo' in iface or 'vir' in iface:
-            #if 'lo' in iface or 'vir' in iface or 'vbox' in iface:
-                if iface != "virbr2-nic":
-                    continue
-            try:
-                self.netsettings.update({iface: netifaces.ifaddresses(iface)[
-                    netifaces.AF_INET][0]})
-                self.netsettings[iface]["onboot"] = "Yes"
-            except Exception:
-                self.netsettings.update({iface: {"addr": "", "netmask": "",
-                                        "onboot": "no"}})
-            self.netsettings[iface]['mac'] = netifaces.ifaddresses(iface)[
-                netifaces.AF_LINK][0]['addr']
-
-            #Set link state
-            try:
-                with open("/sys/class/net/%s/operstate" % iface) as f:
-                    content = f.readlines()
-                    self.netsettings[iface]["link"] = content[0].strip()
-            except Exception:
-                self.netsettings[iface]["link"] = "unknown"
-            #Change unknown link state to up if interface has an IP
-            if self.netsettings[iface]["link"] == "unknown":
-                if self.netsettings[iface]["addr"] != "":
-                    self.netsettings[iface]["link"] = "up"
-
-            #Read bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
-            self.netsettings[iface]['bootproto'] = "none"
-            try:
-                with open("/etc/sysconfig/network-scripts/ifcfg-%s" % iface)\
-                        as fh:
-                    for line in fh:
-                        if re.match("^BOOTPROTO=", line):
-                            self.netsettings[iface]['bootproto'] = \
-                                line.split('=').strip()
-                            break
-            except Exception:
-                #Check for dhclient process running for this interface
-                if self.getDHCP(iface):
-                    self.netsettings[iface]['bootproto'] = "dhcp"
-                else:
-                    self.netsettings[iface]['bootproto'] = "none"
-        self.gateway = self.get_default_gateway_linux()
+        ModuleHelper.getNetwork(self)
 
     def getDHCP(self, iface):
-        """Returns True if the interface has a dhclient process running."""
-        noout = open('/dev/null', 'w')
-        dhclient_running = subprocess.call(["pgrep", "-f", "dhclient.*%s" %
-                                           (iface)], stdout=noout,
-                                           stderr=noout)
-        if dhclient_running == 0:
-            return True
-        else:
-            return False
+        return ModuleHelper.getDHCP(iface)
 
     def get_default_gateway_linux(self):
-        """Read the default gateway directly from /proc."""
-        with open("/proc/net/route") as fh:
-            for line in fh:
-                fields = line.strip().split()
-                if fields[1] != '00000000' or not int(fields[3], 16) & 2:
-                    continue
-                return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+        return ModuleHelper.get_default_gateway_linux()
 
     def radioSelectIface(self, current, state, user_data=None):
         """Update network details and display information."""
@@ -495,7 +421,7 @@ interface first.")
         #you will change the network settings for interface eth0 and then come
         #back to this page to update your DHCP settings. If the inSameSubnet
         #test fails, just recalculate and set new values.
-        for index, key in enumerate(fields):
+        for index, key in enumerate(self.fields):
             if key == "ADMIN_NETWORK/dhcp_pool_start":
                 dhcp_start = self.edits[index].get_edit_text()
                 break
@@ -532,7 +458,7 @@ interface first.")
             static_end = ""
             dynamic_start = ""
             dynamic_end = ""
-        for index, key in enumerate(fields):
+        for index, key in enumerate(self.fields):
             if key == "ADMIN_NETWORK/static_pool_start":
                 self.edits[index].set_edit_text(static_start)
             elif key == "ADMIN_NETWORK/static_pool_end":
@@ -547,71 +473,5 @@ interface first.")
         self.setNetworkDetails()
 
     def screenUI(self):
-        #Define your text labels, text fields, and buttons first
-        text1 = urwid.Text("Settings for PXE booting of slave nodes.")
-        text2 = urwid.Text("Select the interface where PXE will run:")
-        #Current network settings
-        self.net_text1 = widget.TextLabel("")
-        self.net_text2 = widget.TextLabel("")
-        self.net_text3 = widget.TextLabel("")
-        self.net_text4 = widget.TextLabel("")
-        log.debug("Default iface %s" % self.activeiface)
-        self.net_choices = widget.ChoicesGroup(self,
-                                               sorted(self.netsettings.keys()),
-                                               default_value=self.activeiface,
-                                               fn=self.radioSelectIface)
-
-        self.edits = []
-        toolbar = self.parent.footer
-        for key in fields:
-            #Example: key = hostname, label = Hostname, value = fuel-pm
-            if key == "blank":
-                self.edits.append(blank)
-            elif DEFAULTS[key]["value"] == "radio":
-                label = widget.TextLabel(DEFAULTS[key]["label"])
-                choices = widget.ChoicesGroup(self, ["Yes", "No"],
-                                              default_value="Yes",
-                                              fn=self.radioSelectIface)
-                self.edits.append(widget.Columns([label, choices]))
-            elif DEFAULTS[key]["value"] == "label":
-                self.edits.append(widget.TextLabel(DEFAULTS[key]["label"]))
-            else:
-                caption = DEFAULTS[key]["label"]
-                default = DEFAULTS[key]["value"]
-                tooltip = DEFAULTS[key]["tooltip"]
-                self.edits.append(widget.TextField(key, caption, 23, default,
-                                  tooltip, toolbar))
-
-        #Button to check
-        button_check = widget.Button("Check", self.check)
-        #Button to revert to previously saved settings
-        button_cancel = widget.Button("Cancel", self.cancel)
-        #Button to apply (and check again)
-        button_apply = widget.Button("Apply", self.apply)
-
-        #Wrap buttons into Columns so it doesn't expand and look ugly
-        if self.parent.globalsave:
-            check_col = widget.Columns([button_check])
-        else:
-            check_col = widget.Columns([button_check, button_cancel,
-                                       button_apply, ('weight', 2, blank)])
-
-        self.listbox_content = [text1, blank, text2]
-        self.listbox_content.extend([self.net_choices, self.net_text1,
-                                     self.net_text2, self.net_text3,
-                                     self.net_text4, blank])
-        self.listbox_content.extend(self.edits)
-        self.listbox_content.append(blank)
-        self.listbox_content.append(check_col)
-
-        #Add listeners
-
-        #Build all of these into a list
-        #self.listbox_content = [ text1, blank, blank, edit1, edit2, \
-        #                    edit3, edit4, edit5, edit6, button_check ]
-        self.setNetworkDetails()
-
-        #Add everything into a ListBox and return it
-        self.listwalker = urwid.SimpleListWalker(self.listbox_content)
-        screen = urwid.ListBox(self.listwalker)
-        return screen
+        return ModuleHelper.screenUI(self, self.header_content, self.fields,
+                                     self.defaults)

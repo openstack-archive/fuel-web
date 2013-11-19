@@ -40,7 +40,7 @@ def TextField(keyword, label, width, default_value=None, tooltip=None,
     return wrapped_obj
 
 
-def ChoicesGroup(self, choices, default_value=None, fn=None):
+def ChoicesGroup(choices, default_value=None, fn=None):
     """Returns list of RadioButtons in a one-line GridFlow."""
     rb_group = []
 
@@ -51,7 +51,7 @@ def ChoicesGroup(self, choices, default_value=None, fn=None):
                        user_data=txt),
                        'buttn', 'buttnf')
     wrapped_choices = urwid.GridFlow(rb_group, 13, 3, 0, 'left')
-    #Bundle rb_group so we can use it later easily
+    #Bundle rb_group so it can be use later easily
     wrapped_choices.rb_group = rb_group
     return wrapped_choices
 

@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from fuelmenu.common.modulehelper import ModuleHelper
 import fuelmenu.common.urwidwrapper as widget
 import subprocess
 import urwid
@@ -29,7 +30,12 @@ class shell():
         self.visible = True
         self.parent = parent
         self.screen = None
-        #self.screen = self.screenUI()
+        #UI text
+        text1 = "Press the button below to enter a shell login."
+        login_button = widget.Button("Shell Login", self.start_shell)
+        self.header_content = [text1, blank, login_button]
+        self.fields = []
+        self.defaults = dict()
 
     def check(self, args):
         return True
@@ -45,12 +51,5 @@ class shell():
         pass
 
     def screenUI(self):
-        #Define your text labels, text fields, and buttons first
-        text1 = urwid.Text("Press the button below to enter a shell login.")
-        login_button = widget.Button("Shell Login", self.start_shell)
-        #Build all of these into a list
-        listbox_content = [text1, blank, login_button]
-
-        #Add everything into a ListBox and return it
-        screen = urwid.ListBox(urwid.SimpleListWalker(listbox_content))
-        return screen
+        return ModuleHelper.screenUI(self, self.header_content, self.fields,
+                                     self.defaults, buttons_visible=False)

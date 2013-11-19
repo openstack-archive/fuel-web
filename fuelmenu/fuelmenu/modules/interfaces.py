@@ -17,6 +17,7 @@ import dhcp_checker.api
 import dhcp_checker.utils
 from fuelmenu.common import dialog
 from fuelmenu.common.errors import BadIPException
+from fuelmenu.common.modulehelper import ModuleHelper
 from fuelmenu.common import network
 from fuelmenu.common import puppet
 from fuelmenu.common import replace
@@ -24,11 +25,8 @@ from fuelmenu.common import timeout
 import fuelmenu.common.urwidwrapper as widget
 import logging
 import netaddr
-import netifaces
 import re
 import socket
-import struct
-import subprocess
 import traceback
 import urwid
 import urwid.raw_display
@@ -38,32 +36,6 @@ blank = urwid.Divider()
 
 
 #Need to define fields in order so it will render correctly
-fields = ["blank", "ifname", "onboot", "bootproto", "ipaddr", "netmask",
-          "gateway"]
-
-DEFAULTS = \
-    {
-        "ifname": {"label": "Interface name:",
-                   "tooltip": "Interface system identifier",
-                   "value": "locked"},
-        "onboot": {"label": "Enable interface:",
-                   "tooltip": "",
-                   "value": "radio"},
-        "bootproto": {"label": "Configuration via DHCP:",
-                      "tooltip": "",
-                      "value": "radio",
-                      "choices": ["DHCP", "Static"]},
-        "ipaddr": {"label": "IP address:",
-                   "tooltip": "Manual IP address (example 192.168.1.2)",
-                   "value": ""},
-        "netmask": {"label": "Netmask:",
-                    "tooltip": "Manual netmask (example 255.255.255.0)",
-                    "value": "255.255.255.0"},
-        "gateway": {"label": "Default Gateway:",
-                    "tooltip": "Manual gateway to access Internet (example "
-                    "192.168.1.1)",
-                    "value": ""},
-    }
 
 
 class interfaces(urwid.WidgetWrap):
@@ -82,6 +54,44 @@ class interfaces(urwid.WidgetWrap):
         self.activeiface = sorted(self.netsettings.keys())[0]
         self.extdhcp = True
 
+        #UI text
+        self.net_choices = widget.ChoicesGroup(sorted(self.netsettings.keys()),
+                                               default_value=self.activeiface,
+                                               fn=self.radioSelectIface)
+        #Placeholders for network settings text
+        self.net_text1 = widget.TextLabel("")
+        self.net_text2 = widget.TextLabel("")
+        self.net_text3 = widget.TextLabel("")
+        self.header_content = [self.net_choices, self.net_text1,
+                               self.net_text2, self.net_text3]
+        self.fields = ["blank", "ifname", "onboot", "bootproto", "ipaddr",
+                       "netmask", "gateway"]
+        self.defaults = \
+            {
+                "ifname": {"label": "Interface name:",
+                           "tooltip": "Interface system identifier",
+                           "value": "locked"},
+                "onboot": {"label": "Enable interface:",
+                           "tooltip": "",
+                           "value": "radio"},
+                "bootproto": {"label": "Configuration via DHCP:",
+                              "tooltip": "",
+                              "value": "radio",
+                              "choices": ["DHCP", "Static"]},
+                "ipaddr": {"label": "IP address:",
+                           "tooltip": "Manual IP address (example \
+192.168.1.2)",
+                           "value": ""},
+                "netmask": {"label": "Netmask:",
+                            "tooltip": "Manual netmask (example \
+255.255.255.0)",
+                            "value": "255.255.255.0"},
+                "gateway": {"label": "Default Gateway:",
+                            "tooltip": "Manual gateway to access Internet \
+(example 192.168.1.1)",
+                            "value": ""},
+            }
+
     def fixDnsmasqUpstream(self):
         #check upstream dns server
         with open('/etc/dnsmasq.upstream', 'r') as f:
@@ -93,7 +103,7 @@ class interfaces(urwid.WidgetWrap):
         if nameservers == []:
             #Write dnsmasq upstream server to default if it's not readable
             with open('/etc/dnsmasq.upstream', 'w') as f:
-                nameservers = DEFAULTS['DNS_UPSTREAM']['value'].replace(
+                nameservers = self.defaults['DNS_UPSTREAM']['value'].replace(
                     ',', ' ')
                 f.write("nameserver %s\n" % nameservers)
                 f.close()
@@ -123,7 +133,7 @@ class interfaces(urwid.WidgetWrap):
         #Get field information
         responses = dict()
         self.parent.footer.set_text("Checking data...")
-        for index, fieldname in enumerate(fields):
+        for index, fieldname in enumerate(self.fields):
             if fieldname == "blank" or fieldname == "ifname":
                 pass
             elif fieldname == "bootproto":
@@ -305,71 +315,13 @@ class interfaces(urwid.WidgetWrap):
         return True
 
     def getNetwork(self):
-        """Returns addr, broadcast, netmask for each network interface."""
-        for iface in netifaces.interfaces():
-            if 'lo' in iface or 'vir' in iface:
-                if iface != "virbr2-nic":
-                    continue
-            try:
-                self.netsettings.update({iface: netifaces.ifaddresses(iface)[
-                    netifaces.AF_INET][0]})
-                self.netsettings[iface]["onboot"] = "Yes"
-            except Exception:
-                #Interface is down, so mark it onboot=no
-                self.netsettings.update({iface: {"addr": "", "netmask": "",
-                                        "onboot": "no"}})
-
-            self.netsettings[iface]['mac'] = netifaces.ifaddresses(iface)[
-                netifaces.AF_LINK][0]['addr']
-            self.gateway = self.get_default_gateway_linux()
-
-            #Set link state
-            try:
-                with open("/sys/class/net/%s/operstate" % iface) as f:
-                    content = f.readlines()
-                    self.netsettings[iface]["link"] = content[0].strip()
-            except Exception:
-                self.netsettings[iface]["link"] = "unknown"
-            #Change unknown link state to up if interface has an IP
-            if self.netsettings[iface]["link"] == "unknown":
-                if self.netsettings[iface]["addr"] != "":
-                    self.netsettings[iface]["link"] = "up"
-
-            #Read bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
-            #default to static
-            self.netsettings[iface]['bootproto'] = "none"
-            try:
-                with open("/etc/sysconfig/network-scripts/ifcfg-%s" % iface)\
-                        as fh:
-                    for line in fh:
-                        if re.match("^BOOTPROTO=", line):
-                            self.netsettings[iface]['bootproto'] = \
-                                line.split('=').strip()
-                            break
-
-            except Exception:
-                #Check for dhclient process running for this interface
-                if self.getDHCP(iface):
-                    self.netsettings[iface]['bootproto'] = "dhcp"
-                else:
-                    self.netsettings[iface]['bootproto'] = "none"
+        ModuleHelper.getNetwork(self)
 
     def getDHCP(self, iface):
-        """Returns True if the interface has a dhclient process running."""
-        noout = open('/dev/null', 'w')
-        dhclient_running = subprocess.call(["pgrep", "-f", "dhclient.*%s" %
-                                           (iface)], stdout=noout,
-                                           stderr=noout)
-        return dhclient_running == 0
+        return ModuleHelper.getDHCP(iface)
 
     def get_default_gateway_linux(self):
-        """Read the default gateway directly from /proc."""
-        with open("/proc/net/route") as fh:
-            for line in fh:
-                fields = line.strip().split()
-                if fields[1] != '00000000' or not int(fields[3], 16) & 2:
-                    continue
-                return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+        return ModuleHelper.get_default_gateway_linux()
 
     def radioSelectIface(self, current, state, user_data=None):
         """Update network details and display information."""
@@ -387,23 +339,6 @@ class interfaces(urwid.WidgetWrap):
         self.setNetworkDetails()
         return
 
-    def radioSelectExtIf(self, current, state, user_data=None):
-        """Update network details and display information."""
-        ### This makes no sense, but urwid returns the previous object.
-        ### The previous object has True state, which is wrong.
-        ### Somewhere in current.group a RadioButton is set to True.
-        ### Our quest is to find it.
-        for rb in current.group:
-            if rb.get_label() == current.get_label():
-                continue
-            if rb.base_widget.state is True:
-                if rb.base_widget.get_label() == "Yes":
-                    self.extdhcp = True
-                else:
-                    self.extdhcp = False
-                break
-        return
-
     def setNetworkDetails(self):
         self.net_text1.set_text("Interface: %-13s  Link: %s" % (
             self.activeiface,
@@ -416,7 +351,7 @@ class interfaces(urwid.WidgetWrap):
             self.netsettings[self.activeiface]['netmask'],
             self.gateway))
         #Set text fields to current netsettings
-        for index, fieldname in enumerate(fields):
+        for index, fieldname in enumerate(self.fields):
             if fieldname == "ifname":
                 self.edits[index].base_widget.set_edit_text(self.activeiface)
             elif fieldname == "bootproto":
@@ -465,67 +400,10 @@ class interfaces(urwid.WidgetWrap):
         self.getNetwork()
         self.setNetworkDetails()
 
-    def screenUI(self):
-        #Define your text labels, text fields, and buttons first
-        text1 = widget.TextLabel("Network interface setup")
-
-        #Current network settings
-        self.net_text1 = widget.TextLabel("")
-        self.net_text2 = widget.TextLabel("")
-        self.net_text3 = widget.TextLabel("")
-        self.net_choices = widget.ChoicesGroup(self,
-                                               sorted(self.netsettings.keys()),
-                                               default_value=self.activeiface,
-                                               fn=self.radioSelectIface)
-
-        self.edits = []
-        toolbar = self.parent.footer
-        for key in fields:
-            #Example: key = hostname, label = Hostname, value = fuel
-            if key == "blank":
-                self.edits.append(blank)
-            elif DEFAULTS[key]["value"] == "radio":
-                label = widget.TextLabel(DEFAULTS[key]["label"])
-                if "choices" in DEFAULTS[key]:
-                    choices_list = DEFAULTS[key]["choices"]
-                else:
-                    choices_list = ["Yes", "No"]
-                choices = widget.ChoicesGroup(self, choices_list,
-                                              default_value="Yes",
-                                              fn=self.radioSelectExtIf)
-                columns = widget.Columns([('weight', 2, label),
-                                         ('weight', 3, choices)])
-                #Attach choices rb_group so we can use it later
-                columns.rb_group = choices.rb_group
-                self.edits.append(columns)
-            else:
-                caption = DEFAULTS[key]["label"]
-                default = DEFAULTS[key]["value"]
-                tooltip = DEFAULTS[key]["tooltip"]
-                disabled = True if key == "ifname" else False
-                self.edits.append(widget.TextField(key, caption, 23, default,
-                                  tooltip, toolbar, disabled=disabled))
-
-        #Button to check
-        button_check = widget.Button("Check", self.check)
-        #Button to apply (and check again)
-        button_apply = widget.Button("Apply", self.apply)
-
-        #Wrap buttons into Columns so it doesn't expand and look ugly
-        check_col = widget.Columns([button_check, button_apply,
-                                   ('weight', 3, blank)])
-
-        self.listbox_content = [text1, blank]
-        self.listbox_content.extend([self.net_choices, self.net_text1,
-                                     self.net_text2, self.net_text3,
-                                     blank])
-        self.listbox_content.extend(self.edits)
-        self.listbox_content.append(blank)
-        self.listbox_content.append(check_col)
-
-        #Add everything into a ListBox and return it
-        self.listwalker = urwid.SimpleListWalker(self.listbox_content)
-        screen = urwid.ListBox(self.listwalker)
+    def cancel(self, button):
+        ModuleHelper.cancel(self, button)
         self.setNetworkDetails()
-        self.screen = screen
-        return screen
+
+    def screenUI(self):
+        return ModuleHelper.screenUI(self, self.header_content, self.fields,
+                                     self.defaults, showallbuttons=True)

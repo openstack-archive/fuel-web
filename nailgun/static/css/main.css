@@ -305,35 +305,6 @@ h6.page-title {
   height: 50px;
 }
 
-.footer-logo {
-  display: block;
-  float: left;
-  width: 67px;
-  height: 34px;
-  background: url(../img/mirantis-logo-small2.png) no-repeat top left;
-  margin: 8px 0px 0px 10px;
-  overflow: hidden;
-  cursor: pointer;
-}
-
-.footer-logo:hover {
-  display: block;
-  float: left;
-  width: 67px;
-  height: 34px;
-  background: url(../img/mirantis-logo-small2.png) no-repeat 0px -34px;
-  margin: 8px 0px 0px 10px;
-  overflow: hidden;
-}
-
-.footer-copyright {
-  display: block;
-  padding: 14px 20px 0px 20px;
-  color: #f0f0f0;
-  font-size: 11px;
-  margin-top: 0px;
-}
-
 .footer-version {
   display: block;
   padding: 14px 20px 0px 20px;

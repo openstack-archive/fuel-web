@@ -14,6 +14,7 @@
 # under the License.
 
 from fuelmenu.common import dialog
+from fuelmenu.common.modulehelper import ModuleHelper
 from fuelmenu.common import nailyfactersettings
 import fuelmenu.common.urwidwrapper as widget
 from fuelmenu.settings import Settings
@@ -26,22 +27,6 @@ import urwid.web_display
 log = logging.getLogger('fuelmenu.mirrors')
 blank = urwid.Divider()
 
-#Need to define fields in order so it will render correctly
-fields = ["NTP1", "NTP2", "NTP3"]
-
-DEFAULTS = \
-    {
-        "NTP1": {"label": "NTP Server 1",
-                 "tooltip": "NTP Server for time synchronization",
-                 "value": "time.nist.gov"},
-        "NTP2": {"label": "NTP Server 3",
-                 "tooltip": "NTP Server for time synchronization",
-                 "value": "time-a.nist.gov"},
-        "NTP3": {"label": "NTP Server 3",
-                 "tooltip": "NTP Server for time synchronization",
-                 "value": "time-b.nist.gov"},
-    }
-
 
 class ntpsetup(urwid.WidgetWrap):
     def __init__(self, parent):
@@ -50,6 +35,26 @@ class ntpsetup(urwid.WidgetWrap):
         self.visible = True
         self.deployment = "pre"
         self.parent = parent
+
+        #UI details
+        self.header_content = ["NTP Setup", "Note: Leave all NTP servers "
+                               "blank if you do not have Internet access."]
+
+        self.fields = ["NTP1", "NTP2", "NTP3"]
+        self.defaults = \
+            {
+                "NTP1": {"label": "NTP Server 1",
+                         "tooltip": "NTP Server for time synchronization",
+                         "value": "time.nist.gov"},
+                "NTP2": {"label": "NTP Server 3",
+                         "tooltip": "NTP Server for time synchronization",
+                         "value": "time-a.nist.gov"},
+                "NTP3": {"label": "NTP Server 3",
+                         "tooltip": "NTP Server for time synchronization",
+                         "value": "time-b.nist.gov"},
+            }
+
+        #Load info
         self.oldsettings = self.load()
         self.screen = None
 
@@ -60,7 +65,7 @@ class ntpsetup(urwid.WidgetWrap):
         #Get field information
         responses = dict()
 
-        for index, fieldname in enumerate(fields):
+        for index, fieldname in enumerate(self.fields):
             if fieldname == "blank":
                 pass
             else:
@@ -69,7 +74,7 @@ class ntpsetup(urwid.WidgetWrap):
         ###Validate each field
         errors = []
 
-        if all(map(lambda f: (len(responses[f]) == 0), fields)):
+        if all(map(lambda f: (len(responses[f]) == 0), self.fields)):
             #We will allow empty if user doesn't need external networking
             #and present a strongly worded warning
             msg = "If you continue without NTP, you may have issues with "\
@@ -83,12 +88,12 @@ class ntpsetup(urwid.WidgetWrap):
             #NTP must be under 255 chars
             if len(ntpvalue) >= 255:
                 errors.append("%s must be under 255 chars." %
-                              DEFAULTS[ntpfield]['label'])
+                              self.defaults[ntpfield]['label'])
 
             #NTP needs to have valid chars
             if re.search('[^a-zA-Z0-9-.]', ntpvalue):
                 errors.append("%s contains illegal characters." %
-                              DEFAULTS[ntpfield]['label'])
+                              self.defaults[ntpfield]['label'])
 
             #ensure external NTP is valid
             if len(ntpvalue) > 0:
@@ -97,11 +102,11 @@ class ntpsetup(urwid.WidgetWrap):
                     #Try to test NTP via ntpdate
                     if not self.checkNTP(ntpvalue):
                         errors.append("%s unable to perform NTP."
-                                      % DEFAULTS[ntpfield]['label'])
+                                      % self.defaults[ntpfield]['label'])
                 except Exception as e:
                     errors.append(e)
                     errors.append("%s unable to perform NTP: %s"
-                                  % DEFAULTS[ntpfield]['label'])
+                                  % self.defaults[ntpfield]['label'])
 
         if len(errors) > 0:
             self.parent.footer.set_text(
@@ -134,9 +139,7 @@ class ntpsetup(urwid.WidgetWrap):
         return True
 
     def cancel(self, button):
-        for index, fieldname in enumerate(fields):
-            if fieldname != "blank":
-                self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
+        ModuleHelper.cancel(self, button)
 
     def load(self):
         #Read in yaml
@@ -145,13 +148,13 @@ class ntpsetup(urwid.WidgetWrap):
         oldsettings.update(Settings().read(self.parent.settingsfile))
 
         oldsettings = Settings().read(self.parent.settingsfile)
-        for setting in DEFAULTS.keys():
+        for setting in self.defaults.keys():
             try:
                 if "/" in setting:
                     part1, part2 = setting.split("/")
-                    DEFAULTS[setting]["value"] = oldsettings[part1][part2]
+                    self.defaults[setting]["value"] = oldsettings[part1][part2]
                 else:
-                    DEFAULTS[setting]["value"] = oldsettings[setting]
+                    self.defaults[setting]["value"] = oldsettings[setting]
             except Exception:
                 log.warning("No setting named %s found." % setting)
                 continue
@@ -185,10 +188,10 @@ class ntpsetup(urwid.WidgetWrap):
 
         #Set oldsettings to reflect new settings
         self.oldsettings = newsettings
-        #Update DEFAULTS
-        for index, fieldname in enumerate(fields):
+        #Update defaults
+        for index, fieldname in enumerate(self.fields):
             if fieldname != "blank":
-                DEFAULTS[fieldname]['value'] = newsettings[fieldname]
+                self.defaults[fieldname]['value'] = newsettings[fieldname]
 
     def checkNTP(self, server):
         #Note: Python's internal resolver caches negative answers.
@@ -206,57 +209,5 @@ class ntpsetup(urwid.WidgetWrap):
         pass
 
     def screenUI(self):
-        #Define your text labels, text fields, and buttons first
-        text1 = urwid.Text("NTP Setup")
-        text2 = urwid.Text("Note: Leave all NTP servers blank if you do not "
-                           "have Internet access.")
-
-        self.edits = []
-        toolbar = self.parent.footer
-        for key in fields:
-            #Example: key = hostname, label = Hostname, value = fuel-pm
-            if key == "blank":
-                self.edits.append(blank)
-            elif DEFAULTS[key]["value"] == "radio":
-                label = widget.TextLabel(DEFAULTS[key]["label"])
-                choices = widget.ChoicesGroup(self, ["Yes", "No"],
-                                              default_value="Yes",
-                                              fn=self.radioSelectIface)
-                self.edits.append(widget.Columns([label, choices]))
-            else:
-                caption = DEFAULTS[key]["label"]
-                default = DEFAULTS[key]["value"]
-                tooltip = DEFAULTS[key]["tooltip"]
-                self.edits.append(
-                    widget.TextField(key, caption, 23, default, tooltip,
-                                     toolbar))
-
-        #Button to check
-        button_check = widget.Button("Check", self.check)
-        #Button to revert to previously saved settings
-        button_cancel = widget.Button("Cancel", self.cancel)
-        #Button to apply (and check again)
-        button_apply = widget.Button("Apply", self.apply)
-
-        #Wrap buttons into Columns so it doesn't expand and look ugly
-        if self.parent.globalsave:
-            check_col = widget.Columns([button_check])
-        else:
-            check_col = widget.Columns([button_check, button_cancel,
-                                       button_apply, ('weight', 2, blank)])
-
-        self.listbox_content = [text1, blank, text2, blank]
-        self.listbox_content.extend(self.edits)
-        self.listbox_content.append(blank)
-        self.listbox_content.append(check_col)
-
-        #Add listeners
-
-        #Build all of these into a list
-        #self.listbox_content = [ text1, blank, blank, edit1, edit2, \
-        #                    edit3, edit4, edit5, edit6, button_check ]
-
-        #Add everything into a ListBox and return it
-        self.listwalker = urwid.SimpleListWalker(self.listbox_content)
-        screen = urwid.ListBox(self.listwalker)
-        return screen
+        return ModuleHelper.screenUI(self, self.header_content, self.fields,
+                                     self.defaults)

@@ -504,15 +504,16 @@ class Environment(object):
                 "networks": [
                     {
                         "name": "public",
-                        "pool": ["172.16.0.0/12"]
+                        "pool": ["172.16.0.0/24"],
+                        "ip_range": ["172.16.0.2", "172.16.0.126"]
                     },
                     {
                         "name": "management",
-                        "pool": ["192.168.0.0/16"]
+                        "pool": ["192.168.0.0/24"]
                     },
                     {
                         "name": "storage",
-                        "pool": ["192.168.0.0/16"]
+                        "pool": ["192.168.1.0/24"]
                     }
                 ],
                 "config": {

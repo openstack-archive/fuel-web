@@ -700,6 +700,155 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(len(n_rpc_deploy), 1)
         self.assertEquals(n_rpc_deploy[0]['uid'], str(self.env.nodes[0].id))
 
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_deploy_multinode_neutron_gre_w_custom_public_ranges(self,
+                                                                 mocked_rpc):
+        self.env.create(
+            cluster_kwargs={'net_provider': 'neutron',
+                            'net_segment_type': 'gre'},
+            nodes_kwargs=[{"pending_addition": True},
+                          {"pending_addition": True},
+                          {"pending_addition": True},
+                          {"pending_addition": True},
+                          {"pending_addition": True}]
+        )
+
+        net_data = json.loads(
+            self.env.neutron_networks_get(self.env.clusters[0].id).body)
+        pub = filter(lambda ng: ng['name'] == 'public',
+                     net_data['networks'])[0]
+        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.12'],
+                                  ['172.16.0.20', '172.16.0.22']]})
+
+        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        self.env.launch_deployment()
+
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        self.assertEquals(len(args), 2)
+        self.assertEquals(len(args[1]), 2)
+
+        n_rpc_deploy = args[1][1]['args']['deployment_info']
+        self.assertEquals(len(n_rpc_deploy), 5)
+        pub_ips = ['172.16.0.10', '172.16.0.11', '172.16.0.12',
+                   '172.16.0.20', '172.16.0.21']
+        for n in n_rpc_deploy:
+            for i, n_common_args in enumerate(n['nodes']):
+                self.assertEquals(n_common_args['public_address'], pub_ips[i])
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_deploy_ha_neutron_gre_w_custom_public_ranges(self, mocked_rpc):
+        self.env.create(
+            cluster_kwargs={'mode': 'ha_compact',
+                            'net_provider': 'neutron',
+                            'net_segment_type': 'gre'},
+            nodes_kwargs=[{"pending_addition": True},
+                          {"pending_addition": True},
+                          {"pending_addition": True},
+                          {"pending_addition": True},
+                          {"pending_addition": True}]
+        )
+
+        net_data = json.loads(
+            self.env.neutron_networks_get(self.env.clusters[0].id).body)
+        pub = filter(lambda ng: ng['name'] == 'public',
+                     net_data['networks'])[0]
+        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.12'],
+                                  ['172.16.0.20', '172.16.0.22']]})
+
+        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        self.env.launch_deployment()
+
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        self.assertEquals(len(args), 2)
+        self.assertEquals(len(args[1]), 2)
+
+        n_rpc_deploy = args[1][1]['args']['deployment_info']
+        self.assertEquals(len(n_rpc_deploy), 5)
+        pub_ips = ['172.16.0.11', '172.16.0.12',
+                   '172.16.0.20', '172.16.0.21', '172.16.0.22']
+        for n in n_rpc_deploy:
+            self.assertEquals(n['public_vip'], '172.16.0.10')
+            for i, n_common_args in enumerate(n['nodes']):
+                self.assertEquals(n_common_args['public_address'], pub_ips[i])
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_deploy_neutron_gre_w_changed_public_cidr(self, mocked_rpc):
+        self.env.create(
+            cluster_kwargs={'net_provider': 'neutron',
+                            'net_segment_type': 'gre'},
+            nodes_kwargs=[{"pending_addition": True},
+                          {"pending_addition": True}]
+        )
+
+        net_data = json.loads(
+            self.env.neutron_networks_get(self.env.clusters[0].id).body)
+        pub = filter(lambda ng: ng['name'] == 'public',
+                     net_data['networks'])[0]
+        pub.update({'ip_ranges': [['172.16.10.10', '172.16.10.122']],
+                    'gateway': '172.16.10.1'})
+        virt_nets = net_data['neutron_parameters']['predefined_networks']
+        virt_nets['net04_ext']['L3']['floating'] = ['172.16.10.130',
+                                                    '172.16.10.254']
+
+        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        self.env.launch_deployment()
+
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        self.assertEquals(len(args), 2)
+        self.assertEquals(len(args[1]), 2)
+
+        n_rpc_deploy = args[1][1]['args']['deployment_info']
+        self.assertEquals(len(n_rpc_deploy), 2)
+        pub_ips = ['172.16.10.10', '172.16.10.11']
+        for n in n_rpc_deploy:
+            for i, n_common_args in enumerate(n['nodes']):
+                self.assertEquals(n_common_args['public_address'], pub_ips[i])
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_deploy_neutron_error_not_enough_ip_addresses(self, mocked_rpc):
+        self.env.create(
+            cluster_kwargs={'net_provider': 'neutron',
+                            'net_segment_type': 'gre'},
+            nodes_kwargs=[{"pending_addition": True},
+                          {"pending_addition": True},
+                          {"pending_addition": True}]
+        )
+
+        net_data = json.loads(
+            self.env.neutron_networks_get(self.env.clusters[0].id).body)
+        pub = filter(lambda ng: ng['name'] == 'public',
+                     net_data['networks'])[0]
+        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.11']]})
+
+        resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        task = self.env.launch_deployment()
+
+        self.assertEquals(task.status, 'error')
+        self.assertEquals(
+            task.message,
+            'Not enough IP addresses. Public network must have at least '
+            '3 IP addresses for the current environment.')
+
     def test_occurs_error_not_enough_ip_addresses(self):
         self.env.create(
             cluster_kwargs={},

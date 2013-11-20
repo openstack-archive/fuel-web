@@ -46,7 +46,7 @@ class ntpsetup(urwid.WidgetWrap):
                 "NTP1": {"label": "NTP Server 1",
                          "tooltip": "NTP Server for time synchronization",
                          "value": "time.nist.gov"},
-                "NTP2": {"label": "NTP Server 3",
+                "NTP2": {"label": "NTP Server 2",
                          "tooltip": "NTP Server for time synchronization",
                          "value": "time-a.nist.gov"},
                 "NTP3": {"label": "NTP Server 3",
@@ -205,7 +205,7 @@ class ntpsetup(urwid.WidgetWrap):
     def refresh(self):
         pass
 
-    def radioSelectIface(self):
+    def radioSelect(self):
         pass
 
     def screenUI(self):

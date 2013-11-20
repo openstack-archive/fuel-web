@@ -50,7 +50,7 @@ def ChoicesGroup(choices, default_value=None, fn=None):
                        is_default, on_state_change=fn,
                        user_data=txt),
                        'buttn', 'buttnf')
-    wrapped_choices = urwid.GridFlow(rb_group, 13, 3, 0, 'left')
+    wrapped_choices = TabbedGridFlow(rb_group, 13, 3, 0, 'left')
     #Bundle rb_group so it can be used later easily
     wrapped_choices.rb_group = rb_group
     return wrapped_choices
@@ -72,7 +72,7 @@ def Columns(objects):
     #   Objects is a list of widgets. Widgets may be optionally specified
     #   as a tuple with ('weight', weight, widget) or (width, widget).
     #   Tuples without a widget have a weight of 1."""
-    return urwid.Padding(urwid.Columns(objects, 1),
+    return urwid.Padding(TabbedColumns(objects, 1),
                          left=0, right=0, min_width=61)
 
 
@@ -80,6 +80,93 @@ def Button(text, fn):
     """Returns a wrapped Button with reverse focus attribute."""
     button = urwid.Button(text, fn)
     return urwid.AttrMap(button, None, focus_map='reversed')
+
+
+class TabbedGridFlow(urwid.GridFlow):
+
+    def __init__(self, cells, cell_width, h_sep, v_sep, align):
+        urwid.GridFlow.__init__(self, cells=cells, cell_width=cell_width,
+                                h_sep=h_sep, v_sep=v_sep, align=align)
+
+
+    def keypress(self, size, key):
+        if key == 'tab' and self.focus_position < (len(self.contents) - 1)\
+                 and self.contents[self.focus_position + 1][0].selectable():
+            self.tab_next(self.focus_position)
+        elif key == 'shift tab' and self.focus_position > 0 \
+                 and self.contents[self.focus_position - 1][0].selectable():
+            self.tab_prev(self.focus_position)
+        else:
+            return self.__super.keypress(size, key)
+
+    def tab_next(self, pos):
+        self.set_focus(pos + 1)
+        while pos < (len(self.contents) - 1):
+            if self.contents[pos][0].selectable():
+                return
+            else:
+                pos += 1
+
+        if pos >= (len(self.contents) - 1):
+            pos = 0
+        self.set_focus(pos)
+
+    def tab_prev(self, pos):
+        self.set_focus(pos - 1)
+        while pos > 0:
+            if self.contents[pos][0].selectable():
+                return
+            else:
+                pos -= 1
+        if pos == 0:
+            pos = (len(self.contents) - 1)
+
+        self.set_focus(pos)
+
+
+class TabbedColumns(urwid.Columns):
+
+    def __init__(self, widget_list, dividechars=0, focus_column=None,
+                 min_width=1, box_columns=None):
+        urwid.Columns.__init__(self,  widget_list,
+                               dividechars=dividechars,
+                               focus_column=focus_column, 
+                               min_width=min_width,
+                               box_columns=box_columns)
+
+    def keypress(self, size, key):
+        if key == 'tab' and self.focus_position < (len(self.contents) - 1)\
+                 and self.contents[self.focus_position + 1][0].selectable():
+            self.tab_next(self.focus_position)
+        elif key == 'shift tab' and self.focus_position > 0 \
+                 and self.contents[self.focus_position - 1][0].selectable():
+            self.tab_prev(self.focus_position)
+        else:
+            return self.__super.keypress(size, key)
+
+    def tab_next(self, pos):
+        self.set_focus(pos + 1)
+        while pos < (len(self.contents) - 1):
+            if self.contents[pos][0].selectable():
+                return
+            else:
+                pos += 1
+
+        if pos >= (len(self.contents) - 1):
+            pos = 0
+        self.set_focus(pos)
+
+    def tab_prev(self, pos):
+        self.set_focus(pos - 1)
+        while pos > 0:
+            if self.contents[pos][0].selectable():
+                return
+            else:
+                pos -= 1
+        if pos == 0:
+            pos = (len(self.contents) - 1)
+
+        self.set_focus(pos)
 
 
 class TextWithTip(urwid.Edit):
@@ -95,3 +182,60 @@ class TextWithTip(urwid.Edit):
             self.toolbar.set_text(self.tip)
         canv = super(TextWithTip, self).render(size, focus)
         return canv
+
+
+class TabbedListWalker(urwid.ListWalker):
+    def __init__(self, lst):
+        self.lst = lst
+        self.focus = 0
+
+    def _modified(self):
+        return urwid.ListWalker._modified(self)
+
+    def tab_next(self):
+        item, pos = self.get_next(self.focus)
+        while pos is not None:
+            if item.selectable():
+                break
+            else:
+                item, pos = self.get_next(pos)
+        try:
+            item.set_focus(0)
+        except (IndexError, AttributeError):
+            pass
+        if pos is None:
+            pos = 0
+        self.focus = pos
+        self._modified()
+
+    def tab_prev(self):
+        item, pos = self.get_prev(self.focus)
+        while pos is not None:
+            if item.selectable():
+                break
+            else:
+                item, pos = self.get_prev(pos)
+
+        if pos is None:
+            pos = (len(self.lst) - 1)
+        self.focus = pos
+        self._modified()
+
+    def get_focus(self):
+        if self.lst:
+            return self.lst[self.focus], self.focus
+        else:
+            return None, None
+
+    def set_focus(self, focus):
+        self.focus = focus
+
+    def get_next(self, pos):
+        if pos+1 >= len(self.lst):
+            return None, None
+        return self.lst[pos + 1], pos + 1
+
+    def get_prev(self, pos):
+        if pos-1 < 0:
+            return None, None
+        return self.lst[pos - 1], pos - 1

@@ -360,7 +360,7 @@ is accessible"}
     def get_default_gateway_linux(self):
         return ModuleHelper.get_default_gateway_linux()
 
-    def radioSelectIface(self, current, state, user_data=None):
+    def radioSelect(self, current, state, user_data=None):
         pass
 
     def refresh(self):

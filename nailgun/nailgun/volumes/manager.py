@@ -905,7 +905,7 @@ class VolumeManager(object):
                 vg_errors.append([volume['label'], min_size])
 
         if vg_errors:
-            msgs = ["Volume group '{}' requires a minimum of {}MB".format(*v)
+            msgs = ["Volume group '{0}' requires a minimum of {1}MB".format(*v)
                     for v in vg_errors]
             raise errors.NotEnoughFreeSpace('\n'.join(msgs))
 

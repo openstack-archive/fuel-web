@@ -62,7 +62,7 @@ class cobblerconf(urwid.WidgetWrap):
         #Placeholder for network settings text
         self.net_choices = widget.ChoicesGroup(sorted(self.netsettings.keys()),
                                                default_value=self.activeiface,
-                                               fn=self.radioSelectIface)
+                                               fn=self.radioSelect)
         self.net_text1 = widget.TextLabel("")
         self.net_text2 = widget.TextLabel("")
         self.net_text3 = widget.TextLabel("")
@@ -373,7 +373,7 @@ interface first.")
     def get_default_gateway_linux(self):
         return ModuleHelper.get_default_gateway_linux()
 
-    def radioSelectIface(self, current, state, user_data=None):
+    def radioSelect(self, current, state, user_data=None):
         """Update network details and display information."""
         ### Urwid returns the previously selected radio button.
         ### The previous object has True state, which is wrong.

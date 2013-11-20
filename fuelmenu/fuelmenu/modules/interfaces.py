@@ -292,7 +292,7 @@ class interfaces(urwid.WidgetWrap):
                                       "GATEWAY=")
             self.parent.refreshScreen()
             puppet.puppetApply(puppetclasses)
-            self.getNetwork()
+            ModuleHelper.getNetwork(self)
             expr = '^GATEWAY=.*'
             gateway = self.get_default_gateway_linux()
             if gateway is None:
@@ -305,11 +305,11 @@ class interfaces(urwid.WidgetWrap):
             self.log.error(e)
             self.parent.footer.set_text("Error applying changes. Check logs "
                                         "for details.")
-            self.getNetwork()
+            ModuleHelper.getNetwork(self)
             self.setNetworkDetails()
             return False
         self.parent.footer.set_text("Changes successfully applied.")
-        self.getNetwork()
+        ModuleHelper.getNetwork(self)
         self.setNetworkDetails()
 
         return True
@@ -335,9 +335,21 @@ class interfaces(urwid.WidgetWrap):
             if rb.base_widget.state is True:
                 self.activeiface = rb.base_widget.get_label()
                 break
-        self.getNetwork()
+        ModuleHelper.getNetwork(self)
         self.setNetworkDetails()
-        return
+
+    def radioSelect(self, current, state, user_data=None):
+        """Update network details and display information."""
+        ### This makes no sense, but urwid returns the previous object.
+        ### The previous object has True state, which is wrong.
+        ### Somewhere in current.group a RadioButton is set to True.
+        ### Our quest is to find it.
+        for rb in current.group:
+            if rb.get_label() == current.get_label():
+                continue
+            if rb.base_widget.state is True:
+                self.extdhcp = (rb.base_widget.get_label() == "Yes")
+                break
 
     def setNetworkDetails(self):
         self.net_text1.set_text("Interface: %-13s  Link: %s" % (
@@ -397,7 +409,7 @@ class interfaces(urwid.WidgetWrap):
                     self.edits[index].set_edit_text("")
 
     def refresh(self):
-        self.getNetwork()
+        ModuleHelper.getNetwork(self)
         self.setNetworkDetails()
 
     def cancel(self, button):

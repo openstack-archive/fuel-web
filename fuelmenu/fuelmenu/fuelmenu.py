@@ -112,12 +112,12 @@ class FuelSetup(object):
 
     def setChildScreen(self, name=None):
         if name is None:
-            child = self.children[0]
+            self.child = self.children[0]
         else:
-            child = self.children[int(self.choices.index(name))]
-        if not child.screen:
-            child.screen = child.screenUI()
-        self.childpage = child.screen
+            self.child = self.children[int(self.choices.index(name))]
+        if not self.child.screen:
+            self.child.screen = self.child.screenUI()
+        self.childpage = self.child.screen
         self.childfill = urwid.Filler(self.childpage, 'top', 40)
         self.childbox = urwid.BoxAdapter(self.childfill, 40)
         self.cols = urwid.Columns(
@@ -130,7 +130,7 @@ class FuelSetup(object):
                     self.childbox,
                     urwid.Divider(" ")]))
             ], 1)
-        child.refresh()
+        self.child.refresh()
         self.listwalker[:] = [self.cols]
 
     def refreshScreen(self):
@@ -187,8 +187,8 @@ class FuelSetup(object):
         menufill = urwid.Filler(self.menuitems, 'top', 40)
         self.menubox = urwid.BoxAdapter(menufill, 40)
 
-        child = self.children[0]
-        self.childpage = child.screenUI()
+        self.child = self.children[0]
+        self.childpage = self.child.screenUI()
         self.childfill = urwid.Filler(self.childpage, 'top', 22)
         self.childbox = urwid.BoxAdapter(self.childfill, 22)
         self.cols = urwid.Columns(
@@ -236,6 +236,10 @@ class FuelSetup(object):
         def unhandled(key):
             if key == 'f8':
                 raise urwid.ExitMainLoop()
+            if key == 'shift tab':
+                self.child.walker.tab_prev()
+            if key == 'tab':
+                self.child.walker.tab_next()
 
         self.mainloop = urwid.MainLoop(self.frame, palette, self.screen,
                                        unhandled_input=unhandled)

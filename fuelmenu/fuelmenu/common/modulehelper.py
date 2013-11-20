@@ -101,7 +101,7 @@ class ModuleHelper(object):
                     choices_list = ["Yes", "No"]
                 choices = widget.ChoicesGroup(choices_list,
                                               default_value="Yes",
-                                              fn=modobj.radioSelectExtIf)
+                                              fn=modobj.radioSelect)
                 columns = widget.Columns([('weight', 2, label),
                                          ('weight', 3, choices)])
                 #Attach choices rb_group so we can use it later
@@ -139,10 +139,11 @@ class ModuleHelper(object):
             listbox_content.append(check_col)
 
         #Add everything into a ListBox and return it
-        listwalker = urwid.SimpleListWalker(listbox_content)
+        listwalker = widget.TabbedListWalker(listbox_content)
         screen = urwid.ListBox(listwalker)
-        #return screen
         modobj.edits = edits
+        modobj.walker = listwalker
+        modobj.listbox_content = listbox_content
         return screen
 
     @classmethod

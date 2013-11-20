@@ -95,3 +95,44 @@ class TextWithTip(urwid.Edit):
             self.toolbar.set_text(self.tip)
         canv = super(TextWithTip, self).render(size, focus)
         return canv
+
+
+class TabbedListWalker(urwid.ListWalker):
+    def __init__(self, lst):
+        self.lst = lst
+        self.focus = 0
+
+    def _modified(self):
+        return urwid.ListWalker._modified(self)
+
+    def tab_next(self):
+        item, pos = self.get_next(self.focus)
+        while pos is not None:
+            if item.selectable():
+                break
+            else:
+                item, pos = self.get_next(pos)
+
+        if pos is None:
+            pos = 0
+        self.focus = pos
+        self._modified()
+
+    def get_focus(self):
+        if self.lst:
+            return self.lst[self.focus], self.focus
+        else:
+            return None, None
+
+    def set_focus(self, focus):
+        self.focus = focus
+
+    def get_next(self, pos):
+        if pos+1 >= len(self.lst):
+            return None, None
+        return self.lst[pos + 1], pos + 1
+
+    def get_prev(self, pos):
+        if pos-1 < 0:
+            return None, None
+        return self.lst[pos - 1], pos - 1

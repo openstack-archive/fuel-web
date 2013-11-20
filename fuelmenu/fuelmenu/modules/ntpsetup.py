@@ -205,7 +205,7 @@ class ntpsetup(urwid.WidgetWrap):
     def refresh(self):
         pass
 
-    def radioSelectIface(self):
+    def radioSelect(self):
         pass
 
     def screenUI(self):

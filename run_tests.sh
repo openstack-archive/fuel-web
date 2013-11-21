@@ -9,6 +9,7 @@ function usage {
   echo "  -j, --jslint             Just run JSLint"
   echo "  -u, --ui-tests           Just run UI tests"
   echo "  -i, --integration        Just run integration tests"
+  echo "  -C, --cli                Just run fuel-cli tests"
   echo "  -u, --unit               Just run unit tests"
   echo "  -x, --xunit              Generate reports (useful in Jenkins environment)"
   echo "  -P, --no-flake8          Don't run static code checks"
@@ -33,6 +34,7 @@ function process_option {
     -U|--no-ui-tests) no_ui_tests=1;;
     -I|--integration) integration_tests=1;;
     -n|--unit) unit_tests=1;;
+    -C|--cli) cli_tests=1;;
     -x|--xunit) xunit=1;;
     -c|--clean) clean=1;;
     ui_tests*) ui_test_files="$ui_test_files $1";;
@@ -49,6 +51,7 @@ no_jslint=0
 just_ui_tests=0
 no_ui_tests=0
 integration_tests=0
+cli_tests=0
 unit_tests=0
 xunit=0
 clean=0
@@ -224,6 +227,65 @@ function run_nailgun_tests {
 #    exit 1
 #  fi
 }
+
+function run_cli_tests {
+    (
+    cd nailgun
+    result=0
+    test_server_port=8003
+    test_server_cmd="./manage.py run --port=$test_server_port --fake-tasks"
+    old_server_pid=`ps aux | grep "$test_server_cmd" | grep -v grep | awk '{ print $2 }'`
+    if [ -n "$old_server_pid" ]; then
+        kill $old_server_pid
+        echo -n "Killing old test server... "
+        sleep 5
+    fi
+    test_server_log_file=`tempfile`
+    # for test_file in $ui_test_files; do
+    echo -n "Starting test server ... "
+    ./manage.py dropdb > /dev/null
+    ./manage.py syncdb > /dev/null
+    ./manage.py loaddefault > /dev/null
+    $test_server_cmd >> $test_server_log_file 2>&1 &
+    server_pid=$!
+    which nc > /dev/null
+    if [ $? -eq 0 ]; then
+        # nc is available, use it to check test server readiness
+        for i in {1..50}; do
+            nc -vz localhost $test_server_port 2> /dev/null
+            if [ $? -eq 0 ]; then break; fi
+            sleep 0.1
+        done
+    else
+        # nc is not available, use sleep
+        sleep 5
+    fi
+    kill -0 $server_pid 2> /dev/null
+    if [ $? -eq 0 ]; then
+        echo "Test server started"
+        clean
+        test_args="../fuelclient/tests"
+        stderr=$(nosetests $noseopts $test_args --verbosity=2 3>&1 1>&2 2>&3 | tee /dev/stderr)
+        result=$(($result + $?))
+        kill $server_pid
+        wait $server_pid 2> /dev/null
+    else
+        echo "Test server failed to start!"
+        cat $test_server_log_file
+        result=1
+        break
+    fi
+
+    ./manage.py dropdb >> /dev/null
+    rm $test_server_log_file
+    return $result
+    )
+}
+
+if [ $cli_tests -eq 1 ]; then
+    run_cli_tests || exit 1
+    exit
+fi
 
 function run_integration_tests {
     noseargs="nailgun/test/integration"

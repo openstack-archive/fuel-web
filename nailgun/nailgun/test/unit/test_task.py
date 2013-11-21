@@ -106,3 +106,21 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         for node in self.cluster.nodes:
             self.assertEquals(node.status, 'ready')
             self.assertEquals(node.progress, 100)
+
+    def test_update_cluster_status_if_task_was_already_in_error_status(self):
+        for node in self.cluster.nodes:
+            node.status = 'provisioning'
+            node.progress = 12
+
+        task = Task(name='provision', cluster=self.cluster, status='error')
+        self.db.add(task)
+        self.db.commit()
+
+        TaskHelper.update_task_status(task.uuid, 'error', 100)
+
+        self.assertEquals(self.cluster.status, 'error')
+        self.assertEquals(task.status, 'error')
+
+        for node in self.cluster.nodes:
+            self.assertEquals(node.status, 'error')
+            self.assertEquals(node.progress, 0)

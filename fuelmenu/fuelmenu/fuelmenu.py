@@ -68,9 +68,6 @@ class Loader(object):
         return (self.modlist, self.choices)
 
 
-version = "3.2"
-
-
 class FuelSetup(object):
 
     def __init__(self):
@@ -83,6 +80,7 @@ class FuelSetup(object):
         self.managediface = "eth0"
         #Set to true to move all settings to end
         self.globalsave = True
+        self.version = self.getVersion("/etc/nailgun/version.yaml")
         self.main()
         self.choices = []
 
@@ -159,6 +157,17 @@ class FuelSetup(object):
         #Refresh top level listwalker
         #self.listwalker[:] = [self.cols]
 
+    def getVersion(self, versionfile):
+        try:
+            with open(versionfile, "r") as f:
+                versionlines = f.readlines()
+                for line in versionlines:
+                    if "release:" in line:
+                        return line.split(':')[1].strip()
+        except IOError:
+            log.error("Unable to set Fuel version from %s" % versionfile)
+            return ""
+
     def main(self):
         #Disable kernel print messages. They make our UI ugly
         noout = open('/dev/null', 'w')
@@ -167,7 +176,7 @@ class FuelSetup(object):
 
         text_header = (u"Fuel %s setup "
                        u"Use Up/Down/Left/Right to navigate.  F8 exits."
-                       % version)
+                       % self.version)
         text_footer = (u"Status messages go here.")
 
         #Top and bottom lines of frame

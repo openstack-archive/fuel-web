@@ -28,7 +28,21 @@ from time import sleep
 import urllib2
 import yaml
 
-ROOT = "http://127.0.0.1:8000"
+path_to_config = "/etc/fuel-cli.yaml"
+if os.path.exists(path_to_config):
+    with open(path_to_config, "r") as fh:
+        config = yaml.load(fh.read())
+    ROOT = "http://{0}:{1}".format(
+        config["LISTEN_ADDRESS"],
+        config["LISTEN_PORT"]
+    )
+else:
+    defaults = {
+        "LISTEN_ADDRESS": "127.0.0.1",
+        "LISTEN_PORT": "8000"
+    }
+    defaults.update(os.environ)
+    ROOT = "http://{LISTEN_ADDRESS}:{LISTEN_PORT}".format(**defaults)
 
 OSTF_ROOT = ROOT + "/ostf/"
 API_ROOT = ROOT + "/api/v1/"
@@ -152,7 +166,9 @@ def json_api_delete_request(api):
     except ValueError:
         return {}
     except urllib2.HTTPError as e:
-        print_error(str(e) + "\n")
+        print_error(str(e))
+    except urllib2.URLError:
+        print_error("Can't connect to Nailgun server!")
 
 
 def json_api_put_request(api, data):
@@ -172,7 +188,9 @@ def json_api_put_request(api, data):
             opener.open(request).read()
         )
     except urllib2.HTTPError as e:
-            print_error(str(e) + "\n")
+            print_error(str(e))
+    except urllib2.URLError:
+        print_error("Can't connect to Nailgun server!")
 
 
 def json_api_get_request(api, root=API_ROOT):
@@ -189,7 +207,9 @@ def json_api_get_request(api, root=API_ROOT):
             request.read()
         )
     except urllib2.HTTPError as e:
-        print_error(str(e) + "\n")
+        print_error(str(e))
+    except urllib2.URLError:
+        print_error("Can't connect to Nailgun server!")
 
 
 def json_ostf_get_request(api):
@@ -222,7 +242,9 @@ def json_api_post_request(api, data, root=API_ROOT):
             .read()
         )
     except urllib2.HTTPError as e:
-            print_error(str(e) + "\n")
+            print_error(str(e))
+    except urllib2.URLError:
+        print_error("Can't connect to Nailgun server!")
 
 
 def has_arguments(params):
@@ -404,7 +426,7 @@ def environment(params):
             )
         print_to_output(
             cluster_response,
-            "Environment with id={id}, mode={mode}"
+            "Environment '{name}' with id={id}, mode={mode}"
             " and network-mode={net_provider} was created!"
             .format(**cluster_response)
         )
@@ -424,11 +446,11 @@ def environment(params):
         msg_templates = []
         if params.name:
             msg_templates.append(
-                "Environment with id={id} was renamed to {name}."
+                "Environment with id={id} was renamed to '{name}'."
             )
         if params.mode:
             msg_templates.append(
-                "Mode of environment with id={id} was set to {mode}."
+                "Mode of environment with id={id} was set to '{mode}'."
             )
 
         message = "\n".join(msg_templates).format(

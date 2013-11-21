@@ -131,7 +131,7 @@ class TabbedColumns(urwid.Columns):
 
     def __init__(self, widget_list, dividechars=0, focus_column=None,
                  min_width=1, box_columns=None):
-        urwid.Columns.__init__(self,  widget_list,
+        urwid.Columns.__init__(self, widget_list,
                                dividechars=dividechars,
                                focus_column=focus_column,
                                min_width=min_width,
@@ -260,11 +260,11 @@ class TabbedListWalker(urwid.ListWalker):
         self.focus = focus
 
     def get_next(self, pos):
-        if pos+1 >= len(self.lst):
+        if (pos + 1) >= len(self.lst):
             return None, None
         return self.lst[pos + 1], pos + 1
 
     def get_prev(self, pos):
-        if pos-1 < 0:
+        if (pos - 1) < 0:
             return None, None
         return self.lst[pos - 1], pos - 1

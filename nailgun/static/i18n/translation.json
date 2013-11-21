@@ -182,6 +182,7 @@
                     "vlan_manager": "VLAN Manager",
                     "verify_networks_button": "Verify Networks",
                     "neutron_segmentation": "Neutron with __segment_type__ segmentation",
+                    "untagged": "untagged",
                     "range_start": "Start",
                     "range_end": "End",
                     "verify_networks": {

@@ -4391,6 +4391,14 @@ input.input-append {
   margin-right: 30px;
 }
 
+.btn-group-congiration[data-invalid=true] i {
+    display: inline;
+}
+
+.btn-group-congiration[data-invalid=false] i {
+    display: none;
+}
+
 .cluster-name-box {
   display: block;
   height: 30px;

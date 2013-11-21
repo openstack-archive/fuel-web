@@ -1,41 +1,40 @@
 <% var clusterNodesScreen = nodes.cluster && !edit %>
 
 <div class="cluster-toolbar">
-  <div class="cluster-toolbar-item nodes-filter">
-    <label data-i18n="cluster_page.nodes_tab.node_management_panel.group_by"></label>
-    <select name="grouping" <%= nodes.length ? '' : 'disabled' %>>
-      <% var groupings = cluster.groupings() %>
-      <% _.each(_.keys(groupings), function(grouping) { %>
+    <div class="cluster-toolbar-item nodes-filter">
+        <label data-i18n="cluster_page.nodes_tab.node_management_panel.group_by"></label>
+        <select name="grouping" <%= nodes.length ? '' : 'disabled' %>>
+        <% var groupings = cluster.groupings() %>
+        <% _.each(_.keys(groupings), function(grouping) { %>
         <% if (clusterNodesScreen || edit || grouping == 'hardware') { %>
-          <% var currentGrouping = clusterNodesScreen ? nodes.cluster.get('grouping') : 'hardware' %>
-          <option value="<%= grouping %>" <%= grouping == currentGrouping ? 'selected' : '' %>><%= groupings[grouping] %></option>
+        <% var currentGrouping = clusterNodesScreen ? nodes.cluster.get('grouping') : 'hardware' %>
+        <option value="<%= grouping %>" <%= grouping == currentGrouping ? 'selected' : '' %>><%= groupings[grouping] %></option>
         <% } %>
-      <% }) %>
-    </select>
-  </div>
-  <% if (clusterNodesScreen) { %>
-    <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-danger btn-delete-nodes hide"><i class="icon-trash"></i><span data-i18n="common.delete_button"></span></button>
+        <% }) %>
+        </select>
     </div>
-    <% var disabled = nodes.cluster.task('deploy', 'running') ? 'disabled' : '' %>
+    <% if (clusterNodesScreen) { %>
     <div class="cluster-toolbar-item pull-right">
-      <a class="btn btn-success btn-edit-nodes hide" data-action="edit" href="" <%= disabled %>><i class="icon-edit"></i><span data-i18n="cluster_page.nodes_tab.node_management_panel.edit_roles_button"></span></a>
+        <button class="btn btn-danger btn-delete-nodes"><i class="icon-trash"></i><span data-i18n="common.delete_button"></span></button>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <<%= locked ? 'div' : 'a' %> class="btn btn-success btn-add-nodes" href="#cluster/<%- cluster.id %>/nodes/add" <%= disabled %>><i class="icon-plus"></i><span data-i18n="cluster_page.nodes_tab.node_management_panel.add_nodes_button"></span></<%= locked ? 'div' : 'a' %>>
+        <button class="btn btn-success btn-edit-nodes"><i class="icon-edit"></i><span data-i18n="cluster_page.nodes_tab.node_management_panel.edit_roles_button"></span></button>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-group-congiration btn-configure-interfaces" disabled data-action="interfaces"><i class="icon-attention text-error hide"></i> <span data-i18n="dialog.show_node.network_configuration_button"></span></button>
+        <button class="btn btn-success btn-add-nodes"><i class="icon-plus"></i><span data-i18n="cluster_page.nodes_tab.node_management_panel.add_nodes_button"></span></button>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-group-congiration btn-configure-disks" disabled data-action="disks"><i class="icon-attention text-error hide"></i> <span data-dismiss="modal" data-i18n="dialog.show_node.disk_configuration_button"></span></button>
-    </div>
-  <% } else { %>
-    <div class="cluster-toolbar-item pull-right">
-      <button class="btn btn-success btn-apply" disabled data-i18n="common.apply_changes_button"></button>
+        <button class="btn btn-group-congiration btn-configure-interfaces" data-action="interfaces"><i class="icon-attention text-error"></i><span data-i18n="dialog.show_node.network_configuration_button"></span></button>
     </div>
     <div class="cluster-toolbar-item pull-right">
-      <a class="btn" href="#cluster/<%- cluster.id %>/nodes" data-i18n="common.cancel_button"></a>
+        <button class="btn btn-group-congiration btn-configure-disks" data-action="disks"><i class="icon-attention text-error"></i> <span data-dismiss="modal" data-i18n="dialog.show_node.disk_configuration_button"></span></button>
     </div>
-  <% } %>
+    <% } else { %>
+    <div class="cluster-toolbar-item pull-right">
+        <button class="btn btn-success btn-apply" data-i18n="common.apply_changes_button"></button>
+    </div>
+    <div class="cluster-toolbar-item pull-right">
+        <button class="btn btn-cancel" data-i18n="common.cancel_button"></button>
+    </div>
+    <% } %>
 </div>

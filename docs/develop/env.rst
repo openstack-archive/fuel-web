@@ -21,25 +21,41 @@ Clone the Mirantis Fuel repositories from GitHub::
     git clone https://github.com/stackforge/fuel-ostf
     git clone https://github.com/Mirantis/fuel
 
-All sections below assume you start in your clone of the fuel-main repository.
+All sections below assume you start in your clone of the **fuel-web** repository.
+Please ensure you use updated information on the versions of packages
+and their dependencies (apt-get update).
 
 Setup for Nailgun Unit Tests
 ----------------------------
 
-#. Install Python dependencies. There is a file called "requirements-eggs.txt" 
-   which includes all Python dependencies, so you can install pip and then all
-   of them at once::
-
-    sudo apt-get install python-dev python-setuptools
-    sudo easy_install -U pip==1.2.1
-    sudo pip install -r requirements-eggs.txt
-    sudo pip install nose-timer
-
 #. Install and configure PostgreSQL database::
 
     sudo apt-get install postgresql postgresql-server-dev-9.1
-    sudo -u postgres createuser -SDRP nailgun (enter password nailgun)
+    sudo -u postgres createuser -SDRP nailgun (enter password "nailgun")
     sudo -u postgres createdb nailgun
+
+#. Install pip and development tools::
+
+    sudo apt-get install python-dev python-pip
+
+#. Install virtualenv. That is optional step that increases flexibility
+   when dealing with environment settings and package installation::
+
+    sudo pip install virtualenv virtualenvwrapper
+    source /usr/local/bin/virtualenvwrapper.sh (you can save this to .bashrc)
+    mkvirtualenv fuel (you can use any name instead of 'fuel')
+    workon fuel (command selects the particular environment)
+
+#. Install Python dependencies. This section assumes that you use virtual environment.
+   Otherwise, you have to install all this stuff globally.
+   There is a file called "setup.py" which can be used to install all Python dependencies,
+   so you can install pip and then all of them at once::
+
+    pip install flake8 mock (only these should be installed separately)
+    pip install ./shotgun (this fuel project is listed in setup.py requirements)
+    cd nailgun
+    python setup.py develop
+    cd ..
 
 #. Create required folder for log files::
 

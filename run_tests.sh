@@ -139,9 +139,9 @@ function run_ui_tests {
     fi
     (
     cd nailgun
-    ui_tests_dir=ui_tests
+    ui_tests_dir=ui_tests/tests/modules
     if [ -z "$ui_test_files" ]; then
-        ui_test_files=$ui_tests_dir/test_*.js
+        ui_test_files=$ui_tests_dir/test_*.py
     fi
     result=0
 
@@ -157,7 +157,9 @@ function run_ui_tests {
     test_server_config=$compressed_static_dir/settings.yaml
     echo -e "DEVELOPMENT: 0\nSTATIC_DIR: '$compressed_static_dir'" > $compressed_static_dir/settings.yaml
     test_server_port=5544
+    test_runner_browser=firefox
     test_server_cmd="./manage.py run --port=$test_server_port --config=$test_server_config --fake-tasks --fake-tasks-tick-count=80 --fake-tasks-tick-interval=1"
+    test_runner_cmd="/usr/bin/env python ui_tests/runner.py -b$test_runner_browser -u localhost:$test_server_port"
     old_server_pid=`ps aux | grep "$test_server_cmd" | grep -v grep | awk '{ print $2 }'`
     if [ -n "$old_server_pid" ]; then
         kill $old_server_pid
@@ -187,7 +189,7 @@ function run_ui_tests {
         kill -0 $server_pid 2> /dev/null
         if [ $? -eq 0 ]; then
             echo "Test server started"
-            casperjs test --includes=$ui_tests_dir/helpers.js --fail-fast $test_file
+            $test_runner_cmd $test_file
             result=$(($result + $?))
             kill $server_pid
             wait $server_pid 2> /dev/null

@@ -3620,10 +3620,6 @@ hr.slim {
   display: block;
 }
 
-.cluster-toolbar-item .btn.conflict i {
-  display: inline;
-}
-
 .disk-map-full {
   clear: both;
   display: block;
@@ -4397,6 +4393,14 @@ input.input-append {
 
 .btn-configure-interfaces {
   margin-right: 30px;
+}
+
+.btn-group-congiration[data-invalid=true] i {
+    display: inline;
+}
+
+.btn-group-congiration[data-invalid=false] i {
+    display: none;
 }
 
 .cluster-name-box {

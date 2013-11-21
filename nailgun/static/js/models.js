@@ -151,6 +151,9 @@ define(['utils', 'deepModel'], function(utils) {
         toJSON: function(options) {
             var result = this.constructor.__super__.toJSON.call(this, options);
             return _.omit(result, 'checked');
+        },
+        isAvailable: function() {
+            return ((this.get('online') && this.get('status') != 'error') || this.get('cluster')) && !this.get('pending_deletion');
         }
     });
 

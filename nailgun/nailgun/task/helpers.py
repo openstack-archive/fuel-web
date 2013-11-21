@@ -121,7 +121,7 @@ class TaskHelper(object):
             logger.error("Can't set status='%s', message='%s':no task \
                     with UUID %s found!", status, msg, uuid)
             return
-        previous_status = task.status
+
         data = {'status': status, 'progress': progress,
                 'message': msg, 'result': result}
 
@@ -130,19 +130,13 @@ class TaskHelper(object):
                 setattr(task, key, value)
                 logger.info(
                     u"Task {0} ({1}) {2} is set to {3}".format(
-                        task.uuid,
-                        task.name,
-                        key,
-                        value
-                    )
-                )
-        db().add(task)
+                        task.uuid, task.name, key, value))
         db().commit()
 
-        if previous_status != status and task.cluster_id:
-            logger.debug("Updating cluster status: "
+        if task.cluster_id:
+            logger.debug("Updating cluster status: %s "
                          "cluster_id: %s status: %s",
-                         task.cluster_id, status)
+                         uuid, task.cluster_id, status)
             cls.update_cluster_status(uuid)
         if task.parent:
             logger.debug("Updating parent task: %s.", task.parent.uuid)

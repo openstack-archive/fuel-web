@@ -258,11 +258,11 @@ class TabbedListWalker(urwid.ListWalker):
         self.focus = focus
 
     def get_next(self, pos):
-        if pos+1 >= len(self.lst):
+        if (pos + 1) >= len(self.lst):
             return None, None
         return self.lst[pos + 1], pos + 1
 
     def get_prev(self, pos):
-        if pos-1 < 0:
+        if (pos - 1) < 0:
             return None, None
         return self.lst[pos - 1], pos - 1

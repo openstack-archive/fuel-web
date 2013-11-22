@@ -99,7 +99,8 @@ class Node(Base):
                               backref=backref("node"),
                               uselist=False)
     interfaces = relationship("NodeNICInterface", backref="node",
-                              cascade="delete")
+                              cascade="delete",
+                              order_by="NodeNICInterface.id")
 
     @property
     def offline(self):

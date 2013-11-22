@@ -44,7 +44,7 @@
             },
             "network": {
                 "fuelweb_admin": "Admin (PXE)",
-                "fixed": "VM Networks (Fixed)",
+                "fixed": "VM (Fixed)",
                 "public": "Public",
                 "floating": "Floating",
                 "management": "Management",

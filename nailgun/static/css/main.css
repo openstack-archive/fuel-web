@@ -3539,9 +3539,12 @@ hr.slim {
     cursor: default;
 }
 .logical-network-item > .name {
-  margin-top: 10px;
+  height: 18px;
+  margin: 10px 3px 0;
+  word-break: break-all;
   font-size: 14px;
   text-transform: capitalize;
+  overflow: hidden;
 }
 
 .logical-network-item > .id {

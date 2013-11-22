@@ -16,9 +16,9 @@
 
 import json
 
-from nailgun.api.models import AllowedNetworks
-from nailgun.api.models import Cluster
-from nailgun.api.models import NetworkAssignment
+from nailgun.db.sqlalchemy.models import AllowedNetworks
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkAssignment
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 

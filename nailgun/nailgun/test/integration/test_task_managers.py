@@ -21,12 +21,14 @@ import nailgun.rpc as rpc
 import time
 
 from mock import patch
-from nailgun.api.models import Cluster
-from nailgun.api.models import Node
-from nailgun.api.models import Notification
-from nailgun.api.models import Task
-from nailgun.errors import errors
+
 from nailgun.settings import settings
+
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Notification
+from nailgun.db.sqlalchemy.models import Task
+from nailgun.errors import errors
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.test.base import BaseIntegrationTest

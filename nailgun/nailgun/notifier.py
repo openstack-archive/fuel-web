@@ -16,9 +16,9 @@
 
 from datetime import datetime
 
-from nailgun.api.models import Notification
-from nailgun.api.models import Task
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Notification
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 

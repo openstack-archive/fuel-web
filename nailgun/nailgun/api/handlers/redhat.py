@@ -24,10 +24,10 @@ from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
-from nailgun.api.models import RedHatAccount
-from nailgun.api.models import Release
 from nailgun.api.validators.redhat import RedHatAccountValidator
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import RedHatAccount
+from nailgun.db.sqlalchemy.models import Release
 from nailgun.logger import logger
 from nailgun.task.manager import RedHatSetupTaskManager
 

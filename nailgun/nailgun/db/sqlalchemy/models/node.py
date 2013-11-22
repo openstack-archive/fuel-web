@@ -24,12 +24,12 @@ from sqlalchemy import String
 from sqlalchemy import Unicode
 from sqlalchemy.orm import relationship, backref
 
-from nailgun.api.models.base import Base
-from nailgun.api.models.fields import JSON
-from nailgun.api.models.fields import LowercaseString
-from nailgun.api.models.network import AllowedNetworks
-from nailgun.api.models.network import NetworkAssignment
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.fields import LowercaseString
+from nailgun.db.sqlalchemy.models.network import AllowedNetworks
+from nailgun.db.sqlalchemy.models.network import NetworkAssignment
 from nailgun.logger import logger
 from nailgun.volumes.manager import VolumeManager
 

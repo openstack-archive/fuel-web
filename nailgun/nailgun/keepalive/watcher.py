@@ -22,10 +22,11 @@ import threading
 import time
 import traceback
 
-from nailgun.api.models import Node
-from nailgun.db import db
-from nailgun.logger import logger
 from nailgun import notifier
+
+from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.logger import logger
 from nailgun.settings import settings
 
 

@@ -24,9 +24,9 @@ import web
 
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
-from nailgun.api.models import Release
 from nailgun.api.validators.release import ReleaseValidator
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Release
 
 
 class ReleaseHandler(JSONHandler):

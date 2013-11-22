@@ -26,8 +26,8 @@ import sys
 from sqlalchemy import orm
 import sqlalchemy.types
 
-from nailgun.api import models
 from nailgun.db import db as ormgen
+from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
@@ -171,8 +171,15 @@ def upload_fixtures():
     fns = []
     for path in settings.FIXTURES_TO_UPLOAD:
         if not os.path.isabs(path):
-            path = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                path))
+            path = os.path.abspath(
+                os.path.join(
+                    os.path.dirname(__file__),
+                    "..",
+                    "..",
+                    "fixtures",
+                    path
+                )
+            )
         fns.append(path)
 
     for fn in fns:

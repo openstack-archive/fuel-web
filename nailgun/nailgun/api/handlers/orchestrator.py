@@ -21,10 +21,11 @@ import web
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
-from nailgun.api.models import Cluster
-from nailgun.api.models import Node
 from nailgun.api.validators.node import NodesFilterValidator
+
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.logger import logger
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers

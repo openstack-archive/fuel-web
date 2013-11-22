@@ -16,8 +16,8 @@
 
 import time
 
-from nailgun.api.models import Cluster
-from nailgun.api.models import Task
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse

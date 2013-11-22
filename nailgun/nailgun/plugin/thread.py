@@ -19,8 +19,8 @@ import threading
 import time
 import traceback
 
-from nailgun.api.models import Task
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.logger import logger
 
 PLUGIN_PROCESSING_QUEUE = None

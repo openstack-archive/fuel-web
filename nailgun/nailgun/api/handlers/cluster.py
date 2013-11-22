@@ -25,10 +25,6 @@ import web
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
-from nailgun.api.models import Attributes
-from nailgun.api.models import Cluster
-from nailgun.api.models import Node
-from nailgun.api.models import Release
 from nailgun.api.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
 from nailgun.api.serializers.network_configuration \
@@ -36,6 +32,10 @@ from nailgun.api.serializers.network_configuration \
 from nailgun.api.validators.cluster import AttributesValidator
 from nailgun.api.validators.cluster import ClusterValidator
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Attributes
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.task.manager import ApplyChangesTaskManager

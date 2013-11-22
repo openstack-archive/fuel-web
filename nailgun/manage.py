@@ -102,7 +102,7 @@ if __name__ == "__main__":
     if params.action == "dumpdata":
         import logging
         logging.disable(logging.WARNING)
-        from nailgun.fixtures import fixman
+        from nailgun.db.sqlalchemy import fixman
         fixman.dump_fixture(params.model)
         sys.exit(0)
 
@@ -126,13 +126,13 @@ if __name__ == "__main__":
         logger.info("Done")
     elif params.action == "loaddata":
         logger.info("Uploading fixture...")
-        from nailgun.fixtures import fixman
+        from nailgun.db.sqlalchemy import fixman
         with open(params.fixture, "r") as fileobj:
             fixman.upload_fixture(fileobj)
         logger.info("Done")
     elif params.action == "loaddefault":
         logger.info("Uploading fixture...")
-        from nailgun.fixtures import fixman
+        from nailgun.db.sqlalchemy import fixman
         fixman.upload_fixtures()
         logger.info("Done")
     elif params.action == "dump_settings":

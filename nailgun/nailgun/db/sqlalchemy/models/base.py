@@ -14,20 +14,29 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from datetime import datetime
+
 from sqlalchemy import Column
-from sqlalchemy import Enum
+from sqlalchemy import DateTime
 from sqlalchemy import Integer
-from sqlalchemy import String
 
-from nailgun.api.models.base import Base
+from sqlalchemy.ext.declarative import declarative_base
+
+from nailgun.db.sqlalchemy.models.fields import JSON
 
 
-class Plugin(Base):
-    __tablename__ = 'plugins'
-    TYPES = ('nailgun', 'fuel')
+Base = declarative_base()
+
+
+class GlobalParameters(Base):
+    __tablename__ = 'global_parameters'
+    id = Column(Integer, primary_key=True)
+    parameters = Column(JSON, default={})
+
+
+class CapacityLog(Base):
+    __tablename__ = 'capacity_log'
 
     id = Column(Integer, primary_key=True)
-    type = Column(Enum(*TYPES, name='plugin_type'), nullable=False)
-    name = Column(String(128), nullable=False, unique=True)
-    state = Column(String(128), nullable=False, default='registered')
-    version = Column(String(128), nullable=False)
+    report = Column(JSON)
+    datetime = Column(DateTime, default=datetime.now())

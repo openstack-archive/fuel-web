@@ -17,8 +17,8 @@
 import json
 import uuid
 
-from nailgun.api.models import Notification
-from nailgun.api.models import Task
+from nailgun.db.sqlalchemy.models import Notification
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun import notifier
 from nailgun.rpc import receiver as rcvr

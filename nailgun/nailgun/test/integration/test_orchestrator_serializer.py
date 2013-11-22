@@ -16,12 +16,12 @@
 
 import json
 
-from nailgun.api.models import Cluster
-from nailgun.api.models import IPAddrRange
-from nailgun.api.models import Network
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import IPAddrRange
+from nailgun.db.sqlalchemy.models import Network
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentHASerializer
 from nailgun.orchestrator.deployment_serializers \

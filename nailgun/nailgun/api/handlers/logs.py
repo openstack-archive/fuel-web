@@ -30,9 +30,9 @@ import web
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
-from nailgun.api.models import Node
-from nailgun.api.models import RedHatAccount
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 

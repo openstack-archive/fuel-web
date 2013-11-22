@@ -24,8 +24,8 @@ from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
-from nailgun.api.models import CapacityLog
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.task.manager import GenerateCapacityLogTaskManager
 
 """

@@ -23,15 +23,16 @@ import traceback
 
 from sqlalchemy import or_
 
-from nailgun.api.models import IPAddr
-from nailgun.api.models import Node
-from nailgun.api.models import Release
-from nailgun.api.models import Task
+from nailgun import notifier
+
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import IPAddr
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Release
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
-from nailgun import notifier
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 

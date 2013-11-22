@@ -16,11 +16,11 @@
 from netaddr import AddrFormatError
 from netaddr import IPNetwork
 
-from nailgun.api.models import Cluster
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
 from nailgun.api.validators.base import BasicValidator
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
 

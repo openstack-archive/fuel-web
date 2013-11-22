@@ -20,35 +20,40 @@ except ImportError:
     # Runing unit-tests in production environment
     from unittest2.case import TestCase
 
+import json
+import mock
+import os
+import re
+import time
+
 from datetime import datetime
 from functools import partial
 from itertools import izip
-import json
-import mock
 from netaddr import IPNetwork
-import os
 from random import randint
-import re
-import time
 
 from paste.fixture import TestApp
 
 import nailgun
-from nailgun.api.models import Cluster
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
-from nailgun.api.models import NodeAttributes
-from nailgun.api.models import NodeNICInterface
-from nailgun.api.models import Notification
-from nailgun.api.models import RedHatAccount
-from nailgun.api.models import Release
-from nailgun.api.models import Task
 from nailgun.api.urls.v1 import urls
+
 from nailgun.db import db
 from nailgun.db import flush
 from nailgun.db import syncdb
-from nailgun.fixtures.fixman import upload_fixture
+
 from nailgun.logger import logger
+
+from nailgun.db.sqlalchemy.fixman import upload_fixture
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeAttributes
+from nailgun.db.sqlalchemy.models import NodeNICInterface
+from nailgun.db.sqlalchemy.models import Notification
+from nailgun.db.sqlalchemy.models import RedHatAccount
+from nailgun.db.sqlalchemy.models import Release
+from nailgun.db.sqlalchemy.models import Task
+
 from nailgun.network.manager import NetworkManager
 from nailgun.wsgi import build_app
 

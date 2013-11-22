@@ -25,9 +25,9 @@ from mock import patch
 
 import nailgun
 from nailgun.api.handlers.logs import read_backwards
-from nailgun.api.models import RedHatAccount
-from nailgun.api.models import Role
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import RedHatAccount
+from nailgun.db.sqlalchemy.models import Role
 from nailgun.errors import errors
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager

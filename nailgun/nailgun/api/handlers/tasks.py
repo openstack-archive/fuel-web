@@ -18,8 +18,8 @@ import web
 
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
-from nailgun.api.models import Task
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Task
 
 """
 Handlers dealing with tasks

@@ -30,16 +30,16 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 
 
-from nailgun.api.models import Cluster
-from nailgun.api.models import IPAddr
-from nailgun.api.models import IPAddrRange
-from nailgun.api.models import Network
-from nailgun.api.models import NetworkAssignment
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
-from nailgun.api.models import NodeNICInterface
-from nailgun.api.models import Vlan
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import IPAddr
+from nailgun.db.sqlalchemy.models import IPAddrRange
+from nailgun.db.sqlalchemy.models import Network
+from nailgun.db.sqlalchemy.models import NetworkAssignment
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeNICInterface
+from nailgun.db.sqlalchemy.models import Vlan
 from nailgun.errors import errors
 from nailgun.logger import logger
 

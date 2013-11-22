@@ -26,8 +26,8 @@ import sys
 from sqlalchemy import orm
 import sqlalchemy.types
 
-from nailgun.api import models
 from nailgun.db import db as ormgen
+from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings

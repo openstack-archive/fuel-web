@@ -28,14 +28,14 @@ import web
 
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
-from nailgun.api.models import Cluster
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
-from nailgun.api.models import NodeAttributes
-from nailgun.api.models import NodeNICInterface
 from nailgun.api.validators.network import NetAssignmentValidator
 from nailgun.api.validators.node import NodeValidator
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeAttributes
+from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.network.neutron import NeutronManager

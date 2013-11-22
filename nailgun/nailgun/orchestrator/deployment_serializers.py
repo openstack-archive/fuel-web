@@ -20,9 +20,9 @@ from netaddr import IPNetwork
 from sqlalchemy import and_
 from sqlalchemy import or_
 
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager

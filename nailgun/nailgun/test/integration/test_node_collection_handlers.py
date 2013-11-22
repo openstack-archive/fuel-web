@@ -16,8 +16,8 @@
 
 import json
 
-from nailgun.api.models import Node
-from nailgun.api.models import Notification
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Notification
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 

@@ -18,15 +18,15 @@ import json
 from mock import patch
 import uuid
 
-from nailgun.api.models import Attributes
-from nailgun.api.models import Cluster
-from nailgun.api.models import IPAddr
-from nailgun.api.models import Network
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
-from nailgun.api.models import Notification
-from nailgun.api.models import Task
-from nailgun.api.models import Vlan
+from nailgun.db.sqlalchemy.models import Attributes
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import IPAddr
+from nailgun.db.sqlalchemy.models import Network
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Notification
+from nailgun.db.sqlalchemy.models import Task
+from nailgun.db.sqlalchemy.models import Vlan
 from nailgun.rpc import receiver as rcvr
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse

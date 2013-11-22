@@ -22,10 +22,10 @@ from mock import patch
 from nailgun.settings import settings
 
 import nailgun
-from nailgun.api.models import Cluster
-from nailgun.api.models import Node
-from nailgun.api.models import Notification
-from nailgun.api.models import Task
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Notification
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 import nailgun.rpc as rpc
 from nailgun.task.manager import DeploymentTaskManager

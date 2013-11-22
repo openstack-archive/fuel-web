@@ -15,9 +15,9 @@
 #    under the License.
 
 
-from nailgun.api.models import Cluster
-from nailgun.api.models import Node
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.orchestrator.provisioning_serializers import serialize
 from nailgun.test.base import BaseIntegrationTest
 

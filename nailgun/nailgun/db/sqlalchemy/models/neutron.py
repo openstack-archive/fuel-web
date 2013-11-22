@@ -19,11 +19,11 @@ from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 
-from nailgun.api.models.base import Base
-from nailgun.api.models.fields import JSON
-from nailgun.api.models.network import NetworkConfiguration
-from nailgun.api.models.network import NetworkGroup
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.network import NetworkConfiguration
+from nailgun.db.sqlalchemy.models.network import NetworkGroup
 
 
 class NeutronNetworkConfiguration(NetworkConfiguration):

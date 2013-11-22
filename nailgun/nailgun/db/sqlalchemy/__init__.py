@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
+
 import contextlib
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine
@@ -62,7 +64,7 @@ def load_db_driver(handler):
 
 
 def syncdb():
-    from nailgun.api.models.base import Base
+    from nailgun.db.sqlalchemy.models.base import Base
     Base.metadata.create_all(engine)
 
 
@@ -94,7 +96,7 @@ def dropdb():
 def flush():
     """Delete all data from all tables within nailgun metadata
     """
-    from nailgun.api.models.base import Base
+    from nailgun.db.sqlalchemy.models.base import Base
     with contextlib.closing(engine.connect()) as con:
         trans = con.begin()
         for table in reversed(Base.metadata.sorted_tables):

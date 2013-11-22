@@ -24,18 +24,19 @@ from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import object_mapper
 
-from nailgun.api.models import CapacityLog
-from nailgun.api.models import Cluster
-from nailgun.api.models import Node
-from nailgun.api.models import RedHatAccount
-from nailgun.api.models import Release
+import nailgun.rpc as rpc
+
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import CapacityLog
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import RedHatAccount
+from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
-import nailgun.rpc as rpc
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper

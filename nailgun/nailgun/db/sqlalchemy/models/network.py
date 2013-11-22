@@ -22,8 +22,8 @@ from sqlalchemy import String
 from sqlalchemy import Unicode
 from sqlalchemy.orm import relationship, backref
 
-from nailgun.api.models.base import Base
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models.base import Base
 
 
 class IPAddr(Base):

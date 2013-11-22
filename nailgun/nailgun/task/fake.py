@@ -24,11 +24,12 @@ from kombu import Connection
 from kombu import Exchange
 from kombu import Queue
 
-from nailgun.api.models import Node
-from nailgun.api.models import NodeAttributes
-from nailgun.db import db
-from nailgun.network.manager import NetworkManager
 from nailgun import notifier
+
+from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeAttributes
+from nailgun.network.manager import NetworkManager
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.settings import settings
 

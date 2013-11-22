@@ -28,13 +28,13 @@ from sqlalchemy.orm import joinedload
 
 import nailgun
 
-from nailgun.api.models import IPAddr
-from nailgun.api.models import IPAddrRange
-from nailgun.api.models import Network
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
-from nailgun.api.models import NodeNICInterface
-from nailgun.api.models import Vlan
+from nailgun.db.sqlalchemy.models import IPAddr
+from nailgun.db.sqlalchemy.models import IPAddrRange
+from nailgun.db.sqlalchemy.models import Network
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeNICInterface
+from nailgun.db.sqlalchemy.models import Vlan
 from nailgun.network.manager import NetworkManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks

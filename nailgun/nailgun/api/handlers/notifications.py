@@ -22,9 +22,9 @@ import web
 
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
-from nailgun.api.models import Notification
 from nailgun.api.validators.notification import NotificationValidator
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Notification
 from nailgun.settings import settings
 
 

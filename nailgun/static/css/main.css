@@ -3590,9 +3590,11 @@ hr.slim {
     cursor: default;
 }
 .logical-network-item > .name {
+  height: 18px;
   margin-top: 10px;
   font-size: 14px;
   text-transform: capitalize;
+  overflow: hidden;
 }
 
 .logical-network-item > .id {

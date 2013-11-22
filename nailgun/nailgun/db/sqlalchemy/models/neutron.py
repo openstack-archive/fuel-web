@@ -19,8 +19,8 @@ from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 
-from nailgun.api.models.base import Base
-from nailgun.api.models.fields import JSON
+from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.fields import JSON
 
 
 class NeutronConfig(Base):

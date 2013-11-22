@@ -21,7 +21,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import Text
 
-from nailgun.api.models.base import Base
+from nailgun.db.sqlalchemy.models.base import Base
 
 
 class Notification(Base):

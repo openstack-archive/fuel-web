@@ -18,9 +18,9 @@ import json
 from mock import patch
 
 import nailgun
-from nailgun.api.models import Cluster
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse

@@ -25,9 +25,9 @@ from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy.orm import relationship, backref
 
-from nailgun.api.models.base import Base
-from nailgun.api.models.fields import JSON
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.fields import JSON
 
 
 class Task(Base):

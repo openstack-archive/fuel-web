@@ -15,7 +15,7 @@
 #    under the License.
 
 
-from nailgun.api.models import Cluster
+from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentHASerializer
 from nailgun.task.helpers import TaskHelper

@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.models import Plugin
-from nailgun.api.models import Task
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Plugin
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.plugin.fsm import PluginFSM
 from nailgun.plugin.thread import get_queue

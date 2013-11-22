@@ -18,12 +18,12 @@ from netaddr import IPNetwork
 from netaddr import IPRange
 from netaddr import IPSet
 
-from nailgun.api.models import Cluster
-from nailgun.api.models import GlobalParameters
-from nailgun.api.models import IPAddrRange
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import NeutronConfig
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import GlobalParameters
+from nailgun.db.sqlalchemy.models import IPAddrRange
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager

@@ -16,7 +16,7 @@
 
 import re
 
-from nailgun.api.models import Notification
+from nailgun.db.sqlalchemy.models import Notification
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 

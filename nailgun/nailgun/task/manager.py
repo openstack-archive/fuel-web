@@ -16,14 +16,14 @@
 
 import traceback
 
-from nailgun.api.models import Cluster
-from nailgun.api.models import RedHatAccount
-from nailgun.api.models import Task
 from nailgun.api.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
 from nailgun.api.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import RedHatAccount
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 import nailgun.rpc as rpc

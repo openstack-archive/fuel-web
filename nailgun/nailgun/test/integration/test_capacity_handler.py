@@ -18,7 +18,7 @@ import json
 from mock import patch
 from StringIO import StringIO
 
-from nailgun.api.models import Task
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse

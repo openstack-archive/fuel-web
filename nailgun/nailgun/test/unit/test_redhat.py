@@ -19,8 +19,8 @@ from mock import patch
 
 import nailgun
 from nailgun.api.handlers.redhat import RedHatSetupHandler
-from nailgun.api.models import RedHatAccount
-from nailgun.api.models import Task
+from nailgun.db.sqlalchemy.models import RedHatAccount
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.task.manager import RedHatSetupTaskManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks

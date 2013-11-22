@@ -14,29 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from datetime import datetime
-
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import Integer
-
-from sqlalchemy.ext.declarative import declarative_base
-
-from nailgun.api.models.fields import JSON
-
-
-Base = declarative_base()
-
-
-class GlobalParameters(Base):
-    __tablename__ = 'global_parameters'
-    id = Column(Integer, primary_key=True)
-    parameters = Column(JSON, default={})
-
-
-class CapacityLog(Base):
-    __tablename__ = 'capacity_log'
-
-    id = Column(Integer, primary_key=True)
-    report = Column(JSON)
-    datetime = Column(DateTime, default=datetime.now())
+from nailgun.db.sqlalchemy import db
+from nailgun.db.sqlalchemy import dropdb
+from nailgun.db.sqlalchemy import engine
+from nailgun.db.sqlalchemy import flush
+from nailgun.db.sqlalchemy import load_db_driver
+from nailgun.db.sqlalchemy import NoCacheQuery
+from nailgun.db.sqlalchemy import syncdb

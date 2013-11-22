@@ -15,8 +15,8 @@
 #    under the License.
 
 from fysom import Fysom
-from nailgun.api.models import Plugin
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Plugin
 from nailgun.fsm.state_list import StateList
 from nailgun.logger import logger
 import re

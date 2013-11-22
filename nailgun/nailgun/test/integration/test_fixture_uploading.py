@@ -16,9 +16,9 @@
 
 import cStringIO
 
-from nailgun.api.models import Node
-from nailgun.api.models import Release
-from nailgun.fixtures.fixman import upload_fixture
+from nailgun.db.sqlalchemy.fixman import upload_fixture
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Release
 from nailgun.test.base import BaseIntegrationTest
 
 

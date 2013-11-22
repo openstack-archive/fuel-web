@@ -15,7 +15,7 @@
 #    under the License.
 
 
-from nailgun.api.models import Task
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.plugin.thread import get_queue
 from nailgun.plugin.thread import PluginThread
 from nailgun.test.base import BaseIntegrationTest

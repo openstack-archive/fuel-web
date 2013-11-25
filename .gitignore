@@ -21,6 +21,10 @@ nosetests.xml
 nailgun.log
 lock
 
+node_modules
+
+nailgun/static/css/less.css
+
 .idea
 .DS_Store
 

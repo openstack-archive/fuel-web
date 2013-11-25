@@ -56,7 +56,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     var options = {type: 'local', source: 'api', level: 'error'};
                     logsLink = '#cluster/' + app.page.model.id + '/logs/' + utils.serializeTabOptions(options);
                 }
-            } catch(e) {}
+            } catch (ignore) {}
             this.$('.modal-body').removeClass().addClass('modal-body');
             this.$('.modal-body').html(views.Dialog.prototype.errorMessageTemplate({logsLink: logsLink}));
         },
@@ -349,7 +349,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var description = '';
             try {
                 description = release.get('modes_metadata')[mode].description;
-            } catch(e) {}
+            } catch (ignore) {}
             this.$('.mode-description').text(description);
         },
         beforeClusterCreation: function(cluster) {
@@ -370,7 +370,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         beforeSettingsSaving: function(settings) {
             try {
                 settings.get('editable').common.libvirt_type.value = this.$('input[name=hypervisor]:checked').val();
-            } catch(e) {
+            } catch (e) {
                 return (new $.Deferred()).reject();
             }
             return (new $.Deferred()).resolve();
@@ -429,7 +429,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         storageSettings.images_ceph.value = true;
                     }
                 }
-            } catch(e) {
+            } catch (e) {
                 return (new $.Deferred()).reject();
             }
             return (new $.Deferred()).resolve();
@@ -458,7 +458,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     additionalServices.murano.value = this.$('input[name=murano]').is(':checked');
                     additionalServices.heat.value = this.$('input[name=murano]').is(':checked');
                 }
-            } catch(e) {
+            } catch (e) {
                 return (new $.Deferred()).reject();
             }
             return (new $.Deferred()).resolve();
@@ -638,7 +638,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     } else if (name == 'max_speed' || name == 'current_speed') {
                         value = utils.showBandwidth(value);
                     }
-                } catch (e) {}
+                } catch (ignore) {}
                 return value;
             },
             showSummary: function(meta, group) {
@@ -665,7 +665,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         var bandwidths = _.groupBy(_.pluck(meta.interfaces, 'current_speed'), utils.showBandwidth);
                         summary = _.map(_.keys(bandwidths).sort(), function(bandwidth) {return bandwidths[bandwidth].length + ' x ' + bandwidth;}).join(', ');
                     }
-                } catch (e) {}
+                } catch (ignore) {}
                 return summary;
             },
             sortEntryProperties: function(entry) {
@@ -767,7 +767,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
                     });
                 };
-                var deferred = this.nodes.sync('update', this.nodes)
+                this.nodes.sync('update', this.nodes)
                     .done(_.bind(function() {
                         this.$el.modal('hide');
                         app.page.tab.model.fetch();

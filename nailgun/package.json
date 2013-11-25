@@ -1,0 +1,18 @@
+{
+  "name": "fuel-web",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stackforge/fuel-web.git"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.2",
+    "jslint": "~0.2.5",
+    "requirejs": "~2.1.9",
+    "uglifyjs": "~2.3.6",
+    "less": "~1.5.1",
+    "grunt-jslint": "~1.1.1",
+    "grunt-contrib-requirejs": "~0.4.1",
+    "grunt-contrib-less": "~0.8.2"
+  }
+}

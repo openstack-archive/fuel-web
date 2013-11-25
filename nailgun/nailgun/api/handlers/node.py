@@ -379,12 +379,11 @@ class NodeCollectionHandler(JSONHandler):
 
             for key, value in nd.iteritems():
                 if is_agent and (key, value) == ("status", "discover") \
-                        and node.status == "provisioning":
-                    # We don't update provisioning back to discover
+                        and node.status in ('provisioning', 'error'):
+                    # We don't update provisioning and error back to discover
                     logger.debug(
-                        "Node is already provisioning - "
-                        "status not updated by agent"
-                    )
+                        "Node has provisioning or error status - "
+                        "status not updated by agent")
                     continue
                 if key == "meta":
                     node.update_meta(value)

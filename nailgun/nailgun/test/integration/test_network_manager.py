@@ -36,6 +36,8 @@ from nailgun.api.models import Node
 from nailgun.api.models import NodeNICInterface
 from nailgun.api.models import Vlan
 from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
+from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -133,56 +135,6 @@ class TestNetworkManager(BaseIntegrationTest):
             ),
             1
         )
-
-    def test_get_default_nic_networkgroups(self):
-        cluster = self.env.create_cluster(api=True)
-        node = self.env.create_node(api=True)
-        node_db = self.env.nodes[0]
-
-        admin_nic = node_db.admin_interface
-        other_iface = self.db.query(NodeNICInterface).filter_by(
-            node_id=node['id']
-        ).filter(
-            not_(NodeNICInterface.id == admin_nic.id)
-        ).first()
-
-        interfaces = deepcopy(node_db.meta['interfaces'])
-
-        # allocate ip from admin subnet
-        admin_ip = str(IPNetwork(NetworkManager().get_admin_network().cidr)[0])
-        for interface in interfaces:
-            if interface['mac'] == admin_nic.mac:
-                # reset admin ip for previous admin interface
-                interface['ip'] = None
-            elif interface['mac'] == other_iface.mac:
-                # set new admin interface
-                interface['ip'] = admin_ip
-
-        node_db.meta['interfaces'] = interfaces
-
-        self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{
-                'mac': admin_nic.mac,
-                'meta': node_db.meta,
-                'is_agent': True,
-                'cluster_id': cluster["id"]
-            }]),
-            headers=self.default_headers,
-            expect_errors=True
-        )
-
-        new_main_nic_id = node_db.admin_interface.id
-        self.assertEquals(new_main_nic_id, other_iface.id)
-        self.assertEquals(
-            other_iface.assigned_networks,
-            self.env.network_manager.get_default_nic_networkgroups(
-                node_db, other_iface))
-        self.assertEquals(
-            self.db.query(
-                NodeNICInterface).get(admin_nic.id).assigned_networks,
-            self.env.network_manager.get_default_nic_networkgroups(
-                node_db, admin_nic))
 
     def test_assign_vip_is_idempotent(self):
         cluster = self.env.create_cluster(api=True)
@@ -495,3 +447,118 @@ class TestNetworkManager(BaseIntegrationTest):
             ),
             itertools.product((0, 1), ('eth0', 'eth1'))
         )
+
+
+class TestNovaNetworkManager(BaseIntegrationTest):
+
+    def test_get_default_nic_networkgroups(self):
+        cluster = self.env.create_cluster(api=True)
+        node = self.env.create_node(api=True)
+        node_db = self.env.nodes[0]
+
+        admin_nic = node_db.admin_interface
+        other_iface = self.db.query(NodeNICInterface).filter_by(
+            node_id=node['id']
+        ).filter(
+            not_(NodeNICInterface.id == admin_nic.id)
+        ).first()
+
+        interfaces = deepcopy(node_db.meta['interfaces'])
+
+        # allocate ip from admin subnet
+        admin_ip = str(IPNetwork(NetworkManager.get_admin_network().cidr)[0])
+        for interface in interfaces:
+            if interface['mac'] == admin_nic.mac:
+                # reset admin ip for previous admin interface
+                interface['ip'] = None
+            elif interface['mac'] == other_iface.mac:
+                # set new admin interface
+                interface['ip'] = admin_ip
+
+        node_db.meta['interfaces'] = interfaces
+
+        self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{
+                        'mac': admin_nic.mac,
+                        'meta': node_db.meta,
+                        'is_agent': True,
+                        'cluster_id': cluster["id"]
+                        }]),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        new_main_nic_id = node_db.admin_interface.id
+        self.assertEquals(new_main_nic_id, other_iface.id)
+        self.assertEquals(
+            other_iface.assigned_networks,
+            NovaNetworkManager.get_default_nic_networkgroups(
+                node_db, other_iface))
+        self.assertEquals(
+            self.db.query(
+                NodeNICInterface).get(admin_nic.id).assigned_networks,
+            NovaNetworkManager.get_default_nic_networkgroups(
+                node_db, admin_nic))
+
+
+class TestNeutronManager(BaseIntegrationTest):
+
+    def test_get_default_nic_networkgroups(self):
+        cluster = self.env.create_cluster(api=True,
+                                          net_provider='neutron',
+                                          net_segment_type='gre')
+        node = self.env.create_node(api=True)
+        node_db = self.env.nodes[0]
+
+        admin_nic = node_db.admin_interface
+        other_iface = self.db.query(NodeNICInterface).filter_by(
+            node_id=node['id']
+        ).filter(
+            not_(NodeNICInterface.id == admin_nic.id)
+        ).first()
+
+        interfaces = deepcopy(node_db.meta['interfaces'])
+
+        # allocate ip from admin subnet
+        admin_ip = str(IPNetwork(NetworkManager.get_admin_network().cidr)[0])
+        for interface in interfaces:
+            if interface['mac'] == admin_nic.mac:
+                # reset admin ip for previous admin interface
+                interface['ip'] = None
+            elif interface['mac'] == other_iface.mac:
+                # set new admin interface
+                interface['ip'] = admin_ip
+
+        node_db.meta['interfaces'] = interfaces
+
+        self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{
+                        'mac': admin_nic.mac,
+                        'meta': node_db.meta,
+                        'is_agent': True,
+                        'cluster_id': cluster["id"]
+                        }]),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        new_main_nic_id = node_db.admin_interface.id
+        admin_nets = [n.name for n in self.db.query(
+            NodeNICInterface).get(new_main_nic_id).assigned_networks]
+        other_nets = [n.name for n in other_iface.assigned_networks]
+
+        nics = NeutronManager.get_default_networks_assignment(node_db)
+        def_admin_nic = [n for n in nics if n['id'] == new_main_nic_id]
+        def_other_nic = [n for n in nics if n['id'] == other_iface.id]
+
+        self.assertEquals(len(def_admin_nic), 1)
+        self.assertEquals(len(def_other_nic), 1)
+        self.assertEquals(new_main_nic_id, other_iface.id)
+        self.assertEquals(
+            set(admin_nets),
+            set([n['name'] for n in def_admin_nic[0]['assigned_networks']]))
+        self.assertEquals(
+            set(other_nets),
+            set([n['name'] for n in def_other_nic[0]['assigned_networks']]))

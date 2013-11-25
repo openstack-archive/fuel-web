@@ -23,7 +23,6 @@ from nailgun.api.validators.base import BasicValidator
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
-from nailgun.network.neutron import NeutronManager
 
 
 class NovaNetworkConfigurationValidator(BasicValidator):
@@ -216,12 +215,7 @@ class NetAssignmentValidator(BasicValidator):
             )
         network_group_ids = set([ng.id for ng in db_network_groups])
 
-        if db_node.cluster and db_node.cluster.net_provider == 'neutron':
-            net_manager = NeutronManager()
-        else:
-            net_manager = NetworkManager()
-
-        admin_ng_id = net_manager.get_admin_network_group_id()
+        admin_ng_id = NetworkManager.get_admin_network_group_id()
 
         for iface in interfaces:
             db_iface = filter(

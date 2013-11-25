@@ -23,24 +23,7 @@ from nailgun.test.base import BaseIntegrationTest
 
 class TestHandlers(BaseIntegrationTest):
     def test_ip_range_intersection(self):
-        nm = NetworkManager()
-        self.assertEqual(nm.is_range_in_cidr(
-            IPRange('192.168.0.0', '192.168.255.255'),
-            IPNetwork('192.168.1.0/24')
-        ), True)
-        self.assertEqual(nm.is_range_in_cidr(
-            IPRange('164.174.47.1', '191.0.0.0'),
-            IPNetwork('192.168.1.0/24')
-        ), False)
-        self.assertEqual(nm.is_range_in_cidr(
-            IPRange('192.168.0.0', '192.168.255.255'),
-            IPRange('164.174.47.1', '191.0.0.0')
-        ), False)
-        self.assertEqual(nm.is_range_in_cidr(
-            IPNetwork('192.168.1.0/8'),
-            IPNetwork('192.168.1.0/24')
-        ), True)
-
+        nm = NetworkManager
         self.assertEqual(nm.is_range_intersection(
             IPRange('192.168.0.0', '192.168.255.255'),
             IPNetwork('192.168.1.0/24')

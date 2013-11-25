@@ -73,7 +73,7 @@ class Environment(object):
         self.releases = []
         self.clusters = []
         self.nodes = []
-        self.network_manager = NetworkManager()
+        self.network_manager = NetworkManager
 
     def create(self, **kwargs):
         cluster = self.create_cluster(

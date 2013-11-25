@@ -68,7 +68,7 @@ class Loader(object):
         return (self.modlist, self.choices)
 
 
-version = "3.2"
+version = "3.2.1"
 
 
 class FuelSetup(object):

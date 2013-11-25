@@ -498,12 +498,20 @@ class TestNeutronHandlersVlan(BaseIntegrationTest):
     def test_network_checking_failed_if_private_paired_w_other_network(self):
         resp = self.env.node_nics_get(self.env.nodes[0].id)
         ifaces = json.loads(resp.body)
-        priv_net = ifaces[1]["assigned_networks"][0]
+        priv_nic = [nic for nic in ifaces
+                    if len(nic["assigned_networks"]) == 1 and
+                    nic["assigned_networks"][0]["name"] == "private"]
+        self.assertIsNotNone(priv_nic)
         # only 'private' should be here in default configuration
-        self.assertEquals(priv_net["name"], "private")
+        priv_net = priv_nic[0]["assigned_networks"][0]
+        others_nic = [nic for nic in ifaces
+                      if len(nic["assigned_networks"]) > 1]
+        # all networks except 'admin' and 'private' should be here
+        # in default configuration
+        self.assertIsNotNone(others_nic)
 
-        ifaces[1]["assigned_networks"].remove(priv_net)
-        ifaces[2]["assigned_networks"].append(priv_net)
+        priv_nic[0]["assigned_networks"].remove(priv_net)
+        others_nic[0]["assigned_networks"].append(priv_net)
 
         self.env.node_collection_nics_put(
             self.env.nodes[0].id,

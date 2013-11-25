@@ -83,7 +83,7 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                         app.page.tab.routeScreen(tabOptions);
                         return;
                     }
-                } catch(e) {}
+                } catch (ignore) {}
             }
 
             var cluster, tasks;

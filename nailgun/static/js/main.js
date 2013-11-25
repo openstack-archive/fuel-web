@@ -13,7 +13,6 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-'use strict';
 requirejs.config({
     baseUrl: 'static',
     urlArgs: '_=' +  (new Date()).getTime(),
@@ -63,6 +62,7 @@ requirejs.config({
         i18next: {
             deps: ['text!i18n/translation.json', 'jquery'],
             init: function(translation, $) {
+                'use strict';
                 $.i18n.init({resStore: JSON.parse(translation)});
             }
         },
@@ -85,5 +85,6 @@ require([
     'jquery', 'underscore', 'backbone', 'stickit', 'deepModel', 'coccyx', 'i18next', 'bootstrap', 'retina', 'jquery-checkbox', 'jquery-timeout', 'jquery-ui', 'jquery-autoNumeric',
     'app'
 ], function() {
+    'use strict';
     require('app').initialize();
 });

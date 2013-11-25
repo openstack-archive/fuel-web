@@ -17,7 +17,6 @@ define(['utils', 'deepModel'], function(utils) {
     'use strict';
 
     var models = {};
-    var collections = {};
 
     models.Release = Backbone.Model.extend({
         constructorName: 'Release',
@@ -133,7 +132,7 @@ define(['utils', 'deepModel'], function(utils) {
                 } else if (resourceName == 'interfaces') {
                     resource = this.get('meta').interfaces.length;
                 }
-            } catch (e) {}
+            } catch (ignore) {}
             if (_.isNaN(resource)) {
                 resource = 0;
             }
@@ -203,7 +202,7 @@ define(['utils', 'deepModel'], function(utils) {
             var id;
             try {
                 id = this.get('result').release_info.release_id;
-            } catch(e) {}
+            } catch (ignore) {}
             return id;
         }
     });

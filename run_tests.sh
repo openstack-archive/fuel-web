@@ -71,7 +71,6 @@ fi
 function clean {
   echo "cleaning *.pyc, *.json, *.log, *.pid files"
   find . -type f -name "*.pyc" -delete
-  rm -f *.json
   rm -f *.log
   rm -f *.pid
 }
@@ -107,20 +106,10 @@ if [ $just_flake8 -eq 1 ]; then
 fi
 
 function run_jslint {
-    which jslint > /dev/null
-    if [ $? -ne 0 ]; then
-        echo "JSLint is not installed; install by running:"
-        echo "sudo apt-get install npm"
-        echo "sudo npm install -g jslint"
-        return 1
-    fi
     (
     cd nailgun
-    jsfiles=$(find static/js -type f | grep -v ^static/js/libs/ | grep \\.js$)
-    jslint_predef=(requirejs require define app Backbone $ _ alert confirm)
-    jslint_options="$(echo ${jslint_predef[@]} | sed 's/^\| / --predef=/g') --browser=true --nomen=true --eqeq=true --vars=true --white=true --es5=false"
-    jslint $jslint_options $jsfiles
-    ) || return 1
+    grunt jslint
+    )
 }
 
 if [ $just_jslint -eq 1 ]; then
@@ -151,7 +140,7 @@ function run_ui_tests {
     echo -n "Compressing UI... "
     compressed_static_dir=/tmp/static_compressed
     rm -rf $compressed_static_dir && mkdir -p $compressed_static_dir
-    r.js -o build.js dir=$compressed_static_dir > /dev/null
+    grunt build --static-dir=$compressed_static_dir > /dev/null
     if [ $? -ne 0 ]; then
         echo "Failed!"
         exit 1

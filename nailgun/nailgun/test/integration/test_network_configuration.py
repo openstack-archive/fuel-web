@@ -462,7 +462,7 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
         super(TestNovaNetworkConfigurationHandlerHA, self).setUp()
         cluster = self.env.create_cluster(api=True, mode='ha_compact')
         self.cluster = self.db.query(Cluster).get(cluster['id'])
-        self.net_manager = NetworkManager()
+        self.net_manager = NetworkManager
 
     def test_returns_management_vip_and_public_vip(self):
         resp = json.loads(self.env.nova_networks_get(self.cluster.id).body)

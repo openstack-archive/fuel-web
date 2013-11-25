@@ -217,7 +217,7 @@ class Cluster(Base):
         TaskHelper.update_slave_nodes_fqdn(nodes)
 
         nodes_ids = [n.id for n in nodes]
-        netmanager = NetworkManager()
+        netmanager = NetworkManager
         if nodes_ids:
             netmanager.assign_ips(nodes_ids, 'management')
             netmanager.assign_ips(nodes_ids, 'public')
@@ -231,11 +231,10 @@ class Cluster(Base):
         from nailgun.network.manager import NetworkManager
         from nailgun.task.helpers import TaskHelper
 
-        netmanager = NetworkManager()
         nodes = TaskHelper.nodes_to_provision(self)
         TaskHelper.update_slave_nodes_fqdn(nodes)
         for node in nodes:
-            netmanager.assign_admin_ips(
+            NetworkManager.assign_admin_ips(
                 node.id, len(node.meta.get('interfaces', [])))
 
     @property
@@ -244,8 +243,8 @@ class Cluster(Base):
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:
-            from nailgun.network.manager import NetworkManager
-            return NetworkManager
+            from nailgun.network.nova_network import NovaNetworkManager
+            return NovaNetworkManager
 
 
 class AttributesGenerators(object):

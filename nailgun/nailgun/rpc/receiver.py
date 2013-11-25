@@ -115,7 +115,6 @@ class NailgunReceiver(object):
 
     @classmethod
     def remove_cluster_resp(cls, **kwargs):
-        network_manager = NetworkManager()
         logger.info(
             "RPC method remove_cluster_resp received: %s" %
             json.dumps(kwargs)
@@ -144,7 +143,7 @@ class NailgunReceiver(object):
             db().commit()
 
             # Dmitry's hack for clearing VLANs without networks
-            network_manager.clear_vlans()
+            NetworkManager.clear_vlans()
 
             notifier.notify(
                 "done",
@@ -357,7 +356,6 @@ class NailgunReceiver(object):
 
     @classmethod
     def _success_action(cls, task, status, progress):
-        network_manager = NetworkManager()
         # check if all nodes are ready
         if any(map(lambda n: n.status == 'error',
                    task.cluster.nodes)):
@@ -378,7 +376,7 @@ class NailgunReceiver(object):
                 )
                 public_net = filter(
                     lambda n: n['name'] == 'public' and 'ip' in n,
-                    network_manager.get_node_networks(controller.id)
+                    NetworkManager.get_node_networks(controller.id)
                 )
                 if public_net:
                     horizon_ip = public_net[0]['ip'].split('/')[0]
@@ -411,13 +409,12 @@ class NailgunReceiver(object):
             # determining horizon url in HA mode - it's vip
             # from a public network saved in task cache
             try:
-                netmanager = NetworkManager()
                 message = (
                     u"Deployment of environment '{0}' is done. "
                     "Access the OpenStack dashboard (Horizon) at {1}"
                 ).format(
                     task.cluster.name,
-                    netmanager.get_horizon_url(task.cluster.id)
+                    NetworkManager.get_horizon_url(task.cluster.id)
                 )
             except Exception as exc:
                 logger.error(": ".join([

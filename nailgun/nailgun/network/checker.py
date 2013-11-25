@@ -44,7 +44,7 @@ class NetworkCheck(object):
         self.cluster = task.cluster
         self.task = task
         self.data = data
-        self.net_man = self.cluster.network_manager()
+        self.net_man = self.cluster.network_manager
         self.net_provider = self.cluster.net_provider
         admin_ng = self.net_man.get_admin_network_group()
         fields = NetworkGroup.__mapper__.columns.keys()

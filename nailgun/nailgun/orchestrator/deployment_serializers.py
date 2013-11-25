@@ -282,7 +282,7 @@ class DeploymentHASerializer(DeploymentMultiSerializer):
             cls
         ).get_common_attrs(cluster)
 
-        netmanager = cluster.network_manager()
+        netmanager = cluster.network_manager
         nw_metadata = cluster.release.networks_metadata[cluster.net_provider]
         for ng in nw_metadata["networks"]:
             if ng.get("assign_vip"):
@@ -439,7 +439,7 @@ class NetworkDeploymentSerializer(object):
     @staticmethod
     def get_admin_ip(node):
         """Getting admin ip and assign prefix from admin network."""
-        network_manager = NetworkManager()
+        network_manager = NetworkManager
         admin_ip = network_manager.get_admin_ips_for_interfaces(
             node)[node.admin_interface.name]
         admin_ip = IPNetwork(admin_ip)
@@ -496,7 +496,7 @@ class NovaNetworkDeploymentSerializer(object):
         """Assign fixed_interfaces and vlan_interface.
         They should be equal.
         """
-        fixed_interface = NetworkManager()._get_interface_by_network_name(
+        fixed_interface = NetworkManager._get_interface_by_network_name(
             node.id, 'fixed')
 
         attrs = {'fixed_interface': fixed_interface.name,
@@ -584,7 +584,7 @@ class NeutronNetworkDeploymentSerializer(object):
                  'quantum_settings': cls.neutron_attrs(cluster)}
 
         if cluster.mode == 'multinode':
-            nm = NeutronManager()
+            nm = NeutronManager
             for node in cluster.nodes:
                 if cls._node_has_role_by_name(node, 'controller'):
                     mgmt_cidr = nm.get_node_network_by_netname(
@@ -731,7 +731,7 @@ class NeutronNetworkDeploymentSerializer(object):
                 'name': iface.name
             })
 
-        nm = NetworkManager()
+        nm = NetworkManager
         # Populate IP address information to endpoints.
         netgroup_mapping = [
             ('storage', 'br-storage'),

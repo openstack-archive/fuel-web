@@ -122,7 +122,7 @@ class NetworkConfiguration(object):
     @classmethod
     def update(cls, cluster, network_configuration):
         from nailgun.network.manager import NetworkManager
-        network_manager = NetworkManager()
+        network_manager = NetworkManager
 
         if 'net_manager' in network_configuration:
             setattr(

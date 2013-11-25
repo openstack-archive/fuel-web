@@ -39,7 +39,6 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             app.navbar.setActive(_.result(this, 'navbarActiveElement'));
         },
         updateBreadcrumbs: function() {
-            var breadcrumbsPath = _.isFunction(this.breadcrumbsPath) ? this.breadcrumbsPath() : this.breadcrumbsPath;
             app.breadcrumbs.setPath(_.result(this, 'breadcrumbsPath'));
         },
         updateTitle: function() {

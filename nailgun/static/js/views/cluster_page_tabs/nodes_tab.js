@@ -917,7 +917,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             this.updateNode(data);
         },
-        discardAddition: function() {
+        discardAddition: function(e) {
+            e.preventDefault();
             this.updateNode({
                 cluster: null,
                 pending_addition: false,

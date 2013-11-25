@@ -16,6 +16,7 @@
 
 from copy import deepcopy
 import json
+from mock import patch
 import string
 
 from nailgun.errors import errors
@@ -75,24 +76,6 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             self.assertTrue(type(disk['size']) == int)
             self.assertGreaterEqual(disk['size'], 0)
             self.assertEqual(len(disk['volumes']), 0)
-
-    def test_disks_recreation_after_node_agent_request(self):
-        self.env.create_node(api=True)
-        node_db = self.env.nodes[0]
-        response = self.put(node_db.id, [])
-        self.assertEquals(response, [])
-
-        response = self.get(node_db.id)
-        self.assertEquals(response, [])
-
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{"mac": node_db.mac, "is_agent": True}]),
-            headers=self.default_headers)
-        self.assertEquals(200, resp.status)
-
-        response = self.get(node_db.id)
-        self.assertNotEquals(response, [])
 
     def test_volumes_regeneration_after_roles_update(self):
         self.create_node(roles=[], pending_roles=['compute'])
@@ -204,6 +187,13 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
         for partition_after in partitions_after_update:
             self.assertEquals(partition_after['size'], new_volume_size)
+
+    def test_validator_at_least_one_disk_exists(self):
+        node = self.create_node()
+        response = self.put(node.id, [], True)
+        self.assertEquals(response.status, 400)
+        self.assertRegexpMatches(response.body,
+                                 '^Node seems not to have disks')
 
     def test_validator_not_enough_size_for_volumes(self):
         node = self.create_node()
@@ -362,7 +352,6 @@ class TestVolumeManager(BaseIntegrationTest):
         for disk in only_disks(disks):
             os_volume = filter(
                 lambda volume: volume.get('vg') == 'os', disk['volumes'])[0]
-
             os_sum_size += os_volume['size']
             if not with_lvm_meta:
                 os_sum_size -= os_volume['lvm_meta_size']
@@ -501,7 +490,7 @@ class TestVolumeManager(BaseIntegrationTest):
 
     def test_allocates_space_single_disk_for_ceph_for_ceph_role(self):
         node = self.create_node('ceph-osd')
-        self.update_node_with_single_disk(node, 20000)
+        self.update_node_with_single_disk(node, 30000)
         self.should_contain_os_with_minimal_size(node.volume_manager)
         self.all_free_space_except_os_for_volume(
             node.volume_manager.volumes, 'ceph')
@@ -564,19 +553,9 @@ class TestVolumeManager(BaseIntegrationTest):
             self, role, space_info, volumes_metadata):
         node = self.create_node(role)
         volume_manager = node.volume_manager
-        volumes = volume_manager.expand_generators(
-            volumes_metadata['volumes'])
-
-        role_ids = [space['id'] for space in space_info]
-        min_installation_size = sum([
-            volume['min_size'] for volume in
-            filter(lambda volume: volume['id'] in role_ids, volumes)])
-
-        boot_data_size = volume_manager.call_generator('calc_boot_size') +\
-            volume_manager.call_generator('calc_boot_records_size')
-
-        min_installation_size += boot_data_size
-
+        min_installation_size = self.__calc_minimal_installation_size(
+            volume_manager
+        )
         return node, min_installation_size
 
     def update_node_with_single_disk(self, node, size):
@@ -617,6 +596,8 @@ class TestVolumeManager(BaseIntegrationTest):
             headers=self.default_headers)
 
     def test_check_disk_space_for_deployment(self):
+        min_size = 100000
+
         volumes_metadata = self.env.get_default_volumes_metadata()
         volumes_roles_mapping = volumes_metadata['volumes_roles_mapping']
 
@@ -625,13 +606,48 @@ class TestVolumeManager(BaseIntegrationTest):
                 create_node_and_calculate_min_size(
                     role, space_info, volumes_metadata)
 
-            self.update_node_with_single_disk(node, min_installation_size)
-            node.volume_manager.check_disk_space_for_deployment()
+            self.update_node_with_single_disk(node, min_size)
+            vm = node.volume_manager
+            with patch.object(vm,
+                              '_VolumeManager'
+                              '__calc_minimal_installation_size',
+                              return_value=min_size):
+                vm.check_disk_space_for_deployment()
 
-            self.update_node_with_single_disk(node, min_installation_size - 1)
-            self.assertRaises(
-                errors.NotEnoughFreeSpace,
-                node.volume_manager.check_disk_space_for_deployment)
+            self.update_node_with_single_disk(node, min_size - 1)
+            vm = node.volume_manager
+            with patch.object(vm,
+                              '_VolumeManager'
+                              '__calc_minimal_installation_size',
+                              return_value=min_size):
+                self.assertRaises(
+                    errors.NotEnoughFreeSpace,
+                    vm.check_disk_space_for_deployment
+                )
+
+    def test_calc_minimal_installation_size(self):
+        volumes_metadata = self.env.get_default_volumes_metadata()
+        volumes_roles_mapping = volumes_metadata['volumes_roles_mapping']
+
+        for role, space_info in volumes_roles_mapping.iteritems():
+            node = self.create_node(role)
+            vm = node.volume_manager
+            self.assertEquals(
+                vm._VolumeManager__calc_minimal_installation_size(),
+                self.__calc_minimal_installation_size(vm)
+            )
+
+    def __calc_minimal_installation_size(self, volume_manager):
+        disks_count = len(filter(lambda disk: disk.size > 0,
+                                 volume_manager.disks))
+        boot_size = volume_manager.call_generator('calc_boot_size') + \
+            volume_manager.call_generator('calc_boot_records_size')
+
+        min_installation_size = disks_count * boot_size
+        for volume in volume_manager.allowed_volumes:
+            min_size = volume_manager.expand_generators(volume)['min_size']
+            min_installation_size += min_size
+        return min_installation_size
 
     def test_check_volume_size_for_deployment(self):
         node = self.create_node('controller', 'ceph-osd')

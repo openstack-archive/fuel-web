@@ -654,10 +654,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }
             },
             '.node-status i': {
+                observe: 'status',
                 visible: function(value) {
-                    return !_.contains(['provisioning', 'deploying'], this.node.get('status'));
+                    return !_.contains(['provisioning', 'deploying'], value);
                 },
-                updateView: true,
                 attributes: [{
                     name: 'class',
                     observe: ['status', 'online', 'pending_addition', 'pending_deletion'],
@@ -665,7 +665,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }]
             },
             '.node-button button': {
-                observe: ['cluster'],
+                observe: 'cluster',
                 visible: function(value) {
                     return !_.isUndefined(value) && value != '';
                 },

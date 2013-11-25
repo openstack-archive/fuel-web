@@ -73,12 +73,18 @@ Setup for Nailgun Unit Tests
 Setup for Web UI Tests
 ----------------------
 
-#. Install NodeJS (on Debian, you may need to use 'apt-get install -t
-   experimental' to get the latest npm, on Ubuntu 12.04, use nodejs package
-   instead of nodejs-legacy)) and CasperJS::
+#. Install NodeJS and JS dependencies::
 
-    sudo apt-get install npm nodejs-legacy phantomjs
-    sudo npm install -g jslint requirejs
+    sudo add-apt-repository ppa:chris-lea/node.js
+    sudo apt-get update
+    sudo apt-get install nodejs
+    sudo npm install -g grunt-cli
+    cd nailgun
+    npm install
+
+#. Install CasperJS::
+
+    sudo apt-get install phantomjs
     cd ~
     git clone git://github.com/n1k0/casperjs.git
     cd casperjs
@@ -113,7 +119,7 @@ Running Nailgun in Fake Mode
 
 #. (optional) To create a compressed version of UI and put it into static_compressed dir::
 
-    r.js -o build.js dir=static_compressed
+    grunt build --static-dir=static_compressed
 
 Astute and Naily
 ----------------

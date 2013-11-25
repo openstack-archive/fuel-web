@@ -68,7 +68,8 @@ class ProvisioningSerializer(object):
             'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
             'netboot_enabled': '1',
             'kernel_options': {
-                'netcfg/choose_interface': node.admin_interface.name},
+                'netcfg/choose_interface': node.admin_interface.name,
+                'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'ks_spaces': node.attributes.volumes,
                 'puppet_auto_setup': 1,
@@ -131,6 +132,19 @@ class ProvisioningSerializer(object):
         return {
             'interfaces': interfaces,
             'interfaces_extra': interfaces_extra}
+
+    @classmethod
+    def interfaces_mapping_for_udev(cls, node):
+        """Serialize interfaces mapping for cobbler
+        :param node: node model
+        :returns: returns string, example:
+                  00:02:03:04:04_eth0,00:02:03:04:05_eth1
+        """
+        mapping = []
+        for interface in node.interfaces:
+            mapping.append('{0}_{1}'.format(interface.mac, interface.name))
+
+        return ','.join(mapping)
 
     @classmethod
     def get_ssh_key_path(cls, node):

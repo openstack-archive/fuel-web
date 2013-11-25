@@ -27,13 +27,16 @@ define([], function() {
             this.deferreds = {};
         },
         registerDeferred: function(deferred) {
-            this.deferreds = this.deferreds || {};
-            deferred._coccyxId = deferred._coccyxId || _.uniqueId('coccyx');
-            this.deferreds[deferred._coccyxId] = deferred;
-            deferred.always(_.bind(function() {
-                delete this.deferreds[deferred._coccyxId];
-            }, this));
-            return deferred;
+            if (!this.isTornDown) {
+                this.deferreds = this.deferreds || {};
+                deferred._coccyxId = deferred._coccyxId || _.uniqueId('coccyx');
+                this.deferreds[deferred._coccyxId] = deferred;
+                deferred.always(_.bind(function() {
+                    delete this.deferreds[deferred._coccyxId];
+                }, this));
+                return deferred;
+            }
+            return;
         },
         unregisterDeferred: function(deferred) {
             this.deferreds = this.deferreds || {};

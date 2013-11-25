@@ -75,6 +75,7 @@
 
     _tearDown: function() {
       var that = this;
+      this.isTornDown = true;
       if (this.beforeTearDown) this.beforeTearDown();
       if (this.__parentView) this.__parentView.unregisterSubView(this);
       _(Coccyx._globalTearDownCallbacks).each(function(callback) {

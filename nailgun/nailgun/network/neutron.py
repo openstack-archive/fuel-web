@@ -31,20 +31,22 @@ from nailgun.network.manager import NetworkManager
 
 class NeutronManager(NetworkManager):
 
-    def create_neutron_config(self, cluster):
+    @classmethod
+    def create_neutron_config(cls, cluster):
         meta = cluster.release.networks_metadata["neutron"]["config"]
         neutron_config = NeutronConfig(
             cluster_id=cluster.id,
             parameters=meta["parameters"],
-            predefined_networks=self._generate_predefined_networks(cluster),
-            L2=self._generate_l2(cluster),
-            L3=self._generate_l3(cluster),
+            predefined_networks=cls._generate_predefined_networks(cluster),
+            L2=cls._generate_l2(cluster),
+            L3=cls._generate_l3(cluster),
             segmentation_type=cluster.net_segment_type,
         )
         db().add(neutron_config)
         db().flush()
 
-    def _generate_external_network(self, cluster):
+    @classmethod
+    def _generate_external_network(cls, cluster):
         public_cidr, public_gw = db().query(
             NetworkGroup.cidr,
             NetworkGroup.gateway
@@ -65,7 +67,8 @@ class NeutronManager(NetworkManager):
             }
         }
 
-    def _generate_internal_network(self, cluster):
+    @classmethod
+    def _generate_internal_network(cls, cluster):
         return {
             "L3": {
                 "cidr": "192.168.111.0/24",
@@ -78,13 +81,15 @@ class NeutronManager(NetworkManager):
             }
         }
 
-    def _generate_predefined_networks(self, cluster):
+    @classmethod
+    def _generate_predefined_networks(cls, cluster):
         return {
-            "net04_ext": self._generate_external_network(cluster),
-            "net04": self._generate_internal_network(cluster)
+            "net04_ext": cls._generate_external_network(cluster),
+            "net04": cls._generate_internal_network(cluster)
         }
 
-    def _generate_l2(self, cluster):
+    @classmethod
+    def _generate_l2(cls, cluster):
         res = {
             "base_mac": "fa:16:3e:00:00:00",
             "segmentation_type": cluster.net_segment_type,
@@ -108,11 +113,13 @@ class NeutronManager(NetworkManager):
             ]
         return res
 
-    def _generate_l3(self, cluster):
+    @classmethod
+    def _generate_l3(cls, cluster):
         return {}
 
-    def assign_networks_by_default(self, node):
-        self.clear_assigned_networks(node)
+    @classmethod
+    def assign_networks_by_default(cls, node):
+        cls.clear_assigned_networks(node)
         # exclude admin interface if it is not only the interface
         ifaces = [iface for iface in node.interfaces
                   if iface.id != node.admin_interface.id]
@@ -120,7 +127,7 @@ class NeutronManager(NetworkManager):
             ifaces = [node.admin_interface]
         # assign private network for vlan
         if node.cluster.net_segment_type == 'vlan':
-            ng_prv = [ng for ng in self.get_cluster_networkgroups_by_node(node)
+            ng_prv = [ng for ng in cls.get_cluster_networkgroups_by_node(node)
                       if ng.name == 'private']
             if ng_prv:
                 ifaces[0].assigned_networks.append(ng_prv[0])
@@ -129,22 +136,24 @@ class NeutronManager(NetworkManager):
         # assign all remaining networks
         map(ifaces[0].assigned_networks.append,
             filter(lambda ng: ng.name != 'private',
-                   self.get_cluster_networkgroups_by_node(node)))
+                   cls.get_cluster_networkgroups_by_node(node)))
 
         node.admin_interface.assigned_networks.append(
-            self.get_admin_network_group()
+            cls.get_admin_network_group()
         )
 
         db().commit()
 
-    def get_allowed_nic_networkgroups(self, node, nic):
+    @classmethod
+    def get_allowed_nic_networkgroups(cls, node, nic):
         """Get all allowed network groups
         """
         if nic == node.admin_interface:
-            return [self.get_admin_network_group()]
-        return self.get_all_cluster_networkgroups(node)
+            return [cls.get_admin_network_group()]
+        return cls.get_all_cluster_networkgroups(node)
 
-    def allow_network_assignment_to_all_interfaces(self, node):
+    @classmethod
+    def allow_network_assignment_to_all_interfaces(cls, node):
         """Method adds all network groups from cluster
         to allowed_networks list for all interfaces
         of specified node.
@@ -156,16 +165,22 @@ class NeutronManager(NetworkManager):
 
             if nic == node.admin_interface:
                 nic.allowed_networks.append(
-                    self.get_admin_network_group()
+                    cls.get_admin_network_group()
                 )
                 continue
 
-            for ng in self.get_cluster_networkgroups_by_node(node):
+            for ng in cls.get_cluster_networkgroups_by_node(node):
                 nic.allowed_networks.append(ng)
 
         db().commit()
 
-    def get_default_networks_assignment(self, node):
+    @classmethod
+    def get_default_networks_assignment(cls, node):
+        """Assign all network groups except admin to one NIC,
+        admin network group has its own NIC by default - gre
+        Assign all network groups except admin and private to one NIC,
+        admin and private network groups has their own NICs by default - vlan
+        """
         nics = []
 
         already_assigned = []
@@ -178,7 +193,7 @@ class NeutronManager(NetworkManager):
                 "current_speed": nic.current_speed
             }
             if nic == node.admin_interface:
-                admin_ng = self.get_admin_network_group()
+                admin_ng = cls.get_admin_network_group()
                 assigned_ngs = [admin_ng]
                 already_assigned.append(admin_ng.name)
             else:
@@ -205,7 +220,7 @@ class NeutronManager(NetworkManager):
                 nic_dict.setdefault('assigned_networks', []).append(
                     {'id': ng.id, 'name': ng.name})
 
-            allowed_ngs = self.get_allowed_nic_networkgroups(
+            allowed_ngs = cls.get_allowed_nic_networkgroups(
                 node,
                 nic
             )
@@ -218,7 +233,8 @@ class NeutronManager(NetworkManager):
         return nics
 
     # TODO(enchantner): refactor and DRY
-    def create_network_groups(self, cluster_id):
+    @classmethod
+    def create_network_groups(cls, cluster_id):
         '''Method for creation of network groups for cluster.
 
         :param cluster_id: Cluster database ID.
@@ -237,7 +253,7 @@ class NeutronManager(NetworkManager):
         networks_metadata = cluster_db.release.networks_metadata
 
         admin_network_range = db().query(IPAddrRange).filter_by(
-            network_group_id=self.get_admin_network_group_id()
+            network_group_id=cls.get_admin_network_group_id()
         ).all()[0]
 
         networks_list = networks_metadata["neutron"]["networks"]
@@ -320,7 +336,7 @@ class NeutronManager(NetworkManager):
             db().commit()
             nw_group.ip_ranges.append(new_ip_range)
             db().commit()
-            self.create_networks(nw_group)
+            cls.create_networks(nw_group)
 
             used_vlans.append(vlan_start)
             used_nets.append(str(new_net))

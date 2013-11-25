@@ -212,8 +212,8 @@ class Cluster(Base):
             from nailgun.network.neutron import NeutronManager
             return NeutronManager
         else:
-            from nailgun.network.manager import NetworkManager
-            return NetworkManager
+            from nailgun.network.nova_network import NovaNetworkManager
+            return NovaNetworkManager
 
 
 class AttributesGenerators(object):

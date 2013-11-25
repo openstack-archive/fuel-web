@@ -114,8 +114,7 @@ class Node(Base):
     @property
     def network_data(self):
         from nailgun.network.manager import NetworkManager
-        netmanager = NetworkManager()
-        return netmanager.get_node_networks(self.id)
+        return NetworkManager.get_node_networks(self.id)
 
     @property
     def volume_manager(self):
@@ -176,11 +175,10 @@ class Node(Base):
         :raises: errors.CanNotFindInterface
         """
         from nailgun.network.manager import NetworkManager
-        network_manager = NetworkManager()
 
         for interface in self.interfaces:
             ip_addr = interface.ip_addr
-            if network_manager.is_ip_belongs_to_admin_subnet(ip_addr):
+            if NetworkManager.is_ip_belongs_to_admin_subnet(ip_addr):
                 return interface
 
         logger.warning(u'Cannot find admin interface for node '

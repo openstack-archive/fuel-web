@@ -94,7 +94,7 @@ class ProvisioningSerializer(object):
     def serialize_interfaces(cls, node):
         interfaces = {}
         interfaces_extra = {}
-        net_manager = NetworkManager()
+        net_manager = NetworkManager
         admin_ips = net_manager.get_admin_ips_for_interfaces(node)
         admin_netmask = net_manager.get_admin_network_group().netmask
 

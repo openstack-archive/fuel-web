@@ -247,8 +247,7 @@ class TestHandlers(BaseIntegrationTest):
                 }
             }
 
-            netmanager = NetworkManager()
-            netmanager.assign_admin_ips(
+            NetworkManager.assign_admin_ips(
                 n.id,
                 len(n.meta.get('interfaces', []))
             )
@@ -591,8 +590,7 @@ class TestHandlers(BaseIntegrationTest):
                 }
             }
 
-            netmanager = NetworkManager()
-            netmanager.assign_admin_ips(
+            NetworkManager.assign_admin_ips(
                 n.id,
                 len(n.meta.get('interfaces', []))
             )

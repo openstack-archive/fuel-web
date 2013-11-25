@@ -46,7 +46,7 @@ class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
             cluster.network_groups
         )
 
-        net_manager = NetworkManager()
+        net_manager = NetworkManager
         result['networks'].append(
             cls.serialize_network_group(
                 net_manager.get_admin_network_group()
@@ -83,7 +83,7 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
             cluster.network_groups
         )
 
-        net_manager = NeutronManager()
+        net_manager = NeutronManager
         result['networks'].append(
             cls.serialize_network_group(
                 net_manager.get_admin_network_group()

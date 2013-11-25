@@ -38,7 +38,6 @@ from nailgun.api.validators.node import NodeValidator
 from nailgun.db import db
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
-from nailgun.network.neutron import NeutronManager
 from nailgun.network.topology import TopoChecker
 from nailgun import notifier
 
@@ -56,8 +55,7 @@ class NodeHandler(JSONHandler):
         json_data = None
         try:
             json_data = JSONHandler.render(instance, fields=cls.fields)
-            network_manager = NetworkManager()
-            json_data['network_data'] = network_manager.get_node_networks(
+            json_data['network_data'] = NetworkManager.get_node_networks(
                 instance.id)
         except Exception:
             logger.error(traceback.format_exc())
@@ -85,7 +83,7 @@ class NodeHandler(JSONHandler):
 
         data = self.checked_data(self.validator.validate_update)
 
-        network_manager = NetworkManager()
+        network_manager = NetworkManager
 
         old_cluster_id = node.cluster_id
 
@@ -102,7 +100,7 @@ class NodeHandler(JSONHandler):
                     network_manager.clear_assigned_networks(node)
                     network_manager.clear_all_allowed_networks(node.id)
                 if node.cluster_id:
-                    network_manager = node.cluster.network_manager()
+                    network_manager = node.cluster.network_manager
                     network_manager.assign_networks_by_default(node)
                     network_manager.allow_network_assignment_to_all_interfaces(
                         node
@@ -168,7 +166,7 @@ class NodeCollectionHandler(JSONHandler):
     @classmethod
     def render(cls, nodes, fields=None):
         json_list = []
-        network_manager = NetworkManager()
+        network_manager = NetworkManager
         ips_mapped = network_manager.get_grouped_ips_by_node()
         networks_grouped = network_manager.get_networks_grouped_by_cluster()
         for node in nodes:
@@ -271,13 +269,13 @@ class NodeCollectionHandler(JSONHandler):
         db().add(node)
         db().commit()
 
-        network_manager = NetworkManager()
+        network_manager = NetworkManager
         # Add interfaces for node from 'meta'.
         if node.meta and node.meta.get('interfaces'):
             network_manager.update_interfaces_info(node)
 
         if node.cluster_id:
-            network_manager = node.cluster.network_manager()
+            network_manager = node.cluster.network_manager
             network_manager.assign_networks_by_default(node)
             network_manager.allow_network_assignment_to_all_interfaces(node)
 
@@ -353,11 +351,7 @@ class NodeCollectionHandler(JSONHandler):
             else:
                 cluster = node.cluster
 
-            if cluster:
-                network_manager = cluster.network_manager()
-            # essential rollback - we can't avoid it now
-            else:
-                network_manager = NetworkManager()
+            network_manager = NetworkManager
 
             if nd.get("pending_roles") == [] and node.cluster:
                 node.cluster.clear_pending_changes(node_id=node.id)
@@ -439,6 +433,7 @@ class NodeCollectionHandler(JSONHandler):
                     network_manager.clear_assigned_networks(node)
                     network_manager.clear_all_allowed_networks(node.id)
                 if nd['cluster_id'] and cluster:
+                    network_manager = cluster.network_manager
                     network_manager.assign_networks_by_default(node)
                     network_manager.allow_network_assignment_to_all_interfaces(
                         node
@@ -493,8 +488,7 @@ class NodeNICsHandler(JSONHandler):
         node_data = {'id': node_id, 'interfaces': interfaces_data}
         self.validator.validate(node_data)
 
-        network_manager = NetworkManager()
-        network_manager._update_attrs(node_data)
+        NetworkManager._update_attrs(node_data)
         node = self.get_object_or_404(Node, node_id)
         return self.render(node)['interfaces']
 
@@ -514,11 +508,10 @@ class NodeCollectionNICsHandler(JSONHandler):
                * 400 (invalid nodes data specified)
         """
         data = self.validator.validate_collection_structure(web.data())
-        network_manager = NetworkManager()
         updated_nodes_ids = []
         for node_data in data:
             self.validator.verify_data_correctness(node_data)
-            node_id = network_manager._update_attrs(node_data)
+            node_id = NetworkManager._update_attrs(node_data)
             updated_nodes_ids.append(node_id)
         updated_nodes = db().query(Node).filter(
             Node.id.in_(updated_nodes_ids)
@@ -541,12 +534,9 @@ class NodeNICsDefaultHandler(JSONHandler):
         return default_nets
 
     def get_default(self, node):
-        if node.cluster and node.cluster.net_provider == 'neutron':
-            network_manager = NeutronManager()
-        else:
-            network_manager = NetworkManager()
-
-        return network_manager.get_default_networks_assignment(node)
+        if node.cluster:
+            return node.cluster.network_manager.\
+                get_default_networks_assignment(node)
 
 
 class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):

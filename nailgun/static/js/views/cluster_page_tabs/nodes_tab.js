@@ -107,10 +107,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var bindings = {
                 attributes: [{
                     name: 'disabled',
-                    observe: 'disabled',
-                    onGet: function(value) {
-                        return _.isUndefined(value) ? false : value;
-        }
+                    observe: 'disabled'
                 }]
             };
             this.stickit(this.loadDefaultsButton, {'.btn-defaults': bindings});
@@ -137,24 +134,61 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.nodes.fetch().always(_.bind(this.scheduleUpdate, this));
         },
         calculateApplyButtonState: function() {
-            this.$('.btn-apply').prop('disabled', !this.hasChanges());
+            this.applyChangesButton.set('disabled', !this.hasChanges());
         },
         updateBatchActionsButtons: function() {
             var nodes = new models.Nodes(this.nodes.where({checked: true}));
-            this.$('.btn-group-congiration').prop('disabled', !nodes.length);
-            this.$('.btn-delete-nodes').toggle(!!this.nodes.where({checked: true, pending_deletion: false}).length);
-            this.$('.btn-add-nodes').css('display', nodes.length ? 'none' : 'block');
-            var notDeployedSelectedNodes = this.nodes.where({checked: true, online: true, pending_addition: true});
-            this.$('.btn-edit-nodes').toggle(!!notDeployedSelectedNodes.length && notDeployedSelectedNodes.length == nodes.length);
-            this.$('.btn-edit-nodes').attr('href', '#cluster/' + this.model.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: _.pluck(notDeployedSelectedNodes, 'id')}));
+            this.configureDisksButton.set('disabled', !nodes.length);
+            this.configureInterfacesButton.set('disabled', !nodes.length);
+            this.deleteNodesButton.set('visible', !!nodes.where({pending_deletion: false}).length);
+            this.addNodesButton.set('visible', !nodes.length);
+            var notDeployedSelectedNodes = nodes.where({online: true, pending_addition: true});
+            this.editRolesButton.set('visible', !!notDeployedSelectedNodes.length && notDeployedSelectedNodes.length == nodes.length);
             // check selected nodes for group configuration availability
             var noDisksConflict = true;
             nodes.each(function(node) {
                 var noRolesConflict = !_.difference(_.union(nodes.at(0).get('roles'), nodes.at(0).get('pending_roles')), _.union(node.get('roles'), node.get('pending_roles'))).length;
                 noDisksConflict = noDisksConflict && noRolesConflict && _.isEqual(nodes.at(0).resource('disks'), node.resource('disks'));
             });
-            this.$('.btn-configure-disks').toggleClass('conflict', !noDisksConflict);
-            this.$('.btn-configure-interfaces').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);
+            this.configureDisksButton.set('invalid', !noDisksConflict);
+            this.configureInterfacesButton.set('invalid', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);
+        },
+        setupButtonsBindings: function() {
+            var visibleBindings = {
+                observe: 'visible',
+                visible: true
+            };
+            var disabledBindings = {
+                attributes: [{
+                    name: 'disabled',
+                    observe: 'disabled'
+                }]
+            };
+            this.stickit(this.deleteNodesButton, {'.btn-delete-nodes': visibleBindings});
+            this.stickit(this.configureDisksButton, {'.btn-configure-disks' : {
+                attributes: _.union([], disabledBindings.attributes, this.getConfigureButtonsObject('btn btn-group-congiration btn-configure-disks'))
+            }});
+            this.stickit(this.configureInterfacesButton, {'.btn-configure-interfaces': {
+                attributes: _.union([], disabledBindings.attributes, this.getConfigureButtonsObject('btn btn-group-congiration btn-configure-interfaces'))
+            }});
+            this.stickit(this.addNodesButton, {'.btn-add-nodes': _.extend({}, visibleBindings, disabledBindings)});
+            this.stickit(this.editRolesButton, {'.btn-edit-nodes': _.extend({}, visibleBindings,disabledBindings)});
+            this.stickit(this.applyChangesButton, {'.btn-apply': disabledBindings});
+        },
+        getConfigureButtonsObject: function(className) {
+            return [
+                {
+                    name: 'data-invalid',
+                    observe: 'invalid'
+                },
+                {
+                    name: 'class',
+                    observe: 'invalid',
+                    onGet: function(value) {
+                        return value ? className + ' conflict' : className;
+                    }
+                }
+            ]
         },
         initialize: function() {
             this.nodes.on('resize', this.render, this);
@@ -162,6 +196,17 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.model.on('change:status', _.bind(function() {app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});}, this));
             }
             this.scheduleUpdate();
+            var defaultButtonModelsData = {
+                'visible': false,
+                'disabled': false,
+                'invalid': false
+            };
+            this.addNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'visible': true}));
+            this.deleteNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
+            this.editRolesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
+            this.configureDisksButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
+            this.configureInterfacesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
+            this.applyChangesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -188,6 +233,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.append(this.nodeList.render().el);
             this.nodeList.calculateSelectAllCheckedState();
             this.nodeList.calculateSelectAllDisabledState();
+            this.setupButtonsBindings();
             return this;
         }
     });
@@ -264,7 +310,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-delete-nodes:not(:disabled)' : 'showDeleteNodesDialog',
             'click .btn-apply:not(:disabled)' : 'applyChanges',
             'click .btn-group-congiration:not(.conflict):not(:disabled)' : 'goToConfigurationScreen',
-            'click .btn-group-congiration.conflict' : 'showUnavailableGroupConfigurationDialog'
+            'click .btn-group-congiration.conflict' : 'showUnavailableGroupConfigurationDialog',
+            'click .btn-add-nodes': 'goToAddNodesScreen',
+            'click .btn-edit-nodes': 'goToEditNodesRolesScreen',
+            'click .btn-cancel': 'goToNodesList'
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -318,6 +367,15 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var selectedNodesIds = _.pluck(this.screen.nodes.where({checked: true}), 'id').join(',');
             app.navigate('#cluster/' + this.cluster.id + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
         },
+        goToAddNodesScreen: function() {
+            app.navigate('#cluster/' + this.cluster.id + '/nodes/add', {trigger: true});
+        },
+        goToEditNodesRolesScreen: function() {
+            app.navigate('#cluster/' + this.cluster.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: _.pluck(this.nodes.where({checked: true}), 'id')}), {trigger: true});
+        },
+        goToNodesList: function() {
+            app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
+        },
         showUnavailableGroupConfigurationDialog: function (e) {
             var action = this.$(e.currentTarget).data('action');
             var messages = {
@@ -333,9 +391,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.html(this.template({
                 nodes: this.nodes,
                 cluster: this.cluster,
-                edit: this.screen instanceof EditNodesScreen,
-                locked: this.screen.isLocked()
+                edit: this.screen instanceof EditNodesScreen
             })).i18n();
+            var isDisabled = !!this.cluster.task('deploy', 'running');
+            this.screen.addNodesButton.set('disabled', isDisabled);
+            this.screen.editRolesButton.set('disabled', isDisabled);
             return this;
         }
     });

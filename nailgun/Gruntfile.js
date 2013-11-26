@@ -19,20 +19,20 @@ module.exports = function(grunt) {
     requirejs: {
       compile: {
         options: {
-          baseUrl: ".",
-          appDir: "static",
-          dir: grunt.option('static-dir') || "/tmp/static_compressed",
-          mainConfigFile: "static/js/main.js",
-          modules: [{name: "js/main"}],
+          baseUrl: '.',
+          appDir: 'static',
+          dir: grunt.option('static-dir') || '/tmp/static_compressed',
+          mainConfigFile: 'static/js/main.js',
+          modules: [{name: 'js/main'}],
           waitSeconds: 60,
-          optimize: "uglify2",
+          optimize: 'uglify2',
         }
       }
     },
     less: {
       all: {
-        src: 'static/less/*.less',
-        dest: 'static/css/less.css'
+          src: ['static/less/bootstrap/bootstrap.less'],
+          dest: 'static/css/less.css'
       }
     },
     jslint: {
@@ -59,6 +59,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-requirejs');
   grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-jslint');
-  grunt.registerTask('compress', ['requirejs']);
-  grunt.registerTask('default', ['requirejs']);
+  grunt.registerTask('build', ['requirejs']);
 };

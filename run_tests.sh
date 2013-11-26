@@ -69,9 +69,8 @@ if [ -n "$ui_test_files" ]; then
 fi
 
 function clean {
-  echo "cleaning *.pyc, *.json, *.log, *.pid files"
+  echo "cleaning *.pyc, *.log, *.pid files"
   find . -type f -name "*.pyc" -delete
-  rm -f *.json
   rm -f *.log
   rm -f *.pid
 }
@@ -141,7 +140,7 @@ function run_ui_tests {
     echo -n "Compressing UI... "
     compressed_static_dir=/tmp/static_compressed
     rm -rf $compressed_static_dir && mkdir -p $compressed_static_dir
-    grunt compress --static-dir=$compressed_static_dir > /dev/null
+    grunt build --static-dir=$compressed_static_dir > /dev/null
     if [ $? -ne 0 ]; then
         echo "Failed!"
         exit 1

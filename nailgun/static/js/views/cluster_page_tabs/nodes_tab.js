@@ -537,8 +537,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.selectAllCheckbox.set('checked', availableNodes.length && this.nodes.where({checked: true}).length == availableNodes.length);
         },
         calculateSelectAllDisabledState: function() {
-            var availableNodes = this.nodes.where({disabled: false, checked: false});
-            var disabled = !availableNodes.length || (this.screen.roles && this.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.screen instanceof EditNodesScreen || this.screen.isLocked();
+            var availableNodes = this.nodes.filter(function(node) {return node.isSelectable();});
+            var disabled = !this.nodes.where({disabled: false}).length || (this.screen.roles && this.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.screen instanceof EditNodesScreen || this.screen.isLocked();
             this.selectAllCheckbox.set('disabled', disabled);
         },
         groupNodes: function(attribute) {
@@ -569,6 +569,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 disabled: false
             });
             this.selectAllCheckbox.on('change:checked', this.selectNodes, this);
+            this.nodes.on('change:checked', this.calculateSelectAllCheckedState, this);
         },
         renderNodeGroups: function() {
             this.$('.nodes').html('');
@@ -638,6 +639,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             });
             this.selectAllCheckbox.on('change:checked', this.selectNodes, this);
             this.selectAllCheckbox.on('change:disabled', this.nodeList.calculateSelectAllDisabledState, this.nodeList);
+            this.nodes.on('change:checked', this.calculateSelectAllCheckedState, this);
         },
         renderNode: function(node) {
             var nodeView = new Node({
@@ -697,7 +699,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             },
             '.node-checkbox input': {
                 observe: 'checked',
-                stickitChange: true,
                 attributes: [{
                     name: 'disabled',
                     observe: 'disabled'
@@ -846,10 +847,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return this.hasChanges() && !(this.screen instanceof EditNodesScreen) ? 'icon-back-in-time' : 'icon-logs';
         },
         onNodeSelection: function(node, checked, options) {
-            if (options.stickitChange) {
-                this.group.calculateSelectAllCheckedState();
-                this.group.nodeList.calculateSelectAllCheckedState();
-            }
             if (!checked) {
                 node.set({pending_roles: this.initialRoles});
             }
@@ -925,7 +922,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 pending_roles: []
             });
         },
-        discardDeletion: function() {
+        discardDeletion: function(e) {
+            e.preventDefault();
             this.updateNode({pending_deletion: false});
         },
         showNodeLogs: function() {

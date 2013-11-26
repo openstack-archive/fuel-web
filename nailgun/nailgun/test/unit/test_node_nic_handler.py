@@ -246,3 +246,16 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
         self.assertNotEquals(response[0]['id'], fake_id)
+
+    def test_mac_address_should_be_in_lower_case(self):
+        meta = self.env.default_metadata()
+        new_mac = 'AA:BB:CC:DD:11:22'
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'eth0', 'mac': new_mac}])
+        node = self.env.create_node(api=True, meta=meta)
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        response = json.loads(resp.body)
+        self.assertNotEquals(response[0]['mac'], new_mac.lower())

@@ -26,6 +26,7 @@ from sqlalchemy.orm import relationship, backref
 
 from nailgun.api.models.base import Base
 from nailgun.api.models.fields import JSON
+from nailgun.api.models.fields import LowercaseString
 from nailgun.api.models.network import AllowedNetworks
 from nailgun.api.models.network import NetworkAssignment
 from nailgun.db import db
@@ -78,7 +79,7 @@ class Node(Base):
         default='discover'
     )
     meta = Column(JSON, default={})
-    mac = Column(String(17), nullable=False, unique=True)
+    mac = Column(LowercaseString(17), nullable=False, unique=True)
     ip = Column(String(15))
     fqdn = Column(String(255))
     manufacturer = Column(Unicode(50))
@@ -244,7 +245,7 @@ class NodeNICInterface(Base):
         ForeignKey('nodes.id', ondelete="CASCADE"),
         nullable=False)
     name = Column(String(128), nullable=False)
-    mac = Column(String(32), nullable=False)
+    mac = Column(LowercaseString(17), nullable=False)
     max_speed = Column(Integer)
     current_speed = Column(Integer)
     allowed_networks = relationship(

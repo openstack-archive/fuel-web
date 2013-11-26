@@ -130,14 +130,7 @@ define(['require'], function(require) {
             return _.isString(ip) && !ip.match(ipRegexp);
         },
         validateIPrange: function(startIP, endIP) {
-            var start = startIP.split('.'), end = endIP.split('.');
-            var valid = true;
-            _.each(start, function(el, index) {
-                if (parseInt(el, 10) > parseInt(end[index], 10)) {
-                    valid = false;
-                }
-            });
-            return valid;
+            return this.ipIntRepresentation(startIP) - this.ipIntRepresentation(endIP) <= 0;
         },
         ipIntRepresentation: function(ip) {
             var octets = ip.split('.');
@@ -161,9 +154,9 @@ define(['require'], function(require) {
             // bitwise operations are exceedingly rare in JS, and those operators usually are a typo for the boolean versions (&&, ||)
             // so JSLint reports bugs, if an appropriate flag is not set
             /*jslint bitwise: true*/
-            var networkAddressHex = (0xFFFFFFFF + Number((netmaskInt & ipInt).toString(10)) + 1).toString(16);
+            var networkAddressInt = netmaskInt & ipInt;
+            var networkAddress = [networkAddressInt >>> 24, networkAddressInt >>> 16 & 0xFF, networkAddressInt >>> 8 & 0xFF, networkAddressInt & 0xFF].join('.');
             /*jslint bitwise: false*/
-            var networkAddress = _.map(networkAddressHex.match(/[0-9A-F]{2}/ig), function(n) {return parseInt(n, 16);}).join('.');
             return networkAddress + '/' + networkSize;
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {

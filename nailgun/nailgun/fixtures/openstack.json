@@ -321,8 +321,15 @@
                         "auto_assign_floating_ip": {
                             "value": false,
                             "label": "Auto assign floating IP",
-                            "description": "If true, OpenStack will automatically assign a floating IP to a new instance",
+                            "description": "If selected, OpenStack will automatically assign a floating IP to a new instance",
                             "weight": 40,
+                            "type": "checkbox"
+                        },
+                        "vlan_splinters": {
+                            "value": false,
+                            "label": "Enable 'OVS VLAN splinters' feature (Neutron only)",
+                            "description": "Use VLAN splinters Open vSwitch method on necessary network interfaces",
+                            "weight": 45,
                             "type": "checkbox"
                         },
                         "libvirt_type": {
@@ -353,7 +360,7 @@
                         "use_cow_images": {
                             "value": true,
                             "label": "Use qcow format for images",
-                            "description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.",
+                            "description": "For most cases you will want qcow format. If it's disabled, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.",
                             "weight": 50,
                             "type": "checkbox"
                         },
@@ -789,7 +796,7 @@
                         "auto_assign_floating_ip": {
                             "value": false,
                             "label": "Auto assign floating IP",
-                            "description": "If true, OpenStack will automatically assign a floating IP to a new instance",
+                            "description": "If selected, OpenStack will automatically assign a floating IP to a new instance",
                             "weight": 40,
                             "type": "checkbox"
                         },
@@ -821,7 +828,7 @@
                         "use_cow_images": {
                             "value": true,
                             "label": "Use qcow format for images",
-                            "description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.",
+                            "description": "For most cases you will want qcow format. If it's disabled, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.",
                             "weight": 50,
                             "type": "checkbox"
                         },
@@ -1302,8 +1309,15 @@
                         "auto_assign_floating_ip": {
                             "value": false,
                             "label": "Auto assign floating IP",
-                            "description": "If true, OpenStack will automatically assign a floating IP to a new instance",
+                            "description": "If selected, OpenStack will automatically assign a floating IP to a new instance",
                             "weight": 40,
+                            "type": "checkbox"
+                        },
+                        "vlan_splinters": {
+                            "value": false,
+                            "label": "Enable 'OVS VLAN splinters' feature (Neutron only)",
+                            "description": "Use VLAN splinters Open vSwitch method on necessary network interfaces",
+                            "weight": 45,
                             "type": "checkbox"
                         },
                         "libvirt_type": {
@@ -1334,7 +1348,7 @@
                         "use_cow_images": {
                             "value": true,
                             "label": "Use qcow format for images",
-                            "description": "For most cases you will want qcow format. If it's set to false, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.",
+                            "description": "For most cases you will want qcow format. If it's disabled, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting.",
                             "weight": 50,
                             "type": "checkbox"
                         },

@@ -414,8 +414,8 @@ define(['utils', 'deepModel'], function(utils) {
         },
         validate: function(attrs, options) {
             var errors = {};
+            var publicCidr = options.net_provider == 'neutron' && attrs.name == 'public' ? utils.composeCidr(attrs.ip_ranges[0][0], attrs.netmask) : '';
             _.each(this.getAttributes(options.net_provider), _.bind(function(attribute) {
-                var publicCidr = options.net_provider == 'neutron' && attrs.name == 'public' ? utils.composeCidr(attrs.ip_ranges[0][0], attrs.netmask) : '';
                 if (attribute == 'ip_ranges') {
                     if (_.filter(attrs.ip_ranges, function(range) {return !_.isEqual(range, ['', '']);}).length){
                         _.each(attrs.ip_ranges, _.bind(function(range, index) {

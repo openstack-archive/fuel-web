@@ -161,7 +161,8 @@ define(['require'], function(require) {
             // bitwise operations are exceedingly rare in JS, and those operators usually are a typo for the boolean versions (&&, ||)
             // so JSLint reports bugs, if an appropriate flag is not set
             /*jslint bitwise: true*/
-            var networkAddressHex = (0xFFFFFFFF + Number((netmaskInt & ipInt).toString(10)) + 1).toString(16);
+            var networkAddressInt = Number((netmaskInt & ipInt).toString(10));
+            var networkAddressHex = networkAddressInt > 0 ? ('00000000' + networkAddressInt.toString(16)).slice(-8) : (0xFFFFFFFF + networkAddressInt + 1).toString(16);
             /*jslint bitwise: false*/
             var networkAddress = _.map(networkAddressHex.match(/[0-9A-F]{2}/ig), function(n) {return parseInt(n, 16);}).join('.');
             return networkAddress + '/' + networkSize;

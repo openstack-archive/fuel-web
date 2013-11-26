@@ -31,7 +31,7 @@ module.exports = function(grunt) {
     },
     less: {
       all: {
-        src: 'static/less/*.less',
+        src: ['static/less/bootstrap.less'],
         dest: 'static/css/less.css'
       }
     },

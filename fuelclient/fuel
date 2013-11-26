@@ -76,10 +76,8 @@ class SetAction(argparse.Action):
             setattr(namespace, self.dest, set(values))
 
 
-def handle_api_exceptions(e):
-    if isinstance(e, ValueError):
-        return {}
-    elif isinstance(e, urllib2.HTTPError):
+def handle_api_exceptions(e):    
+    if isinstance(e, urllib2.HTTPError):
         print_error(str(e))
     elif isinstance(e, urllib2.URLError):
         print_error("Can't connect to Nailgun server!")
@@ -167,12 +165,9 @@ def json_api_delete_request(api):
     request = urllib2.Request(API_ROOT + api)
     request.add_header('Content-Type', ' application/json')
     request.get_method = lambda: 'DELETE'
-    try:
-        return json.loads(
-            opener.open(request).read()
-        )
-    except Exception as e:
-        return handle_api_exceptions(e)
+    return json.loads(
+        opener.open(request).read()
+    )
 
 
 def json_api_put_request(api, data):
@@ -187,12 +182,9 @@ def json_api_put_request(api, data):
     request = urllib2.Request(API_ROOT + api, data=data_json)
     request.add_header('Content-Type', ' application/json')
     request.get_method = lambda: 'PUT'
-    try:
-        return json.loads(
-            opener.open(request).read()
-        )
-    except Exception as e:
-        return handle_api_exceptions(e)
+    return json.loads(
+        opener.open(request).read()
+    )
 
 
 def json_api_get_request(api, root=API_ROOT):
@@ -203,13 +195,10 @@ def json_api_get_request(api, root=API_ROOT):
         "GET {0}"
         .format(url)
     )
-    try:
-        request = urllib2.urlopen(url)
-        return json.loads(
-            request.read()
-        )
-    except Exception as e:
-        return handle_api_exceptions(e)
+    request = urllib2.urlopen(url)
+    return json.loads(
+        request.read()
+    )
 
 
 def json_ostf_get_request(api):
@@ -236,13 +225,10 @@ def json_api_post_request(api, data, root=API_ROOT):
             'Content-Type': 'application/json'
         }
     )
-    try:
-        return json.loads(
-            urllib2.urlopen(request)
-            .read()
-        )
-    except Exception as e:
-        return handle_api_exceptions(e)
+    return json.loads(
+        urllib2.urlopen(request)
+        .read()
+    )
 
 
 def has_arguments(params):
@@ -1720,4 +1706,7 @@ if __name__ == '__main__':
         sys.exit(0)
     current_action = getattr(parsed_params, "action")
     delattr(parsed_params, "action")
-    actions[current_action]["action"](parsed_params)
+    try:
+        actions[current_action]["action"](parsed_params)
+    except Exception as e:
+        handle_api_exceptions(e)

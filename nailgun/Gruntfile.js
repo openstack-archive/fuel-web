@@ -32,7 +32,7 @@ module.exports = function(grunt) {
     less: {
       all: {
         src: ['static/less/bootstrap.less'],
-        dest: 'static/css/less_.css'
+        dest: 'static/css/less.css'
       }
     },
     jslint: {

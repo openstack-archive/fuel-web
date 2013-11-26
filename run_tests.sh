@@ -1,5 +1,12 @@
 #!/bin/bash
 
+function drop_db {
+  nailgun/manage.py dropdb >> /dev/null
+  exit 1
+}
+
+trap drop_db INT
+
 function usage {
   echo "Usage: $0 [OPTION]..."
   echo "Run tests"
@@ -53,9 +60,9 @@ unit_tests=0
 xunit=0
 clean=0
 ui_test_files=
-default_noseargs="--with-timer"
-noseargs="$default_noseargs"
-noseopts=
+default_noseopts="--with-timer"
+noseargs=
+noseopts="$default_noseopts"
 
 for arg in "$@"; do
   process_option $arg
@@ -214,7 +221,7 @@ function run_nailgun_tests {
 }
 
 function run_integration_tests {
-    noseargs="nailgun/test/integration"
+    [ -z "$noseargs" ] && noseargs="nailgun/test/integration"
     run_nailgun_tests
 }
 
@@ -232,14 +239,8 @@ if [ $unit_tests -eq 1 ]; then
     exit
 fi
 
+# Run all tests if no one was selected explicitly.
 errors=''
-
-trap drop_db INT
-
-function drop_db {
-  nailgun/manage.py dropdb >> /dev/null
-  exit 1
-}
 
 run_unit_tests || errors+=' unittests'
 

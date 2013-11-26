@@ -303,7 +303,7 @@ class Environment(object):
 
     def _generate_random_mac(self):
         mac = [randint(0x00, 0x7f) for _ in xrange(6)]
-        return ':'.join(map(lambda x: "%02x" % x, mac)).upper()
+        return ':'.join(map(lambda x: "%02x" % x, mac)).lower()
 
     def generate_interfaces_in_meta(self, amount):
         nics = []

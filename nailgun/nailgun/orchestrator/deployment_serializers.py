@@ -667,9 +667,19 @@ class NeutronNetworkDeploymentSerializer(object):
 
         # Add a dynamic data to a structure.
 
+        use_vlan_splinters = node.cluster.attributes.editable['common'].get(
+            'vlan_splinters', {}
+        ).get('value')
+
         # Fill up interfaces and add bridges for them.
         for iface in node.interfaces:
-            attrs['interfaces'][iface.name] = {}
+            # Handle vlan splinters.
+            attrs['interfaces'][iface.name] = {
+                'L2': cls._get_vlan_splinters_desc(
+                    use_vlan_splinters, iface, node.cluster
+                )
+            }
+
             if iface.name == node.admin_interface.name:
                 # A physical interface for the FuelWeb admin network should
                 # not be used through bridge. Directly only.
@@ -752,6 +762,30 @@ class NeutronNetworkDeploymentSerializer(object):
         attrs['roles']['fw-admin'] = node.admin_interface.name
 
         return attrs
+
+    @classmethod
+    def _get_vlan_splinters_desc(cls, use_vlan_splinters, iface,
+                                 cluster):
+        iface_attrs = {}
+        if not use_vlan_splinters:
+            iface_attrs['vlan_splinters'] = 'off'
+            return iface_attrs
+        iface_attrs['vlan_splinters'] = 'auto'
+        trunks = [0]
+
+        for ng in iface.assigned_networks:
+            if ng.name == 'private':
+                vlan_range = cluster.neutron_config.L2.get(
+                    "phys_nets", {}).get("physnet2", {}).get("vlan_range", ())
+                trunks.extend(xrange(*vlan_range))
+                trunks.append(vlan_range[1])
+            else:
+                if ng.vlan_start in (0, None):
+                    continue
+                trunks.append(ng.vlan_start)
+        iface_attrs['trunks'] = trunks
+
+        return iface_attrs
 
 
 def serialize(cluster, nodes):

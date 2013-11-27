@@ -27,9 +27,7 @@ from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.api.models import Cluster
-from nailgun.api.models import NetworkConfiguration
 from nailgun.api.models import NetworkGroup
-from nailgun.api.models import NeutronNetworkConfiguration
 from nailgun.api.models import Task
 
 from nailgun.api.serializers.network_configuration \
@@ -44,6 +42,8 @@ from nailgun.api.validators.network \
 from nailgun.db import db
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.network.neutron import NeutronManager
+from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
@@ -150,7 +150,7 @@ class NovaNetworkConfigurationHandler(JSONHandler):
                         json.dumps(data)
                     )
 
-                NetworkConfiguration.update(cluster, data)
+                NovaNetworkManager.update(cluster, data)
             except web.webapi.badrequest as exc:
                 TaskHelper.set_error(task.uuid, exc.data)
                 logger.error(traceback.format_exc())
@@ -210,7 +210,7 @@ class NeutronNetworkConfigurationHandler(JSONHandler):
                         cluster_id=cluster_id
                     )
 
-                NeutronNetworkConfiguration.update(cluster, data)
+                NeutronManager.update(cluster, data)
             except Exception as exc:
                 TaskHelper.set_error(task.uuid, exc)
                 logger.error(traceback.format_exc())

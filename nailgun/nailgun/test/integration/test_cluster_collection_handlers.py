@@ -21,9 +21,9 @@ from sqlalchemy.sql import not_
 
 from nailgun.api.models import Cluster
 from nailgun.api.models import Network
-from nailgun.api.models import NetworkConfiguration
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Release
+from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -75,7 +75,7 @@ class TestHandlers(BaseIntegrationTest):
                 name="management",
                 cluster_id=clstr.id
             ).first()
-            NetworkConfiguration.update(
+            NovaNetworkManager.update(
                 clstr,
                 {
                     "networks": [

@@ -88,9 +88,6 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
                 net_manager.get_admin_network_group()
             )
         )
-        # result['networks'] = [cls.serialize_network_group(ng)
-        #                       for ng in cluster.network_groups
-        #                       if ng.name != 'private']
 
         if cluster.is_ha_mode:
             nw_metadata = cluster.release.networks_metadata["neutron"]

@@ -51,10 +51,6 @@ class BaseTestCase(TestCase):
             os.path.pardir
         )
     )
-    clean_cmd = os.path.join(
-        root_path,
-        "run_tests.sh"
-    ) + " -c"
     manage_path = os.path.join(
         root_path,
         "nailgun/manage.py"
@@ -65,7 +61,7 @@ class BaseTestCase(TestCase):
     )
 
     @classmethod
-    def setUpClass(cls):
+    def setUp(cls):
         cls.reload_nailgun_server()
 
     @classmethod

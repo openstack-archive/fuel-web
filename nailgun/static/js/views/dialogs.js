@@ -100,6 +100,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         template: _.template(createClusterWizardTemplate),
         templateHelpers: _.pick(utils, 'floor'),
         events: {
+            'keydown input': 'onInputKeydown',
             'click .next-pane-btn': 'nextPane',
             'click .prev-pane-btn': 'prevPane',
             'click .wizard-step.available': 'onStepClick',
@@ -116,6 +117,12 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 this.panes.push(pane);
                 pane.render();
             }, this);
+        },
+        onInputKeydown: function(e) {
+            if (e.which == 13) {
+                e.preventDefault();
+                this.nextPane();
+            }
         },
         onStepClick: function(e) {
             var paneIndex = parseInt($(e.currentTarget).data('pane'), 10);
@@ -277,10 +284,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         onInputKeydown: function(e) {
             this.$('.control-group.error').removeClass('error');
             this.$('.help-inline').html('');
-            if (e.which == 13) {
-                e.preventDefault();
-                this.wizard.nextPane();
-            }
         },
         onReleaseChange: function() {
             this.updateReleaseParameters();

@@ -32,3 +32,11 @@ class JSON(types.TypeDecorator):
         if value is not None:
             value = json.loads(value)
         return value
+
+
+class LowercaseString(types.TypeDecorator):
+
+    impl = types.String
+
+    def process_bind_param(self, value, dialect):
+        return value.lower()

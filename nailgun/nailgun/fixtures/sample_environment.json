@@ -9,7 +9,7 @@
             "online": true,
             "pending_addition": false,
             "platform_name": "X9DRW",
-            "mac": "00:25:90:6A:B1:10",
+            "mac": "00:25:90:6a:b1:10",
             "meta": {
                 "cpu": {
                     "real": 2,
@@ -115,13 +115,13 @@
                 },
                 "interfaces": [
                     {
-                        "mac": "00:25:90:6A:B1:10",
+                        "mac": "00:25:90:6a:b1:10",
                         "max_speed": 1000,
                         "name": "eth0",
                         "current_speed": 1000
                     },
                     {
-                        "mac": "00:25:90:6A:B1:11",
+                        "mac": "00:25:90:6a:b1:11",
                         "max_speed": 1000,
                         "name": "eth1",
                         "current_speed": null,
@@ -283,7 +283,7 @@
             "online": true,
             "pending_addition": false,
             "platform_name": "Inspiron N5110",
-            "mac": "58:91:CF:2A:C4:1B",
+            "mac": "58:91:cF:2a:c4:1b",
             "meta": {
                 "memory": {
                     "slots": 2,
@@ -305,20 +305,20 @@
                 "interfaces": [
                     {
                         "ip": "10.20.0.4",
-                        "mac": "58:91:CF:2A:C4:1B",
+                        "mac": "58:91:cF:2a:c4:1b",
                         "netmask": "255.255.255.0",
                         "current_speed": null,
                         "name": "wlan0"
                     },
                     {
                         "ip": "192.168.70.234",
-                        "mac": "24:B6:FD:53:63:00",
+                        "mac": "24:b6:fd:53:63:00",
                         "max_speed": 100,
                         "name": "eth0",
                         "current_speed": 10
                     },
                     {
-                        "mac": "54:78:EA:05:17:BA",
+                        "mac": "54:78:ea:05:17:ba",
                         "max_speed": 100,
                         "name": "eth1",
                         "current_speed": 20
@@ -400,7 +400,7 @@
             "online": true,
             "pending_addition": false,
             "platform_name": "X9SCD",
-            "mac": "00:25:90:67:9F:B7",
+            "mac": "00:25:90:67:9f:b7",
             "meta": {
                 "memory": {
                     "slots": 4,
@@ -434,13 +434,13 @@
                         "name": "eth1",
                         "ip": "172.18.67.167",
                         "netmask": "255.255.255.240",
-                        "mac": "00:25:90:67:9F:B7",
+                        "mac": "00:25:90:67:9f:b7",
                         "max_speed": 1000,
                         "current_speed": 1000
                     },
                     {
                         "ip": "10.20.0.5",
-                        "mac": "00:25:90:67:9F:B6",
+                        "mac": "00:25:90:67:9f:b6",
                         "max_speed": 1000,
                         "name": "eth0",
                         "current_speed": null
@@ -524,7 +524,7 @@
             "online": false,
             "pending_addition": false,
             "platform_name": "X9SCD",
-            "mac": "00:25:90:67:9D:24",
+            "mac": "00:25:90:67:9d:24",
             "meta": {
                 "memory": {
                     "slots": 4,
@@ -555,7 +555,7 @@
                 },
                 "interfaces": [
                     {
-                        "mac": "00:25:90:67:9D:25",
+                        "mac": "00:25:90:67:9d:25",
                         "max_speed": 1000,
                         "name": "eth1",
                         "current_speed": null
@@ -564,7 +564,7 @@
                         "name": "eth0",
                         "ip": "10.20.0.6",
                         "netmask": "255.255.255.240",
-                        "mac": "00:25:90:67:9D:24",
+                        "mac": "00:25:90:67:9d:24",
                         "max_speed": 1000,
                         "current_speed": 1000
                     }
@@ -648,7 +648,7 @@
             "online": true,
             "pending_addition": false,
             "platform_name": "X9SCD",
-            "mac": "00:25:90:67:9C:9C",
+            "mac": "00:25:90:67:9c:9c",
             "meta": {
                 "memory": {
                     "slots": 4,
@@ -679,7 +679,7 @@
                 },
                 "interfaces": [
                     {
-                        "mac": "00:25:90:67:9C:9D",
+                        "mac": "00:25:90:67:9c:9d",
                         "max_speed": 1000,
                         "name": "eth1",
                         "current_speed": null,
@@ -688,7 +688,7 @@
                     {
                         "name": "eth0",
                         "netmask": "255.255.255.224",
-                        "mac": "00:25:90:67:9C:9C",
+                        "mac": "00:25:90:67:9c:9c",
                         "max_speed": 1000,
                         "current_speed": 1000
                     }
@@ -770,7 +770,7 @@
             "ip": "10.20.0.63",
             "online": true,
             "pending_addition": false,
-            "mac": "08:00:27:22:AB:AA",
+            "mac": "08:00:27:22:ab:aa",
             "meta": {
                 "memory": {
                     "total": 778887168
@@ -780,7 +780,7 @@
                         "name": "eth0",
                         "ip": "10.20.0.63",
                         "netmask": "255.255.255.0",
-                        "mac": "08:00:27:22:AB:AA",
+                        "mac": "08:00:27:22:ab:aa",
                         "max_speed": 100,
                         "current_speed": 100
                     }
@@ -827,7 +827,7 @@
             "ip": "10.20.0.226",
             "online": true,
             "pending_addition": false,
-            "mac": "52:54:00:0E:B8:F5",
+            "mac": "52:54:00:0e:b8:f5",
             "meta": {
                 "memory": {
                     "slots": 1,
@@ -845,7 +845,7 @@
                         "name": "eth0",
                         "ip": "10.20.0.226",
                         "netmask": "255.255.255.0",
-                        "mac": "52:54:00:0E:B8:F5",
+                        "mac": "52:54:00:0e:b8:f5",
                         "max_speed": 100,
                         "current_speed": 100
                     }
@@ -891,7 +891,7 @@
             "pending_addition": false,
             "fqdn": "slave-15.domain.tld",
             "platform_name": "X9DRW",
-            "mac": "00:25:90:6A:B1:84",
+            "mac": "00:25:90:6a:b1:84",
             "meta": {
                 "cpu": {
                     "real": 2,
@@ -1000,13 +1000,13 @@
                         "name": "p2p1",
                         "ip": "172.18.67.170",
                         "netmask": "255.255.255.240",
-                        "mac": "00:25:90:6A:B1:84",
+                        "mac": "00:25:90:6a:b1:84",
                         "max_speed": 1000,
                         "current_speed": 1000
                     },
                     {
                         "ip": "10.20.0.7",
-                        "mac": "00:25:90:6A:B1:85",
+                        "mac": "00:25:90:6a:b1:b5",
                         "max_speed": 1000,
                         "name": "p2p2",
                         "current_speed": null

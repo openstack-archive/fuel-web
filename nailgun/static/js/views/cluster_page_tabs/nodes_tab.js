@@ -140,7 +140,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var nodes = new models.Nodes(this.nodes.where({checked: true}));
             this.configureDisksButton.set('disabled', !nodes.length);
             this.configureInterfacesButton.set('disabled', !nodes.length);
-            this.deleteNodesButton.set('visible', !!nodes.where({pending_deletion: false}).length);
+            this.deleteNodesButton.set('visible', !!nodes.where({pending_deletion: false}).length && !this.isLocked());
             this.addNodesButton.set('visible', !nodes.length);
             var notDeployedSelectedNodes = nodes.where({online: true, pending_addition: true});
             this.editRolesButton.set('visible', !!notDeployedSelectedNodes.length && notDeployedSelectedNodes.length == nodes.length);
@@ -538,7 +538,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         calculateSelectAllDisabledState: function() {
             var availableNodes = this.nodes.filter(function(node) {return node.isSelectable();});
-            var disabled = !this.nodes.where({disabled: false}).length || (this.screen.roles && this.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.screen instanceof EditNodesScreen || this.screen.isLocked();
+            var disabled = !this.nodes.where({disabled: false}).length || (this.screen.roles && this.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.screen instanceof EditNodesScreen;
             this.selectAllCheckbox.set('disabled', disabled);
         },
         groupNodes: function(attribute) {
@@ -628,7 +628,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         calculateSelectAllDisabledState: function() {
             var availableNodes = this.nodes.where({disabled: false});
-            var disabled = !availableNodes.length || (this.nodeList.screen.roles && this.nodeList.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.nodeList.screen instanceof EditNodesScreen || this.nodeList.screen.isLocked();
+            var disabled = !availableNodes.length || (this.nodeList.screen.roles && this.nodeList.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.nodeList.screen instanceof EditNodesScreen;
             this.selectAllCheckbox.set('disabled', disabled);
         },
         initialize: function(options) {
@@ -857,7 +857,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
         },
         calculateNodeDisabledState: function() {
-            this.node.set('disabled', !this.node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked());
+            this.node.set('disabled', !this.node.isSelectable() || this.screen instanceof EditNodesScreen);
         },
         startNodeRenaming: function() {
             if (!this.renameable || this.renaming) {return;}

@@ -76,7 +76,7 @@
   <% if (false && node.get('ip')) { %>
     <button class="btn btn-node-console" data-i18n="dialog.show_node.ssh_console"></button>
   <% } %>
-  <% if (node.get('cluster') && !locked) { %>
+  <% if (node.get('cluster')) { %>
     <button class="btn btn-edit-networks" data-dismiss="modal" data-i18n="dialog.show_node.network_configuration_button"></button>
     <button class="btn btn-edit-disks" data-dismiss="modal" data-i18n="dialog.show_node.disk_configuration_button"></button>
   <% } %>

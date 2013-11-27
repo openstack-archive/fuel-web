@@ -702,10 +702,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             }), '_blank');
         },
         render: function() {
-            this.constructor.__super__.render.call(this, _.extend({
-                node: this.node,
-                locked: !app.page.tab || app.page.tab.model.task('deploy', 'running')
-            }, this.templateHelpers));
+            this.constructor.__super__.render.call(this, _.extend({node: this.node}, this.templateHelpers));
             this.$('.accordion-body').collapse({
                 parent: this.$('.accordion'),
                 toggle: false

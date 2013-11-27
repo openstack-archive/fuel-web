@@ -352,3 +352,40 @@ class NeutronManager(NetworkManager):
             )
             db().add(private_network_group)
             db().commit()
+
+    @classmethod
+    def update(cls, cluster, network_configuration):
+        if 'networks' in network_configuration:
+            for ng in network_configuration['networks']:
+                if ng['id'] == cls.get_admin_network_group_id():
+                    continue
+
+                ng_db = db().query(NetworkGroup).get(ng['id'])
+
+                for key, value in ng.iteritems():
+                    if key == "ip_ranges":
+                        cls._set_ip_ranges(ng['id'], value)
+                    else:
+                        if key == 'cidr' and \
+                                ng['name'] not in ('private', 'public'):
+                            cls.update_range_mask_from_cidr(ng_db, value)
+
+                        setattr(ng_db, key, value)
+
+                if ng['name'] == 'public':
+                    cls.update_cidr_from_gw_mask(ng_db, ng)
+                    #TODO(NAME) get rid of unmanaged parameters in request
+                    if 'neutron_parameters' in network_configuration:
+                        pre_nets = network_configuration[
+                            'neutron_parameters']['predefined_networks']
+                        pre_nets['net04_ext']['L3']['gateway'] = ng['gateway']
+                if ng['name'] != 'private':
+                    cls.create_networks(ng_db)
+                ng_db.cluster.add_pending_changes('networks')
+
+        if 'neutron_parameters' in network_configuration:
+            for key, value in network_configuration['neutron_parameters'] \
+                    .items():
+                setattr(cluster.neutron_config, key, value)
+            db().add(cluster.neutron_config)
+            db().commit()

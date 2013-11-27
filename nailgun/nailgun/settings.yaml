@@ -76,6 +76,21 @@ LOG_FORMATS:
       - CRIT
       - ALERT
       - EMERG
+  - &remote_imfile_log_format
+    regexp: '^(?P<date>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?P<secfrac>\.\d{1,})?(?P<timezone>(Z|[+-]\d{2}:\d{2}))?\s[a-z]{3,7}:\s+(?P<date_local>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}((.|,)\d{3})?)\s+(-\s+)?(?P<pid>\d+)?(\s+)?(-\s+)?(?P<level>[a-zA-Z]{3,8})\s+(?P<text>.*)$'
+    date_format: '%Y-%m-%dT%H:%M:%S'
+    levels:
+      - TRACE
+      - DEBUG
+      - INFO
+      - NOTICE
+      - AUDIT
+      - WARNING
+      - ERROR
+      - CRITICAL
+      - ALERT
+      - EMERG
+      - PANIC
   - &python_log_format
     regexp: '^(?P<date>\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})\s(?P<level>[A-Z]+)\s(?P<text>.*)$'
     date_format: '%Y-%m-%d %H:%M:%S'
@@ -91,6 +106,10 @@ LOG_TYPES:
     remote: False
     multiline: True
   - &remote_log_type
+    remote: True
+    multiline: True
+    base: *remote_syslog_dir
+  - &remote_imfile_log_type
     remote: True
     multiline: True
     base: *remote_syslog_dir
@@ -223,122 +242,122 @@ LOGS:
 # Openstack logs
   - id: 'os/nova-cert'
     name: "nova-cert"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "nova-cert.log"
   - id: 'os/nova-consoleauth'
     name: "nova-consoleauth"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "nova-consoleauth.log"
   - id: 'os/nova-scheduler'
     name: "nova-scheduler"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "nova-scheduler.log"
   - id: 'os/nova-network'
     name: "nova-network"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "nova-network.log"
   - id: 'os/nova-compute'
     name: "nova-compute"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "nova-compute.log"
   - id: 'os/nova-conductor'
     name: "nova-conductor"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "nova-conductor.log"
   - id: 'os/nova-objectstore'
     name: "nova-objectstore"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "nova-objectstore.log"
   - id: 'os/keystone'
     name: "keystone"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "keystone.log"
   - id: 'os/cinder-api'
     name: "cinder-api"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "cinder-api.log"
   - id: 'os/cinder-volume'
     name: "cinder-volume"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "cinder-volume.log"
   - id: 'os/cinder-scheduler'
     name: "cinder-scheduler"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "cinder-scheduler.log"
   - id: 'os/glance-api'
     name: "glance-api"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "glance-api.log"
   - id: 'os/glance-registry'
     name: "glance-registry"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "glance-registry.log"
   - id: 'os/neutron-server'
     name: "neutron-server"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "neutron-server.log"
   - id: 'os/neutron-ovs-cleanup'
     name: "neutron-ovs-cleanup"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "neutron-ovs-cleanup.log"
   - id: 'os/neutron-rescheduling'
     name: "neutron-rescheduling"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "neutron-rescheduling.log"
   - id: 'os/neutron-ovs-agent'
     name: "neutron-ovs-agent"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "neutron-ovs-agent.log"
   - id: 'os/neutron-l3-agent'
     name: "neutron-l3-agent"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "neutron-l3-agent.log"
   - id: 'os/neutron-dhcp-agent'
     name: "neutron-dhcp-agent"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "neutron-dhcp-agent.log"
   - id: 'os/neutron-metadata-agent'
     name: "neutron-metadata-agent"
-    <<: *remote_log_type
-    <<: *remote_syslog_log_format
+    <<: *remote_imfile_log_type
+    <<: *remote_imfile_log_format
     <<: *os_log_group
     path: "neutron-metadata-agent.log"
 

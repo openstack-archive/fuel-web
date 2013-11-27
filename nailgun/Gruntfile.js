@@ -53,12 +53,19 @@ module.exports = function(grunt) {
           es5: false
         }
       }
+    },
+    bower: {
+      target: {
+          rjsConfig: 'app/config.js'
+      }
     }
   });
 
   grunt.loadNpmTasks('grunt-contrib-requirejs');
   grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-jslint');
+  grunt.loadNpmTasks('grunt-bower-requirejs');
   grunt.registerTask('compress', ['requirejs']);
   grunt.registerTask('default', ['requirejs']);
+  grunt.registerTask('default', ['bower']);
 };

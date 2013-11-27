@@ -111,7 +111,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         onTabLeave: function(e) {
             var href = $(e.currentTarget).attr('href');
-            if (Backbone.history.getHash() != href.substr(1) && _.result(this.tab, 'hasChanges')) {
+            if (Backbone.history.getHash() != href.substr(1) && _.result(this.tab, 'hasChanges') && !$(e.currentTarget).closest($('.view-logs-link')).length) {
                 e.preventDefault();
                 this.discardSettingsChanges({
                     verification: !!(this.model.task('verify_networks', 'running') || this.model.task('check_networks', 'running')),

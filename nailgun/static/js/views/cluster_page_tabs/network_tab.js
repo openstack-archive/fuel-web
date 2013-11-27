@@ -49,8 +49,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         isLocked: function() {
             var task = !!this.model.task('deploy', 'running') || !!this.model.task('verify_networks', 'running');
-            var allowedClusterStatus = this.model.get('status') == 'new' || this.model.get('status') == 'error';
-            return !allowedClusterStatus || task;
+            return this.model.get('status') != 'new' || task;
         },
         isVerificationLocked: function() {
             return !!this.model.task('deploy', 'running') || !!this.model.task('verify_networks', 'running');

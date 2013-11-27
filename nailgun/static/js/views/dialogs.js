@@ -207,6 +207,15 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     });
 
     views.WizardPane = Backbone.View.extend({
+        events: {
+            'keydown input': 'onInputKeydown'
+        },
+        onInputKeydown: function(e) {
+            if (e.which == 13) {
+                e.preventDefault();
+                this.wizard.nextPane();
+            }
+        },
         initialize: function(options) {
             _.defaults(this, options);
         },
@@ -277,10 +286,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         onInputKeydown: function(e) {
             this.$('.control-group.error').removeClass('error');
             this.$('.help-inline').html('');
-            if (e.which == 13) {
-                e.preventDefault();
-                this.wizard.nextPane();
-            }
+            this.constructor.__super__.onInputKeydown.apply(this, arguments);
         },
         onReleaseChange: function() {
             this.updateReleaseParameters();
@@ -341,6 +347,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         releaseDependent: true,
         template: _.template(clusterModePaneTemplate),
         events: {
+            'keydown input': 'onInputKeydown',
             'change input[name=mode]': 'toggleTypes'
         },
         toggleTypes: function() {

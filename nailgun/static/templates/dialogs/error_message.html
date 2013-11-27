@@ -1,8 +1,6 @@
 <div class="text-error request-failed">
-  Server error has occurred.
+  <div data-i18n="dialog.error_occured.alert_text"></div>
   <% if (logsLink)  { %>
-    Please contact the administrators or <a href="<%- logsLink %>" target="_blank">see the logs</a>.
-  <% } else { %>
-    Please contact the administrators.
-  <% } %>
+    <a class="no-leave-check" href="<%- logsLink %>" target="_blank" data-i18n="dialog.error_occured.see_logs"></a>
+  <% }%>
 </div>

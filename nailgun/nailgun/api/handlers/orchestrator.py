@@ -15,6 +15,7 @@
 #    under the License.
 
 import traceback
+
 import web
 
 from nailgun.api.handlers.base import content_json

@@ -131,7 +131,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 noDisksConflict = noDisksConflict && noRolesConflict && _.isEqual(nodes.at(0).resource('disks'), node.resource('disks'));
             });
             this.$('.btn-configure-disks').toggleClass('conflict', !noDisksConflict);
-            this.$('.btn-configure-interfaces').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);
+            this.$('.btn-configure-interfaces').toggleClass('conflict', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1 || !!nodes.where({pending_addition: false}).length);
         },
         initialize: function() {
             this.nodes.on('resize', this.render, this);
@@ -305,7 +305,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var action = this.$(e.currentTarget).data('action');
             var messages = {
                 'disks': 'Only nodes with identical disk capacities can be configured together in the same action.',
-                'interfaces': 'Only nodes with an identical number of network interfaces can be configured together in the same action.'
+                'interfaces': 'Only not deployed nodes with an identical number of network interfaces can be configured together in the same action.'
             };
             var dialog = new dialogViews.Dialog();
             app.page.registerSubView(dialog);
@@ -1194,8 +1194,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !noChanges;
         },
         isLocked: function() {
-            var forbiddenNodes = this.nodes.filter(function(node) {return node.get('pending_addition') || node.get('status') == 'error';});
-            return !forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
+            var forbiddenNodes = this.nodes.filter(function(node) {return !node.get('pending_addition') || node.get('status') == 'error';});
+            return forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
             this.updateButtonsState(this.isLocked() || !this.hasChanges());

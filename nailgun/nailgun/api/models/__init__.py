@@ -34,13 +34,9 @@ from nailgun.api.models.network import NetworkGroup
 from nailgun.api.models.network import IPAddr
 from nailgun.api.models.network import IPAddrRange
 from nailgun.api.models.network import Vlan
-from nailgun.api.models.network import NetworkConfiguration
-from nailgun.api.models.network import L2Topology
-from nailgun.api.models.network import L2Connection
 from nailgun.api.models.network import AllowedNetworks
 from nailgun.api.models.network import NetworkAssignment
 
-from nailgun.api.models.neutron import NeutronNetworkConfiguration
 from nailgun.api.models.neutron import NeutronConfig
 
 from nailgun.api.models.notification import Notification

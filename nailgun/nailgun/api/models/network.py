@@ -23,7 +23,6 @@ from sqlalchemy import Unicode
 from sqlalchemy.orm import relationship, backref
 
 from nailgun.api.models.base import Base
-from nailgun.db import db
 
 
 class IPAddr(Base):
@@ -116,89 +115,6 @@ class NetworkGroup(Base):
             )
         ]
         return vlans
-
-
-class NetworkConfiguration(object):
-    @classmethod
-    def update(cls, cluster, network_configuration):
-        from nailgun.network.manager import NetworkManager
-        network_manager = NetworkManager
-
-        if 'net_manager' in network_configuration:
-            setattr(
-                cluster,
-                'net_manager',
-                network_configuration['net_manager']
-            )
-
-        if 'dns_nameservers' in network_configuration:
-            setattr(
-                cluster,
-                'dns_nameservers',
-                network_configuration['dns_nameservers']['nameservers']
-            )
-
-        if 'networks' in network_configuration:
-            for ng in network_configuration['networks']:
-                if ng['id'] == network_manager.get_admin_network_group_id():
-                    continue
-
-                ng_db = db().query(NetworkGroup).get(ng['id'])
-
-                for key, value in ng.iteritems():
-                    if key == "ip_ranges":
-                        cls._set_ip_ranges(ng['id'], value)
-                    else:
-                        if key == 'cidr' and \
-                                not ng['name'] in ('public', 'floating'):
-                            network_manager.update_range_mask_from_cidr(
-                                ng_db, value)
-
-                        setattr(ng_db, key, value)
-
-                network_manager.create_networks(ng_db)
-                ng_db.cluster.add_pending_changes('networks')
-
-    @classmethod
-    def _set_ip_ranges(cls, network_group_id, ip_ranges):
-        # deleting old ip ranges
-        db().query(IPAddrRange).filter_by(
-            network_group_id=network_group_id).delete()
-
-        for r in ip_ranges:
-            new_ip_range = IPAddrRange(
-                first=r[0],
-                last=r[1],
-                network_group_id=network_group_id)
-            db().add(new_ip_range)
-        db().commit()
-
-
-class L2Topology(Base):
-    __tablename__ = 'l2_topologies'
-    id = Column(Integer, primary_key=True)
-    network_id = Column(
-        Integer,
-        ForeignKey('network_groups.id', ondelete="CASCADE"),
-        nullable=False
-    )
-
-
-class L2Connection(Base):
-    __tablename__ = 'l2_connections'
-    id = Column(Integer, primary_key=True)
-    topology_id = Column(
-        Integer,
-        ForeignKey('l2_topologies.id', ondelete="CASCADE"),
-        nullable=False
-    )
-    interface_id = Column(
-        Integer,
-        # If interface is removed we should somehow remove
-        # all L2Topologes which include this interface.
-        ForeignKey('node_nic_interfaces.id', ondelete="CASCADE"),
-        nullable=False
-    )
 
 
 class AllowedNetworks(Base):

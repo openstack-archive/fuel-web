@@ -153,3 +153,39 @@ class NovaNetworkManager(NetworkManager):
         if nic == node.admin_interface:
             ngs.append(cls.get_admin_network_group())
         return ngs
+
+    @classmethod
+    def update(cls, cluster, network_configuration):
+        if 'net_manager' in network_configuration:
+            setattr(
+                cluster,
+                'net_manager',
+                network_configuration['net_manager']
+            )
+        if 'dns_nameservers' in network_configuration:
+            setattr(
+                cluster,
+                'dns_nameservers',
+                network_configuration['dns_nameservers']['nameservers']
+            )
+
+        if 'networks' in network_configuration:
+            for ng in network_configuration['networks']:
+                if ng['id'] == cls.get_admin_network_group_id():
+                    continue
+
+                ng_db = db().query(NetworkGroup).get(ng['id'])
+
+                for key, value in ng.iteritems():
+                    if key == "ip_ranges":
+                        cls._set_ip_ranges(ng['id'], value)
+                    else:
+                        if key == 'cidr' and \
+                                not ng['name'] in ('public', 'floating'):
+                            cls.update_range_mask_from_cidr(
+                                ng_db, value)
+
+                        setattr(ng_db, key, value)
+
+                cls.create_networks(ng_db)
+                ng_db.cluster.add_pending_changes('networks')

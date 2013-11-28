@@ -438,33 +438,6 @@ class NetworkManager(object):
         return free_ips
 
     @classmethod
-    def _get_free_ips_from_range(cls, iterable, num=1):
-        """Method for receiving free IP addresses from range.
-
-        :param iterable: Iterable object with IP addresses.
-        :type  iterable: iterable
-        :param num: Number of IP addresses to return.
-        :type  num: int
-        :returns: List of free IP addresses from given range.
-        :raises: errors.OutOfIPs
-        """
-        free_ips = []
-        for chunk in cls._chunked_range(iterable):
-            from_range = set(chunk)
-            diff = from_range - set(
-                [i.ip_addr for i in db().query(IPAddr).
-                 filter(IPAddr.ip_addr.in_(from_range))]
-            )
-            while len(free_ips) < num:
-                try:
-                    free_ips.append(diff.pop())
-                except KeyError:
-                    break
-            if len(free_ips) == num:
-                return free_ips
-        raise errors.OutOfIPs()
-
-    @classmethod
     def _get_ips_except_admin(cls, node_id=None,
                               network_id=None, joined=False):
         """Method for receiving IP addresses for node or network
@@ -908,44 +881,6 @@ class NetworkManager(object):
         return range1.first <= range2.last and range2.first <= range1.last
 
     @classmethod
-    def get_min_max_addr(cls, range_object):
-        """takes object which implicitly has IP range
-         and returns min and max address as tuple of two IPAddress elements
-
-        :range_object IPNetwork, IPRange: - object with ip range
-        :return (IPAddress, IPAddress):
-        """
-        if isinstance(range_object, IPRange):
-            return map(
-                IPAddress,
-                str(range_object).split('-')
-            )
-        else:
-            prefix_length = range_object.prefixlen
-            bin_addr = range_object.ip.bits().replace('.', '')
-            min_max_bin_addr = [bin_addr[0:prefix_length] +
-                                x * (32 - prefix_length) for x in ('0', '1')]
-            return map(
-                cls.bin_to_ip_addr,
-                min_max_bin_addr
-            )
-
-    @classmethod
-    def bin_to_ip_addr(cls, bin):
-        """converts string of 32 digits to IP address
-
-        :bin str: is binary representation of IP address, must be 32 character
-        long with ones and zeros  (ex: '00101100110011000011001100110011' )
-        :returns IPAddress: returns object of IPAddress class
-        """
-        return IPAddress('.'.join(
-            map(
-                lambda x: str(int(''.join(x), 2)),
-                zip(*[iter(bin)] * 8)
-            )
-        ))
-
-    @classmethod
     def get_node_interface_by_netname(cls, node_id, netname):
         return db().query(NodeNICInterface).join(
             (NetworkGroup, NodeNICInterface.assigned_networks)
@@ -954,3 +889,26 @@ class NetworkManager(object):
         ).filter(
             NodeNICInterface.node_id == node_id
         ).first()
+
+    @classmethod
+    def _set_ip_ranges(cls, network_group_id, ip_ranges):
+        # deleting old ip ranges
+        db().query(IPAddrRange).filter_by(
+            network_group_id=network_group_id).delete()
+
+        for r in ip_ranges:
+            new_ip_range = IPAddrRange(
+                first=r[0],
+                last=r[1],
+                network_group_id=network_group_id)
+            db().add(new_ip_range)
+        db().commit()
+
+    @classmethod
+    def update_cidr_from_gw_mask(cls, ng_db, ng):
+        if ng.get('gateway') and ng.get('netmask'):
+            from nailgun.network.checker import calc_cidr_from_gw_mask
+            cidr = calc_cidr_from_gw_mask({'gateway': ng['gateway'],
+                                           'netmask': ng['netmask']})
+            if cidr:
+                ng_db.cidr = str(cidr)

@@ -21,60 +21,6 @@ from sqlalchemy import Integer
 
 from nailgun.api.models.base import Base
 from nailgun.api.models.fields import JSON
-from nailgun.api.models.network import NetworkConfiguration
-from nailgun.api.models.network import NetworkGroup
-from nailgun.db import db
-
-
-class NeutronNetworkConfiguration(NetworkConfiguration):
-    @classmethod
-    def update(cls, cluster, network_configuration):
-        from nailgun.network.neutron import NetworkManager
-        network_manager = NetworkManager
-        if 'networks' in network_configuration:
-            for ng in network_configuration['networks']:
-                if ng['id'] == network_manager.get_admin_network_group_id():
-                    continue
-
-                ng_db = db().query(NetworkGroup).get(ng['id'])
-
-                for key, value in ng.iteritems():
-                    if key == "ip_ranges":
-                        cls._set_ip_ranges(ng['id'], value)
-                    else:
-                        if key == 'cidr' and \
-                                ng['name'] not in ('private', 'public'):
-                            network_manager.update_range_mask_from_cidr(
-                                ng_db, value)
-
-                        setattr(ng_db, key, value)
-
-                if ng['name'] == 'public':
-                    cls.update_cidr_from_gw_mask(ng_db, ng)
-                    #TODO(NAME) get rid of unmanaged parameters in request
-                    if 'neutron_parameters' in network_configuration:
-                        pre_nets = network_configuration[
-                            'neutron_parameters']['predefined_networks']
-                        pre_nets['net04_ext']['L3']['gateway'] = ng['gateway']
-                if ng['name'] != 'private':
-                    network_manager.create_networks(ng_db)
-                ng_db.cluster.add_pending_changes('networks')
-
-        if 'neutron_parameters' in network_configuration:
-            for key, value in network_configuration['neutron_parameters'] \
-                    .items():
-                setattr(cluster.neutron_config, key, value)
-            db().add(cluster.neutron_config)
-            db().commit()
-
-    @classmethod
-    def update_cidr_from_gw_mask(cls, ng_db, ng):
-        if ng.get('gateway') and ng.get('netmask'):
-            from nailgun.network.checker import calc_cidr_from_gw_mask
-            cidr = calc_cidr_from_gw_mask({'gateway': ng['gateway'],
-                                           'netmask': ng['netmask']})
-            if cidr:
-                ng_db.cidr = str(cidr)
 
 
 class NeutronConfig(Base):

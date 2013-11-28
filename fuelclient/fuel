@@ -76,7 +76,7 @@ class SetAction(argparse.Action):
             setattr(namespace, self.dest, set(values))
 
 
-def handle_api_exceptions(e):    
+def handle_api_exceptions(e):
     if isinstance(e, urllib2.HTTPError):
         print_error(str(e))
     elif isinstance(e, urllib2.URLError):
@@ -675,6 +675,7 @@ def network(params):
         os.path.abspath(params.dir or os.path.curdir),
         "network_{0}".format(params.env)
     )
+    check_for_one_attribute(params, ["upload", "verify", "download"])
     if params.upload:
         data, network_file_path = read_from_file(network_file_path)
         put_response = json_api_put_request(
@@ -694,17 +695,14 @@ def network(params):
             "Verification status is '{status}'. message: {message}"
             .format(**put_response)
         )
-    else:
-        if params.download:
-            network_file_path = write_to_file(network_file_path,
-                                              network_data)
-            print(
-                "Network configuration for environment with id={0}"
-                " downloaded to {1}"
-                .format(params.env, network_file_path)
-            )
-        else:
-            print_to_output(network_data, None)
+    elif params.download:
+        network_file_path = write_to_file(network_file_path,
+                                          network_data)
+        print(
+            "Network configuration for environment with id={0}"
+            " downloaded to {1}"
+            .format(params.env, network_file_path)
+        )
 
 
 def settings(params):
@@ -879,6 +877,17 @@ class DeployProgressFactory:
         for _node in self.nodes:
             _node["norm_progress"] = _node["progress"] / 100.0
 
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.is_not_finished:
+            sleep(0.5)
+            self.update()
+            return self
+        else:
+            raise StopIteration
+
 
 def print_deploy_progress(deploy_task):
     deploy_process = DeployProgressFactory(deploy_task)
@@ -893,26 +902,25 @@ def print_deploy_progress_without_terminal(deploy_process):
     print("Deploying changes to environment with id={0}".format(
         deploy_process.env
     ))
+    message_len = 0
     try:
-        while deploy_process.is_not_finished:
+        for state in deploy_process:
+            sys.stdout.write("\r" * message_len)
             message_len = 0
-            deploy_process.update()
             deployment_message = "[Deployment: {0:4.0%}]".format(
-                deploy_process.normalized_progress
+                state.normalized_progress
             )
             sys.stdout.write(deployment_message)
             message_len += len(deployment_message)
-            for index, _node in enumerate(deploy_process.nodes):
+            for index, _node in enumerate(state.nodes):
                 node_message = "[Node{id:2} {norm_progress:4.0%}]".format(
                     **_node
                 )
                 message_len += len(node_message)
                 sys.stdout.write(node_message)
-            sleep(0.5)
-            sys.stdout.write("\r" * message_len)
-        print("Finished deployment!")
-    except DeployProgressError as e:
-        print(e.message)
+        print("\nFinished deployment!")
+    except DeployProgressError as de:
+        print(de.message)
 
 
 def print_deploy_progress_with_terminal(deploy_process, terminal_screen):
@@ -922,32 +930,30 @@ def print_deploy_progress_with_terminal(deploy_process, terminal_screen):
     total_progress_bar = partial(get_bar_for_progress, scr_width - 17)
     node_bar = partial(get_bar_for_progress, scr_width - 28)
     try:
-        while deploy_process.is_not_finished:
-            deploy_process.update()
+        for state in deploy_process:
+            terminal_screen.refresh()
             terminal_screen.addstr(
                 0, 0,
                 "Deploying changes to environment with id={0}".format(
-                    deploy_process.env
+                    state.env
                 )
             )
             terminal_screen.addstr(
                 1, 0,
                 "Deployment: {0} {1:4.0%}".format(
-                    total_progress_bar(deploy_process.progress),
-                    deploy_process.normalized_progress
+                    total_progress_bar(state.progress),
+                    state.normalized_progress
                 )
             )
-            for index, _node in enumerate(deploy_process.nodes):
+            for index, _node in enumerate(state.nodes):
                 terminal_screen.addstr(
                     index + 2, 0,
                     "Node{id:3} {status:13}: {bar} {norm_progress:4.0%}"
                     .format(bar=node_bar(_node["progress"]), **_node)
                 )
-            sleep(0.5)
-            terminal_screen.refresh()
-    except DeployProgressError as e:
+    except DeployProgressError as de:
         close_curses()
-        print(e.message)
+        print(de.message)
     finally:
         close_curses()
 

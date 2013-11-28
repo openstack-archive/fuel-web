@@ -12,45 +12,66 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations
  * under the License.
-**/
+ **/
 module.exports = function(grunt) {
-  grunt.initConfig({
-    pkg: grunt.file.readJSON('package.json'),
-    requirejs: {
-      compile: {
-        options: {
-          baseUrl: '.',
-          appDir: 'static',
-          dir: grunt.option('static-dir') || '/tmp/static_compressed',
-          mainConfigFile: 'static/js/main.js',
-          modules: [{name: 'js/main'}],
-          waitSeconds: 60,
-          optimize: 'uglify2',
+    grunt.initConfig({
+        pkg: grunt.file.readJSON('package.json'),
+        requirejs: {
+            compile: {
+                options: {
+                    baseUrl: ".",
+                    appDir: "static",
+                    dir: grunt.option('static-dir') || "/tmp/static_compressed",
+                    mainConfigFile: "static/js/main.js",
+                    modules: [{name: "js/main"}],
+                    waitSeconds: 60,
+                    optimize: "uglify2",
+                }
+            }
+        },
+        less: {
+            all: {
+                src: 'static/less/*.less',
+                dest: 'static/css/less.css'
+            }
+        },
+        jslint: {
+            client: {
+                src: [
+                    'static/js/*.js',
+                    'static/js/views/*.js',
+                ],
+                directives: {
+                    predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
+                    ass: true,
+                    browser: true,
+                    unparam: true,
+                    nomen: true,
+                    eqeq: true,
+                    vars: true,
+                    white: true,
+                    es5: false
+                }
+            }
+        },
+        bower: {
+            install: {
+                options: {
+                    targetDir: 'static/js/libs/bower',
+                    verbose: true,
+                    cleanup: true,
+                    layout: "byComponent",
+                    bowerOptions: {
+                        production: true
+                    }
+                }
+            }
         }
-      }
-    },
-    jslint: {
-      client: {
-        src: [
-          'static/js/*.js',
-          'static/js/views/*.js',
-        ],
-        directives: {
-          predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
-          ass: true,
-          browser: true,
-          unparam: true,
-          nomen: true,
-          eqeq: true,
-          vars: true,
-          white: true,
-          es5: false
-        }
-      }
-    }
-  });
+    });
 
-  grunt.loadNpmTasks('grunt-contrib-requirejs');
-  grunt.loadNpmTasks('grunt-jslint');
-  grunt.registerTask('build', ['requirejs']);
+    grunt.loadNpmTasks('grunt-contrib-less');
+    grunt.loadNpmTasks('grunt-jslint');
+    grunt.loadNpmTasks('grunt-bower-task');
+    grunt.registerTask('compress', ['requirejs']);
+    grunt.registerTask('default', ['bower']);
 };

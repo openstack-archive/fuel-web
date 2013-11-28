@@ -55,17 +55,24 @@ module.exports = function(grunt) {
       }
     },
     bower: {
-      target: {
-          rjsConfig: 'app/config.js'
-      }
+        install: {
+            options: {
+                targetDir: 'static/js/libs/bower',
+                verbose: true,
+                cleanup: true,
+                layout: "byComponent",
+                bowerOptions: {
+                    production: true
+                }
+            }
+        }
     }
   });
 
   grunt.loadNpmTasks('grunt-contrib-requirejs');
   grunt.loadNpmTasks('grunt-contrib-less');
   grunt.loadNpmTasks('grunt-jslint');
-  grunt.loadNpmTasks('grunt-bower-requirejs');
+  grunt.loadNpmTasks('grunt-bower-task');
   grunt.registerTask('compress', ['requirejs']);
-  grunt.registerTask('default', ['requirejs']);
   grunt.registerTask('default', ['bower']);
 };

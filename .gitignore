@@ -23,6 +23,7 @@ lock
 
 node_modules
 
+nailgun/static/js/libs/bower
 nailgun/static/css/less.css
 
 .idea

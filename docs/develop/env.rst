@@ -100,9 +100,14 @@ Setup for Web UI Tests
 Running Nailgun in Fake Mode
 ----------------------------
 
-#. Populate the database from fixtures::
+#. Fetch JS dependencies::
 
     cd nailgun
+    npm install
+    grunt bower
+
+#. Populate the database from fixtures::
+
     ./manage.py syncdb
     ./manage.py loaddefault # It loads all basic fixtures listed in settings.yaml
     ./manage.py loaddata nailgun/fixtures/sample_environment.json  # Loads fake nodes

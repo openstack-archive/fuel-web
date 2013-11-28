@@ -137,6 +137,9 @@ function run_ui_tests {
     fi
     result=0
 
+    echo -n "Starting Grunt Bower task... "
+    grunt bower:install
+
     echo -n "Compressing UI... "
     compressed_static_dir=/tmp/static_compressed
     rm -rf $compressed_static_dir && mkdir -p $compressed_static_dir

@@ -37,15 +37,6 @@ define(['require'], function(require) {
             var urlRegexp = /(?:https?:\/\/([\-\w\.]+)+(:\d+)?(\/([\w\/_\-\.]*(\?\S+)?)?)?)/g;
             return utils.linebreaks(text).replace(urlRegexp, utils.composeLink);
         },
-        forceWebkitRedraw: function(el) {
-            if (window.isWebkit) {
-                el.each(function() {
-                    this.style.webkitTransform = 'scale(1)';
-                    var dummy = this.offsetHeight;
-                    this.style.webkitTransform = '';
-                });
-            }
-        },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;
             var dialogViews = require('views/dialogs'); // avoid circular dependencies

@@ -817,7 +817,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var operatingSystem;
             try {
               operatingSystem = this.node.collection.cluster.get('release').get('operating_system');
-            } catch(e){}
+            } catch (ignore) {}
             operatingSystem = operatingSystem || 'OS';
             var labels = {
                 offline: $.t('cluster_page.nodes_tab.node.status.offline'),

@@ -136,7 +136,9 @@ define(['require'], function(require) {
             /*jslint bitwise: false*/
             return result;
         },
-        composeCidr: function(ip, netmask) {
+        composeCidr: function(ipRanges, netmask) {
+            var notEmptyIpRanges = _.filter(ipRanges, function(ipRange) {return _.compact(ipRange).length;});
+            var ip = notEmptyIpRanges.length ? notEmptyIpRanges[0][0] || notEmptyIpRanges[0][1] : '';
             var netmaskInt = this.ipIntRepresentation(netmask);
             var ipInt = this.ipIntRepresentation(ip);
             var networkSize = netmaskInt.toString(2).match(/1/g).length;

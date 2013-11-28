@@ -31,13 +31,6 @@
   <div>
     <div class="range-row-header" data-i18n="cluster_page.network_tab.neutron.external_network"></div>
     <div class="network-attribute">
-      <label class="parameter-box clearfix setting">
-        <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.neutron.cidr"></div>
-        <div class="parameter-control"><input type="text" value="<%- externalCidr %>" name="cidr-ext" disabled /></div>
-        <div class="error"><span class="help-inline"></span></div>
-      </label>
-    </div>
-    <div class="network-attribute">
       <div class="range-row-header"><div data-i18n="cluster_page.network_tab.range_start"></div><div data-i18n="cluster_page.network_tab.range_end"></div></div>
       <% var range = neutronParameters.get('predefined_networks').net04_ext.L3.floating %>
       <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.neutron.floaing_ip"></div>

@@ -24,7 +24,6 @@ from datetime import datetime
 from functools import partial
 from itertools import izip
 import json
-import logging
 import mock
 from netaddr import IPNetwork
 import os
@@ -49,6 +48,7 @@ from nailgun.db import db
 from nailgun.db import flush
 from nailgun.db import syncdb
 from nailgun.fixtures.fixman import upload_fixture
+from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.wsgi import build_app
 
@@ -159,7 +159,7 @@ class Environment(object):
                 try:
                     del cluster_data[ex]
                 except KeyError as err:
-                    logging.warning(err)
+                    logger.warning(err)
         if api:
             resp = self.app.post(
                 reverse('ClusterCollectionHandler'),
@@ -211,7 +211,7 @@ class Environment(object):
                 try:
                     del node_data[ex]
                 except KeyError as err:
-                    logging.warning(err)
+                    logger.warning(err)
         if api:
             resp = self.app.post(
                 reverse('NodeCollectionHandler'),
@@ -432,7 +432,7 @@ class Environment(object):
                 try:
                     data.extend(json.load(fxtr_file))
                 except Exception as exc:
-                    logging.error(
+                    logger.error(
                         'Error "%s" occurred while loading '
                         'fixture %s' % (exc, fxtr_path)
                     )
@@ -446,13 +446,13 @@ class Environment(object):
             )
 
             if not os.path.exists(fxtr_path):
-                logging.warning(
+                logger.warning(
                     "Fixture file was not found: %s",
                     fxtr_path
                 )
                 break
             else:
-                logging.debug(
+                logger.debug(
                     "Fixture file is found, yielding path: %s",
                     fxtr_path
                 )

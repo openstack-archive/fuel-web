@@ -1194,8 +1194,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !noChanges;
         },
         isLocked: function() {
-            var forbiddenNodes = this.nodes.filter(function(node) {return node.get('pending_addition') || node.get('status') == 'error';});
-            return !forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
+            var forbiddenNodes = this.nodes.filter(function(node) {return !node.get('pending_addition') || node.get('status') == 'error';});
+            return forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
             this.updateButtonsState(this.isLocked() || !this.hasChanges());

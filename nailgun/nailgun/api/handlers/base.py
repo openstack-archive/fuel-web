@@ -97,10 +97,7 @@ class JSONHandler(object):
     def checked_data(self, validate_method=None, **kwargs):
         try:
             data = kwargs.pop('data', web.data())
-            if validate_method:
-                method = validate_method
-            else:
-                method = self.validator.validate
+            method = validate_method or self.validator.validate
 
             valid_data = method(data, **kwargs)
         except (

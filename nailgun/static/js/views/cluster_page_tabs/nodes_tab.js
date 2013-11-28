@@ -151,7 +151,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 noDisksConflict = noDisksConflict && noRolesConflict && _.isEqual(nodes.at(0).resource('disks'), node.resource('disks'));
             });
             this.configureDisksButton.set('invalid', !noDisksConflict);
-            this.configureInterfacesButton.set('invalid', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1);
+            this.configureInterfacesButton.set('invalid', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1 || !!nodes.where({pending_addition: false}).length);
         },
         setupButtonsBindings: function() {
             var visibleBindings = {
@@ -378,13 +378,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         showUnavailableGroupConfigurationDialog: function (e) {
             var action = this.$(e.currentTarget).data('action');
-            var messages = {
-                'disks': 'Only nodes with identical disk capacities can be configured together in the same action.',
-                'interfaces': 'Only nodes with an identical number of network interfaces can be configured together in the same action.'
-            };
             var dialog = new dialogViews.Dialog();
             app.page.registerSubView(dialog);
-            dialog.render({title: 'Unable to configure ' + action, message: messages[action]});
+            dialog.render({title: $.t('cluster_page.nodes_tab.node_management_panel.cant_configure_' + action), message: $.t('cluster_page.nodes_tab.node_management_panel.' + action + '_configuration_warning')});
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -1283,8 +1279,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !noChanges;
         },
         isLocked: function() {
-            var forbiddenNodes = this.nodes.filter(function(node) {return node.get('pending_addition') || node.get('status') == 'error';});
-            return !forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
+            var forbiddenNodes = this.nodes.filter(function(node) {return !node.get('pending_addition') || node.get('status') == 'error';});
+            return forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
             this.updateButtonsState(this.isLocked() || !this.hasChanges());

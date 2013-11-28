@@ -136,7 +136,11 @@
                     "node_management_panel": {
                         "group_by": "Group By",
                         "edit_roles_button": "Edit Roles",
-                        "add_nodes_button": "Add Nodes"
+                        "add_nodes_button": "Add Nodes",
+                        "cant_configure_disks": "Unable to configure disks",
+                        "cant_configure_interfaces": "Unable to configure interfaces",
+                        "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
+                        "interfaces_configuration_warning": "Only not deployed nodes with an identical number of network interfaces can be configured together in the same action."
                     },
                     "node": {
                         "hardware": {

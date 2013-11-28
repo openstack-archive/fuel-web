@@ -389,6 +389,10 @@
                     "important": "Important",
                     "incomplete_actions_text": "There are incompleted actions. Removing of the environment may fail and lead to inconsistent state.",
                     "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes."
+                },
+                "error_occured": {
+                    "alert_text": "Server error has occured. Please contact the administrators.",
+                    "see_logs": "See the logs"
                 }
             }
         }

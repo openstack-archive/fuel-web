@@ -204,7 +204,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.scheduleUpdate();
             this.eventNamespace = 'unsavedchanges' + this.activeTab;
             $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
-            $('body').on('click.' + this.eventNamespace, 'a[href^=#]', _.bind(this.onTabLeave, this));
+            $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
         },
         render: function() {
             this.tearDownRegisteredSubViews();

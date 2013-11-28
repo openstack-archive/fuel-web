@@ -58,7 +58,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 }
             } catch (ignore) {}
             this.$('.modal-body').removeClass().addClass('modal-body');
-            this.$('.modal-body').html(views.Dialog.prototype.errorMessageTemplate({logsLink: logsLink}));
+            this.$('.modal-body').html(views.Dialog.prototype.errorMessageTemplate({logsLink: logsLink})).i18n();
         },
         displayErrorMessage: function(options) {
             this.displayError();

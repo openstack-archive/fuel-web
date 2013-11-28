@@ -13,6 +13,8 @@
     "less": "~1.5.1",
     "grunt-jslint": "~1.1.1",
     "grunt-contrib-requirejs": "~0.4.1",
-    "grunt-contrib-less": "~0.8.2"
+    "grunt-contrib-less": "~0.8.2",
+    "grunt-bower": "~0.7.0",
+    "grunt-bower-task": "~0.3.4"
   }
 }

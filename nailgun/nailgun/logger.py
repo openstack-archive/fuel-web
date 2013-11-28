@@ -15,17 +15,47 @@
 #    under the License.
 
 import logging
+import sys
+
 from logging.handlers import WatchedFileHandler
 from StringIO import StringIO
 
-from nailgun.settings import settings
-
-logger = logging.getLogger("nailgun")
-api_logger = logging.getLogger("nailgun-api")
 
 SERVER_ERROR_MSG = '500 Internal Server Error'
 DATEFORMAT = '%Y-%m-%d %H:%M:%S'
-LOGFORMAT = '%(asctime)s %(levelname)s (%(module)s) %(message)s'
+LOGFORMAT = '%(asctime)s.%(msecs)03d %(levelname)s ' + \
+            '[%(thread)x] (%(module)s) %(message)s'
+formatter = logging.Formatter(LOGFORMAT, DATEFORMAT)
+
+
+def make_nailgun_logger():
+    """Make logger for nailgun app writes logs to stdout
+    """
+    logger = logging.getLogger("nailgun")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
+
+
+def make_api_logger():
+    """Make logger for REST API writes logs to the file
+    """
+    # Circular import dependency problem
+    # we import logger module in settings
+    from nailgun.settings import settings
+
+    logger = logging.getLogger("nailgun-api")
+    log_file = WatchedFileHandler(settings.API_LOG)
+    log_file.setFormatter(formatter)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(log_file)
+    return logger
+
+
+logger = make_nailgun_logger()
+api_logger = make_api_logger()
 
 
 class WriteLogger(logging.Logger, object):
@@ -42,11 +72,6 @@ class WriteLogger(logging.Logger, object):
 class HTTPLoggerMiddleware(object):
     def __init__(self, application):
         self.application = application
-        log_file = WatchedFileHandler(settings.API_LOG)
-        log_format = logging.Formatter(LOGFORMAT, DATEFORMAT)
-        log_file.setFormatter(log_format)
-        api_logger.setLevel(logging.DEBUG)
-        api_logger.addHandler(log_file)
 
     def __call__(self, env, start_response):
         env['wsgi.errors'] = WriteLogger(api_logger.error)

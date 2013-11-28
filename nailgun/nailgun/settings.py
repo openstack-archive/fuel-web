@@ -14,26 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
-import logging.config
 import os.path
-import sys
 
 import yaml
+
+from nailgun.logger import logger
 
 
 class NailgunSettings(object):
     def __init__(self):
-        logger = logging.getLogger("nailgun")
-        logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s (%(module)s) %(message)s",
-            "%Y-%m-%d %H:%M:%S"
-        )
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-
         settings_files = []
         logger.debug("Looking for settings.yaml package config "
                      "using old style __file__")

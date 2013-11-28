@@ -12,27 +12,28 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
  * License for the specific language governing permissions and limitations
  * under the License.
-**/
+ **/
 requirejs.config({
     baseUrl: 'static',
     urlArgs: '_=' +  (new Date()).getTime(),
     waitSeconds: 60,
     paths: {
-        jquery: 'js/libs/jquery-1.9.1',
-        'jquery-checkbox': 'js/libs/jquery.checkbox',
-        'jquery-timeout': 'js/libs/jquery.timeout',
-        'jquery-ui': 'js/libs/jquery-ui-1.10.2.custom',
-        'jquery-autoNumeric': 'js/libs/autoNumeric',
-        i18next: 'js/libs/i18next-1.7.1',
+        'jquery': 'js/libs/bower/jquery/js/jquery',
+        'jquery-checkbox': 'js/libs/custom/jquery.checkbox',
+        'jquery-timeout': 'js/libs/bower/jquery.timeout/js/index',
+        'jquery-ui': 'js/libs/custom/jquery-ui-1.10.2.custom',
+        'jquery-autoNumeric': 'js/libs/bower/autoNumeric/js/autoNumeric',
         utils: 'js/utils',
-        underscore: 'js/libs/lodash',
-        backbone: 'js/libs/backbone',
-        stickit: 'js/libs/backbone.stickit',
-        deepModel: 'js/libs/deep-model',
-        coccyx: 'js/libs/coccyx',
-        bootstrap: 'js/libs/bootstrap.min',
-        text: 'js/libs/text',
-        retina: 'js/libs/retina',
+        lodash: 'js/libs/bower/lodash/js/lodash',
+        backbone: 'js/libs/custom/backbone',
+        stickit: 'js/libs/bower/backbone.stickit/js/index',
+        coccyx: 'js/libs/custom/coccyx',
+        bootstrap: 'js/libs/custom/bootstrap.min',
+        text: 'js/libs/bower/requirejs-text/js/text',
+        retina: 'js/libs/bower/retina.js/js/retina',
+        i18next: 'js/libs/bower/i18next/js/i18next-1.7.1',
+        underscore: 'js/libs/bower/lodash/js/lodash',
+        deepModel: 'js/libs/bower/backbone-deep-model/js/deep-model',
         app: 'js/app',
         models: 'js/models',
         collections: 'js/collections',

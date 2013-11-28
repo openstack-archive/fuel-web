@@ -22,6 +22,7 @@ nailgun.log
 lock
 
 node_modules
+static/js/libs/bower
 
 .idea
 .DS_Store

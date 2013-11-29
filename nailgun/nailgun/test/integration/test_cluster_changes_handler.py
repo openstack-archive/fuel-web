@@ -476,9 +476,18 @@ class TestHandlers(BaseIntegrationTest):
                         "version": "1.0",
                         "provider": "ovs",
                         "interfaces": {
-                            "eth0": {"mtu": 1500},
-                            "eth1": {"mtu": 1500},
-                            "eth2": {"mtu": 1500},
+                            "eth0": {
+                                "L2": {"vlan_splinters": "off"},
+                                "mtu": 1500
+                            },
+                            "eth1": {
+                                "L2": {"vlan_splinters": "off"},
+                                "mtu": 1500
+                            },
+                            "eth2": {
+                                "L2": {"vlan_splinters": "off"},
+                                "mtu": 1500
+                            },
                         },
                         "endpoints": {
                             "br-mgmt": {"IP": [ips['management'] + "/24"]},

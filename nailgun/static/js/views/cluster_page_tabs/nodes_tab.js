@@ -1211,7 +1211,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 .find('.volume-group-size').text(utils.showDiskSize(size, 2));
         },
         renderVisualGraph: function() {
-            if (!this.disk.get('volumes').some('validationError') && !this.disk.validationError) {
+            if (!this.disk.get('volumes').some('validationError') && this.disk.isValid()) {
                 var unallocatedWidth = 100;
                 this.disk.get('volumes').each(function(volume) {
                     var width = this.disk.get('size') ? utils.floor(volume.get('size') / this.disk.get('size') * 100, 2) : 0;
@@ -1368,7 +1368,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.registerSubView(nodeInterface);
                 this.$('.node-networks').append(nodeInterface.render().el);
             }, this));
-// if any errors found disable apply button
+            // if any errors found disable apply button
             _.each(this.interfaces.invoke('validate'), _.bind(function(interfaceValidationResult) {
                 if (!_.isEmpty(interfaceValidationResult)) {
                     this.applyChangesButton.set('disabled', true);

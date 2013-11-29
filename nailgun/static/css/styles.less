@@ -1,1 +1,13 @@
-@import 'main.css';
+@import '../js/libs/bower/bootstrap/less/bootstrap.less';
+/* overriding bootstrap icons */
+[class^="icon-"],
+[class*=" icon-"] {
+  display: inline;
+  vertical-align: baseline;
+  background: none;
+  width: auto;
+  height: auto;
+  margin-top: 0;
+}
+@import (less) 'fonticon.css';
+@import (less) 'main.css';

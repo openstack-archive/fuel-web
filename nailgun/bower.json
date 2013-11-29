@@ -11,7 +11,8 @@
         "backbone.stickit": "https://raw.github.com/NYTimes/backbone.stickit/b450a07b2cecb3ad0343096f29e0332d5f9508b0/backbone.stickit.js",
         "i18next": "1.7.1",
         "backbone-deep-model": "0.10.4",
-        "less": "1.5.1"
+        "less": "1.5.1",
+        "bootstrap": "2.3.2"
     },
     "exportsOverride": {
         "jquery": {
@@ -46,6 +47,10 @@
         },
         "less": {
             "js": "dist/less-1.5.1.js"
+        },
+        "bootstrap":{
+            "js": "docs/assets/js/bootstrap.js",
+            "less": "less/*.less"
         }
     },
     "ignore": [

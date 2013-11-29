@@ -20,7 +20,7 @@ casper.on('page.error', function(msg) {
 });
 
 casper.loadPage = function(page) {
-    return this.thenOpen(baseUrl + page).waitWhileSelector('#content > .loading');
+    return this.thenOpen(baseUrl + page).waitWhileSelector('#content > .loading', null, null, 10000);
 }
 
 casper.loadJsFile = function(file) {

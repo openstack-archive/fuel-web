@@ -743,7 +743,9 @@ class NetworkManager(object):
                 if network.name == network_name:
                     return interface
 
-        raise errors.CanNotFindInterface()
+        raise errors.CanNotFindInterface(
+            u'Cannot find interface by name "{0}" for node: '
+            '{1}'.format(network_name, node.full_name))
 
     @classmethod
     def get_end_point_ip(cls, cluster_id):

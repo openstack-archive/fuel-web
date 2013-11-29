@@ -400,6 +400,7 @@
     "zh-CN": {
         "translation": {
             "common": {
+                "title": "Fuel Dashboard",
                 "select_all_button": "选择全部",
                 "load_defaults_button": "恢复默认",
                 "cancel_changes_button": "取消变更",
@@ -407,9 +408,20 @@
                 "rename_button": "重命名",
                 "delete_button": "删除",
                 "save_settings_button": "保存设置",
-                "cancel_button": "取消"
+                "cancel_button": "取消",
+                "apply_changes_button": "应用变更",
+                "not_available": "N/A",
+                "size": {
+                    "byte": "byte",
+                    "byte_plural": "bytes",
+                    "kb": "KB",
+                    "mb": "MB",
+                    "gb": "GB",
+                    "tb": "TB"
+                }
             },
             "node_details": {
+                "cpu": "CPU",
                 "system": "系统",
                 "memory": "内存",
                 "disks": "磁盘",
@@ -429,7 +441,8 @@
                 }
             },
             "network": {
-                "fixed": "虚机网络（固定）",
+                "fuelweb_admin": "Admin (PXE)",
+                "fixed": "VM（固定）",
                 "public": "公开",
                 "floating": "浮动",
                 "management": "管理",
@@ -440,8 +453,10 @@
                 "releases": "版本",
                 "support": "支持",
                 "stats": {
-                    "total": "全部节点",
-                    "unallocated": "未分配节点"
+                    "total": ["全部", "节点"],
+                    "total_plural": ["全部", "节点"],
+                    "unallocated": ["未分配", "节点"],
+                    "unallocated_plural": ["未分配", "节点"]
                 }
             },
             "breadcrumbs": {
@@ -449,7 +464,8 @@
                 "environments": "环境",
                 "releases": "版本",
                 "support": "支持",
-                "notifications": "通知"
+                "notifications": "通知",
+                "capacity": "Capacity"
             },
             "notifications_page": {
                 "title": "通知"
@@ -464,7 +480,16 @@
                 "irc_text": "如果您有任何问题，可通过IRC（freenode.net网络的 #fuel 频道）联系开发者。",
                 "log_text": "如果您在使用Fuel Web的过程中遇到任何错误或异常，可能需要将日志提交给支持团队，请点击按钮下载：",
                 "contact_support": "联系支持",
-                "download_logs": "下载日志"
+                "register_fuel_title": "注册FUEL",
+                "register_fuel_content": "注册后能收到新版本和相关重要信息。另外，您在接下来的30天内将可得到基础支持服务!",
+                "download_diagnostic_snapshot_text": "下载诊断快照",
+                "gen_logs_snapshot_text": "生成日志快照...",
+                "loading": "加载...",
+                "gen_diagnostic_snapshot_text": "生成诊断快照",
+                "diagnostic_snapshot": "诊断快照",
+                "capacity_audit": "性能审计",
+                "capacity_audit_text": "查看和下载性能日志。",
+                "view_capacity_audit": "查看性能日志"
             },
             "release_page": {
                 "title": "版本",
@@ -475,7 +500,6 @@
                 "no_releases_message": "没有版本可用",
                 "release": {
                     "configure_button": "配置",
-                    "progress": "下载",
                     "active": "活动",
                     "error": "错误",
                     "not_available": "不可用",
@@ -493,17 +517,31 @@
             "cluster_page": {
                 "nodes_tab": {
                     "configure_interfaces": {
+                        "title": "在__name__上配置接口",
+                        "title_plural": "在__count__个节点上配置接口",
                         "speed": "速度",
                         "drag_and_drop_description": "使用拖拽在物理接口之间移动逻辑网络"
                     },
                     "configure_disks": {
+                        "title": "在__name__上配置磁盘",
+                        "title_plural": "在__count__个节点上配置磁盘",
                         "disk_information": "磁盘信息",
                         "volume_groups": "卷组",
                         "total_space": "全部空间",
                         "unallocated": "未分配",
                         "use_all_allowed_space": "使用全部可用空间"
                     },
+                    "node_management_panel": {
+                        "group_by": "分组",
+                        "edit_roles_button": "编辑角色",
+                        "add_nodes_button": "增加节点"
+                    },
                     "node": {
+                        "hardware": {
+                            "cpu": "CPU",
+                            "hdd": "HDD",
+                            "ram": "RAM"
+                        },
                         "status": {
                             "discovered": "在线",
                             "offline": "离线",
@@ -512,15 +550,117 @@
                             "pending_addition": "等待增加",
                             "pending_deletion": "等待删除",
                             "ready": "已就绪",
-                            "installing_os": "正在安装",
-                            "os_is_installed": "已安装",
-                            "installing_openstack": "正在安装OpenStack"
-                        }
+                            "installing_os": "正在安装__os__",
+                            "os_is_installed": "__os__已安装",
+                            "installing_openstack": "正在安装OpenStack",
+                            "discard_addition": "取消增加",
+                            "discard_deletion": "取消删除",
+                            "discard_role_changes": "取消角色变更"
+                        },
+                        "edit_name": "编辑名称"
                     },
-                    "back_to_nodes_button": "返回节点列表"
+                    "back_to_nodes_button": "返回节点列表",
+                    "unallocated_nodes": "未分配节点",
+                    "no_selected_nodes": "没有选择任何节点",
+                    "no_nodes_in_environment": "选择想分配的节点并设置角色",
+                    "no_nodes_in_fuel": "这个操作需要拥有一个或多个未分配节点的节点池。配置节点从网络启动来将它添加到节点池(PXE booting)。Fuel会自动发现节点。"
                 },
                 "settings_tab": {
-                    "title": "OpenStack设置"
+                    "title": "OpenStack设置",
+                    "access": {
+                        "group_name": "访问",
+                        "user": {
+                            "label": "用户名",
+                            "description": "管理员用户名"
+                        },
+                        "email": {
+                            "label": "电子邮件",
+                            "description": "管理员电子邮件"
+                        },
+                        "tenant": {
+                            "label": "tenant",
+                            "description": "管理员Tenant(项目)名称"
+                        },
+                        "password": {
+                            "label": "密码",
+                            "description": "管理员密码"
+                        }
+                    },
+                    "syslog": {
+                        "group_name": "系统日志",
+                        "syslog_transport": {
+                            "label": "系统日志传输协议",
+                            "values": {
+                                "udp": {
+                                    "label": "UDP"
+                                },
+                                "tcp": {
+                                    "label": "TCP"
+                                }
+                            }
+                        },
+                        "syslog_server": {
+                            "label": "Hostname",
+                            "description": "远程系统日志主机名"
+                        },
+                        "syslog_port": {
+                            "label": "端口",
+                            "description": "远程系统日志端口"
+                        }
+                    },
+                    "common": {
+                        "group_name": "通用",
+                        "auto_assign_floating_ip": {
+                            "label": "自动分配浮动IP",
+                            "description": "OpenStack将自动给新实例分配浮动IP"
+                        },
+                        "libvirt_type": {
+                            "label": "管理器类型",
+                            "values": {
+                                "kvm": {
+                                    "label": "KVM",
+                                    "description": "如果在硬件上运行OpenStack，选择该类型的管理器"
+                                },
+                                "qemu": {
+                                    "label": "QEMU",
+                                    "description": "如果您在虚拟机上运行OpenStack请选择该类型的管理器"
+                                }
+                            }
+                        },
+                        "start_guests_on_host_boot": {
+                            "label": "主机启动时运行客户机",
+                            "description": "在主机重启时是否需要重启客户机。 如果启用，此选项会导致nova-compute启动时无条件的重启客户机。如果客户机为停止状态，则启动它。如果是运行状态，则重启"
+                        },
+                        "use_cow_images": {
+                            "label": "为映像使用qcow格式",
+                            "description": "大多数情况下您需要qcow格式。如果设置为false，将使用原始映像格式运行虚机。基于原始格式的OpenStack当前不支持快照"
+                        },
+                        "compute_scheduler_driver": {
+                            "label": "Scheduler driver",
+                            "values": {
+                                "nova": {
+                                    "scheduler": {
+                                        "filter_scheduler": {
+                                            "FilterScheduler": {
+                                                "label": "过滤器调度器",
+                                                "description": "TBD"
+                                            }
+                                        },
+                                        "simple": {
+                                            "SimpleScheduler": {
+                                                "label": "简单调度器",
+                                                "description": "TBD"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "auth_key": {
+                            "label": "公开密钥",
+                            "description": "部署节点时包含在authorized_keys中的公钥"
+                        }
+                    }
                 },
                 "actions_tab": {
                     "title": "动作",
@@ -533,14 +673,22 @@
                     "flatdhcp_manager": "FlatDHCP管理",
                     "vlan_manager": "VLAN管理",
                     "verify_networks_button": "验证网络",
+                    "neutron_segmentation": "Neutron和__segment_type__段",
+                    "untagged": "未标记",
                     "range_start": "开始",
                     "range_end": "结束",
                     "verify_networks": {
-                        "step_0": "完成网络验证4个步骤:",
+                        "step_0": "完成网络验证的4个步骤:",
                         "step_1": "1. 每个节点启动测试监听帧",
                         "step_2": "2. 每个节点发送802.1Q封装的UDP帧",
                         "step_3": "3. 每个节点从其它节点注册测试帧",
-                        "success_alert": "验证成功。网络配置正确。"
+                        "step_4": "4. 在所有端口发送DHCP消息",
+                        "success_alert": "验证成功。网络配置正确。",
+                        "fail_alert": "验证失败。",
+                        "node_name": "节点名称",
+                        "node_mac_address": "节点MAC地址",
+                        "node_interface": "节点接口",
+                        "expected_vlan": "Expected VLAN (未接收)"
                     },
                     "network_parameters": {
                         "ip_range": "IP范围",
@@ -552,6 +700,18 @@
                         "size_of_networks": "网络大小",
                         "vlan_id_range": "VLAN ID范围",
                         "use_vlan_tagging": "使用VLAN标记"
+                    },
+                    "neutron": {
+                        "l2_configuration": "Neutron L2配置",
+                        "l3_configuration": "Neutron L3配置",
+                        "id_range": "ID范围",
+                        "base_mac": "基础MAC地址",
+                        "external_network": "外部网络",
+                        "cidr": "CIDR",
+                        "floaing_ip": "浮动IP范围",
+                        "internal_network": "内部网络",
+                        "gateway": "网关",
+                        "name_servers": "Name servers"
                     }
                 },
                 "logs_tab": {
@@ -559,7 +719,7 @@
                     "logs": "日志",
                     "node": "节点",
                     "source": "来源",
-                    "level": "级别",
+                    "min_level": "最低级别",
                     "show": "显示",
                     "log_alert": "无法获取日志",
                     "source_alert": "无法获取日志来源",
@@ -574,14 +734,84 @@
                     "run_tests_button": "运行测试",
                     "stop_tests_button": "停止测试",
                     "deploy_alert": "在测试之前必须先部署新的OpenStack环境",
-                    "not_available_alert": "OSTF服务不可用"
+                    "not_available_alert": "OSTF服务不可用",
+                    "expected_duration": "Expected Duration",
+                    "actual_duration": "Actual Duration",
+                    "status": "状态"
                 },
                 "deploy_changes": "部署变更",
                 "deployment_mode": "部署模式：",
                 "openstack_release": "OpenStack版本：",
                 "environment_status": "环境状态："
             },
+            "capacity_page": {
+                "title": "性能审计",
+                "license_usage": "许可使用报告",
+                "fuel_version": "Fuel版本",
+                "fuel_uuid": "Fuel UUID",
+                "env_name": "环境名称",
+                "node_count": "节点数量",
+                "total_number_alloc_nodes": "全部已分配节点的数量",
+                "total_number_unalloc_nodes": "全部未分配节点的数量",
+                "node_role": "节点角色",
+                "nodes_with_config": "该配置的节点数",
+                "download_report": "下载报告",
+                "loading": "加载..."
+            },
             "dialog": {
+                "create_cluster_wizard": {
+                    "title": "新建OpenStack环境",
+                    "prev": "后退",
+                    "next": "前进",
+                    "create": "新建",
+                    "name_release": {
+                        "title": "名称和版本",
+                        "name": "名称",
+                        "release_label": "OpenStack版本",
+                        "red_hat_info": "要安装Red Hat OpenStack, 您需要先下载缓存在Fuel主节点上的RHOS和RHEL。你可以前往版本页面操作，或者在下方选择您的订阅类型并输入认证，RHEL和RHOS将会在新建环境后自动下载并存储。"
+                    },
+                    "mode": {
+                        "title": "部署模式"
+                    },
+                    "compute": {
+                        "title": "计算",
+                        "kvm_description": "如果在硬件上运行OpenStack，请选择该管理器类型",
+                        "qemu_description": "如果在虚机上运行OpenStack，请选择该管理器类型"
+                    },
+                    "network": {
+                        "title": "网络",
+                        "alert": "__releaseName__不支持Neutron",
+                        "nova_network": "Nova-Network",
+                        "neutr_gre": "Neutron GRE",
+                        "neutr_vlan": "Neutron VLAN"
+                    },
+                    "storage": {
+                        "title": "后端存储",
+                        "alert": "__releaseName__不支持Ceph",
+                        "default": "默认",
+                        "ceph": "Ceph",
+                        "cinder": "Cinder",
+                        "cinder_help": "Cinder块存储默认使用LVM卷和iSCSI共享存储。Ceph后端需要2个或更多Ceph-OSD节点与KVM管理器。",
+                        "glance": "Glance",
+                        "glance_help": "在HA部署模式中，Glance Image服务默认使用Swift对象存储, 在简单多节点模式中，使用控制节点的本地存储。Ceph后端需要2个或更多Ceph-OSD节点。"
+                    },
+                    "additional": {
+                        "title": "附加服务",
+                        "alert": "__releaseName__不支持附加服务",
+                        "install_savanna": "安装Savanna",
+                        "install_savanna_description": "利用Savanna能在各大版本厂商的OpenStack上的部署Hadoop集群。",
+                        "install_murano": "安装Murano",
+                        "install_murano_description": "利用Murano能将基于Windows的数据中心服务，如活动目录、IIS、Microsoft SQL和ASP.NET部署到OpenStack上。"
+                    },
+                    "ready": {
+                        "title": "完成",
+                        "env_select_deploy": "部署准备就绪！请选择",
+                        "or_make_config_choice": "或者更多配置，请前往",
+                        "console": "控制面板。",
+                        "deploy": "立即部署",
+                        "env": "环境"
+                    }
+                },
                 "dismiss_settings": {
                     "title": "确认",
                     "important": "重要",
@@ -592,29 +822,41 @@
                 },
                 "display_changes": {
                     "title": "部署变更",
-                    "added_node": "增加节点：",
-                    "deleted_node": "删除：",
+                    "added_node": "增加__nodesCount__个节点。",
+                    "added_node_plural": "增加__nodesCount__个节点。",
+                    "deleted_node": "删除__nodesCount__个节点。",
+                    "deleted_node_plural":  "删除__nodesCount__个节点。",
+                    "reconfigured_node": "__nodesCount__个节点重置角色。",
+                    "reconfigured_node_plural": "__nodesCount__个节点重置角色。",
                     "settings_changes": {
                         "attrs": "OpenStack设置",
                         "networks": "网络设置",
                         "disks": "以下节点的磁盘配置变更："
                     },
                     "warnings": {
-                        "controller": "部署后的环境将不包含足够数量的控制器，也许不可使用。",
+                        "controller": "环境应该有__nodeSize__个控制节点。",
+                        "controller_plural": "环境应该有__nodeSize__个控制节点",
                         "compute": "建议部署计算节点。"
                     },
-                    "changed": "变更：",
-                    "deploy": "部署"
+                    "changed_task_name": "__item__已变更",
+                    "changed": "已变更",
+                    "deleted": "已删除",
+                    "deploy": "部署",
+                    "redeployment_needed": "某些节点配置后状态错误，需要重新部署。"
                 },
                 "show_node": {
                     "manufacturer_label": "设备：",
                     "mac_address_label": "MAC地址：",
+                    "fqdn_label": "FQDN",
+                    "ssh_console": "SSH控制台",
+                    "network_configuration_button": "网络配置",
+                    "disk_configuration_button": "磁盘配置",
                     "close_button": "关闭",
                     "total": "全部",
-                    "network_configuration_button": "网络配置",
-                    "disk_configuration_button": "磁盘配置"
+                    "bytes": "bytes",
+                    "drive": "drive",
+                    "drive_plural": "drives"
                 },
-
                 "rhel_license": {
                     "title": "红帽企业版Linux账户设置",
                     "description": "安装红帽版的OpenStack平台, 你首先必须下载RHOS和RHEL并缓存在Fuel的主节点上。请选择你的订阅并在下面输入你的凭据开始下载。",

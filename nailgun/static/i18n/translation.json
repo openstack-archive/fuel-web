@@ -242,6 +242,29 @@
                         "internal_network": "Internal network",
                         "gateway": "Gateway",
                         "name_servers": "Name servers"
+                    },
+                    "validation": {
+                        "invalid_ip_start": "Invalid IP range start",
+                        "invalid_ip_end": "Invalid IP range end",
+                        "invalid_ip_range": "IP range start is greater than IP range end",
+                        "empty_ip_range": "Please specify at least one IP range",
+                        "invalid_vlan": "Invalid VLAN ID",
+                        "forbidden_vlan": "This VLAN ID is used by other networks. Please choose another ID",
+                        "vlan_is_used_for_fixed_networks": "This VLAN ID reserved for VM networks (fixed). Please choose another ID",
+                        "invalid_netmask": "Invalid netmask",
+                        "invalid_gateway": "Invalid gateway",
+                        "invalid_amount": "Invalid amount of networks",
+                        "gateway_is_out_of_ip_range": "Gateway is out of Public IP range",
+                        "gateway_is_out_of_internal_ip_range": "Gateway is out of internal network IP range",
+                        "need_more_vlan": "Number of networks needs more VLAN IDs than available. Check VLAN ID Range field.",
+                        "invalid_nameserver": "Invalid nameserver",
+                        "invalid_id_start": "Invalid ID range start",
+                        "invalid_id_end": "Invalid ID range end",
+                        "invalid_id_range": "ID range start is greater than ID range end",
+                        "id_intersection": "There is an intersection with VLAN ID of other networks. Please set another ID range",
+                        "invalid_mac": "Invalid MAC address",
+                        "ip_start_is_out_of_ip_range": "IP start is out of IP range",
+                        "ip_end_is_out_of_ip_range": "IP end is out of IP range"
                     }
                 },
                 "logs_tab": {

@@ -12,3 +12,4 @@
    develop/module_structure
    develop/fuel_settings
    develop/puppet_tips
+   develop/pxe_deployment

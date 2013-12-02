@@ -39,13 +39,13 @@ class NetworkConfigurationValidator(BasicValidator):
         networks = d.get('networks')
         if not isinstance(networks, list):
             raise errors.InvalidData(
-                "It's expected to receive array, not a single object",
+                "'networks' is expected to be an array",
                 log_message=True
             )
         for i in networks:
             if 'id' not in i:
                 raise errors.InvalidData(
-                    "No 'id' param for '{0}'".format(i),
+                    "No 'id' param presents for '{0}' network".format(i),
                     log_message=True
                 )
 

@@ -28,12 +28,6 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 Base = declarative_base()
 
 
-class GlobalParameters(Base):
-    __tablename__ = 'global_parameters'
-    id = Column(Integer, primary_key=True)
-    parameters = Column(JSON, default={})
-
-
 class CapacityLog(Base):
     __tablename__ = 'capacity_log'
 

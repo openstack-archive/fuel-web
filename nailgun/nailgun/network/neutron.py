@@ -15,17 +15,10 @@
 #    under the License.
 
 from netaddr import IPNetwork
-from netaddr import IPRange
-from netaddr import IPSet
 
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import GlobalParameters
-from nailgun.db.sqlalchemy.models import IPAddrRange
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
-from nailgun.errors import errors
-from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 
 
@@ -232,158 +225,18 @@ class NeutronManager(NetworkManager):
             nics.append(nic_dict)
         return nics
 
-    # TODO(enchantner): refactor and DRY
-    @classmethod
-    def create_network_groups(cls, cluster_id):
-        '''Method for creation of network groups for cluster.
-
-        :param cluster_id: Cluster database ID.
-        :type  cluster_id: int
-        :returns: None
-        :raises: errors.OutOfVLANs, errors.OutOfIPs,
-        errors.NoSuitableCIDR
-        '''
-        used_nets = []
-        used_vlans = []
-
-        global_params = db().query(GlobalParameters).first()
-
-        cluster_db = db().query(Cluster).get(cluster_id)
-
-        networks_metadata = cluster_db.release.networks_metadata
-
-        admin_network_range = db().query(IPAddrRange).filter_by(
-            network_group_id=cls.get_admin_network_group_id()
-        ).all()[0]
-
-        networks_list = networks_metadata["neutron"]["networks"]
-
-        def _free_vlans():
-            free_vlans = set(
-                range(
-                    *global_params.parameters["vlan_range"]
-                )
-            ) - set(used_vlans)
-            if not free_vlans or len(free_vlans) < len(networks_list):
-                raise errors.OutOfVLANs()
-            return sorted(list(free_vlans))
-
-        for network in networks_list:
-            free_vlans = _free_vlans()
-            vlan_start = free_vlans[0] if "vlan_start" not in network \
-                else network.get("vlan_start")
-            if vlan_start and vlan_start not in free_vlans:
-                vlan_start = free_vlans[0]
-
-            logger.debug("Found free vlan: %s", vlan_start)
-            pool = network.get('pool')
-            if not pool:
-                raise errors.InvalidNetworkPool(
-                    u"Invalid pool '{0}' for network '{1}'".format(
-                        pool,
-                        network['name']
-                    )
-                )
-
-            nets_free_set = IPSet(pool) -\
-                IPSet(
-                    IPNetwork(global_params.parameters["net_exclude"])
-                ) -\
-                IPSet(
-                    IPRange(
-                        admin_network_range.first,
-                        admin_network_range.last
-                    )
-                ) -\
-                IPSet(used_nets)
-            if not nets_free_set:
-                raise errors.OutOfIPs()
-
-            free_cidrs = sorted(list(nets_free_set._cidrs))
-            new_net = None
-            for fcidr in free_cidrs:
-                for n in fcidr.subnet(24, count=1):
-                    new_net = n
-                    break
-                if new_net:
-                    break
-            if not new_net:
-                raise errors.NoSuitableCIDR()
-
-            if network.get("ip_range"):
-                new_ip_range = IPAddrRange(
-                    first=network["ip_range"][0],
-                    last=network["ip_range"][1]
-                )
-            else:
-                new_ip_range = IPAddrRange(
-                    first=str(new_net[2]),
-                    last=str(new_net[-2])
-                )
-            gw = str(new_net[1]) if network.get('use_gateway') else None
-
-            nw_group = NetworkGroup(
-                release=cluster_db.release.id,
-                name=network['name'],
-                cidr=str(new_net),
-                netmask=str(new_net.netmask),
-                gateway=gw,
-                cluster_id=cluster_id,
-                vlan_start=vlan_start,
-                amount=1
-            )
-            db().add(nw_group)
-            db().commit()
-            nw_group.ip_ranges.append(new_ip_range)
-            db().commit()
-            cls.cleanup_network_group(nw_group)
-
-            used_vlans.append(vlan_start)
-            used_nets.append(str(new_net))
-
-        if cluster_db.net_segment_type == 'vlan':
-            private_network_group = NetworkGroup(
-                release=cluster_db.release.id,
-                name="private",
-                cluster_id=cluster_id,
-                netmask='32',
-                vlan_start=None,
-                amount=1
-            )
-            db().add(private_network_group)
-            db().commit()
-
     @classmethod
     def update(cls, cluster, network_configuration):
-        if 'networks' in network_configuration:
-            for ng in network_configuration['networks']:
-                if ng['id'] == cls.get_admin_network_group_id():
-                    continue
+        cls.update_networks(cluster, network_configuration)
 
-                ng_db = db().query(NetworkGroup).get(ng['id'])
-
-                for key, value in ng.iteritems():
-                    if key == "ip_ranges":
-                        cls._set_ip_ranges(ng['id'], value)
-                    else:
-                        if key == 'cidr' and \
-                                ng_db.meta.get("notation") == "cidr":
-                            cls.update_range_mask_from_cidr(ng_db, value)
-
-                        setattr(ng_db, key, value)
-
-                if ng['name'] == 'public':
-                    cls.update_cidr_from_gw_mask(ng_db, ng)
-                    #TODO(NAME) get rid of unmanaged parameters in request
-                    if 'neutron_parameters' in network_configuration:
+        if 'neutron_parameters' in network_configuration:
+            if 'networks' in network_configuration:
+                #TODO(NAME) get rid of unmanaged parameters in request
+                for ng in network_configuration['networks']:
+                    if ng['name'] == 'public':
                         pre_nets = network_configuration[
                             'neutron_parameters']['predefined_networks']
                         pre_nets['net04_ext']['L3']['gateway'] = ng['gateway']
-                if ng_db.meta.get("notation"):
-                    cls.cleanup_network_group(ng_db)
-                ng_db.cluster.add_pending_changes('networks')
-
-        if 'neutron_parameters' in network_configuration:
             for key, value in network_configuration['neutron_parameters'] \
                     .items():
                 setattr(cluster.neutron_config, key, value)

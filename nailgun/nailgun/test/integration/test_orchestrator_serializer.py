@@ -16,6 +16,8 @@
 
 import json
 
+from netaddr import IPRange
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import IPAddrRange
@@ -136,35 +138,19 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         # Check uncommon attrs
         node_uids = sorted(set([n['uid'] for n in node_list]))
+        man_ip = [str(ip) for ip in IPRange('192.168.0.1', '192.168.0.4')]
+        pub_ip = [str(ip) for ip in IPRange('172.16.0.2', '172.16.0.5')]
+        sto_ip = [str(ip) for ip in IPRange('192.168.1.1', '192.168.1.4')]
         expected_list = [
-            {
-                'roles': ['controller', 'cinder'],
-                'attrs': {
-                    'uid': node_uids[0],
-                    'internal_address': '192.168.0.2',
-                    'public_address': '172.16.0.2',
-                    'storage_address': '192.168.1.2'}},
-            {
-                'roles': ['compute', 'cinder'],
-                'attrs': {
-                    'uid': node_uids[1],
-                    'internal_address': '192.168.0.3',
-                    'public_address': '172.16.0.3',
-                    'storage_address': '192.168.1.3'}},
-            {
-                'roles': ['compute'],
-                'attrs': {
-                    'uid': node_uids[2],
-                    'internal_address': '192.168.0.4',
-                    'public_address': '172.16.0.4',
-                    'storage_address': '192.168.1.4'}},
-            {
-                'roles': ['cinder'],
-                'attrs': {
-                    'uid': node_uids[3],
-                    'internal_address': '192.168.0.5',
-                    'public_address': '172.16.0.5',
-                    'storage_address': '192.168.1.5'}}]
+            {'roles': ['controller', 'cinder']},
+            {'roles': ['compute', 'cinder']},
+            {'roles': ['compute']},
+            {'roles': ['cinder']}]
+        for i in range(len(expected_list)):
+            expected_list[i]['attrs'] = {'uid': node_uids[i],
+                                         'internal_address': man_ip[i],
+                                         'public_address': pub_ip[i],
+                                         'storage_address': sto_ip[i]}
 
         for expected in expected_list:
             attrs = expected['attrs']
@@ -253,9 +239,9 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             'eth0': {
                 'interface': 'eth0',
                 'ipaddr': [
-                    '192.168.0.2/24',
+                    '192.168.0.1/24',
                     '172.16.0.2/24',
-                    '192.168.1.2/24'],
+                    '192.168.1.1/24'],
                 'gateway': '172.16.0.1'},
             'eth1': {
                 'interface': 'eth1',
@@ -326,7 +312,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def test_get_common_attrs(self):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
-        self.assertEquals(attrs['management_vip'], '192.168.0.8')
+        self.assertEquals(attrs['management_vip'], '192.168.0.7')
         self.assertEquals(attrs['public_vip'], '172.16.0.8')
 
         # last_contrller
@@ -426,35 +412,19 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         # Check uncommon attrs
         node_uids = sorted(set([n['uid'] for n in node_list]))
+        man_ip = [str(ip) for ip in IPRange('192.168.0.1', '192.168.0.4')]
+        pub_ip = [str(ip) for ip in IPRange('172.16.0.2', '172.16.0.5')]
+        sto_ip = [str(ip) for ip in IPRange('192.168.1.1', '192.168.1.4')]
         expected_list = [
-            {
-                'roles': ['controller', 'cinder'],
-                'attrs': {
-                    'uid': node_uids[0],
-                    'internal_address': '192.168.0.2',
-                    'public_address': '172.16.0.2',
-                    'storage_address': '192.168.1.2'}},
-            {
-                'roles': ['compute', 'cinder'],
-                'attrs': {
-                    'uid': node_uids[1],
-                    'internal_address': '192.168.0.3',
-                    'public_address': '172.16.0.3',
-                    'storage_address': '192.168.1.3'}},
-            {
-                'roles': ['compute'],
-                'attrs': {
-                    'uid': node_uids[2],
-                    'internal_address': '192.168.0.4',
-                    'public_address': '172.16.0.4',
-                    'storage_address': '192.168.1.4'}},
-            {
-                'roles': ['cinder'],
-                'attrs': {
-                    'uid': node_uids[3],
-                    'internal_address': '192.168.0.5',
-                    'public_address': '172.16.0.5',
-                    'storage_address': '192.168.1.5'}}]
+            {'roles': ['controller', 'cinder']},
+            {'roles': ['compute', 'cinder']},
+            {'roles': ['compute']},
+            {'roles': ['cinder']}]
+        for i in range(len(expected_list)):
+            expected_list[i]['attrs'] = {'uid': node_uids[i],
+                                         'internal_address': man_ip[i],
+                                         'public_address': pub_ip[i],
+                                         'storage_address': sto_ip[i]}
 
         for expected in expected_list:
             attrs = expected['attrs']
@@ -660,7 +630,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def test_get_common_attrs(self):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
-        self.assertEquals(attrs['management_vip'], '192.168.0.8')
+        self.assertEquals(attrs['management_vip'], '192.168.0.7')
         self.assertEquals(attrs['public_vip'], '172.16.0.8')
 
         # last_contrller

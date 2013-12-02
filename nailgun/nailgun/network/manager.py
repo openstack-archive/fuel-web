@@ -74,12 +74,7 @@ class NetworkManager(object):
         :returns: Admin Network ID or None.
         :raises: errors.AdminNetworkNotFound
         '''
-        admin_net = db().query(Network).filter_by(
-            name="fuelweb_admin"
-        ).first()
-        if not admin_net and fail_if_not_found:
-            raise errors.AdminNetworkNotFound()
-        return admin_net.id
+        return cls.get_admin_network(fail_if_not_found).id
 
     @classmethod
     def get_admin_network(cls, fail_if_not_found=True):
@@ -108,12 +103,7 @@ class NetworkManager(object):
         :returns: Admin NetworkGroup ID or None.
         :raises: errors.AdminNetworkNotFound
         '''
-        admin_ng = db().query(NetworkGroup).filter_by(
-            name="fuelweb_admin"
-        ).first()
-        if not admin_ng and fail_if_not_found:
-            raise errors.AdminNetworkNotFound()
-        return admin_ng.id
+        return cls.get_admin_network_group(fail_if_not_found).id
 
     @classmethod
     def get_admin_network_group(cls, fail_if_not_found=True):
@@ -398,12 +388,9 @@ class NetworkManager(object):
     @classmethod
     def check_ip_belongs_to_net(cls, ip_addr, network):
         addr = IPAddress(ip_addr)
-        ipranges = imap(
-            lambda ir: IPRange(ir.first, ir.last),
-            network.network_group.ip_ranges
-        )
-        for r in ipranges:
-            if addr in r:
+        for r in network.network_group.ip_ranges:
+            ir = IPRange(r.first, r.last)
+            if addr in ir:
                 return True
         return False
 

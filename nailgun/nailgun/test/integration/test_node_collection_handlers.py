@@ -24,10 +24,7 @@ from nailgun.test.base import reverse
 
 class TestHandlers(BaseIntegrationTest):
     def test_node_list_empty(self):
-        resp = self.app.get(
-            reverse('NodeCollectionHandler'),
-            headers=self.default_headers
-        )
+        resp = self.env.node_collection_get()
         self.assertEquals(200, resp.status)
         response = json.loads(resp.body)
         self.assertEquals([], response)
@@ -56,11 +53,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         cluster = self.env.clusters[0]
 
-        resp = self.app.get(
-            reverse('NodeCollectionHandler'),
-            params={'cluster_id': cluster.id},
-            headers=self.default_headers
-        )
+        resp = self.env.node_collection_get(params={'cluster_id': cluster.id})
         self.assertEquals(200, resp.status)
         response = json.loads(resp.body)
         self.assertEquals(1, len(response))
@@ -78,11 +71,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
 
-        resp = self.app.get(
-            reverse('NodeCollectionHandler'),
-            params={'cluster_id': ''},
-            headers=self.default_headers
-        )
+        resp = self.env.node_collection_get(params={'cluster_id': ''})
         self.assertEquals(200, resp.status)
         response = json.loads(resp.body)
         self.assertEquals(1, len(response))
@@ -97,10 +86,7 @@ class TestHandlers(BaseIntegrationTest):
             ]
         )
 
-        resp = self.app.get(
-            reverse('NodeCollectionHandler'),
-            headers=self.default_headers
-        )
+        resp = self.env.node_collection_get()
         self.assertEquals(200, resp.status)
         response = json.loads(resp.body)
         self.assertEquals(2, len(response))
@@ -119,10 +105,7 @@ class TestHandlers(BaseIntegrationTest):
             "management"
         )
 
-        resp = self.app.get(
-            reverse('NodeCollectionHandler'),
-            headers=self.default_headers
-        )
+        resp = self.env.node_collection_get()
 
         self.assertEquals(200, resp.status)
         response = json.loads(resp.body)
@@ -141,106 +124,72 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_node_update(self):
         node = self.env.create_node(api=False)
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'mac': node.mac, 'manufacturer': 'new'}]),
-            headers=self.default_headers)
+        resp = self.env.node_collection_put([{'mac': node.mac,
+                                              'manufacturer': 'new'}])
         self.assertEquals(resp.status, 200)
-        resp = self.app.get(
-            reverse('NodeCollectionHandler'),
-            headers=self.default_headers
-        )
+
+        resp = self.env.node_collection_get()
         node = self.db.query(Node).get(node.id)
         self.assertEquals('new', node.manufacturer)
 
     def test_node_update_empty_mac_or_id(self):
         node = self.env.create_node(api=False)
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'manufacturer': 'man0'}]),
-            headers=self.default_headers,
-            expect_errors=True)
+        resp = self.env.node_collection_put([{'manufacturer': 'man0'}],
+                                            expect_errors=True)
         self.assertEquals(resp.status, 400)
         self.assertEquals(resp.body, "Neither MAC nor ID is specified")
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'mac': None,
-                         'manufacturer': 'man1'}]),
-            headers=self.default_headers,
-            expect_errors=True)
+        resp = self.env.node_collection_put([{'mac': None,
+                                              'manufacturer': 'man1'}],
+                                            expect_errors=True)
         self.assertEquals(resp.status, 400)
         self.assertEquals(resp.body, "Neither MAC nor ID is specified")
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'id': None,
-                         'manufacturer': 'man2'}]),
-            headers=self.default_headers,
-            expect_errors=True)
+        resp = self.env.node_collection_put([{'id': None,
+                                              'manufacturer': 'man2'}],
+                                            expect_errors=True)
         self.assertEquals(resp.status, 400)
         self.assertEquals(resp.body, "Neither MAC nor ID is specified")
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'mac': None,
-                         'id': None,
-                         'manufacturer': 'man3'}]),
-            headers=self.default_headers,
-            expect_errors=True)
+        resp = self.env.node_collection_put([{'mac': None,
+                                              'id': None,
+                                              'manufacturer': 'man3'}],
+                                            expect_errors=True)
         self.assertEquals(resp.status, 400)
         self.assertEquals(resp.body, "Neither MAC nor ID is specified")
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node.id,
-                         'mac': None,
-                         'manufacturer': 'man4'}]),
-            headers=self.default_headers,
-            expect_errors=True)
+        resp = self.env.node_collection_put([{'id': node.id,
+                                              'mac': None,
+                                              'manufacturer': 'man4'}],
+                                            expect_errors=True)
         self.assertEquals(resp.status, 400)
         self.assertEquals(resp.body, "Null MAC is specified")
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'id': None,
-                         'mac': node.mac,
-                         'manufacturer': 'man5'}]),
-            headers=self.default_headers)
+        resp = self.env.node_collection_put([{'id': None,
+                                              'mac': node.mac,
+                                              'manufacturer': 'man5'}])
         self.assertEquals(resp.status, 200)
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node.id,
-                         'manufacturer': 'man6'}]),
-            headers=self.default_headers)
+        resp = self.env.node_collection_put([{'id': node.id,
+                                              'manufacturer': 'man6'}])
         self.assertEquals(resp.status, 200)
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'mac': node.mac,
-                         'manufacturer': 'man7'}]),
-            headers=self.default_headers)
+        resp = self.env.node_collection_put([{'mac': node.mac,
+                                              'manufacturer': 'man7'}])
         self.assertEquals(resp.status, 200)
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node.id,
-                         'mac': node.mac,
-                         'manufacturer': 'man8'}]),
-            headers=self.default_headers)
+        resp = self.env.node_collection_put([{'id': node.id,
+                                              'mac': node.mac,
+                                              'manufacturer': 'man8'}])
         self.assertEquals(resp.status, 200)
 
     def node_update_with_invalid_id(self):
         node = self.env.create_node(api=False)
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'id': 'new_id',
-                         'mac': node.mac}]),
-            headers=self.default_headers,
-            expect_errors=True)
+        resp = self.env.node_collection_put([{'id': 'new_id',
+                                              'mac': node.mac}],
+                                            expect_errors=True)
         self.assertEquals(resp.status, 400)
         self.assertEquals(resp.body, "Invalid ID specified")
 
@@ -251,19 +200,15 @@ class TestHandlers(BaseIntegrationTest):
             meta=self.env.default_metadata()
         )
         node_db = self.env.nodes[0]
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([
-                {'mac': node_db.mac, 'is_agent': True,
-                 'status': 'discover', 'manufacturer': 'new'}
-            ]),
-            headers=self.default_headers
-        )
+        resp = self.env.node_collection_put([{'mac': node_db.mac,
+                                              'is_agent': True,
+                                              'status': 'discover',
+                                              'manufacturer': 'new'}])
         self.assertEquals(resp.status, 200)
-        resp = self.app.get(
-            reverse('NodeCollectionHandler'),
-            headers=self.default_headers
-        )
+
+        resp = self.env.node_collection_get()
+        self.assertEquals(resp.status, 200)
+
         node_db = self.db.query(Node).get(node_db.id)
         self.assertEquals('new', node_db.manufacturer)
         self.assertEquals('provisioning', node_db.status)
@@ -271,25 +216,20 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_timestamp_updated_only_by_agent(self):
         node = self.env.create_node(api=False)
         timestamp = node.timestamp
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([
-                {'mac': node.mac, 'status': 'discover',
-                 'manufacturer': 'old'}
-            ]),
-            headers=self.default_headers)
+        resp = self.env.node_collection_put([{'mac': node.mac,
+                                              'status': 'discover',
+                                              'manufacturer': 'old'}])
         self.assertEquals(resp.status, 200)
+
         node = self.db.query(Node).get(node.id)
         self.assertEquals(node.timestamp, timestamp)
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([
-                {'mac': node.mac, 'status': 'discover',
-                 'manufacturer': 'new', 'is_agent': True}
-            ]),
-            headers=self.default_headers)
+        resp = self.env.node_collection_put([{'mac': node.mac,
+                                              'status': 'discover',
+                                              'manufacturer': 'new',
+                                              'is_agent': True}])
         self.assertEquals(resp.status, 200)
+
         node = self.db.query(Node).get(node.id)
         self.assertNotEquals(node.timestamp, timestamp)
         self.assertEquals('new', node.manufacturer)
@@ -334,12 +274,8 @@ class TestHandlers(BaseIntegrationTest):
         self.assertNotEqual(node1.mac, node1_json["mac"])
 
         # Here we are trying to update node
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([node1_json]),
-            headers=self.default_headers,
-            expect_errors=True
-        )
+        resp = self.env.node_collection_put([node1_json],
+                                            expect_errors=True)
         self.assertEqual(resp.status, 200)
         response = json.loads(resp.body)
         # Here we are checking if node mac is successfully updated
@@ -368,26 +304,19 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_can_be_created_with_any_role(self):
         node = self.env.create_node(api=True)
         cluster = self.env.create_cluster(api=True)
-
         new_pending_roles = ['new_pending_role1', 'new_pending_role2']
         new_roles = ['new_role1', 'new_role2']
 
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([
-                {'mac': node['mac'],
-                 'cluster_id': cluster['id'],
-                 'pending_roles': new_pending_roles,
-                 'roles': new_roles}]),
-            headers=self.default_headers)
-
+        resp = self.env.node_collection_put([
+            {'mac': node['mac'],
+             'cluster_id': cluster['id'],
+             'pending_roles': new_pending_roles,
+             'roles': new_roles}])
         self.assertEqual(resp.status, 200)
         node_resp = json.loads(resp.body)[0]
-
         self.assertEqual(node_resp['pending_roles'], new_pending_roles)
         self.assertEqual(node_resp['roles'], new_roles)
 
         node_db = self.db.query(Node).get(node['id'])
-
         self.assertEqual(node_db.pending_roles, new_pending_roles)
         self.assertEqual(node_db.roles, new_roles)

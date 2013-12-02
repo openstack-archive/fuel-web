@@ -59,13 +59,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
     def test_network_verify_compares_received_with_cached(self, macs_mock):
         macs_mock.return_value = self.master_macs
 
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env.nova_networks_get(self.env.clusters[0].id)
         self.assertEquals(200, resp.status)
         nets = json.loads(resp.body)
 
@@ -78,13 +72,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
                                                         mocked_rpc, macs_mock):
         macs_mock.return_value = self.master_macs
 
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env.nova_networks_get(self.env.clusters[0].id)
         self.assertEquals(200, resp.status)
         nets = json.loads(resp.body)
 
@@ -107,13 +95,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
                                                            macs_mock):
         macs_mock.return_value = self.master_macs
 
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env.nova_networks_get(self.env.clusters[0].id)
         self.assertEquals(200, resp.status)
         nets = json.loads(resp.body)
 
@@ -142,13 +124,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
                                                    macs_mock):
         macs_mock.return_value = self.master_macs
 
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}
-            ),
-            headers=self.default_headers
-        )
+        resp = self.env.nova_networks_get(self.env.clusters[0].id)
         nets = resp.body
 
         self.env.create_task(

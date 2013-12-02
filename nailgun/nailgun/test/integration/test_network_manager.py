@@ -39,7 +39,6 @@ from nailgun.network.neutron import NeutronManager
 from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
-from nailgun.test.base import reverse
 
 
 class TestNetworkManager(BaseIntegrationTest):
@@ -155,15 +154,10 @@ class TestNetworkManager(BaseIntegrationTest):
             ]
         )
         networks_data = {'net_manager': 'VlanManager'}
-        self.app.put(
-            reverse('NovaNetworkConfigurationHandler',
-                    kwargs={"cluster_id": cluster['id']}),
-            json.dumps(networks_data),
-            headers=self.default_headers
-        )
+        self.env.nova_networks_put(cluster['id'], networks_data)
+
         network_data = self.env.network_manager.get_node_networks(
-            self.env.nodes[0].id
-        )
+            self.env.nodes[0].id)
 
         self.assertEquals(len(network_data), 5)
         fixed_nets = filter(lambda net: net['name'] == 'fixed', network_data)
@@ -383,16 +377,15 @@ class TestNetworkManager(BaseIntegrationTest):
         admin_ng_id = self.env.network_manager.get_admin_network_group_id()
         admin_network_range = self.db.query(IPAddrRange).\
             filter_by(network_group_id=admin_ng_id).all()[0]
+        admin_ip_range = IPRange(admin_network_range.first,
+                                 admin_network_range.last)
 
         map(
             lambda (x, y): self.assertIn(
                 IPAddress(
                     rpc_nodes_provision[x]['interfaces'][y]['ip_address']
                 ),
-                IPRange(
-                    admin_network_range.first,
-                    admin_network_range.last
-                )
+                admin_ip_range
             ),
             itertools.product((0, 1), ('eth0', 'eth1'))
         )
@@ -426,17 +419,12 @@ class TestNovaNetworkManager(BaseIntegrationTest):
 
         node_db.meta['interfaces'] = interfaces
 
-        self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{
-                        'mac': admin_nic.mac,
-                        'meta': node_db.meta,
-                        'is_agent': True,
-                        'cluster_id': cluster["id"]
-                        }]),
-            headers=self.default_headers,
-            expect_errors=True
-        )
+        self.env.node_collection_put([{'mac': admin_nic.mac,
+                                       'meta': node_db.meta,
+                                       'is_agent': True,
+                                       'cluster_id': cluster["id"]
+                                       }],
+                                     expect_errors=True)
 
         new_main_nic_id = node_db.admin_interface.id
         self.assertEquals(new_main_nic_id, other_iface.id)
@@ -481,17 +469,12 @@ class TestNeutronManager(BaseIntegrationTest):
 
         node_db.meta['interfaces'] = interfaces
 
-        self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{
-                        'mac': admin_nic.mac,
-                        'meta': node_db.meta,
-                        'is_agent': True,
-                        'cluster_id': cluster["id"]
-                        }]),
-            headers=self.default_headers,
-            expect_errors=True
-        )
+        self.env.node_collection_put([{'mac': admin_nic.mac,
+                                       'meta': node_db.meta,
+                                       'is_agent': True,
+                                       'cluster_id': cluster["id"]
+                                       }],
+                                     expect_errors=True)
 
         new_main_nic_id = node_db.admin_interface.id
         admin_nets = [n.name for n in self.db.query(

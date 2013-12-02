@@ -883,13 +883,9 @@ class TestHandlers(BaseIntegrationTest):
                     '240.0.1.2',
                     '240.0.1.3']]}]}
 
-        self.app.put(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': cluster.id}),
-            json.dumps(net_data),
-            headers=self.default_headers,
-            expect_errors=True)
+        self.env.nova_networks_put(cluster.id,
+                                   net_data,
+                                   expect_errors=True)
 
         task = self.env.launch_deployment()
 

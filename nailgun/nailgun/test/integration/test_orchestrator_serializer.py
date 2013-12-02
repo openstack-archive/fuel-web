@@ -184,11 +184,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_vlan_manager(self):
         cluster = self.create_env('multinode')
         data = {'net_manager': 'VlanManager'}
-        url = reverse('NovaNetworkConfigurationHandler',
-                      kwargs={'cluster_id': cluster.id})
-        self.app.put(url, json.dumps(data),
-                     headers=self.default_headers,
-                     expect_errors=False)
+        self.env.nova_networks_put(cluster.id, data)
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:

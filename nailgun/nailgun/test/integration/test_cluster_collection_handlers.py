@@ -31,11 +31,9 @@ from nailgun.test.base import reverse
 class TestHandlers(BaseIntegrationTest):
 
     def _get_cluster_networks(self, cluster_id):
-        nets = json.loads(self.app.get(
-            reverse('NovaNetworkConfigurationHandler',
-                    {"cluster_id": cluster_id}),
-            headers=self.default_headers,
-        ).body)["networks"]
+        nets = json.loads(
+            self.env.nova_networks_get(cluster_id).body
+        )["networks"]
         return nets
 
     def test_cluster_list_empty(self):

@@ -47,6 +47,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             var hasRunningTests = this.hasRunningTests();
             this.$('.run-tests-btn').prop('disabled', !this.$('input.testset-select:checked').length || hasRunningTests).toggle(!hasRunningTests);
             this.$('.stop-tests-btn').prop('disabled', !hasRunningTests).toggle(hasRunningTests);
+            this.$('input[type=checkbox]').prop('disabled', hasRunningTests);
         },
         calculateSelectAllTumblerState: function() {
             this.$('.select-all-tumbler').prop('checked', this.$('input.testset-select:checked').length == this.$('input.testset-select').length);

@@ -92,6 +92,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
     Screen = Backbone.View.extend({
         constructorName: 'Screen',
         keepScrollPosition: false,
+        hasDragged: false,
         goToNodeList: function() {
             app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});
         },
@@ -1019,8 +1020,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         checkForChanges: function() {
             this.updateButtonsState(this.isLocked());
-            this.applyChangesButton.set('disabled', this.isLocked() || !this.hasChanges() || this.hasValidationErrors());
-            this.cancelChangesButton.set('disabled', this.isLocked() || (!this.hasChanges() && !this.hasValidationErrors()));
+            this.applyChangesButton.set('disabled', this.isLocked() || !this.checkForUnappliedChanges() || this.hasValidationErrors());
+            this.cancelChangesButton.set('disabled', this.isLocked() || (!this.checkForUnappliedChanges() && !this.hasValidationErrors()));
         },
         loadDefaults: function() {
             this.disableControls(true);
@@ -1270,7 +1271,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         disableControls: function(disable) {
             this.updateButtonsState(disable || this.isLocked());
         },
-        hasChanges: function() {
+        checkForUnappliedChanges: function() {
             var noChanges = true;
             var networks = this.interfaces.getAssignedNetworks();
             this.nodes.each(function(node) {
@@ -1282,8 +1283,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var forbiddenNodes = this.nodes.filter(function(node) {return !node.get('pending_addition') || node.get('status') == 'error';});
             return forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
         },
+        hasChanges: function() {
+            return this.checkForUnappliedChanges() && this.hasDragged;
+        },
         checkForChanges: function() {
-            this.updateButtonsState(this.isLocked() || !this.hasChanges());
+            this.updateButtonsState(this.isLocked() || !this.checkForUnappliedChanges());
             this.loadDefaultsButton.set('disabled', this.isLocked());
         },
         loadDefaults: function() {
@@ -1416,6 +1420,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             this.render();
             this.screen.draggedNetworks = null;
+            this.screen.hasDragged = true;
         },
         updateDropTarget: function(event) {
             this.screen.dropTarget = this;

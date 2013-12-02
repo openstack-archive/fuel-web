@@ -327,13 +327,14 @@ class NodeCollectionHandler(JSONHandler):
         q = db().query(Node)
         nodes_updated = []
         for nd in data:
-            is_agent = nd.pop("is_agent") if "is_agent" in nd else False
             node = None
             if nd.get("mac"):
                 node = q.filter_by(mac=nd["mac"]).first() \
                     or self.validator.validate_existent_node_mac_update(nd)
             else:
                 node = q.get(nd["id"])
+
+            is_agent = nd.pop("is_agent") if "is_agent" in nd else False
             if is_agent:
                 node.timestamp = datetime.now()
                 if not node.online:
@@ -343,15 +344,8 @@ class NodeCollectionHandler(JSONHandler):
                     logger.info(msg)
                     notifier.notify("discover", msg, node_id=node.id)
                 db().commit()
+
             old_cluster_id = node.cluster_id
-
-            # Choosing network manager
-            if nd.get('cluster_id'):
-                cluster = db().query(Cluster).get(nd['cluster_id'])
-            else:
-                cluster = node.cluster
-
-            network_manager = NetworkManager
 
             if nd.get("pending_roles") == [] and node.cluster:
                 node.cluster.clear_pending_changes(node_id=node.id)
@@ -363,7 +357,8 @@ class NodeCollectionHandler(JSONHandler):
                 node.cluster_id = nd["cluster_id"]
 
             regenerate_volumes = any((
-                'roles' in nd and set(nd['roles']) != set(node.roles),
+                'roles' in nd and
+                set(nd['roles']) != set(node.roles),
                 'pending_roles' in nd and
                 set(nd['pending_roles']) != set(node.pending_roles),
                 node.cluster_id != old_cluster_id
@@ -422,18 +417,21 @@ class NodeCollectionHandler(JSONHandler):
                         notifier.notify("error", msg, node_id=node.id)
 
                 db().commit()
+
+            network_manager = NetworkManager
+
             if is_agent:
                 # Update node's NICs.
                 network_manager.update_interfaces_info(node)
+                db().commit()
 
-            nodes_updated.append(node)
-            db().commit()
+            nodes_updated.append(node.id)
             if 'cluster_id' in nd and nd['cluster_id'] != old_cluster_id:
                 if old_cluster_id:
                     network_manager.clear_assigned_networks(node)
                     network_manager.clear_all_allowed_networks(node.id)
-                if nd['cluster_id'] and cluster:
-                    network_manager = cluster.network_manager
+                if nd['cluster_id'] and node.cluster:
+                    network_manager = node.cluster.network_manager
                     network_manager.assign_networks_by_default(node)
                     network_manager.allow_network_assignment_to_all_interfaces(
                         node
@@ -444,7 +442,7 @@ class NodeCollectionHandler(JSONHandler):
             joinedload('cluster'),
             joinedload('interfaces'),
             joinedload('interfaces.assigned_networks')).\
-            filter(Node.id.in_([n.id for n in nodes_updated])).all()
+            filter(Node.id.in_(nodes_updated)).all()
         return self.render(nodes)
 
 

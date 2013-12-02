@@ -418,7 +418,7 @@ class CheckBeforeDeploymentTask(object):
         except errors.NotEnoughFreeSpace as e:
             raise errors.NotEnoughFreeSpace(
                 u"Node '%s' has insufficient disk space\n%s" % (
-                node.human_readable_name, e.message))
+                    node.human_readable_name, e.message))
 
     @classmethod
     def __check_ceph(cls, task):

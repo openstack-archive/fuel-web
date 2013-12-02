@@ -44,7 +44,8 @@ default_messages = {
 
     # network errors
     "AdminNetworkNotFound": "Admin network info not found",
-    "InvalidNetworkPool": "Invalid network pool",
+    "InvalidNetworkCidr": "Invalid network CIDR",
+    "InvalidNetworkVLANIDs": "Invalid network VLAN IDs",
     "AssignIPError": "Failed to assign IP to node",
     "NetworkCheckError": "Network checking failed",
     "CantRemoveOldVerificationTask": "Can't remove old verification task, still running",

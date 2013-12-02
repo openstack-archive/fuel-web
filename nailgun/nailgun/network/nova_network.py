@@ -14,53 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.models import Cluster
-from nailgun.api.models import IPAddrRange
 from nailgun.api.models import NetworkGroup
 from nailgun.db import db
 from nailgun.network.manager import NetworkManager
 
 
 class NovaNetworkManager(NetworkManager):
-
-    @classmethod
-    def create_network_groups(cls, cluster_id):
-        """Method for creation of network groups for cluster.
-
-        :param cluster_id: Cluster database ID.
-        :type  cluster_id: int
-        :returns: None
-        :raises: errors.OutOfVLANs, errors.OutOfIPs,
-        errors.NoSuitableCIDR
-        """
-        cluster_db = db().query(Cluster).get(cluster_id)
-        networks_metadata = \
-            cluster_db.release.networks_metadata["nova_network"]
-
-        for network in networks_metadata["networks"]:
-            new_ip_range = IPAddrRange(
-                first=network["ip_range"][0],
-                last=network["ip_range"][1]
-            )
-            gw = network['gateway'] if network.get('use_gateway') else None
-
-            nw_group = NetworkGroup(
-                release=cluster_db.release.id,
-                name=network['name'],
-                cidr=network['cidr'],
-                netmask=network['netmask'],
-                gateway=gw,
-                cluster_id=cluster_id,
-                vlan_start=network['vlan_start'],
-                amount=1,
-                network_size=network['network_size']
-                if 'network_size' in network else 256
-            )
-            db().add(nw_group)
-            db().commit()
-            nw_group.ip_ranges.append(new_ip_range)
-            db().commit()
-            cls.create_networks(nw_group)
 
     @classmethod
     def assign_networks_by_default(cls, node):

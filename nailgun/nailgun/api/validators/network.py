@@ -25,26 +25,26 @@ from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
 
 
-class NovaNetworkConfigurationValidator(BasicValidator):
+class NetworkConfigurationValidator(BasicValidator):
     @classmethod
     def validate_networks_update(cls, data):
         d = cls.validate_json(data)
-        networks = d['networks']
-
         if not d:
             raise errors.InvalidData(
                 "No valid data received",
                 log_message=True
             )
+
+        networks = d.get('networks')
         if not isinstance(networks, list):
             raise errors.InvalidData(
-                "It's expected to receive array, not a single object",
+                "'networks' is expected to be an array",
                 log_message=True
             )
         for i in networks:
             if 'id' not in i:
                 raise errors.InvalidData(
-                    "No 'id' param for '{0}'".format(i),
+                    "No 'id' param presents for '{0}' network".format(i),
                     log_message=True
                 )
 
@@ -57,6 +57,9 @@ class NovaNetworkConfigurationValidator(BasicValidator):
                         log_message=True
                     )
         return d
+
+
+class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
 
     @classmethod
     def validate_dns_servers_update(cls, data):
@@ -79,7 +82,7 @@ class NovaNetworkConfigurationValidator(BasicValidator):
         return d
 
 
-class NeutronNetworkConfigurationValidator(NovaNetworkConfigurationValidator):
+class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
     # TODO(enchantner): Implement validation logic
 
     @classmethod

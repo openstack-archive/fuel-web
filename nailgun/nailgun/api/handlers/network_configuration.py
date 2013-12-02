@@ -100,27 +100,6 @@ class ProviderHandler(JSONHandler):
         return TaskHandler.render(task)
 
 
-class NovaNetworkConfigurationVerifyHandler(ProviderHandler):
-    """Network configuration verify handler
-    """
-
-    validator = NovaNetworkConfigurationValidator
-    provider = "nova_network"
-
-    @content_json
-    def PUT(self, cluster_id):
-        """:IMPORTANT: this method should be rewritten to be more RESTful
-
-        :returns: JSONized Task object.
-        :http: * 202 (network checking task failed)
-               * 200 (network verification task started)
-               * 404 (cluster not found in db)
-        """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
-        self.check_net_provider(cluster)
-        return self.launch_verify(cluster)
-
-
 class NovaNetworkConfigurationHandler(ProviderHandler):
     """Network configuration handler
     """
@@ -246,13 +225,36 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         raise web.accepted(data=data)
 
 
-class NeutronNetworkConfigurationVerifyHandler(
-        NovaNetworkConfigurationVerifyHandler):
-    validator = NeutronNetworkConfigurationValidator
-    provider = "neutron"
+class NetworkConfigurationVerifyHandler(ProviderHandler):
+    """Network configuration verify handler base
+    """
 
     @content_json
     def PUT(self, cluster_id):
+        """:IMPORTANT: this method should be rewritten to be more RESTful
+
+        :returns: JSONized Task object.
+        :http: * 202 (network checking task failed)
+               * 200 (network verification task started)
+               * 404 (cluster not found in db)
+        """
         cluster = self.get_object_or_404(Cluster, cluster_id)
         self.check_net_provider(cluster)
         return self.launch_verify(cluster)
+
+
+class NovaNetworkConfigurationVerifyHandler(NetworkConfigurationVerifyHandler):
+    """Nova-Network configuration verify handler
+    """
+
+    validator = NovaNetworkConfigurationValidator
+    provider = "nova_network"
+
+
+class NeutronNetworkConfigurationVerifyHandler(
+        NetworkConfigurationVerifyHandler):
+    """Neutron network configuration verify handler
+    """
+
+    validator = NeutronNetworkConfigurationValidator
+    provider = "neutron"

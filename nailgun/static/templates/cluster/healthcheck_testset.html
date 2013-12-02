@@ -2,16 +2,16 @@
   <table class="table table-bordered healthcheck-table enable-selection">
     <thead>
       <tr>
+        <th class="healthcheck-col-select">
+          <div class="custom-tumbler">
+            <label>
+              <input type="checkbox" class="testset-select" id="testset-select-<%- testset.id %>">
+              <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+            </label>
+          </div>
+        </th>
         <th>
-          <label class="parameter-box clearfix">
-            <div class="parameter-control">
-              <div class="custom-tumbler">
-                <input type="checkbox" class="testset-select" name="<%- testset.id %>" />
-                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-              </div>
-            </div>
-            <div class="parameter-name" style="cursor: pointer"><%- testset.get('name') %></div>
-          </label>
+          <label class="testset-name" for="testset-select-<%- testset.id %>"><%- testset.get('name') %></label>
         </th>
         <th class="healthcheck-col-duration" data-i18n="cluster_page.healthcheck_tab.expected_duration"></th>
         <th class="healthcheck-col-duration" data-i18n="cluster_page.healthcheck_tab.actual_duration"></th>

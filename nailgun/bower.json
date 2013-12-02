@@ -1,0 +1,54 @@
+{
+    "name": "fuel-web",
+    "dependencies": {
+        "jquery": "1.9.1",
+        "requirejs": "2.1.4",
+        "requirejs-text": "2.0.5",
+        "lodash": "1.1.1",
+        "retina.js": "1.1.0",
+        "autoNumeric": "http://github.com/BobKnothe/autoNumeric/zipball/1.9.12",
+        "jquery.timeout": "http://jquery-timeout.googlecode.com/files/jquery.timeout-1.1.0.js",
+        "backbone.stickit": "https://raw.github.com/NYTimes/backbone.stickit/b450a07b2cecb3ad0343096f29e0332d5f9508b0/backbone.stickit.js",
+        "i18next": "1.7.1",
+        "backbone-deep-model": "0.10.4"
+    },
+    "exportsOverride": {
+        "jquery": {
+            "js": "jquery.js"
+        },
+        "requirejs": {
+            "js": "require.js"
+        },
+        "requirejs-text": {
+            "js": "text.js"
+        },
+        "lodash": {
+            "js": "lodash.js"
+        },
+        "retina.js": {
+            "js": "src/retina.js"
+        },
+        "autoNumeric": {
+            "js": "autoNumeric.js"
+        },
+        "jquery.timeout": {
+            "js": "index.js"
+        },
+        "backbone.stickit": {
+            "js": "index.js"
+        },
+        "i18next": {
+            "js": "release/i18next-1.7.1.js"
+        },
+        "backbone-deep-model": {
+            "js": "distribution/deep-model.js"
+        }
+    },
+    "ignore": [
+        "**/.*",
+        "node_modules",
+        "test",
+        "tests"
+    ],
+    "private": true
+}

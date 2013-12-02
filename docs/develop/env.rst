@@ -145,17 +145,19 @@ Building the Fuel ISO
 ---------------------
 
 #. Following software is required to build the Fuel ISO images on Ubuntu
-   12.10 or newer (on Ubuntu 12.04, use nodejs package instead of
-   nodejs-legacy)::
+   12.04 or newer::
 
     sudo apt-get install build-essential make git ruby ruby-dev rubygems debootstrap
     sudo apt-get install python-setuptools yum yum-utils libmysqlclient-dev isomd5sum
     sudo apt-get install python-nose libvirt-bin python-ipaddr python-paramiko python-yaml
-    sudo apt-get install python-pip kpartx extlinux npm nodejs-legacy unzip genisoimage
+    sudo apt-get install python-pip kpartx extlinux unzip genisoimage
     sudo gem install bundler -v 1.2.1
     sudo gem install builder
     sudo pip install xmlbuilder jinja2
-    sudo npm install -g requirejs
+    sudo add-apt-repository ppa:chris-lea/node.js
+    sudo apt-get update
+    sudo apt-get install nodejs
+    sudo npm install -g grunt-cli
 
 #. (alternative) If you have completed the instructions in the previous
    sections of Fuel development environment setup guide, the list of
@@ -163,6 +165,10 @@ Building the Fuel ISO
 
     sudo apt-get install ruby-dev ruby-builder bundler libmysqlclient-dev
     sudo apt-get install yum-utils kpartx extlinux genisoimage isomd5sum
+    sudo add-apt-repository ppa:chris-lea/node.js
+    sudo apt-get update
+    sudo apt-get install nodejs
+    sudo npm install -g grunt-cli
 
 #. ISO build process requires sudo permissions, allow yourself to run
    commands as root user without request for a password::

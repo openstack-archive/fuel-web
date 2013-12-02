@@ -17,6 +17,7 @@
 from copy import deepcopy
 import json
 from mock import patch
+import string
 
 from nailgun.errors import errors
 from nailgun.test.base import BaseIntegrationTest
@@ -564,7 +565,27 @@ class TestVolumeManager(BaseIntegrationTest):
             'size': size * (1024 ** 2),
             'model': 'SAMSUNG B00B135',
             'name': 'sda',
-            'disk': 'disk/id/b00b135'}]
+            'disk': 'disk/id/a00b135'}]
+
+        self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{
+                'mac': node.mac,
+                'meta': new_meta,
+                'is_agent': True}]),
+            headers=self.default_headers)
+
+    def add_disk_to_node(self, node, size):
+        new_meta = node.meta.copy()
+        last_disk = [d['name'][-1] for d in new_meta['disks']][-1]
+        new_disk = string.letters.index(last_disk) + 1
+
+        new_meta['disks'].append({
+            # convert mbytes to bytes
+            'size': size * (1024 ** 2),
+            'model': 'SAMSUNG B00B135',
+            'name': 'sd%s' % string.letters[new_disk],
+            'disk': 'disk/id/%s00b135' % string.letters[new_disk]})
 
         self.app.put(
             reverse('NodeCollectionHandler'),
@@ -627,6 +648,22 @@ class TestVolumeManager(BaseIntegrationTest):
             min_size = volume_manager.expand_generators(volume)['min_size']
             min_installation_size += min_size
         return min_installation_size
+
+    def test_check_volume_size_for_deployment(self):
+        node = self.create_node('controller', 'ceph-osd')
+        # First disk contains more than minimum size of all VGs
+        self.update_node_with_single_disk(node, 116384)
+        # Second is taken entirely by ceph
+        self.add_disk_to_node(node, 65536)
+        node.volume_manager.check_volume_sizes_for_deployment()
+
+        # First disk contains less than minimum size of all VGs
+        self.update_node_with_single_disk(node, 16384)
+        # Second is taken entirely by ceph
+        self.add_disk_to_node(node, 65536)
+        self.assertRaises(
+            errors.NotEnoughFreeSpace,
+            node.volume_manager.check_volume_sizes_for_deployment)
 
 
 class TestDisks(BaseIntegrationTest):

@@ -1,0 +1,29 @@
+@startuml
+    title Cluster Deployment
+    actor WebUser
+
+    Nailgun -> Naily: Provision,Deploy
+    Naily -> Astute: Provision,Deploy
+    Astute -> MC: Type of nodes?
+    MC -> Astute: bootstrap
+    Astute -> Cobbler: create system,reboot
+    Astute -> MC: Type of nodes?
+
+    MC --> Astute: booted in target OS
+    Astute --> Naily: provisioned
+    Naily --> Nailgun: provisioned
+    Nailgun --> WebUser: status on UI
+    Astute -> MC: Create /etc/astute.yaml
+
+    Astute -> MC: run puppet
+    MC -> Puppet: runonce
+    Puppet -> Facter: get facts
+    Facter --> Puppet: set facts and parse astute.yaml
+
+    Puppet -> Puppet: applies $role
+    Puppet --> MC: done
+    MC --> Astute: deploy is done
+    Astute --> Naily: deploy is done
+    Naily --> Nailgun: deploy is done
+    Nailgun --> WebUser: deploy is done
+@enduml

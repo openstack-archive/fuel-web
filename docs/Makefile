@@ -21,6 +21,7 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html       to make standalone HTML files"
+	@echo "  diagrams   to make PlantUML diagrans"
 	@echo "  dirhtml    to make HTML files named index.html in directories"
 	@echo "  singlehtml to make a single large HTML file"
 	@echo "  pickle     to make pickle files"
@@ -46,6 +47,11 @@ clean:
 $(PLANTUML):
 	wget http://downloads.sourceforge.net/project/plantuml/plantuml.jar -O $(PLANTUML)
 	$(ACTION.TOUCH)
+
+diagrams: $(PLANTUML)
+	@echo "Building PlantUML diagrams"
+	@java -jar $(PLANTUML) _diagrams/
+	@echo "Build finished"
 
 html: $(PLANTUML)
 	$(SPHINXBUILD) -b html -W $(ALLSPHINXOPTS) $(BUILDDIR)/html

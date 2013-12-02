@@ -1,0 +1,35 @@
+@startuml
+    title Nodes Provisioning
+    actor WebUser
+
+    box "Physical Server"
+        participant NodePXE
+        participant NodeAgent
+    end box
+
+    NodePXE -> Cobbler: PXE discovery
+    Cobbler --> NodePXE: bootstrap OS image
+    NodePXE -> Cobbler: network settings request
+    Cobbler --> NodePXE: IP, DNS response
+    NodePXE -> NodePXE: OS installation
+    NodePXE -> NodeAgent: starts agent
+    NodePXE -> MC: starts MCollective
+    NodeAgent -> Ohai: get info
+    Ohai --> NodeAgent: info
+    NodeAgent -> NodePXE: get admin node IP
+    NodePXE --> NodeAgent: admin node IP
+    NodeAgent -> Nailgun: Registration
+    |||
+    WebUser -> Nailgun: create cluster
+    WebUser -> Nailgun: add nodes to cluster
+    WebUser -> Nailgun: deploy cluster
+    |||
+    Nailgun -> Naily: Provision CentOS
+    Naily -> Astute: Provision CentOS
+    Astute -> Cobbler: Provision CentOS
+    Cobbler -> NodePXE: ssh to reboot
+    Cobbler --> NodePXE: CentOS image
+    NodePXE -> NodeAgent: starts agent
+    NodePXE -> MC: starts MC agent
+    NodeAgent -> Nailgun: Node metadata
+@enduml

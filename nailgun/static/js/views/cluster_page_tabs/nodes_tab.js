@@ -976,7 +976,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$('.btn, input').attr('disabled', disable || this.isLocked());
         },
         returnToNodeList: function() {
-            if (this.hasChanges()) {
+            if (this.hasChanges() && this.hasDragged) {
                 this.tab.page.discardSettingsChanges({cb: _.bind(this.goToNodeList, this)});
             } else {
                 this.goToNodeList();
@@ -1416,6 +1416,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             this.render();
             this.screen.draggedNetworks = null;
+//            FIXME: temporary hack
+            this.screen.hasDragged = true;
         },
         updateDropTarget: function(event) {
             this.screen.dropTarget = this;
@@ -1432,6 +1434,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             _.defaults(this, options);
             this.model.get('assigned_networks').on('add remove', this.checkIfEmpty, this);
             this.model.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
+//            FIXME: temporary dirty hack
+            this.screen.hasDragged = false;
         },
         render: function() {
             this.$el.html(this.template(_.extend({ifc: this.model}, this.templateHelpers))).i18n();

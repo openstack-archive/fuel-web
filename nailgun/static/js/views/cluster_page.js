@@ -100,7 +100,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.updateTitle();
         },
         onDeployRequest: function() {
-            if (_.result(this.tab, 'hasChanges')) {
+            if (_.result(this.tab, 'hasChanges') && this.tab.screen.hasDragged) {
                 this.discardSettingsChanges({cb: _.bind(function() {
                     this.tab.revertChanges();
                     this.displayChanges();
@@ -111,7 +111,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         onTabLeave: function(e) {
             var href = $(e.currentTarget).attr('href');
-            if (Backbone.history.getHash() != href.substr(1) && _.result(this.tab, 'hasChanges')) {
+            if (Backbone.history.getHash() != href.substr(1) && _.result(this.tab, 'hasChanges') && this.tab.screen.hasDragged) {
                 e.preventDefault();
                 this.discardSettingsChanges({
                     verification: !!(this.model.task('verify_networks', 'running') || this.model.task('check_networks', 'running')),
@@ -194,7 +194,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             $('body').off('click.' + this.eventNamespace);
         },
         onBeforeunloadEvent: function() {
-            if (_.result(this.tab, 'hasChanges')) {
+            if (_.result(this.tab, 'hasChanges') && this.tab.screen.hasDragged) {
                 return dialogViews.DiscardSettingsChangesDialog.prototype.defaultMessage;
             }
         },

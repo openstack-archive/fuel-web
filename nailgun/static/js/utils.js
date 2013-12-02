@@ -17,6 +17,12 @@ define(['require'], function(require) {
     'use strict';
 
     var utils = {
+        regexes: {
+            url: /(?:https?:\/\/([\-\w\.]+)+(:\d+)?(\/([\w\/_\-\.]*(\?\S+)?)?)?)/,
+            ip: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/,
+            mac: /^([0-9a-fA-F]{2}:){5}([0-9a-fA-F]{2})$/,
+            cidr: /^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$/
+        },
         serializeTabOptions: function(options) {
             return _.map(options, function(value, key) {
                 return key + ':' + value;
@@ -34,8 +40,7 @@ define(['require'], function(require) {
             return '<a target="_blank" href="' + url + '">' + url + '</a>';
         },
         urlify: function (text) {
-            var urlRegexp = /(?:https?:\/\/([\-\w\.]+)+(:\d+)?(\/([\w\/_\-\.]*(\?\S+)?)?)?)/g;
-            return utils.linebreaks(text).replace(urlRegexp, utils.composeLink);
+            return utils.linebreaks(text).replace(new RegExp(utils.regexes.url.source, 'g'), utils.composeLink);
         },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;
@@ -91,15 +96,14 @@ define(['require'], function(require) {
             return Math.floor(n * Math.pow(10, decimals)) / Math.pow(10, decimals);
         },
         isNaturalNumber: function(n) {
-            return !_.isNaN(n) && n > 0 && n % 1 === 0;
+            return _.isNumber(n) && n > 0 && n % 1 === 0;
         },
         validateCidr: function(cidr, field) {
             field = field || 'cidr';
             var errors = {};
             var match;
-            var cidrRegexp = /^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$/;
             if (_.isString(cidr)) {
-                match = cidr.match(cidrRegexp);
+                match = cidr.match(utils.regexes.cidr);
                 if (match) {
                     var prefix = parseInt(match[1], 10);
                     if (prefix < 2) {
@@ -117,15 +121,16 @@ define(['require'], function(require) {
             return errors;
         },
         validateIP: function(ip) {
-            var ipRegexp = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
-            return _.isString(ip) && !ip.match(ipRegexp);
+            return _.isString(ip) && !ip.match(utils.regexes.ip);
         },
         validateIPrange: function(startIP, endIP) {
             return this.ipIntRepresentation(startIP) - this.ipIntRepresentation(endIP) <= 0;
         },
+        validateNetmask: function(netmask) {
+            return utils.validateIP(netmask) || !this.ipIntRepresentation(netmask).toString(2).match(/^1+00+$/);
+        },
         ipIntRepresentation: function(ip) {
-            var octets = ip.split('.');
-            return _.reduce(octets, function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
+            return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
             /*jslint bitwise: true*/
@@ -136,9 +141,7 @@ define(['require'], function(require) {
             /*jslint bitwise: false*/
             return result;
         },
-        composeCidr: function(ipRanges, netmask) {
-            var notEmptyIpRanges = _.filter(ipRanges, function(ipRange) {return _.compact(ipRange).length;});
-            var ip = notEmptyIpRanges.length ? notEmptyIpRanges[0][0] || notEmptyIpRanges[0][1] : '';
+        composeCidr: function(ip, netmask) {
             var netmaskInt = this.ipIntRepresentation(netmask);
             var ipInt = this.ipIntRepresentation(ip);
             var networkSize = netmaskInt.toString(2).match(/1/g).length;

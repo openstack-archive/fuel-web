@@ -72,7 +72,7 @@ class NetworkGroup(Base):
     vlan_start = Column(Integer)
     cidr = Column(String(25))
     gateway = Column(String(25))
-    netmask = Column(String(25), nullable=False)
+    netmask = Column(String(25))
     ip_ranges = relationship(
         "IPAddrRange",
         backref="network_group",

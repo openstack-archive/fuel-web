@@ -15,52 +15,10 @@
 #    under the License.
 
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import IPAddrRange
-from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
 
 
 class NovaNetworkManager(NetworkManager):
-
-    @classmethod
-    def create_network_groups(cls, cluster_id):
-        """Method for creation of network groups for cluster.
-
-        :param cluster_id: Cluster database ID.
-        :type  cluster_id: int
-        :returns: None
-        :raises: errors.OutOfVLANs, errors.OutOfIPs,
-        errors.NoSuitableCIDR
-        """
-        cluster_db = db().query(Cluster).get(cluster_id)
-        networks_metadata = \
-            cluster_db.release.networks_metadata["nova_network"]
-
-        for network in networks_metadata["networks"]:
-            new_ip_range = IPAddrRange(
-                first=network["ip_range"][0],
-                last=network["ip_range"][1]
-            )
-            gw = network['gateway'] if network.get('use_gateway') else None
-
-            nw_group = NetworkGroup(
-                release=cluster_db.release.id,
-                name=network['name'],
-                cidr=network['cidr'],
-                netmask=network['netmask'],
-                gateway=gw,
-                cluster_id=cluster_id,
-                vlan_start=network['vlan_start'],
-                amount=1,
-                network_size=network['network_size']
-                if 'network_size' in network else 256
-            )
-            db().add(nw_group)
-            db().commit()
-            nw_group.ip_ranges.append(new_ip_range)
-            db().commit()
-            cls.cleanup_network_group(nw_group)
 
     @classmethod
     def assign_networks_by_default(cls, node):
@@ -156,6 +114,8 @@ class NovaNetworkManager(NetworkManager):
 
     @classmethod
     def update(cls, cluster, network_configuration):
+        cls.update_networks(cluster, network_configuration)
+
         if 'net_manager' in network_configuration:
             setattr(
                 cluster,
@@ -168,23 +128,4 @@ class NovaNetworkManager(NetworkManager):
                 'dns_nameservers',
                 network_configuration['dns_nameservers']['nameservers']
             )
-
-        if 'networks' in network_configuration:
-            for ng in network_configuration['networks']:
-                if ng['id'] == cls.get_admin_network_group_id():
-                    continue
-
-                ng_db = db().query(NetworkGroup).get(ng['id'])
-
-                for key, value in ng.iteritems():
-                    if key == "ip_ranges":
-                        cls._set_ip_ranges(ng['id'], value)
-                    else:
-                        if key == 'cidr' and \
-                                ng_db.meta.get("notation") == "cidr":
-                            cls.update_range_mask_from_cidr(ng_db, value)
-
-                        setattr(ng_db, key, value)
-
-                cls.cleanup_network_group(ng_db)
-                ng_db.cluster.add_pending_changes('networks')
+        db().commit()

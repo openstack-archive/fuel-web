@@ -33,39 +33,40 @@ class NetworkConfigurationSerializer(BasicSerializer):
         data_dict.setdefault("gateway", "")
         return data_dict
 
-
-class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
-
     @classmethod
-    def serialize_for_cluster(cls, cluster):
+    def serialize_net_groups_and_vips(cls, cluster):
         result = {}
-        result['net_manager'] = cluster.net_manager
+        net_manager = NetworkManager
         result['networks'] = map(
             cls.serialize_network_group,
             cluster.network_groups
         )
-
-        net_manager = NetworkManager
         result['networks'].append(
             cls.serialize_network_group(
                 net_manager.get_admin_network_group()
             )
         )
+        if cluster.is_ha_mode:
+            for ng in cluster.network_groups:
+                if ng.meta.get("assign_vip"):
+                    result['{0}_vip'.format(ng.name)] = \
+                        net_manager.assign_vip(cluster.id, ng.name)
+        return result
+
+
+class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
+
+    @classmethod
+    def serialize_for_cluster(cls, cluster):
+        result = cls.serialize_net_groups_and_vips(cluster)
+
+        result['net_manager'] = cluster.net_manager
+
         if cluster.dns_nameservers:
             result['dns_nameservers'] = {
                 "nameservers": cluster.dns_nameservers
             }
 
-        if cluster.is_ha_mode:
-            nw_metadata = cluster.release.networks_metadata["nova_network"]
-            for network in nw_metadata["networks"]:
-                if network.get("assign_vip"):
-                    result['{0}_vip'.format(
-                        network["name"]
-                    )] = net_manager.assign_vip(
-                        cluster.id,
-                        network["name"]
-                    )
         return result
 
 
@@ -73,36 +74,16 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
 
     @classmethod
     def serialize_for_cluster(cls, cluster):
-        result = {}
+        result = cls.serialize_net_groups_and_vips(cluster)
+
         result['net_provider'] = cluster.net_provider
         result['net_l23_provider'] = cluster.net_l23_provider
         result['net_segment_type'] = cluster.net_segment_type
-        result['networks'] = map(
-            cls.serialize_network_group,
-            cluster.network_groups
-        )
-
-        net_manager = NetworkManager
-        result['networks'].append(
-            cls.serialize_network_group(
-                net_manager.get_admin_network_group()
-            )
-        )
-
-        if cluster.is_ha_mode:
-            nw_metadata = cluster.release.networks_metadata["neutron"]
-            for network in nw_metadata["networks"]:
-                if network.get("assign_vip"):
-                    result['{0}_vip'.format(
-                        network["name"]
-                    )] = net_manager.assign_vip(
-                        cluster.id,
-                        network["name"]
-                    )
 
         result['neutron_parameters'] = {
             'predefined_networks': cluster.neutron_config.predefined_networks,
             'L2': cluster.neutron_config.L2,
             'segmentation_type': cluster.neutron_config.segmentation_type
         }
+
         return result

@@ -116,6 +116,17 @@ class NetworkGroup(Base):
         ]
         return vlans
 
+    @property
+    def meta(self):
+        if self.cluster:
+            meta = self.cluster.release.networks_metadata[
+                self.cluster.net_provider
+            ]["networks"]
+            for net in meta:
+                if net["name"] == self.name:
+                    return net
+        return {}
+
 
 class AllowedNetworks(Base):
     __tablename__ = 'allowed_networks'

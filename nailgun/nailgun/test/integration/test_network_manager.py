@@ -34,7 +34,6 @@ from nailgun.api.models import Network
 from nailgun.api.models import NetworkGroup
 from nailgun.api.models import Node
 from nailgun.api.models import NodeNICInterface
-from nailgun.api.models import Vlan
 from nailgun.network.manager import NetworkManager
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.nova_network import NovaNetworkManager
@@ -341,56 +340,6 @@ class TestNetworkManager(BaseIntegrationTest):
             filter_by(network=admin_net_id).all()
         self.assertEquals(len(admin_ips), 1)
         self.assertEquals(admin_ips[0].ip_addr, '10.0.0.1')
-
-    def test_vlan_set_null(self):
-        self.env.create_cluster(api=True)
-        cluster_db = self.env.clusters[0]
-        same_vlan = 100
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': cluster_db.id}),
-            headers=self.default_headers
-        )
-        networks_data = json.loads(resp.body)
-        networks_data["networks"] = [
-            n for n in networks_data["networks"]
-            if n["name"] != "fuelweb_admin"
-        ]
-        same_vlan_nets = filter(
-            lambda n: n['vlan_start'] == same_vlan, networks_data['networks'])
-        different_vlan_nets = filter(
-            lambda n: n['vlan_start'] != same_vlan, networks_data['networks'])
-        different_vlan_nets[0]['vlan_start'] = same_vlan
-        same_vlan_nets_count_expect = len(same_vlan_nets) + 1
-        resp = self.app.put(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={"cluster_id": cluster_db.id}
-            ),
-            json.dumps(networks_data),
-            headers=self.default_headers
-        )
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': cluster_db.id}),
-            headers=self.default_headers
-        )
-        networks_data = json.loads(resp.body)['networks']
-        same_vlan_nets = [
-            net for net in networks_data if net["vlan_start"] == same_vlan
-        ]
-        self.assertEquals(len(same_vlan_nets), same_vlan_nets_count_expect)
-
-        vlan_db = self.db.query(Vlan).get(same_vlan)
-        self.assertEquals(len(vlan_db.network), same_vlan_nets_count_expect)
-
-        for net in vlan_db.network:
-            self.db.delete(net)
-        self.db.commit()
-        self.db.refresh(vlan_db)
-        self.assertEquals(vlan_db.network, [])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')

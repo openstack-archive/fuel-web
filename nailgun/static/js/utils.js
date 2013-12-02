@@ -17,6 +17,16 @@ define(['require'], function(require) {
     'use strict';
 
     var utils = {
+        regexes: {
+            url: /(?:https?:\/\/([\-\w\.]+)+(:\d+)?(\/([\w\/_\-\.]*(\?\S+)?)?)?)/g,
+            ip: /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/,
+            mac: /^([0-9a-fA-F]{2}[:\-]){5}([0-9a-fA-F]{2})$/,
+            cidr: /^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$/,
+            username: /^[A-z0-9\._%\+\-@]+$/,
+            password: /^[\x21-\x7E]+$/,
+            satellite: /(^(?:(?!\d+\.)[a-zA-Z0-9_\-]{1,63}\.?)+(?:[a-zA-Z]{2,})$)/,
+            activation_key: /^[A-z0-9\*\.\+\-]+$/
+        },
         serializeTabOptions: function(options) {
             return _.map(options, function(value, key) {
                 return key + ':' + value;
@@ -34,8 +44,7 @@ define(['require'], function(require) {
             return '<a target="_blank" href="' + url + '">' + url + '</a>';
         },
         urlify: function (text) {
-            var urlRegexp = /(?:https?:\/\/([\-\w\.]+)+(:\d+)?(\/([\w\/_\-\.]*(\?\S+)?)?)?)/g;
-            return utils.linebreaks(text).replace(urlRegexp, utils.composeLink);
+            return utils.linebreaks(text).replace(utils.regexes.url, utils.composeLink);
         },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;
@@ -91,15 +100,14 @@ define(['require'], function(require) {
             return Math.floor(n * Math.pow(10, decimals)) / Math.pow(10, decimals);
         },
         isNaturalNumber: function(n) {
-            return !_.isNaN(n) && n > 0 && n % 1 === 0;
+            return n && n > 0 && n % 1 === 0;
         },
         validateCidr: function(cidr, field) {
             field = field || 'cidr';
             var errors = {};
             var match;
-            var cidrRegexp = /^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$/;
             if (_.isString(cidr)) {
-                match = cidr.match(cidrRegexp);
+                match = cidr.match(utils.regexes.cidr);
                 if (match) {
                     var prefix = parseInt(match[1], 10);
                     if (prefix < 2) {
@@ -117,11 +125,21 @@ define(['require'], function(require) {
             return errors;
         },
         validateIP: function(ip) {
-            var ipRegexp = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/;
-            return _.isString(ip) && !ip.match(ipRegexp);
+            return _.isString(ip) && !ip.match(utils.regexes.ip);
         },
         validateIPrange: function(startIP, endIP) {
             return this.ipIntRepresentation(startIP) - this.ipIntRepresentation(endIP) <= 0;
+        },
+        validateNetmask: function(value) {
+            var valid_values = {0:1, 128:1, 192:1, 224:1, 240:1, 248:1, 252:1, 254:1, 255:1};
+            var m = value.split('.');
+            var i;
+            for (i = 0; i <= 3; i += 1) {
+                if (!(valid_values.hasOwnProperty(m[i]))) {
+                    return true;
+                }
+            }
+            return false;
         },
         ipIntRepresentation: function(ip) {
             var octets = ip.split('.');

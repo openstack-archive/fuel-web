@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="990px" height="818px" viewBox="0 0 990 818" enable-background="new 0 0 990 818" xml:space="preserve">
+<g>
+	<path fill="#E6E7E8" d="M379.641,778c0,5.5-4.5,10-10,10h-250c-5.5,0-10-4.5-10-10V41.75c0-5.5,4.5-10,10-10h250
+		c5.5,0,10,4.5,10,10V778z"/>
+</g>
+<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="174.278" y1="97.604" x2="174.278" y2="745"/>
+<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="65" y1="128.507" x2="65" y2="700"/>
+<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="315.278" y1="97.604" x2="315.278" y2="745"/>
+<rect x="112.597" y="46.263" fill="none" width="242.015" height="18.223"/>
+<text transform="matrix(1 0 0 1 122.5967 57.4629)" fill="#899596" font-family="'PTSans-Bold'" font-size="16">Physical Server</text>
+<g id="DataBase">
+	<g>
+		<path fill="#4E86AD" d="M224.278,95.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M365.278,95.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M499.973,95.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M715.973,95.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M563.278,95.315c0,2.2-1.8,4-4,4h-42c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h42c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M623.278,95.315c0,2.2-1.8,4-4,4h-42c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h42c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M821.973,95.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M927.973,95.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<text transform="matrix(1 0 0 1 150.4707 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">NodePXE</text>
+	<text transform="matrix(1 0 0 1 286.6523 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">NodeAgent</text>
+	<text transform="matrix(1 0 0 1 530.0938 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">MC</text>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="460.973" y1="97.604" x2="460.973" y2="745"/>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="538.278" y1="97.604" x2="538.278" y2="745"/>
+	<text transform="matrix(1 0 0 1 441.0098 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Cobbler</text>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="676.973" y1="97.604" x2="676.973" y2="745"/>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="598.278" y1="97.604" x2="598.278" y2="745"/>
+	<text transform="matrix(1 0 0 1 586.3086 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Ohai</text>
+	<text transform="matrix(1 0 0 1 656.8613 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Nailgun</text>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="782.973" y1="97.604" x2="782.973" y2="745"/>
+	<text transform="matrix(1 0 0 1 769.6416 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Naily</text>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="888.973" y1="97.604" x2="888.973" y2="745"/>
+	<text transform="matrix(1 0 0 1 872.4258 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Astute</text>
+	<g>
+		<path fill="#4E86AD" d="M224.278,765.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V765.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M365.278,765.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V765.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M499.973,765.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V765.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M715.973,765.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V765.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M563.278,765.315c0,2.2-1.8,4-4,4h-42c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h42c2.2,0,4,1.8,4,4V765.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M623.278,765.315c0,2.2-1.8,4-4,4h-42c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h42c2.2,0,4,1.8,4,4V765.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M821.973,765.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V765.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M927.973,765.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V765.315z"
+			/>
+	</g>
+	<text transform="matrix(1 0 0 1 150.4707 759.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">NodePXE</text>
+	<text transform="matrix(1 0 0 1 286.6523 759.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">NodeAgent</text>
+	<text transform="matrix(1 0 0 1 530.0938 759.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">MC</text>
+	<text transform="matrix(1 0 0 1 441.0098 759.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Cobbler</text>
+	<text transform="matrix(1 0 0 1 586.3086 759.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Ohai</text>
+	<text transform="matrix(1 0 0 1 656.8613 759.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Nailgun</text>
+	<text transform="matrix(1 0 0 1 769.6416 759.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Naily</text>
+	<text transform="matrix(1 0 0 1 872.4258 759.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Astute</text>
+	<g>
+		<path fill="#899596" d="M64.742,67.212c-4.397,0-7.245-7.365-7.245-7.365c-0.586,2.247-9.281,4.884-9.281,4.884
+			c-2.54,0.976-3.615,2.443-3.615,2.443c-3.759,5.566-4.198,17.974-4.198,17.974c0.047,2.834,1.269,3.13,1.269,3.13
+			c8.646,3.858,23.546,4.541,23.546,4.541c0.463,0.009,0.92,0.015,1.374,0.015c13.119,0,21.337-3.97,21.337-3.97
+			c1.471-0.93,1.515-1.662,1.515-1.662c1.025-8.892-3.369-18.905-3.369-18.905c-1.321-2.93-9.378-5.47-9.378-5.47
+			c-4.301-1.515-4.33-3.029-4.33-3.029C69.544,65.361,66.948,67.212,64.742,67.212z"/>
+		<path fill="#B8C1C1" d="M55.203,48.624c-0.006,0.313-0.009,0.627-0.009,0.94c0,2.631,1.066,5.42,2.657,7.664
+			c-0.006-0.009-0.012-0.012-0.018-0.021c0,0,0.053,0.278,0.05,0.715l0.595,1.544c0.721,1.863,3.246,6.694,6.264,6.694
+			c2.104,0,4.415-2.364,6.686-6.841l0.495-0.979c-0.026-0.278-0.038-0.568-0.023-0.888c0,0-0.023,0.026-0.064,0.067
+			c1.857-2.382,3.07-5.399,3.07-8.03c0-0.144,0.094-0.762,0.152-1.667c0.161-0.363,0.378-0.677,0.653-0.677
+			c0,0,1.611-4.69-0.513-8.279c0,0-0.732-3.299-4.617-4.764c-3.589-2.197-8.938-0.879-8.938-0.879
+			c-6.521,1.099-7.693,8.426-7.693,8.426c-0.293,3.516,0.366,6.129,0.366,6.129C54.734,48.143,55.016,48.418,55.203,48.624z"/>
+	</g>
+</g>
+<rect x="407.614" y="46.263" fill="none" width="376.682" height="18.223"/>
+<text transform="matrix(1 0 0 1 417.6143 57.4629)" fill="#899596" font-family="'PTSans-Bold'" font-size="16">Nodes Provisioning</text>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="174.278" y1="133.63" x2="454.615" y2="133.63"/>
+		<g>
+			<polygon fill="#F15A29" points="451.807,137.333 453.38,133.63 451.807,129.927 460.585,133.63 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="174.278" y1="186.63" x2="454.615" y2="186.63"/>
+		<g>
+			<polygon fill="#F15A29" points="451.807,190.333 453.38,186.63 451.807,182.927 460.585,186.63 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="174.278" y1="266.631" x2="309.309" y2="266.631"/>
+		<g>
+			<polygon fill="#F15A29" points="306.5,270.334 308.073,266.631 306.5,262.928 315.278,266.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="174.278" y1="655" x2="309.309" y2="655"/>
+		<g>
+			<polygon fill="#F15A29" points="306.5,658.703 308.073,655 306.5,651.297 315.278,655 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="174.278" y1="680" x2="532.296" y2="680"/>
+		<g>
+			<polygon fill="#F15A29" points="529.487,683.703 531.061,680 529.487,676.297 538.266,680 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="315.278" y1="706" x2="671.003" y2="706"/>
+		<g>
+			<polygon fill="#F15A29" points="668.194,709.703 669.768,706 668.194,702.297 676.973,706 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="174.278" y1="395.631" x2="309.309" y2="395.631"/>
+		<g>
+			<polygon fill="#F15A29" points="306.5,399.334 308.073,395.631 306.5,391.928 315.278,395.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="174.278" y1="290.631" x2="532.296" y2="290.631"/>
+		<g>
+			<polygon fill="#F15A29" points="529.487,294.334 531.061,290.631 529.487,286.928 538.266,290.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="315.278" y1="317.631" x2="592.309" y2="317.631"/>
+		<g>
+			<polygon fill="#F15A29" points="589.5,321.334 591.073,317.631 589.5,313.928 598.278,317.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="676.973" y1="524.631" x2="777.003" y2="524.631"/>
+		<g>
+			<polygon fill="#F15A29" points="774.194,528.334 775.768,524.631 774.194,520.928 782.973,524.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="782.973" y1="550.631" x2="883.003" y2="550.631"/>
+		<g>
+			<polygon fill="#F15A29" points="880.194,554.334 881.768,550.631 880.194,546.928 888.973,550.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="315.278" y1="420.631" x2="671.003" y2="420.631"/>
+		<g>
+			<polygon fill="#F15A29" points="668.194,424.334 669.768,420.631 668.194,416.928 676.973,420.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="65" y1="447.631" x2="671.003" y2="447.631"/>
+		<g>
+			<polygon fill="#F15A29" points="668.194,451.334 669.768,447.631 668.194,443.928 676.973,447.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="65" y1="473.631" x2="671.003" y2="473.631"/>
+		<g>
+			<polygon fill="#F15A29" points="668.194,477.334 669.768,473.631 668.194,469.928 676.973,473.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="65" y1="497" x2="671.003" y2="497"/>
+		<g>
+			<polygon fill="#F15A29" points="668.194,500.703 669.768,497 668.194,493.297 676.973,497 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="180.248" y1="160.63" x2="182.248" y2="160.63"/>
+		
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4.0049,4.0049" x1="186.253" y1="160.63" x2="456.582" y2="160.63"/>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="458.585" y1="160.63" x2="460.585" y2="160.63"/>
+		<g>
+			<polygon fill="#F15A29" points="183.057,164.333 181.483,160.63 183.057,156.927 174.278,160.63 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="180.248" y1="213.63" x2="182.248" y2="213.63"/>
+		
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4.0049,4.0049" x1="186.253" y1="213.63" x2="456.582" y2="213.63"/>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="458.585" y1="213.63" x2="460.585" y2="213.63"/>
+		<g>
+			<polygon fill="#F15A29" points="183.057,217.333 181.483,213.63 183.057,209.927 174.278,213.63 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="321.248" y1="342.631" x2="323.248" y2="342.631"/>
+		
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="3.957,3.957" x1="327.205" y1="342.631" x2="594.3" y2="342.631"/>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="596.278" y1="342.631" x2="598.278" y2="342.631"/>
+		<g>
+			<polygon fill="#F15A29" points="324.057,346.334 322.483,342.631 324.057,338.928 315.278,342.631 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="181.901" y1="369.5" x2="315.278" y2="369.5"/>
+		<g>
+			<polygon fill="#F15A29" points="184.71,373.203 183.137,369.5 184.71,365.797 175.932,369.5 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="466.942" y1="578.5" x2="888.973" y2="578.5"/>
+		<g>
+			<polygon fill="#F15A29" points="469.751,582.203 468.178,578.5 469.751,574.797 460.973,578.5 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="179.97" y1="603.5" x2="460.585" y2="603.5"/>
+		<g>
+			<polygon fill="#F15A29" points="182.778,607.203 181.205,603.5 182.778,599.797 174,603.5 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="179.97" y1="628.5" x2="460.585" y2="628.5"/>
+		<g>
+			<polygon fill="#F15A29" points="182.778,632.203 181.205,628.5 182.778,624.797 174,628.5 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<g>
+		<polyline fill="none" stroke="#F15A29" stroke-miterlimit="10" points="174.278,237.333 210.667,237.333 210.667,245 180.248,245 
+					"/>
+		<g>
+			<polygon fill="#F15A29" points="183.057,241.297 181.483,245 183.057,248.703 174.278,245 			"/>
+		</g>
+	</g>
+</g>
+<g>
+	<rect x="12" y="99.833" fill="none" width="106" height="13.165"/>
+	<text transform="matrix(1 0 0 1 43.9746 106.8335)" font-family="'PTSans-Regular'" font-size="10">Web_User</text>
+</g>
+<g>
+	<path fill="#899596" d="M64.742,747.213c-4.397,0-7.245-7.365-7.245-7.365c-0.586,2.246-9.281,4.883-9.281,4.883
+		c-2.54,0.977-3.615,2.443-3.615,2.443c-3.759,5.566-4.198,17.975-4.198,17.975c0.047,2.834,1.269,3.129,1.269,3.129
+		c8.646,3.859,23.546,4.541,23.546,4.541c0.463,0.01,0.92,0.016,1.374,0.016c13.119,0,21.337-3.971,21.337-3.971
+		c1.471-0.93,1.515-1.662,1.515-1.662c1.025-8.891-3.369-18.904-3.369-18.904c-1.321-2.93-9.378-5.471-9.378-5.471
+		c-4.301-1.514-4.33-3.029-4.33-3.029C69.544,745.361,66.948,747.213,64.742,747.213z"/>
+	<path fill="#B8C1C1" d="M55.203,728.623c-0.006,0.314-0.009,0.627-0.009,0.941c0,2.631,1.066,5.42,2.657,7.664
+		c-0.006-0.01-0.012-0.012-0.018-0.021c0,0,0.053,0.279,0.05,0.715l0.595,1.545c0.721,1.863,3.246,6.693,6.264,6.693
+		c2.104,0,4.415-2.363,6.686-6.84l0.495-0.979c-0.026-0.279-0.038-0.568-0.023-0.889c0,0-0.023,0.027-0.064,0.068
+		c1.857-2.383,3.07-5.4,3.07-8.031c0-0.143,0.094-0.762,0.152-1.666c0.161-0.363,0.378-0.678,0.653-0.678
+		c0,0,1.611-4.689-0.513-8.279c0,0-0.732-3.299-4.617-4.764c-3.589-2.197-8.938-0.879-8.938-0.879
+		c-6.521,1.1-7.693,8.426-7.693,8.426c-0.293,3.516,0.366,6.129,0.366,6.129C54.734,728.143,55.016,728.418,55.203,728.623z"/>
+</g>
+<g>
+	<rect x="12" y="779.834" fill="none" width="106" height="13.164"/>
+	<text transform="matrix(1 0 0 1 43.9746 786.834)" font-family="'PTSans-Regular'" font-size="10">Web_User</text>
+</g>
+<text transform="matrix(1 0 0 1 71 129.6304)"><tspan x="0" y="0" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="0" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">PXE discovery</tspan><tspan x="0" y="26" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="26" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Bootstrap OS image</tspan><tspan x="0" y="52" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="52" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Network settings request</tspan><tspan x="0" y="78" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="78" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">IP, DNS response</tspan><tspan x="0" y="104" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="104" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">OS installation</tspan><tspan x="0" y="130" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="130" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Starts agent</tspan><tspan x="0" y="156" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="156" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Starts MCollective</tspan><tspan x="0" y="182" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">							</tspan><tspan x="252" y="182" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Get info</tspan><tspan x="0" y="208" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">							</tspan><tspan x="252" y="208" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Info</tspan><tspan x="0" y="234" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="234" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Get admin node IP</tspan><tspan x="0" y="260" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="260" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Admin node IP</tspan><tspan x="0" y="286" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">							</tspan><tspan x="252" y="286" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Registration</tspan><tspan x="0" y="312" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Create cluster</tspan><tspan x="0" y="338" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Add nodes to cluster</tspan><tspan x="0" y="364" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Deploy cluster</tspan><tspan x="0" y="390" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">																	</tspan><tspan x="612" y="390" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Provision CentOS</tspan><tspan x="0" y="416" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">																		</tspan><tspan x="648" y="416" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">  </tspan><tspan x="653.088" y="416" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="28">	</tspan><tspan x="684" y="416" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">	</tspan><tspan x="720" y="416" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Provision CentOS</tspan><tspan x="0" y="442" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">											</tspan><tspan x="396" y="442" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Provision CentOS</tspan><tspan x="0" y="468" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="468" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">SSH to reboot</tspan><tspan x="0" y="494" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="494" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">CentOS image</tspan><tspan x="0" y="520" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="520" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Starts agent</tspan><tspan x="0" y="546" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">			</tspan><tspan x="108" y="546" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Starts MC agent</tspan><tspan x="0" y="572" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12" letter-spacing="33">							</tspan><tspan x="252" y="572" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">Node metadata</tspan></text>
+</svg>

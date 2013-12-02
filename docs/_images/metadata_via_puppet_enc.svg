@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="990px" height="764px" viewBox="0 0 990 764" enable-background="new 0 0 990 764" xml:space="preserve">
+<g id="DataBase">
+	<g>
+		<path fill="#E6E7E8" d="M547,315c0,3.3-2.7,6-6,6H220.614c-3.3,0-6-2.7-6-6V78.167c0-3.3,2.7-6,6-6H541c3.3,0,6,2.7,6,6V315z"/>
+	</g>
+	<rect x="224.614" y="82.167" fill="none" width="376.682" height="18.223"/>
+	<text transform="matrix(1 0 0 1 234.6143 93.3672)" fill="#899596" font-family="'PTSans-Bold'" font-size="16">Master Node</text>
+	<g>
+		<path fill="#E6E7E8" d="M387.334,480.284c0,3.3-2.701,6-6,6h-160.72c-3.3,0-6-2.7-6-6V355.631c0-3.3,2.7-6,6-6h160.72
+			c3.299,0,6,2.7,6,6V480.284z"/>
+	</g>
+	<rect x="214.967" y="362.007" fill="none" width="172.014" height="18.223"/>
+	<text transform="matrix(1 0 0 1 224.9668 373.207)" fill="#899596" font-family="'PTSans-Bold'" font-size="16">Target Node</text>
+	<g>
+		<path fill="#4E86AD" d="M334.614,134c0,2.75-2.25,5-5,5h-90c-2.75,0-5-2.25-5-5v-16c0-2.75,2.25-5,5-5h90c2.75,0,5,2.25,5,5V134z"
+			/>
+		<text transform="matrix(1 0 0 1 247.4814 129.6304)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Puppet Master</text>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M364.614,206.833c0,2.75-2.25,5-5,5h-90c-2.75,0-5-2.25-5-5v-16c0-2.75,2.25-5,5-5h90c2.75,0,5,2.25,5,5
+			V206.833z"/>
+		<text transform="matrix(1 0 0 1 287.5127 202.4639)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">ENC Script</text>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M364.614,284c0,2.75-2.25,5-5,5h-90c-2.75,0-5-2.25-5-5v-16c0-2.75,2.25-5,5-5h90c2.75,0,5,2.25,5,5V284z"
+			/>
+		<text transform="matrix(1 0 0 1 284.3867 279.6309)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">MCollective</text>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M525.75,206.833c0,2.75-2.925,5-6.5,5h-117c-3.575,0-6.5-2.25-6.5-5v-16c0-2.75,2.925-5,6.5-5h117
+			c3.575,0,6.5,2.25,6.5,5V206.833z"/>
+		<text transform="matrix(1 0 0 1 428.7041 202.4639)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Orchestrator</text>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M525.75,284c0,2.75-2.925,5-6.5,5h-117c-3.575,0-6.5-2.25-6.5-5v-16c0-2.75,2.925-5,6.5-5h117
+			c3.575,0,6.5,2.25,6.5,5V284z"/>
+		<text transform="matrix(1 0 0 1 414.8564 279.6309)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">YAML data source</text>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M348.974,411.631c0,2.75-2.7,5-6,5h-108c-3.3,0-6-2.25-6-5v-16c0-2.75,2.7-5,6-5h108c3.3,0,6,2.25,6,5
+			V411.631z"/>
+		<text transform="matrix(1 0 0 1 242.0488 407.2617)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">MCollective Agent</text>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M328.974,461.284c0,2.75-2.25,5-5,5h-90c-2.75,0-5-2.25-5-5v-16c0-2.75,2.25-5,5-5h90c2.75,0,5,2.25,5,5
+			V461.284z"/>
+		<text transform="matrix(1 0 0 1 260.8125 456.9141)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Puppet</text>
+	</g>
+	<g>
+		<path fill="#899596" d="M654.038,177.797c-4.397,0-7.245-7.365-7.245-7.365c-0.586,2.247-9.281,4.884-9.281,4.884
+			c-2.54,0.976-3.615,2.443-3.615,2.443c-3.759,5.566-4.198,17.974-4.198,17.974c0.047,2.834,1.269,3.13,1.269,3.13
+			c8.646,3.858,23.546,4.541,23.546,4.541c0.463,0.009,0.92,0.015,1.374,0.015c13.119,0,21.337-3.97,21.337-3.97
+			c1.471-0.93,1.515-1.662,1.515-1.662c1.025-8.892-3.369-18.905-3.369-18.905c-1.321-2.93-9.378-5.47-9.378-5.47
+			c-4.301-1.515-4.33-3.029-4.33-3.029C658.84,175.945,656.244,177.797,654.038,177.797z"/>
+		<path fill="#B8C1C1" d="M644.499,159.208c-0.006,0.313-0.009,0.627-0.009,0.94c0,2.631,1.066,5.42,2.657,7.664
+			c-0.006-0.009-0.013-0.012-0.018-0.021c0,0,0.052,0.278,0.05,0.715l0.595,1.544c0.721,1.863,3.245,6.694,6.264,6.694
+			c2.104,0,4.415-2.364,6.686-6.841l0.495-0.979c-0.026-0.278-0.038-0.568-0.023-0.888c0,0-0.023,0.026-0.064,0.067
+			c1.857-2.382,3.07-5.399,3.07-8.03c0-0.144,0.094-0.762,0.152-1.667c0.16-0.363,0.377-0.677,0.653-0.677
+			c0,0,1.611-4.69-0.513-8.279c0,0-0.732-3.299-4.617-4.764c-3.589-2.197-8.938-0.879-8.938-0.879
+			c-6.521,1.099-7.693,8.426-7.693,8.426c-0.294,3.516,0.366,6.129,0.366,6.129C644.03,158.728,644.312,159.003,644.499,159.208z"/>
+	</g>
+	<g>
+		<rect x="601.296" y="210.418" fill="none" width="106" height="13.165"/>
+		<text transform="matrix(1 0 0 1 635.7559 217.418)" font-family="'PTSans-Regular'" font-size="10">CLI_User</text>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F26A1B" stroke-miterlimit="10" x1="278.974" y1="416.631" x2="278.974" y2="433.314"/>
+			<g>
+				<polygon fill="#F26A1B" points="275.271,430.506 278.974,432.079 282.677,430.506 278.974,439.284 				"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g>
+			<path fill="#4E86AD" d="M525.75,133c0,3.3-2.701,6-6,6h-148c-3.3,0-6-2.7-6-6v-14c0-3.3,2.7-6,6-6h148c3.299,0,6,2.7,6,6V133z"/>
+		</g>
+		<text transform="matrix(1 0 0 1 374.3203 129.6304)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Async RPC consumer (Naily)</text>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F26A1B" stroke-miterlimit="10" x1="620.5" y1="198.833" x2="531.719" y2="198.833"/>
+			<g>
+				<polygon fill="#F26A1B" points="534.528,195.13 532.955,198.833 534.528,202.537 525.75,198.833 				"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F26A1B" stroke-miterlimit="10" x1="620.5" y1="214.542" x2="524.635" y2="260.423"/>
+			<g>
+				<polygon fill="#F26A1B" points="525.568,255.87 525.749,259.89 528.766,262.551 519.25,263 				"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F26A1B" stroke-miterlimit="10" x1="281.5" y1="139" x2="312.227" y2="181.015"/>
+			<g>
+				<polygon fill="#F26A1B" points="307.579,180.934 311.496,180.018 313.557,176.562 315.75,185.833 				"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F26A1B" stroke-miterlimit="10" x1="460.75" y1="139" x2="460.75" y2="179.864"/>
+			<g>
+				<polygon fill="#F26A1B" points="457.047,177.055 460.75,178.628 464.453,177.055 460.75,185.833 				"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F26A1B" stroke-miterlimit="10" x1="460.75" y1="263" x2="460.75" y2="217.803"/>
+			<g>
+				<polygon fill="#F26A1B" points="464.453,220.612 460.75,219.039 457.047,220.612 460.75,211.833 				"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F26A1B" stroke-miterlimit="10" x1="312.5" y1="211.833" x2="402.738" y2="260.181"/>
+			<g>
+				<polygon fill="#F26A1B" points="398.514,262.118 401.648,259.598 402.012,255.59 408,263 				"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F26A1B" stroke-miterlimit="10" x1="428" y1="211.833" x2="355.973" y2="259.696"/>
+			<g>
+				<polygon fill="#F26A1B" points="356.262,255.058 357.002,259.013 360.361,261.226 351,263 				"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F26A1B" stroke-miterlimit="10" x1="314.614" y1="289.631" x2="314.614" y2="384.661"/>
+			<g>
+				<polygon fill="#F26A1B" points="310.911,381.853 314.614,383.426 318.317,381.853 314.614,390.631 				"/>
+			</g>
+		</g>
+	</g>
+	<g>
+		<g>
+			<path fill="none" stroke="#F26A1B" stroke-miterlimit="10" d="M228.974,453.284c0,0-58.974,6.716-58.974-168.95
+				c0,0,1.773-148.166,58.665-157.839"/>
+			<g>
+				<polygon fill="#F26A1B" points="226.25,130.563 227.445,126.721 225.51,123.194 234.614,126 				"/>
+			</g>
+		</g>
+	</g>
+</g>
+</svg>

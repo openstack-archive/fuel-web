@@ -47,37 +47,10 @@ defined by Nailgun.
 Communication paths between these components are illustrated on the
 Logical Architecture Diagram:
 
- .. uml::
-    package "Master Node" {
-        [JavaScript UI]
-        package "Nailgun Backend" {
-            package "SQL Database" <<Database>> {
-                [Nailgun DB]
-            }
-            [Nailgun DB] --> [Data Model]
-            [Data Model] <-- [REST API]
-            [RPC Receiver] --> [Nailgun DB]
-        }
-        [Provisioner (Cobbler)] --> [DHCP, DNS, TFTP]
-        [RPC Consumer (Naily)] --> [RPC Receiver] : AMQP
-        [RPC Consumer (Naily)] --> [Orchestrator (Astute)] : AMQP
-        [Orchestrator (Astute)] --> [MCollective]
-    }
-    package "Target Node" {
-        [MCollective Agent] --> [Puppet]
-    }
-    actor Web_User
-    actor CLI_User
-    Web_User --> [JavaScript UI]
-    CLI_User --> [REST API]
+.. image:: /_images/logical_arch.svg
+  :align: center
+  :width: 100%
 
-    [JavaScript UI] --> [REST API]
-
-    [Orchestrator (Astute)] --> [Provisioner (Cobbler)] : XML-RPC
-
-    [MCollective] --> [MCollective Agent]
-
-..    CLI User --> [Provisioner(cobbler)]
 
 .. rubric:: Footnotes
 

@@ -23,14 +23,17 @@ from itertools import islice
 
 import math
 
+from netaddr import AddrFormatError
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
+
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 
 
 from nailgun.api.models import Cluster
+from nailgun.api.models import GlobalParameters
 from nailgun.api.models import IPAddr
 from nailgun.api.models import IPAddrRange
 from nailgun.api.models import Network
@@ -74,12 +77,7 @@ class NetworkManager(object):
         :returns: Admin Network ID or None.
         :raises: errors.AdminNetworkNotFound
         '''
-        admin_net = db().query(Network).filter_by(
-            name="fuelweb_admin"
-        ).first()
-        if not admin_net and fail_if_not_found:
-            raise errors.AdminNetworkNotFound()
-        return admin_net.id
+        return cls.get_admin_network(fail_if_not_found).id
 
     @classmethod
     def get_admin_network(cls, fail_if_not_found=True):
@@ -108,12 +106,7 @@ class NetworkManager(object):
         :returns: Admin NetworkGroup ID or None.
         :raises: errors.AdminNetworkNotFound
         '''
-        admin_ng = db().query(NetworkGroup).filter_by(
-            name="fuelweb_admin"
-        ).first()
-        if not admin_ng and fail_if_not_found:
-            raise errors.AdminNetworkNotFound()
-        return admin_ng.id
+        return cls.get_admin_network_group(fail_if_not_found).id
 
     @classmethod
     def get_admin_network_group(cls, fail_if_not_found=True):
@@ -398,12 +391,9 @@ class NetworkManager(object):
     @classmethod
     def check_ip_belongs_to_net(cls, ip_addr, network):
         addr = IPAddress(ip_addr)
-        ipranges = imap(
-            lambda ir: IPRange(ir.first, ir.last),
-            network.network_group.ip_ranges
-        )
-        for r in ipranges:
-            if addr in r:
+        for r in network.network_group.ip_ranges:
+            ir = IPRange(r.first, r.last)
+            if addr in ir:
                 return True
         return False
 
@@ -904,11 +894,108 @@ class NetworkManager(object):
             db().add(new_ip_range)
         db().commit()
 
+    @staticmethod
+    def calc_cidr_from_gw_mask(net_group):
+        try:
+            return IPNetwork(net_group.get('gateway') + '/' +
+                             net_group.get('netmask')).cidr
+        except (AddrFormatError, KeyError):
+            return None
+
     @classmethod
     def update_cidr_from_gw_mask(cls, ng_db, ng):
         if ng.get('gateway') and ng.get('netmask'):
-            from nailgun.network.checker import calc_cidr_from_gw_mask
-            cidr = calc_cidr_from_gw_mask({'gateway': ng['gateway'],
-                                           'netmask': ng['netmask']})
+            cidr = cls.calc_cidr_from_gw_mask(ng)
             if cidr:
                 ng_db.cidr = str(cidr)
+
+    @classmethod
+    def create_network_groups(cls, cluster_id):
+        '''Method for creation of network groups for cluster.
+
+        :param cluster_id: Cluster database ID.
+        :type  cluster_id: int
+        :returns: None
+        :raises: errors.InvalidNetworkVLANIDs, errors.InvalidNetworkCIDR
+        '''
+        used_nets = []
+
+        global_params = db().query(GlobalParameters).first()
+
+        cluster_db = db().query(Cluster).get(cluster_id)
+
+        networks_metadata = cluster_db.release.networks_metadata
+
+        admin_network_range = db().query(IPAddrRange).filter_by(
+            network_group_id=cls.get_admin_network_group_id()
+        ).all()[0]
+        used_nets.append(IPRange(
+            admin_network_range.first,
+            admin_network_range.last))
+        used_nets.append(IPNetwork(global_params.parameters["net_exclude"]))
+
+        networks_list = networks_metadata[cluster_db.net_provider]["networks"]
+
+        allowed_vlans = set(
+            range(*global_params.parameters["vlan_range"])
+        )
+
+        for net in networks_list:
+            if "seg_type" in net and \
+                    cluster_db.net_segment_type != net['seg_type']:
+                continue
+            vlan_start = net.get("vlan_start")
+            if vlan_start and vlan_start not in allowed_vlans:
+                raise errors.InvalidNetworkVLANIDs(
+                    u"VLAN ID {0} for '{1}' network is out "
+                    u"of allowed range".format(vlan_start, net['name']))
+
+            cidr, gw, cidr_gw, netmask = None, None, None, '255.255.255.255'
+            if net.get("notation"):
+                if net.get("cidr"):
+                    cidr = IPNetwork(net["cidr"]).cidr
+                    for n in used_nets:
+                        if cls.is_range_intersection(n, cidr):
+                            raise errors.InvalidNetworkCIDR(
+                                u"CIDR '{0}' of '{1}' network intersects "
+                                u"with IP range '{2}' of other network".format(
+                                    str(cidr), net['name'], str(n)))
+                    cidr_gw = str(cidr[1])
+                    netmask = str(cidr.netmask)
+                if net["notation"] == 'cidr' and cidr:
+                    new_ip_range = IPAddrRange(
+                        first=str(cidr[2]),
+                        last=str(cidr[-2])
+                    )
+                    gw = cidr_gw if net.get('use_gateway') else None
+                elif net["notation"] == 'ip_ranges' and net.get("ip_range"):
+                    new_ip_range = IPAddrRange(
+                        first=net["ip_range"][0],
+                        last=net["ip_range"][1]
+                    )
+                    gw = net.get('gateway') or cidr_gw \
+                        if net.get('use_gateway') else None
+                    netmask = net.get('netmask') or netmask
+
+            nw_group = NetworkGroup(
+                release=cluster_db.release.id,
+                name=net['name'],
+                cidr=str(cidr) if cidr else None,
+                netmask=netmask,
+                gateway=gw,
+                cluster_id=cluster_id,
+                vlan_start=vlan_start,
+                amount=1,
+                network_size=net['network_size'] if 'network_size' in net
+                else cidr.size if cidr else 1
+            )
+            db().add(nw_group)
+            db().commit()
+            if net.get("notation"):
+                nw_group.ip_ranges.append(new_ip_range)
+                db().commit()
+                cls.create_networks(nw_group)
+                if net["notation"] == 'cidr':
+                    used_nets.append(cidr)
+                elif net["notation"] == 'ip_ranges':
+                    used_nets.append(new_ip_range)

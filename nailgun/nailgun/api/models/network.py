@@ -98,7 +98,7 @@ class NetworkGroup(Base):
     cidr = Column(String(25))
     gateway = Column(String(25))
 
-    netmask = Column(String(25), nullable=False)
+    netmask = Column(String(25))
     ip_ranges = relationship(
         "IPAddrRange",
         backref="network_group"

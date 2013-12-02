@@ -21,12 +21,13 @@ from itertools import ifilter
 from itertools import imap
 from itertools import islice
 
+from netaddr import AddrFormatError
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
+
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
-
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
@@ -61,36 +62,27 @@ class NetworkManager(object):
         db().commit()
 
     @classmethod
-    def get_admin_network_group_id(cls, fail_if_not_found=True):
-        '''Method for receiving Admin NetworkGroup ID.
+    def get_admin_network_group_id(cls):
+        """Method for receiving Admin NetworkGroup ID.
 
-        :param fail_if_not_found: Raise an error
-        if admin network group is not found in database.
         :type  fail_if_not_found: bool
         :returns: Admin NetworkGroup ID or None.
         :raises: errors.AdminNetworkNotFound
-        '''
-        admin_ng = db().query(NetworkGroup).filter_by(
-            name="fuelweb_admin"
-        ).first()
-        if not admin_ng and fail_if_not_found:
-            raise errors.AdminNetworkNotFound()
-        return admin_ng.id
+        """
+        return cls.get_admin_network_group().id
 
     @classmethod
-    def get_admin_network_group(cls, fail_if_not_found=True):
-        '''Method for receiving Admin NetworkGroup.
+    def get_admin_network_group(cls):
+        """Method for receiving Admin NetworkGroup.
 
-        :param fail_if_not_found: Raise an error
-        if admin network group is not found in database.
         :type  fail_if_not_found: bool
         :returns: Admin NetworkGroup or None.
         :raises: errors.AdminNetworkNotFound
-        '''
+        """
         admin_ng = db().query(NetworkGroup).filter_by(
             name="fuelweb_admin"
         ).first()
-        if not admin_ng and fail_if_not_found:
+        if not admin_ng:
             raise errors.AdminNetworkNotFound()
         return admin_ng
 
@@ -313,12 +305,8 @@ class NetworkManager(object):
     @classmethod
     def check_ip_belongs_to_net(cls, ip_addr, network):
         addr = IPAddress(ip_addr)
-        ipranges = imap(
-            lambda ir: IPRange(ir.first, ir.last),
-            network.ip_ranges
-        )
-        for r in ipranges:
-            if addr in r:
+        for r in network.ip_ranges:
+            if addr in IPRange(r.first, r.last):
                 return True
         return False
 
@@ -371,8 +359,10 @@ class NetworkManager(object):
             ips = ips.filter_by(node=node_id)
         if network_id:
             ips = ips.filter_by(network=network_id)
-
-        admin_net_id = cls.get_admin_network_group_id(False)
+        try:
+            admin_net_id = cls.get_admin_network_group_id()
+        except errors.AdminNetworkNotFound:
+            admin_net_id = None
         if admin_net_id:
             ips = ips.filter(
                 not_(IPAddr.network == admin_net_id)
@@ -816,12 +806,118 @@ class NetworkManager(object):
             db().add(new_ip_range)
         db().commit()
 
+    @staticmethod
+    def calc_cidr_from_gw_mask(net_group):
+        try:
+            return IPNetwork(net_group.get('gateway') + '/' +
+                             net_group.get('netmask')).cidr
+        except (AddrFormatError, KeyError):
+            return None
+
     @classmethod
     def update_cidr_from_gw_mask(cls, ng_db, ng):
         if ng.get('gateway') and ng.get('netmask'):
-            from nailgun.network.checker import calc_cidr_from_gw_mask
-            cidr = calc_cidr_from_gw_mask({'gateway': ng['gateway'],
-                                           'netmask': ng['netmask']})
+            cidr = cls.calc_cidr_from_gw_mask(ng)
             if cidr:
                 ng_db.cidr = str(cidr)
                 ng_db.network_size = cidr.size
+
+    @classmethod
+    def create_network_groups(cls, cluster_id):
+        """Method for creation of network groups for cluster.
+
+        :param cluster_id: Cluster database ID.
+        :type  cluster_id: int
+        :returns: None
+        :raises: errors.InvalidNetworkCIDR
+        """
+        cluster_db = db().query(Cluster).get(cluster_id)
+        networks_metadata = cluster_db.release.networks_metadata
+        networks_list = networks_metadata[cluster_db.net_provider]["networks"]
+        used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
+
+        def check_range_in_use_already(cidr_range):
+            for n in used_nets:
+                if cls.is_range_intersection(n, cidr_range):
+                    raise errors.InvalidNetworkCIDR(
+                        u"CIDR/range '{0}' of '{1}' network intersects "
+                        u"with IP range '{2}' of other network".format(
+                            str(cidr_range), net['name'], str(n)))
+            used_nets.append(cidr_range)
+
+        for net in networks_list:
+            if "seg_type" in net and \
+                    cluster_db.net_segment_type != net['seg_type']:
+                continue
+            vlan_start = net.get("vlan_start")
+            net_size = net.get('network_size')
+            cidr, gw, cidr_gw, netmask = None, None, None, None
+            if net.get("notation"):
+                if net.get("cidr"):
+                    cidr = IPNetwork(net["cidr"]).cidr
+                    cidr_gw = str(cidr[1])
+                    netmask = str(cidr.netmask)
+                    net_size = net_size or cidr.size
+                if net["notation"] == 'cidr' and cidr:
+                    new_ip_range = IPAddrRange(
+                        first=str(cidr[2]),
+                        last=str(cidr[-2])
+                    )
+                    if net.get('use_gateway'):
+                        gw = cidr_gw
+                    else:
+                        new_ip_range.first = str(cidr[1])
+                    check_range_in_use_already(cidr)
+                elif net["notation"] == 'ip_ranges' and net.get("ip_range"):
+                    new_ip_range = IPAddrRange(
+                        first=net["ip_range"][0],
+                        last=net["ip_range"][1]
+                    )
+                    gw = net.get('gateway') or cidr_gw \
+                        if net.get('use_gateway') else None
+                    netmask = net.get('netmask') or netmask
+                    check_range_in_use_already(IPRange(new_ip_range.first,
+                                                       new_ip_range.last))
+
+            nw_group = NetworkGroup(
+                release=cluster_db.release.id,
+                name=net['name'],
+                cidr=str(cidr) if cidr else None,
+                netmask=netmask,
+                gateway=gw,
+                cluster_id=cluster_id,
+                vlan_start=vlan_start,
+                amount=1,
+                network_size=net_size or 1
+            )
+            db().add(nw_group)
+            db().commit()
+            if net.get("notation"):
+                nw_group.ip_ranges.append(new_ip_range)
+                db().commit()
+                cls.cleanup_network_group(nw_group)
+
+    @classmethod
+    def update_networks(cls, cluster, network_configuration):
+        if 'networks' in network_configuration:
+            for ng in network_configuration['networks']:
+                if ng['id'] == cls.get_admin_network_group_id():
+                    continue
+
+                ng_db = db().query(NetworkGroup).get(ng['id'])
+
+                for key, value in ng.iteritems():
+                    if key == "ip_ranges":
+                        cls._set_ip_ranges(ng['id'], value)
+                    else:
+                        if key == 'cidr' and \
+                                ng_db.meta.get("notation") == "cidr":
+                            cls.update_range_mask_from_cidr(ng_db, value)
+
+                        setattr(ng_db, key, value)
+
+                if ng_db.meta.get("calculate_cidr"):
+                    cls.update_cidr_from_gw_mask(ng_db, ng)
+                if ng_db.meta.get("notation"):
+                    cls.cleanup_network_group(ng_db)
+                ng_db.cluster.add_pending_changes('networks')

@@ -86,6 +86,7 @@ class Environment(object):
                 else:
                     node_kwargs["cluster_id"] = cluster.id
             node_kwargs.setdefault("api", False)
+            node_kwargs.setdefault("roles", ["controller"])
             self.create_node(
                 **node_kwargs
             )
@@ -196,7 +197,6 @@ class Environment(object):
 
         node_data = {
             'mac': mac,
-            'roles': ['controller'],
             'status': 'discover',
             'meta': default_metadata
         }

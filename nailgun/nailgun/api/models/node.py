@@ -50,7 +50,11 @@ class PendingNodeRoles(Base):
 class Role(Base):
     __tablename__ = 'roles'
     id = Column(Integer, primary_key=True)
-    release_id = Column(Integer, ForeignKey('releases.id', ondelete='CASCADE'))
+    release_id = Column(
+        Integer,
+        ForeignKey('releases.id', ondelete='CASCADE'),
+        nullable=False
+    )
     name = Column(String(50), nullable=False)
 
 
@@ -92,14 +96,22 @@ class Node(Base):
     error_msg = Column(String(255))
     timestamp = Column(DateTime, nullable=False)
     online = Column(Boolean, default=True)
-    role_list = relationship("Role", secondary=NodeRoles.__table__)
-    pending_role_list = relationship("Role",
-                                     secondary=PendingNodeRoles.__table__)
+    role_list = relationship(
+        "Role",
+        secondary=NodeRoles.__table__,
+        backref=backref("nodes", cascade="all,delete")
+    )
+    pending_role_list = relationship(
+        "Role",
+        secondary=PendingNodeRoles.__table__,
+        backref=backref("pending_nodes", cascade="all,delete")
+    )
     attributes = relationship("NodeAttributes",
                               backref=backref("node"),
                               uselist=False)
     interfaces = relationship("NodeNICInterface", backref="node",
-                              cascade="delete")
+                              cascade="delete",
+                              order_by="NodeNICInterface.id")
 
     @property
     def offline(self):
@@ -143,8 +155,19 @@ class Node(Base):
 
     @roles.setter
     def roles(self, new_roles):
-        self.role_list = map(lambda role: Role(name=role), new_roles)
-        db().commit()
+        if not self.cluster:
+            logger.warning(
+                u"Attempting to assign roles to node "
+                u"'{0}' which isn't added to cluster".format(
+                    self.name or self.id
+                )
+            )
+            return
+        self.role_list = db().query(Role).filter_by(
+            release_id=self.cluster.release_id,
+        ).filter(
+            Role.name.in_(new_roles)
+        ).all()
 
     @property
     def pending_roles(self):
@@ -157,10 +180,19 @@ class Node(Base):
 
     @pending_roles.setter
     def pending_roles(self, new_roles):
-        self.pending_role_list = map(
-            lambda role: Role(name=role), new_roles)
-
-        db().commit()
+        if not self.cluster:
+            logger.warning(
+                u"Attempting to assign pending_roles to node "
+                u"'{0}' which isn't added to cluster".format(
+                    self.name or self.id
+                )
+            )
+            return
+        self.pending_role_list = db().query(Role).filter_by(
+            release_id=self.cluster.release_id,
+        ).filter(
+            Role.name.in_(new_roles)
+        ).all()
 
     @property
     def admin_interface(self):

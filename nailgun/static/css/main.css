@@ -1,5 +1,5 @@
 @import 'fonticon.css';
-@import 'bootstrap.css';
+@import 'less.css';
 
 html {
   background-color: #39444F;
@@ -1112,6 +1112,7 @@ label.error {
   font-size: 110px;
   color: #909EAE;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  display: inline;
 }
 
 .create-cluster:hover > .add-icon > .icon-create {

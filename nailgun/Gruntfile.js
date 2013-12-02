@@ -64,12 +64,19 @@ module.exports = function(grunt) {
                     }
                 }
             }
+        },
+        less: {
+            all: {
+                src: ['static/js/libs/bower/bootstrap/less/bootstrap.less'],
+                dest: 'static/css/less.css'
+            }
         }
     });
 
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
-    grunt.registerTask('build', ['bower', 'requirejs']);
+    grunt.loadNpmTasks('grunt-contrib-less');
+    grunt.registerTask('build', ['bower', 'less', 'requirejs']);
     grunt.registerTask('default', ['build']);
 };

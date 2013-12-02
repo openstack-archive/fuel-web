@@ -39,10 +39,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             'click .btn-revert-changes:not([disabled])': 'revertChanges',
             'click .apply-btn:not([disabled])': 'applyChanges'
         },
-        defaultButtonsState: function(validationErrors) {
-            this.$('.btn.verify-networks-btn').attr('disabled', validationErrors);
-            this.$('.btn.btn-revert-changes').attr('disabled', !this.hasChanges && !validationErrors);
-            this.$('.btn.apply-btn').attr('disabled', !this.hasChanges || validationErrors);
+        defaultButtonsState: function(errors) {
+            this.$('.btn.verify-networks-btn').attr('disabled', errors);
+            this.$('.btn.btn-revert-changes').attr('disabled', !this.hasChanges && !errors);
+            this.$('.btn.apply-btn').attr('disabled', !this.hasChanges || errors);
         },
         disableControls: function() {
             this.$('.btn, input, select').attr('disabled', true);
@@ -56,35 +56,14 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         checkForChanges: function() {
             this.hasChanges = !_.isEqual(this.model.get('networkConfiguration').toJSON(), this.networkConfiguration.toJSON());
-            var neutronConfigurationErrors = !!(this.networkConfiguration.get('neutron_parameters') && this.networkConfiguration.get('neutron_parameters').validationError);
-            var novaNetworkConfigurationErrors = !!(this.networkConfiguration.get('dns_nameservers') && this.networkConfiguration.get('dns_nameservers').validationError);
-            this.defaultButtonsState(this.networkConfiguration.get('networks').some('validationError') || neutronConfigurationErrors || novaNetworkConfigurationErrors);
+            this.defaultButtonsState(!!this.networkConfiguration.validationError);
         },
         changeManager: function(e) {
             this.$('.net-manager input').attr('checked', function(el, oldAttr) {return !oldAttr;});
             this.networkConfiguration.set({net_manager: this.$(e.currentTarget).val()});
             this.networkConfiguration.get('networks').findWhere({name: 'fixed'}).set({amount: this.$(e.currentTarget).val() == 'VlanManager' ? this.fixedAmount : 1});
             this.renderNetworks();
-            this.checkForChanges();
-            this.networkConfiguration.get('networks').invoke('set', {}, { // trigger validation check
-                validate: true,
-                net_provider: this.model.get('net_provider'),
-                networkConfiguration: this.networkConfiguration
-            });
-            this.page.removeFinishedTasks();
-        },
-        updateFloatingVlanFromPublic: function() {
-            if (this.model.get('net_provider') == 'nova_network') {
-                var networks = this.networkConfiguration.get('networks');
-                networks.findWhere({name: 'floating'}).set({vlan_start: networks.findWhere({name: 'public'}).get('vlan_start')});
-            }
-        },
-        composeIpRanges: function(network) {
-            var ip_ranges = [];
-            this.$('.' + network + ' .ip-range-row').each(function(index, rangeRow) {
-                ip_ranges.push([$(rangeRow).find('input:first').val(), $(rangeRow).find('input:last').val()]);
-            });
-            return ip_ranges;
+            this.updateNetworkConfiguration();
         },
         startVerification: function() {
             var task = new models.Task();
@@ -103,9 +82,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 }, this));
         },
         verifyNetworks: function() {
-            var neutronConfigurationErrors = !!(this.networkConfiguration.get('neutron_parameters') && this.networkConfiguration.get('neutron_parameters').validationError);
-            var novaNetworkConfigurationErrors = !!(this.networkConfiguration.get('dns_nameservers') && this.networkConfiguration.get('dns_nameservers').validationError);
-            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError') && !neutronConfigurationErrors && !novaNetworkConfigurationErrors) {
+            if (!this.networkConfiguration.validationError) {
                 this.$('.verify-networks-btn').prop('disabled', true);
                 this.filterEmptyIpRanges();
                 this.page.removeFinishedTasks().always(_.bind(this.startVerification, this));
@@ -117,14 +94,12 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         filterEmptyIpRanges: function() {
             this.networkConfiguration.get('networks').each(function(network) {
-                network.set({ip_ranges: _.filter(network.get('ip_ranges'), function(range) {return !_.isEqual(range, ['', '']);})});
+                network.set({ip_ranges: _.filter(network.get('ip_ranges'), function(range) {return _.compact(range).length;})});
             }, this);
         },
         applyChanges: function() {
             var deferred;
-            var neutronConfigurationErrors = !!(this.networkConfiguration.get('neutron_parameters') && this.networkConfiguration.get('neutron_parameters').validationError);
-            var novaNetworkConfigurationErrors = !!(this.networkConfiguration.get('dns_nameservers') && this.networkConfiguration.get('dns_nameservers').validationError);
-            if (!_.some(this.networkConfiguration.get('networks').models, 'validationError') && !neutronConfigurationErrors && !novaNetworkConfigurationErrors) {
+            if (!this.networkConfiguration.validationError) {
                 this.disableControls();
                 this.filterEmptyIpRanges();
                 deferred = Backbone.sync('update', this.networkConfiguration, {url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
@@ -177,12 +152,40 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         setInitialData: function() {
             this.hasChanges = false;
             this.networkConfiguration = new models.NetworkConfiguration(this.model.get('networkConfiguration').toJSON(), {parse: true});
-            this.fixedAmount = this.model.get('net_provider') == 'nova_network' ? this.networkConfiguration.get('networks').findWhere({name: 'fixed'}).get('amount') || 1 : 1;
             this.networkConfiguration.get('networks').each(function(network) {
                 if (!_.contains(['fixed', 'private'], network.get('name'))) {
                     network.set({network_size: utils.calculateNetworkSize(network.get('cidr'))});
                 }
             });
+            this.fixedAmount = this.model.get('net_provider') == 'nova_network' ? this.networkConfiguration.get('networks').findWhere({name: 'fixed'}).get('amount') : 1;
+            this.networkConfiguration.on('invalid', function(model, errors) {
+                _.each(errors.dns_nameservers, _.bind(function(error, field) {
+                    this.$('.nova-nameservers input[name=' + field + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
+                }, this));
+                _.each(errors.neutron_parameters, _.bind(function(error, field) {
+                    this.$('.neutron-parameters input[name=' + field + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
+                }, this));
+                _.each(errors.networks, _.bind(function(networkErrors, network) {
+                    _.each(networkErrors, _.bind(function(error, field) {
+                        if (field != 'ip_ranges') {
+                            this.$('input[name=' + network + '-' + field + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
+                        } else {
+                            _.each(networkErrors.ip_ranges, _.bind(function(range) {
+                                var row = this.$('.' + network + ' .ip-range-row:eq(' + range.index + ')');
+                                row.find('input:first').toggleClass('error', !!range.start);
+                                row.find('input:last').toggleClass('error', !!range.end);
+                                row.find('.help-inline').text(range.start || range.end);
+                            }, this));
+                        }
+                    }, this));
+                }, this));
+            }, this);
+        },
+        updateNetworkConfiguration: function() {
+            this.$('input[type=text]').removeClass('error').parents('.network-attribute').find('.help-inline').text('');
+            this.networkConfiguration.isValid();
+            this.checkForChanges();
+            this.page.removeFinishedTasks();
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -279,120 +282,83 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             'keyup input[type=text]': 'changeNetwork',
             'change select': 'changeNetwork',
             'change .use-vlan-tagging': 'changeNetwork',
-            'click .range-name': 'setIPRangeFocus',
             'click .ip-ranges-add:not([disabled])': 'addIPRange',
             'click .ip-ranges-delete:not([disabled])': 'deleteIPRange'
         },
         setupVlanEnd: function() {
-            var vlanEnd = '';
-            // calculate vlan end if there are no amount or vlan start validation errors
-            var errors = this.network.validationError;
-            if (!errors || !(errors.amount || errors.vlan_start)) {
-                vlanEnd = (this.network.get('vlan_start') + this.network.get('amount') - 1);
-                vlanEnd = vlanEnd > 4094 ? 4094 : vlanEnd;
+            if (this.network.get('name') == 'fixed') {
+                var vlanEnd = '';
+                var errors;
+                try {
+                    errors = this.tab.networkConfiguration.validationError.networks.fixed;
+                } catch(ignore) {}
+                if (!errors || (!errors.amount && !errors.vlan_start)) {
+                    vlanEnd = (this.network.get('vlan_start') + this.network.get('amount') - 1);
+                    vlanEnd = vlanEnd > 4094 ? 4094 : vlanEnd;
+                }
+                this.$('input[name=fixed-vlan_range-end]').val(vlanEnd);
             }
-            this.$('input[name=fixed-vlan_range-end]').val(vlanEnd);
         },
-        changeNetwork: function(e) {
-            // FIXME(vk): very complex and confusing logic, needs to be rewritten
-            var target = $(e.currentTarget);
-            this.$('input[type=text]').removeClass('error');
-            this.$('.help-inline').text('');
-
-            if (target.hasClass('use-vlan-tagging')) {
-                // toggle VLAN ID input field on checkbox
-                target.parents('.range-row').find('.parameter-control:last').toggle(target.is(':checked'));
-            }
+        updateFloatingVlanFromPublic: function() {
             if (this.network.get('name') == 'public' && this.tab.model.get('net_provider') == 'nova_network') {
-                this.tab.$('input[name=floating-vlan_start]').val(this.$('input[name=public-vlan_start]').val());
-                if (target.hasClass('use-vlan-tagging')) {
-                    this.tab.$('div.floating').find('.use-vlan-tagging').prop('checked', target.is(':checked'));
-                    this.tab.$('div.floating').find('.vlan_start').toggle(target.is(':checked'));
+                var vlan = this.network.get('vlan_start');
+                this.tab.networkConfiguration.get('networks').findWhere({name: 'floating'}).set({vlan_start: vlan});
+                this.tab.$('div.floating').find('.use-vlan-tagging').prop('checked', !_.isNull(vlan));
+                this.tab.$('div.floating').find('.vlan_start').toggle(!_.isNull(vlan)).find('input').val(vlan || '');
+            }
+        },
+        getIpRangesFromForm: function() {
+            var ipRanges = [];
+            this.$('.ip-range-row').each(function(i, row) {
+                ipRanges.push([$(row).find('input:first').val(), $(row).find('input:last').val()]);
+            });
+            return ipRanges;
+        },
+        composeIpRangesRows: function(target, addRange) {
+           if (!_.isUndefined(addRange)) {
+                var row = target.parents('.ip-range-row');
+                if (addRange) {
+                    var newRow = row.clone();
+                    newRow.find('input').val('');
+                    row.after(newRow);
+                    row.parent().find('.ip-ranges-delete').parent().removeClass('hide');
+                } else {
+                    row.parent().find('.ip-ranges-delete').parent().toggleClass('hide', row.siblings('.ip-range-row').length == 1);
+                    row.remove();
                 }
             }
-            if (target.attr('name') == 'fixed-amount') {
-                // storing fixedAmount
+        },
+        changeNetwork: function(e, addRange) {
+            var target = $(e.currentTarget);
+            this.composeIpRangesRows(target, addRange);
+            if (target.hasClass('use-vlan-tagging')) { // toggle VLAN ID input field on checkbox
+                target.parents('.range-row').find('.parameter-control:last').toggle(target.is(':checked'));
+            }
+            if (target.attr('name') == 'fixed-amount') {// storing fixedAmount
                 this.tab.fixedAmount = parseInt(target.val(), 10) || this.tab.fixedAmount;
             }
-            this.updateNetworkFromForm();
-            if (this.network.get('name') == 'fixed' && target.hasClass('range')) {
-                this.setupVlanEnd();
-            }
-            this.tab.updateFloatingVlanFromPublic();
-            this.tab.checkForChanges();
-            this.tab.page.removeFinishedTasks();
-        },
-        updateNetworkFromForm: function() {
             var fixedNetworkOnVlanManager = this.tab.networkConfiguration.get('net_manager') == 'VlanManager' && this.network.get('name') == 'fixed';
             this.network.set({
-                ip_ranges: this.tab.composeIpRanges(this.network.get('name')),
+                ip_ranges: this.getIpRangesFromForm(),
                 cidr: $.trim(this.$('.cidr input').val()),
                 vlan_start: fixedNetworkOnVlanManager || this.$('.use-vlan-tagging:checked').length ? Number(this.$('.vlan_start input').val()) : null,
                 netmask: $.trim(this.$('.netmask input').val()),
                 gateway: $.trim(this.$('.gateway input').val()) || null,
                 amount: fixedNetworkOnVlanManager ? Number(this.$('input[name=fixed-amount]').val()) : 1,
-                network_size: fixedNetworkOnVlanManager ? Number(this.$('.network_size select').val()) : utils.calculateNetworkSize(this.$('.cidr input').val())
-            }, {
-                validate: true,
-                net_provider: this.tab.model.get('net_provider'),
-                networkConfiguration: this.tab.networkConfiguration
+                network_size: this.network.get('name') == 'fixed' ? Number(this.$('.network_size select').val()) : utils.calculateNetworkSize(this.$('.cidr input').val())
             });
-            this.validateNeutronFloatingIpRange();
-        },
-        validateNeutronFloatingIpRange: function() {
-            if (this.tab.model.get('net_provider') == 'neutron' && this.network.get('name') == 'public') {
-                this.tab.$('.neutron-parameters input.error').removeClass('error');
-                this.tab.$('.neutron-parameters .help-inline').text('');
-                var predefined_networks = _.cloneDeep(this.tab.networkConfiguration.get('neutron_parameters').get('predefined_networks'));
-                predefined_networks.net04_ext.L3.floating = [$.trim(this.tab.$('input[name=floating_start]').val()), $.trim(this.tab.$('input[name=floating_end]').val())];
-                this.tab.networkConfiguration.get('neutron_parameters').set({predefined_networks: predefined_networks}, {
-                    validate: true,
-                    publicCidr: utils.composeCidr(this.tab.composeIpRanges(this.network.get('name')), $.trim(this.$('.netmask input').val()))
-                });
-            }
-        },
-        setIPRangeFocus: function(e) {
-            this.$(e.currentTarget).next().find('input:first').focus();
-        },
-        editIPRange: function(e, add) {
-            var row = this.$(e.currentTarget).parents('.ip-range-row');
-            if (add) {
-                var newRow = row.clone();
-                newRow.find('input').removeClass('error').val('');
-                newRow.find('.help-inline').text('');
-                row.after(newRow);
-                row.parent().find('.ip-ranges-delete').parent().removeClass('hide');
-            } else {
-                row.parent().find('.ip-ranges-delete').parent().toggleClass('hide', row.siblings('.ip-range-row').length == 1);
-                row.remove();
-            }
-            this.updateNetworkFromForm();
-            this.tab.checkForChanges();
-            this.tab.page.removeFinishedTasks();
+            this.updateFloatingVlanFromPublic();
+            this.tab.updateNetworkConfiguration();
+            this.setupVlanEnd();
         },
         addIPRange: function(e) {
-            this.editIPRange(e, true);
+            this.changeNetwork(e, true);
         },
         deleteIPRange: function(e) {
-            this.editIPRange(e, false);
+            this.changeNetwork(e, false);
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.network.on('invalid', function(model, errors) {
-                this.$('input.error').removeClass('error').find('.help-inline').text('');
-                _.each(_.without(_.keys(errors), 'ip_ranges'), _.bind(function(field) {
-                    this.$('.' + field).children().addClass('error');
-                    this.$('.' + field).parents('.network-attribute').find('.error .help-inline').text(errors[field]);
-                }, this));
-                if (errors.ip_ranges) {
-                    _.each(errors.ip_ranges, _.bind(function(range) {
-                        var row = this.$('.ip-range-row:eq(' + range.index + ')');
-                        row.find('input:first').toggleClass('error', !!range.start);
-                        row.find('input:last').toggleClass('error', !!range.end);
-                        row.find('.help-inline').text(range.start || range.end);
-                    }, this));
-                }
-            }, this);
         },
         render: function() {
             this.$el.html(this.template({
@@ -410,21 +376,12 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         events: {
             'keyup input[type=text]': 'onChange'
         },
-        onChange: function(e) {
-            this.$('input[type=text]').removeClass('error');
-            this.$('.help-inline').text('');
-            this.novaNetworkConfiguration.set({nameservers: [$.trim(this.$('input[name=nameserver-0]').val()), $.trim(this.$('input[name=nameserver-1]').val())]}, {validate: true});
-            this.tab.checkForChanges();
-            this.tab.page.removeFinishedTasks();
+        onChange: function() {
+            this.novaNetworkConfiguration.set({nameservers: [$.trim(this.$('input[name=nameserver-0]').val()), $.trim(this.$('input[name=nameserver-1]').val())]});
+            this.tab.updateNetworkConfiguration();
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.novaNetworkConfiguration.on('invalid', function(model, errors) {
-                this.$('input.error').removeClass('error').find('.help-inline').text('');
-                _.each(errors, _.bind(function(error, field) {
-                    this.$('input[name=' + field + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
-                }, this));
-            }, this);
         },
         render: function() {
             this.$el.html(this.template({
@@ -441,9 +398,6 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             'keyup input[type=text]': 'changeConfiguration'
         },
         changeConfiguration: function(e) {
-            this.$('input[type=text]').removeClass('error');
-            this.$('.help-inline').text('');
-
             var l2 = _.cloneDeep(this.neutronParameters.get('L2'));
             l2.base_mac = $.trim(this.$('input[name=base_mac]').val());
             var idRange = [Number(this.$('input[name=id_start]').val()), Number(this.$('input[name=id_end]').val())];
@@ -452,46 +406,16 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             } else {
                 l2.phys_nets.physnet2.vlan_range = idRange;
             }
-
             var predefined_networks = _.cloneDeep(this.neutronParameters.get('predefined_networks'));
             predefined_networks.net04_ext.L3.floating = [$.trim(this.$('input[name=floating_start]').val()), $.trim(this.$('input[name=floating_end]').val())];
-            predefined_networks.net04_ext.L3.cidr = $.trim(this.$('input[name=cidr-ext]').val());
             predefined_networks.net04.L3.cidr = $.trim(this.$('input[name=cidr-int]').val());
             predefined_networks.net04.L3.gateway = $.trim(this.$('input[name=gateway]').val());
             predefined_networks.net04.L3.nameservers = [$.trim(this.$('input[name=nameserver-0]').val()), $.trim(this.$('input[name=nameserver-1]').val())];
-
-            this.neutronParameters.set({
-                L2: l2,
-                predefined_networks: predefined_networks
-            }, {
-                validate: true,
-                publicCidr: utils.composeCidr(this.tab.composeIpRanges('public'), $.trim(this.tab.$('input[name=public-netmask]').val())),
-                networkVlans: _.compact(this.tab.networkConfiguration.get('networks').pluck('vlan_start'))
-            });
-            this.tab.checkForChanges();
-            this.tab.page.removeFinishedTasks();
+            this.neutronParameters.set({L2: l2, predefined_networks: predefined_networks});
+            this.tab.updateNetworkConfiguration();
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.neutronParameters.on('invalid', function(model, errors) {
-                this.$('input.error').removeClass('error');
-                this.$('.help-inline').text('');
-                _.each(_.without(_.keys(errors), 'id_range', 'floating'), _.bind(function(field) {
-                    this.$('input[name=' + field + ']')
-                        .addClass('error')
-                        .parents('.network-attribute').find('.error .help-inline').text(errors[field]);
-                }, this));
-                if (errors.id_range) {
-                    this.$('input[name=id_start], input[name=id_end]')
-                        .addClass('error')
-                        .parents('.network-attribute').find('.error .help-inline').text(errors.id_range);
-                }
-                if (errors.floating) {
-                    this.$('input[name=floating_start], input[name=floating_end]')
-                        .addClass('error')
-                        .parents('.network-attribute').find('.error .help-inline').text(errors.floating);
-                }
-            }, this);
         },
         render: function() {
             this.$el.html(this.template({

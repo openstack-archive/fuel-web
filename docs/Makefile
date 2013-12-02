@@ -47,6 +47,11 @@ $(PLANTUML):
 	wget http://downloads.sourceforge.net/project/plantuml/plantuml.jar -O $(PLANTUML)
 	$(ACTION.TOUCH)
 
+diagrams: $(PLANTUML)
+	@echo "Building diagrams"
+	@java -jar $(PLANTUML) _diagrams/
+	@echo "Build finished"
+
 html: $(PLANTUML)
 	$(SPHINXBUILD) -b html -W $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo

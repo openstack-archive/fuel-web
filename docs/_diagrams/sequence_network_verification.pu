@@ -1,0 +1,23 @@
+@startuml
+    title Network Verification
+    actor WebUser
+
+    WebUser -> Nailgun: verify networks (cluster #1)
+    Nailgun -> Naily: verify nets (100-120 vlans)
+    Naily -> Astute: verify nets
+    Astute -> MC: start listeners
+    MC -> net_probe.py: forks to listen
+    MC --> Astute: listening
+    Astute -> MC: send frames
+    MC -> net_probe.py: send frames
+    net_probe.py --> MC: sent
+    MC --> Astute: sent
+
+    Astute -> MC: get result
+    MC -> net_probe.py: stop listeners
+    net_probe.py --> MC: result
+    MC --> Astute: result graph
+    Astute --> Naily: vlans Ok
+    Naily --> Nailgun: response
+    Nailgun --> WebUser: response
+@enduml

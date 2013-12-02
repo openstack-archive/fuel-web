@@ -25,17 +25,8 @@ from nailgun.api.serializers.network_configuration \
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.network.manager import NetworkManager
 from nailgun.task.helpers import TaskHelper
-
-
-def calc_cidr_from_gw_mask(net_group):
-    """Calculate network CIDR from its gateway and netmask
-    """
-    try:
-        return netaddr.IPNetwork(net_group['gateway'] + '/' +
-                                 net_group['netmask']).cidr
-    except (netaddr.AddrFormatError, KeyError):
-        return None
 
 
 class NetworkCheck(object):
@@ -193,7 +184,7 @@ class NetworkCheck(object):
         ng = [ng for ng in self.networks
               if ng['name'] == 'public'][0]
         pub_gw = netaddr.IPAddress(ng['gateway'])
-        pub_cidr = calc_cidr_from_gw_mask(ng)
+        pub_cidr = NetworkManager.calc_cidr_from_gw_mask(ng)
         if not pub_cidr:
             self.err_msgs.append(
                 u"Invalid gateway or netmask for public network")
@@ -404,7 +395,7 @@ class NetworkCheck(object):
         """
         # calculate and check public CIDR
         public = filter(lambda ng: ng['name'] == 'public', self.networks)[0]
-        public_cidr = calc_cidr_from_gw_mask(public)
+        public_cidr = NetworkManager.calc_cidr_from_gw_mask(public)
         if not public_cidr:
             self.err_msgs.append(
                 u"Invalid gateway or netmask for public network")

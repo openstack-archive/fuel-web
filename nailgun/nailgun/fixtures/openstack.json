@@ -44,7 +44,6 @@
                             "name": "floating",
                             "cidr": "172.16.0.0/24",
                             "netmask": "255.255.255.0",
-                            "gateway": null,
                             "ip_range": ["172.16.0.128", "172.16.0.254"],
                             "vlan_start": null,
                             "use_gateway": false,
@@ -69,9 +68,6 @@
                         {
                             "name": "management",
                             "cidr": "192.168.0.0/24",
-                            "netmask": "255.255.255.0",
-                            "gateway": null,
-                            "ip_range": ["192.168.0.2", "192.168.0.254"],
                             "vlan_start": 101,
                             "use_gateway": false,
                             "notation": "cidr",
@@ -82,9 +78,6 @@
                         {
                             "name": "storage",
                             "cidr": "192.168.1.0/24",
-                            "netmask": "255.255.255.0",
-                            "gateway": null,
-                            "ip_range": ["192.168.1.2", "192.168.1.254"],
                             "vlan_start": 102,
                             "use_gateway": false,
                             "notation": "cidr",
@@ -95,9 +88,6 @@
                         {
                             "name": "fixed",
                             "cidr": "10.0.0.0/16",
-                            "netmask": "255.255.0.0",
-                            "gateway": "10.0.0.1",
-                            "ip_range": ["10.0.0.2", "10.0.255.254"],
                             "network_size": 256,
                             "vlan_start": 103,
                             "use_gateway": true,
@@ -112,7 +102,7 @@
                     "networks": [
                         {
                             "name": "public",
-                            "pool": ["172.16.0.0/24"],
+                            "cidr": "172.16.0.0/24",
                             "ip_range": ["172.16.0.2", "172.16.0.126"],
                             "vlan_start": null,
                             "use_gateway": true,
@@ -123,7 +113,8 @@
                         },
                         {
                             "name": "management",
-                            "pool": ["192.168.0.0/24"],
+                            "cidr": "192.168.0.0/24",
+                            "vlan_start": 101,
                             "use_gateway": false,
                             "notation": "cidr",
                             "render_type": "cidr",
@@ -132,11 +123,22 @@
                         },
                         {
                             "name": "storage",
-                            "pool": ["192.168.1.0/24"],
+                            "cidr": "192.168.1.0/24",
+                            "vlan_start": 102,
                             "use_gateway": false,
                             "notation": "cidr",
                             "render_type": "cidr",
                             "render_addr_mask": "storage",
+                            "assign_vip": false
+                        },
+                        {
+                            "name": "private",
+                            "seg_type": "vlan",
+                            "vlan_start": null,
+                            "use_gateway": false,
+                            "notation": null,
+                            "render_type": null,
+                            "render_addr_mask": null,
                             "assign_vip": false
                         }
                     ],
@@ -645,7 +647,6 @@
                             "name": "floating",
                             "cidr": "172.16.0.0/24",
                             "netmask": "255.255.255.0",
-                            "gateway": null,
                             "ip_range": ["172.16.0.128", "172.16.0.254"],
                             "vlan_start": null,
                             "use_gateway": false,
@@ -670,9 +671,6 @@
                         {
                             "name": "management",
                             "cidr": "192.168.0.0/24",
-                            "netmask": "255.255.255.0",
-                            "gateway": null,
-                            "ip_range": ["192.168.0.2", "192.168.0.254"],
                             "vlan_start": 101,
                             "use_gateway": false,
                             "notation": "cidr",
@@ -683,9 +681,6 @@
                         {
                             "name": "storage",
                             "cidr": "192.168.1.0/24",
-                            "netmask": "255.255.255.0",
-                            "gateway": null,
-                            "ip_range": ["192.168.1.2", "192.168.1.254"],
                             "vlan_start": 102,
                             "use_gateway": false,
                             "notation": "cidr",
@@ -696,9 +691,6 @@
                         {
                             "name": "fixed",
                             "cidr": "10.0.0.0/16",
-                            "netmask": "255.255.0.0",
-                            "gateway": "10.0.0.1",
-                            "ip_range": ["10.0.0.2", "10.0.255.254"],
                             "network_size": 256,
                             "vlan_start": 103,
                             "use_gateway": true,
@@ -1071,7 +1063,6 @@
                             "name": "floating",
                             "cidr": "172.16.0.0/24",
                             "netmask": "255.255.255.0",
-                            "gateway": null,
                             "ip_range": ["172.16.0.128", "172.16.0.254"],
                             "vlan_start": null,
                             "use_gateway": false,
@@ -1096,9 +1087,6 @@
                         {
                             "name": "management",
                             "cidr": "192.168.0.0/24",
-                            "netmask": "255.255.255.0",
-                            "gateway": null,
-                            "ip_range": ["192.168.0.2", "192.168.0.254"],
                             "vlan_start": 101,
                             "use_gateway": false,
                             "notation": "cidr",
@@ -1109,9 +1097,6 @@
                         {
                             "name": "storage",
                             "cidr": "192.168.1.0/24",
-                            "netmask": "255.255.255.0",
-                            "gateway": null,
-                            "ip_range": ["192.168.1.2", "192.168.1.254"],
                             "vlan_start": 102,
                             "use_gateway": false,
                             "notation": "cidr",
@@ -1122,9 +1107,6 @@
                         {
                             "name": "fixed",
                             "cidr": "10.0.0.0/16",
-                            "netmask": "255.255.0.0",
-                            "gateway": "10.0.0.1",
-                            "ip_range": ["10.0.0.2", "10.0.255.254"],
                             "network_size": 256,
                             "vlan_start": 103,
                             "use_gateway": true,
@@ -1139,7 +1121,7 @@
                     "networks": [
                         {
                             "name": "public",
-                            "pool": ["172.16.0.0/24"],
+                            "cidr": "172.16.0.0/24",
                             "ip_range": ["172.16.0.2", "172.16.0.126"],
                             "vlan_start": null,
                             "use_gateway": true,
@@ -1150,7 +1132,8 @@
                         },
                         {
                             "name": "management",
-                            "pool": ["192.168.0.0/24"],
+                            "cidr": "192.168.0.0/24",
+                            "vlan_start": 101,
                             "use_gateway": false,
                             "notation": "cidr",
                             "render_type": "cidr",
@@ -1159,11 +1142,22 @@
                         },
                         {
                             "name": "storage",
-                            "pool": ["192.168.1.0/24"],
+                            "cidr": "192.168.1.0/24",
+                            "vlan_start": 102,
                             "use_gateway": false,
                             "notation": "cidr",
                             "render_type": "cidr",
                             "render_addr_mask": "storage",
+                            "assign_vip": false
+                        },
+                        {
+                            "name": "private",
+                            "seg_type": "vlan",
+                            "vlan_start": null,
+                            "use_gateway": false,
+                            "notation": null,
+                            "render_type": null,
+                            "render_addr_mask": null,
                             "assign_vip": false
                         }
                     ],

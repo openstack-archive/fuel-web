@@ -14,51 +14,21 @@
 # under the License.
 
 from fuelmenu.common import dialog
+from fuelmenu.common.modulehelper import ModuleHelper
 from fuelmenu.common import nailyfactersettings
 from fuelmenu.common import replace
 import fuelmenu.common.urwidwrapper as widget
 from fuelmenu.settings import Settings
 import logging
 import netaddr
-import netifaces
 import re
 import socket
-import struct
 import subprocess
 import urwid
 import urwid.raw_display
 import urwid.web_display
 log = logging.getLogger('fuelmenu.mirrors')
 blank = urwid.Divider()
-
-#Need to define fields in order so it will render correctly
-#fields = ["hostname", "domain", "mgmt_if","dhcp_start","dhcp_end",
-#          "blank","ext_if","ext_dns"]
-fields = ["HOSTNAME", "DNS_DOMAIN", "DNS_SEARCH", "DNS_UPSTREAM", "blank",
-          "TEST_DNS"]
-
-DEFAULTS = \
-    {
-        "HOSTNAME": {"label": "Hostname",
-                     "tooltip": "Hostname to use for Fuel master node",
-                     "value": socket.gethostname().split('.')[0]},
-        "DNS_UPSTREAM": {"label": "External DNS",
-                         "tooltip": "DNS server(s) (comma separated) to handle\
- DNS requests (example 8.8.8.8)",
-                         "value": "8.8.8.8"},
-        "DNS_DOMAIN": {"label": "Domain",
-                       "tooltip": "Domain suffix to user for all nodes in your\
-cluster",
-                       "value": "domain.tld"},
-        "DNS_SEARCH": {"label": "Search Domain",
-                       "tooltip": "Domains to search when looking up DNS\
-(space separated)",
-                       "value": "domain.tld"},
-        "TEST_DNS": {"label": "Hostname to test DNS:",
-                     "value": "www.google.com",
-                     "tooltip": "DNS record to resolve to see if DNS is\
-accessible"}
-    }
 
 
 class dnsandhostname(urwid.WidgetWrap):
@@ -72,6 +42,36 @@ class dnsandhostname(urwid.WidgetWrap):
         self.gateway = self.get_default_gateway_linux()
         self.extdhcp = True
         self.parent = parent
+
+        #UI Text
+        self.header_content = ["DNS and hostname setup", "Note: Leave "
+                               "External DNS blank if you do not have "
+                               "Internet access."]
+        self.fields = ["HOSTNAME", "DNS_DOMAIN", "DNS_SEARCH", "DNS_UPSTREAM",
+                       "blank", "TEST_DNS"]
+        self.defaults = \
+            {
+                "HOSTNAME": {"label": "Hostname",
+                             "tooltip": "Hostname to use for Fuel master node",
+                             "value": socket.gethostname().split('.')[0]},
+                "DNS_UPSTREAM": {"label": "External DNS",
+                                 "tooltip": "DNS server(s) (comma separated) \
+to handle DNS requests (example 8.8.8.8)",
+                                 "value": "8.8.8.8"},
+                "DNS_DOMAIN": {"label": "Domain",
+                               "tooltip": "Domain suffix to user for all \
+nodes in your cluster",
+                               "value": "domain.tld"},
+                "DNS_SEARCH": {"label": "Search Domain",
+                               "tooltip": "Domains to search when looking up \
+DNS (space separated)",
+                               "value": "domain.tld"},
+                "TEST_DNS": {"label": "Hostname to test DNS:",
+                             "value": "www.google.com",
+                             "tooltip": "DNS record to resolve to see if DNS \
+is accessible"}
+            }
+
         self.oldsettings = self.load()
         self.screen = None
         self.fixDnsmasqUpstream()
@@ -92,7 +92,7 @@ class dnsandhostname(urwid.WidgetWrap):
         if nameservers == []:
             #Write dnsmasq upstream server to default if it's not readable
             with open('/etc/dnsmasq.upstream', 'w') as f:
-                nameservers = DEFAULTS['DNS_UPSTREAM'][
+                nameservers = self.defaults['DNS_UPSTREAM'][
                     'value'].replace(',', ' ')
                 f.write("nameserver %s\n" % nameservers)
                 f.close()
@@ -120,7 +120,7 @@ class dnsandhostname(urwid.WidgetWrap):
 
     def setEtcResolv(self, nameserver="default"):
         if nameserver == "default":
-            ns = DEFAULTS['DNS_UPSTREAM']['value']
+            ns = self.defaults['DNS_UPSTREAM']['value']
         else:
             ns = nameserver
         with open("/etc/resolv.conf", "w") as fh:
@@ -134,7 +134,7 @@ class dnsandhostname(urwid.WidgetWrap):
         #Get field information
         responses = dict()
 
-        for index, fieldname in enumerate(fields):
+        for index, fieldname in enumerate(self.fields):
             if fieldname == "blank":
                 pass
             else:
@@ -272,32 +272,10 @@ class dnsandhostname(urwid.WidgetWrap):
             f.write("nameserver %s\n" % nameservers)
         f.close()
 
-        ###Future feature to apply post-deployment
-        #Need to decide if we are pre-deployment or post-deployment
-        #if self.deployment == "post":
-        #  self.updateCobbler(responses)
-        #  services.restart("cobbler")
-
         return True
-#  def updateCobbler(self, params):
-#    patterns={
-#      'cblr_server'      : '^server: .*',
-#      'cblr_next_server' : '^next_server: .*',
-#      'mgmt_if'     : '^interface=.*',
-#      'domain'      : '^domain=.*',
-#      'server'      : '^server=.*',
-#      'dhcp-range'  : '^dhcp-range=',
-#      'dhcp-option' : '^dhcp-option=',
-#      'pxe-service' : '^pxe-service=(^,)',
-#      'dhcp-boot'   : '^dhcp-boot=([^,],{3}),'
-#      }
 
     def cancel(self, button):
-        for index, fieldname in enumerate(fields):
-            if fieldname == "blank":
-                pass
-            else:
-                self.edits[index].set_edit_text(DEFAULTS[fieldname]['value'])
+        ModuleHelper.cancel(self, button)
 
     def load(self):
         #Read in yaml
@@ -306,13 +284,13 @@ class dnsandhostname(urwid.WidgetWrap):
         oldsettings.update(Settings().read(self.parent.settingsfile))
 
         oldsettings = Settings().read(self.parent.settingsfile)
-        for setting in DEFAULTS.keys():
+        for setting in self.defaults.keys():
             try:
                 if "/" in setting:
                     part1, part2 = setting.split("/")
-                    DEFAULTS[setting]["value"] = oldsettings[part1][part2]
+                    self.defaults[setting]["value"] = oldsettings[part1][part2]
                 else:
-                    DEFAULTS[setting]["value"] = oldsettings[setting]
+                    self.defaults[setting]["value"] = oldsettings[setting]
             except Exception:
                 log.warning("No setting named %s found." % setting)
                 continue
@@ -353,10 +331,10 @@ class dnsandhostname(urwid.WidgetWrap):
 
         #Set oldsettings to reflect new settings
         self.oldsettings = newsettings
-        #Update DEFAULTS
-        for index, fieldname in enumerate(fields):
+        #Update self.defaults
+        for index, fieldname in enumerate(self.fields):
             if fieldname != "blank":
-                DEFAULTS[fieldname]['value'] = newsettings[fieldname]
+                self.defaults[fieldname]['value'] = newsettings[fieldname]
 
     def checkDNS(self, server):
         #Note: Python's internal resolver caches negative answers.
@@ -365,7 +343,7 @@ class dnsandhostname(urwid.WidgetWrap):
         noout = open('/dev/null', 'w')
         dns_works = subprocess.call(["dig", "+short", "+time=3",
                                      "+retries=1",
-                                     DEFAULTS["TEST_DNS"]['value'],
+                                     self.defaults["TEST_DNS"]['value'],
                                      "@%s" % server], stdout=noout,
                                     stderr=noout)
         if dns_works != 0:
@@ -374,140 +352,20 @@ class dnsandhostname(urwid.WidgetWrap):
             return True
 
     def getNetwork(self):
-        """Returns addr, broadcast, netmask for each network interface."""
-        for iface in netifaces.interfaces():
-            if 'lo' in iface or 'vir' in iface:
-            #if 'lo' in iface or 'vir' in iface or 'vbox' in iface:
-                if iface != "virbr2-nic":
-                    continue
-            try:
-                self.netsettings.update({iface: netifaces.ifaddresses(
-                    iface)[netifaces.AF_INET][0]})
-                self.netsettings[iface]["onboot"] = "Yes"
-            except Exception:
-                self.netsettings.update({iface: {"addr": "", "netmask": "",
-                                                 "onboot": "no"}})
-            self.netsettings[iface]['mac'] = netifaces.ifaddresses(
-                iface)[netifaces.AF_LINK][0]['addr']
-
-            #Set link state
-            try:
-                with open("/sys/class/net/%s/operstate" % iface) as f:
-                    content = f.readlines()
-                    self.netsettings[iface]["link"] = content[0].strip()
-            except Exception:
-                self.netsettings[iface]["link"] = "unknown"
-            #Change unknown link state to up if interface has an IP
-            if self.netsettings[iface]["link"] == "unknown":
-                if self.netsettings[iface]["addr"] != "":
-                    self.netsettings[iface]["link"] = "up"
-
-            #Read bootproto from /etc/sysconfig/network-scripts/ifcfg-DEV
-            try:
-                with open("/etc/sysconfig/network-scripts/ifcfg-%s" % iface) \
-                        as fh:
-                    for line in fh:
-                        if re.match("^BOOTPROTO=", line):
-                            self.netsettings[
-                                iface]['bootproto'] = line.split('=').strip()
-                            break
-            except Exception:
-            #Let's try checking for dhclient process running for this interface
-                if self.getDHCP(iface):
-                    self.netsettings[iface]['bootproto'] = "dhcp"
-                else:
-                    self.netsettings[iface]['bootproto'] = "none"
+        ModuleHelper.getNetwork(self)
 
     def getDHCP(self, iface):
-        """Returns True if the interface has a dhclient process running."""
-        import subprocess
-        noout = open('/dev/null', 'w')
-        dhclient_running = subprocess.call(
-            ["pgrep", "-f", "dhclient.*%s" % (iface)],
-            stdout=noout, stderr=noout)
-        return (dhclient_running == 0)
+        return ModuleHelper.getDHCP(iface)
 
     def get_default_gateway_linux(self):
-        """Read the default gateway directly from /proc."""
-        with open("/proc/net/route") as fh:
-            for line in fh:
-                fields = line.strip().split()
-                if fields[1] != '00000000' or not int(fields[3], 16) & 2:
-                    continue
-
-                return socket.inet_ntoa(struct.pack("<L", int(fields[2], 16)))
+        return ModuleHelper.get_default_gateway_linux()
 
     def radioSelectIface(self, current, state, user_data=None):
-        """Update network details and display information."""
-        ### This makes no sense, but urwid returns the previous object.
-        ### The previous object has True state, which is wrong..
-        ### Somewhere in current.group a RadioButton is set to True.
-        ### Our quest is to find it.
-        for rb in current.group:
-            if rb.get_label() == current.get_label():
-                continue
-            if rb.base_widget.state is True:
-                self.activeiface = rb.base_widget.get_label()
-                break
-        self.gateway = self.get_default_gateway_linux()
-        self.getNetwork()
-        return
+        pass
 
     def refresh(self):
         pass
 
     def screenUI(self):
-        #Define your text labels, text fields, and buttons first
-        text1 = urwid.Text("DNS and hostname setup")
-        text2 = urwid.Text("Note: Leave External DNS blank if you do not have"
-                           " Internet access.")
-
-        self.edits = []
-        toolbar = self.parent.footer
-        for key in fields:
-        #for key, values in DEFAULTS.items():
-            #Example: key = hostname, label = Hostname, value = fuel-pm
-            if key == "blank":
-                self.edits.append(blank)
-            elif DEFAULTS[key]["value"] == "radio":
-                label = widget.TextLabel(DEFAULTS[key]["label"])
-                choices = widget.ChoicesGroup(self, ["Yes", "No"],
-                                              default_value="Yes",
-                                              fn=self.radioSelectIface)
-                self.edits.append(widget.Columns([label, choices]))
-            else:
-                caption = DEFAULTS[key]["label"]
-                default = DEFAULTS[key]["value"]
-                tooltip = DEFAULTS[key]["tooltip"]
-                self.edits.append(widget.TextField(key, caption, 23, default,
-                                  tooltip, toolbar))
-
-        #Button to check
-        button_check = widget.Button("Check", self.check)
-        #Button to revert to previously saved settings
-        button_cancel = widget.Button("Cancel", self.cancel)
-        #Button to apply (and check again)
-        button_apply = widget.Button("Apply", self.apply)
-
-        #Wrap buttons into Columns so it doesn't expand and look ugly
-        if self.parent.globalsave:
-            check_col = widget.Columns([button_check])
-        else:
-            check_col = widget.Columns([button_check, button_cancel,
-                                       button_apply, ('weight', 2, blank)])
-
-        self.listbox_content = [text1, blank, text2, blank]
-        self.listbox_content.extend(self.edits)
-        self.listbox_content.append(blank)
-        self.listbox_content.append(check_col)
-
-        #Add listeners
-
-        #Build all of these into a list
-        #self.listbox_content = [ text1, blank, blank, edit1, edit2, \
-        #                    edit3, edit4, edit5, edit6, button_check ]
-
-        #Add everything into a ListBox and return it
-        self.listwalker = urwid.SimpleListWalker(self.listbox_content)
-        screen = urwid.ListBox(self.listwalker)
-        return screen
+        return ModuleHelper.screenUI(self, self.header_content, self.fields,
+                                     self.defaults)

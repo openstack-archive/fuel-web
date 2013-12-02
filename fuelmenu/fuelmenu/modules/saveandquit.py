@@ -14,6 +14,7 @@
 # under the License.
 
 from fuelmenu.common import dialog
+from fuelmenu.common.modulehelper import ModuleHelper
 import fuelmenu.common.urwidwrapper as widget
 import time
 import urwid
@@ -30,6 +31,18 @@ class saveandquit():
         self.visible = True
         self.parent = parent
         self.screen = None
+        #UI text
+        saveandcontinue_button = widget.Button("Save and Continue",
+                                               self.save_and_continue)
+        saveandquit_button = widget.Button("Save and Quit", self.save_and_quit)
+        quitwithoutsaving_button = widget.Button("Quit without saving",
+                                                 self.quit_without_saving)
+        self.header_content = ["Save configuration before quitting?", blank,
+                               saveandcontinue_button, saveandquit_button,
+                               quitwithoutsaving_button]
+
+        self.fields = []
+        self.defaults = dict()
 
     def save_and_continue(self, args):
         self.save()
@@ -60,17 +73,5 @@ class saveandquit():
         pass
 
     def screenUI(self):
-        #Define your text labels, text fields, and buttons first
-        text1 = urwid.Text("Save configuration before you quit?")
-        saveandcontinue_button = widget.Button("Save and Continue",
-                                               self.save_and_continue)
-        saveandquit_button = widget.Button("Save and Quit", self.save_and_quit)
-        quitwithoutsaving_button = widget.Button("Quit without saving",
-                                                 self.quit_without_saving)
-        #Build all of these into a list
-        listbox_content = [text1, blank, saveandcontinue_button,
-                           saveandquit_button, quitwithoutsaving_button]
-
-        #Add everything into a ListBox and return it
-        screen = urwid.ListBox(urwid.SimpleListWalker(listbox_content))
-        return screen
+        return ModuleHelper.screenUI(self, self.header_content, self.fields,
+                                     self.defaults, buttons_visible=False)

@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="990px" height="764px" viewBox="0 0 990 764" enable-background="new 0 0 990 764" xml:space="preserve">
+<g id="DataBase">
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="174.278" y1="95.217" x2="174.278" y2="679"/>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="65" y1="128.507" x2="65" y2="653"/>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="284.278" y1="95.217" x2="284.278" y2="679"/>
+	<g>
+		<path fill="#4E86AD" d="M224.278,95.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M334.278,95.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M433.278,95.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M967.973,95.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<text transform="matrix(1 0 0 1 154.167 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Nailgun</text>
+	<text transform="matrix(1 0 0 1 271.1084 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Naily</text>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="825.278" y1="95.217" x2="825.278" y2="679"/>
+	<g>
+		<path fill="#4E86AD" d="M875.278,95.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V95.315z"/>
+	</g>
+	<text transform="matrix(1 0 0 1 787.1729 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Puppet_master</text>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="394.278" y1="95.217" x2="394.278" y2="679"/>
+	<text transform="matrix(1 0 0 1 369.084 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">YAML_file</text>
+	<g>
+		<g>
+			<path fill="#4E86AD" d="M738.278,92.761c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4V77.315c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V92.761
+				z"/>
+		</g>
+		<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="699.278" y1="95.217" x2="699.278" y2="679"/>
+		<text transform="matrix(1.109 0 0 1 680.9551 88.3115)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="10.8209">Puppet</text>
+	</g>
+	<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="928.973" y1="95.217" x2="928.973" y2="679"/>
+	<text transform="matrix(1 0 0 1 918.1318 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">ENC</text>
+	<g>
+		<path fill="#4E86AD" d="M224.278,695.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V695.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M334.278,695.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V695.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M433.278,695.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V695.315z"
+			/>
+	</g>
+	<g>
+		<path fill="#4E86AD" d="M967.973,695.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V695.315z"
+			/>
+	</g>
+	<text transform="matrix(1 0 0 1 154.167 689.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Nailgun</text>
+	<text transform="matrix(1 0 0 1 271.1084 689.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Naily</text>
+	<g>
+		<path fill="#4E86AD" d="M875.278,695.315c0,2.2-1.8,4-4,4h-92c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h92c2.2,0,4,1.8,4,4V695.315z"
+			/>
+	</g>
+	<text transform="matrix(1 0 0 1 787.1729 689.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Puppet_master</text>
+	<g>
+		<g>
+			<path fill="#4E86AD" d="M639.278,95.315c0,2.2-1.8,4-4,4h-42c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h42c2.2,0,4,1.8,4,4V95.315z"
+				/>
+		</g>
+		<text transform="matrix(1 0 0 1 606.0938 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">MC</text>
+		<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="614.278" y1="95.217" x2="614.278" y2="679"/>
+		<g>
+			<path fill="#4E86AD" d="M639.278,695.315c0,2.2-1.8,4-4,4h-42c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h42c2.2,0,4,1.8,4,4V695.315z
+				"/>
+		</g>
+		<text transform="matrix(1 0 0 1 606.0938 689.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">MC</text>
+	</g>
+	<text transform="matrix(1 0 0 1 369.084 689.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">YAML_file</text>
+	<g>
+		<g>
+			<path fill="#4E86AD" d="M563.278,95.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V95.315z"
+				/>
+		</g>
+		<line fill="none" stroke="#4E86AD" stroke-miterlimit="10" x1="524.278" y1="95.217" x2="524.278" y2="679"/>
+		<text transform="matrix(1 0 0 1 492.2324 89.9458)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Orchestrator</text>
+		<g>
+			<path fill="#4E86AD" d="M563.278,695.315c0,2.2-1.8,4-4,4h-70c-2.2,0-4-1.8-4-4v-18c0-2.2,1.8-4,4-4h70c2.2,0,4,1.8,4,4V695.315z
+				"/>
+		</g>
+		<text transform="matrix(1 0 0 1 492.2324 689.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">Orchestrator</text>
+	</g>
+	<text transform="matrix(1 0 0 1 918.1318 689.9453)" fill="#FFFFFF" font-family="'PTSans-Regular'" font-size="12">ENC</text>
+	<g>
+		<path fill="#899596" d="M64.742,67.212c-4.397,0-7.245-7.365-7.245-7.365c-0.586,2.247-9.281,4.884-9.281,4.884
+			c-2.54,0.976-3.615,2.443-3.615,2.443c-3.759,5.566-4.198,17.974-4.198,17.974c0.047,2.834,1.268,3.13,1.268,3.13
+			c8.646,3.858,23.547,4.541,23.547,4.541c0.463,0.009,0.92,0.015,1.374,0.015c13.119,0,21.337-3.97,21.337-3.97
+			c1.471-0.93,1.515-1.662,1.515-1.662c1.025-8.892-3.369-18.905-3.369-18.905c-1.321-2.93-9.378-5.47-9.378-5.47
+			c-4.301-1.515-4.33-3.029-4.33-3.029C69.544,65.361,66.947,67.212,64.742,67.212z"/>
+		<path fill="#B8C1C1" d="M55.203,48.624c-0.006,0.313-0.009,0.627-0.009,0.94c0,2.631,1.066,5.42,2.657,7.664
+			c-0.006-0.009-0.012-0.012-0.018-0.021c0,0,0.053,0.278,0.05,0.715l0.595,1.544c0.721,1.863,3.246,6.694,6.264,6.694
+			c2.104,0,4.415-2.364,6.686-6.841l0.495-0.979c-0.026-0.278-0.038-0.568-0.024-0.888c0,0-0.021,0.026-0.062,0.067
+			c1.856-2.382,3.069-5.399,3.069-8.03c0-0.144,0.095-0.762,0.152-1.667c0.161-0.363,0.378-0.677,0.653-0.677
+			c0,0,1.611-4.69-0.513-8.279c0,0-0.733-3.299-4.617-4.764c-3.589-2.197-8.938-0.879-8.938-0.879
+			c-6.521,1.099-7.693,8.426-7.693,8.426c-0.293,3.516,0.365,6.129,0.365,6.129C54.734,48.143,55.016,48.418,55.203,48.624z"/>
+	</g>
+	<rect x="124.893" y="32.833" fill="none" width="730.386" height="18.223"/>
+	<text transform="matrix(1 0 0 1 266.4805 44.0332)" fill="#899596" font-family="'PTSans-Bold'" font-size="16">Diagram of ALTERNATIVE Implementation of Cluster Deployment</text>
+	<g>
+		<rect x="12" y="99.833" fill="none" width="106" height="13.165"/>
+		<text transform="matrix(1 0 0 1 43.9746 106.8335)" font-family="'PTSans-Regular'" font-size="10">Web_User</text>
+	</g>
+	<g>
+		<path fill="#899596" d="M64.742,697.213c-4.397,0-7.245-7.365-7.245-7.365c-0.586,2.246-9.281,4.883-9.281,4.883
+			c-2.54,0.977-3.615,2.443-3.615,2.443c-3.759,5.566-4.198,17.975-4.198,17.975c0.047,2.834,1.268,3.129,1.268,3.129
+			c8.646,3.859,23.547,4.541,23.547,4.541c0.463,0.01,0.92,0.016,1.374,0.016c13.119,0,21.337-3.971,21.337-3.971
+			c1.471-0.93,1.515-1.662,1.515-1.662c1.025-8.891-3.369-18.904-3.369-18.904c-1.321-2.93-9.378-5.471-9.378-5.471
+			c-4.301-1.514-4.33-3.029-4.33-3.029C69.544,695.361,66.947,697.213,64.742,697.213z"/>
+		<path fill="#B8C1C1" d="M55.203,678.623c-0.006,0.314-0.009,0.627-0.009,0.941c0,2.631,1.066,5.42,2.657,7.664
+			c-0.006-0.01-0.012-0.012-0.018-0.021c0,0,0.053,0.279,0.05,0.715l0.595,1.545c0.721,1.863,3.246,6.693,6.264,6.693
+			c2.104,0,4.415-2.363,6.686-6.84l0.495-0.979c-0.026-0.279-0.038-0.568-0.024-0.889c0,0-0.021,0.027-0.062,0.068
+			c1.856-2.383,3.069-5.4,3.069-8.031c0-0.143,0.095-0.762,0.152-1.666c0.161-0.363,0.378-0.678,0.653-0.678
+			c0,0,1.611-4.689-0.513-8.279c0,0-0.733-3.299-4.617-4.764c-3.589-2.197-8.938-0.879-8.938-0.879
+			c-6.521,1.1-7.693,8.426-7.693,8.426c-0.293,3.516,0.365,6.129,0.365,6.129C54.734,678.143,55.016,678.418,55.203,678.623z"/>
+	</g>
+	<g>
+		<rect x="12" y="729.834" fill="none" width="106" height="13.164"/>
+		<text transform="matrix(1 0 0 1 43.9746 736.834)" font-family="'PTSans-Regular'" font-size="10">Web_User</text>
+	</g>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="174.278" y1="155.63" x2="278.309" y2="155.63"/>
+			<g>
+				<polygon fill="#F15A29" points="275.5,159.333 277.073,155.63 275.5,151.927 284.278,155.63 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 179.2783 149.6304)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">1 Deploy cluster</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="284.278" y1="175.63" x2="388.309" y2="175.63"/>
+			<g>
+				<polygon fill="#F15A29" points="385.5,179.333 387.073,175.63 385.5,171.927 394.278,175.63 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 289.2783 169.6304)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">2 Store configuration</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="284.278" y1="195.63" x2="518.309" y2="195.63"/>
+			<g>
+				<polygon fill="#F15A29" points="515.5,199.333 517.073,195.63 515.5,191.927 524.278,195.63 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 289.2783 189.6304)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">3 Deploy</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="524.278" y1="355.631" x2="608.309" y2="355.631"/>
+			<g>
+				<polygon fill="#F15A29" points="605.5,359.334 607.073,355.631 605.5,351.928 614.278,355.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 529.2783 349.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">11 Run puppet</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="614.278" y1="375.631" x2="693.147" y2="375.631"/>
+			<g>
+				<polygon fill="#F15A29" points="690.339,379.334 691.912,375.631 690.339,371.928 699.117,375.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 619.2783 369.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">12 Runonce</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="698.944" y1="395.631" x2="819.309" y2="395.631"/>
+			<g>
+				<polygon fill="#F15A29" points="816.5,399.334 818.073,395.631 816.5,391.928 825.278,395.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 703.9443 389.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">13 Get modules, class</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="825.278" y1="415.631" x2="923.003" y2="415.631"/>
+			<g>
+				<polygon fill="#F15A29" points="920.194,419.334 921.768,415.631 920.194,411.928 928.973,415.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 832.2783 409.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">14 Get class</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="400.248" y1="435.631" x2="928.811" y2="435.631"/>
+			<g>
+				<polygon fill="#F15A29" points="403.057,439.334 401.482,435.631 403.057,431.928 394.278,435.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 399.2783 429.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">15 Get class</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="394.278" y1="455.631" x2="922.842" y2="455.631"/>
+			<g>
+				<polygon fill="#F15A29" points="920.033,459.334 921.606,455.631 920.033,451.928 928.811,455.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 399.2783 449.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">16 Class to deploy</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="620.248" y1="545.631" x2="698.944" y2="545.631"/>
+			<g>
+				<polygon fill="#F15A29" points="623.057,549.334 621.482,545.631 623.057,541.928 614.278,545.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 619.2783 539.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">20 Done</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="831.248" y1="475.631" x2="928.973" y2="475.631"/>
+			<g>
+				<polygon fill="#F15A29" points="834.057,479.334 832.482,475.631 834.057,471.928 825.278,475.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 832.2783 469.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">17 Class</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="705.248" y1="495.631" x2="825.277" y2="495.631"/>
+			<g>
+				<polygon fill="#F15A29" points="708.057,499.334 706.482,495.631 708.057,491.928 699.278,495.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 706.2783 489.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">18 Modules, class</text>
+	<g>
+		<g>
+			<polyline fill="none" stroke="#F15A29" stroke-miterlimit="10" points="699.278,517 756.002,517 756.002,531 705.086,531 			"/>
+			<g>
+				<polygon fill="#F15A29" points="707.896,527.297 706.322,531 707.896,534.703 699.117,531 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 704.2783 511)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">19 Applies $role</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="524.278" y1="255.631" x2="608.309" y2="255.631"/>
+			<g>
+				<polygon fill="#F15A29" points="605.5,259.334 607.073,255.631 605.5,251.928 614.278,255.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 529.2783 249.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">6 Nodes ready?</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="394.278" y1="235.63" x2="518.296" y2="235.63"/>
+			<g>
+				<polygon fill="#F15A29" points="515.486,239.333 517.061,235.63 515.486,231.927 524.266,235.63 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 399.2783 229.6304)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">5 Data</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="400.248" y1="215.63" x2="524.266" y2="215.63"/>
+			<g>
+				<polygon fill="#F15A29" points="403.057,219.333 401.482,215.63 403.057,211.927 394.278,215.63 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 399.2783 209.6304)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">4 Get data</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="530.248" y1="275.631" x2="614.266" y2="275.631"/>
+			<g>
+				<polygon fill="#F15A29" points="533.057,279.334 531.482,275.631 533.057,271.928 524.278,275.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 529.2783 269.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">7 Ready</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="530.248" y1="566" x2="614.266" y2="566"/>
+			<g>
+				<polygon fill="#F15A29" points="533.057,569.703 531.482,566 533.057,562.297 524.278,566 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 529.2783 560)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">21 Deploy is done</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="400.248" y1="586" x2="524.278" y2="586"/>
+			<g>
+				<polygon fill="#F15A29" points="403.057,589.703 401.482,586 403.057,582.297 394.278,586 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 399.2783 580)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">22 Update info</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="290.248" y1="606" x2="524.278" y2="606"/>
+			<g>
+				<polygon fill="#F15A29" points="293.057,609.703 291.482,606 293.057,602.297 284.278,606 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 289.2783 600)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">23 Deploy is done</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="180.248" y1="626" x2="284.278" y2="626"/>
+			<g>
+				<polygon fill="#F15A29" points="183.057,629.703 181.482,626 183.057,622.297 174.278,626 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 179.2783 620)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">24 Deploy is done</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="70.248" y1="646" x2="174.278" y2="646"/>
+			<g>
+				<polygon fill="#F15A29" points="73.057,649.703 71.482,646 73.057,642.297 64.278,646 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 69.2783 640)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">25 Deploy is done</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="290.248" y1="295.631" x2="614.266" y2="295.631"/>
+			<g>
+				<polygon fill="#F15A29" points="293.057,299.334 291.482,295.631 293.057,291.928 284.278,295.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 289.2783 289.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">8 Ready</text>
+	<g>
+		<g>
+			<line fill="none" stroke="#F15A29" stroke-miterlimit="10" x1="180.248" y1="315.631" x2="284.278" y2="315.631"/>
+			<g>
+				<polygon fill="#F15A29" points="183.057,319.334 181.482,315.631 183.057,311.928 174.278,315.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 179.2783 309.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">9 Nodes booted</text>
+	<g>
+		<g>
+			
+				<line fill="none" stroke="#F15A29" stroke-miterlimit="10" stroke-dasharray="4,4" x1="70.248" y1="335.631" x2="174.278" y2="335.631"/>
+			<g>
+				<polygon fill="#F15A29" points="73.057,339.334 71.482,335.631 73.057,331.928 64.278,335.631 				"/>
+			</g>
+		</g>
+	</g>
+	<text transform="matrix(1 0 0 1 69.2783 329.6309)" fill="#333333" font-family="'MyriadPro-Regular'" font-size="12">10 Status on UI</text>
+</g>
+</svg>

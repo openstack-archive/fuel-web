@@ -7,59 +7,18 @@ Metadata via Puppet ENC (part of architecture)
 This is alternative possible architecture.
 See corresponding sequence diagram and more information here: :ref:`deploy_via_enc_sequence`.
 
- .. uml::
-    package "Master Node" {
-        [Async RPC consumer(Naily)] --> [Orchestrator]
-        [Orchestrator] --> [MCollective]
-        [Orchestrator] <-- [YAML data source]
-        [Puppet Master] --> [ENC Script]
-        [ENC Script] --> [YAML data source]
-    }
-    package "Target Node" {
-        [MCollective Agent] --> [Puppet]
-    }
-    actor CLI_User
-    CLI_User --> [YAML data source]
-    CLI_User --> [Orchestrator]
-
-    [MCollective] --> [MCollective Agent]
-    [Puppet] --> [Puppet Master]
+.. image:: /_images/metadata_via_puppet_enc.svg
+  :align: center
+  :width: 100%
 
 .. _deploy_via_enc_sequence:
 
 Alternative Implementation for deployment via ENC
 -------------------------------------------------
- .. uml::
-    title Diagram of ALTERNATIVE Implementation of Cluster Deployment
-    autonumber
-    actor WebUser
-    
-    Nailgun -> Naily: Deploy cluster
-    Naily -> YAML_file: Store configuration
-    Naily -> Orchestrator: Deploy
-    Orchestrator -> YAML_file: get data
-    YAML_file --> Orchestrator: data
-    Orchestrator -> MC: nodes ready?
-    MC --> Orchestrator: ready
-    Orchestrator --> Naily: ready
-    Naily -> Nailgun: nodes booted
-    Nailgun --> WebUser: status on UI
-    |||
-    Orchestrator -> MC: run puppet
-    MC -> Puppet: runonce
-    Puppet -> Puppet_master: get modules,class
-    Puppet_master -> ENC: get class
-    ENC -> YAML_file: get class
-    YAML_file --> ENC: class to deploy
-    ENC --> Puppet_master: class
-    Puppet_master --> Puppet: modules, class
-    Puppet -> Puppet: applies $role
-    Puppet --> MC: done
-    MC --> Orchestrator: deploy is done
-    Orchestrator -> YAML_file: update info
-    Orchestrator --> Naily: deploy is done
-    Naily --> Nailgun: deploy is done
-    Nailgun --> WebUser: deploy is done
+
+.. image:: /_images/alternative_deployment.svg
+  :align: center
+  :width: 100%
 
 Alternative schema of deployment is different in following:
 

@@ -36,12 +36,8 @@ class TestClusterHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         self.env.create_cluster(api=True, nodes=[node['id']])
 
-        resp = self.app.get(
-            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
-            headers=self.default_headers)
-
+        resp = self.env.node_nics_get(node['id'])
         self.assertEquals(resp.status, 200)
-
         response = json.loads(resp.body)
 
         for resp_nic in response:
@@ -60,9 +56,7 @@ class TestClusterHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         self.env.create_cluster(api=True, nodes=[node['id']])
 
-        resp = self.app.get(
-            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
-            headers=self.default_headers)
+        resp = self.env.node_nics_get(node['id'])
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
 
@@ -85,9 +79,7 @@ class TestClusterHandlers(BaseIntegrationTest):
         )
         self.assertEquals(resp.status, 200)
 
-        resp = self.app.get(
-            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
-            headers=self.default_headers)
+        resp = self.env.node_nics_get(node['id'])
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
         for resp_nic in response:
@@ -125,9 +117,7 @@ class TestNodeHandlers(BaseIntegrationTest):
              {'name': 'eth1', 'mac': '654'}])
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
-        resp = self.app.get(
-            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
-            headers=self.default_headers)
+        resp = self.env.node_nics_get(node['id'])
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
         for resp_nic in response:
@@ -153,9 +143,7 @@ class TestNodeHandlers(BaseIntegrationTest):
         )
         self.assertEquals(resp.status, 200)
 
-        resp = self.app.get(
-            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
-            headers=self.default_headers)
+        resp = self.env.node_nics_get(node['id'])
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
         for resp_nic in response:
@@ -182,9 +170,7 @@ class TestNodeHandlers(BaseIntegrationTest):
         )
         self.assertEquals(resp.status, 200)
 
-        resp = self.app.get(
-            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
-            headers=self.default_headers)
+        resp = self.env.node_nics_get(node['id'])
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
         for resp_nic in response:

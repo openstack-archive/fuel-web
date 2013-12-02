@@ -359,30 +359,13 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
     def setUp(self):
         super(TestNeutronHandlersGre, self).setUp()
-        meta = self.env.default_metadata()
-        self.env.set_interfaces_in_meta(meta, [{
-            "mac": "00:00:00:00:00:66",
-            "max_speed": 1000,
-            "name": "eth0",
-            "current_speed": 1000
-        }, {
-            "mac": "00:00:00:00:00:77",
-            "max_speed": 1000,
-            "name": "eth1",
-            "current_speed": None}])
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': 'gre'
             },
             nodes_kwargs=[
-                {
-                    'api': True,
-                    'roles': ['controller'],
-                    'pending_addition': True,
-                    'meta': meta,
-                    'mac': "00:00:00:00:00:66"
-                }
+                {'pending_addition': True}
             ]
         )
         self.cluster = self.env.clusters[0]
@@ -408,7 +391,6 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         ifaces = json.loads(resp.body)
         ifaces[1]["assigned_networks"], ifaces[0]["assigned_networks"] = \
             ifaces[0]["assigned_networks"], ifaces[1]["assigned_networks"]
-
         self.env.node_collection_nics_put(
             node_db.id,
             [{"interfaces": ifaces, "id": node_db.id}])
@@ -645,21 +627,11 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
     def setUp(self):
         super(TestNeutronHandlersVlan, self).setUp()
         meta = self.env.default_metadata()
-        self.env.set_interfaces_in_meta(meta, [{
-            "mac": "00:00:00:00:00:66",
-            "max_speed": 1000,
-            "name": "eth0",
-            "current_speed": 1000
-        }, {
-            "mac": "00:00:00:00:00:77",
-            "max_speed": 1000,
-            "name": "eth1",
-            "current_speed": None
-        }, {
-            "mac": "00:00:00:00:00:88",
-            "max_speed": 1000,
-            "name": "eth2",
-            "current_speed": None}])
+        self.env.set_interfaces_in_meta(meta, [
+            {"name": "eth0", "mac": "00:00:00:00:00:66"},
+            {"name": "eth1", "mac": "00:00:00:00:00:77"},
+            {"name": "eth2", "mac": "00:00:00:00:00:88"}
+        ])
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
@@ -668,7 +640,6 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
             nodes_kwargs=[
                 {
                     'api': True,
-                    'roles': ['controller'],
                     'pending_addition': True,
                     'meta': meta,
                     'mac': "00:00:00:00:00:66"

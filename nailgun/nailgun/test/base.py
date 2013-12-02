@@ -578,10 +578,11 @@ class Environment(object):
                 raise TimeoutError(error_message)
             time.sleep(0.1)
 
-    def _api_get(self, method, instance_id, expect_errors=False):
+    def _api_get(self, method, instance_id, expect_errors=False, params=None):
         return self.app.get(
             reverse(method,
                     kwargs=instance_id),
+            params=params,
             headers=self.default_headers,
             expect_errors=expect_errors)
 
@@ -631,6 +632,18 @@ class Environment(object):
         return self._api_put('NodeCollectionNICsHandler',
                              {'node_id': node_id},
                              interfaces,
+                             expect_errors)
+
+    def node_collection_get(self, params=None, expect_errors=False):
+        return self._api_get(method='NodeCollectionHandler',
+                             instance_id=None,
+                             expect_errors=expect_errors,
+                             params=params)
+
+    def node_collection_put(self, nodes, expect_errors=False):
+        return self._api_put('NodeCollectionHandler',
+                             None,
+                             nodes,
                              expect_errors)
 
 

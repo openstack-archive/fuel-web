@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from nailgun.api.models import Cluster
 from nailgun.api.models import IPAddrRange
 from nailgun.api.models import Network
@@ -29,7 +27,6 @@ from nailgun.orchestrator.deployment_serializers \
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
 from nailgun.volumes import manager
 
 
@@ -184,11 +181,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_vlan_manager(self):
         cluster = self.create_env('multinode')
         data = {'net_manager': 'VlanManager'}
-        url = reverse('NovaNetworkConfigurationHandler',
-                      kwargs={'cluster_id': cluster.id})
-        self.app.put(url, json.dumps(data),
-                     headers=self.default_headers,
-                     expect_errors=False)
+        self.env.nova_networks_put(cluster.id, data)
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:

@@ -135,22 +135,14 @@ class TestClusterChanges(BaseIntegrationTest):
         cluster_db.clear_pending_changes()
         all_changes = self.db.query(ClusterChanges).all()
         self.assertEquals(len(all_changes), 0)
-        resp = self.app.get(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': cluster['id']}),
-            headers=self.default_headers
-        )
+        resp = self.env.nova_networks_get(cluster['id'])
         net_id = json.loads(resp.body)['networks'][0]["id"]
-        resp = self.app.put(
-            reverse(
-                'NovaNetworkConfigurationHandler',
-                kwargs={'cluster_id': cluster['id']}),
-            json.dumps({'networks': [{
-                "id": net_id, "access": "restricted"}
-            ]}),
-            headers=self.default_headers
-        )
+        self.env.nova_networks_put(
+            cluster['id'],
+            {'networks': [
+                {"id": net_id,
+                 "access": "restricted"}
+            ]})
         pending_changes = self.db.query(ClusterChanges).filter_by(
             name="networks"
         ).all()

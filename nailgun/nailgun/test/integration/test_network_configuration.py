@@ -415,10 +415,10 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEquals(publ_ng.cidr, '172.16.0.0/24')
 
     def test_admin_public_untagged_others_tagged(self):
-        resp = self.env.nova_networks_get(self.cluster.id)
+        resp = self.env.neutron_networks_get(self.cluster.id)
         data = json.loads(resp.body)
         for net in data['networks']:
-            if net['name'] in ('fuelweb_admin', 'public',):
+            if net['name'] in ('fuelweb_admin', 'public', 'private'):
                 self.assertIsNone(net['vlan_start'])
             else:
                 self.assertIsNotNone(net['vlan_start'])

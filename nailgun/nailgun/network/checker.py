@@ -25,17 +25,8 @@ from nailgun.api.serializers.network_configuration \
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.network.manager import NetworkManager
 from nailgun.task.helpers import TaskHelper
-
-
-def calc_cidr_from_gw_mask(net_group):
-    """Calculate network CIDR from its gateway and netmask
-    """
-    try:
-        return netaddr.IPNetwork(net_group['gateway'] + '/' +
-                                 net_group['netmask']).cidr
-    except (netaddr.AddrFormatError, KeyError):
-        return None
 
 
 class NetworkCheck(object):
@@ -161,10 +152,7 @@ class NetworkCheck(object):
                 if ng_pair['name'] == 'floating':
                     return [netaddr.IPRange(v[0], v[1])
                             for v in ng['ip_ranges']]
-                else:
-                    return [netaddr.IPNetwork(ng['cidr']).cidr]
-            else:
-                return [netaddr.IPNetwork(ng['cidr']).cidr]
+            return [netaddr.IPNetwork(ng['cidr']).cidr]
 
         for ngs in combinations(self.networks, 2):
             for addrs in product(addr_space(ngs[0], ngs[1]),
@@ -193,7 +181,7 @@ class NetworkCheck(object):
         ng = [ng for ng in self.networks
               if ng['name'] == 'public'][0]
         pub_gw = netaddr.IPAddress(ng['gateway'])
-        pub_cidr = calc_cidr_from_gw_mask(ng)
+        pub_cidr = NetworkManager.calc_cidr_from_gw_mask(ng)
         if not pub_cidr:
             self.err_msgs.append(
                 u"Invalid gateway or netmask for public network")
@@ -320,8 +308,7 @@ class NetworkCheck(object):
             if ng['name'] == 'fixed':
                 net_size = int(ng.get('network_size'))
                 net_amount = int(ng.get('amount'))
-                net_gr_size = 2 ** (32 - netaddr.IPNetwork(
-                    ng.get('cidr')).prefixlen)
+                net_gr_size = netaddr.IPNetwork(ng['cidr']).size
                 if net_size * net_amount > net_gr_size:
                     self.err_msgs.append(
                         u"Number of fixed networks ({0}) doesn't fit into "
@@ -404,7 +391,7 @@ class NetworkCheck(object):
         """
         # calculate and check public CIDR
         public = filter(lambda ng: ng['name'] == 'public', self.networks)[0]
-        public_cidr = calc_cidr_from_gw_mask(public)
+        public_cidr = NetworkManager.calc_cidr_from_gw_mask(public)
         if not public_cidr:
             self.err_msgs.append(
                 u"Invalid gateway or netmask for public network")
@@ -653,7 +640,7 @@ class NetworkCheck(object):
         ext_fl_r = netaddr.IPRange(ext_fl[0], ext_fl[1])
 
         pub = filter(lambda n: n['name'] == 'public', self.networks)[0]
-        pub_cidr = netaddr.IPNetwork(pub['cidr']).cidr
+        pub_cidr = netaddr.IPNetwork(pub['cidr'])
         if pub_cidr.network in ext_fl_r or pub_cidr.broadcast in ext_fl_r:
             self.err_msgs.append(
                 u"Neutron L3 external floating range [{0}] intersect with "

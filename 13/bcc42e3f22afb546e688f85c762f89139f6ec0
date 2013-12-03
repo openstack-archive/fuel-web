@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Dmitry Pyzhov <dpyzhov@mirantis.com>
+Code-Review+2: Dmitry Pyzhov <dpyzhov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 03 Dec 2013 09:47:23 +0000
+Reviewed-on: https://review.openstack.org/57679
+Project: stackforge/fuel-web
+Branch: refs/heads/master

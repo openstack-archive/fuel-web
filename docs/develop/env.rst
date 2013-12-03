@@ -160,7 +160,7 @@ Building the Fuel ISO
     sudo gem install bundler -v 1.2.1
     sudo gem install builder
     sudo pip install xmlbuilder jinja2
-    sudo npm install -g requirejs
+    sudo npm install -g requirejs grunt-cli
 
 #. (alternative) If you have completed the instructions in the previous
    sections of Fuel development environment setup guide, the list of

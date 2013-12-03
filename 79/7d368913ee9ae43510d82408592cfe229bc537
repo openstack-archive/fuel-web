@@ -1,0 +1,9 @@
+Change-Id: I797d368913ee9ae43510d82408592cfe229bc537
+Verified+2: Jenkins
+Approved+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Code-Review+2: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 03 Dec 2013 09:18:59 +0000
+Reviewed-on: https://review.openstack.org/59651
+Project: stackforge/fuel-web
+Branch: refs/heads/3.2-fixes

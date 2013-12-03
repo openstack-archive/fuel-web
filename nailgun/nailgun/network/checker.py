@@ -29,6 +29,8 @@ from nailgun.task.helpers import TaskHelper
 
 
 def calc_cidr_from_gw_mask(net_group):
+    """Calculate network CIDR from its gateway and netmask
+    """
     try:
         return netaddr.IPNetwork(net_group['gateway'] + '/' +
                                  net_group['netmask']).cidr
@@ -80,7 +82,9 @@ class NetworkCheck(object):
             self.err_msgs)
 
     def check_untagged_intersection(self):
-        # check if there are untagged networks on the same interface
+        """check if there are 2 or more untagged networks on the same interface
+        except public and floating networks (nova-net)
+        """
         untagged_nets = set([n['name'] for n in self.networks
                              if n['vlan_start'] is None])
         # check only if we have 2 or more untagged networks
@@ -123,9 +127,32 @@ class NetworkCheck(object):
                                     "errors": ["untagged"]})
         self.expose_error_messages()
 
-    def check_net_addr_spaces_intersection(self, pub_cidr):
-        # check intersection of networks address spaces
-        # for all networks
+    def check_public_floating_assignment(self):
+        """check public and floating are on the same interface (nova-net)
+        """
+        err_nodes = []
+        for node in self.cluster.nodes:
+            pr_fl_nic = []
+            for nic in node.interfaces:
+                pr_fl_nic += [nic.id for n in nic.assigned_networks
+                              if n.name in ('public', 'floating')]
+            if len(pr_fl_nic) == 2 and pr_fl_nic[0] != pr_fl_nic[1]:
+                err_nodes.append(node.name)
+        if err_nodes:
+            self.err_msgs.append(
+                u"Public and floating networks are not assigned to the "
+                u"same physical interface. These networks must be assigned "
+                u"to the same physical interface. "
+                u"Affected nodes:\n{0}".format(", ".join(err_nodes)))
+            self.result.append({"id": [],
+                                "range_errors": [],
+                                "errors": ["public_floating"]})
+        self.expose_error_messages()
+
+    def check_network_address_spaces_intersection(self):
+        """check intersection of networks address spaces for all networks
+        (nova-net)
+        """
         def addr_space(ng, ng_pair):
             if ng['name'] == 'floating':
                 return [netaddr.IPRange(v[0], v[1])
@@ -135,9 +162,9 @@ class NetworkCheck(object):
                     return [netaddr.IPRange(v[0], v[1])
                             for v in ng['ip_ranges']]
                 else:
-                    return [pub_cidr]
+                    return [netaddr.IPNetwork(ng['cidr']).cidr]
             else:
-                return [netaddr.IPNetwork(ng['cidr'])]
+                return [netaddr.IPNetwork(ng['cidr']).cidr]
 
         for ngs in combinations(self.networks, 2):
             for addrs in product(addr_space(ngs[0], ngs[1]),
@@ -157,10 +184,12 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_public_floating_ranges_intersection(self):
-        # 1. Check intersection of networks address spaces inside
-        #    Public and Floating network
-        # 2. Check that Public Gateway is in Public CIDR
-        # 3. Check that Public IP ranges are in Public CIDR
+        """1. Check intersection of networks address spaces inside
+        Public and Floating network
+        2. Check that Public Gateway is in Public CIDR
+        3. Check that Public IP ranges are in Public CIDR
+        (nova-net)
+        """
         ng = [ng for ng in self.networks
               if ng['name'] == 'public'][0]
         pub_gw = netaddr.IPAddress(ng['gateway'])
@@ -172,6 +201,7 @@ class NetworkCheck(object):
                                 "range_errors": [],
                                 "errors": ["netmask"]})
             self.expose_error_messages()
+        ng['cidr'] = pub_cidr
         # Check intersection of networks address spaces inside
         # Public and Floating network
         pub_ranges_err = False
@@ -210,11 +240,12 @@ class NetworkCheck(object):
                                                 "range_errors": [],
                                                 "errors": ["range"]})
         self.expose_error_messages()
-        return pub_cidr
 
     def check_vlan_ids_range_and_intersection(self):
-        # check intersection of networks VLAN IDs ranges
-        # check networks VLAN ID ranges are in allowed range
+        """1. check intersection of networks VLAN IDs ranges
+        2. check networks VLAN ID ranges are in allowed range
+        (nova-net)
+        """
         tagged_nets = dict(
             (n['name'], [int(n['vlan_start']),
                          int(n['amount']) - 1])
@@ -261,8 +292,12 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def check_networks_amount(self):
-        # check each network group has not more than 1 network
-        # except fixed in case of VLANManager
+        """1. check each network group has not more than 1 network
+        except fixed in case of VLANManager
+        2. check number of fixed networks fit in fixed CIDR and size of
+        one fixed network
+        (nova-net)
+        """
         netmanager = self.data.get('net_manager') or self.cluster.net_manager
         for ng in self.networks:
             if ng['amount'] > 1:
@@ -271,25 +306,45 @@ class NetworkCheck(object):
                         u"Network amount for '{0}' is more than 1".format(
                             ng['name'])
                     )
+                    self.result.append({"id": int(ng["id"]),
+                                        "range_errors": [],
+                                        "errors": ["amount"]})
                 elif netmanager == 'FlatDHCPManager':
                     self.err_msgs.append(
                         u"Network amount for 'fixed' is more than 1 "
                         "while using FlatDHCP manager."
                     )
-            if self.err_msgs:
-                self.result.append({"id": int(ng["id"]),
-                                    "range_errors": [],
-                                    "errors": ["amount"]})
+                    self.result.append({"id": int(ng["id"]),
+                                        "range_errors": [],
+                                        "errors": ["amount"]})
+            if ng['name'] == 'fixed':
+                net_size = int(ng.get('network_size'))
+                net_amount = int(ng.get('amount'))
+                net_gr_size = 2 ** (32 - netaddr.IPNetwork(
+                    ng.get('cidr')).prefixlen)
+                if net_size * net_amount > net_gr_size:
+                    self.err_msgs.append(
+                        u"Number of fixed networks ({0}) doesn't fit into "
+                        u"fixed CIDR ({1}) and size of one fixed network "
+                        u"({2}).".format(net_amount, ng['cidr'], net_size)
+                    )
+                    self.result.append({"id": int(ng["id"]),
+                                        "range_errors": [],
+                                        "errors": ["net_size"]})
         self.expose_error_messages()
 
     def neutron_check_segmentation_ids(self):
-        # check: networks VLAN IDs should not be in
-        # Neutron L2 private VLAN ID range (VLAN segmentation only)
+        """1. check networks VLAN IDs not in Neutron L2 private VLAN ID range
+        for VLAN segmentation only
+        2. check networks VLAN IDs should not intersect
+        (neutron)
+        """
         tagged_nets = dict((n["name"], n["vlan_start"]) for n in filter(
             lambda n: (n["vlan_start"] is not None), self.networks))
 
         if tagged_nets:
             if self.task.cluster.net_segment_type == 'vlan':
+                # check networks tags not in Neutron L2 private VLAN ID range
                 if 'neutron_parameters' in self.data:
                     l2cfg = self.data['neutron_parameters']['L2']
                 else:
@@ -314,7 +369,7 @@ class NetworkCheck(object):
                         format(nets_with_errors)
                     raise errors.NetworkCheckError(err_msg, add_client=False)
 
-            # check: networks VLAN IDs should not intersect
+            # check networks VLAN IDs should not intersect
             net_intersect = [name for name, vlan in tagged_nets.iteritems()
                              if tagged_nets.values().count(vlan) >= 2]
             if net_intersect:
@@ -324,7 +379,9 @@ class NetworkCheck(object):
                 raise errors.NetworkCheckError(err_msg, add_client=False)
 
     def neutron_check_network_group_sizes(self):
-        # check network groups sizes
+        """Check networks sizes defined by CIDRs are not smaller then
+         declared with 'network_size' field (neutron)
+        """
         for ng in self.networks:
             if ng['name'] != 'private':
                 # ng['amount'] is always equal 1 for Neutron
@@ -341,6 +398,9 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def neutron_check_network_address_spaces_intersection(self):
+        """Check intersection between address spaces of all networks
+        including admin (neutron)
+        """
         # calculate and check public CIDR
         public = filter(lambda ng: ng['name'] == 'public', self.networks)[0]
         public_cidr = calc_cidr_from_gw_mask(public)
@@ -467,7 +527,8 @@ class NetworkCheck(object):
         self.expose_error_messages()
 
     def neutron_check_interface_mapping(self):
-
+        """Check mapping of networks to NICs (Neutron)
+        """
         # check if there any networks
         # on the same interface as admin network (main)
         admin_interfaces = map(lambda node: node.admin_interface,
@@ -579,19 +640,125 @@ class NetworkCheck(object):
                     format("\n".join(nodes_with_errors))
                 raise errors.NetworkCheckError(err_msg, add_client=False)
 
+    def neutron_check_l3_addresses_not_match_subnet_and_broadcast(self):
+        """check virtual l3 network address ranges and gateway don't intersect
+        with subnetwork address and broadcast address (neutron)
+        """
+        if 'neutron_parameters' in self.data:
+            pre_net = self.data['neutron_parameters']['predefined_networks']
+        else:
+            pre_net = self.task.cluster.neutron_config.predefined_networks
+        ext_fl = pre_net['net04_ext']['L3']['floating']
+        ext_fl_r = netaddr.IPRange(ext_fl[0], ext_fl[1])
+
+        pub = filter(lambda n: n['name'] == 'public', self.networks)[0]
+        pub_cidr = netaddr.IPNetwork(pub['cidr']).cidr
+        if pub_cidr.network in ext_fl_r or pub_cidr.broadcast in ext_fl_r:
+            self.err_msgs.append(
+                u"Neutron L3 external floating range [{0}] intersect with "
+                u"either subnet address or broadcast address "
+                u"of public network.".format(str(ext_fl_r))
+            )
+            self.result.append({"id": 0,
+                                "range_errors": [],
+                                "errors": ["range"]})
+
+        int_cidr = netaddr.IPNetwork(pre_net['net04']['L3']['cidr']).cidr
+        int_gw = netaddr.IPAddress(pre_net['net04']['L3']['gateway'])
+        if int_gw == int_cidr.network or int_gw == int_cidr.broadcast:
+            self.err_msgs.append(
+                u"Neutron L3 internal network gateway address is equal to "
+                u"either subnet address or broadcast address of the network."
+            )
+            self.result.append({"id": 0,
+                                "range_errors": [],
+                                "errors": ["gateway"]})
+        self.expose_error_messages()
+
+    def check_network_classes_exclude_loopback(self):
+        """1. check network address space lies inside A,B or C network class
+        address space
+        2. check network address space doesn't lie inside loopback
+        address space
+        (both neutron and nova-net)
+        """
+        for n in self.networks:
+            if n.get('cidr'):
+                cidr = netaddr.IPNetwork(n['cidr']).cidr
+                if cidr in netaddr.IPNetwork('224.0.0.0/3'):
+                    self.err_msgs.append(
+                        u"{0} network address space does not belong to "
+                        u"A, B, C network classes. It must belong to either "
+                        u"A, B or C network class.".format(n["name"])
+                    )
+                    self.result.append({"id": int(n["id"]),
+                                        "range_errors": [],
+                                        "errors": ["net_class"]})
+                elif cidr in netaddr.IPNetwork('127.0.0.0/8'):
+                    self.err_msgs.append(
+                        u"{0} network address space is inside loopback range "
+                        u"(127.0.0.0/8). It must have no intersection with "
+                        u"loopback range.".format(n["name"])
+                    )
+                    self.result.append({"id": int(n["id"]),
+                                        "range_errors": [],
+                                        "errors": ["loopback"]})
+        self.expose_error_messages()
+
+    def check_network_addresses_not_match_subnet_and_broadcast(self):
+        """check network address ranges and gateway don't intersect with
+        subnetwork address and broadcast address (both neutron and nova-net)
+        """
+        for n in self.networks:
+            # TODO(alekseyk) get rid of network names here
+            if n['name'] in ('public', 'fixed'):
+                cidr = netaddr.IPNetwork(n['cidr']).cidr
+                if n.get('gateway'):
+                    gw = netaddr.IPAddress(n['gateway'])
+                    if gw == cidr.network or gw == cidr.broadcast:
+                        self.err_msgs.append(
+                            u"{0} network gateway address is equal to either "
+                            u"subnet address or broadcast address "
+                            u"of the network.".format(n["name"])
+                        )
+                        self.result.append({"id": int(n["id"]),
+                                            "range_errors": [],
+                                            "errors": ["gateway"]})
+                if n.get('ip_ranges'):
+                    for r in n['ip_ranges']:
+                        ipr = netaddr.IPRange(r[0], r[1])
+                        if cidr.network in ipr or cidr.broadcast in ipr:
+                            self.err_msgs.append(
+                                u"{0} network IP range [{1}] intersect with "
+                                u"either subnet address or broadcast address "
+                                u"of the network.".format(n["name"], str(ipr))
+                            )
+                            self.result.append({"id": int(n["id"]),
+                                                "range_errors": [],
+                                                "errors": ["range"]})
+        self.expose_error_messages()
+
     def check_configuration(self):
+        """check network configuration parameters
+        """
         if self.net_provider == 'neutron':
             self.neutron_check_network_address_spaces_intersection()
             self.neutron_check_segmentation_ids()
             self.neutron_check_network_group_sizes()
+            self.neutron_check_l3_addresses_not_match_subnet_and_broadcast()
         else:
-            pub_cidr = self.check_public_floating_ranges_intersection()
-            self.check_net_addr_spaces_intersection(pub_cidr)
+            self.check_public_floating_ranges_intersection()
+            self.check_network_address_spaces_intersection()
             self.check_networks_amount()
             self.check_vlan_ids_range_and_intersection()
+        self.check_network_classes_exclude_loopback()
+        self.check_network_addresses_not_match_subnet_and_broadcast()
 
     def check_interface_mapping(self):
+        """check mapping of networks to NICs
+        """
         if self.net_provider == 'neutron':
             self.neutron_check_interface_mapping()
         else:
             self.check_untagged_intersection()
+            self.check_public_floating_assignment()

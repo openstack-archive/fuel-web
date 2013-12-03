@@ -878,10 +878,10 @@ class TestHandlers(BaseIntegrationTest):
         net_data = {
             "networks": [{
                 'id': public_network.id,
-                'gateway': '240.0.1.1',
+                'gateway': '220.0.1.1',
                 'ip_ranges': [[
-                    '240.0.1.2',
-                    '240.0.1.3']]}]}
+                    '220.0.1.2',
+                    '220.0.1.3']]}]}
 
         self.app.put(
             reverse(

@@ -95,8 +95,6 @@ h6.page-title {
   display: inline;
   font-size: 11px;
   text-shadow: none;
-  margin: -2px 0 0;
-  padding: 0;
 }
 
 /*  Navigation */
@@ -280,11 +278,11 @@ h6.page-title {
   height: auto !important;
   height: 100%;
   /* Negative indent footer by it's height */
-  margin: 0 auto -40px;
+  margin: 0 auto -70px;
 }
 
 #push, #footer {
-  height: 40px;
+  height: 70px;
 }
 
 #footer {
@@ -302,16 +300,46 @@ h6.page-title {
 }
 
 .footer-box {
-  border-top: 1px solid #2B2D31;
-  height: 20px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 4px;
+  height: 50px;
+}
+
+.footer-logo {
+  display: block;
+  float: left;
+  width: 67px;
+  height: 34px;
+  background: url(../img/mirantis-logo-small2.png) no-repeat top left;
+  margin: 8px 0px 0px 10px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.footer-logo:hover {
+  display: block;
+  float: left;
+  width: 67px;
+  height: 34px;
+  background: url(../img/mirantis-logo-small2.png) no-repeat 0px -34px;
+  margin: 8px 0px 0px 10px;
+  overflow: hidden;
+}
+
+.footer-copyright {
+  display: block;
+  padding: 14px 20px 0px 20px;
+  color: #f0f0f0;
+  font-size: 11px;
+  margin-top: 0px;
 }
 
 .footer-version {
-  color: #7789A0;
   display: block;
+  padding: 14px 20px 0px 20px;
+  color: #7789a0;
   font-size: 11px;
-  margin-top: 9px;
-  padding: 0;
+  margin-top: 0px;
 }
 
 .footer-lang {

@@ -123,6 +123,27 @@ class NetworkCheck(object):
                                     "errors": ["untagged"]})
         self.expose_error_messages()
 
+    def check_public_floating_assignment(self):
+        # check public and floating are on the same interface
+        err_nodes = []
+        for node in self.cluster.nodes:
+            for iface in node.interfaces:
+                if len(filter(lambda n: n.name in ('public', 'floating'),
+                              iface.assigned_networks)) == 2:
+                    break
+            else:
+                err_nodes.append(node.name)
+        if err_nodes:
+            self.err_msgs.append(
+                u"Public and floating networks are not assigned to the "
+                u"same physical interface. These networks must be assigned "
+                u"to the same physical interface. "
+                u"Affected nodes:\n{0}".format(", ".join(err_nodes)))
+            self.result.append({"id": [],
+                                "range_errors": [],
+                                "errors": ["public_floating"]})
+        self.expose_error_messages()
+
     def check_net_addr_spaces_intersection(self, pub_cidr):
         # check intersection of networks address spaces
         # for all networks
@@ -263,6 +284,8 @@ class NetworkCheck(object):
     def check_networks_amount(self):
         # check each network group has not more than 1 network
         # except fixed in case of VLANManager
+        # check number of fixed networks fit in fixed CIDR and size of
+        # one fixed network
         netmanager = self.data.get('net_manager') or self.cluster.net_manager
         for ng in self.networks:
             if ng['amount'] > 1:
@@ -271,15 +294,31 @@ class NetworkCheck(object):
                         u"Network amount for '{0}' is more than 1".format(
                             ng['name'])
                     )
+                    self.result.append({"id": int(ng["id"]),
+                                        "range_errors": [],
+                                        "errors": ["amount"]})
                 elif netmanager == 'FlatDHCPManager':
                     self.err_msgs.append(
                         u"Network amount for 'fixed' is more than 1 "
                         "while using FlatDHCP manager."
                     )
-            if self.err_msgs:
-                self.result.append({"id": int(ng["id"]),
-                                    "range_errors": [],
-                                    "errors": ["amount"]})
+                    self.result.append({"id": int(ng["id"]),
+                                        "range_errors": [],
+                                        "errors": ["amount"]})
+            if ng['name'] == 'fixed':
+                net_size = int(ng.get('network_size'))
+                net_amount = int(ng.get('amount'))
+                net_gr_size = 2 ** (32 - netaddr.IPNetwork(
+                    ng.get('cidr')).prefixlen)
+                if net_size * net_amount > net_gr_size:
+                    self.err_msgs.append(
+                        u"Number of fixed networks ({0}) doesn't fit into "
+                        u"fixed CIDR ({1}) and size of one fixed network "
+                        u"({2}).".format(net_amount, ng['cidr'], net_size)
+                    )
+                    self.result.append({"id": int(ng["id"]),
+                                        "range_errors": [],
+                                        "errors": ["net_size"]})
         self.expose_error_messages()
 
     def neutron_check_segmentation_ids(self):
@@ -579,6 +618,34 @@ class NetworkCheck(object):
                     format("\n".join(nodes_with_errors))
                 raise errors.NetworkCheckError(err_msg, add_client=False)
 
+    def check_network_classes_exclude_loopback(self):
+        # 1. check network address space lies inside A,B or C network class
+        # address space
+        # 2. check network address space doesn't lie inside loopback
+        # address space
+        for n in self.networks:
+            if n.get('cidr'):
+                cidr = netaddr.IPNetwork(n['cidr']).cidr
+                if cidr in netaddr.IPNetwork('224.0.0.0/3'):
+                    self.err_msgs.append(
+                        u"{0} network address space does not belong to "
+                        u"A, B, C network classes. It must belong to either "
+                        u"A, B or C network class.".format(n["name"])
+                    )
+                    self.result.append({"id": int(n["id"]),
+                                        "range_errors": [],
+                                        "errors": ["net_class"]})
+                elif cidr in netaddr.IPNetwork('127.0.0.0/8'):
+                    self.err_msgs.append(
+                        u"{0} network address space is inside loopback range "
+                        u"(127.0.0.0/8). It must have no intersection with "
+                        u"loopback range.".format(n["name"])
+                    )
+                    self.result.append({"id": int(n["id"]),
+                                        "range_errors": [],
+                                        "errors": ["loopback"]})
+        self.expose_error_messages()
+
     def check_configuration(self):
         if self.net_provider == 'neutron':
             self.neutron_check_network_address_spaces_intersection()
@@ -589,9 +656,11 @@ class NetworkCheck(object):
             self.check_net_addr_spaces_intersection(pub_cidr)
             self.check_networks_amount()
             self.check_vlan_ids_range_and_intersection()
+        self.check_network_classes_exclude_loopback()
 
     def check_interface_mapping(self):
         if self.net_provider == 'neutron':
             self.neutron_check_interface_mapping()
         else:
             self.check_untagged_intersection()
+            self.check_public_floating_assignment()

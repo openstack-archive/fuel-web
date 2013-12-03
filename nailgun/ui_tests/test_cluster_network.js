@@ -315,7 +315,7 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: save changes');
-    this.fill('.networks-table', {'management-cidr': '240.0.1.0/23'});
+    this.fill('.networks-table', {'management-cidr': '220.0.1.0/23'});
     this.evaluate(function() {
         $('input[name=management-cidr]').keyup();
     });

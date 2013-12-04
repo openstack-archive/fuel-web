@@ -294,7 +294,12 @@ if [ $integration_tests -eq 1 ]; then
 fi
 
 function run_unit_tests {
-    nosetests $noseopts $test_args --verbosity=2 nailgun/nailgun/test/unit #shotgun
+  (
+  cd nailgun
+  ./manage.py dropdb > /dev/null
+  ./manage.py syncdb > /dev/null
+  )
+  nosetests $noseopts $test_args --verbosity=2 nailgun/nailgun/test/unit #shotgun
 }
 
 if [ $unit_tests -eq 1 ]; then

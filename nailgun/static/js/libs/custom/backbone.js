@@ -1327,6 +1327,11 @@
   // Cached regex for removing a trailing slash.
   var trailingSlash = /\/$/;
 
+  if (isExplorer.exec(navigator.userAgent.toLowerCase())) {
+      // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
+      $.ajaxSetup({ cache: false });
+  }
+
   // Has the history handling already been started?
   History.started = false;
 

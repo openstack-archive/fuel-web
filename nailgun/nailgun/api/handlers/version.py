@@ -32,10 +32,4 @@ class VersionHandler(JSONHandler):
         """:returns: FUEL/FUELWeb commit SHA, release version.
         :http: * 200 (OK)
         """
-        return {
-            "release": str(settings.VERSION['release']),
-            "nailgun_sha": str(settings.VERSION['nailgun_sha']),
-            "astute_sha": str(settings.VERSION['astute_sha']),
-            "fuellib_sha": str(settings.VERSION['fuellib_sha']),
-            "ostf_sha": str(settings.VERSION['ostf_sha'])
-        }
+        return str(settings.VERSION)

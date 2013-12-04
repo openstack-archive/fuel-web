@@ -20,7 +20,9 @@
                     "mb": "MB",
                     "gb": "GB",
                     "tb": "TB"
-                }
+                },
+                "node":"__count__ node",
+                "node_plural":"__count__ nodes"
             },
             "node_details": {
                 "cpu": "CPU",
@@ -117,7 +119,19 @@
                 "cluster_hardware_ram": "RAM"
             },
             "cluster_page": {
+                "tabs": {
+                    "nodes": "Nodes",
+                    "networks": "Networks",
+                    "settings": "Settings",
+                    "logs": "Logs",
+                    "health_check": "Health Check",
+                    "actions": "Actions"
+                },
                 "nodes_tab": {
+                    "roles": "Roles",
+                    "hardware_info": "Hardware Info",
+                    "roles_and_hardware_info": "Roles and hardware info",
+                    "assign_roles": "Assign Roles",
                     "configure_interfaces": {
                         "title": "Configure interfaces on __name__",
                         "title_plural": "Configure interfaces on __count__ nodes",
@@ -422,7 +436,9 @@
                     "mb": "MB",
                     "gb": "GB",
                     "tb": "TB"
-                }
+                },
+                "node":"__count__个节点",
+                "node_plural":"__count__个节点"
             },
             "node_details": {
                 "cpu": "CPU",
@@ -519,7 +535,19 @@
                 "cluster_hardware_ram": "RAM"
             },
             "cluster_page": {
+                "tabs": {
+                    "nodes": "节点",
+                    "networks": "网络",
+                    "settings": "设置",
+                    "logs": "日志",
+                    "health_check": "健康检查",
+                    "actions": "动作"
+                },
                 "nodes_tab": {
+                    "roles": "角色",
+                    "hardware_info": "硬件信息",
+                    "roles_and_hardware_info": "角色和硬件信息",
+                    "assign_roles": "分配角色",
                     "configure_interfaces": {
                         "title": "在__name__上配置接口",
                         "title_plural": "在__count__个节点上配置接口",

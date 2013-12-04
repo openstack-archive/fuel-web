@@ -43,12 +43,12 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             return this.model.get('name');
         },
         tabs: [
-            {url: 'nodes', title: 'Nodes'},
-            {url: 'network', title: 'Networks'},
-            {url: 'settings', title: 'Settings'},
-            {url: 'logs', title: 'Logs'},
-            {url: 'healthcheck', title: 'Health Check'},
-            {url: 'actions', title: 'Actions'}
+            {url: 'nodes', title: $.t('cluster_page.tabs.nodes')},
+            {url: 'network', title: $.t('cluster_page.tabs.networks')},
+            {url: 'settings', title: $.t('cluster_page.tabs.settings')},
+            {url: 'logs', title: $.t('cluster_page.tabs.logs')},
+            {url: 'healthcheck', title: $.t('cluster_page.tabs.health_check')},
+            {url: 'actions', title: $.t('cluster_page.tabs.actions')}
         ],
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),

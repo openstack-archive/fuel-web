@@ -18,7 +18,7 @@
         <% } %>
         <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%= cluster ? cluster.get('name') : $.t('cluster_page.nodes_tab.unallocated_nodes') %></span>
       </div>
-      <div class="node-list-name-count">(<%= nodes.length %> node<%= nodes.length == 1 ? '' : 's' %>)</div>
+      <div class="node-list-name-count">(<%- $.t('common.node', {count: nodes.length}) %>)</div>
     </div>
   </div>
   <div class="span2 select-all">

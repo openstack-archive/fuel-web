@@ -175,6 +175,9 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                 this.unstickit();
             });
 
+            // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
+            $.ajaxSetup({ cache: false });
+
             window.isWebkit = navigator.userAgent.indexOf('AppleWebKit/') !== -1;
 
             var app = new AppRouter();

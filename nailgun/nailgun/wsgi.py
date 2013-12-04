@@ -68,12 +68,7 @@ def run_server(func, server_address=('0.0.0.0', 8080)):
 
 
 def appstart(keepalive=False):
-    logger.info("Fuel-Web {0} SHA: {1}\nFuel SHA: {2}".format(
-        settings.VERSION['release'],
-        settings.VERSION['nailgun_sha'],
-        settings.VERSION['fuellib_sha'],
-        settings.VERSION['ostf_sha']
-    ))
+    logger.info("Fuel version: %s" % str(settings.VERSION))
     if not engine.dialect.has_table(engine.connect(), "nodes"):
         logger.error(
             "Database tables not created. Try './manage.py syncdb' first"

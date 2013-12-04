@@ -21,11 +21,12 @@ define(
     'views/dialogs',
     'text!templates/cluster/network_tab.html',
     'text!templates/cluster/network.html',
+    'text!templates/cluster/range_field.html',
     'text!templates/cluster/nova_nameservers.html',
     'text!templates/cluster/neutron_parameters.html',
     'text!templates/cluster/verify_network_control.html'
 ],
-function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, novaNetworkConfigurationTemplate, neutronParametersTemplate, networkTabVerificationControlTemplate) {
+function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTemplate, rangeTemplate, novaNetworkConfigurationTemplate, neutronParametersTemplate, networkTabVerificationControlTemplate) {
     'use strict';
     var NetworkTab, Network, NeutronConfiguration, NovaNetworkConfiguration, NetworkTabVerificationControl;
 
@@ -34,11 +35,11 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         updateInterval: 3000,
         hasChanges: false,
         events: {
-            'change .net-manager input': 'changeManager',
             'click .verify-networks-btn:not([disabled])': 'verifyNetworks',
             'click .btn-revert-changes:not([disabled])': 'revertChanges',
             'click .apply-btn:not([disabled])': 'applyChanges'
         },
+        bindings: {'input[name=net-manager]': 'net_manager'},
         defaultButtonsState: function(errors) {
             this.$('.btn.verify-networks-btn').attr('disabled', errors);
             this.$('.btn.btn-revert-changes').attr('disabled', !this.hasChanges && !errors);
@@ -58,10 +59,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.hasChanges = !_.isEqual(this.model.get('networkConfiguration').toJSON(), this.networkConfiguration.toJSON());
             this.defaultButtonsState(!!this.networkConfiguration.validationError);
         },
-        changeManager: function(e) {
-            this.$('.net-manager input').attr('checked', function(el, oldAttr) {return !oldAttr;});
-            this.networkConfiguration.set({net_manager: this.$(e.currentTarget).val()});
-            this.networkConfiguration.get('networks').findWhere({name: 'fixed'}).set({amount: this.$(e.currentTarget).val() == 'VlanManager' ? this.fixedAmount : 1});
+        changeManager: function(networkConfiguration, net_manager) {
+            networkConfiguration.get('networks').findWhere({name: 'fixed'}).set({amount: net_manager == 'VlanManager' ? this.fixedAmount : 1});
             this.renderNetworks();
             this.updateNetworkConfiguration();
         },
@@ -168,10 +167,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 _.each(errors.networks, _.bind(function(networkErrors, network) {
                     _.each(networkErrors, _.bind(function(error, field) {
                         if (field != 'ip_ranges') {
-                            this.$('input[name=' + network + '-' + field + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
+                            this.$('.' + network + ' input[name=' + field + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
                         } else {
                             _.each(networkErrors.ip_ranges, _.bind(function(range) {
-                                var row = this.$('.' + network + ' .ip-range-row:eq(' + range.index + ')');
+                                var row = this.$('.' + network + ' .ip-range-rows .range-row:eq(' + range.index + ')');
                                 row.find('input:first').toggleClass('error', !!range.start);
                                 row.find('input:last').toggleClass('error', !!range.end);
                                 row.find('.help-inline').text(range.start || range.end);
@@ -180,6 +179,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     }, this));
                 }, this));
             }, this);
+            this.networkConfiguration.on('change:net_manager', this.changeManager, this);
         },
         updateNetworkConfiguration: function() {
             this.$('input[type=text]').removeClass('error').parents('.network-attribute').find('.help-inline').text('');
@@ -213,7 +213,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                         this.$('div[data-network-id=' + failedNetwork.id + ']').find('.' + field).children().addClass('error');
                     }, this);
                    _.each(failedNetwork.range_errors, function (idx) {
-                        this.$('div[data-network-id=' + failedNetwork.id + ']').find('.ip-range-row:eq('+idx+') input').addClass('error');
+                        this.$('div[data-network-id=' + failedNetwork.id + ']').find('.range-row:eq('+idx+') input').addClass('error');
                     }, this);
                 }, this);
             }
@@ -241,7 +241,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         renderNovaNetworkConfiguration: function() {
             if (this.model.get('net_provider') == 'nova_network' && this.networkConfiguration.get('dns_nameservers')) {
                 var novaNetworkConfigurationView = new NovaNetworkConfiguration({
-                    novaNetworkConfiguration: this.networkConfiguration.get('dns_nameservers'),
+                    configuration: this.networkConfiguration.get('dns_nameservers'),
                     tab: this
                 });
                 this.registerSubView(novaNetworkConfigurationView);
@@ -251,7 +251,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         renderNeutronConfiguration: function() {
             if (this.model.get('net_provider') == 'neutron' && this.networkConfiguration.get('neutron_parameters')) {
                 var neutronConfigurationView = new NeutronConfiguration({
-                    neutronParameters: this.networkConfiguration.get('neutron_parameters'),
+                    configuration: this.networkConfiguration.get('neutron_parameters'),
                     tab: this
                 });
                 this.registerSubView(neutronConfigurationView);
@@ -262,12 +262,12 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$el.html(this.template({
                 loading: this.loading,
                 net_provider: this.model.get('net_provider'),
-                net_manager: this.networkConfiguration.get('net_manager'),
                 hasChanges: this.hasChanges,
                 locked: this.isLocked(),
                 verificationLocked: this.isVerificationLocked(),
                 segment_type: this.model.get("net_segment_type")
             })).i18n();
+            this.stickit(this.networkConfiguration);
             this.renderNetworks();
             this.renderNovaNetworkConfiguration();
             this.renderNeutronConfiguration();
@@ -278,150 +278,232 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
 
     Network = Backbone.View.extend({
         template: _.template(networkTemplate),
+        rangeTemplate: _.template(rangeTemplate),
         events: {
-            'keyup input[type=text]': 'changeNetwork',
-            'change select': 'changeNetwork',
-            'change .use-vlan-tagging': 'changeNetwork',
             'click .ip-ranges-add:not([disabled])': 'addIPRange',
             'click .ip-ranges-delete:not([disabled])': 'deleteIPRange'
         },
-        setupVlanEnd: function() {
-            if (this.network.get('name') == 'fixed') {
-                var vlanEnd = '';
-                var errors;
-                try {
-                    errors = this.tab.networkConfiguration.validationError.networks.fixed;
-                } catch(ignore) {}
-                if (!errors || (!errors.amount && !errors.vlan_start)) {
-                    vlanEnd = (this.network.get('vlan_start') + this.network.get('amount') - 1);
-                    vlanEnd = vlanEnd > 4094 ? 4094 : vlanEnd;
+        stickitNetwork: function() {
+            var bindings = {
+                '.cidr input': 'cidr',
+                '.netmask input': 'netmask',
+                '.gateway input': 'gateway',
+                '.amount input': {
+                    observe: 'amount',
+                    onSet: function(value) {
+                        return Number(value);
+                    }
+                },
+                '.fixed select[name=network_size]': {
+                    observe: 'network_size',
+                    selectOptions: {
+                        collection: function() {
+                            return _.map([8, 16, 32, 64, 128, 256, 512, 1024, 2048], function(size) {
+                                return {value: size, label: size};
+                            });
+                        }
+                    }
+                },
+                '.use-vlan-tagging': {
+                    observe: 'vlan_start',
+                    onGet: function(value) {
+                        return !_.isNull(value);
+                    },
+                    onSet: function(value) {
+                        return value ? '' : null;
+                    },
+                    attributes: [{
+                        name: 'disabled',
+                        observe: 'name',
+                        onGet: function(value) {
+                            return value == 'floating';
+                        }
+                    }]
+                },
+                'input.vlan': {
+                    observe: 'vlan_start',
+                    onGet: function(value) {
+                        this.$('input.vlan').toggle(!_.isNull(value));
+                        return value;
+                    },
+                    onSet: function(value) {
+                        return Number(value);
+                    },
+                    attributes: [{
+                        name: 'disabled',
+                        observe: 'name',
+                        onGet: function(value) {
+                            return value == 'floating';
+                        }
+                    }]
+                },
+                '.fixed input[name=vlan_end]': {
+                    observe: ['vlan_start', 'amount'],
+                    onGet: function(value) {
+                        var vlanEnd = value[0] + value[1] - 1;
+                        return vlanEnd > 4094 ? 4094 : vlanEnd;
+                    }
                 }
-                this.$('input[name=fixed-vlan_end]').val(vlanEnd);
+            };
+            this.stickit(this.network, bindings);
+        },
+        updateFloatingVlan: function(network, vlan) {
+            if (network.get('name') == 'public' && this.tab.model.get('net_provider') == 'nova_network') {
+                this.tab.networkConfiguration.get('networks').findWhere({name: 'floating'}).set({vlan_start: vlan || ''});
             }
         },
-        updateFloatingVlanFromPublic: function() {
-            if (this.network.get('name') == 'public' && this.tab.model.get('net_provider') == 'nova_network') {
-                var vlan = this.network.get('vlan_start');
-                this.tab.networkConfiguration.get('networks').findWhere({name: 'floating'}).set({vlan_start: vlan});
-                this.tab.$('div.floating').find('.use-vlan-tagging').prop('checked', !_.isNull(vlan));
-                this.tab.$('div.floating').find('.vlan_start').toggle(!_.isNull(vlan)).find('input').val(vlan || '');
+        updateFixedAmount: function(network, amount) {
+            if (this.tab.networkConfiguration.get('net_manager') == 'VlanManager' && network.get('name') == 'fixed') {
+                this.tab.fixedAmount = amount; 
             }
         },
-        getIpRangesFromForm: function() {
-            var ipRanges = [];
-            this.$('.ip-range-row').each(function(i, row) {
-                ipRanges.push([$(row).find('input:first').val(), $(row).find('input:last').val()]);
-            });
-            return ipRanges;
-        },
-        composeIpRangesRows: function(target, addRange) {
-           if (!_.isUndefined(addRange)) {
-                var row = target.parents('.ip-range-row');
-                if (addRange) {
-                    var newRow = row.clone();
-                    newRow.find('input').val('');
-                    row.after(newRow);
-                    row.parent().find('.ip-ranges-delete').parent().removeClass('hide');
-                } else {
-                    row.parent().find('.ip-ranges-delete').parent().toggleClass('hide', row.siblings('.ip-range-row').length == 1);
-                    row.remove();
-                }
+        changeIpRanges: function(e, addRange) {
+            var index = this.$('.range-row').index($(e.currentTarget).parents('.range-row'));
+            var ipRanges = _.clone(this.network.get('ip_ranges'));
+            if (addRange) {
+                ipRanges.splice(index + 1, 0, ['','']);
+            } else {
+                ipRanges.splice(index, 1);
             }
-        },
-        changeNetwork: function(e, addRange) {
-            var target = $(e.currentTarget);
-            this.composeIpRangesRows(target, addRange);
-            if (target.hasClass('use-vlan-tagging')) { // toggle VLAN ID input field on checkbox
-                target.parents('.range-row').find('.parameter-control:last').toggle(target.is(':checked'));
-            }
-            if (target.attr('name') == 'fixed-amount') {// storing fixedAmount
-                this.tab.fixedAmount = parseInt(target.val(), 10) || this.tab.fixedAmount;
-            }
-            var fixedNetworkOnVlanManager = this.tab.networkConfiguration.get('net_manager') == 'VlanManager' && this.network.get('name') == 'fixed';
-            this.network.set({
-                ip_ranges: this.getIpRangesFromForm(),
-                cidr: $.trim(this.$('.cidr input').val()),
-                vlan_start: fixedNetworkOnVlanManager || this.$('.use-vlan-tagging:checked').length ? Number(this.$('.vlan_start input').val()) : null,
-                netmask: $.trim(this.$('.netmask input').val()),
-                gateway: $.trim(this.$('.gateway input').val()) || null,
-                amount: fixedNetworkOnVlanManager ? Number(this.$('input[name=fixed-amount]').val()) : 1,
-                network_size: this.network.get('name') == 'fixed' ? Number(this.$('.network_size select').val()) : utils.calculateNetworkSize(this.$('.cidr input').val())
-            });
-            this.updateFloatingVlanFromPublic();
-            this.tab.updateNetworkConfiguration();
-            this.setupVlanEnd();
+            this.network.set({ip_ranges: ipRanges});
+            this.renderIpRanges();
         },
         addIPRange: function(e) {
-            this.changeNetwork(e, true);
+            this.changeIpRanges(e, true);
         },
         deleteIPRange: function(e) {
-            this.changeNetwork(e, false);
+            this.changeIpRanges(e, false);
         },
         initialize: function(options) {
             _.defaults(this, options);
+            this.network.on('change:vlan_start', this.updateFloatingVlan, this);
+            this.network.on('change:amount', this.updateFixedAmount, this);
+            this.network.on('change', this.tab.updateNetworkConfiguration, this.tab);
+        },
+        renderIpRanges: function() {
+            this.$('.ip-ranges-rows').empty();
+            _.each(this.network.get('ip_ranges'), function(range, i) {
+                this.$('.ip-ranges-rows').append(this.rangeTemplate({
+                    index: i,
+                    rangeControls: true,
+                    removalPossible: i < this.network.get('ip_ranges').length - 1,
+                    locked: this.tab.isLocked()
+                }));
+                var ipRangeBindings = {};
+                _.each(range, function(ip, index) {
+                    ipRangeBindings['.ip-ranges-rows .range' + index + '[data-range=' + i + ']'] = {
+                        observe: 'ip_ranges',
+                        stickitChange: i,
+                        onGet: function(value) {
+                            return value[i][index];
+                        },
+                        onSet: _.bind(function(value, options) {
+                            var ipRanges = this.network.get('ip_ranges');
+                            ipRanges[options.stickitChange][index] = value;
+                            return ipRanges;
+                        }, this)
+                    };
+                }, this);
+                this.stickit(this.network, ipRangeBindings);
+            }, this);
         },
         render: function() {
             this.$el.html(this.template({
                 network: this.network,
-                net_provider: this.tab.model.get('net_provider'),
                 net_manager: this.tab.networkConfiguration.get('net_manager'),
+                shownAttributes: this.network.getAttributes(this.tab.model.get('net_provider')),
                 locked: this.tab.isLocked()
             })).i18n();
+            this.renderIpRanges();
+            this.stickitNetwork();
             return this;
         }
     });
 
     NovaNetworkConfiguration = Backbone.View.extend({
         template: _.template(novaNetworkConfigurationTemplate),
-        events: {
-            'keyup input[type=text]': 'onChange'
-        },
-        onChange: function() {
-            this.novaNetworkConfiguration.set({nameservers: [$.trim(this.$('input[name=nameserver-0]').val()), $.trim(this.$('input[name=nameserver-1]').val())]});
-            this.tab.updateNetworkConfiguration();
-        },
+        rangeTemplate: _.template(rangeTemplate),
         initialize: function(options) {
             _.defaults(this, options);
+            this.configuration.on('change', this.tab.updateNetworkConfiguration, this.tab);
+        },
+        stickitNameservers: function() {
+            var bindings = {};
+            _.each(this.configuration.get('nameservers'), function(nameserver, i) {
+                bindings['.nameservers-row input.range' + i] = {
+                    observe: 'nameservers',
+                    stickitChange: i,
+                    onGet: function(value) {return value[i];},
+                    onSet: _.bind(function(value, options) {
+                        var nameservers = this.configuration.get('nameservers');
+                        nameservers[options.stickitChange] = value;
+                        return nameservers;
+                    }, this)
+                };
+            }, this);
+            this.stickit(this.configuration, bindings);
         },
         render: function() {
-            this.$el.html(this.template({
-                nameservers: this.novaNetworkConfiguration.get('nameservers'),
-                locked: this.tab.isLocked()
-            })).i18n();
+            this.$el.html(this.template()).i18n();
+            this.$('.nameservers-row').html(this.rangeTemplate({locked: this.tab.isLocked()}));
+            this.stickitNameservers();
             return this;
         }
     });
 
     NeutronConfiguration = Backbone.View.extend({
         template: _.template(neutronParametersTemplate),
-        events: {
-            'keyup input[type=text]': 'changeConfiguration'
-        },
-        changeConfiguration: function(e) {
-            var l2 = _.cloneDeep(this.neutronParameters.get('L2'));
-            l2.base_mac = $.trim(this.$('input[name=base_mac]').val());
-            var idRange = [Number(this.$('input[name=id_start]').val()), Number(this.$('input[name=id_end]').val())];
-            if (this.neutronParameters.get('segmentation_type') == 'gre') {
-                l2.tunnel_id_ranges = idRange;
-            } else {
-                l2.phys_nets.physnet2.vlan_range = idRange;
-            }
-            var predefined_networks = _.cloneDeep(this.neutronParameters.get('predefined_networks'));
-            predefined_networks.net04_ext.L3.floating = [$.trim(this.$('input[name=floating_start]').val()), $.trim(this.$('input[name=floating_end]').val())];
-            predefined_networks.net04.L3.cidr = $.trim(this.$('input[name=cidr-int]').val());
-            predefined_networks.net04.L3.gateway = $.trim(this.$('input[name=gateway]').val());
-            predefined_networks.net04.L3.nameservers = [$.trim(this.$('input[name=nameserver-0]').val()), $.trim(this.$('input[name=nameserver-1]').val())];
-            this.neutronParameters.set({L2: l2, predefined_networks: predefined_networks});
-            this.tab.updateNetworkConfiguration();
-        },
+        rangeTemplate: _.template(rangeTemplate),
         initialize: function(options) {
             _.defaults(this, options);
+            this.configuration.on('change', this.tab.updateNetworkConfiguration, this.tab);
+        },
+        getIdRange: function() {
+            return this.configuration.get('segmentation_type') == 'gre' ? this.configuration.get('L2').tunnel_id_ranges : this.configuration.get('L2').phys_nets.physnet2.vlan_range;
+        },
+        stickitConfiguration: function() {
+            var bindings = {
+                'input[name=base_mac]': 'L2.base_mac',
+                'input[name=cidr-int]': 'predefined_networks.net04.L3.cidr',
+                'input[name=gateway]': 'predefined_networks.net04.L3.gateway'
+            };
+            _.each(this.getIdRange(), function(id, i) {
+                bindings['input[name=id' + i + ']'] = {
+                    observe: ['L2.tunnel_id_ranges', 'L2.phys_nets.physnet2.vlan_range'],
+                    stickitChange: i,
+                    onGet: function(value) {return value[0] ? value[0][i] : value[1][i];},
+                    onSet: _.bind(function(value, options) {
+                        var range = this.getIdRange();
+                        range[options.stickitChange] = Number(value) || '';
+                        return range;
+                    }, this)
+                };
+            }, this);
+            this.composeRangeBindings(this.configuration.get('predefined_networks').net04_ext.L3.floating, '.floating-row', 'predefined_networks.net04_ext.L3.floating', bindings);
+            this.composeRangeBindings(this.configuration.get('predefined_networks').net04.L3.nameservers, '.nameservers-row', 'predefined_networks.net04.L3.nameservers', bindings);
+            this.stickit(this.configuration, bindings);
+        },
+        composeRangeBindings: function(range, domSelector, attribute, bindings) {
+            _.each(range, function(el, i) {
+                bindings[domSelector + ' input.range' + i] = {
+                    observe: attribute,
+                    stickitChange: i,
+                    onGet: function(value) {return value[i];},
+                    onSet: function(value, options) {
+                        range[options.stickitChange] = value;
+                        return range;
+                    }
+                };
+            });
         },
         render: function() {
             this.$el.html(this.template({
-                neutronParameters: this.neutronParameters,
+                segmentation: this.configuration.get('segmentation_type'),
                 locked: this.tab.isLocked()
             })).i18n();
+            this.$('.floating-row').html(this.rangeTemplate({locked: this.tab.isLocked()}));
+            this.$('.nameservers-row').html(this.rangeTemplate({locked: this.tab.isLocked()}));
+            this.stickitConfiguration();
             return this;
         }
     });

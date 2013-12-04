@@ -457,7 +457,7 @@ define(['utils', 'deepModel'], function(utils) {
         }
     });
 
-    models.NeutronConfiguration = Backbone.Model.extend({
+    models.NeutronConfiguration = Backbone.DeepModel.extend({
         constructorName: 'NeutronConfiguration'
     });
 
@@ -579,17 +579,17 @@ define(['utils', 'deepModel'], function(utils) {
                 var idRange = segmentation == 'gre' ? config.tunnel_id_ranges : config.phys_nets.physnet2.vlan_range;
                 var maxId = segmentation == 'gre' ? 65535 : 4094;
                 if (!utils.isNaturalNumber(idRange[0]) || idRange[0] < 2 || idRange[0] > maxId) {
-                    neutronErrors.id_start = $.t('cluster_page.network_tab.validation.invalid_id_start');
+                    neutronErrors.id0 = $.t('cluster_page.network_tab.validation.invalid_id_start');
                 } else if (!utils.isNaturalNumber(idRange[1]) || idRange[1] < 2 || idRange[1] > maxId) {
-                    neutronErrors.id_end = $.t('cluster_page.network_tab.validation.invalid_id_end');
+                    neutronErrors.id1 = $.t('cluster_page.network_tab.validation.invalid_id_end');
                 } else if (idRange[0] > idRange[1]) {
-                    neutronErrors.id_start = $.t('cluster_page.network_tab.validation.invalid_id_range');
+                    neutronErrors.id0 = $.t('cluster_page.network_tab.validation.invalid_id_range');
                 } else if (segmentation == 'vlan') {
                     _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
                         if (utils.validateVlanRange(idRange[0], idRange[1], vlan)) {
-                            neutronErrors.id_start = $.t('cluster_page.network_tab.validation.id_intersection');
+                            neutronErrors.id0 = $.t('cluster_page.network_tab.validation.id_intersection');
                         }
-                        return neutronErrors.id_start;
+                        return neutronErrors.id0;
                     });
                 }
                 if (config.base_mac == '' || !(_.isString(config.base_mac) && config.base_mac.match(utils.regexes.mac))) {

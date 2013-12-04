@@ -102,6 +102,8 @@ LOG_GROUPS:
     group: 'Other install logs'
   - &bootstrap_log_group
     group: 'Bootstrap logs'
+  - &os_log_group
+    group: 'Openstack logs'
 
 LOGS:
 # Master node logs.

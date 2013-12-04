@@ -10,7 +10,7 @@
             <label class="parameter-box clearfix">
               <div class="parameter-control">
                 <div class="custom-tumbler">
-                  <input type="radio" value="<%= manager %>" name="net-manager" <%= net_manager == manager ? 'checked' : '' %> <%= locked ? 'disabled' : '' %>>
+                  <input type="radio" name="net-manager" value="<%- manager %>" <%= locked ? 'disabled' : '' %>>
                   <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
                 </div>
               </div>

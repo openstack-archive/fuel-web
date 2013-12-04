@@ -54,7 +54,7 @@ define(['utils', 'deepModel'], function(utils) {
             return _.isEmpty(errors) ? null : errors;
         },
         groupings: function() {
-            return {roles: 'Roles', hardware: 'Hardware Info', both: 'Roles and hardware info'};
+            return {roles: $.t('cluster_page.nodes_tab.roles'), hardware: $.t('cluster_page.nodes_tab.hardware_info'), both: $.t('cluster_page.nodes_tab.roles_and_hardware_info')};
         },
         task: function(taskName, status) {
             return this.get('tasks') && this.get('tasks').findTask({name: taskName, status: status});

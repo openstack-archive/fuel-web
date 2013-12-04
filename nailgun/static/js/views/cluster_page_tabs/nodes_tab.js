@@ -1020,8 +1020,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         checkForChanges: function() {
             this.updateButtonsState(this.isLocked());
-            this.applyChangesButton.set('disabled', this.isLocked() || !this.checkForUnappliedChanges() || this.hasValidationErrors());
-            this.cancelChangesButton.set('disabled', this.isLocked() || (!this.checkForUnappliedChanges() && !this.hasValidationErrors()));
+            this.applyChangesButton.set('disabled', this.isLocked() || !this.hasChanges() || this.hasValidationErrors());
+            this.cancelChangesButton.set('disabled', this.isLocked() || (!this.hasChanges() && !this.hasValidationErrors()));
         },
         loadDefaults: function() {
             this.disableControls(true);
@@ -1271,7 +1271,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         disableControls: function(disable) {
             this.updateButtonsState(disable || this.isLocked());
         },
-        checkForUnappliedChanges: function() {
+        checkForNodeNetworksChange: function() {
             var noChanges = true;
             var networks = this.interfaces.getAssignedNetworks();
             this.nodes.each(function(node) {
@@ -1284,10 +1284,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
         },
         hasChanges: function() {
-            return this.checkForUnappliedChanges() && this.hasDragged;
+            return this.checkForNodeNetworksChange() && this.hasDragged;
         },
         checkForChanges: function() {
-            this.updateButtonsState(this.isLocked() || !this.checkForUnappliedChanges());
+            this.updateButtonsState(this.isLocked() || !this.checkForNodeNetworksChange());
             this.loadDefaultsButton.set('disabled', this.isLocked());
         },
         loadDefaults: function() {

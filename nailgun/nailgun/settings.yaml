@@ -299,48 +299,48 @@ LOGS:
     <<: *remote_syslog_log_format
     <<: *os_log_group
     path: "glance-registry.log"
-  - id: 'os/quantum-server'
-    name: "quantum-server"
+  - id: 'os/neutron-server'
+    name: "neutron-server"
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *os_log_group
-    path: "quantum-server.log"
-  - id: 'os/quantum-ovs-cleanup'
-    name: "quantum-ovs-cleanup"
+    path: "neutron-server.log"
+  - id: 'os/neutron-ovs-cleanup'
+    name: "neutron-ovs-cleanup"
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *os_log_group
-    path: "quantum-ovs-cleanup.log"
-  - id: 'os/quantum-rescheduling'
-    name: "quantum-rescheduling"
+    path: "neutron-ovs-cleanup.log"
+  - id: 'os/neutron-rescheduling'
+    name: "neutron-rescheduling"
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *os_log_group
-    path: "quantum-rescheduling.log"
-  - id: 'os/quantum-ovs-agent'
-    name: "quantum-ovs-agent"
+    path: "neutron-rescheduling.log"
+  - id: 'os/neutron-ovs-agent'
+    name: "neutron-ovs-agent"
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *os_log_group
-    path: "quantum-ovs-agent.log"
-  - id: 'os/quantum-l3-agent'
-    name: "quantum-l3-agent"
+    path: "neutron-ovs-agent.log"
+  - id: 'os/neutron-l3-agent'
+    name: "neutron-l3-agent"
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *os_log_group
-    path: "quantum-l3-agent.log"
-  - id: 'os/quantum-dhcp-agent'
-    name: "quantum-dhcp-agent"
+    path: "neutron-l3-agent.log"
+  - id: 'os/neutron-dhcp-agent'
+    name: "neutron-dhcp-agent"
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *os_log_group
-    path: "quantum-dhcp-agent.log"
-  - id: 'os/quantum-metadata-agent'
-    name: "quantum-metadata-agent"
+    path: "neutron-dhcp-agent.log"
+  - id: 'os/neutron-metadata-agent'
+    name: "neutron-metadata-agent"
     <<: *remote_log_type
     <<: *remote_syslog_log_format
     <<: *os_log_group
-    path: "quantum-metadata-agent.log"
+    path: "neutron-metadata-agent.log"
 
 LOGS_TO_PACK_FOR_SUPPORT:
   logs: '/var/log'

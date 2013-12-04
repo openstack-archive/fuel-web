@@ -1,11 +1,8 @@
-<% var shownAttributes = network.getAttributes(net_provider) %>
 <% if (shownAttributes.length) { %>
 
-  <% var networkName = network.get('name') %>
-  <legend class="networks"><%- $.t('network.' + networkName) %></legend>
+  <legend class="networks"><%- $.t('network.' + network.get('name')) %></legend>
 
   <% var disabled = locked ? 'disabled' : '' %>
-  <% var vlanManager = net_manager == 'VlanManager' ? '' : 'hide' %>
   <% var labels = {
     'ip_ranges': $.t('cluster_page.network_tab.network_parameters.ip_range'),
     'vlan_start': $.t('cluster_page.network_tab.network_parameters.vlan_id'),
@@ -17,98 +14,67 @@
     'vlan_range': $.t('cluster_page.network_tab.network_parameters.vlan_id_range')
   } %>
 
-  <div data-network-id="<%- network.id %>" class="<%- networkName %>">
-    <% var attributes = _.sortBy(_.keys(network.attributes), function(attribute) {return _.indexOf(shownAttributes, attribute)}) %>
-    <% _.each(attributes, function(attribute) { %>
-      <div class="network-attribute">
-      <% var hidden = _.contains(shownAttributes, attribute) ? '' : 'hide' %>
-      <% if (attribute == 'ip_ranges') { %>
-        <div class="range-row-header <%= hidden %>">
-          <div data-i18n="cluster_page.network_tab.range_start"></div>
-          <div data-i18n="cluster_page.network_tab.range_end"></div>
-        </div>
-        <div class="networks-sub-title parameter-name range-name <%= hidden %>"><%= labels[attribute] %></div>
-        <% _.each(network.get(attribute), function(ip_range) { %>
-          <div class="range-row ip-range-row clearfix <%= hidden %>">
+  <div data-network-id="<%- network.id %>" class="<%- network.get('name') %>">
+    <% _.each(shownAttributes, function(attribute) { %>
+      <div class="network-attribute <%= attribute %> <%= _.contains(shownAttributes, attribute) ? '' : 'hide' %>">
+        <% if (attribute == 'ip_ranges') { %>
+          <div class="range-row-header">
+            <div data-i18n="cluster_page.network_tab.range_start"></div>
+            <div data-i18n="cluster_page.network_tab.range_end"></div>
+          </div>
+          <div class="networks-sub-title parameter-name range-name"><%= labels[attribute] %></div>
+          <div class="ip-ranges-rows"></div>
+        <% } else if (attribute == 'vlan_start') { %>
+          <% if (net_manager == 'VlanManager' && network.get('name') == 'fixed') { %>
+            <div class="range-row-header mini">
+              <div data-i18n="cluster_page.network_tab.range_start"></div>
+              <div data-i18n="cluster_page.network_tab.range_end"></div>
+            </div>
             <label class="parameter-box clearfix setting">
-              <div class="parameter-control <%- attribute %>">
-                <input type="text" name="<%- attribute %>-start" placeholder="127.0.0.1" value="<%- _.first(ip_range) %>" <%= disabled %> />
+              <div class="networks-sub-title parameter-name"><%= labels.vlan_range %></div>
+              <div class="range-row">
+                <div class="parameter-control vlan_start">
+                  <input type="text" class="vlan mini range" name="<%- attribute %>" value="" <%= disabled %> />
+                </div>
+                <div class="parameter-control vlan_end">
+                  <input type="text" class="mini" name="vlan_end" value="" disabled />
+                </div>
+                <div class="error"><span class="help-inline"></span></div>
               </div>
             </label>
-            <label class="parameter-box clearfix setting">
-            <div class="parameter-control <%- attribute %>">
-              <input type="text" name="<%- attribute %>-end" placeholder="127.0.0.1" value="<%- _.last(ip_range) %>" <%= disabled %> />
-            </div>
-            </label>
-            <div class="ip-ranges-control">
-              <button class="btn btn-link ip-ranges ip-ranges-add" <%= disabled %>><i class="icon-plus-circle"></i></button>
-            </div>
-            <div class="ip-ranges-control <%= network.get(attribute).length > 1 ? '' : 'hide' %>">
-              <button class="btn btn-link ip-ranges ip-ranges-delete" <%= disabled %>><i class="icon-minus-circle"></i></button>
-            </div>
-            <div class="error"><span class="help-inline"></span></div>
-          </div>
-        <% }) %>
-      <% } else if (_.contains(['netmask', 'gateway', 'cidr', 'amount'], attribute)) { %>
-          <label class="parameter-box clearfix setting <%= hidden %> <%= vlanManager && attribute == 'amount' ? 'hide' : '' %>">
-            <div class="networks-sub-title parameter-name"><%= labels[attribute] %></div>
-            <div class="parameter-control <%- attribute %>">
-              <input type="text" class="<%= !vlanManager && attribute == 'amount' ? 'range' : '' %>" name="<%- networkName %>-<%- attribute %>" value="<%- network.get(attribute) %>" <%= disabled %> />
-            </div>
-            <div class="error"><span class="help-inline"></span></div>
-          </label>
-      <% } else if (attribute == 'vlan_start') { %>
-        <% if (net_provider == 'nova_network' && !vlanManager && networkName == 'fixed') { %>
-          <div class="range-row-header mini <%= hidden %>">
-            <div data-i18n="cluster_page.network_tab.range_start">Start</div>
-            <div data-i18n="cluster_page.network_tab.range_end">End</div>
-          </div>
-          <label class="parameter-box clearfix setting">
-            <div class="networks-sub-title parameter-name"><%= labels.vlan_range %></div>
-            <div class="range-row">
-              <div class="parameter-control vlan_start">
-                <input type="text" class="mini range" name="<%- networkName %>-<%- attribute %>" value="<%- network.get(attribute) %>" <%= disabled %> />
-              </div>
-              <div class="parameter-control vlan_end">
-                <input type="text" class="mini" name="<%- networkName %>-vlan_end" value="<%= network.get(attribute) + network.get('amount') - 1 %>" disabled />
-              </div>
+          <% } else { %>
+            <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.network_parameters.use_vlan_tagging"></div>
+            <div class="range-row clearfix" style="height: 40px">
+              <label class="parameter-box clearfix setting">
+                <div class="parameter-control">
+                  <div class="custom-tumbler">
+                    <input type="checkbox" class="use-vlan-tagging" <%= disabled %>>
+                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                  </div>
+                </div>
+              </label>
+              <label class="parameter-box clearfix setting">
+                <div class="parameter-control <%- attribute %>">
+                  <input type="text" value="" name="<%- attribute %>" class="vlan vlan-tagging" <%= disabled %>>
+                </div>
+              </label>
               <div class="error"><span class="help-inline"></span></div>
             </div>
-          </label>
+          <% } %>
         <% } else { %>
-          <% var vlan = network.get(attribute) %>
-          <% var isFloating = networkName == 'floating' ? 'disabled' : '' %>
-          <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.network_parameters.use_vlan_tagging"></div>
-          <div class="range-row clearfix" style="height: 40px">
-            <label class="parameter-box clearfix setting">
-              <div class="parameter-control">
-                <div class="custom-tumbler">
-                  <input type="checkbox" class="use-vlan-tagging" <%= _.isNull(vlan) ? '' : 'checked' %> <%= isFloating || disabled %>>
-                  <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-                </div>
-              </div>
-            </label>
-            <label class="parameter-box clearfix setting">
-              <div class="parameter-control <%- attribute %>" <%= _.isNull(vlan) ? 'style="display:none"' : '' %>>
-                <input type="text" value="<%- _.isNull(vlan) ? '' : vlan %>" name="<%- networkName %>-<%- attribute %>" class="vlan-tagging" <%= isFloating || disabled %>>
-              </div>
-            </label>
+          <% var hidden = net_manager != 'VlanManager' && network.get('name') == 'fixed' && _.contains(['network_size', 'amount'], attribute); %>
+          <label class="parameter-box clearfix setting <%= hidden ? 'hide' : '' %>">
+            <div class="networks-sub-title parameter-name"><%= labels[attribute] %></div>
+            <div class="parameter-control <%- attribute %>">
+              <% if (attribute == 'network_size') { %>
+                <select name="<%- attribute %>" <%= disabled %>></select>
+              <% } else { %>
+                <input type="text" name="<%- attribute %>" value="" <%= disabled %> />
+              <% } %>
+            </div>
             <div class="error"><span class="help-inline"></span></div>
-          </div>
+          </label>
         <% } %>
-      <% } else if (attribute == 'network_size') { %>
-        <label class="parameter-box clearfix setting <%= hidden %> <%= vlanManager %>">
-          <div class="networks-sub-title parameter-name"><%= labels[attribute] %></div>
-          <div class="parameter-control <%- attribute %>">
-            <select name="<%- networkName %>-<%- attribute %>" <%= disabled %>>
-              <% _.each([8, 16, 32, 64, 128, 256, 512, 1024, 2048], function(size) { %>
-                <option value="<%= size %>" <%= network.get('network_size') == size ? 'selected' : '' %>><%= size %></option>
-              <% }) %>
-            </select>
-          </div>
-          <div class="error"><span class="help-inline"></span></div>
-        </label>
-      <% } %>
       </div>
     <% }) %>
   </div>

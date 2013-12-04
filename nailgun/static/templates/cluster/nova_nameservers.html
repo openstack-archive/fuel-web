@@ -1,17 +1,8 @@
-<% var disabled = locked ? 'disabled' : '' %>
 <div>
-  <legend class="networks dns-servers">DNS Servers</legend>
+  <legend class="networks dns-servers" data-i18n="cluster_page.network_tab.nova.dns_servers"></legend>
     <div class="network-attribute">
-      <div class="networks-sub-title parameter-name">Name servers</div>
-      <div class="range-row clearfix">
-        <label class="parameter-box clearfix">
-          <div class="parameter-control"><input type="text" value="<%- nameservers[0] %>" class="nameserver" name="nameserver-0" <%= disabled %> /></div>
-        </label>
-        <label class="parameter-box clearfix">
-          <div class="parameter-control"><input type="text" value="<%- nameservers[1] %>" class="nameserver" name="nameserver-1" <%= disabled %> /></div>
-        </label>
-        <div class="error"><span class="help-inline"></span></div>
-      </div>
+      <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.nova.name_servers"></div>
+      <div class="nameservers-row"></div>
     </div>
   </div>
 </div>

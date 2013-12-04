@@ -450,7 +450,7 @@ define(['utils', 'deepModel'], function(utils) {
         }
     });
 
-    models.NeutronConfiguration = Backbone.Model.extend({
+    models.NeutronConfiguration = Backbone.DeepModel.extend({
         constructorName: 'NeutronConfiguration'
     });
 
@@ -555,7 +555,7 @@ define(['utils', 'deepModel'], function(utils) {
             if (netProvider == 'nova_network') {
                 _.each(attrs.dns_nameservers.get('nameservers'), function(nameserver, i) {
                     if (utils.validateIP(nameserver)) {
-                        novaNetworkErrors['nameserver-' + i] =  $.t('cluster_page.network_tab.validation.invalid_nameserver');
+                        novaNetworkErrors['nameservers-' + i] =  $.t('cluster_page.network_tab.validation.invalid_nameserver');
                     }
                 });
             }
@@ -572,17 +572,17 @@ define(['utils', 'deepModel'], function(utils) {
                 var idRange = segmentation == 'gre' ? config.tunnel_id_ranges : config.phys_nets.physnet2.vlan_range;
                 var maxId = segmentation == 'gre' ? 65535 : 4094;
                 if (!utils.isNaturalNumber(idRange[0]) || idRange[0] < 2 || idRange[0] > maxId) {
-                    neutronErrors.id_start = $.t('cluster_page.network_tab.validation.invalid_id_start');
+                    neutronErrors.id0 = $.t('cluster_page.network_tab.validation.invalid_id_start');
                 } else if (!utils.isNaturalNumber(idRange[1]) || idRange[1] < 2 || idRange[1] > maxId) {
-                    neutronErrors.id_end = $.t('cluster_page.network_tab.validation.invalid_id_end');
+                    neutronErrors.id1 = $.t('cluster_page.network_tab.validation.invalid_id_end');
                 } else if (idRange[0] > idRange[1]) {
-                    neutronErrors.id_start = $.t('cluster_page.network_tab.validation.invalid_id_range');
+                    neutronErrors.id0 = $.t('cluster_page.network_tab.validation.invalid_id_range');
                 } else if (segmentation == 'vlan') {
                     _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
                         if (utils.validateVlanRange(idRange[0], idRange[1], vlan)) {
-                            neutronErrors.id_start = $.t('cluster_page.network_tab.validation.id_intersection');
+                            neutronErrors.id0 = $.t('cluster_page.network_tab.validation.id_intersection');
                         }
-                        return neutronErrors.id_start;
+                        return neutronErrors.id0;
                     });
                 }
                 if (config.base_mac == '' || !(_.isString(config.base_mac) && config.base_mac.match(utils.regexes.mac))) {
@@ -600,19 +600,19 @@ define(['utils', 'deepModel'], function(utils) {
                 }
                 var floatingIpRange = config.net04_ext.L3.floating;
                 if (utils.validateIP(floatingIpRange[0])) {
-                    neutronErrors.floating_start = $.t('cluster_page.network_tab.validation.invalid_ip_start');
+                    neutronErrors['floating-0'] = $.t('cluster_page.network_tab.validation.invalid_ip_start');
                 } else if (publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, floatingIpRange[0])) {
-                    neutronErrors.floating_start = $.t('cluster_page.network_tab.validation.ip_start_is_out_of_ip_range');
+                    neutronErrors['floating-0'] = $.t('cluster_page.network_tab.validation.ip_start_is_out_of_ip_range');
                 } else if (utils.validateIP(floatingIpRange[1])) {
-                    neutronErrors.floating_end = $.t('cluster_page.network_tab.validation.invalid_ip_end');
+                    neutronErrors['floating-1'] = $.t('cluster_page.network_tab.validation.invalid_ip_end');
                 } else if (publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, floatingIpRange[1])) {
-                    neutronErrors.floating_end = $.t('cluster_page.network_tab.validation.ip_end_is_out_of_ip_range');
+                    neutronErrors['floating-1'] = $.t('cluster_page.network_tab.validation.ip_end_is_out_of_ip_range');
                 } else if (!utils.validateIPrange(floatingIpRange[0], floatingIpRange[1])) {
-                    neutronErrors.floating_start = $.t('cluster_page.network_tab.validation.invalid_ip_range');
+                    neutronErrors['floating-0'] = $.t('cluster_page.network_tab.validation.invalid_ip_range');
                 }
                 _.each(config.net04.L3.nameservers, function(nameserver, i) {
                     if (utils.validateIP(nameserver)) {
-                        neutronErrors['nameserver-' + i] = $.t('cluster_page.network_tab.validation.invalid_nameserver');
+                        neutronErrors['nameservers-' + i] = $.t('cluster_page.network_tab.validation.invalid_nameserver');
                     }
                 });
             }

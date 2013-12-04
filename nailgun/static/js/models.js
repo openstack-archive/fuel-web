@@ -457,7 +457,7 @@ define(['utils', 'deepModel'], function(utils) {
         }
     });
 
-    models.NeutronConfiguration = Backbone.Model.extend({
+    models.NeutronConfiguration = Backbone.DeepModel.extend({
         constructorName: 'NeutronConfiguration'
     });
 

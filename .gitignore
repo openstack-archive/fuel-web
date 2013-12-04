@@ -24,6 +24,8 @@ lock
 node_modules
 nailgun/static/js/libs/bower
 
+nailgun/static/css/styles.css
+
 .idea
 .DS_Store
 

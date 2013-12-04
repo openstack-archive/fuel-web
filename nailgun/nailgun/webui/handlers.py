@@ -14,18 +14,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import jinja2
 import mimetypes
 import posixpath
 import web
 
 from nailgun.settings import settings
 
-render = web.template.render(settings.TEMPLATE_DIR)
-
 
 class IndexHandler(object):
     def GET(self):
-        return render.index()
+        tpl_path = posixpath.join(settings.TEMPLATE_DIR, 'index.html')
+        with open(tpl_path, 'r') as f:
+            tpl = jinja2.Template(f.read())
+            return tpl.render(**{
+                'use_less': bool(settings.DEVELOPMENT)
+            })
 
 
 class StaticHandler(object):
@@ -35,7 +39,7 @@ class StaticHandler(object):
         if mimetype:
             web.header("Content-Type", mimetype)
         try:
-            f = open(fl_path, 'r')
-            return f.read()
+            with open(fl_path, 'r') as f:
+                return f.read()
         except Exception:
             raise web.notfound()

@@ -1,0 +1,28 @@
+<% var disabled = locked ? 'disabled' : '' %>
+<% var hide = hidden ? 'hide' : '' %>
+<div class="range-row-header <%= hide %>">
+<div data-i18n="cluster_page.network_tab.range_start"></div>
+<div data-i18n="cluster_page.network_tab.range_end"></div>
+</div>
+<div class="networks-sub-title parameter-name range-name <%= hide %>" data-i18n="cluster_page.network_tab.network_parameters.ip_range"></div>
+<% _.each(ipRanges, function(range) { %>
+<div class="range-row ip-range-row clearfix <%= hide %>">
+  <label class="parameter-box clearfix setting">
+    <div class="parameter-control ip_ranges">
+      <input type="text" name="ip_ranges-start" placeholder="127.0.0.1" value="<%- range[0] %>" <%= disabled %> />
+    </div>
+  </label>
+  <label class="parameter-box clearfix setting">
+  <div class="parameter-control ip_ranges">
+    <input type="text" name="ip_ranges-end" placeholder="127.0.0.1" value="<%- range[1] %>" <%= disabled %> />
+  </div>
+  </label>
+  <div class="ip-ranges-control">
+    <button class="btn btn-link ip-ranges ip-ranges-add" <%= disabled %>><i class="icon-plus-circle"></i></button>
+  </div>
+  <div class="ip-ranges-control <%= ipRanges.length > 1 ? '' : 'hide' %>">
+    <button class="btn btn-link ip-ranges ip-ranges-delete" <%= disabled %>><i class="icon-minus-circle"></i></button>
+  </div>
+  <div class="error"><span class="help-inline"></span></div>
+</div>
+<% }) %>

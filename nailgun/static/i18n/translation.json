@@ -228,10 +228,16 @@
                         "vlan_id_range": "VLAN ID range",
                         "use_vlan_tagging": "Use VLAN Tagging"
                     },
+                    "nova": {
+                        "dns_servers": "DNS Servers",
+                        "name_servers": "Name servers"
+                    },
                     "neutron": {
                         "l2_configuration": "Neutron L2 Configuration",
                         "l3_configuration": "Neutron L3 Configuration",
                         "id_range": "ID range",
+                        "gre_id_range": "Tunnel ID range",
+                        "vlan_id_range": "VLAN ID range",
                         "base_mac": "Base MAC address",
                         "external_network": "External network",
                         "cidr": "CIDR",

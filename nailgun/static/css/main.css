@@ -1541,7 +1541,7 @@ label.error {
   width: 91px;
 }
 
-.networks-table .ip_ranges > div, .neutron-parameters .ip_ranges > div {
+.networks-table .parameter-control.ip_ranges > div, .neutron-parameters .parameter-control.ip_ranges > div {
   margin-bottom: 2px;
   float: left;
 }
@@ -1565,7 +1565,7 @@ input.vlan-tagging {
   margin-left: 199px;
 }
 
-.networks-table .ip-ranges, .neutron-parameters .nameservers-row button {
+.networks-table .ip-ranges-control button, .neutron-parameters .nameservers-row button {
   padding: 0;
 }
 

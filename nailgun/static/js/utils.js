@@ -121,7 +121,7 @@ define(['require'], function(require) {
             return errors;
         },
         validateIP: function(ip) {
-            return _.isString(ip) && !ip.match(utils.regexes.ip);
+            return !_.isString(ip) || !ip.match(utils.regexes.ip);
         },
         validateIPrange: function(startIP, endIP) {
             return this.ipIntRepresentation(startIP) - this.ipIntRepresentation(endIP) <= 0;

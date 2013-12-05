@@ -107,7 +107,7 @@ class Cluster(Base):
     attributes = relationship("Attributes", uselist=False,
                               backref="cluster", cascade="delete")
     changes = relationship("ClusterChanges", backref="cluster",
-                           cascade="delete")
+                           cascade="all,delete")
     # We must keep all notifications even if cluster is removed.
     # It is because we want user to be able to see
     # the notification history so that is why we don't use
@@ -129,6 +129,11 @@ class Cluster(Base):
     replaced_provisioning_info = Column(JSON, default={})
     is_customized = Column(Boolean, default=False)
 
+    neutron_config = relationship("NeutronConfig",
+                                  backref=backref("cluster"),
+                                  cascade="all,delete",
+                                  uselist=False)
+
     def replace_provisioning_info(self, data):
         self.replaced_provisioning_info = data
         self.is_customized = True
@@ -138,10 +143,6 @@ class Cluster(Base):
         self.replaced_deployment_info = data
         self.is_customized = True
         return self.replaced_deployment_info
-
-    neutron_config = relationship("NeutronConfig",
-                                  backref=backref("cluster"),
-                                  uselist=False)
 
     @property
     def is_ha_mode(self):

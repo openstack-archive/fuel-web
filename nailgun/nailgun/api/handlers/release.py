@@ -66,7 +66,10 @@ class ReleaseHandler(JSONHandler):
         """
         release = self.get_object_or_404(Release, release_id)
 
-        data = self.checked_data()
+        data = self.checked_data(
+            self.validator.validate_update,
+            instance=release
+        )
 
         for key, value in data.iteritems():
             setattr(release, key, value)

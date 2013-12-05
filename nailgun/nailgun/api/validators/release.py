@@ -14,13 +14,35 @@
 #    under the License.
 
 from nailgun.api.validators.base import BasicValidator
+from nailgun.api.validators.cluster import AttributesValidator
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Attributes
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
 
 
 class ReleaseValidator(BasicValidator):
+
+    @classmethod
+    def _validate_common(cls, d):
+        if "networks_metadata" in d:
+            # TODO(enchantner): additional validation
+            meta = d["networks_metadata"]["nova_network"]
+            for network in meta["networks"]:
+                if "name" not in network:
+                    raise errors.InvalidData(
+                        "Invalid network data: {0}".format(network),
+                        log_message=True
+                    )
+        if "attributes_metadata" in d:
+            try:
+                AttributesValidator.validate_fixture(
+                    d["attributes_metadata"]
+                )
+            except Exception as exc:
+                raise errors.InvalidData(
+                    str(exc),
+                    log_message=True
+                )
 
     @classmethod
     def validate(cls, data):
@@ -44,25 +66,46 @@ class ReleaseValidator(BasicValidator):
                 "already exists",
                 log_message=True
             )
-        if "networks_metadata" in d:
-            # TODO(enchantner): additional validation
-            meta = d["networks_metadata"]["nova_network"]
-            for network in meta["networks"]:
-                if "name" not in network:
-                    raise errors.InvalidData(
-                        "Invalid network data: %s" % str(network),
-                        log_message=True
-                    )
-        else:
+
+        cls._validate_common(d)
+
+        if "networks_metadata" not in d:
             d["networks_metadata"] = {}
         if "attributes_metadata" not in d:
             d["attributes_metadata"] = {}
-        else:
-            try:
-                Attributes.validate_fixture(d["attributes_metadata"])
-            except Exception:
+
+        return d
+
+    @classmethod
+    def validate_update(cls, data, instance):
+        d = cls.validate_json(data)
+        cls._validate_common(d)
+
+        if ("name" in d and "version" in d) and (
+                d["name"] != instance.name or
+                d["version"] != instance.version):
+            if db().query(Release).filter_by(
+                name=d["name"],
+                version=d["version"]
+            ).first():
+                raise errors.AlreadyExists(
+                    "Release with the same name "
+                    "and version already exists",
+                    log_message=True
+                )
+
+        if "roles" in d:
+            new_roles = set(d["roles"])
+            assigned_roles_names = set([
+                r.name for r in instance.role_list
+                if r.nodes or r.pending_nodes
+            ])
+            if not assigned_roles_names <= new_roles:
                 raise errors.InvalidData(
-                    "Invalid logical structure of attributes metadata",
+                    "Cannot delete roles already "
+                    "assigned to nodes: {0}".format(
+                        ", ".join(assigned_roles_names - new_roles)
+                    ),
                     log_message=True
                 )
         return d

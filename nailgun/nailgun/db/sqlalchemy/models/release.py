@@ -53,8 +53,16 @@ class Release(Base):
     volumes_metadata = Column(JSON, default={})
     modes_metadata = Column(JSON, default={})
     roles_metadata = Column(JSON, default={})
-    role_list = relationship("Role", backref="release")
-    clusters = relationship("Cluster", backref="release")
+    role_list = relationship(
+        "Role",
+        backref="release",
+        cascade="all,delete"
+    )
+    clusters = relationship(
+        "Cluster",
+        backref="release",
+        cascade="all,delete"
+    )
 
     @property
     def roles(self):
@@ -62,7 +70,13 @@ class Release(Base):
 
     @roles.setter
     def roles(self, roles):
-        for role in roles:
-            if role not in self.roles:
-                self.role_list.append(Role(name=role, release=self))
-        db().commit()
+        new_roles = set(roles)
+        for role in self.role_list:
+            if role.name not in new_roles:
+                db().delete(role)
+            else:
+                new_roles.remove(role.name)
+        for new_role in new_roles:
+            self.role_list.append(
+                Role(name=new_role, release=self)
+            )

@@ -101,7 +101,8 @@ class NetworkGroup(Base):
     netmask = Column(String(25), nullable=False)
     ip_ranges = relationship(
         "IPAddrRange",
-        backref="network_group"
+        backref="network_group",
+        cascade="all, delete"
     )
 
     @classmethod

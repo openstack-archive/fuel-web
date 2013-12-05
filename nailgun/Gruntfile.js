@@ -33,7 +33,7 @@ module.exports = function(grunt) {
             client: {
                 src: [
                     'static/js/*.js',
-                    'static/js/views/*.js',
+                    'static/js/views/**/*.js',
                 ],
                 directives: {
                     predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],

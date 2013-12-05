@@ -912,3 +912,4 @@ class NetworkManager(object):
                                            'netmask': ng['netmask']})
             if cidr:
                 ng_db.cidr = str(cidr)
+                ng_db.network_size = cidr.size

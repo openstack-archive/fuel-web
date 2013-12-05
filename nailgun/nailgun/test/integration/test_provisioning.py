@@ -43,19 +43,24 @@ class TestProvisioning(BaseIntegrationTest):
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_node_status_changes_to_provision(self, mocked_rpc=None):
-        cluster = self.env.create_cluster()
-        map(
-            lambda x: self.env.create_node(
-                api=False,
-                cluster_id=cluster['id'],
-                **x),
-            [
-                {"status": "ready"},
-                {"pending_addition": True},
-                {"status": "provisioning", "pending_addition": True},
-                {"status": "deploying", "pending_addition": True},
-                {"status": "error", "error_type": "deploy"},
-                {"status": "error", "error_type": "provision"},
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False, "status": "ready"},
+                {"api": False, "pending_addition": True,
+                 "roles": ["compute"]},
+                {"api": False, "status": "provisioning",
+                 "roles": ["compute"],
+                 "pending_addition": True},
+                {"api": False, "status": "deploying",
+                 "roles": ["compute"],
+                 "pending_addition": True},
+                {"api": False, "status": "error",
+                 "roles": ["compute"],
+                 "error_type": "deploy"},
+                {"api": False, "status": "error",
+                 "roles": ["compute"],
+                 "error_type": "provision"}
             ]
         )
         cluster = self.env.clusters[0]

@@ -21,8 +21,8 @@
                     "gb": "GB",
                     "tb": "TB"
                 },
-                "plural":"s",
-                "node":"node"
+                "node":"__count__ node",
+                "node_plural":"__count__ nodes"
             },
             "node_details": {
                 "cpu": "CPU",
@@ -119,12 +119,14 @@
                 "cluster_hardware_ram": "RAM"
             },
             "cluster_page": {
-                "nodes": "Nodes",
-                "networks": "Networks",
-                "settings": "Settings",
-                "logs": "Logs",
-                "health_check": "Health Check",
-                "actions": "Actions",
+                "tabs": {
+                    "nodes": "Nodes",
+                    "networks": "Networks",
+                    "settings": "Settings",
+                    "logs": "Logs",
+                    "health_check": "Health Check",
+                    "actions": "Actions"
+                },
                 "nodes_tab": {
                     "roles": "Roles",
                     "hardware_info": "Hardware Info",
@@ -435,8 +437,8 @@
                     "gb": "GB",
                     "tb": "TB"
                 },
-                "plural":"",
-                "node":"节点"
+                "node":"__count__个节点",
+                "node_plural":"__count__个节点"
             },
             "node_details": {
                 "cpu": "CPU",
@@ -533,12 +535,14 @@
                 "cluster_hardware_ram": "RAM"
             },
             "cluster_page": {
-                "nodes": "节点",
-                "networks": "网络",
-                "settings": "设置",
-                "logs": "日志",
-                "health_check": "健康检查",
-                "actions": "动作",
+                "tabs": {
+                    "nodes": "节点",
+                    "networks": "网络",
+                    "settings": "设置",
+                    "logs": "日志",
+                    "health_check": "健康检查",
+                    "actions": "动作"
+                },
                 "nodes_tab": {
                     "roles": "角色",
                     "hardware_info": "硬件信息",

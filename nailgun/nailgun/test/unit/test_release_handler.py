@@ -48,3 +48,18 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status, 400)
+
+    def test_release_delete_returns_400_if_clusters(self):
+        cluster = self.env.create_cluster(api=False)
+        resp = self.app.delete(
+            reverse('ReleaseHandler',
+                    kwargs={'release_id': cluster.release.id}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEquals(resp.status, 400)
+        self.assertEquals(
+            resp.body,
+            "Can't delete release with "
+            "clusters assigned"
+        )

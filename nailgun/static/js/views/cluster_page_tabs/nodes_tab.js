@@ -538,23 +538,27 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var disabled = !this.nodes.where({disabled: false}).length || (this.screen.roles && this.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.screen instanceof EditNodesScreen;
             this.selectAllCheckbox.set('disabled', disabled);
         },
-        groupNodes: function(attribute) {
-            if (_.isUndefined(attribute)) {
-                attribute = this.screen instanceof AddNodesScreen ? 'hardware' : this.screen.tab.model.get('grouping');
+        groupNodes: function(grouping) {
+            if (_.isUndefined(grouping)) {
+                grouping = this.screen instanceof AddNodesScreen ? 'hardware' : this.screen.tab.model.get('grouping');
             }
-            if (attribute == 'roles') {
-                var rolesMetadata = this.screen.tab.model.get('release').get('roles_metadata');
-                this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
-            } else if (attribute == 'hardware') {
-                this.nodeGroups = this.nodes.groupBy(function(node) {
-                    return $.t('cluster_page.nodes_tab.node.hardware.hdd') + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.node.hardware.ram') + ': ' + utils.showMemorySize(node.resource('ram'));
+            var nodeGroups = _.pairs(this.nodes.groupByAttribute(grouping));
+            // sort node groups
+            if (grouping != 'hardware') {
+                var preferredOrder = this.screen.tab.model.get('release').get('roles');
+                nodeGroups.sort(function(firstGroup, secondGroup) {
+                    var firstGroupRoles = firstGroup[1][0].sortedRoles();
+                    var secondGroupRoles = secondGroup[1][0].sortedRoles();
+                    var order;
+                    while (!order && firstGroupRoles.length && secondGroupRoles.length) {
+                        order = _.indexOf(preferredOrder, firstGroupRoles.shift()) - _.indexOf(preferredOrder, secondGroupRoles.shift());
+                    }
+                    return order || firstGroupRoles.length - secondGroupRoles.length;
                 });
             } else {
-                this.nodeGroups = this.nodes.groupBy(function(node) {
-                    return _.union(node.get('roles'), node.get('pending_roles')).join(' + ') + ' + ' + $.t('cluster_page.nodes_tab.node.hardware.hdd') + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.node.hardware.ram') + ': ' + utils.showMemorySize(node.resource('ram'));
-                });
+                nodeGroups = _.sortBy(nodeGroups, function(group){ return group[0];});
             }
-            this.renderNodeGroups();
+            this.renderNodeGroups(nodeGroups);
             this.screen.updateBatchActionsButtons();
         },
         initialize: function(options) {
@@ -568,12 +572,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.selectAllCheckbox.on('change:checked', this.selectNodes, this);
             this.nodes.on('change:checked', this.calculateSelectAllCheckedState, this);
         },
-        renderNodeGroups: function() {
+        renderNodeGroups: function(nodeGroups) {
             this.$('.nodes').html('');
-            _.each(_.keys(this.nodeGroups).sort(), function(groupLabel) {
+            _.each(nodeGroups, function(group) {
                 var nodeGroupView = new NodeGroup({
-                    groupLabel: groupLabel,
-                    nodes: new models.Nodes(this.nodeGroups[groupLabel]),
+                    groupLabel: group[0],
+                    nodes: new models.Nodes(group[1]),
                     nodeList: this
                 });
                 this.registerSubView(nodeGroupView);
@@ -772,7 +776,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         sortRoles: function(roles) {
             roles = roles || [];
-            var preferredOrder = app.page.tab.model.get('release').get('roles');
+            var preferredOrder = this.screen.tab.model.get('release').get('roles');
             return roles.sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });

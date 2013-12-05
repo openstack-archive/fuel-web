@@ -157,6 +157,13 @@ define(['utils', 'deepModel'], function(utils) {
         hasRole: function(role, onlyDeployedRoles) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
+        },
+        getRolesSummary: function() {
+            var rolesMetaData = this.collection.cluster.get('release').get('roles_metadata');
+            return _.map(this.sortedRoles(), function(role) {return rolesMetaData[role].name;}).join(' + ');
+        },
+        getHardwareSummary: function() {
+            return $.t('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + $.t('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
         }
     });
 
@@ -187,6 +194,15 @@ define(['utils', 'deepModel'], function(utils) {
         },
         getByIds: function(ids) {
             return this.filter(function(node) {return _.contains(ids, node.id);});
+        },
+        groupByAttribute: function(attr) {
+            if (attr == 'roles') {
+                return this.groupBy(function(node) {return node.getRolesSummary();});
+            }
+            if (attr == 'hardware') {
+                return this.groupBy(function(node) {return node.getHardwareSummary();});
+            }
+            return this.groupBy(function(node) {return node.getRolesSummary() + ' + ' + node.getHardwareSummary();});
         }
     });
 

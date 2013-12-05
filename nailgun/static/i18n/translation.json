@@ -26,6 +26,8 @@
             },
             "node_details": {
                 "cpu": "CPU",
+                "hdd": "HDD",
+                "ram": "RAM",
                 "system": "System",
                 "memory": "Memory",
                 "disks": "Disks",
@@ -157,11 +159,6 @@
                         "interfaces_configuration_warning": "Only not deployed nodes with an identical number of network interfaces can be configured together in the same action."
                     },
                     "node": {
-                        "hardware": {
-                            "cpu": "CPU",
-                            "hdd": "HDD",
-                            "ram": "RAM"
-                        },
                         "status": {
                             "discovered": "Discovered",
                             "offline": "Offline",
@@ -592,11 +589,6 @@
                         "add_nodes_button": "增加节点"
                     },
                     "node": {
-                        "hardware": {
-                            "cpu": "CPU",
-                            "hdd": "HDD",
-                            "ram": "RAM"
-                        },
                         "status": {
                             "discovered": "在线",
                             "offline": "离线",

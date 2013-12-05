@@ -18,7 +18,7 @@ import json
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
-from nailgun.api.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.test.base import BaseIntegrationTest
 
 

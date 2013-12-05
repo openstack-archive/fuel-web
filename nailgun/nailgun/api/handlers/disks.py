@@ -23,10 +23,10 @@ import web
 
 from nailgun.api.handlers.base import content_json
 from nailgun.api.handlers.base import JSONHandler
-from nailgun.api.models import Node
-from nailgun.api.models import NodeAttributes
 from nailgun.api.validators.node import NodeDisksValidator
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.volumes.manager import DisksFormatConvertor

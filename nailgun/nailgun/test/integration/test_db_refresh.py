@@ -20,10 +20,10 @@ from unittest import TestCase
 from paste.fixture import TestApp
 from sqlalchemy.orm.events import orm
 
-from nailgun.api.models import Node
 from nailgun.db import engine
 from nailgun.db import flush
 from nailgun.db import NoCacheQuery
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.wsgi import build_app
 
 

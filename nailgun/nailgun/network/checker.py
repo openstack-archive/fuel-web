@@ -20,9 +20,9 @@ from itertools import product
 
 import netaddr
 
-from nailgun.api.models import NetworkGroup
 from nailgun.api.serializers.network_configuration \
     import NetworkConfigurationSerializer
+from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.task.helpers import TaskHelper

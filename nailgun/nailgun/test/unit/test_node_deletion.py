@@ -18,10 +18,10 @@ import logging
 
 from mock import patch
 
-from nailgun.api.models import IPAddr
-from nailgun.api.models import Network
-from nailgun.api.models import NetworkGroup
-from nailgun.api.models import Node
+from nailgun.db.sqlalchemy.models import IPAddr
+from nailgun.db.sqlalchemy.models import Network
+from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse

@@ -20,9 +20,9 @@ import unittest
 from sqlalchemy import exc
 import web
 
-from nailgun.api import models
 from nailgun.db import db
 from nailgun.db import load_db_driver
+from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.errors import NailgunException
 

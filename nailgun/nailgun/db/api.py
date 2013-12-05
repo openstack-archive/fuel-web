@@ -13,24 +13,3 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-
-from sqlalchemy import Column
-from sqlalchemy import Enum
-from sqlalchemy import Integer
-from sqlalchemy import String
-
-from nailgun.api.models.base import Base
-
-
-class RedHatAccount(Base):
-    __tablename__ = 'red_hat_accounts'
-    LICENSE_TYPES = ('rhsm', 'rhn')
-
-    id = Column(Integer, primary_key=True)
-    username = Column(String(100), nullable=False)
-    password = Column(String(100), nullable=False)
-    license_type = Column(Enum(*LICENSE_TYPES, name='license_type'),
-                          nullable=False)
-    satellite = Column(String(250))
-    activation_key = Column(String(300))

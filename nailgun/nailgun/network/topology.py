@@ -15,8 +15,8 @@
 #    under the License.
 
 
-from nailgun.api.models import Node
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Node
 
 
 class TopoChecker(object):

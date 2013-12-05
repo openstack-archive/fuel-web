@@ -27,10 +27,10 @@ from sqlalchemy import Integer
 from sqlalchemy import Unicode
 from sqlalchemy.orm import relationship, backref
 
-from nailgun.api.models.base import Base
-from nailgun.api.models.fields import JSON
-from nailgun.api.models.release import Release
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.release import Release
 from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.utils import dict_merge

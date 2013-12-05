@@ -16,8 +16,8 @@
 from nailgun.errors import errors
 from nailgun.test.base import BaseTestCase
 
-from nailgun.api.models import Task
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.rpc.receiver import get_task_by_uuid
 
 

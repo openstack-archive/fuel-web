@@ -13,11 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.models import Node
 from nailgun.api.validators.base import BasicValidator
 from nailgun.api.validators.json_schema.disks \
     import disks_simple_format_schema
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 
 

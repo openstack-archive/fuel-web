@@ -75,6 +75,7 @@ class NeutronNetworkConfiguration(NetworkConfiguration):
                                            'netmask': ng['netmask']})
             if cidr:
                 ng_db.cidr = str(cidr)
+                ng_db.network_size = cidr.size
 
 
 class NeutronConfig(Base):

@@ -854,7 +854,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
         },
         calculateNodeDisabledState: function() {
-            this.node.set('disabled', !this.node.isSelectable() || this.screen instanceof EditNodesScreen);
+            this.node.set('disabled', !this.node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked());
         },
         startNodeRenaming: function() {
             if (!this.renameable || this.renaming) {return;}
@@ -889,7 +889,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.endNodeRenaming();
             }
         },
-        showNodeDetails: function() {
+        showNodeDetails: function(e) {
+            e.preventDefault();
             var dialog = new dialogViews.ShowNodeInfoDialog({node: this.node});
             app.page.tab.registerSubView(dialog);
             dialog.render();
@@ -903,7 +904,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this))
                 .fail(function() {utils.showErrorDialog({title: $.t('dialog.discard_changes.cant_discard')});});
         },
-        discardRoleChanges: function() {
+        discardRoleChanges: function(e) {
+            e.preventDefault();
             var data = {pending_roles: []};
             if (this.node.get('pending_addition')) {
                 data.cluster = null;

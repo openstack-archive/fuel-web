@@ -538,22 +538,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var disabled = !this.nodes.where({disabled: false}).length || (this.screen.roles && this.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.screen instanceof EditNodesScreen;
             this.selectAllCheckbox.set('disabled', disabled);
         },
-        groupNodes: function(attribute) {
-            if (_.isUndefined(attribute)) {
-                attribute = this.screen instanceof AddNodesScreen ? 'hardware' : this.screen.tab.model.get('grouping');
+        groupNodes: function(grouping) {
+            if (_.isUndefined(grouping)) {
+                grouping = this.screen instanceof AddNodesScreen ? 'hardware' : this.screen.tab.model.get('grouping');
             }
-            if (attribute == 'roles') {
-                var rolesMetadata = this.screen.tab.model.get('release').get('roles_metadata');
-                this.nodeGroups = this.nodes.groupBy(function(node) {return  _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
-            } else if (attribute == 'hardware') {
-                this.nodeGroups = this.nodes.groupBy(function(node) {
-                    return $.t('cluster_page.nodes_tab.node.hardware.hdd') + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.node.hardware.ram') + ': ' + utils.showMemorySize(node.resource('ram'));
-                });
-            } else {
-                this.nodeGroups = this.nodes.groupBy(function(node) {
-                    return _.union(node.get('roles'), node.get('pending_roles')).join(' + ') + ' + ' + $.t('cluster_page.nodes_tab.node.hardware.hdd') + ': ' + utils.showDiskSize(node.resource('hdd')) + ' \u00A0 ' + $.t('cluster_page.nodes_tab.node.hardware.ram') + ': ' + utils.showMemorySize(node.resource('ram'));
-                });
-            }
+            this.nodeGroups = this.nodes.groupByAttribute(grouping);
             this.renderNodeGroups();
             this.screen.updateBatchActionsButtons();
         },
@@ -570,7 +559,17 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         renderNodeGroups: function() {
             this.$('.nodes').html('');
-            _.each(_.keys(this.nodeGroups).sort(), function(groupLabel) {
+            var preferredOrder = this.screen.tab.model.get('release').get('roles');
+            //var nodeGroups = _.keys(this.nodeGroups).sort(function(a, b) {
+            //    a = a.split(' + ');
+            //    b = b.split(' + ');
+            //    var order;
+            //    while (!order && a.length && b.length) {
+            //        order = _.indexOf(preferredOrder, a.shift()) - _.indexOf(preferredOrder, b.shift());
+            //    }
+            //    return order || a.length - b.length;
+            //});
+            _.each(nodeGroups, function(groupLabel) {
                 var nodeGroupView = new NodeGroup({
                     groupLabel: groupLabel,
                     nodes: new models.Nodes(this.nodeGroups[groupLabel]),
@@ -772,7 +771,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         sortRoles: function(roles) {
             roles = roles || [];
-            var preferredOrder = app.page.tab.model.get('release').get('roles');
+            var preferredOrder = this.screen.tab.model.get('release').get('roles');
             return roles.sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });

@@ -157,6 +157,9 @@ define(['utils', 'deepModel'], function(utils) {
         hasRole: function(role, onlyDeployedRoles) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
+        },
+        getHardwareSummary: function() {
+            return $.t('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + $.t('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
         }
     });
 
@@ -187,6 +190,16 @@ define(['utils', 'deepModel'], function(utils) {
         },
         getByIds: function(ids) {
             return this.filter(function(node) {return _.contains(ids, node.id);});
+        },
+        groupByAttribute: function(attr) {
+            var rolesMetadata = this.cluster.get('release').get('roles_metadata');
+            if (attr == 'roles') {
+                return this.groupBy(function(node) {return _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ');});
+            } else if (attr == 'hardware') {
+                return this.groupBy(function(node) {return node.getHardwareSummary();});
+            } else {
+                return this.groupBy(function(node) {return _.map(node.sortedRoles(), function(role) {return rolesMetadata[role].name;}).join(' + ') + ' + ' + node.getHardwareSummary();});
+            }
         }
     });
 

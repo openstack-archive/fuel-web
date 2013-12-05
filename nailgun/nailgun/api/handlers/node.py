@@ -226,7 +226,10 @@ class NodeCollectionHandler(JSONHandler):
             logger.warning(msg)
             raise error
 
-        node = Node()
+        node = Node(
+            name="Untitled (%s)" % data['mac'][-5:],
+            timestamp=datetime.now()
+        )
         if "cluster_id" in data:
             # FIXME(vk): this part is needed only for tests. Normally,
             # nodes are created only by agent and POST requests don't contain
@@ -243,8 +246,6 @@ class NodeCollectionHandler(JSONHandler):
             else:
                 setattr(node, key, value)
 
-        node.name = "Untitled (%s)" % data['mac'][-5:]
-        node.timestamp = datetime.now()
         db().add(node)
         db().commit()
         node.attributes = NodeAttributes()

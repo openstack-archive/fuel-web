@@ -26,6 +26,10 @@ module.exports = function(grunt) {
                     modules: [{name: "js/main"}],
                     waitSeconds: 60,
                     optimize: "uglify2",
+                    optimizeCss: "standard",
+                    pragmas: {
+                        compressed: true
+                    },
                 }
             }
         },
@@ -48,6 +52,12 @@ module.exports = function(grunt) {
                 }
             }
         },
+        less: {
+            all: {
+                src: 'static/css/styles.less',
+                dest: 'static/css/styles.css',
+            }
+        },
         bower: {
             install: {
                 options: {
@@ -68,8 +78,9 @@ module.exports = function(grunt) {
     });
 
     grunt.loadNpmTasks('grunt-contrib-requirejs');
+    grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
-    grunt.registerTask('build', ['bower', 'requirejs']);
+    grunt.registerTask('build', ['bower', 'less', 'requirejs']);
     grunt.registerTask('default', ['build']);
 };

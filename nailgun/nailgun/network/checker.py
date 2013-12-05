@@ -383,7 +383,8 @@ class NetworkCheck(object):
          declared with 'network_size' field (neutron)
         """
         for ng in self.networks:
-            if ng['name'] != 'private':
+            # network_size is calculated in case of public
+            if ng['name'] not in ('private', 'public'):
                 # ng['amount'] is always equal 1 for Neutron
                 if netaddr.IPNetwork(ng['cidr']).size < ng['network_size']:
                     self.err_msgs.append(

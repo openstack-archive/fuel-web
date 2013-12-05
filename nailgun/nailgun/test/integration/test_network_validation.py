@@ -797,6 +797,27 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             "is less than required"
         )
 
+    def test_network_checking_public_network_cidr_became_smaller(self):
+        self.assertEquals(self.find_net_by_name('public')['network_size'], 256)
+
+        self.find_net_by_name('public')['netmask'] = '255.255.255.128'
+        self.find_net_by_name('public')['gateway'] = '172.16.0.1'
+        self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.2',
+                                                         '172.16.0.77']]
+        virt_nets = self.nets['neutron_parameters']['predefined_networks']
+        virt_nets['net04_ext']['L3']['floating'] = ['172.16.0.99',
+                                                    '172.16.0.111']
+
+        resp = self.env.neutron_networks_put(self.cluster.id, self.nets)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+        resp = self.env.neutron_networks_get(self.cluster.id)
+        self.nets = json.loads(resp.body)
+        self.assertEquals(self.find_net_by_name('public')['cidr'],
+                          '172.16.0.0/25')
+        self.assertEquals(self.find_net_by_name('public')['network_size'], 128)
+
     def test_network_checking_fails_on_network_vlan_match(self):
         self.find_net_by_name('management')['vlan_start'] = '111'
         self.find_net_by_name('storage')['vlan_start'] = '111'

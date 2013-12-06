@@ -1196,7 +1196,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }, this);
             this.disk.get('volumes').each(function(volume) {
                 volume.on('change:size', this.updateDisks, this);
-                volume.on('change:size', this.checkForGroupsDeletionAvailability, this);
+                volume.on('change:size', function() {_.invoke(this.screen.subViews, 'checkForGroupsDeletionAvailability', this);}, this);
                 volume.on('invalid', function(model, error) {
                     this.$('.disk-visual').addClass('invalid');
                     this.$('input[name=' + volume.get('name') + ']').addClass('error').parents('.volume-group').next().text(error);

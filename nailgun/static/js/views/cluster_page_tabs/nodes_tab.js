@@ -1176,9 +1176,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.screen.checkForChanges();
         },
         deleteVolume: function(e) {
-            var volumeName = this.$(e.currentTarget).parents('.volume-group').data('volume');
-            var volume = this.disk.get('volumes').findWhere({name: volumeName});
-            volume.set({size: 0});
+            this.disk.get('volumes').findWhere({name: this.$(e.currentTarget).parents('.volume-group').data('volume')}).set({size: 0});
         },
         useAllAllowedSpace: function(e) {
             var volumeName = this.$(e.currentTarget).parents('.volume-group').data('volume');
@@ -1196,7 +1194,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }, this);
             this.disk.get('volumes').each(function(volume) {
                 volume.on('change:size', this.updateDisks, this);
-                volume.on('change:size', this.checkForGroupsDeletionAvailability, this);
+                volume.on('change:size', function() {_.invoke(this.screen.subViews, 'checkForGroupsDeletionAvailability', this);}, this);
                 volume.on('invalid', function(model, error) {
                     this.$('.disk-visual').addClass('invalid');
                     this.$('input[name=' + volume.get('name') + ']').addClass('error').parents('.volume-group').next().text(error);

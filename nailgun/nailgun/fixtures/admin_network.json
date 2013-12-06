@@ -12,15 +12,6 @@
     },
     {
         "pk": 1,
-        "model": "nailgun.network",
-        "fields": {
-            "name": "fuelweb_admin",
-            "network_group": 1,
-            "cidr": "{{settings.ADMIN_NETWORK['cidr']}}"
-        }
-    },
-    {
-        "pk": 1,
         "model": "nailgun.i_p_addr_range",
         "fields": {
             "network_group": 1,

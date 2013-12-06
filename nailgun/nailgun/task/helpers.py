@@ -59,7 +59,7 @@ class TaskHelper(object):
         bak = os.path.join(prefix, "%s.bak" % str(node.fqdn))
         new = os.path.join(prefix, str(node.fqdn))
 
-        admin_net_id = NetworkManager.get_admin_network_id()
+        admin_net_id = NetworkManager.get_admin_network_group_id()
         links = map(
             lambda i: os.path.join(prefix, i.ip_addr),
             db().query(IPAddr.ip_addr).

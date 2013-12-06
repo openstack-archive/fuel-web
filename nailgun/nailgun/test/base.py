@@ -401,7 +401,7 @@ class Environment(object):
             if self.network_manager.is_ip_belongs_to_admin_subnet(ip)]
 
         if not admin_ips:
-            admin_cidr = self.network_manager.get_admin_network().cidr
+            admin_cidr = self.network_manager.get_admin_network_group().cidr
             interfaces[0]['ip'] = str(IPNetwork(admin_cidr).ip)
 
     def set_interfaces_in_meta(self, meta, interfaces):

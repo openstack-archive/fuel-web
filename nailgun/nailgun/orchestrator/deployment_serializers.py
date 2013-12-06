@@ -397,7 +397,7 @@ class NetworkDeploymentSerializer(object):
         admin_ip = IPNetwork(admin_ip)
 
         # Assign prefix from admin network
-        admin_net = IPNetwork(network_manager.get_admin_network().cidr)
+        admin_net = IPNetwork(network_manager.get_admin_network_group().cidr)
         admin_ip.prefixlen = admin_net.prefixlen
 
         return str(admin_ip)

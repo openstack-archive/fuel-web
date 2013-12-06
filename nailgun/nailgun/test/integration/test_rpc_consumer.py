@@ -21,12 +21,10 @@ import uuid
 from nailgun.db.sqlalchemy.models import Attributes
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import IPAddr
-from nailgun.db.sqlalchemy.models import Network
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
-from nailgun.db.sqlalchemy.models import Vlan
 from nailgun.rpc import receiver as rcvr
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -859,13 +857,12 @@ class TestConsumer(BaseIntegrationTest):
         self.env.create_notification(
             cluster_id=cluster_id
         )
-        networks = self.db.query(Network)\
-            .join(NetworkGroup).\
+        networks = self.db.query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_id).all()
 
         vlans = []
         for net in networks:
-            vlans.append(net.vlan_id)
+            vlans.append(net.vlan_start)
 
         task = Task(
             uuid=str(uuid.uuid4()),
@@ -893,10 +890,6 @@ class TestConsumer(BaseIntegrationTest):
             .filter(IPAddr.node.in_([node1_id, node2_id])).all()
         self.assertEquals(len(ip_db), 0)
 
-        vlan_db = self.db.query(Vlan)\
-            .filter(Vlan.id.in_(vlans)).all()
-        self.assertEquals(len(vlan_db), 0)
-
         attrs_db = self.db.query(Attributes)\
             .filter_by(cluster_id=cluster_id).all()
         self.assertEquals(len(attrs_db), 0)
@@ -905,8 +898,7 @@ class TestConsumer(BaseIntegrationTest):
             .filter_by(cluster_id=cluster_id).all()
         self.assertEquals(len(nots_db), 0)
 
-        nets_db = self.db.query(Network)\
-            .join(NetworkGroup).\
+        nets_db = self.db.query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_id).all()
         self.assertEquals(len(nets_db), 0)
 
@@ -963,7 +955,6 @@ class TestConsumer(BaseIntegrationTest):
             .filter_by(cluster_id=cluster_db.id).all()
         self.assertNotEqual(len(nots_db), 0)
 
-        nets_db = self.db.query(Network)\
-            .join(NetworkGroup).\
+        nets_db = self.db.query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_db.id).all()
         self.assertNotEqual(len(nets_db), 0)

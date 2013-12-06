@@ -29,11 +29,9 @@ from nailgun.db.sqlalchemy.models.node import Role
 from nailgun.db.sqlalchemy.models.node import NodeAttributes
 from nailgun.db.sqlalchemy.models.node import NodeNICInterface
 
-from nailgun.db.sqlalchemy.models.network import Network
 from nailgun.db.sqlalchemy.models.network import NetworkGroup
 from nailgun.db.sqlalchemy.models.network import IPAddr
 from nailgun.db.sqlalchemy.models.network import IPAddrRange
-from nailgun.db.sqlalchemy.models.network import Vlan
 from nailgun.db.sqlalchemy.models.network import AllowedNetworks
 from nailgun.db.sqlalchemy.models.network import NetworkAssignment
 

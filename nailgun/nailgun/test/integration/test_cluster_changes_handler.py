@@ -208,7 +208,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
 
         provision_nodes = []
-        admin_net = self.env.network_manager.get_admin_network()
+        admin_net = self.env.network_manager.get_admin_network_group()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
             udev_interfaces_mapping = ','.join([
@@ -262,7 +262,7 @@ class TestHandlers(BaseIntegrationTest):
                 pnd['interfaces'][i['name']] = {
                     'mac_address': i['mac'],
                     'static': '0',
-                    'netmask': admin_net.network_group.netmask,
+                    'netmask': admin_net.netmask,
                     'ip_address': admin_ips.pop(),
                 }
                 if 'interfaces_extra' not in pnd:
@@ -564,7 +564,7 @@ class TestHandlers(BaseIntegrationTest):
         deployment_msg['args']['deployment_info'] = deployment_info
 
         provision_nodes = []
-        admin_net = self.env.network_manager.get_admin_network()
+        admin_net = self.env.network_manager.get_admin_network_group()
 
         for n in sorted(self.env.nodes, key=lambda n: n.id):
             udev_interfaces_mapping = ','.join([
@@ -619,7 +619,7 @@ class TestHandlers(BaseIntegrationTest):
                 pnd['interfaces'][i['name']] = {
                     'mac_address': i['mac'],
                     'static': '0',
-                    'netmask': admin_net.network_group.netmask,
+                    'netmask': admin_net.netmask,
                     'ip_address': admin_ips.pop(),
                 }
                 if 'interfaces_extra' not in pnd:

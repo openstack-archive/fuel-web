@@ -18,9 +18,7 @@ import json
 
 from sqlalchemy.sql import not_
 
-from nailgun.db.sqlalchemy.models import Network
 from nailgun.db.sqlalchemy.models import NetworkGroup
-from nailgun.db.sqlalchemy.models import Vlan
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -45,11 +43,11 @@ class TestNetworkModels(BaseIntegrationTest):
         self.db.add(ng)
         self.db.commit()
         self.env.network_manager.create_networks(ng)
-        nets_db = self.db.query(Network).filter(
-            not_(Network.name == "fuelweb_admin")
+        nets_db = self.db.query(NetworkGroup).filter(
+            not_(NetworkGroup.name == "fuelweb_admin")
         ).all()
         self.assertEquals(len(nets_db), 1)
-        self.assertEquals(nets_db[0].vlan_id, kw['vlan_start'])
+        self.assertEquals(nets_db[0].vlan_start, kw['vlan_start'])
         self.assertEquals(nets_db[0].name, kw['name'])
         self.assertEquals(nets_db[0].cidr, kw['cidr'])
 
@@ -113,16 +111,12 @@ class TestNetworkModels(BaseIntegrationTest):
         self.db.add(ng)
         self.db.commit()
         self.env.network_manager.create_networks(ng)
-        nets_db = self.db.query(Network).filter(
-            not_(Network.name == "fuelweb_admin")
+        nets_db = self.db.query(NetworkGroup).filter(
+            not_(NetworkGroup.name == "fuelweb_admin")
         ).all()
-        self.assertEquals(len(nets_db), kw['amount'])
-        self.assertEquals(nets_db[0].vlan_id, kw['vlan_start'])
-        self.assertEquals(nets_db[kw['amount'] - 1].vlan_id,
-                          kw['vlan_start'] + kw['amount'] - 1)
+        self.assertEquals(nets_db[0].amount, kw['amount'])
+        self.assertEquals(nets_db[0].vlan_start, kw['vlan_start'])
         self.assertEquals(all(x.name == kw['name'] for x in nets_db), True)
-        vlans_db = self.db.query(Vlan).all()
-        self.assertEquals(len(vlans_db), kw['amount'])
 
     def test_network_group_slices_cidr_for_networks(self):
         cluster = self.env.create_cluster(api=False)
@@ -138,12 +132,11 @@ class TestNetworkModels(BaseIntegrationTest):
         self.db.add(ng)
         self.db.commit()
         self.env.network_manager.create_networks(ng)
-        nets_db = self.db.query(Network).filter(
-            not_(Network.name == "fuelweb_admin")
+        nets_db = self.db.query(NetworkGroup).filter(
+            not_(NetworkGroup.name == "fuelweb_admin")
         ).all()
-        self.assertEquals(len(nets_db), kw['amount'])
-        self.assertEquals(nets_db[0].cidr, '10.0.0.0/25')
-        self.assertEquals(nets_db[1].cidr, '10.0.0.128/25')
+        self.assertEquals(nets_db[0].amount, kw['amount'])
+        self.assertEquals(nets_db[0].cidr, '10.0.0.0/16')
         self.db.refresh(ng)
         self.assertEquals(ng.cidr, '10.0.0.0/16')
 
@@ -196,9 +189,8 @@ class TestNetworkModels(BaseIntegrationTest):
         self.db.add(ng)
         self.db.commit()
         self.env.network_manager.create_networks(ng)
-        nets_db = self.db.query(Network).filter(
-            not_(Network.name == "fuelweb_admin")
+        nets_db = self.db.query(NetworkGroup).filter(
+            not_(NetworkGroup.name == "fuelweb_admin")
         ).all()
-        self.assertEquals(len(nets_db), kw['amount'])
+        self.assertEquals(nets_db[0].amount, kw['amount'])
         self.assertEquals(nets_db[0].gateway, "10.0.0.5")
-        self.assertEquals(nets_db[1].gateway, "10.0.0.5")

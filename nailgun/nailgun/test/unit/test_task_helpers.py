@@ -16,13 +16,14 @@
 
 
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.db.sqlalchemy.models import Task
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentHASerializer
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseUnitTest
 
 
-class TestTaskHelpersNodesSelectionInCaseOfFailedNodes(BaseUnitTest):
+class TestTaskHelpers(BaseUnitTest):
 
     def create_env(self, nodes):
         cluster = self.env.create(
@@ -94,3 +95,41 @@ class TestTaskHelpersNodesSelectionInCaseOfFailedNodes(BaseUnitTest):
 
         computes = self.filter_by_role(nodes, 'compute')
         self.assertEquals(len(computes), 1)
+
+    def test_recalculate_deployment_task_progress(self):
+        cluster = self.create_env([
+            {'roles': ['controller'],
+             'status': 'provisioned',
+             'progress': 100},
+            {'roles': ['compute'],
+             'status': 'deploying',
+             'progress': 100},
+            {'roles': ['compute'],
+             'status': 'ready',
+             'progress': 0},
+            {'roles': ['compute'],
+             'status': 'discover',
+             'progress': 0}])
+
+        task = Task(name='deploy', cluster_id=cluster.id)
+        self.db.add(task)
+        self.db.commit()
+
+        progress = TaskHelper.recalculate_deployment_task_progress(task)
+        self.assertEquals(progress, 25)
+
+    def test_recalculate_provisioning_task_progress(self):
+        cluster = self.create_env([
+            {'roles': ['controller'],
+             'status': 'provisioned',
+             'progress': 100},
+            {'roles': ['compute'],
+             'status': 'provisioning',
+             'progress': 0}])
+
+        task = Task(name='provision', cluster_id=cluster.id)
+        self.db.add(task)
+        self.db.commit()
+
+        progress = TaskHelper.recalculate_provisioning_task_progress(task)
+        self.assertEquals(progress, 50)

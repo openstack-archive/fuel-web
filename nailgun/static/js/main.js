@@ -35,7 +35,9 @@ requirejs.config({
         underscore: 'js/libs/bower/lodash/js/lodash',
         deepModel: 'js/libs/bower/backbone-deep-model/js/deep-model',
         less: 'js/libs/bower/less/js/less-1.5.1',
+        'require-css': 'js/libs/bower/require-css',
         app: 'js/app',
+        styles: 'js/styles',
         models: 'js/models',
         collections: 'js/collections',
         views: 'js/views'
@@ -97,9 +99,7 @@ require([
     'jquery-timeout',
     'jquery-ui',
     'jquery-autoNumeric',
-//>>excludeStart("compressed", pragmas.compressed);
-    'less',
-//>>excludeEnd("compressed");
+    'styles',
     'app'
 ], function() {
     'use strict';

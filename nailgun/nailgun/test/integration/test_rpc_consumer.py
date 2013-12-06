@@ -735,6 +735,36 @@ class TestConsumer(BaseIntegrationTest):
         # if there are error nodes
         self.assertEqual(task.status, "running")
 
+    def test_node_provision_resp(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}])
+        node = self.env.nodes[0]
+        node2 = self.env.nodes[1]
+
+        task = Task(
+            name='provision',
+            cluster_id=self.env.clusters[0].id)
+
+        self.db.add(task)
+        self.db.commit()
+
+        kwargs = {'task_uuid': task.uuid,
+                  'nodes': [
+                      {'uid': node.id,
+                       'status': 'provisioning',
+                       'progress': 50},
+                      {'uid': node2.id,
+                       'status': 'provisioning',
+                       'progress': 50}]}
+
+        self.receiver.provision_resp(**kwargs)
+        self.db.refresh(task)
+
+        self.assertEqual(task.progress, 50)
+
     def test_task_progress(self):
 
         task = Task(

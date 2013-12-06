@@ -33,7 +33,6 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
-from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 
 
@@ -250,28 +249,9 @@ class NailgunReceiver(object):
 
         # We should calculate task progress by nodes info
         task = get_task_by_uuid(task_uuid)
-        coeff = settings.PROVISIONING_PROGRESS_COEFF or 0.3
+
         if nodes and not progress:
-            nodes_progress = []
-            nodes_db = db().query(Node).filter_by(
-                cluster_id=task.cluster_id).all()
-            for node in nodes_db:
-                if node.status == "discover":
-                    nodes_progress.append(0)
-                elif not node.online:
-                    nodes_progress.append(100)
-                elif node.status in ['provisioning', 'provisioned'] or \
-                        node.needs_reprovision:
-                    nodes_progress.append(float(node.progress) * coeff)
-                elif node.status in ['deploying', 'ready'] or \
-                        node.needs_redeploy:
-                    nodes_progress.append(
-                        100.0 * coeff + float(node.progress) * (1.0 - coeff)
-                    )
-            if nodes_progress:
-                progress = int(
-                    float(sum(nodes_progress)) / len(nodes_progress)
-                )
+            progress = TaskHelper.recalculate_deployment_task_progress(task)
 
         # Let's check the whole task status
         if status in ('error',):
@@ -311,6 +291,12 @@ class NailgunReceiver(object):
             else:
                 node_db.status = node.get('status')
                 node_db.progress = node.get('progress')
+
+        db().commit()
+
+        task = get_task_by_uuid(task_uuid)
+        if nodes and not progress:
+            progress = TaskHelper.recalculate_provisioning_task_progress(task)
 
         TaskHelper.update_task_status(task.uuid, status, progress, message)
 

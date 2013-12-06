@@ -290,6 +290,39 @@ class TaskHelper(object):
             node.error_type = error_type
 
     @classmethod
+    def recalculate_deployment_task_progress(cls, task):
+        cluster_nodes = db().query(Node).filter_by(cluster_id=task.cluster_id)
+        nodes_progress = []
+        nodes_progress.extend(
+            cluster_nodes.filter_by(status='discover').count() * [0])
+        nodes_progress.extend(
+            cluster_nodes.filter_by(online=False).count() * [100])
+
+        # Progress of provisioned node is 0
+        # because deployment not started yet
+        nodes_progress.extend(
+            cluster_nodes.filter_by(status='provisioned').count() * [0])
+
+        nodes_progress.extend([
+            n.progress for n in
+            cluster_nodes.filter(
+                Node.status.in_(['deploying', 'ready']))])
+
+        if nodes_progress:
+            return int(float(sum(nodes_progress)) / len(nodes_progress))
+
+    @classmethod
+    def recalculate_provisioning_task_progress(cls, task):
+        cluster_nodes = db().query(Node).filter_by(cluster_id=task.cluster_id)
+        nodes_progress = [
+            n.progress for n in
+            cluster_nodes.filter(
+                Node.status.in_(['provisioning', 'provisioned']))]
+
+        if nodes_progress:
+            return int(float(sum(nodes_progress)) / len(nodes_progress))
+
+    @classmethod
     def nodes_to_delete(cls, cluster):
         return filter(
             lambda n: any([

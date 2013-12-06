@@ -256,25 +256,25 @@ class TestHandlers(BaseIntegrationTest):
                             filter_by(node=n.id).
                             filter_by(network=admin_net.id)])
 
-            for i in n.meta.get('interfaces', []):
+            for i in n.interfaces:
                 if 'interfaces' not in pnd:
                     pnd['interfaces'] = {}
-                pnd['interfaces'][i['name']] = {
-                    'mac_address': i['mac'],
+                pnd['interfaces'][i.name] = {
+                    'mac_address': i.mac,
                     'static': '0',
                     'netmask': admin_net.network_group.netmask,
                     'ip_address': admin_ips.pop(),
                 }
                 if 'interfaces_extra' not in pnd:
                     pnd['interfaces_extra'] = {}
-                pnd['interfaces_extra'][i['name']] = {
+                pnd['interfaces_extra'][i.name] = {
                     'peerdns': 'no',
                     'onboot': 'no'
                 }
 
-                if i['mac'] == n.mac:
-                    pnd['interfaces'][i['name']]['dns_name'] = n.fqdn
-                    pnd['interfaces_extra'][i['name']]['onboot'] = 'yes'
+                if i.mac == n.mac:
+                    pnd['interfaces'][i.name]['dns_name'] = n.fqdn
+                    pnd['interfaces_extra'][i.name]['onboot'] = 'yes'
 
             provision_nodes.append(pnd)
 

@@ -98,11 +98,11 @@ class ProvisioningSerializer(object):
         admin_ips = net_manager.get_admin_ips_for_interfaces(node)
         admin_netmask = net_manager.get_admin_network_group().netmask
 
-        for interface in node.meta.get('interfaces', []):
-            name = interface['name']
+        for interface in node.interfaces:
+            name = interface.name
 
             interfaces[name] = {
-                'mac_address': interface['mac'],
+                'mac_address': interface.mac,
                 'static': '0',
                 'netmask': admin_netmask,
                 'ip_address': admin_ips[name]}
@@ -124,7 +124,7 @@ class ProvisioningSerializer(object):
             # assignted fqdn to be resolved into one IP address
             # because we don't completely support multiinterface
             # configuration yet.
-            if interface['mac'] == node.mac:
+            if interface.mac == node.mac:
                 interfaces[name]['dns_name'] = node.fqdn
                 interfaces_extra[name]['onboot'] = 'yes'
 

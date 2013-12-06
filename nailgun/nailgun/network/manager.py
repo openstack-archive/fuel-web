@@ -21,8 +21,6 @@ from itertools import ifilter
 from itertools import imap
 from itertools import islice
 
-import math
-
 from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
@@ -34,12 +32,10 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import IPAddrRange
-from nailgun.db.sqlalchemy.models import Network
 from nailgun.db.sqlalchemy.models import NetworkAssignment
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
-from nailgun.db.sqlalchemy.models import Vlan
 from nailgun.errors import errors
 from nailgun.logger import logger
 
@@ -63,40 +59,6 @@ class NetworkManager(object):
 
         db().add(ip_range)
         db().commit()
-
-    @classmethod
-    def get_admin_network_id(cls, fail_if_not_found=True):
-        '''Method for receiving Admin Network ID.
-
-        :param fail_if_not_found: Raise an error
-        if admin network is not found in database.
-        :type  fail_if_not_found: bool
-        :returns: Admin Network ID or None.
-        :raises: errors.AdminNetworkNotFound
-        '''
-        admin_net = db().query(Network).filter_by(
-            name="fuelweb_admin"
-        ).first()
-        if not admin_net and fail_if_not_found:
-            raise errors.AdminNetworkNotFound()
-        return admin_net.id
-
-    @classmethod
-    def get_admin_network(cls, fail_if_not_found=True):
-        '''Method for receiving Admin Network.
-
-        :param fail_if_not_found: Raise an error
-        if admin network is not found in database.
-        :type  fail_if_not_found: bool
-        :returns: Admin Network or None.
-        :raises: errors.AdminNetworkNotFound
-        '''
-        admin_net = db().query(Network).filter_by(
-            name="fuelweb_admin"
-        ).first()
-        if not admin_net and fail_if_not_found:
-            raise errors.AdminNetworkNotFound()
-        return admin_net
 
     @classmethod
     def get_admin_network_group_id(cls, fail_if_not_found=True):
@@ -133,57 +95,20 @@ class NetworkManager(object):
         return admin_ng
 
     @classmethod
-    def create_networks(cls, nw_group):
-        """Method for creation of networks for network group.
+    def cleanup_network_group(cls, nw_group):
+        """Network group cleanup - deletes all IPs were assigned within
+        the network group.
 
         :param nw_group: NetworkGroup object.
         :type  nw_group: NetworkGroup
         :returns: None
         """
-        fixnet = IPNetwork(nw_group.cidr)
-        subnet_bits = int(math.ceil(math.log(nw_group.network_size, 2)))
-        logger.debug("Specified network size requires %s bits", subnet_bits)
-        subnets = list(fixnet.subnet(32 - subnet_bits,
-                                     count=nw_group.amount))
-        logger.debug("Base CIDR sliced on subnets: %s", subnets)
-
-        for net in nw_group.networks:
-            logger.debug("Deleting old network with id=%s, cidr=%s",
-                         net.id, net.cidr)
-            ips = db().query(IPAddr).filter(
-                IPAddr.network == net.id
-            ).all()
-            map(db().delete, ips)
-            db().delete(net)
-            db().commit()
-        # Dmitry's hack for clearing VLANs without networks
-        cls.clear_vlans()
-        db().commit()
-        nw_group.networks = []
-
-        for n in xrange(nw_group.amount):
-            vlan_id = None
-            if nw_group.vlan_start is not None:
-                vlan_db = db().query(Vlan).get(nw_group.vlan_start + n)
-                if vlan_db:
-                    logger.warning("Intersection with existing vlan_id: %s",
-                                   vlan_db.id)
-                else:
-                    vlan_db = Vlan(id=nw_group.vlan_start + n)
-                    db().add(vlan_db)
-                vlan_id = vlan_db.id
-                logger.debug("Created VLAN object, vlan_id=%s", vlan_id)
-            gateway = None
-            if nw_group.gateway:
-                gateway = nw_group.gateway
-            net_db = Network(
-                release=nw_group.release,
-                name=nw_group.name,
-                cidr=str(subnets[n]),
-                vlan_id=vlan_id,
-                gateway=gateway,
-                network_group_id=nw_group.id)
-            db().add(net_db)
+        logger.debug("Deleting old IPs for network with id=%s, cidr=%s",
+                     nw_group.id, nw_group.cidr)
+        ips = db().query(IPAddr).filter(
+            IPAddr.network == nw_group.id
+        ).all()
+        map(db().delete, ips)
         db().commit()
 
     @classmethod
@@ -196,21 +121,21 @@ class NetworkManager(object):
         :type  num: int
         :returns: None
         '''
-        admin_net_id = cls.get_admin_network_id()
+        admin_net_id = cls.get_admin_network_group_id()
         node_admin_ips = db().query(IPAddr).filter_by(
             node=node_id,
             network=admin_net_id
         ).all()
 
         if not node_admin_ips or len(node_admin_ips) < num:
-            admin_net = db().query(Network).get(admin_net_id)
+            admin_net = db().query(NetworkGroup).get(admin_net_id)
             logger.debug(
                 u"Trying to assign admin ips: node=%s count=%s",
                 node_id,
                 num - len(node_admin_ips)
             )
             free_ips = cls.get_free_ips(
-                admin_net.network_group.id,
+                admin_net.id,
                 num=num - len(node_admin_ips)
             )
             logger.info(len(free_ips))
@@ -251,7 +176,7 @@ class NetworkManager(object):
                     )
                 )
 
-        network = db().query(Network).join(NetworkGroup).\
+        network = db().query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_id).\
             filter_by(name=network_name).first()
 
@@ -295,7 +220,7 @@ class NetworkManager(object):
                     network_name
                 )
             )
-            free_ip = cls.get_free_ips(network.network_group.id)[0]
+            free_ip = cls.get_free_ips(network.id)[0]
             ip_db = IPAddr(
                 network=network.id,
                 node=node_id,
@@ -327,7 +252,7 @@ class NetworkManager(object):
         if not cluster:
             raise Exception(u"Cluster id='%s' not found" % cluster_id)
 
-        network = db().query(Network).join(NetworkGroup).\
+        network = db().query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_id).\
             filter_by(name=network_name).first()
 
@@ -335,7 +260,7 @@ class NetworkManager(object):
             raise Exception(u"Network '%s' for cluster_id=%s not found." %
                             (network_name, cluster_id))
 
-        admin_net_id = cls.get_admin_network_id()
+        admin_net_id = cls.get_admin_network_group_id()
         cluster_ips = [ne.ip_addr for ne in db().query(IPAddr).filter_by(
             network=network.id,
             node=None
@@ -353,22 +278,12 @@ class NetworkManager(object):
             vip = cluster_ips[0]
         else:
             # IP address has not been assigned, let's do it
-            vip = cls.get_free_ips(network.network_group.id)[0]
+            vip = cls.get_free_ips(network.id)[0]
             ne_db = IPAddr(network=network.id, ip_addr=vip)
             db().add(ne_db)
             db().commit()
 
         return vip
-
-    @classmethod
-    def clear_vlans(cls):
-        """Removes from DB all Vlans without Networks assigned to them.
-        """
-        map(
-            db().delete,
-            db().query(Vlan).filter_by(network=None)
-        )
-        db().commit()
 
     @classmethod
     def _chunked_range(cls, iterable, chunksize=64):
@@ -400,7 +315,7 @@ class NetworkManager(object):
         addr = IPAddress(ip_addr)
         ipranges = imap(
             lambda ir: IPRange(ir.first, ir.last),
-            network.network_group.ip_ranges
+            network.ip_ranges
         )
         for r in ipranges:
             if addr in r:
@@ -451,15 +366,13 @@ class NetworkManager(object):
         """
         ips = db().query(IPAddr).order_by(IPAddr.id)
         if joined:
-            ips = ips.options(
-                joinedload('network_data'),
-                joinedload('network_data.network_group'))
+            ips = ips.options(joinedload('network_data'))
         if node_id:
             ips = ips.filter_by(node=node_id)
         if network_id:
             ips = ips.filter_by(network=network_id)
 
-        admin_net_id = cls.get_admin_network_id(False)
+        admin_net_id = cls.get_admin_network_group_id(False)
         if admin_net_id:
             ips = ips.filter(
                 not_(IPAddr.network == admin_net_id)
@@ -510,27 +423,25 @@ class NetworkManager(object):
         network_data = []
         network_ids = []
         for ip in ips:
-            net = db().query(Network).get(ip.network)
+            net = db().query(NetworkGroup).get(ip.network)
             interface = cls._get_interface_by_network_name(
                 node_db.id, net.name)
 
             if net.name == 'public':
                 # Get prefix from netmask instead of cidr
                 # for public network
-                network_group = db().query(NetworkGroup).get(
-                    net.network_group_id)
 
                 # Convert netmask to prefix
                 prefix = str(IPNetwork(
-                    '0.0.0.0/' + network_group.netmask).prefixlen)
-                netmask = network_group.netmask
+                    '0.0.0.0/' + net.netmask).prefixlen)
+                netmask = net.netmask
             else:
                 prefix = str(IPNetwork(net.cidr).prefixlen)
                 netmask = str(IPNetwork(net.cidr).netmask)
 
             network_data.append({
                 'name': net.name,
-                'vlan': net.vlan_id,
+                'vlan': net.vlan_start,
                 'ip': ip.ip_addr + '/' + prefix,
                 'netmask': netmask,
                 'brd': str(IPNetwork(net.cidr).broadcast),
@@ -565,11 +476,10 @@ class NetworkManager(object):
 
     @classmethod
     def get_networks_grouped_by_cluster(cls):
-        networks = db().query(Network).options(joinedload('network_group')).\
-            order_by(Network.id).all()
+        networks = db().query(NetworkGroup).order_by(NetworkGroup.id).all()
         return cls.group_by_key_and_history(
             networks,
-            lambda net: net.network_group.cluster_id)
+            lambda net: net.cluster_id)
 
     @classmethod
     def get_node_networks_optimized(cls, node_db, ips_db, networks):
@@ -598,15 +508,15 @@ class NetworkManager(object):
 
                 # Convert netmask to prefix
                 prefix = str(IPNetwork(
-                    '0.0.0.0/' + net.network_group.netmask).prefixlen)
-                netmask = net.network_group.netmask
+                    '0.0.0.0/' + net.netmask).prefixlen)
+                netmask = net.netmask
             else:
                 prefix = str(IPNetwork(net.cidr).prefixlen)
                 netmask = str(IPNetwork(net.cidr).netmask)
 
             network_data.append({
                 'name': net.name,
-                'vlan': net.vlan_id,
+                'vlan': net.vlan_start,
                 'ip': ip.ip_addr + '/' + prefix,
                 'netmask': netmask,
                 'brd': str(IPNetwork(net.cidr).broadcast),
@@ -626,7 +536,7 @@ class NetworkManager(object):
                 continue
             network_data.append({
                 'name': net.name,
-                'vlan': net.vlan_id,
+                'vlan': net.vlan_start,
                 'dev': interface.name})
 
         network_data.append(cls._get_admin_network(node_db))
@@ -637,16 +547,16 @@ class NetworkManager(object):
     def _add_networks_wo_ips(cls, cluster_db, network_ids, node_db):
         add_net_data = []
         # And now let's add networks w/o IP addresses
-        nets = db().query(Network).join(NetworkGroup).\
+        nets = db().query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_db.id)
         if network_ids:
-            nets = nets.filter(not_(Network.id.in_(network_ids)))
+            nets = nets.filter(not_(NetworkGroup.id.in_(network_ids)))
 
         # For now, we pass information about all networks,
         #    so these vlans will be created on every node we call this func for
         # However it will end up with errors if we precreate vlans in VLAN mode
         #   in fixed network. We are skipping fixed nets in Vlan mode.
-        for net in nets.order_by(Network.id).all():
+        for net in nets.order_by(NetworkGroup.id).all():
             interface = cls._get_interface_by_network_name(
                 node_db,
                 net.name
@@ -656,7 +566,7 @@ class NetworkManager(object):
                 continue
             add_net_data.append({
                 'name': net.name,
-                'vlan': net.vlan_id,
+                'vlan': net.vlan_start,
                 'dev': interface.name})
 
         add_net_data.append(cls._get_admin_network(node_db))
@@ -737,7 +647,7 @@ class NetworkManager(object):
 
     @classmethod
     def is_ip_belongs_to_admin_subnet(cls, ip_addr):
-        admin_cidr = cls.get_admin_network().cidr
+        admin_cidr = cls.get_admin_network_group().cidr
         if ip_addr and IPAddress(ip_addr) in IPNetwork(admin_cidr):
             return True
         return False
@@ -801,7 +711,7 @@ class NetworkManager(object):
     def get_admin_ips_for_interfaces(cls, node):
         """Returns mapping admin {"inteface name" => "admin ip"}
         """
-        admin_net_id = cls.get_admin_network_id()
+        admin_net_id = cls.get_admin_network_group_id()
         admin_ips = set([
             i.ip_addr for i in db().query(IPAddr).
             order_by(IPAddr.id).

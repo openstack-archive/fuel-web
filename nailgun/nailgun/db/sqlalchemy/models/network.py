@@ -18,9 +18,8 @@ from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy.orm import relationship
 from sqlalchemy import String
-from sqlalchemy import Unicode
-from sqlalchemy.orm import relationship, backref
 
 from nailgun.db.sqlalchemy.models.base import Base
 
@@ -28,11 +27,12 @@ from nailgun.db.sqlalchemy.models.base import Base
 class IPAddr(Base):
     __tablename__ = 'ip_addrs'
     id = Column(Integer, primary_key=True)
-    network = Column(Integer, ForeignKey('networks.id', ondelete="CASCADE"))
+    network = Column(Integer, ForeignKey('network_groups.id',
+                                         ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id', ondelete="CASCADE"))
     ip_addr = Column(String(25), nullable=False)
 
-    network_data = relationship("Network")
+    network_data = relationship("NetworkGroup")
     node_data = relationship("Node")
 
 
@@ -42,29 +42,6 @@ class IPAddrRange(Base):
     network_group_id = Column(Integer, ForeignKey('network_groups.id'))
     first = Column(String(25), nullable=False)
     last = Column(String(25), nullable=False)
-
-
-class Vlan(Base):
-    __tablename__ = 'vlan'
-    id = Column(Integer, primary_key=True)
-    network = relationship("Network",
-                           backref=backref("vlan"))
-
-
-class Network(Base):
-    __tablename__ = 'networks'
-    id = Column(Integer, primary_key=True)
-    # can be nullable only for fuelweb admin net
-    release = Column(Integer, ForeignKey('releases.id'))
-    name = Column(Unicode(100), nullable=False)
-    vlan_id = Column(Integer, ForeignKey('vlan.id'))
-    network_group_id = Column(Integer, ForeignKey('network_groups.id'))
-    cidr = Column(String(25), nullable=False)
-    gateway = Column(String(25))
-    nodes = relationship(
-        "Node",
-        secondary=IPAddr.__table__,
-        backref="networks")
 
 
 class NetworkGroup(Base):
@@ -93,16 +70,17 @@ class NetworkGroup(Base):
     network_size = Column(Integer, default=256)
     amount = Column(Integer, default=1)
     vlan_start = Column(Integer)
-    networks = relationship("Network", cascade="delete",
-                            backref="network_group")
     cidr = Column(String(25))
     gateway = Column(String(25))
-
     netmask = Column(String(25), nullable=False)
     ip_ranges = relationship(
         "IPAddrRange",
         backref="network_group"
     )
+    nodes = relationship(
+        "Node",
+        secondary=IPAddr.__table__,
+        backref="networks")
 
     @classmethod
     def generate_vlan_ids_list(cls, ng):

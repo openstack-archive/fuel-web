@@ -30,7 +30,6 @@ import nailgun
 
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import IPAddrRange
-from nailgun.db.sqlalchemy.models import Network
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
@@ -62,7 +61,7 @@ class TestNetworkManager(BaseIntegrationTest):
             "management"
         )
 
-        management_net = self.db.query(Network).join(NetworkGroup).\
+        management_net = self.db.query(NetworkGroup).\
             filter(
                 NetworkGroup.cluster_id == self.env.clusters[0].id
             ).filter_by(
@@ -186,9 +185,7 @@ class TestNetworkManager(BaseIntegrationTest):
         ips = self.env.network_manager._get_ips_except_admin(joined=True)
         self.assertEqual(len(ips), 2)
         self.assertTrue(isinstance(ips[0].node_data, Node))
-        self.assertTrue(isinstance(ips[0].network_data, Network))
-        self.assertTrue(isinstance(ips[0].network_data.network_group,
-                        NetworkGroup))
+        self.assertTrue(isinstance(ips[0].network_data, NetworkGroup))
 
     def test_get_node_networks_optimization(self):
         self.env.create(
@@ -230,7 +227,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertTrue(isinstance(networks, dict))
         self.assertIn(cluster['id'], networks)
         self.assertEqual(len(networks[cluster['id']]), 5)
-        networks_keys = (n.network_group.name for n in networks[cluster['id']])
+        networks_keys = (n.name for n in networks[cluster['id']])
         # NetworkGroup.names[1:6] - all except fuel_admin and private
         # private is not used with NovaNetwork
         self.assertEqual(sorted(networks_keys),
@@ -258,14 +255,13 @@ class TestNetworkManager(BaseIntegrationTest):
     def test_assign_admin_ips(self):
         node = self.env.create_node()
         self.env.network_manager.assign_admin_ips(node.id, 2)
-        admin_net_id = self.env.network_manager.get_admin_network_id()
         admin_ng_id = self.env.network_manager.get_admin_network_group_id()
         admin_network_range = self.db.query(IPAddrRange).\
             filter_by(network_group_id=admin_ng_id).all()[0]
 
         admin_ips = self.db.query(IPAddr).\
             filter_by(node=node.id).\
-            filter_by(network=admin_net_id).all()
+            filter_by(network=admin_ng_id).all()
         self.assertEquals(len(admin_ips), 2)
         map(
             lambda x: self.assertIn(
@@ -280,12 +276,11 @@ class TestNetworkManager(BaseIntegrationTest):
 
     def test_assign_admin_ips_large_range(self):
         map(self.db.delete, self.db.query(IPAddrRange).all())
-        admin_net_id = self.env.network_manager.get_admin_network_id()
-        admin_ng = self.db.query(Network).get(admin_net_id).network_group
+        admin_ng_id = self.env.network_manager.get_admin_network_group_id()
         mock_range = IPAddrRange(
             first='10.0.0.1',
             last='10.255.255.254',
-            network_group_id=admin_ng.id
+            network_group_id=admin_ng_id
         )
         self.db.add(mock_range)
         self.db.commit()
@@ -300,7 +295,7 @@ class TestNetworkManager(BaseIntegrationTest):
         # Asserting count of admin node IPs
         def asserter(x):
             n, c = x
-            l = len(self.db.query(IPAddr).filter_by(network=admin_net_id).
+            l = len(self.db.query(IPAddr).filter_by(network=admin_ng_id).
                     filter_by(node=n).all())
             self.assertEquals(l, c)
         map(asserter, nc)
@@ -308,7 +303,7 @@ class TestNetworkManager(BaseIntegrationTest):
     def test_assign_admin_ips_idempotent(self):
         node = self.env.create_node()
         self.env.network_manager.assign_admin_ips(node.id, 2)
-        admin_net_id = self.env.network_manager.get_admin_network_id()
+        admin_net_id = self.env.network_manager.get_admin_network_group_id()
         admin_ips = set([i.ip_addr for i in self.db.query(IPAddr).
                          filter_by(node=node.id).
                          filter_by(network=admin_net_id).all()])
@@ -320,12 +315,11 @@ class TestNetworkManager(BaseIntegrationTest):
 
     def test_assign_admin_ips_only_one(self):
         map(self.db.delete, self.db.query(IPAddrRange).all())
-        admin_net_id = self.env.network_manager.get_admin_network_id()
-        admin_ng = self.db.query(Network).get(admin_net_id).network_group
+        admin_net_id = self.env.network_manager.get_admin_network_group_id()
         mock_range = IPAddrRange(
             first='10.0.0.1',
             last='10.0.0.1',
-            network_group_id=admin_ng.id
+            network_group_id=admin_net_id
         )
         self.db.add(mock_range)
         self.db.commit()
@@ -333,7 +327,7 @@ class TestNetworkManager(BaseIntegrationTest):
         node = self.env.create_node()
         self.env.network_manager.assign_admin_ips(node.id, 1)
 
-        admin_net_id = self.env.network_manager.get_admin_network_id()
+        admin_net_id = self.env.network_manager.get_admin_network_group_id()
 
         admin_ips = self.db.query(IPAddr).\
             filter_by(node=node.id).\
@@ -415,7 +409,8 @@ class TestNovaNetworkManager(BaseIntegrationTest):
         interfaces = deepcopy(node_db.meta['interfaces'])
 
         # allocate ip from admin subnet
-        admin_ip = str(IPNetwork(NetworkManager.get_admin_network().cidr)[0])
+        admin_ip = str(IPNetwork(
+            NetworkManager.get_admin_network_group().cidr)[0])
         for interface in interfaces:
             if interface['mac'] == admin_nic.mac:
                 # reset admin ip for previous admin interface
@@ -470,7 +465,8 @@ class TestNeutronManager(BaseIntegrationTest):
         interfaces = deepcopy(node_db.meta['interfaces'])
 
         # allocate ip from admin subnet
-        admin_ip = str(IPNetwork(NetworkManager.get_admin_network().cidr)[0])
+        admin_ip = str(IPNetwork(
+            NetworkManager.get_admin_network_group().cidr)[0])
         for interface in interfaces:
             if interface['mac'] == admin_nic.mac:
                 # reset admin ip for previous admin interface

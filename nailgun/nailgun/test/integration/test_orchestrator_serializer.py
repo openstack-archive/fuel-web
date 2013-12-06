@@ -19,7 +19,6 @@ import json
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import IPAddrRange
-from nailgun.db.sqlalchemy.models import Network
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.orchestrator.deployment_serializers \
@@ -238,8 +237,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                  '172.16.0.10-172.16.0.12'])
 
     def test_configure_interfaces_untagged_network(self):
-        for network in self.db.query(Network).all():
-            network.vlan_id = None
+        for network in self.db.query(NetworkGroup).all():
+            network.vlan_start = None
         self.db.commit()
         node_db = sorted(self.cluster.nodes, key=lambda n: n.id)[0]
         from nailgun.orchestrator.deployment_serializers \

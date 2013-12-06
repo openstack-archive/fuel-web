@@ -16,7 +16,6 @@
 
 
 from nailgun.db.sqlalchemy.models import IPAddr
-from nailgun.db.sqlalchemy.models import Network
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -42,7 +41,7 @@ class TestHorizonURL(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, 60)
 
-        network = self.db.query(Network).join(NetworkGroup).\
+        network = self.db.query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == self.env.clusters[0].id).\
             filter_by(name="public").first()
         lost_ips = self.db.query(IPAddr).filter_by(

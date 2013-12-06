@@ -19,7 +19,6 @@ import logging
 from mock import patch
 
 from nailgun.db.sqlalchemy.models import IPAddr
-from nailgun.db.sqlalchemy.models import Network
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
@@ -59,7 +58,7 @@ class TestNodeDeletion(BaseIntegrationTest):
         ).first()
         self.assertEquals(node_try, None)
 
-        management_net = self.db.query(Network).join(NetworkGroup).\
+        management_net = self.db.query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster.id).filter_by(
                 name='management').first()
 

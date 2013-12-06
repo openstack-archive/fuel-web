@@ -20,7 +20,6 @@ from mock import patch
 from sqlalchemy.sql import not_
 
 from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import Network
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.network.nova_network import NovaNetworkManager
@@ -153,15 +152,15 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(201, resp.status)
-        nets = self.db.query(Network).filter(
-            not_(Network.name == "fuelweb_admin")
+        nets = self.db.query(NetworkGroup).filter(
+            not_(NetworkGroup.name == "fuelweb_admin")
         ).all()
         obtained = []
         for net in nets:
             obtained.append({
                 'release': net.release,
                 'name': net.name,
-                'vlan_id': net.vlan_id,
+                'vlan_id': net.vlan_start,
                 'cidr': net.cidr,
                 'gateway': net.gateway
             })
@@ -184,7 +183,7 @@ class TestHandlers(BaseIntegrationTest):
                 'release': release.id,
                 'name': u'fixed',
                 'vlan_id': 103,
-                'cidr': '10.0.0.0/24',
+                'cidr': '10.0.0.0/16',
                 'gateway': '10.0.0.1'
             },
             {

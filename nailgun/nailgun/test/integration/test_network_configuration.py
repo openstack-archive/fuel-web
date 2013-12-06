@@ -127,8 +127,8 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.nova_networks_put(self.cluster.id, new_nets)
         self.assertEquals(resp.status, 202)
         self.db.refresh(network)
-        self.assertEquals(len(network.networks), 1)
-        self.assertEquals(network.networks[0].vlan_id, 500)
+        self.assertEquals(network.amount, 1)
+        self.assertEquals(network.vlan_start, 500)
 
     def test_update_networks_and_net_manager(self):
         network = self.db.query(NetworkGroup).filter(
@@ -144,7 +144,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEquals(
             self.cluster.net_manager,
             new_net['net_manager'])
-        self.assertEquals(network.networks[0].vlan_id, new_vlan_id)
+        self.assertEquals(network.vlan_start, new_vlan_id)
 
     def test_networks_update_fails_with_wrong_net_id(self):
         new_nets = {'networks': [{'id': 500,
@@ -320,8 +320,8 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEquals(resp.status, 202)
 
         self.db.refresh(network)
-        self.assertEquals(len(network.networks), 1)
-        self.assertEquals(network.networks[0].vlan_id, 500)
+        self.assertEquals(network.amount, 1)
+        self.assertEquals(network.vlan_start, 500)
 
     def test_update_networks_fails_if_change_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)

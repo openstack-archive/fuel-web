@@ -343,9 +343,12 @@ define(['utils', 'deepModel'], function(utils) {
             return response;
         },
         toJSON: function(options) {
-            return _.extend(this.constructor.__super__.toJSON.call(this, options), {
+            return _.omit(_.extend(this.constructor.__super__.toJSON.call(this, options), {
                 assigned_networks: this.get('assigned_networks').toJSON()
-            });
+            }), 'checked');
+        },
+        isBond: function() {
+            return this.get('type') == 'bond';
         },
         validate: function() {
             var errors = [];
@@ -372,6 +375,19 @@ define(['utils', 'deepModel'], function(utils) {
     models.Interfaces = Backbone.Collection.extend({
         constructorName: 'Interfaces',
         model: models.Interface,
+        getSlaveInterfaceNames: function() {
+            return _.pluck(_.flatten(_.filter(this.pluck('slaves'))), 'name');
+        },
+        generateBondName: function() {
+            var base = 'ovs-bond';
+            var index;
+            for (index = 0; true; index += 1) {
+                var proposedName = base + index;
+                if (!this.where({name: proposedName}).length) {
+                    return proposedName;
+                }
+            }
+        },
         comparator: function(ifc) {
             return ifc.get('name');
         }

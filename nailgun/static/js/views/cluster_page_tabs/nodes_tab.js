@@ -104,12 +104,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.applyChangesButton = new Backbone.Model({disabled: true});
         },
         setupButtonsBindings: function() {
-            var bindings = {
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled'
-                }]
-            };
+            var bindings = {attributes: [{name: 'disabled', observe: 'disabled'}]};
             this.stickit(this.loadDefaultsButton, {'.btn-defaults': bindings});
             this.stickit(this.cancelChangesButton, {'.btn-revert-changes': bindings});
             this.stickit(this.applyChangesButton, {'.btn-apply': bindings});
@@ -1274,6 +1269,22 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         disableControls: function(disable) {
             this.updateButtonsState(disable || this.isLocked());
         },
+        initButtons: function() {
+            this.constructor.__super__.initButtons.apply(this);
+            this.bondInterfacesButton = new Backbone.Model({disabled: true});
+            this.unbondInterfacesButton = new Backbone.Model({disabled: true});
+        },
+        setupButtonsBindings: function() {
+            this.constructor.__super__.setupButtonsBindings.apply(this);
+            var bindings = {attributes: [{name: 'disabled', observe: 'disabled'}]};
+            this.stickit(this.bondInterfacesButton, {'.btn-bond': bindings});
+            this.stickit(this.unbondInterfacesButton, {'.btn-unbond': bindings});
+        },
+        updateButtonsState: function(state) {
+            this.constructor.__super__.updateButtonsState.apply(this, arguments);
+            //this.bondInterfacesButton.set('disabled', state);
+            //this.unbondInterfacesButton.set('disabled', state);
+        },
         checkForNodeNetworksChange: function() {
             var chosenNetworks = _.pluck(this.interfaces.toJSON(), 'assigned_networks');
             return !this.nodes.reduce(function(result, node) {
@@ -1291,6 +1302,21 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         checkForChanges: function() {
             this.updateButtonsState(this.isLocked() || !this.checkForNodeNetworksChange());
             this.loadDefaultsButton.set('disabled', this.isLocked());
+        },
+        handleSelection: function() {
+            var checkedInterfaces = this.interfaces.filter(function(ifc) {
+                return ifc.get('checked') && !ifc.isBond();
+            });
+            var checkedBonds = this.interfaces.filter(function(ifc) {
+                return ifc.get('checked') && ifc.isBond();
+            });
+            var interfaceWithUnmovableNetworkChecked = checkedInterfaces.length && !!this.interfaces.find(function(ifc) {
+                return ifc.get('checked') && !!ifc.get('assigned_networks').find(function(interfaceNetwork) {
+                    return interfaceNetwork.getFullNetwork().get('meta').unmovable;
+                });
+            });
+            this.bondInterfacesButton.set('disabled', checkedInterfaces.length < 2 || checkedBonds.length || interfaceWithUnmovableNetworkChecked);
+            this.unbondInterfacesButton.set('disabled', checkedInterfaces.length || !checkedBonds.length);
         },
         loadDefaults: function() {
             this.disableControls(true);
@@ -1340,6 +1366,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                         this.interfaces = new models.Interfaces(this.nodes.at(0).interfaces.toJSON(), {parse: true});
                         this.interfaces.on('reset', this.render, this);
                         this.interfaces.on('sync', this.checkForChanges, this);
+                        this.interfaces.on('change:checked', this.handleSelection, this);
                         // FIXME: modifying prototype to easily access NetworkConfiguration model
                         // should be reimplemented in a less hacky way
                         var networks = this.networkConfiguration.get('networks');
@@ -1357,10 +1384,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         renderInterfaces: function() {
             this.tearDownRegisteredSubViews();
             this.$('.node-networks').html('');
+            var slaveInterfaceNames = this.interfaces.getSlaveInterfaceNames();
             this.interfaces.each(_.bind(function(ifc) {
-                var nodeInterface = new NodeInterface({model: ifc, screen: this});
-                this.registerSubView(nodeInterface);
-                this.$('.node-networks').append(nodeInterface.render().el);
+                if (!_.contains(slaveInterfaceNames, ifc.get('name'))) {
+                    var nodeInterface = new NodeInterface({model: ifc, screen: this});
+                    this.registerSubView(nodeInterface);
+                    this.$('.node-networks').append(nodeInterface.render().el);
+                }
             }, this));
             // if any errors found disable apply button
             _.each(this.interfaces.invoke('validate'), _.bind(function(interfaceValidationResult) {
@@ -1394,6 +1424,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'sortactivate .logical-network-box': 'dragActivate',
             'sortdeactivate .logical-network-box': 'dragDeactivate',
             'sortover .logical-network-box': 'updateDropTarget'
+        },
+        bindings: {
+            'input[type=checkbox]': {
+                observe: 'checked'
+            }
         },
         dragStart: function(event, ui) {
             var networkNames = $(ui.item).find('.logical-network-item').map(function(index, el) {
@@ -1445,6 +1480,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                         .next('.network-box-error-message').text(error);
                 }, this));
             }
+            this.stickit(this.model);
             return this;
         }
     });

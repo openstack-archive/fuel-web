@@ -3,7 +3,7 @@
 @import 'retina.less';
 
 // Basis
-// -------------------------
+// -------------------------
 
 // Global colors
 // --------------------------------------------------
@@ -210,7 +210,6 @@
 // -------------------------
 
 .btn-mixin(@color: @font-color-dark, @background-color: #e4e4e5, @box-shadow-color-start: 0 1px 2px rgba(0,0,0,.25), @box-shadow-color-end: inset 0 0 0 1px rgba(255,255,255,.3), @border-color: #b3b3b3, @gradient-color-start: @fuel-white-grey, @gradient-color-end:  #dcdcdd) {
-  font-size: 14px;
   color: @color;
   background: @background-color;
   .box-shadow-mixin-two (@box-shadow-color-start, @box-shadow-color-end);
@@ -263,6 +262,9 @@ body {
   -ms-user-select: none;
   user-select: none;
 }
+
+::selection {background: #fff2a8; }
+::-moz-selection {background: #fff2a8; }
 
 button {
   font-family: @font-family-base;
@@ -2802,15 +2804,19 @@ hr.slim {
   &.nodrag {
     opacity: 0.7;
     .network-box-item {
-      border-color: red;
+      border-color: @fuel-dark-red;
       background-color: #F2DEDE;
     }
   }
 }
 
 .network-box-name {
-  margin-left: 20px;
+  border-bottom: 1px dotted #999999;
   font-size: 16px;
+  padding: 8px 15px;
+  label {
+    margin: 0;
+  }
 }
 
 .network-box-item {
@@ -2819,7 +2825,7 @@ hr.slim {
   min-height: 80px;
   border: 1px solid #999999;
   margin-left: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 5px;
   margin-top: 10px;
   &:after{
     clear: both;
@@ -2831,7 +2837,7 @@ hr.slim {
 
 .network-info-box {
   display: block;
-  width: 290px;
+  width: 305px;
   min-height: 44px;
   float: left;
   margin: 17px 0px 0px 20px;
@@ -2840,13 +2846,13 @@ hr.slim {
 
 .network-interfaces-status {
   display: block;
-  .width-height-size(54px, 43px);
-  background: #bbbbbb;
+  .width-height-size(54px, 58px);
+  background: @fuel-grey-lighter;
   padding: 0px;
   border-radius: 4px;
   overflow: hidden;
   float: left;
-  margin-right: 20px;
+  margin: 10px 20px 0px 0px;
 }
 
 .interface-online, .interface-offline {
@@ -2857,6 +2863,7 @@ hr.slim {
   display: inline-block;
   text-decoration: inherit;
   width: 0em;
+  height: 17px;
   margin-right: 0em;
   text-align: center;
   font-variant: normal;
@@ -2866,7 +2873,7 @@ hr.slim {
   font-size: 34px;
   padding-top: 22px;
   padding-left: 11px;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+  text-shadow: @text-shadow-white;
 }
 
 .interface-online:before {
@@ -2893,6 +2900,107 @@ hr.slim {
     content: "";
   }
 }
+
+.network-bond-name-checkbox {
+    margin: 3px 12px 0 0;
+}
+
+.network-bond-name {
+  margin-top: 5px;
+  font-size: 16px;
+  color: @fuel-dark-gray-darker;
+  text-shadow: @text-shadow-white;
+  &.disabled {
+    padding-left: 38px;
+  }
+}
+
+.network-bond-mode {
+  font-size: 13px;
+  margin: 2px 0px 0px 20px;
+  text-shadow: @text-shadow-white;
+  > b {
+    color: #555555;
+  }
+  select {
+    width: 160px;
+    margin-top: -4px;
+    margin-bottom: 0px;
+  }
+}
+
+.network-bond-status {
+  font-size: 13px;
+  margin: 2px 0px 0px 20px;
+  text-shadow: @text-shadow-white;
+  > b {
+    color: #555555;
+  }
+}
+
+.physical-network-checkbox {
+  display: block;
+  float: left;
+  padding: 23px 0 0 15px;
+  width: 52px;
+  .box-sizing-mixin;
+}
+
+.network-connections-block {
+  display: block;
+  float: left;
+  width: 54px;
+  margin-bottom: 8px;
+  .box-sizing-mixin;
+}
+
+.network-interfaces-name {
+  color: #505050;
+  font-size: @font-size-base - 3;
+  font-weight: bold;
+  margin: 0;
+  line-height: 16px;
+  text-align: center;
+  text-shadow: @text-shadow-white;
+}
+
+.network-connections-info-block {
+  display: block;
+  float: left;
+  width: 266px;
+  .box-sizing-mixin;
+}
+
+.network-connections-info-block-item {
+  display: block;
+  height: 58px;
+  overflow: hidden;
+  margin: 10px 0px 0px 10px;
+}
+
+.network-connections-info-position {
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+
+.network-connections-info-description {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.network-connections-info-description > div {
+  display: block;
+  height: 18px;
+  font-size: 13px;
+}
+
+.network-connections-info-description > button {
+  font-size: 13px;
+  margin: 0px;
+  padding: 0px;
+}
+
 
 .logical-network-group {
   display: block;

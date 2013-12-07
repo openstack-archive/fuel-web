@@ -1,11 +1,72 @@
-<!-- network block start -->
+<div class="clearfix"></div>
+
+<% var slaveInterfaces = [] %>
 <div class="physical-network-box" data-name="<%- ifc.get('name') %>">
-  <div class="network-box-name"><%- ifc.get('name') %></div>
   <div class="network-box-item">
-    <div class="network-info-box enable-selection">
-      <div class="network-interfaces-status"><div class="interface-<%= ifc.get('state') !== 'down' ? 'online' : 'offline'%>"></div></div>
-      <div>MAC: <%- ifc.get('mac') %></div>
-      <div><%- $.t('cluster_page.nodes_tab.configure_interfaces.speed') %>: <%- showBandwidth(ifc.get('current_speed')) %></div>
+    <% if (ifc.isBond()) { %>
+      <% var slaveInterfaceNames = _.pluck(ifc.get('slaves'), 'name') %>
+      <% slaveInterfaces = ifc.collection.filter(function(slaveInterface) {return _.contains(slaveInterfaceNames, slaveInterface.get('name'))}) %>
+      <div class="network-box-name">
+        <% if (bondingAvailable) { %>
+          <label>
+            <div class="pull-left">
+              <div class="custom-tumbler network-bond-name-checkbox">
+                <input type="checkbox">
+                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+              </div>
+            </div>
+            <div class="network-bond-name pull-left"><%- ifc.get('name') %></div>
+          </label>
+        <% } else { %>
+          <div class="network-bond-name pull-left disabled"><%- ifc.get('name') %></div>
+        <% } %>
+        <div class="network-bond-mode pull-right">
+          <b><%- $.t('cluster_page.nodes_tab.configure_interfaces.mode') %>:</b>
+          <span>
+            <select name="mode" <%= bondingAvailable ? '' : 'disabled' %>></select>
+          </span>
+        </div>
+        <div class="clearfix"></div>
+      </div>
+
+      <div class="physical-network-checkbox"></div>
+    <% } else { %>
+      <% slaveInterfaces = [ifc] %>
+      <div class="physical-network-checkbox">
+        <% var bondable = bondingAvailable && !ifc.get('assigned_networks').find(function(interfaceNetwork) {return interfaceNetwork.getFullNetwork().get('meta').unmovable}) %>
+        <% if (bondable) { %>
+          <label>
+            <div class="custom-tumbler">
+              <input type="checkbox">
+              <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+            </div>
+          </label>
+        <% } %>
+      </div>
+    <% } %>
+
+    <div class="network-connections-block">
+      <% _.each(slaveInterfaces, function(slaveInterface) { %>
+        <div class="network-interfaces-status">
+          <div class="interface-<%= slaveInterface.get('state') != 'down' ? 'online' : 'offline'%>"></div>
+          <div class="network-interfaces-name"><%- slaveInterface.get('name') %></div>
+        </div>
+      <% }) %>
+    </div>
+
+    <div class="network-connections-info-block">
+      <% _.each(slaveInterfaces, function(slaveInterface) { %>
+        <div class="network-connections-info-block-item">
+          <div class="network-connections-info-position"></div>
+          <div class="network-connections-info-description">
+            <div>MAC: <%- slaveInterface.get('mac') %></div>
+            <div><%- $.t('cluster_page.nodes_tab.configure_interfaces.speed') %>: <%- showBandwidth(slaveInterface.get('current_speed')) %></div>
+            <% if (bondingAvailable && slaveInterfaces.length >= 3) { %>
+              <button class="btn btn-link btn-remove-interface" type="button" data-interface-id="<%= slaveInterface.id %>">Remove</button>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
     </div>
 
     <div class="logical-network-box">
@@ -36,5 +97,4 @@
     </div>
   </div>
 </div>
-<!-- network block end -->
 <div class="network-box-error-message common enable-selection">&nbsp;</div>

@@ -144,8 +144,17 @@
                     "configure_interfaces": {
                         "title": "Configure interfaces on __name__",
                         "title_plural": "Configure interfaces on __count__ nodes",
+                        "bond_button": "Bond Interfaces",
+                        "unbond_button": "Unbond Interfaces",
                         "speed": "Speed",
-                        "drag_and_drop_description": "You can drag and drop logical networks between physical interfaces",
+                        "bonding_mode": "Mode",
+                        "bonding_modes": {
+                            "active-backup": "Active Backup",
+                            "balance-slb": "Balance SLB",
+                            "balance-tcp": "Balance TCP",
+                            "lacp-balance-tcp": "LACP Balance TCP"
+                        },
+                        "drag_and_drop_description": "You can drag and drop logical networks between interfaces",
                         "neutron_vlan_range": "Neutron VLAN IDs",
                         "validation": {
                             "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface"

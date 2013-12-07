@@ -347,6 +347,9 @@ define(['utils', 'deepModel'], function(utils) {
                 assigned_networks: this.get('assigned_networks').toJSON()
             });
         },
+        isBond: function() {
+            return this.get('type') == 'bond';
+        },
         validate: function() {
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork'));

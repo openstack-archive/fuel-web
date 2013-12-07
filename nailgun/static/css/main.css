@@ -3383,8 +3383,9 @@ hr.slim {
 }
 
 .network-box-name {
-  margin-left: 20px;
+  border-bottom: 1px dotted #999999;
   font-size: 16px;
+  padding: 8px 15px;
 }
 
 .network-box-item {
@@ -3423,33 +3424,35 @@ hr.slim {
 .network-interfaces-status {
   display: block;
   width: 54px;
-  height: 43px;
+  height: 58px;
   background: #bbbbbb;
   padding: 0px;
   border-radius: 4px;
   overflow: hidden;
   float: left;
   margin-right: 20px;
+  margin-top: 10px;
 }
 
 .interface-online, .interface-offline {
+  display: block;
   font-family: "fontello";
-  font-style: normal;
-  font-weight: normal;
-  speak: none;
-  display: inline-block;
-  text-decoration: inherit;
-  width: 0em;
-  margin-right: 0em;
-  text-align: center;
-  font-variant: normal;
-  text-transform: none;
-  line-height: 0em;
-  margin-left: 0em;
   font-size: 34px;
-  padding-top: 22px;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+  height: 17px;
+  line-height: 0;
+  margin-left: 0;
+  margin-right: 0;
   padding-left: 11px;
+  padding-top: 22px;
+  text-align: center;
+  text-decoration: inherit;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+  text-transform: none;
+  width: 0;
+  cursor: default;
 }
 
 .interface-online:before {
@@ -3463,11 +3466,13 @@ hr.slim {
 
 .logical-network-box {
   display: block;
+  width: 612px;
   float: left;
-  width: 600px;
-  min-height: 68px;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing:
+  border-box;
   margin-bottom: 10px;
-  text-align: center;
 }
 
 .logical-network-box:after {
@@ -3475,6 +3480,82 @@ hr.slim {
   display: table;
   line-height: 0;
   content: "";
+}
+
+.network-bond-name-checkbox {
+    margin: 0px;
+    margin-right: 12px;
+}
+.network-bond-name {
+  margin-top: 2px;
+  color: #333333;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.network-bond-mode {
+  font-size: 13px;
+  margin: 2px 0px 0px 20px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.network-bond-mode > b {
+  color: #555555;
+}
+.network-bond-status {
+  font-size: 13px;
+  margin: 2px 0px 0px 20px;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+.network-bond-status > b {
+  color: #555555;
+}
+.physical-network-checkbox {
+  display: block;
+  float: left;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  padding: 23px 0 0 15px;
+  width: 54px;
+}
+.network-connections-block {
+  display: block;
+  float: left;
+  width: 54px;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+.network-interfaces-name {
+  color: #505050;
+  font-size: 11px;
+  font-weight: bold;
+  margin: 0;
+  line-height: 16px;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.network-connections-info-block {
+  display: block;
+  float: left;
+  width: 220px;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box; 
+}
+.network-connections-info-block-item {
+  display: block;
+  height: 58px;
+  overflow: hidden;
+  margin: 10px 0px 0px 10px;
+}
+.network-connections-info-position {
+  display: inline-block;
+  height: 100%;
+  vertical-align: middle;
+}
+.network-connections-info-description {
+  display: inline-block;
+  vertical-align: middle;
 }
 
 .logical-network-group {

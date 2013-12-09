@@ -14,14 +14,17 @@
  * under the License.
 **/
 
-(function(){
+(function() {
+    'use strict';
     var compressed = true;
 //>>excludeStart("compressed", pragmas.compressed);
     compressed = false;
 //>>excludeEnd("compressed");
     if (compressed) {
         // in production mode we use compressed CSS
-        define(['require-css/css!/static/css/styles'], function() {});
+        define(['require-css/css!/static/css/styles'], function() {
+            return {};
+        });
     } else {
         // in development mode we load original LESS
         // working around requirejs define counter
@@ -36,4 +39,4 @@
             less.refresh();
         });
     }
-})();
+}());

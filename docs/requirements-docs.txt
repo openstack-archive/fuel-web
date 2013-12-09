@@ -1,0 +1,9 @@
+-r ../requirements-eggs.txt
+Sphinx
+rst2pdf
+sphinxcontrib-plantuml
+sphinxcontrib-blockdiag
+sphinxcontrib-actdiag
+sphinxcontrib-seqdiag
+sphinxcontrib-nwdiag
+mock

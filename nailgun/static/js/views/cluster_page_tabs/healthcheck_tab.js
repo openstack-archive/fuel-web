@@ -45,7 +45,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         },
         calculateTestControlButtonsState: function() {
             var hasRunningTests = this.hasRunningTests();
-            this.$('.run-tests-btn').prop('disabled', !this.$('input.testset-select:checked').length || hasRunningTests).toggle(!hasRunningTests);
+            this.$('.run-tests-btn').prop('disabled', !this.$('input.test-select:checked').length || hasRunningTests).toggle(!hasRunningTests);
             this.$('.stop-tests-btn').prop('disabled', !hasRunningTests).toggle(hasRunningTests);
             this.$('input[type=checkbox]').prop('disabled', hasRunningTests);
         },
@@ -56,8 +56,12 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             var checked = $(e.currentTarget).is(':checked');
             this.$('input.testset-select').prop('checked', checked);
             this.calculateTestControlButtonsState();
+            this.$('.test-select').prop('checked', true);
         },
         testSetSelected: function() {
+            _.each(this.subViews, function(subView) {
+                    subView.$(".test-select").prop('checked', subView.$('input.testset-select').is(':checked'));
+            });
             this.calculateSelectAllTumblerState();
             this.calculateTestControlButtonsState();
         },
@@ -85,17 +89,23 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                     .always(_.bind(this.scheduleUpdate, this))
             );
         },
-        runTests: function() {
-            this.disableControls(true);
-            var testruns = new models.TestRuns();
+        runTests: function(e) {
+            var selectedTestIds,
+                testruns = new models.TestRuns(),
+                selectedTests;
             _.each(this.subViews, function(subView) {
-                if (subView instanceof TestSet && subView.$('input.testset-select:checked').length) {
+                if (subView instanceof TestSet && subView.$('input.test-select:checked').length) {
+                    selectedTests = subView.$("input.test-select:checked");
+                    selectedTestIds = _.map(selectedTests, function(selectedTest) {
+                        return $(selectedTest).attr("data-id");
+                    });
                     var testrun = new models.TestRun({
                         testset: subView.testset.id,
                         metadata: {
                             config: {},
                             cluster_id: this.model.id
-                        }
+                        },
+                        tests: selectedTestIds
                     });
                     testruns.add(testrun);
                 }
@@ -207,6 +217,13 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             });
             return lines.join('\n');
         }}),
+        events: {
+            'change input.test-select': 'testSelected'
+        },
+        testSelected: function() {
+            this.$('.testset-select').prop('checked', this.$('input.test-select:checked').length == this.$('input.test-select').length);
+            $('.run-tests-btn').prop('disabled', !this.$('input.test-select:checked').length);
+        },
         initialize: function(options) {
             _.defaults(this, options);
             this.testrun.on('change', this.renderTests, this);

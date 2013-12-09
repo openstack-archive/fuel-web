@@ -633,12 +633,27 @@
                             "description": "管理员电子邮件"
                         },
                         "tenant": {
-                            "label": "tenant",
-                            "description": "管理员Tenant(项目)名称"
+                            "label": "租户",
+                            "description": "管理员租户名称"
                         },
                         "password": {
                             "label": "密码",
                             "description": "管理员密码"
+                        }
+                    },
+                    "additional_components": {
+                        "group_name": "额外组件",
+                        "savanna": {
+                            "label": "安装Savanna",
+                            "description": "如果选择，Savanna组件将被安装。"
+                        },
+                        "murano": {
+                            "label": "安装Murano",
+                            "description": "如果选择，Murano组件将被安装。"
+                        },
+                        "ceilometer": {
+                            "label": "安装Ceilometer",
+                            "description": "如果选择，Ceilometer组件将被安装。"
                         }
                     },
                     "syslog": {
@@ -655,7 +670,7 @@
                             }
                         },
                         "syslog_server": {
-                            "label": "Hostname",
+                            "label": "主机名",
                             "description": "远程系统日志主机名"
                         },
                         "syslog_port": {
@@ -663,8 +678,35 @@
                             "description": "远程系统日志端口"
                         }
                     },
+                    "storage": {
+                        "group_name": "存储",
+                        "volumes_lvm": {
+                            "label": "基于iSCSI的Cinder LVM卷",
+                            "description": "需要至少一个Cinder节点"
+                        },
+                        "volumes_ceph": {
+                            "label": "Ceph RBD卷",
+                            "description": "需要至少两个Ceph-OSD节点"
+                        },
+                        "images_ceph": {
+                            "label": "Ceph RBD映像",
+                            "description": "需要至少两个Ceph-OSD节点"
+                        },
+                        "objects_ceph": {
+                            "label": "Ceph rados-gw对象",
+                            "description": "需要至少两个Ceph-OSD节点，与Swift不兼容"
+                        },
+                        "osd_pool_size": {
+                            "label": "Ceph对象副本数量",
+                            "description": "定义Ceph池中的对象副本数量。需要部署至少相应数量的Ceph-OSD节点。"
+                        }
+                    },
                     "common": {
                         "group_name": "通用",
+                        "debug": {
+                            "label": "OpenStack调试日志",
+                            "description": "调试模式能够提供更多信息，但也需要更多磁盘空间。"
+                        },
                         "auto_assign_floating_ip": {
                             "label": "自动分配浮动IP",
                             "description": "OpenStack将自动给新实例分配浮动IP"
@@ -686,24 +728,28 @@
                             "label": "主机启动时运行客户机",
                             "description": "在主机重启时是否需要重启客户机。 如果启用，此选项会导致nova-compute启动时无条件的重启客户机。如果客户机为停止状态，则启动它。如果是运行状态，则重启"
                         },
+                        "vlan_splinters": {
+                            "label": "打开'OVS VLAN splinters'特性（仅Neutron）",
+                            "description": "将VLAN splinters Open vSwitch方法使用到需要的网卡上。"
+                        },
                         "use_cow_images": {
                             "label": "为映像使用qcow格式",
                             "description": "大多数情况下您需要qcow格式。如果设置为false，将使用原始映像格式运行虚机。基于原始格式的OpenStack当前不支持快照"
                         },
                         "compute_scheduler_driver": {
-                            "label": "Scheduler driver",
+                            "label": "调度方式",
                             "values": {
                                 "nova": {
                                     "scheduler": {
                                         "filter_scheduler": {
                                             "FilterScheduler": {
-                                                "label": "过滤器调度器",
+                                                "label": "过滤器调度",
                                                 "description": "TBD"
                                             }
                                         },
                                         "simple": {
                                             "SimpleScheduler": {
-                                                "label": "简单调度器",
+                                                "label": "简单调度",
                                                 "description": "TBD"
                                             }
                                         }

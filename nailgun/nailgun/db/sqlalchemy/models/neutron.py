@@ -27,7 +27,10 @@ class NeutronConfig(Base):
     __tablename__ = 'neutron_configs'
     NET_SEGMENT_TYPES = ('vlan', 'gre')
     id = Column(Integer, primary_key=True)
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    cluster_id = Column(
+        Integer,
+        ForeignKey('clusters.id', ondelete="CASCADE")
+    )
     parameters = Column(JSON, default={})
     L2 = Column(JSON, default={})
     L3 = Column(JSON, default={})

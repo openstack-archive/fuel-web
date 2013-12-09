@@ -98,7 +98,8 @@ class Node(Base):
                                      secondary=PendingNodeRoles.__table__)
     attributes = relationship("NodeAttributes",
                               backref=backref("node"),
-                              uselist=False)
+                              uselist=False,
+                              cascade="all,delete")
     interfaces = relationship("NodeNICInterface", backref="node",
                               cascade="delete",
                               order_by="NodeNICInterface.id")

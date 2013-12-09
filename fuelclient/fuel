@@ -76,13 +76,13 @@ class SetAction(argparse.Action):
             setattr(namespace, self.dest, set(values))
 
 
-def handle_api_exceptions(e):
-    if isinstance(e, urllib2.HTTPError):
-        print_error(str(e))
-    elif isinstance(e, urllib2.URLError):
+def handle_exceptions(exc):
+    if isinstance(exc, urllib2.HTTPError):
+        print_error(str(exc))
+    elif isinstance(exc, urllib2.URLError):
         print_error("Can't connect to Nailgun server!")
     else:
-        raise e
+        raise exc
 
 
 def recur_get(multi_level_dict, key_chain):
@@ -531,6 +531,24 @@ def node(params):
     elif any((params.default, params.download, params.upload)):
         print('"--default", "--download" or "--upload" '
               'must appear after "--disk" or "--network" flags.')
+    elif params.deploy or params.provision:
+        check_for_attributes(params, ["node", "env"])
+        node_ids = [str(n) for n in chain(*params.node)]
+        mode = "deploy" if params.deploy else "provision"
+        deploy_nodes_url = "clusters/{0}/{1}/?nodes={2}".format(
+            params.env,
+            mode,
+            ','.join(node_ids)
+        )
+        data = json_api_put_request(
+            deploy_nodes_url,
+            {}
+        )
+        print_to_output(
+            data,
+            "Started {0}ing nodes [{1}]."
+            .format(mode, ", ".join(node_ids))
+        )
     else:
         acceptable_keys = ["id", "status", "name", "cluster",
                            "mac", "roles", "pending_roles", "online"]
@@ -765,7 +783,8 @@ def task(params):
             .format(','.join(map(str, task_ids)))
         )
     else:
-        acceptable_keys = ["id", "status", "name", "cluster", "progress"]
+        acceptable_keys = ["id", "status", "name",
+                           "cluster", "progress", "uuid"]
         tasks = json_api_get_request("tasks/")
         print_to_output(
             tasks,
@@ -822,7 +841,7 @@ def download_snapshot_with_progress_bar(url, directory):
         print()
 
 
-def deploy(params):
+def deploy_changes(params):
     """Deploy changes to environments
     """
     check_for_attributes(params, ["env"])
@@ -987,6 +1006,10 @@ def fact(params, info_type):
         params.env,
         info_type
     )
+    if params.node:
+        facts_default_url += "/?nodes=" + ",".join(
+            str(n) for n in chain(*params.node)
+        )
     facts_url = "clusters/{0}/orchestrator/{1}/".format(
         params.env,
         info_type
@@ -1017,7 +1040,7 @@ def fact(params, info_type):
             write_facts_to_dir(facts, dir_name)
 
 
-def healthcheck(params):
+def health_check(params):
     """Run health check on environment
     """
     check_for_attributes(params, ["env"])
@@ -1350,6 +1373,20 @@ def get_release_arg(help_msg):
     }
 
 
+def get_node_arg(help_msg):
+    return {
+        "args": ["--node", "--node-id"],
+        "params": {
+            "dest": "node",
+            "action": "store",
+            "nargs": '+',
+            "type": parse_ids,
+            "help": help_msg,
+            "default": None
+        }
+    }
+
+
 actions = {
     "release": {
         "action": release,
@@ -1473,17 +1510,8 @@ actions = {
             get_download_arg("Download configuration of specific node"),
             get_upload_arg("Upload configuration to specific node"),
             get_dir_arg("Select directory to which download node attributes"),
+            get_node_arg("Node id."),
         {
-            "args": ["--node", "--node-id"],
-            "params": {
-                "dest": "node",
-                "action": "store",
-                "nargs": '+',
-                "type": parse_ids,
-                "help": "Node id.",
-                "default": None
-            }
-        }, {
             "args": ["-r", "--role"],
             "params": {
                 "dest": "role",
@@ -1514,6 +1542,22 @@ actions = {
                 "dest": "force",
                 "action": "store_true",
                 "help": "Bypassing parameter validation.",
+                "default": False
+            }
+        }, {
+            "args": ["--deploy"],
+            "params": {
+                "dest": "deploy",
+                "action": "store_true",
+                "help": "Deploy specific nodes.",
+                "default": False
+            }
+        }, {
+            "args": ["--provision"],
+            "params": {
+                "dest": "provision",
+                "action": "store_true",
+                "help": "Provision specific nodes.",
                 "default": False
             }
         }]
@@ -1558,12 +1602,12 @@ actions = {
             get_dir_arg("Directory to which download snapshot.")
         ]
     },
-    "deploy": {
-        "action": deploy,
+    "deploy-changes": {
+        "action": deploy_changes,
         "args": []
     },
     "health": {
-        "action": healthcheck,
+        "action": health_check,
         "args": [
             get_list_arg("List all available checks"),
             {
@@ -1587,7 +1631,8 @@ def get_args_for_facts(fact_type):
         get_download_arg("Download current {0} data.".format(fact_type)),
         get_upload_arg("Upload current {0} data.".format(fact_type)),
         get_default_arg("Download default {0} data.".format(fact_type)),
-        get_dir_arg("Directory with {0} data.".format(fact_type))
+        get_dir_arg("Directory with {0} data.".format(fact_type)),
+        get_node_arg("Node ids."),
     ]
 
 
@@ -1715,4 +1760,4 @@ if __name__ == '__main__':
     try:
         actions[current_action]["action"](parsed_params)
     except Exception as e:
-        handle_api_exceptions(e)
+        handle_exceptions(e)

@@ -27,9 +27,9 @@
         </div>
         <div class="node-details"></div>
         <div class="node-hardware">
-            <span><%- $.t('cluster_page.nodes_tab.node.hardware.cpu') %>: <%= node.resource('cores') || '?' %></span>
-            <span><%- $.t('cluster_page.nodes_tab.node.hardware.hdd') %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb') %></span>
-            <span><%- $.t('cluster_page.nodes_tab.node.hardware.ram') %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb') %></span>
+            <span><%- $.t('node_details.cpu') %>: <%= node.resource('cores') || '?' %></span>
+            <span><%- $.t('node_details.hdd') %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb') %></span>
+            <span><%- $.t('node_details.ram') %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb') %></span>
         </div>
     </div>
 </label>

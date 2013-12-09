@@ -5,7 +5,8 @@
     <td class="healthcheck-col-select">
       <div class="custom-tumbler">
         <label>
-          <input type="checkbox" class="test-select" id="test-select-<%- test.get('testset') %>-<%= testIndex %>">
+          <input type="checkbox" class="test-select" id="test-select-<%- test.get('testset') %>-<%= testIndex %>"
+                 data-id="<%- test.get('id') %>">
           <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
         </label>
       </div>

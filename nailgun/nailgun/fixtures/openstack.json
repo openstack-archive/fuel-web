@@ -470,6 +470,13 @@
                             "weight": 30,
                             "type": "checkbox"
                         },
+                        "ephemeral_ceph": {
+                            "value": false,
+                            "label": "Ceph RBD for ephemeral volumes",
+                            "description": "Requires at least two Ceph-OSD nodes",
+                            "weight": 35,
+                            "type": "checkbox"
+                        },
                         "objects_ceph": {
                             "value": false,
                             "label": "Ceph rados-gw for objects",
@@ -956,6 +963,7 @@
                         "volumes_ceph": false,
                         "images_ceph": false,
                         "objects_ceph": false,
+                        "ephemeral_ceph": false,
                         "osd_pool_size": "2"
                     },
                     "mysql": {
@@ -1495,6 +1503,13 @@
                             "label": "Ceph RBD for images",
                             "description": "Requires at least two Ceph-OSD nodes",
                             "weight": 30,
+                            "type": "checkbox"
+                        },
+                        "ephemeral_ceph": {
+                            "value": false,
+                            "label": "Ceph RBD for ephemeral volumes",
+                            "description": "Requires at least two Ceph-OSD nodes",
+                            "weight": 35,
                             "type": "checkbox"
                         },
                         "objects_ceph": {

@@ -19,17 +19,27 @@ module.exports = function(grunt) {
         requirejs: {
             compile: {
                 options: {
-                    baseUrl: ".",
-                    appDir: "static",
-                    dir: grunt.option('static-dir') || "/tmp/static_compressed",
-                    mainConfigFile: "static/js/main.js",
-                    modules: [{name: "js/main"}],
+                    baseUrl: '.',
+                    appDir: 'static',
+                    dir: grunt.option('static-dir') || '/tmp/static_compressed',
+                    mainConfigFile: 'static/js/main.js',
                     waitSeconds: 60,
-                    optimize: "uglify2",
-                    optimizeCss: "standard",
+                    optimize: 'uglify2',
+                    optimizeCss: 'standard',
                     pragmas: {
                         compressed: true
                     },
+                    map: {
+                        '*': {
+                            'css': 'require-css'
+                        }
+                    },
+                    modules: [
+                        {
+                            name: 'js/main',
+                            exclude: ['css/normalize']
+                        }
+                    ]
                 }
             }
         },

@@ -2,8 +2,9 @@
     "name": "fuel-web",
     "dependencies": {
         "jquery": "1.9.1",
-        "requirejs": "2.1.4",
-        "requirejs-text": "2.0.5",
+        "requirejs": "2.1.9",
+        "requirejs-text": "2.0.10",
+        "require-css": "0.1.0",
         "lodash": "1.1.1",
         "retina.js": "1.1.0",
         "autoNumeric": "http://github.com/BobKnothe/autoNumeric/zipball/1.9.12",

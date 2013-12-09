@@ -73,7 +73,6 @@ class ProvisioningSerializer(object):
                 'ks_spaces': node.attributes.volumes,
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,
-                'puppet_version': settings.PUPPET_VERSION,
                 'puppet_enable': 0,
                 'mco_auto_setup': 1,
                 'install_log_2_syslog': 1,

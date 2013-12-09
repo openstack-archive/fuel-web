@@ -336,7 +336,7 @@ class NeutronManager(NetworkManager):
             db().commit()
             nw_group.ip_ranges.append(new_ip_range)
             db().commit()
-            cls.create_networks(nw_group)
+            cls.cleanup_network_group(nw_group)
 
             used_vlans.append(vlan_start)
             used_nets.append(str(new_net))
@@ -380,7 +380,7 @@ class NeutronManager(NetworkManager):
                             'neutron_parameters']['predefined_networks']
                         pre_nets['net04_ext']['L3']['gateway'] = ng['gateway']
                 if ng_db.meta.get("notation"):
-                    cls.create_networks(ng_db)
+                    cls.cleanup_network_group(ng_db)
                 ng_db.cluster.add_pending_changes('networks')
 
         if 'neutron_parameters' in network_configuration:

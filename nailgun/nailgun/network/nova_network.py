@@ -60,7 +60,7 @@ class NovaNetworkManager(NetworkManager):
             db().commit()
             nw_group.ip_ranges.append(new_ip_range)
             db().commit()
-            cls.create_networks(nw_group)
+            cls.cleanup_network_group(nw_group)
 
     @classmethod
     def assign_networks_by_default(cls, node):
@@ -186,5 +186,5 @@ class NovaNetworkManager(NetworkManager):
 
                         setattr(ng_db, key, value)
 
-                cls.create_networks(ng_db)
+                cls.cleanup_network_group(ng_db)
                 ng_db.cluster.add_pending_changes('networks')

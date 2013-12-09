@@ -131,20 +131,14 @@ class NailgunReceiver(object):
             logger.debug("Removing environment itself")
             cluster_name = cluster.name
 
-            nws = itertools.chain(
-                *[n.networks for n in cluster.network_groups]
-            )
             ips = db().query(IPAddr).filter(
-                IPAddr.network.in_([n.id for n in nws])
+                IPAddr.network.in_([n.id for n in cluster.network_groups])
             )
             map(db().delete, ips)
             db().commit()
 
             db().delete(cluster)
             db().commit()
-
-            # Dmitry's hack for clearing VLANs without networks
-            NetworkManager.clear_vlans()
 
             notifier.notify(
                 "done",

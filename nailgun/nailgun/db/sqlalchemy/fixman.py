@@ -22,6 +22,7 @@ import os.path
 import Queue
 import StringIO
 import sys
+import yaml
 
 from sqlalchemy import orm
 import sqlalchemy.types
@@ -48,7 +49,11 @@ def template_fixture(fileobj, **kwargs):
 
 def upload_fixture(fileobj):
     db.expunge_all()
-    fixture = json.load(
+    loaders = {'.json': json, '.yaml': yaml, '.yml': yaml}
+    extension = os.path.splitext(fileobj.name)[1]
+    if extension not in loaders:
+        raise Exception("Unknown file extension '{0}'".format(extension))
+    fixture = loaders[extension].load(
         template_fixture(fileobj)
     )
 

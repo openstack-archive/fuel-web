@@ -15,6 +15,7 @@
 #    under the License.
 
 import cStringIO
+import json
 
 from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import Node
@@ -94,7 +95,7 @@ class TestFixture(BaseIntegrationTest):
             }
         }]'''
 
-        upload_fixture(cStringIO.StringIO(data))
+        upload_fixture(cStringIO.StringIO(data), loader=json)
         check = self.db.query(Release).filter(
             Release.name == u"CustomFixtureRelease"
         )

@@ -6,7 +6,7 @@
       <li class="<%= activeTab == tab.url ? 'active' : '' %>">
         <a href="#cluster/<%= cluster.id %>/<%= tab.url %>">
           <b class="tab-<%= tab.url %>-normal"></b>
-          <div class="tab-title"><%= tab.title %></div>
+          <div class="tab-title"><%- $.t('cluster_page.tabs.' + tab.url) %></div>
         </a>
       </li>
     <% }) %>

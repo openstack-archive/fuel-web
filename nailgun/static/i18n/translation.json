@@ -347,7 +347,8 @@
                     },
                     "additional": {
                         "title": "Additional Services",
-                        "alert": "Additional services are not available in __releaseName__",
+                        "release_alert": "Additional services are not available in __releaseName__",
+                        "network_mode_alert": "Murano is not available for current network mode. Please choose Neutron networking to enable.",
                         "install_savanna": "Install Savanna",
                         "install_savanna_description": "Savanna enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
                         "install_murano": "Install Murano",
@@ -890,7 +891,7 @@
                     },
                     "additional": {
                         "title": "附加服务",
-                        "alert": "__releaseName__不支持附加服务",
+                        "release_alert": "__releaseName__不支持附加服务",
                         "install_savanna": "安装Savanna",
                         "install_savanna_description": "利用Savanna能在各大版本厂商的OpenStack上的部署Hadoop集群。",
                         "install_murano": "安装Murano",

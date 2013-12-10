@@ -1433,6 +1433,10 @@ label.error {
   padding: 0;
 }
 
+.pane-content .alert {
+  margin-bottom: 10px;
+}
+
 .loading {
   margin-top: 200px;
   width: 100%;

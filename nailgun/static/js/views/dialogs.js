@@ -218,13 +218,18 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             _.defaults(this, options);
         },
         processPaneData: function() {
-            return (new $.Deferred()).resolve();
+            return $.Deferred().resolve();
         },
         beforeClusterCreation: function(cluster) {
-            return (new $.Deferred()).resolve();
+            return $.Deferred().resolve();
         },
         beforeSettingsSaving: function(cluster) {
-            return (new $.Deferred()).resolve();
+            return $.Deferred().resolve();
+        },
+        dependentPanes: function() {
+            return _.filter(this.wizard.subViews, function(pane) {
+                return pane instanceof views.WizardPane && _.contains(pane.deps, this.constructor);
+            }, this);
         },
         render: function() {
             this.$el.html(this.template()).i18n();
@@ -252,13 +257,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             }
             if (success && (!this.previousRelease || this.previousRelease.id != this.release.id)) {
                 this.previousRelease = this.release;
-                var releaseDependentPanes = _.filter(this.wizard.subViews, function(pane) {
-                    return pane instanceof views.WizardPane && pane.releaseDependent;
-                });
-                _.invoke(releaseDependentPanes, 'render');
+                _.invoke(this.dependentPanes(), 'render');
             }
-            var deferred = new $.Deferred();
-            return deferred[success ? 'resolve' : 'reject']();
+            return $.Deferred()[success ? 'resolve' : 'reject']();
         },
         createCluster: function() {
             this.$('.control-group').removeClass('error').find('.help-inline').text('');
@@ -341,7 +342,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterModePane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.mode.title',
-        releaseDependent: true,
+        deps: [clusterWizardPanes.ClusterNameAndReleasePane],
         template: _.template(clusterModePaneTemplate),
         events: {
             'change input[name=mode]': 'toggleTypes'
@@ -357,7 +358,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         beforeClusterCreation: function(cluster) {
             cluster.set({mode: this.$('input[name=mode]:checked').val()});
-            return (new $.Deferred()).resolve();
+            return $.Deferred().resolve();
         },
         render: function() {
             var availableModes = models.Cluster.prototype.availableModes();
@@ -374,9 +375,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             try {
                 settings.get('editable').common.libvirt_type.value = this.$('input[name=hypervisor]:checked').val();
             } catch (e) {
-                return (new $.Deferred()).reject();
+                return $.Deferred().reject();
             }
-            return (new $.Deferred()).resolve();
+            return $.Deferred().resolve();
         },
         render: function() {
             this.$el.html(this.template());
@@ -387,27 +388,37 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterNetworkPane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.network.title',
-        releaseDependent: true,
+        deps: [clusterWizardPanes.ClusterNameAndReleasePane],
         template: _.template(clusterNetworkPaneTemplate),
+        processPaneData: function() {
+            this.manager = this.$('input[name=manager]:checked').val();
+            if (!this.previousRelease || this.previousRelease.id != this.release.id) {
+                this.previousRelease = this.release;
+                _.invoke(this.dependentPanes(), 'render');
+            }
+            return $.Deferred().resolve();
+        },
         beforeClusterCreation: function(cluster) {
-            var manager = this.$('input[name=manager]:checked').val();
-            if (manager == 'nova-network') {
+            if (this.manager == 'nova-network') {
                 cluster.set({net_provider: 'nova_network'});
             } else {
                 cluster.set({net_provider: 'neutron'});
-                if (manager == 'neutron-gre') {
+                if (this.manager == 'neutron-gre') {
                     cluster.set({net_segment_type: 'gre'});
-                } else if (manager == 'neutron-vlan') {
+                } else if (this.manager == 'neutron-vlan') {
                     cluster.set({net_segment_type: 'vlan'});
                 }
             }
-            return (new $.Deferred()).resolve();
+            return $.Deferred().resolve();
         },
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            var disabled = !release || release.get('operating_system') == 'RHEL'; // no Neutron for RHOS for now
-            this.$el.html(this.template({disabled: disabled, release: release})).i18n();
-            if (disabled) {
+            var disabledDueToRelease = !release || release.get('operating_system') == 'RHEL'; // no Neutron for RHOS for now
+            this.$el.html(this.template({
+                disabledDueToRelease: disabledDueToRelease,
+                release: release
+            })).i18n();
+            if (disabledDueToRelease) {
                 this.$('input[value^=neutron]').prop('disabled', true);
             }
             this.$('input[name=manager]:first').prop('checked', true);
@@ -417,7 +428,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterStoragePane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.storage.title',
-        releaseDependent: true,
+        deps: [clusterWizardPanes.ClusterNameAndReleasePane],
         template: _.template(clusterStoragePaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
@@ -433,9 +444,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     }
                 }
             } catch (e) {
-                return (new $.Deferred()).reject();
+                return $.Deferred().reject();
             }
-            return (new $.Deferred()).resolve();
+            return $.Deferred().resolve();
         },
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
@@ -451,7 +462,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterAdditionalServicesPane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.additional.title',
-        releaseDependent: true,
+        deps: [clusterWizardPanes.ClusterNameAndReleasePane, clusterWizardPanes.ClusterNetworkPane],
         template: _.template(clusterAdditionalServicesPaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
@@ -462,16 +473,24 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     additionalServices.heat.value = this.$('input[name=murano]').is(':checked');
                 }
             } catch (e) {
-                return (new $.Deferred()).reject();
+                return $.Deferred().reject();
             }
-            return (new $.Deferred()).resolve();
+            return $.Deferred().resolve();
         },
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            var disabled = !release || release.get('operating_system') == 'RHEL'; // no Savanna & Murano for RHOS for now
-            this.$el.html(this.template({disabled: disabled, release: release})).i18n();
-            if (disabled) {
+            var disabledDueToRelease = !release || release.get('operating_system') == 'RHEL'; // no Savanna & Murano for RHOS for now
+            var networkMode = this.wizard.findPane(clusterWizardPanes.ClusterNetworkPane).manager;
+            var disabledDueToNetworkMode = networkMode == 'nova-network'; // no Murano for Nova Network
+            this.$el.html(this.template({
+                disabledDueToRelease: disabledDueToRelease,
+                disabledDueToNetworkMode: disabledDueToNetworkMode,
+                release: release
+            })).i18n();
+            if (disabledDueToRelease) {
                 this.$('input[type=checkbox]').prop('disabled', true);
+            } else if (disabledDueToNetworkMode) {
+                this.$('input[name=murano]').prop('disabled', true);
             }
             return this;
         }

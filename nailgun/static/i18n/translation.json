@@ -123,10 +123,10 @@
             "cluster_page": {
                 "tabs": {
                     "nodes": "Nodes",
-                    "networks": "Networks",
+                    "network": "Networks",
                     "settings": "Settings",
                     "logs": "Logs",
-                    "health_check": "Health Check",
+                    "healthcheck": "Health Check",
                     "actions": "Actions"
                 },
                 "nodes_tab": {
@@ -557,10 +557,10 @@
             "cluster_page": {
                 "tabs": {
                     "nodes": "节点",
-                    "networks": "网络",
+                    "network": "网络",
                     "settings": "设置",
                     "logs": "日志",
-                    "health_check": "健康检查",
+                    "healthcheck": "健康检查",
                     "actions": "动作"
                 },
                 "nodes_tab": {

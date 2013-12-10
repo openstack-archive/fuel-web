@@ -69,7 +69,7 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             this.navigate('#cluster/' + id + '/nodes', {trigger: true, replace: true});
         },
         showClusterTab: function(id, activeTab) {
-            if (!_.contains(_.pluck(_.result(ClusterPage.prototype, 'tabs'), 'url'), activeTab)) {
+            if (!_.contains(ClusterPage.prototype.tabs, activeTab)) {
                 this.showCluster(id);
                 return;
             }

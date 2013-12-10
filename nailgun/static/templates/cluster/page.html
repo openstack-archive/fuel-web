@@ -3,10 +3,10 @@
 <div class="whitebox">
   <ul class="nav nav-tabs cluster-tabs">
     <% _.each(tabs, function(tab) { %>
-      <li class="<%= activeTab == tab.url ? 'active' : '' %>">
-        <a href="#cluster/<%= cluster.id %>/<%= tab.url %>">
-          <b class="tab-<%= tab.url %>-normal"></b>
-          <div class="tab-title"><%= tab.title %></div>
+      <li class="<%= activeTab == tab ? 'active' : '' %>">
+        <a href="#cluster/<%= cluster.id %>/<%= tab %>">
+          <b class="tab-<%= tab %>-normal"></b>
+          <div class="tab-title"><%- $.t('cluster_page.tabs.' + tab) %></div>
         </a>
       </li>
     <% }) %>
@@ -14,7 +14,7 @@
   </ul>
   <div class="tab-content">
     <% _.each(tabs, function(tab) { %>
-      <div class="tab-pane <%= activeTab == tab.url ? 'active' : '' %>" id="tab-<%= tab.url %>"></div>
+      <div class="tab-pane <%= activeTab == tab ? 'active' : '' %>" id="tab-<%= tab %>"></div>
     <% }) %>
   </div>
 </div>

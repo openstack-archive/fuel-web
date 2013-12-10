@@ -41,22 +41,33 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             return this.model.get('status') == 'new' || this.hasRunningTests() || !!this.model.task('deploy', 'running');
         },
         disableControls: function(disable) {
-            this.$('.btn, input').prop('disabled', disable || this.isLocked());
+            var disabledState = disable || this.isLocked();
+            this.$('input').prop('disabled', disabledState);
+            this.selectAllTumbler.set({'disabled': disabledState});
+            this.runTestsButton.set({'disabled': disabledState});
+            this.stopTestsButton.set({'disabled': disabledState});
         },
         calculateTestControlButtonsState: function() {
             var hasRunningTests = this.hasRunningTests();
-            this.$('.run-tests-btn').prop('disabled', !this.$('input.testset-select:checked').length || hasRunningTests).toggle(!hasRunningTests);
-            this.$('.stop-tests-btn').prop('disabled', !hasRunningTests).toggle(hasRunningTests);
+            this.runTestsButton.set({'disabled': !this.$('input.test-select:checked').length || hasRunningTests})
+                .set({'visible': !hasRunningTests});
+            this.stopTestsButton.set({'disabled': !hasRunningTests})
+                .set({'visible': hasRunningTests});
+            this.$('input[type=checkbox]').prop('disabled', hasRunningTests);
         },
         calculateSelectAllTumblerState: function() {
-            this.$('.select-all-tumbler').prop('checked', this.$('input.testset-select:checked').length == this.$('input.testset-select').length);
+            this.selectAllTumbler.set({'checked': this.$('input.testset-select:checked').length == this.$('input.testset-select').length});
         },
         allTestSetsSelected: function(e) {
             var checked = $(e.currentTarget).is(':checked');
             this.$('input.testset-select').prop('checked', checked);
+            this.$('.test-select').prop('checked', checked);
             this.calculateTestControlButtonsState();
         },
         testSetSelected: function() {
+            _.each(this.subViews, function(subView) {
+                    subView.$('.test-select').prop('checked', subView.$('input.testset-select').is(':checked'));
+            });
             this.calculateSelectAllTumblerState();
             this.calculateTestControlButtonsState();
         },
@@ -70,6 +81,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             if (this.hasRunningTests()) {
                 this.registerDeferred(this.timeout = $.timeout(this.updateInterval).done(_.bind(this.update, this)));
             }
+            this.calculateTestControlButtonsState();
         },
         update: function() {
             this.registerDeferred(
@@ -84,17 +96,24 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                     .always(_.bind(this.scheduleUpdate, this))
             );
         },
-        runTests: function() {
+        runTests: function(e) {
             this.disableControls(true);
-            var testruns = new models.TestRuns();
+            var selectedTestIds,
+                testruns = new models.TestRuns(),
+                selectedTests;
             _.each(this.subViews, function(subView) {
-                if (subView instanceof TestSet && subView.$('input.testset-select:checked').length) {
+                if (subView instanceof TestSet && subView.$('input.test-select:checked').length) {
+                    selectedTests = subView.$('input.test-select:checked');
+                    selectedTestIds = _.map(selectedTests, function(selectedTest) {
+                        return $(selectedTest).attr('data-id');
+                    });
                     var testrun = new models.TestRun({
                         testset: subView.testset.id,
                         metadata: {
                             config: {},
                             cluster_id: this.model.id
-                        }
+                        },
+                        tests: selectedTestIds
                     });
                     testruns.add(testrun);
                 }
@@ -172,7 +191,36 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         },
         render: function() {
             this.tearDownRegisteredSubViews();
+            var defaultButtonModelsData = {
+                'visible': true,
+                'disabled': true
+            };
+            this.runTestsButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
+            this.stopTestsButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'visible': false}));
+            this.selectAllTumbler = new Backbone.Model(_.extend({}, defaultButtonModelsData, {
+                'disabled': false,
+                'checked': false
+            }));
             this.$el.html(this.template({cluster: this.model})).i18n();
+            var visibleBindings = {
+                observe: 'visible',
+                visible: true
+            };
+            var checkedDisabledBindings = {
+                attributes: [
+                    {
+                        name: 'disabled',
+                        observe: 'disabled'
+                    },
+                    {
+                    name: 'checked',
+                    observe: 'checked'
+                    }
+                ]
+            };
+            this.stickit(this.runTestsButton, {'.run-tests-btn': _.extend({}, visibleBindings, checkedDisabledBindings)});
+            this.stickit(this.stopTestsButton, {'.stop-tests-btn':  _.extend({}, visibleBindings, checkedDisabledBindings)});
+            this.stickit(this.selectAllTumbler, {'.select-all-tumbler': checkedDisabledBindings});
             if (this.testsets.deferred.state() != 'pending') {
                 this.$('.testsets').html('');
                 this.testsets.each(function(testset) {
@@ -206,6 +254,14 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             });
             return lines.join('\n');
         }}),
+        events: {
+            'change input.test-select': 'testSelected'
+        },
+        testSelected: function() {
+            this.$('.testset-select').prop('checked', this.$('input.test-select:checked').length == this.$('input.test-select').length);
+            this.tab.runTestsButton.set({'disabled': !this.$('input.test-select:checked').length});
+            this.tab.calculateSelectAllTumblerState();
+        },
         initialize: function(options) {
             _.defaults(this, options);
             this.testrun.on('change', this.renderTests, this);

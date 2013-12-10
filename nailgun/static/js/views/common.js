@@ -334,7 +334,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             }, this);
         },
         render: function() {
-            this.$el.html(_.result(this, 'visible') ? this.template({account: this.redHatAccount}) : '');
+            this.$el.html(_.result(this, 'visible') ? this.template({account: this.redHatAccount}) : '').i18n();
             this.$('.control-group.rhn').toggle(this.redHatAccount.get('license_type') == 'rhn');
             return this;
         }

@@ -1,9 +1,17 @@
-<% tests.each(function(test) { %>
   <% var result = testrun && _.find(testrun.get('tests'), {id: test.id}) %>
   <% var status = result && result.status || 'unknown' %>
-  <tr>
+    <td class="healthcheck-col-select">
+      <div class="custom-tumbler">
+        <label>
+          <input type="checkbox" class="test-select" id="test-select-<%- test.get('testset') %>-<%= testIndex %>">
+          <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+        </label>
+      </div>
+    </td>
     <td>
-      <div class="healthcheck-name"><%- test.get('name') %></div>
+      <div class="healthcheck-name">
+        <label for="test-select-<%- test.get('testset') %>-<%= testIndex %>"><%- test.get('name') %></label>
+      </div>
       <% if (status == 'failure' || status == 'error' || status == 'skipped') { %>
         <div class="healthcheck-msg healthcheck-status-failure">
           <% if (result && result.message) { %>
@@ -44,5 +52,3 @@
         <% } %>
       </div>
     </td>
-  </tr>
-<% }) %>

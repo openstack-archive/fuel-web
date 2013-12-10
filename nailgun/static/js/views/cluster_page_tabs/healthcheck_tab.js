@@ -26,39 +26,35 @@ define(
 function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, healthcheckTestSetTemplate, healthcheckTestsTemplate) {
     'use strict';
 
-    var HealthCheckTab, TestSet;
+    var HealthCheckTab, TestSet, Test;
 
     HealthCheckTab = commonViews.Tab.extend({
         template: _.template(healthcheckTabTemplate),
         updateInterval: 3000,
         events: {
-            'change input.testset-select': 'testSetSelected',
-            'change input.select-all-tumbler': 'allTestSetsSelected',
             'click .run-tests-btn:not(:disabled)': 'runTests',
             'click .stop-tests-btn:not(:disabled)': 'stopTests'
         },
+        getNumberOfCheckedTests: function() {
+            return this.tests.where({checked: true}).length;
+        },
         isLocked: function() {
-            return this.model.get('status') == 'new' || this.hasRunningTests() || !!this.model.task('deploy', 'running');
+            return this.model.get('status') == 'new' || this.hasRunningTests() || !!this.model.task('deploy', 'running') ;
         },
         disableControls: function(disable) {
-            this.$('.btn, input').prop('disabled', disable || this.isLocked());
+            var disabledState = disable || this.isLocked();
+            this.runTestsButton.set({disabled: disabledState || !this.getNumberOfCheckedTests()});
+            this.stopTestsButton.set({disabled: disabledState});
+            this.selectAllCheckbox.set({'disabled': disabledState});
         },
-        calculateTestControlButtonsState: function() {
+        checkIfRunningTests: function() {
             var hasRunningTests = this.hasRunningTests();
-            this.$('.run-tests-btn').prop('disabled', !this.$('input.testset-select:checked').length || hasRunningTests).toggle(!hasRunningTests);
-            this.$('.stop-tests-btn').prop('disabled', !hasRunningTests).toggle(hasRunningTests);
-        },
-        calculateSelectAllTumblerState: function() {
-            this.$('.select-all-tumbler').prop('checked', this.$('input.testset-select:checked').length == this.$('input.testset-select').length);
-        },
-        allTestSetsSelected: function(e) {
-            var checked = $(e.currentTarget).is(':checked');
-            this.$('input.testset-select').prop('checked', checked);
-            this.calculateTestControlButtonsState();
-        },
-        testSetSelected: function() {
-            this.calculateSelectAllTumblerState();
-            this.calculateTestControlButtonsState();
+            this.runTestsButton.set({
+                visible: !hasRunningTests
+            });
+            this.stopTestsButton.set({
+                visible: hasRunningTests
+            });
         },
         getActiveTestRuns: function() {
             return this.testruns.where({status: 'running'});
@@ -70,36 +66,60 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             if (this.hasRunningTests()) {
                 this.registerDeferred(this.timeout = $.timeout(this.updateInterval).done(_.bind(this.update, this)));
             }
+            this.checkIfRunningTests();
+            this.disableControls();
         },
         update: function() {
             this.registerDeferred(
                 this.testruns.fetch()
                     .done(_.bind(function() {
                         if (!this.hasRunningTests()) {
-                            this.$('input[type=checkbox]').prop('checked', false);
                             this.disableControls(false);
                         }
-                        this.calculateTestControlButtonsState();
                     }, this))
                     .always(_.bind(this.scheduleUpdate, this))
             );
         },
         runTests: function() {
             this.disableControls(true);
-            var testruns = new models.TestRuns();
+            var testruns = new models.TestRuns(),
+                oldTestruns = new models.TestRuns();
             _.each(this.subViews, function(subView) {
-                if (subView instanceof TestSet && subView.$('input.testset-select:checked').length) {
-                    var testrun = new models.TestRun({
+                if (subView.tests.where({checked: true}).length) {
+                    var selectedTestIds = _.pluck(subView.tests.where({checked: true}), 'id');
+                    var currentTestrunForReRun = new models.TestRun({
                         testset: subView.testset.id,
                         metadata: {
                             config: {},
                             cluster_id: this.model.id
-                        }
+                        },
+                        tests: selectedTestIds
                     });
-                    testruns.add(testrun);
+                    if (this.testruns.length != 0) {
+                        if (_.isEmpty(this.testruns.filter(function(testRun) {
+                            return !_.isEmpty(_.where(testRun, {'testset': subView.testset.id}));
+                        }))) {
+
+                            testruns.add(currentTestrunForReRun);
+                        } else {
+                                var currentTestrun = new models.TestRun({
+                                    id: subView.testrun.id,
+                                    tests: selectedTestIds,
+                                    status: 'restarted'
+                                });
+                                oldTestruns.add(currentTestrun);
+                            }
+                    } else {
+                        testruns.add(currentTestrunForReRun);
+                    }
                 }
             }, this);
-            Backbone.sync('create', testruns).done(_.bind(this.update, this));
+            if (!_.isEmpty(testruns.models)) {
+                $.when(Backbone.sync('create', testruns).done(_.bind(this.update, this)));
+            }
+            if (!_.isEmpty(oldTestruns.models)) {
+                $.when(Backbone.sync('update', oldTestruns).done(_.bind(this.update, this)));
+            }
         },
         stopTests: function() {
             var testruns = new models.TestRuns(this.getActiveTestRuns());
@@ -137,6 +157,18 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         },
         initialize: function(options) {
             _.defaults(this, options);
+             this.runTestsButton = new Backbone.Model({
+                visible: true,
+                disabled: true
+            });
+            this.stopTestsButton = new Backbone.Model({
+                visible: false,
+                disabled: true
+            });
+            this.selectAllCheckbox = new Backbone.Model({
+                checked: false,
+                disabled: false
+            });
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
@@ -154,7 +186,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                     this.tests.fetch(),
                     this.testruns.fetch()
                 ).done(_.bind(function() {
-                    this.model.set({'ostf': ostf}, {silent: true});
+                    this.model.set({ostf: ostf}, {silent: true});
                     this.render();
                     this.scheduleUpdate();
                 }, this)
@@ -169,6 +201,42 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 }
             }
             this.testruns.on('sync', this.updateTestRuns, this);
+        },
+        initStickitBindings: function() {
+            var visibleBindings = {
+                observe: 'visible',
+                visible: true
+            };
+            var disabledBindings = {
+                attributes: [
+                    {
+                        name: 'disabled',
+                        observe: 'disabled'
+                    }
+                ]
+            };
+            this.stickit(this.runTestsButton, {'.run-tests-btn': _.extend({}, visibleBindings, disabledBindings)});
+            this.stickit(this.stopTestsButton, {'.stop-tests-btn':  _.extend({}, visibleBindings, disabledBindings)});
+            var bindings = {
+                '.select-all-tumbler': {
+                    observe: 'checked',
+                    onSet: _.bind(function(value) {
+                        _.each(this.subViews, function(testsSet) {
+                            testsSet.selectAllCheckbox.set({checked: value});
+                        }, this);
+                        this.tests.each(function(test) {
+                            test.set({checked: value});
+                        }, this);
+                    }, this),
+                        attributes: [
+                        {
+                            name: 'disabled',
+                            observe: 'disabled'
+                        }
+                    ]
+                }
+            };
+            this.stickit(this.selectAllCheckbox, bindings);
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -186,16 +254,23 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                     this.registerSubView(testsetView);
                     this.$('.testsets').append(testsetView.render().el);
                 }, this);
+                this.disableControls();
             }
-            this.disableControls(false);
-            this.calculateTestControlButtonsState();
+            this.initStickitBindings();
+            this.selectAllCheckbox.on('change:disabled', _.bind(function(model, value){
+                _.each(this.subViews, function(testsSet) {
+                    testsSet.selectAllCheckbox.set({disabled: value});
+                }, this);
+                this.tests.each(function(test) {
+                    test.set({disabled: value});
+                }, this);
+            }, this));
             return this;
         }
     });
 
     TestSet = Backbone.View.extend({
         template: _.template(healthcheckTestSetTemplate),
-        testsTemplate: _.template(healthcheckTestsTemplate),
         templateHelpers: _.extend(_.pick(utils, 'linebreaks'), {highlightStep: function(text, step) {
             var lines = text.split('\n');
             var rx = new RegExp('^\\s*' + step + '\\.');
@@ -206,16 +281,90 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             });
             return lines.join('\n');
         }}),
+        calculateSelectAllCheckedState: function() {
+            this.selectAllCheckbox.set({checked: !this.tests.where({checked: false}).length});
+            this.tab.selectAllCheckbox.set({checked: this.tab.tests.where({checked: true}).length == this.tab.tests.models.length});
+        },
         initialize: function(options) {
             _.defaults(this, options);
+            this.selectAllCheckbox = new Backbone.Model({
+                checked: false,
+                disabled: false
+            });
             this.testrun.on('change', this.renderTests, this);
+            this.tests.on('change:checked', _.bind(function() {
+                this.calculateSelectAllCheckedState();
+                this.tab.disableControls();
+            }, this));
         },
         renderTests: function() {
-            this.$('tbody').html(this.testsTemplate(_.extend({testrun: this.testrun, tests: this.tests}, this.templateHelpers))).i18n();
+            this.$('tbody').empty();
+            _.each(this.tests.models, function(test, index) {
+                    test.set({checked: false});
+                    var testView = new Test({
+                        testset: this,
+                        tab: this.tab,
+                        testrun: this.testrun,
+                        model: test,
+                        testIndex: index
+                    });
+                    this.$('tbody').append(testView.render().el);
+                }, this);
+        },
+        initStickitBindings: function() {
+            var bindings = {
+                '.testset-select': {
+                    observe: 'checked',
+                    onSet: _.bind(function(value) {
+                       this.tests.each(function(test) {
+                            test.set({checked: value});
+                        });
+                    }, this),
+                    attributes: [{
+                        name: 'disabled',
+                        observe: 'disabled'
+                    }]
+                }
+            };
+            this.stickit(this.selectAllCheckbox, bindings);
         },
         render: function() {
             this.$el.html(this.template({testset: this.testset})).i18n();
             this.renderTests();
+            this.initStickitBindings();
+            return this;
+        }
+    });
+
+    Test = Backbone.View.extend({
+        template: _.template(healthcheckTestsTemplate),
+        tagName: 'tr',
+        initStickitBindings: function() {
+            var bindings = {
+                '.test-select': {
+                    observe: 'checked',
+                    attributes: [{
+                        name: 'disabled',
+                        observe: 'disabled'
+                    }]
+                }
+            };
+            this.stickit(this.model, bindings);
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+            if (_.isUndefined(this.model.get('disabled'))) {
+                this.model.set({disabled: false});
+            }
+        },
+        render: function() {
+
+            this.$el.html(this.template(_.extend({
+                testrun: this.testrun,
+                test: this.model,
+                testIndex: this.testIndex
+            }, this.testset.templateHelpers))).i18n();
+            this.initStickitBindings();
             return this;
         }
     });

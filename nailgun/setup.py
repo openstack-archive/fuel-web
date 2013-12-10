@@ -31,8 +31,6 @@ requires = [
     'decorator==3.4.0',
     'kombu==2.1.8',
     'netaddr==0.7.10',
-    'nose2==0.4.1',
-    'nose==1.1.2',
     'pycrypto==2.6',
     'simplejson==2.6.2',
     'web.py==0.37',

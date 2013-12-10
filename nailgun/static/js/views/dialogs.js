@@ -460,6 +460,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     additionalServices.savanna.value = this.$('input[name=savanna]').is(':checked');
                     additionalServices.murano.value = this.$('input[name=murano]').is(':checked');
                     additionalServices.heat.value = this.$('input[name=murano]').is(':checked');
+                    additionalServices.ceilometer.value = this.$('input[name=ceilometer]').is(':checked');
                 }
             } catch (e) {
                 return (new $.Deferred()).reject();

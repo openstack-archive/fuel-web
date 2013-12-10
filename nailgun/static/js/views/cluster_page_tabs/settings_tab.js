@@ -110,6 +110,9 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     this.registerSubView(settingGroupView);
                     this.$('.settings').append(settingGroupView.render().el);
                 }, this);
+                if (this.model.get('net_provider') == 'nova_network') {
+                    this.$('input[name=murano]').attr('disabled', true);
+                }
             }
             if (this.settings) {
                 this.composeBindings();

@@ -1,4 +1,4 @@
-<% if (disabled && release) { %>
+<% if (disabledDueToRelease && release) { %>
   <div class="alert" style="margin:0">
       <%- $.t("dialog.create_cluster_wizard.network.alert", { releaseName: release.get('name')} ) %>
   </div>

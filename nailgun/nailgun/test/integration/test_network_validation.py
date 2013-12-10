@@ -617,8 +617,17 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         resp = self.env.node_nics_get(node_db.id)
 
         ifaces = json.loads(resp.body)
-        ifaces[1]["assigned_networks"], ifaces[0]["assigned_networks"] = \
-            ifaces[0]["assigned_networks"], ifaces[1]["assigned_networks"]
+        admin_if = [iface for iface in ifaces
+                    if len(iface["assigned_networks"]) == 1]
+        self.assertEquals(len(admin_if), 1)
+        self.assertEquals(admin_if[0]["assigned_networks"][0]['name'],
+                          'fuelweb_admin')
+        other_if = [iface for iface in ifaces
+                    if iface != admin_if[0]]
+        self.assertGreaterEqual(len(other_if), 1)
+        admin_if[0]["assigned_networks"].extend(
+            other_if[0]["assigned_networks"])
+        other_if[0]["assigned_networks"] = []
 
         self.env.node_collection_nics_put(
             node_db.id,

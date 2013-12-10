@@ -113,14 +113,14 @@ class NetworkManager(object):
 
     @classmethod
     def assign_admin_ips(cls, node_id, num=1):
-        '''Method for assigning admin IP addresses to nodes.
+        """Method for assigning admin IP addresses to nodes.
 
         :param node_id: Node database ID.
         :type  node_id: int
         :param num: Number of IP addresses for node.
         :type  num: int
         :returns: None
-        '''
+        """
         admin_net_id = cls.get_admin_network_group_id()
         node_admin_ips = db().query(IPAddr).filter_by(
             node=node_id,

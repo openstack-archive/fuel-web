@@ -51,11 +51,9 @@
           %>
 
           <% if (!_.isNull(tasks.deferred)) { %>
-            <button class="btn download-logs-progress disabled" data-i18n="loading"></button>
-          <% } else { %>
-            <% if (!task || taskCompleted) { %>
+            <button class="btn download-logs-progress disabled" data-i18n="support_page.loading"></button>
+          <% } else if (!task || taskCompleted) { %>
             <button class="btn download-logs" data-i18n="support_page.gen_diagnostic_snapshot_text"></button>
-            <% } %>
           <% } %>
 
           <button class="btn hide genereting-logs disabled" data-i18n="support_page.gen_logs_snapshot_text"></button>

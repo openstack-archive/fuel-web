@@ -1,7 +1,8 @@
-<% if (disabled && release) { %>
-  <div class="alert" style="margin-bottom: 10px">
-      <%- $.t("dialog.create_cluster_wizard.additional.alert", { releaseName: release.get('name')} ) %>
-  </div>
+<% if (disabledDueToRelease && release) { %>
+  <div class="alert"><%- $.t("dialog.create_cluster_wizard.additional.release_alert", {releaseName: release.get('name')}) %></div>
+<% } %>
+<% if (disabledDueToNetworkMode) { %>
+  <div class="alert" data-i18n="dialog.create_cluster_wizard.additional.network_mode_alert"></div>
 <% } %>
 <form class="form-horizontal" style="margin:0" onsubmit="return false">
   <fieldset>

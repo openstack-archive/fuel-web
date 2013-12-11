@@ -109,6 +109,10 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                 };
                 $.when(cluster.fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'), tasks.fetch())
                     .done(_.bind(render, this))
+                    .then(_.bind(function(){
+                        cluster.set('release', new models.Release({id: cluster.get('release_id')}));
+                        return cluster.fetchRelated('release');
+                    }, this))
                     .fail(_.bind(this.listClusters, this));
             }
         },

@@ -434,15 +434,13 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_deletion_offline_node(self):
-        cluster = self.env.create_cluster()
-        self.env.create_node(
-            cluster_id=cluster['id'],
-            online=False,
-            pending_deletion=True)
-
-        self.env.create_node(
-            cluster_id=cluster['id'],
-            status='ready')
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"online": False, "pending_deletion": True},
+                {"status": "ready"}
+            ]
+        )
 
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
@@ -450,17 +448,15 @@ class TestTaskManagers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_deletion_three_offline_nodes_and_one_online(self):
-        cluster = self.env.create_cluster()
-        for _ in range(3):
-            self.env.create_node(
-                cluster_id=cluster['id'],
-                online=False,
-                pending_deletion=True)
-
-        self.env.create_node(
-            cluster_id=cluster['id'],
-            online=True,
-            pending_deletion=True)
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"online": False, "pending_deletion": True},
+                {"online": False, "pending_deletion": True},
+                {"online": False, "pending_deletion": True},
+                {"online": True, "pending_deletion": True}
+            ]
+        )
 
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
@@ -479,7 +475,8 @@ class TestTaskManagers(BaseIntegrationTest):
             online=False,
             pending_deletion=True,
             pending_addition=False,
-            status='ready')
+            status='ready',
+            roles=['controller'])
 
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)

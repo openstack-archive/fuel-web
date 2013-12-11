@@ -79,7 +79,6 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.previousSettings = _.cloneDeep(this.model.get('settings').get('editable'));
             this.settings = new models.Settings(this.previousSettings);
             // some hacks until settings dependecies are implemented
-            this.settings.on('change:additional_components.murano.value', _.bind(function(model, value) {this.settings.set({'additional_components.heat.value': value});}, this));
             this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
             this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
             this.settings.on('change', _.bind(this.checkForChanges, this));

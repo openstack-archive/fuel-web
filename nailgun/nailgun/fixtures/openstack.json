@@ -320,7 +320,7 @@
                             "type": "checkbox"
                         },
                         "heat": {
-                            "value": false,
+                            "value": true,
                             "label": "",
                             "description": "",
                             "weight": 30,
@@ -1355,7 +1355,7 @@
                             "type": "checkbox"
                         },
                         "heat": {
-                            "value": false,
+                            "value": true,
                             "label": "",
                             "description": "",
                             "weight": 30,

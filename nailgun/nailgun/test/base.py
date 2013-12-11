@@ -487,12 +487,23 @@ class Environment(object):
 
     def launch_verify_networks(self, data=None):
         if self.clusters:
+            net_urls = {
+                "nova_network": {
+                    "config": "NovaNetworkConfigurationHandler",
+                    "verify": "NovaNetworkConfigurationVerifyHandler"
+                },
+                "neutron": {
+                    "config": "NeutronNetworkConfigurationHandler",
+                    "verify": "NeutronNetworkConfigurationVerifyHandler"
+                }
+            }
+            provider = self.clusters[0].net_provider
             if data:
                 nets = json.dumps(data)
             else:
                 resp = self.app.get(
                     reverse(
-                        'NovaNetworkConfigurationHandler',
+                        net_urls[provider]["config"],
                         kwargs={'cluster_id': self.clusters[0].id}
                     ),
                     headers=self.default_headers
@@ -502,7 +513,7 @@ class Environment(object):
 
             resp = self.app.put(
                 reverse(
-                    'NovaNetworkConfigurationVerifyHandler',
+                    net_urls[provider]["verify"],
                     kwargs={'cluster_id': self.clusters[0].id}),
                 nets,
                 headers=self.default_headers

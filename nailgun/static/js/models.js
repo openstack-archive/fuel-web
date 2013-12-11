@@ -523,7 +523,7 @@ define(['utils', 'deepModel'], function(utils) {
                         }
                     } else if (attr == 'cidr') {
                         networkErrors = _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
-                    } else if (attr == 'vlan_start' && (!_.isNull(network.get('vlan_start')) || (network.get('name') == 'fixed' && attrs.net_manager == 'VlanManager'))) {
+                    } else if (attr == 'vlan_start' && network.get('name') != 'floating' && (!_.isNull(network.get('vlan_start')) || (network.get('name') == 'fixed' && attrs.net_manager == 'VlanManager'))) {
                         var vlan = network.get('vlan_start');
                         var forbiddenVlans = _.compact(attrs.networks.map(function(net) {return net.id != network.id && net.get('name') != 'floating' ? net.get('vlan_start') : null;}));
                         if (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094) {

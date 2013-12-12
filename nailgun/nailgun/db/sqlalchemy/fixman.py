@@ -32,6 +32,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
+from nailgun.utils import dict_merge
 
 db = ormgen()
 
@@ -62,8 +63,18 @@ def upload_fixture(fileobj, loader=None):
     queue = Queue.Queue()
     keys = {}
 
+    for i in range(0, len(fixture)):
+        def extend(obj):
+            if 'extend' in obj:
+                obj['extend'] = extend(obj['extend'])
+            return dict_merge(obj.get('extend', {}), obj)
+        fixture[i] = extend(fixture[i])
+        fixture[i].pop('extend', None)
+
     for obj in fixture:
-        pk = obj["pk"]
+        pk = obj.get("pk")
+        if pk is None:
+            continue
         model_name = obj["model"].split(".")[1]
 
         try:

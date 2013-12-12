@@ -59,10 +59,29 @@ class TestHandlers(BaseTestCase):
                     "--list", "-s", "--set", "--delete", "--default", "-d",
                     "--download", "-u", "--upload", "--dir", "--node",
                     "--node-id", "-r", "--role", "--net", "--network",
-                    "--disk", "-f", "--force"]
+                    "--disk", "-f", "--force", "--deploy", "--provision"]
         self.check_all_in_msg("node --help", help_msg)
 
         self.check_for_rows_in_table("node")
 
         for action in ("set", "remove", "--network", "--disk"):
             self.check_if_required("node {0}".format(action))
+
+    def test_selected_node_deploy_or_provision(self):
+        self.load_data_to_nailgun_server()
+        self.run_cli_commands((
+            "env create --name=NewEnv --release=1",
+            "--env-id=1 node set --node 1 --role=controller"
+        ))
+        commands = ("--provision", "--deploy")
+        for action in commands:
+            self.check_if_required("--env-id=1 node {0}".format(action))
+        messages = (
+            "Started provisioning nodes [1].\n",
+            "Started deploying nodes [1].\n"
+        )
+        for cmd, msg in zip(commands, messages):
+            self.check_for_stdout(
+                "--env-id=1 node {0} --node=1".format(cmd),
+                msg
+            )

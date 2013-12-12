@@ -87,7 +87,7 @@ class BaseTestCase(TestCase):
         print("Running " + " ".join(args))
         handle.wait()
 
-    def run_cli_command(self, command_line=None, with_erros=False):
+    def run_cli_command(self, command_line, with_erros=False):
         modified_env = os.environ.copy()
         modified_env["LISTEN_PORT"] = "8003"
         command_args = [" ".join((self.fuel_path, command_line))]
@@ -108,22 +108,26 @@ class BaseTestCase(TestCase):
                 self.fail()
         return result
 
+    def run_cli_commands(self, command_lines, with_erros=False):
+        for command in command_lines:
+            self.run_cli_command(command, with_erros=with_erros)
+
     def check_if_required(self, command):
-        call = self.run_cli_command(command_line=command, with_erros=True)
+        call = self.run_cli_command(command, with_erros=True)
         #should not work without env id
         self.assertIn("required", call.stderr)
 
     def check_for_stdout(self, command, msg):
-        call = self.run_cli_command(command_line=command)
+        call = self.run_cli_command(command)
         self.assertEqual(call.stdout, msg)
 
     def check_all_in_msg(self, command, substrs):
-        output = self.run_cli_command(command_line=command)
+        output = self.run_cli_command(command)
         for substr in substrs:
             self.assertIn(substr, output.stdout)
 
     def check_for_rows_in_table(self, command):
-        output = self.run_cli_command(command_line=command)
+        output = self.run_cli_command(command)
         message = output.stdout.split("\n")
         #no env
         self.assertEqual(message[2], '')

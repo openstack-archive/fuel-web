@@ -43,6 +43,7 @@ from nailgun.db import syncdb
 
 from nailgun.logger import logger
 
+from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -435,7 +436,7 @@ class Environment(object):
         for fxtr_path in self.fxtr_paths_by_names(fxtr_names):
             with open(fxtr_path, "r") as fxtr_file:
                 try:
-                    data.extend(json.load(fxtr_file))
+                    data.extend(load_fixture(fxtr_file))
                 except Exception as exc:
                     logger.error(
                         'Error "%s" occurred while loading '
@@ -444,24 +445,28 @@ class Environment(object):
         return data
 
     def fxtr_paths_by_names(self, fxtr_names):
-        for fxtr in fxtr_names:
-            fxtr_path = os.path.join(
-                self.fixture_dir,
-                "%s.json" % fxtr
-            )
+        for ext in ['json', 'yaml']:
+            for fxtr in fxtr_names:
+                fxtr_path = os.path.join(
+                    self.fixture_dir,
+                    "%s.%s" % (fxtr, ext)
+                )
 
-            if not os.path.exists(fxtr_path):
-                logger.warning(
-                    "Fixture file was not found: %s",
-                    fxtr_path
-                )
-                break
+                if os.path.exists(fxtr_path):
+                    logger.debug(
+                        "Fixture file is found, yielding path: %s",
+                        fxtr_path
+                    )
+                    yield fxtr_path
+                    break
             else:
-                logger.debug(
-                    "Fixture file is found, yielding path: %s",
-                    fxtr_path
-                )
-                yield fxtr_path
+                continue
+            break
+        else:
+            logger.warning(
+                "Fixture file was not found: %s",
+                fxtr
+            )
 
     def find_item_by_pk_model(self, data, pk, model):
         for item in data:

@@ -11,12 +11,16 @@
         {
             name: 'savanna',
             label: $.t("dialog.create_cluster_wizard.additional.install_savanna"),
-            description:  $.t("dialog.create_cluster_wizard.additional.install_savanna_description"),
+            description:  $.t("dialog.create_cluster_wizard.additional.install_savanna_description")
         },{
             name: 'murano',
             label: $.t("dialog.create_cluster_wizard.additional.install_murano"),
             description: $.t("dialog.create_cluster_wizard.additional.install_murano_description")
-        }
+        },{
+            name: 'ceilometer',
+            label: $.t("dialog.create_cluster_wizard.additional.install_ceilometer"),
+            description: $.t("dialog.create_cluster_wizard.additional.install_ceilometer_description")
+          }
       ] %>
       <% _.each(services, function(service) { %>
         <label class="parameter-box clearfix">

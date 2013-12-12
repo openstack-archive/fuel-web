@@ -352,7 +352,9 @@
                         "install_savanna": "Install Savanna",
                         "install_savanna_description": "Savanna enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
                         "install_murano": "Install Murano",
-                        "install_murano_description": "Murano enables windows based datacenter services like Active Directory, IIS, Microsoft SQL and ASP.NET to be deployed on OpenStack."
+                        "install_murano_description": "Murano enables windows based datacenter services like Active Directory, IIS, Microsoft SQL and ASP.NET to be deployed on OpenStack.",
+                        "install_ceilometer": "Install Ceilometer",
+                        "install_ceilometer_description": "Ceilometer provides metering and monitoring of an OpenStack cloud."
                     },
                     "ready": {
                         "title": "Finish",

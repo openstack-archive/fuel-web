@@ -75,6 +75,7 @@ Setup for Web UI Tests
 
 #. Install NodeJS and JS dependencies::
 
+    sudo apt-get remove nodejs nodejs-legacy
     sudo add-apt-repository ppa:chris-lea/node.js
     sudo apt-get update
     sudo apt-get install nodejs
@@ -150,15 +151,16 @@ Building the Fuel ISO
 ---------------------
 
 #. Following software is required to build the Fuel ISO images on Ubuntu
-   12.10 or newer
+   12.10 or newer::
 
+    sudo apt-get remove nodejs nodejs-legacy
     sudo apt-get install software-properties-common
     sudo add-apt-repository ppa:chris-lea/node.js
     sudo apt-get update
     sudo apt-get install build-essential make git ruby ruby-dev rubygems debootstrap
     sudo apt-get install python-setuptools yum yum-utils libmysqlclient-dev isomd5sum
     sudo apt-get install python-nose libvirt-bin python-ipaddr python-paramiko python-yaml
-    sudo apt-get install python-pip kpartx extlinux npm unzip genisoimage nodejs
+    sudo apt-get install python-pip kpartx extlinux unzip genisoimage nodejs
     sudo gem install bundler -v 1.2.1
     sudo gem install builder
     sudo pip install xmlbuilder jinja2
@@ -182,6 +184,7 @@ Building the Fuel ISO
 
 #. Now you can build the Fuel ISO image::
 
+    cd fuel-main
     make iso
 
 #. To build an ISO image from custom branches of fuel, astute, nailgun

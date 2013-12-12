@@ -50,6 +50,10 @@ class SampleGenerator(object):
             if hasattr(handler, field):
                 sample_method = getattr(handler, field)
                 break
+
+        if not sample_method:
+            return "URL: **Not exposed**"
+
         args = inspect.getargspec(sample_method).args[1:]
         test_url_data = dict([
             (arg, "%{0}%".format(arg)) for arg in args

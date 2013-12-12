@@ -150,8 +150,9 @@ Building the Fuel ISO
 ---------------------
 
 #. Following software is required to build the Fuel ISO images on Ubuntu
-   12.10 or newer
+   12.10 or newer::
 
+    sudo apt-get remove nodejs nodejs-legacy
     sudo apt-get install software-properties-common
     sudo add-apt-repository ppa:chris-lea/node.js
     sudo apt-get update

@@ -78,7 +78,8 @@ class SetAction(argparse.Action):
 
 def handle_exceptions(exc):
     if isinstance(exc, urllib2.HTTPError):
-        print_error(str(exc))
+        error_message_body = exc.read()
+        print_error("{0} ({1})".format(exc, error_message_body))
     elif isinstance(exc, urllib2.URLError):
         print_error("Can't connect to Nailgun server!")
     else:
@@ -488,6 +489,11 @@ def node(params):
         if not params.node and params.env:
             node_ids = [k for k, v in nodes_clusters.iteritems()
                         if v == int(params.env)]
+            if not node_ids:
+                print_error(
+                    "Environment with id={0} doesn't have nodes to remove."
+                    .format(params.env)
+                )
         else:
             node_ids = list(chain(*params.node))
         data = map(

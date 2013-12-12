@@ -32,6 +32,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
+from nailgun.utils import dict_merge
 
 db = ormgen()
 
@@ -47,23 +48,37 @@ def template_fixture(fileobj, **kwargs):
     return StringIO.StringIO(t.render(**kwargs))
 
 
-def upload_fixture(fileobj, loader=None):
-    db.expunge_all()
+def load_fixture(fileobj, loader=None):
     if not loader:
         loaders = {'.json': json, '.yaml': yaml, '.yml': yaml}
         extension = os.path.splitext(fileobj.name)[1]
         if extension not in loaders:
             raise Exception("Unknown file extension '{0}'".format(extension))
         loader = loaders[extension]
-    fixture = loader.load(
+    return loader.load(
         template_fixture(fileobj)
     )
+
+
+def upload_fixture(fileobj, loader=None):
+    db.expunge_all()
+    fixture = load_fixture(fileobj, loader)
 
     queue = Queue.Queue()
     keys = {}
 
+    for i in range(0, len(fixture)):
+        def extend(obj):
+            if 'extend' in obj:
+                obj['extend'] = extend(obj['extend'])
+            return dict_merge(obj.get('extend', {}), obj)
+        fixture[i] = extend(fixture[i])
+        fixture[i].pop('extend', None)
+
     for obj in fixture:
-        pk = obj["pk"]
+        pk = obj.get("pk")
+        if pk is None:
+            continue
         model_name = obj["model"].split(".")[1]
 
         try:

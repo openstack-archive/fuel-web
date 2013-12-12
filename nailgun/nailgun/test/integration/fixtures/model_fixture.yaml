@@ -1,0 +1,559 @@
+---
+- &base_release
+  model: "nailgun.release"
+  fields:
+    state: "available"
+    modes_metadata:
+      multinode:
+        description: "In this configuration the OpenStack controller is deployed separately from the compute and cinder nodes. This mode assumes the presence of 1 controller node and 1 or more compute/cinder nodes. You can add more nodes to scale your cloud later."
+      ha_compact:
+        description: "This configuration requires multiple OpenStack controllers (3+) and provides high availability for all OpenStack components, including MySQL/Galera, RabbitMQ, and Cinder, as well as OpenStack API services. Select this configuration if you want to build a production-grade OpenStack cloud with 6 nodes or more."
+    roles:
+      - controller
+      - compute
+      - cinder
+    roles_metadata:
+      controller:
+        name: "Controller"
+        description: "The controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well."
+        conflicts:
+          - compute
+      compute:
+        name: "Compute"
+        description: "A compute node creates, manages and terminates virtual machine instances."
+        conflicts:
+          - controller
+      cinder:
+        name: "Storage - Cinder LVM"
+        description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
+    networks_metadata:
+      nova_network:
+        networks:
+          - name: "floating"
+            cidr: "172.16.0.0/24"
+            ip_range: ["172.16.0.128", "172.16.0.254"]
+            vlan_start: null
+            use_gateway: false
+            notation: "ip_ranges"
+            render_type: "ip_ranges"
+            render_addr_mask: null
+            use_same_vlan_nic: 1
+            map_priority: 1
+            assign_vip: false
+          - name: "public"
+            cidr: "172.16.0.0/24"
+            netmask: "255.255.255.0"
+            gateway: "172.16.0.1"
+            ip_range: ["172.16.0.2", "172.16.0.127"]
+            vlan_start: null
+            use_gateway: true
+            notation: "ip_ranges"
+            calculate_cidr: true
+            render_type: null
+            render_addr_mask: "public"
+            use_same_vlan_nic: 1
+            map_priority: 1
+            assign_vip: true
+          - name: "management"
+            cidr: "192.168.0.0/24"
+            vlan_start: 101
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "internal"
+            map_priority: 2
+            assign_vip: true
+          - name: "storage"
+            cidr: "192.168.1.0/24"
+            vlan_start: 102
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "storage"
+            map_priority: 2
+            assign_vip: false
+          - name: "fixed"
+            cidr: "10.0.0.0/16"
+            network_size: 256
+            vlan_start: 103
+            use_gateway: true
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: null
+            map_priority: 2
+            assign_vip: false
+    volumes_metadata:
+      volumes_roles_mapping:
+        controller:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "image"}
+        compute:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "vm"}
+        cinder:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "cinder"}
+        other:
+          - {allocate_size: "all", id: "os"}
+      volumes:
+        - id: "os"
+          type: "vg"
+          min_size: {generator: "calc_min_os_size"}
+          label: "Base System"
+          volumes:
+            - mount: "/"
+              type: "lv"
+              name: "root"
+              size: {generator: "calc_total_root_vg"}
+              file_system: "ext4"
+            - mount: "swap"
+              type: "lv"
+              name: "swap"
+              size: {generator: "calc_swap_size"}
+              file_system: "swap"
+        - id: "vm"
+          type: "vg"
+          min_size: {generator: "calc_min_vm_size"}
+          label: "Virtual Storage"
+          volumes:
+            - mount: "{{settings.NOVA_STATE_PATH}}"
+              type: "lv"
+              name: "nova"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["vm"]
+              file_system: "xfs"
+        - id: "image"
+          type: "vg"
+          min_size: {generator: "calc_min_glance_size"}
+          label: "Image Storage"
+          volumes:
+            - mount: "/var/lib/glance"
+              type: "lv"
+              name: "glance"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["image"]
+              file_system: "xfs"
+        - id: "cinder"
+          type: "vg"
+          label: "Cinder"
+          min_size: {generator: "calc_min_cinder_size"}
+          volumes: []
+    attributes_metadata:
+      editable:
+        access:
+          user:
+            value: "admin"
+            label: "username"
+            description: "Username for Administrator"
+            weight: 10
+            type: "text"
+          email:
+            value: "admin@example.org"
+            label: "email"
+            description: "Email address for Administrator"
+            weight: 40
+            type: "text"
+          tenant:
+            value: "admin"
+            label: "tenant"
+            description: "Tenant (project) name for Administrator"
+            weight: 30
+            type: "text"
+          password:
+            value: "admin"
+            label: "password"
+            description: "Password for Administrator"
+            weight: 20
+            type: "password"
+        common:
+          debug:
+            value: false
+            label: "OpenStack debug logging"
+            description: "Debug logging mode provides more information, but requires more disk space."
+            weight: 20
+            type: "checkbox"
+          auto_assign_floating_ip:
+            value: false
+            label: "Auto assign floating IP"
+            description: "If selected, OpenStack will automatically assign a floating IP to a new instance"
+            weight: 40
+            type: "checkbox"
+          libvirt_type:
+            value: "qemu"
+            values:
+              - data: "kvm"
+                label: "KVM"
+                description: "Choose this type of hypervisor if you run OpenStack on hardware"
+              - data: "qemu"
+                label: "QEMU"
+                description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
+            label: "Hypervisor type"
+            weight: 30
+            type: "radio"
+          start_guests_on_host_boot:
+            value: true
+            label: "Start guests on host boot"
+            description: "Whether to (re-)start guests when the host reboots. If enabled, this option causes guests assigned to the host to be unconditionally restarted when nova-compute starts. If the guest is found to be stopped, it starts. If it is found to be running, it reboots."
+            weight: 60
+            type: "checkbox"
+          use_cow_images:
+            value: true
+            label: "Use qcow format for images"
+            description: "For most cases you will want qcow format. If it's disabled, raw image format will be used to run VMs. OpenStack with raw format currently does not support snapshotting."
+            weight: 50
+            type: "checkbox"
+          compute_scheduler_driver:
+            value: "nova.scheduler.filter_scheduler.FilterScheduler"
+            values:
+              - data: "nova.scheduler.filter_scheduler.FilterScheduler"
+                label: "Filter scheduler"
+                description: "Currently the most advanced OpenStack scheduler. See the OpenStack documentation for details."
+              - data: "nova.scheduler.simple.SimpleScheduler"
+                label: "Simple scheduler"
+                description: "This is 'naive' scheduler which tries to find the least loaded host"
+            label: "Scheduler driver"
+            weight: 40
+            type: "radio"
+          auth_key:
+            value: ""
+            label: "Public Key"
+            description: "Public key(s) to include in authorized_keys on deployed nodes"
+            weight: 70
+            type: "text"
+        syslog:
+          syslog_transport:
+            value: "udp"
+            values:
+              - data: "udp"
+                label: "UDP"
+                description: ""
+              - data: "tcp"
+                label: "TCP"
+                description: ""
+            label: "Syslog transport protocol"
+            weight: 30
+            type: "radio"
+          syslog_server:
+            value: ""
+            label: "Hostname"
+            description: "Remote syslog hostname"
+            weight: 10
+            type: "text"
+          syslog_port:
+            value: "514"
+            label: "Port"
+            description: "Remote syslog port"
+            weight: 20
+            type: "text"
+        storage:
+          volumes_lvm:
+            value: true
+            label: "Cinder LVM over iSCSI for volumes"
+            description: "Requires at least one Storage - Cinder LVM node."
+            weight: 10
+            type: "checkbox"
+      generated:
+        mysql:
+          root_password:
+            generator: "password"
+        keystone:
+          db_password:
+            generator: "password"
+          admin_token:
+            generator: "password"
+        glance:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+        nova:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+          state_path: "{{settings.NOVA_STATE_PATH}}"
+        rabbit:
+          password:
+            generator: "password"
+        swift:
+          user_password:
+            generator: "password"
+        cinder:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+        base_syslog:
+          syslog_server:
+            generator: "ip"
+            generator_arg: "admin"
+          syslog_port:
+            generator: "identical"
+            generator_arg: "514"
+        cobbler:
+          profile:
+            generator: "identical"
+- &full_release
+  extend: *base_release
+  fields:
+    roles:
+      - controller
+      - compute
+      - cinder
+      - ceph-osd
+    roles_metadata:
+      ceph-osd:
+        name: "Storage - Ceph OSD"
+        description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
+    networks_metadata:
+      neutron:
+        networks:
+          - name: "public"
+            cidr: "172.16.0.0/24"
+            ip_range: ["172.16.0.2", "172.16.0.126"]
+            vlan_start: null
+            use_gateway: true
+            notation: "ip_ranges"
+            calculate_cidr: true
+            render_type: null
+            render_addr_mask: "public"
+            map_priority: 1
+            assign_vip: true
+          - name: "management"
+            cidr: "192.168.0.0/24"
+            vlan_start: 101
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "internal"
+            map_priority: 2
+            assign_vip: true
+          - name: "storage"
+            cidr: "192.168.1.0/24"
+            vlan_start: 102
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "storage"
+            map_priority: 2
+            assign_vip: false
+          - name: "private"
+            seg_type: "vlan"
+            vlan_start: null
+            use_gateway: false
+            notation: null
+            render_type: null
+            render_addr_mask: null
+            map_priority: 2
+            dedicated_nic: true
+            assign_vip: false
+        config:
+          parameters:
+            amqp:
+              provider: "rabbitmq"
+              username: null
+              passwd: ""
+              hosts: "hostname1:5672, hostname2:5672"
+            database:
+              provider: "mysql"
+              port: "3306"
+              database: null
+              username: null
+              passwd:   ""
+            keystone:
+              admin_user: null
+              admin_password: ""
+            metadata:
+              metadata_proxy_shared_secret: ""
+    volumes_metadata:
+      volumes_roles_mapping:
+        ceph-osd:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "min", id: "cephjournal"}
+          - {allocate_size: "full-disk", id: "ceph"}
+      volumes:
+        - id: "ceph"
+          type: "partition"
+          min_size: {generator: "calc_min_ceph_size"}
+          label: "Ceph"
+          name: "Ceph"
+          mount: "none"
+          partition_guid: "4fbd7e29-9d25-41b8-afd0-062c0ceff05d"
+          file_system: "none"
+        - id: "cephjournal"
+          type: "partition"
+          min_size: {generator: "calc_min_ceph_journal_size"}
+          name: "Ceph Journal"
+          label: "Ceph Journal"
+          mount: "none"
+          partition_guid: "45b0969e-9b03-4f30-b4c6-b4b80ceff106"
+          file_system: "none"
+        - id: "os"
+          type: "vg"
+          min_size: {generator: "calc_min_os_size"}
+          label: "Base System"
+          volumes:
+            - mount: "/"
+              type: "lv"
+              name: "root"
+              size: {generator: "calc_total_root_vg"}
+              file_system: "ext4"
+            - mount: "swap"
+              type: "lv"
+              name: "swap"
+              size: {generator: "calc_swap_size"}
+              file_system: "swap"
+        - id: "vm"
+          type: "vg"
+          min_size: {generator: "calc_min_vm_size"}
+          label: "Virtual Storage"
+          volumes:
+            - mount: "{{settings.NOVA_STATE_PATH}}"
+              type: "lv"
+              name: "nova"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["vm"]
+              file_system: "xfs"
+        - id: "image"
+          type: "vg"
+          min_size: {generator: "calc_min_glance_size"}
+          label: "Image Storage"
+          volumes:
+            - mount: "/var/lib/glance"
+              type: "lv"
+              name: "glance"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["image"]
+              file_system: "xfs"
+        - id: "cinder"
+          type: "vg"
+          label: "Cinder"
+          min_size: {generator: "calc_min_cinder_size"}
+          volumes: []
+    attributes_metadata:
+      editable:
+        additional_components:
+          savanna:
+            value: false
+            label: "Install Savanna"
+            description: "If selected, Savanna component will be installed"
+            weight: 10
+            type: "checkbox"
+          murano:
+            value: false
+            label: "Install Murano"
+            description: "If selected, Murano component will be installed"
+            weight: 20
+            type: "checkbox"
+          heat:
+            value: true
+            label: ""
+            description: ""
+            weight: 30
+            type: "hidden"
+          ceilometer:
+            value: false
+            label: "Install Ceilometer"
+            description: "If selected, Ceilometer component will be installed"
+            weight: 40
+            type: "checkbox"
+        common:
+          vlan_splinters:
+            value: "disabled"
+            label: "Open VSwitch VLAN Splinters feature (Neutron only)"
+            weight: 45
+            type: "radio"
+            values:
+              - data: "disabled"
+                label: "Disabled"
+                description: "OVS VLAN splinters disabled on all interfaces"
+              - data: "soft"
+                label: "Enable OVS VLAN splinters soft trunks workaround"
+                description: "Configure OVS to use VLAN splinters workaround with soft trunk detection. This may resolve issues that might be encountered when using VLAN tags with OVS and Neutron on Kernels <3.3 (CentOS)"
+              - data: "hard"
+                label: "Enable OVS VLAN splinters hard trunks workaround"
+                description: "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be predefined. This may work better than soft trunks especially if you still see network problems using soft trunks"
+        storage:
+          volumes_ceph:
+            value: false
+            label: "Ceph RBD for volumes (Cinder)"
+            description: "Configures Cinder to store volumes in Ceph RBD images."
+            weight: 20
+            type: "checkbox"
+          images_ceph:
+            value: false
+            label: "Ceph RBD for images (Glance)"
+            description: "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing."
+            weight: 30
+            type: "checkbox"
+          ephemeral_ceph:
+            value: false
+            label: "Ceph RBD for ephemeral volumes (Nova)"
+            description: "Configures Nova to store ephemeral volumes in RBD. This works best if Ceph is enabled for volumes and images, too. Enables live migration of all types of Ceph backed VMs (without this option, live migration will only work with VMs launched from Cinder volumes)."
+            weight: 35
+            type: "checkbox"
+          objects_ceph:
+            value: false
+            label: "Ceph RadosGW for objects (Swift API)"
+            description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
+            weight: 40
+            type: "checkbox"
+          osd_pool_size:
+            value: "2"
+            label: "Ceph object replication factor"
+            description: "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Storage - Ceph OSD' nodes."
+            weight: 70
+            type: "text"
+      generated:
+        savanna:
+          user_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+        murano:
+          user_password:
+            generator: "password"
+          rabbit_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+        heat:
+          user_password:
+            generator: "password"
+          rabbit_password:
+            generator: "password"
+          db_password:
+            generator: "password"
+        ceilometer:
+          db_password:
+            generator: "password"
+          user_password:
+            generator: "password"
+          metering_secret:
+            generator: "password"
+        quantum_settings:
+          database:
+            passwd:
+              generator: "password"
+          keystone:
+            admin_password:
+              generator: "password"
+          metadata:
+            metadata_proxy_shared_secret:
+              generator: "password"
+- pk: 2
+  extend: *full_release
+  fields:
+    name: "Havana-on-CentOS 6.4"
+    version: "2013.2.1"
+    operating_system: "CentOS"
+    description: "This option will install the OpenStack Havana packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      generated:
+        cobbler:
+          profile:
+            generator_arg: "centos-x86_64"

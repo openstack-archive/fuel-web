@@ -16,6 +16,9 @@
 
 import json
 
+from copy import deepcopy
+from netaddr import IPNetwork
+
 from nailgun.db.sqlalchemy.models import AllowedNetworks
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkAssignment
@@ -211,3 +214,54 @@ class TestNodeHandlers(BaseIntegrationTest):
         )
         self.assertEquals(resp.status, 200)
         self.assertItemsEqual(macs, resp_macs)
+
+
+class TestNodeNICAdminAssigning(BaseIntegrationTest):
+
+    def test_admin_nic_and_ip_assignment(self):
+        cluster = self.env.create_cluster(api=True)
+        admin_ip = str(IPNetwork(
+            self.env.network_manager.get_admin_network_group().cidr)[0])
+        mac1, mac2 = '123', '321'
+        meta = self.env.default_metadata()
+        meta['interfaces'] = [{'name': 'eth0', 'mac': mac1},
+                              {'name': 'eth1', 'mac': mac2, 'ip': admin_ip}]
+        self.env.create_node(api=True, meta=meta, mac=mac1,
+                             cluster_id=cluster['id'])
+        node_db = self.env.nodes[0]
+        self.assertEquals(node_db.admin_interface.mac, mac2)
+        self.assertEquals(node_db.admin_interface.ip_addr, admin_ip)
+
+        meta = deepcopy(node_db.meta)
+        for interface in meta['interfaces']:
+            if interface['mac'] == mac2:
+                # reset admin ip for previous admin interface
+                interface['ip'] = None
+            elif interface['mac'] == mac1:
+                # set new admin interface
+                interface['ip'] = admin_ip
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node_db.id,
+                        'meta': meta,
+                        'is_agent': True}]),
+            headers=self.default_headers
+        )
+        self.assertEquals(resp.status, 200)
+
+        self.db.refresh(node_db)
+        self.assertEquals(node_db.admin_interface.mac, mac2)
+        self.assertEquals(node_db.admin_interface.ip_addr, None)
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node_db.id,
+                         'cluster_id': None}]),
+            headers=self.default_headers
+        )
+        self.assertEquals(resp.status, 200)
+
+        self.db.refresh(node_db)
+        self.assertEquals(node_db.admin_interface.mac, mac1)
+        self.assertEquals(node_db.admin_interface.ip_addr, admin_ip)

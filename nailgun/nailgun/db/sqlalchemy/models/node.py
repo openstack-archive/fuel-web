@@ -208,6 +208,11 @@ class Node(Base):
         """
         from nailgun.network.manager import NetworkManager
 
+        admin_ng = NetworkManager.get_admin_network_group()
+        for interface in self.interfaces:
+            if admin_ng in interface.assigned_networks:
+                return interface
+
         for interface in self.interfaces:
             ip_addr = interface.ip_addr
             if NetworkManager.is_ip_belongs_to_admin_subnet(ip_addr):

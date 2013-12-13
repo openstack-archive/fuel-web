@@ -823,3 +823,21 @@ class NetworkManager(object):
             if cidr:
                 ng_db.cidr = str(cidr)
                 ng_db.network_size = cidr.size
+
+    @classmethod
+    def generate_vlan_ids_list(cls, cluster, ng):
+
+        if ng.get("name") == "private":
+            vlan_range = cluster.neutron_config.L2[
+                "phys_nets"]["physnet2"]["vlan_range"]
+            return range(vlan_range[0], vlan_range[1] + 1)
+
+        if ng.get("vlan_start") is None:
+            return []
+        vlans = [
+            i for i in xrange(
+                int(ng.get("vlan_start")),
+                int(ng.get("vlan_start")) + int(ng.get("amount"))
+            )
+        ]
+        return vlans

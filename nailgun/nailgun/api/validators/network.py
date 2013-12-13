@@ -25,11 +25,12 @@ from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
 
 
-class NovaNetworkConfigurationValidator(BasicValidator):
+class NetworkConfigurationValidator(BasicValidator):
+
     @classmethod
     def validate_networks_update(cls, data):
         d = cls.validate_json(data)
-        networks = d['networks']
+        networks = d.get('networks')
 
         if not d:
             raise errors.InvalidData(
@@ -58,6 +59,9 @@ class NovaNetworkConfigurationValidator(BasicValidator):
                     )
         return d
 
+
+class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
+
     @classmethod
     def validate_dns_servers_update(cls, data):
         d = cls.validate_json(data)
@@ -79,8 +83,7 @@ class NovaNetworkConfigurationValidator(BasicValidator):
         return d
 
 
-class NeutronNetworkConfigurationValidator(NovaNetworkConfigurationValidator):
-    # TODO(enchantner): Implement validation logic
+class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
 
     @classmethod
     def validate_neutron_params(cls, data, **kwargs):

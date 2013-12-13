@@ -83,18 +83,6 @@ class NetworkGroup(Base):
         secondary=IPAddr.__table__,
         backref="networks")
 
-    @classmethod
-    def generate_vlan_ids_list(cls, ng):
-        if ng["vlan_start"] is None:
-            return []
-        vlans = [
-            i for i in xrange(
-                int(ng["vlan_start"]),
-                int(ng["vlan_start"]) + int(ng["amount"])
-            )
-        ]
-        return vlans
-
     @property
     def meta(self):
         if self.cluster:

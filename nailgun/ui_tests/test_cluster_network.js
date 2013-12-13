@@ -80,7 +80,7 @@ casper.then(function() {
         return __utils__.getFieldValue('fixed-amount');
     });
     var initialVlanIDValue = this.evaluate(function(initialValue) {
-        return __utils__.getFieldValue('fixed-vlan_range-start');
+        return __utils__.getFieldValue('fixed-vlan_start');
     });
 
     var fixtures = [
@@ -127,7 +127,7 @@ casper.then(function() {
         self.then(function() {
             this.fill('.networks-table', {'fixed-amount': fixture.amount});
             if (fixture.vlanStart != '') {
-                this.fill('.networks-table', {'fixed-vlan_range-start': fixture.vlanStart});
+                this.fill('.networks-table', {'fixed-vlan_start': fixture.vlanStart});
             }
             this.evaluate(function() {
                 $('input[name=fixed-amount]').keyup();
@@ -136,7 +136,7 @@ casper.then(function() {
                 this.test.assertExists('input[name=fixed-amount].error', 'Field validation has worked ' + fixture.validationMessage);
                 this.test.assertExists('.apply-btn:disabled', 'Apply button is disabled if there is validation error');
             } else {
-                this.test.assertEvalEquals(function() {return $('input[name=fixed-vlan_range-end]').val()}, fixture.vlanEnd, 'End value is correct');
+                this.test.assertEvalEquals(function() {return $('input[name=fixed-vlan_end]').val()}, fixture.vlanEnd, 'End value is correct');
                 this.test.assertDoesntExist('input[name=fixed-amount].error', 'Field validation works properly with correct value');}
         });
     });
@@ -144,19 +144,19 @@ casper.then(function() {
     casper.then(function() {
 	this.fill('.networks-table', {
             'fixed-amount': '1',
-            'fixed-vlan_range-start': '4094'
+            'fixed-vlan_start': '4094'
         });
         this.evaluate(function() {
             $('input[name=fixed-amount]').keyup();
         });
         this.test.assertDoesntExist('input[name=fixed-amount].error', 'Field validation works properly');
-        this.test.assertDoesntExist('.networks-table.fixed-vlan-end', 'Field end vlan value works properly');
+        this.test.assertDoesntExist('.networks-table.fixed-vlan_end', 'Field end vlan value works properly');
     });
 
     casper.then(function() {
         this.fill('.networks-table', {
             'fixed-amount': initialAmountValue,
-            'fixed-vlan_range-start': initialVlanIDValue
+            'fixed-vlan_start': initialVlanIDValue
         });
 	this.evaluate(function() {
             $('input[name=fixed-amount]').keyup();

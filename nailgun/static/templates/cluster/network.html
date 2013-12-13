@@ -67,10 +67,10 @@
             <div class="networks-sub-title parameter-name"><%= labels.vlan_range %></div>
             <div class="range-row">
               <div class="parameter-control vlan_start">
-                <input type="text" class="mini range" name="fixed-vlan_range-start" value="<%- network.get('vlan_start') %>" <%= disabled %> />
+                <input type="text" class="mini range" name="<%- networkName %>-<%- attribute %>" value="<%- network.get(attribute) %>" <%= disabled %> />
               </div>
               <div class="parameter-control vlan_end">
-                <input type="text" class="mini" name="fixed-vlan_range-end" value="<%= network.get('vlan_start') + network.get('amount') - 1 %>" disabled />
+                <input type="text" class="mini" name="<%- networkName %>-vlan_end" value="<%= network.get(attribute) + network.get('amount') - 1 %>" disabled />
               </div>
               <div class="error"><span class="help-inline"></span></div>
             </div>

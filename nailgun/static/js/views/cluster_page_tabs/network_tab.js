@@ -296,7 +296,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     vlanEnd = (this.network.get('vlan_start') + this.network.get('amount') - 1);
                     vlanEnd = vlanEnd > 4094 ? 4094 : vlanEnd;
                 }
-                this.$('input[name=fixed-vlan_range-end]').val(vlanEnd);
+                this.$('input[name=fixed-vlan_end]').val(vlanEnd);
             }
         },
         updateFloatingVlanFromPublic: function() {

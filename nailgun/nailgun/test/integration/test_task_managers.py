@@ -59,6 +59,10 @@ class TestTaskManagers(BaseIntegrationTest):
         # provision
         # deployment
         self.assertEquals(len(supertask.subtasks), 3)
+        # provisioning task has less weight then deployment
+        provision_task = filter(
+            lambda t: t.name == 'provision', supertask.subtasks)[0]
+        self.assertEquals(provision_task.weight, 0.4)
 
         self.env.wait_for_nodes_status([self.env.nodes[0]], 'provisioning')
         self.env.wait_ready(

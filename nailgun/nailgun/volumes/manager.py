@@ -724,11 +724,11 @@ class VolumeManager(object):
         '''
         mem = float(self.ram) / 1024 ** 3
         if mem <= 2:
-            return gb_to_mb(int(2 * mem))
+            return gb_to_mb(int(round(2 * mem)))
         elif mem > 2 and mem <= 8:
             return gb_to_mb(mem)
         elif mem > 8 and mem <= 64:
-            return gb_to_mb(int(.5 * mem))
+            return gb_to_mb(int(round(.5 * mem)))
         else:
             return gb_to_mb(4)
 

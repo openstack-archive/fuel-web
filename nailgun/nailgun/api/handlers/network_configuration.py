@@ -91,6 +91,11 @@ class ProviderHandler(JSONHandler):
             'name': n['name'],
             'vlans': NetworkGroup.generate_vlan_ids_list(n)
         } for n in data['networks']]
+        private = filter(lambda n: n['name'] == 'private', vlan_ids)
+        if private:
+            vlan_range = cluster.neutron_config.L2[
+                'phys_nets']["physnet2"]["vlan_range"]
+            private[0]['vlans'] = range(vlan_range[0], vlan_range[1] + 1)
 
         task_manager = VerifyNetworksTaskManager(cluster_id=cluster.id)
         try:

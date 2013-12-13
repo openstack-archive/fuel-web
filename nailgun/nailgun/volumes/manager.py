@@ -722,12 +722,12 @@ class VolumeManager(object):
                        Red_Hat_Enterprise_Linux/6/html/Installation_Guide/
                        s2-diskpartrecommend-ppc.html#id4394007
         '''
-        mem = float(self.ram) / 1024 ** 3
-        if mem <= 2:
-            return gb_to_mb(int(2 * mem))
-        elif mem > 2 and mem <= 8:
+        mem = int(float(self.ram) / 1024 ** 2)
+        if mem <= 2048:
+            return gb_to_mb(2 * mem)
+        elif mem > 2048 and mem <= 8192:
             return gb_to_mb(mem)
-        elif mem > 8 and mem <= 64:
+        elif mem > 8192 and mem <= 65536:
             return gb_to_mb(int(.5 * mem))
         else:
             return gb_to_mb(4)

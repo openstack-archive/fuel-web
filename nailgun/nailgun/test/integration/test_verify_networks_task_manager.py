@@ -17,6 +17,7 @@
 import json
 from mock import patch
 
+from nailgun.task.manager import VerifyNetworksTaskManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -229,3 +230,56 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
             (u'Network verification on Neutron is not implemented yet'),
             task.message
         )
+
+
+class TestVerifyNeutronVlan(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestVerifyNeutronVlan, self).setUp()
+        meta1 = self.env.default_metadata()
+        meta2 = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta1, [
+            {"name": "eth0", "mac": "00:00:00:00:00:66"},
+            {"name": "eth1", "mac": "00:00:00:00:00:77"},
+            {"name": "eth2", "mac": "00:00:00:00:00:88"}])
+        self.env.set_interfaces_in_meta(meta2, [
+            {"name": "eth0", "mac": "00:00:00:00:01:66"},
+            {"name": "eth1", "mac": "00:00:00:00:01:77"},
+            {"name": "eth2", "mac": "00:00:00:00:01:88"}])
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'vlan'
+            },
+            nodes_kwargs=[
+                {
+                    'api': True,
+                    'pending_addition': True,
+                    'meta': meta1
+                },
+                {
+                    'api': True,
+                    'pending_addition': True,
+                    'meta': meta2
+                }]
+        )
+
+    @fake_tasks(fake_rpc=False)
+    def test_network_verification_neutron_with_vlan_segmentation(
+            self, mocked_rpc):
+        orig_func = VerifyNetworksTaskManager.execute
+        l2params = self.env.clusters[0].neutron_config.L2
+        vlan_range_be = l2params["phys_nets"]["physnet2"]["vlan_range"]
+        vlan_range = range(vlan_range_be[0], vlan_range_be[1] + 1)
+
+        def verify_execute(inst, nets, vlan_ids):
+            self.assertGreater(len(vlan_ids), 0)
+            priv = filter(lambda n: n['name'] == 'private', vlan_ids)
+            self.assertEqual(len(priv), 1)
+            self.assertEqual(priv[0]['vlans'], vlan_range)
+            return orig_func(inst, nets, vlan_ids)
+
+        VerifyNetworksTaskManager.execute = verify_execute
+
+        task = self.env.launch_verify_networks()
+        self.assertEqual(task.status, 'running')

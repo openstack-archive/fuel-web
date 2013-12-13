@@ -389,3 +389,14 @@ class NeutronManager(NetworkManager):
                 setattr(cluster.neutron_config, key, value)
             db().add(cluster.neutron_config)
             db().commit()
+
+    @classmethod
+    def generate_vlan_ids_list(cls, data, cluster, ng):
+        if ng.get("name") == "private":
+            if "neutron_parameters" in data:
+                l2params = data["neutron_parameters"]["L2"]
+            else:
+                l2params = cluster.neutron_config.L2
+            vlan_range = l2params["phys_nets"]["physnet2"]["vlan_range"]
+            return range(vlan_range[0], vlan_range[1] + 1)
+        return [int(ng.get("vlan_start"))] if ng.get("vlan_start") else []

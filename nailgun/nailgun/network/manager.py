@@ -823,3 +823,11 @@ class NetworkManager(object):
             if cidr:
                 ng_db.cidr = str(cidr)
                 ng_db.network_size = cidr.size
+
+    @classmethod
+    def get_vlan_ids_list_from_ng(cls, ng):
+        if ng.get("vlan_start") is None:
+            return []
+        vlans = range(int(ng.get("vlan_start")),
+                      int(ng.get("vlan_start")) + int(ng.get("amount")))
+        return vlans

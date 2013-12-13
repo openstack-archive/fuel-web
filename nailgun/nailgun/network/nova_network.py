@@ -188,3 +188,7 @@ class NovaNetworkManager(NetworkManager):
 
                 cls.cleanup_network_group(ng_db)
                 ng_db.cluster.add_pending_changes('networks')
+
+    @classmethod
+    def generate_vlan_ids_list(cls, data, cluster, ng):
+        return cls.get_vlan_ids_list_from_ng(ng)

@@ -49,8 +49,6 @@ First we need to install the software::
     apt-get install syslinux syslinux-common
     # nfs server
     apt-get install nfs-server
-    # archiver to extract ISO file
-    apt-get install p7zip-full
 
 Setting up DHCP server
 --------------------------
@@ -233,16 +231,7 @@ Now we need to write the pxelinux configuration file. It will be located here
     KERNEL poweroff.com
 
 
-Now we need to unpack the Fuel ISO file you have downloaded::
-
-    mkdir -p /var/lib/tftpboot/fuel
-    cd /var/lib/tftpboot/fuel
-    7z x /path/to/your/fuel.iso
-    find -type f | xargs -P 1 -L 1 chmod 644
-    find -type d | xargs -P 1 -L 1 chmod 755
-
-An alternate method is to mount iso image, but in this case you must add crossmt
-option to /etc/exports::
+Now we need to mount the Fuel ISO file we have downloaded::
 
     mkdir -p /var/lib/tftpboot/fuel
     mount -o loop /path/to/your/fuel.iso /var/lib/tftpboot/fuel

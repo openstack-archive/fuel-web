@@ -925,13 +925,17 @@ label.error {
 
 /* Cluster Tabs Design */
 .cluster-tabs {
-    border: none;
+    border: medium none;
+    display: block;
+    height: 50px;
     margin-top: -70px;
+    overflow: hidden;
 }
 
 .cluster-tabs li {
   margin-left: -1px;
   min-width: 98px;
+  margin-bottom: 1px;
 }
 
 .cluster-tabs li a {
@@ -1011,6 +1015,23 @@ label.error {
   background-color: #ffffff;
   border-color: #404c5c #404c5c #404c5c;
   border-bottom-color: transparent;
+}
+
+.cluster-tabs-more {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  color: #D4D4D4;
+  cursor: pointer;
+  display: block;
+  float: left;
+  font-size: 23px;
+  height: 48px;
+  padding: 12px 0 0 12px;
+  width: 58px;
+}
+.cluster-tabs-more:hover {
+  color: #f0f0f0;
 }
 /* End Cluster Tabs Design */
 
@@ -4401,23 +4422,27 @@ input.input-append {
 
 .cluster-name-box {
   display: block;
-  height: 30px;
-  margin: 0px;
+  margin: 10px 0px 4px 0px;
   padding: 0px;
+  overflow: hidden;
+  width: 700px;
 }
 
 .node-list-name {
-  float: left;
-  margin: 0px;
-  padding: 0px;
-  display: inline-block;
-  line-height: 18px;
-  cursor: default;
-  font-size: 24px;
-  color: #333333;
-  font-family: "Segoe UI Light","Segoe UI",Helvetica,Georgia,Tahoma,Arial;
-  font-weight: lighter;
-  position: relative;
+  color: #E0E0E0;
+    cursor: default;
+    display: inline;
+    float: left;
+    font-family: "Segoe UI Light","Segoe UI",Helvetica,Georgia,Tahoma,Arial;
+    font-size: 24px;
+    font-weight: lighter;
+    line-height: 18px;
+    margin: 0;
+    max-width: 562px;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+    white-space: nowrap;
 }
 
 .btn-cluster-details {
@@ -4438,7 +4463,7 @@ i.btn-cluster-details {
   display: inline-block;
   margin: 0px;
   padding: 0px;
-  color: #666666;
+  color: #a0a0a0;
   font-size: 16px;
   line-height: 22px;
   margin-left: 15px;
@@ -4453,7 +4478,7 @@ i.btn-cluster-details {
   padding: 10px;
   text-align: left;
   margin: 0;
-  position: absolute;
+  position: static;
   z-index: 10000;
 }
 

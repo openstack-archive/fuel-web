@@ -25,14 +25,15 @@ define(
     'views/cluster_page_tabs/logs_tab',
     'views/cluster_page_tabs/actions_tab',
     'views/cluster_page_tabs/healthcheck_tab',
+    'text!templates/cluster/cluster_title.html',
     'text!templates/cluster/page.html',
     'text!templates/cluster/customization_message.html',
     'text!templates/cluster/deployment_result.html',
     'text!templates/cluster/deployment_control.html'
 ],
-function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
+function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterTitleTemplate, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
     'use strict';
-    var ClusterPage, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
+    var ClusterPage, ClusterTitle, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
 
     ClusterPage = commonViews.Page.extend({
         navbarActiveElement: 'clusters',
@@ -207,7 +208,8 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 activeTab: this.activeTab,
                 renaming: this.renaming
             })).i18n();
-
+            var clusterTitleView = new ClusterTitle({model: this.model.get('nodes')});
+            $('ul.breadcrumb').after(clusterTitleView.render().el);
             this.clusterCustomizationMessage = new ClusterCustomizationMessage({model: this.model, page: this});
             this.registerSubView(this.clusterCustomizationMessage);
             this.$('.customization-message').html(this.clusterCustomizationMessage.render().el);
@@ -233,6 +235,20 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 this.registerSubView(this.tab);
             }
 
+            return this;
+        }
+    });
+
+    ClusterTitle = Backbone.View.extend({
+        template: _.template(clusterTitleTemplate),
+        events: {
+            'click .btn-cluster-details': 'toggleSummaryPanel'
+        },
+        toggleSummaryPanel: function() {
+            this.$('.cluster-details').toggle();
+        },
+        render: function () {
+            this.$el.html(this.template({nodes: this.model})).i18n();
             return this;
         }
     });

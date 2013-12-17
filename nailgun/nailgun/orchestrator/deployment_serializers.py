@@ -765,22 +765,30 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     def _get_vlan_splinters_desc(cls, use_vlan_splinters, iface,
                                  cluster):
         iface_attrs = {}
-        if not use_vlan_splinters:
+        if use_vlan_splinters == 'disabled':
             iface_attrs['vlan_splinters'] = 'off'
             return iface_attrs
         iface_attrs['vlan_splinters'] = 'auto'
         trunks = [0]
 
-        for ng in iface.assigned_networks:
-            if ng.name == 'private':
-                vlan_range = cluster.neutron_config.L2.get(
-                    "phys_nets", {}).get("physnet2", {}).get("vlan_range", ())
-                trunks.extend(xrange(*vlan_range))
-                trunks.append(vlan_range[1])
-            else:
-                if ng.vlan_start in (0, None):
-                    continue
-                trunks.append(ng.vlan_start)
+        if use_vlan_splinters == 'hard':
+            for ng in iface.assigned_networks:
+                if ng.name == 'private':
+                    vlan_range = cluster.neutron_config.L2.get(
+                        "phys_nets", {}
+                    ).get("physnet2", {}).get("vlan_range", ())
+                    trunks.extend(xrange(*vlan_range))
+                    trunks.append(vlan_range[1])
+                else:
+                    if ng.vlan_start in (0, None):
+                        continue
+                    trunks.append(ng.vlan_start)
+        elif use_vlan_splinters == 'soft':
+            pass
+        else:
+            logger.warn('Invalid vlan_splinters value: %s', use_vlan_splinters)
+            return {}
+
         iface_attrs['trunks'] = trunks
 
         return iface_attrs

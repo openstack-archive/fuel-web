@@ -350,11 +350,28 @@
                             "type": "checkbox"
                         },
                         "vlan_splinters": {
-                            "value": false,
-                            "label": "Enable 'OVS VLAN splinters' feature (Neutron only)",
+                            "value": "disabled",
+                            "value": [
+                                {
+                                    "data": "disabled",
+                                    "label": "disabled",
+                                    "description": "VLAN splinters disabled on all interfaces"
+                                },
+                                {
+                                    "data": "soft",
+                                    "label": "soft mode",
+                                    "description": "VLAN splinters are enabled and collect tags automatically"
+                                },
+                                {
+                                    "data": "hard",
+                                    "label": "hard mode",
+                                    "description": "VLAN splinters are enabled and use explicitly provided tags"
+                                }
+                            ],
+                            "label": "'OVS VLAN splinters' feature (Neutron only)",
                             "description": "Use VLAN splinters Open vSwitch method on necessary network interfaces",
                             "weight": 45,
-                            "type": "checkbox"
+                            "type": "radio"
                         },
                         "libvirt_type": {
                             "value": "qemu",
@@ -1394,11 +1411,28 @@
                             "type": "checkbox"
                         },
                         "vlan_splinters": {
-                            "value": false,
-                            "label": "Enable 'OVS VLAN splinters' feature (Neutron only)",
+                            "value": "disabled",
+                            "value": [
+                                {
+                                    "data": "disabled",
+                                    "label": "disabled",
+                                    "description": "VLAN splinters disabled on all interfaces"
+                                },
+                                {
+                                    "data": "soft",
+                                    "label": "soft mode",
+                                    "description": "VLAN splinters are enabled and collect tags automatically"
+                                },
+                                {
+                                    "data": "hard",
+                                    "label": "hard mode",
+                                    "description": "VLAN splinters are enabled and use explicitly provided tags"
+                                }
+                            ],
+                            "label": "'OVS VLAN splinters' feature (Neutron only)",
                             "description": "Use VLAN splinters Open vSwitch method on necessary network interfaces",
                             "weight": 45,
-                            "type": "checkbox"
+                            "type": "radio"
                         },
                         "libvirt_type": {
                             "value": "qemu",

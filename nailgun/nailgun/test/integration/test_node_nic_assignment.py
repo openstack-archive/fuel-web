@@ -265,3 +265,69 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         self.db.refresh(node_db)
         self.assertEquals(node_db.admin_interface.mac, mac1)
         self.assertEquals(node_db.admin_interface.ip_addr, admin_ip)
+
+
+class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
+
+    def create_node(self):
+        meta = self.env.default_metadata()
+        admin_ip = str(IPNetwork(
+            self.env.network_manager.get_admin_network_group().cidr)[0])
+        meta['interfaces'] = [{'name': 'eth3', 'mac': '000'},
+                              {'name': 'eth2', 'mac': '111'},
+                              {'name': 'eth0', 'mac': '222', 'ip': admin_ip},
+                              {'name': 'eth1', 'mac': '333'}]
+        return self.env.create_node(api=True, meta=meta,
+                                    cluster_id=self.env.clusters[0].id)
+
+    def test_nova_net_public_network_assigned_to_second_nic_by_name(self):
+        self.env.create_cluster(api=True)
+        node = self.create_node()
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        data = json.loads(resp.body)
+        eth1 = [nic for nic in data if nic['name'] == 'eth1']
+        self.assertEqual(len(eth1), 1)
+        self.assertEqual(
+            len(filter(lambda n: n['name'] == 'public',
+                       eth1[0]['assigned_networks'])),
+            1)
+
+    def test_neutron_gre_public_network_assigned_to_second_nic_by_name(self):
+        self.env.create_cluster(api=True,
+                                net_provider='neutron',
+                                net_segment_type='gre')
+        node = self.create_node()
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        data = json.loads(resp.body)
+        eth1 = [nic for nic in data if nic['name'] == 'eth1']
+        self.assertEqual(len(eth1), 1)
+        self.assertEqual(
+            len(filter(lambda n: n['name'] == 'public',
+                       eth1[0]['assigned_networks'])),
+            1)
+
+    def test_neutron_vlan_public_network_assigned_to_second_nic_by_name(self):
+        self.env.create_cluster(api=True,
+                                net_provider='neutron',
+                                net_segment_type='vlan')
+        node = self.create_node()
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        data = json.loads(resp.body)
+        eth1 = [nic for nic in data if nic['name'] == 'eth1']
+        self.assertEqual(len(eth1), 1)
+        self.assertEqual(
+            len(filter(lambda n: n['name'] == 'public',
+                       eth1[0]['assigned_networks'])),
+            1)

@@ -113,7 +113,7 @@ class Node(Base):
                               cascade="all,delete")
     interfaces = relationship("NodeNICInterface", backref="node",
                               cascade="delete",
-                              order_by="NodeNICInterface.id")
+                              order_by="NodeNICInterface.name")
 
     @property
     def uid(self):

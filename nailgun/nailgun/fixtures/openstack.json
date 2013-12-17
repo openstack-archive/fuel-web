@@ -350,11 +350,27 @@
                             "type": "checkbox"
                         },
                         "vlan_splinters": {
-                            "value": false,
-                            "label": "Enable 'OVS VLAN splinters' feature (Neutron only)",
-                            "description": "Use VLAN splinters Open vSwitch method on necessary network interfaces",
+                            "value": "disabled",
+                            "label": "Open VSwitch VLAN Splinters feature (Neutron only)",
                             "weight": 45,
-                            "type": "checkbox"
+                            "type": "radio",
+                            "values": [
+                                {
+                                    "data": "disabled",
+                                    "label": "Disabled",
+                                    "description": "OVS VLAN splinters disabled on all interfaces"
+                                },
+                                {
+                                    "data": "soft",
+                                    "label": "Enable OVS VLAN splinters soft trunks workaround",
+                                    "description": "Configure OVS to use VLAN splinters workaround with soft trunk detection. This may resolve issues that might be encountered when using VLAN tags with OVS and Neutron on Kernels <3.3 (CentOS)"
+                                },
+                                {
+                                    "data": "hard",
+                                    "label": "Enable OVS VLAN splinters hard trunks workaround",
+                                    "description": "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be predefined. This may work better than soft trunks especially if you still see network problems using soft trunks"
+                                }
+                            ]
                         },
                         "libvirt_type": {
                             "value": "qemu",
@@ -1394,11 +1410,27 @@
                             "type": "checkbox"
                         },
                         "vlan_splinters": {
-                            "value": false,
-                            "label": "Enable 'OVS VLAN splinters' feature (Neutron only)",
-                            "description": "Use VLAN splinters Open vSwitch method on necessary network interfaces",
+                            "value": "disabled",
+                            "label": "Open VSwitch VLAN Splinters feature (Neutron only)",
                             "weight": 45,
-                            "type": "checkbox"
+                            "type": "radio",
+                            "values": [
+                                {
+                                    "data": "disabled",
+                                    "label": "Disabled",
+                                    "description": "OVS VLAN splinters disabled on all interfaces"
+                                },
+                                {
+                                    "data": "soft",
+                                    "label": "Enable OVS VLAN splinters soft trunks workaround",
+                                    "description": "Configure OVS to use VLAN splinters workaround with soft trunk detection. This may resolve issues that might be encountered when using VLAN tags with OVS and Neutron on Kernels <3.3 (CentOS)"
+                                },
+                                {
+                                    "data": "hard",
+                                    "label": "Enable OVS VLAN splinters hard trunks workaround",
+                                    "description": "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be predefined. This may work better than soft trunks especially if you still see network problems using soft trunks"
+                                }
+                            ]
                         },
                         "libvirt_type": {
                             "value": "qemu",

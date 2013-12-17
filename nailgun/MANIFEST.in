@@ -2,3 +2,4 @@ include manage.py
 include fuel-cli/fuel
 recursive-include nailgun *
 recursive-include static *
+include *requirements.txt

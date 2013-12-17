@@ -477,15 +477,18 @@ class TestHandlers(BaseIntegrationTest):
                         "provider": "ovs",
                         "interfaces": {
                             "eth0": {
-                                "L2": {"vlan_splinters": "off"},
+                                "L2": {"vlan_splinters": "off",
+                                    "vlan_splinters_trunks": "off"},
                                 "mtu": 1500
                             },
                             "eth1": {
-                                "L2": {"vlan_splinters": "off"},
+                                "L2": {"vlan_splinters": "off",
+                                    "vlan_splinters_trunks": "off"},
                                 "mtu": 1500
                             },
                             "eth2": {
-                                "L2": {"vlan_splinters": "off"},
+                                "L2": {"vlan_splinters": "off",
+                                    "vlan_splinters_trunks": "off"},
                                 "mtu": 1500
                             },
                         },

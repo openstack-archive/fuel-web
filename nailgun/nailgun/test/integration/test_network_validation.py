@@ -618,10 +618,9 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
         ifaces = json.loads(resp.body)
         admin_if = [iface for iface in ifaces
-                    if len(iface["assigned_networks"]) == 1]
+                    if len(iface["assigned_networks"]) == 1 and
+                    iface["assigned_networks"][0]["name"] == "fuelweb_admin"]
         self.assertEquals(len(admin_if), 1)
-        self.assertEquals(admin_if[0]["assigned_networks"][0]['name'],
-                          'fuelweb_admin')
         other_if = [iface for iface in ifaces
                     if iface != admin_if[0]]
         self.assertGreaterEqual(len(other_if), 1)

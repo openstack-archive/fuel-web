@@ -125,18 +125,20 @@ class NeutronManager(NetworkManager):
                   if iface.id != node.admin_interface.id]
         if not ifaces:
             ifaces = [node.admin_interface]
-        # assign private network for vlan
+        # assign private network to dedicated NIC for vlan
         if node.cluster.net_segment_type == 'vlan':
-            ng_prv = [ng for ng in cls.get_cluster_networkgroups_by_node(node)
-                      if ng.name == 'private']
-            if ng_prv:
-                ifaces[0].assigned_networks.append(ng_prv[0])
-                if len(ifaces) > 1:
-                    ifaces.pop(0)
+            map(ifaces[0].assigned_networks.append,
+                filter(lambda ng: ng.name != 'private',
+                       cls.get_cluster_networkgroups_by_node(node)))
+            if len(ifaces) > 1:
+                ifaces.pop(0)
+            map(ifaces[0].assigned_networks.append,
+                filter(lambda ng: ng.name == 'private',
+                       cls.get_cluster_networkgroups_by_node(node)))
         # assign all remaining networks
-        map(ifaces[0].assigned_networks.append,
-            filter(lambda ng: ng.name != 'private',
-                   cls.get_cluster_networkgroups_by_node(node)))
+        else:
+            map(ifaces[0].assigned_networks.append,
+                cls.get_cluster_networkgroups_by_node(node))
 
         node.admin_interface.assigned_networks.append(
             cls.get_admin_network_group()
@@ -182,8 +184,8 @@ class NeutronManager(NetworkManager):
         admin and private network groups has their own NICs by default - vlan
         """
         nics = []
-
-        already_assigned = []
+        to_be_assigned = set([ng.name for ng in node.cluster.network_groups] +
+                             [cls.get_admin_network_group().name])
         for i, nic in enumerate(node.interfaces):
             nic_dict = {
                 "id": nic.id,
@@ -192,33 +194,28 @@ class NeutronManager(NetworkManager):
                 "max_speed": nic.max_speed,
                 "current_speed": nic.current_speed
             }
-            if nic == node.admin_interface:
-                admin_ng = cls.get_admin_network_group()
-                assigned_ngs = [admin_ng]
-                already_assigned.append(admin_ng.name)
-            else:
-                if node.cluster.net_segment_type == 'vlan' \
-                        and not "private" in already_assigned:
-                    assigned_ngs = filter(
-                        lambda ng: ng.name == "private",
-                        node.cluster.network_groups
-                    )
-                    already_assigned.append("private")
+            if to_be_assigned:
+                if nic == node.admin_interface:
+                    admin_ng = cls.get_admin_network_group()
+                    assigned_ngs = [admin_ng]
                 else:
-                    assigned_ngs = filter(
-                        lambda ng: (
-                            ng.name != "private" and
-                            ng.name not in already_assigned
-                        ),
-                        node.cluster.network_groups
-                    )
-                    already_assigned.extend([
-                        ng.name for ng in assigned_ngs
-                    ])
+                    if node.cluster.net_segment_type == 'vlan':
+                        if "public" in to_be_assigned:
+                            assigned_ngs = filter(
+                                lambda ng: ng.name != "private",
+                                node.cluster.network_groups)
+                        else:
+                            assigned_ngs = filter(
+                                lambda ng: ng.name == "private",
+                                node.cluster.network_groups)
+                    else:
+                        assigned_ngs = [ng
+                                        for ng in node.cluster.network_groups]
 
-            for ng in assigned_ngs:
-                nic_dict.setdefault('assigned_networks', []).append(
-                    {'id': ng.id, 'name': ng.name})
+                for ng in assigned_ngs:
+                    nic_dict.setdefault('assigned_networks', []).append(
+                        {'id': ng.id, 'name': ng.name})
+                to_be_assigned -= set([ng.name for ng in assigned_ngs])
 
             allowed_ngs = cls.get_allowed_nic_networkgroups(
                 node,

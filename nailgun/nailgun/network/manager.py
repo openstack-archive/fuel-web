@@ -605,7 +605,8 @@ class NetworkManager(object):
             logger.warn("Cannot update interfaces: %s" % str(e))
             return
 
-        for interface in node.meta["interfaces"]:
+        for interface in sorted(node.meta["interfaces"],
+                                key=lambda k: k['name']):
             interface_db = db().query(NodeNICInterface).filter_by(
                 mac=interface['mac']).first()
             if interface_db:

@@ -440,10 +440,21 @@ class VerifyNetworksTaskManager(TaskManager):
             name="check_networks",
             cluster=self.cluster
         )
-        if not task.cluster.nodes:
+        if self.cluster.net_provider == "neutron":
             task.status = 'error'
-            task.message = ('There should be at least 1 node for dhcp check.'
-                            'And 2 nodes for connectivity check')
+            task.message = ('Network verification on Neutron'
+                            ' is not implemented yet')
+            db().add(task)
+            db().commit()
+            return task
+
+        if len(task.cluster.nodes) < 2:
+            task.status = 'error'
+            task.message = ('At least two nodes are required to be '
+                            'in the environment for network verification.')
+            db().add(task)
+            db().commit()
+            return task
 
         db().add(task)
         db().commit()
@@ -455,18 +466,6 @@ class VerifyNetworksTaskManager(TaskManager):
             check_admin_untagged=True
         )
         db().refresh(task)
-
-        #disable neutron with vlan connectivity check after deployment
-        if task.status != 'error':
-            if (
-                task.cluster.status != 'new' and
-                task.cluster.net_provider == 'neutron'
-            ):
-                task.status = 'error'
-                task.message = ('Network verification on Neutron'
-                                ' is not implemented yet')
-
-                db().commit()
 
         if task.status != 'error':
             # this one is connected with UI issues - we need to

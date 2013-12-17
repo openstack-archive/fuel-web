@@ -29,12 +29,12 @@
                     "conflicts": ["controller"]
                 },
                 "cinder": {
-                    "name": "Cinder",
-                    "description": "Cinder provides an infrastructure for managing block storage volumes in OpenStack.  Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level storage."
+                    "name": "Storage - Cinder LVM",
+                    "description": "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
                 },
-                "ceph-osd": {
-                    "name": "Ceph OSD",
-                    "description": "Ceph OSD is the object storage daemon for the Ceph distributed file system.  It is responsible for storing objects on a local file system and providing access to them over the network, for example to Glance."
+                "cinder": {
+                    "name": "Storage - Cinder LVM",
+                    "description": "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
                 }
             },
             "networks_metadata": {
@@ -465,45 +465,47 @@
                         }
                     },
                     "storage": {
+                        "label": "Storage Settings for this cluster",
+                        "description": "This section covers several storage settings. Note: when using 'Storage - Cinder LVM', nodes cinder-volume service runs on each node. When using 'Storage - Ceph OSD', nodes cinder-volume and the Ceph monitors will run on the controllers. Cinder management services are always installed on the controllers.",
                         "volumes_lvm": {
                             "value": false,
                             "label": "Cinder LVM over iSCSI for volumes",
-                            "description": "Requires at least one Cinder node",
+                            "description": "Requires at least one Storage - Cinder LVM node.",
                             "weight": 10,
                             "type": "checkbox"
                         },
                         "volumes_ceph": {
                             "value": false,
-                            "label": "Ceph RBD for volumes",
-                            "description": "Requires at least two Ceph-OSD nodes",
+                            "label": "Ceph RBD for volumes (Cinder)",
+                            "description": "Configures Cinder to store volumes in Ceph RBD images.",
                             "weight": 20,
                             "type": "checkbox"
                         },
                         "images_ceph": {
                             "value": false,
-                            "label": "Ceph RBD for images",
-                            "description": "Requires at least two Ceph-OSD nodes",
+                            "label": "Ceph RBD for images (Glance)",
+                            "description": "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing.",
                             "weight": 30,
                             "type": "checkbox"
                         },
                         "ephemeral_ceph": {
                             "value": false,
-                            "label": "Ceph RBD for ephemeral volumes",
-                            "description": "Requires at least two Ceph-OSD nodes",
+                            "label": "Ceph RBD for ephemeral volumes (Nova)",
+                            "description": "Configures Nova to store ephemeral volumes in RBD. This works best if Ceph is enabled for volumes and images, too. Enables live migration of all types of Ceph backed VMs (without this option, live migration will only work with VMs launched from Cinder volumes).",
                             "weight": 35,
                             "type": "checkbox"
                         },
                         "objects_ceph": {
                             "value": false,
-                            "label": "Ceph rados-gw for objects",
-                            "description": "Requires at least two Ceph-OSD nodes, incompatible with Swift",
+                            "label": "Ceph RadosGW for objects (Swift API)",
+                            "description": "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing.",
                             "weight": 40,
                             "type": "checkbox"
                         },
                         "osd_pool_size": {
                             "value": "2",
                             "label": "Ceph object replication factor",
-                            "description": "Defines the number of object replicas in Ceph pools. At least that many Ceph-OSD nodes must be deployed.",
+                            "description": "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Storage - Ceph OSD' nodes.",
                             "weight": 70,
                             "type": "text"
                         }
@@ -666,8 +668,8 @@
                     "conflicts": ["controller"]
                 },
                 "cinder": {
-                    "name": "Cinder",
-                    "description": "Cinder provides an infrastructure for managing block storage volumes in OpenStack.  Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level storage."
+                    "name": "Storage - Cinder LVM",
+                    "description": "Configures a local LVM - iSCSI Block storage that will be configured for its only use, block volumes (cinder). Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level storage."
                 }
             },
             "networks_metadata": {
@@ -1089,12 +1091,12 @@
                     "conflicts": ["controller"]
                 },
                 "cinder": {
-                    "name": "Cinder",
-                    "description": "Cinder provides an infrastructure for managing block storage volumes in OpenStack.  Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level storage."
+                    "name": "Storage - Cinder LVM",
+                    "description": "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
                 },
                 "ceph-osd": {
-                    "name": "Ceph OSD",
-                    "description": "Ceph OSD is the object storage daemon for the Ceph distributed file system.  It is responsible for storing objects on a local file system and providing access to them over the network, for example to Glance."
+                    "name": "Storage - Ceph OSD",
+                    "description": "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
                 }
             },
             "networks_metadata": {
@@ -1525,45 +1527,47 @@
                         }
                     },
                     "storage": {
+                        "label": "Storage Settings for this cluster",
+                        "description": "This section covers several storage settings. Note: when using 'Storage - Cinder LVM', nodes cinder-volume service runs on each node. When using 'Storage - Ceph OSD', nodes cinder-volume and the Ceph monitors will run on the controllers. Cinder management services are always installed on the controllers.",
                         "volumes_lvm": {
                             "value": false,
                             "label": "Cinder LVM over iSCSI for volumes",
-                            "description": "Requires at least one Cinder node",
+                            "description": "Requires at least one Storage - Cinder LVM node.",
                             "weight": 10,
                             "type": "checkbox"
                         },
                         "volumes_ceph": {
                             "value": false,
-                            "label": "Ceph RBD for volumes",
-                            "description": "Requires at least two Ceph-OSD nodes",
+                            "label": "Ceph RBD for volumes (Cinder)",
+                            "description": "Configures Cinder to store volumes in Ceph RBD images.",
                             "weight": 20,
                             "type": "checkbox"
                         },
                         "images_ceph": {
                             "value": false,
-                            "label": "Ceph RBD for images",
-                            "description": "Requires at least two Ceph-OSD nodes",
+                            "label": "Ceph RBD for images (Glance)",
+                            "description": "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing.",
                             "weight": 30,
                             "type": "checkbox"
                         },
                         "ephemeral_ceph": {
                             "value": false,
-                            "label": "Ceph RBD for ephemeral volumes",
-                            "description": "Requires at least two Ceph-OSD nodes",
+                            "label": "Ceph RBD for ephemeral volumes (Nova)",
+                            "description": "Configures Nova to store ephemeral volumes in RBD. This works best if Ceph is enabled for volumes and images, too. Enables live migration of all types of Ceph backed VMs (without this option, live migration will only work with VMs launched from Cinder volumes).",
                             "weight": 35,
                             "type": "checkbox"
                         },
                         "objects_ceph": {
                             "value": false,
-                            "label": "Ceph rados-gw for objects",
-                            "description": "Requires at least two Ceph-OSD nodes, incompatible with Swift",
+                            "label": "Ceph RadosGW for objects (Swift API)",
+                            "description": "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing.",
                             "weight": 40,
                             "type": "checkbox"
                         },
                         "osd_pool_size": {
                             "value": "2",
                             "label": "Ceph object replication factor",
-                            "description": "Defines the number of object replicas in Ceph pools. At least that many Ceph-OSD nodes must be deployed.",
+                            "description": "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Storage - Ceph OSD' nodes.",
                             "weight": 70,
                             "type": "text"
                         }

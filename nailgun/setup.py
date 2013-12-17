@@ -12,42 +12,25 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import os
 import os.path
 
 from setuptools import find_packages
 from setuptools import setup
 
-
-requires = [
-    'Jinja2==2.7',
-    'Paste==1.7.5.1',
-    'PyYAML==3.10',
-    'SQLAlchemy==0.7.8',
-    'amqplib==1.0.2',
-    'anyjson==0.3.1',
-    'argparse==1.2.1',
-    'decorator==3.4.0',
-    'kombu==2.1.8',
-    'netaddr==0.7.10',
-    'pycrypto==2.6',
-    'simplejson==2.6.2',
-    'web.py==0.37',
-    'wsgilog==0.3',
-    'wsgiref==0.1.2',
-    'fysom==1.0.11',
-    'jsonschema==2.0.0',
-    'Shotgun==0.1.0',
-    'netifaces==0.8',
-    'psycopg2==2.4.6'
-]
-
 major_version = '0.1'
 minor_version = '0'
 name = 'Nailgun'
 
 version = "%s.%s" % (major_version, minor_version)
+
+
+def find_requires():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    requirements = []
+    with open('{0}/requirements.txt'.format(dir_path), 'r') as reqs:
+        requirements = reqs.readlines()
+    return requirements
 
 
 def recursive_data_files(spec_data_files):
@@ -77,7 +60,7 @@ if __name__ == "__main__":
           keywords='web wsgi nailgun mirantis',
           packages=find_packages(),
           zip_safe=False,
-          install_requires=requires,
+          install_requires=find_requires(),
           include_package_data=True,
           scripts=['manage.py'],
           entry_points={

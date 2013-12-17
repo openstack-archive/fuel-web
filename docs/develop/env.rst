@@ -51,7 +51,7 @@ Setup for Nailgun Unit Tests
    There is a file called "setup.py" which can be used to install all Python dependencies,
    so you can install pip and then all of them at once::
 
-    pip install hacking==0.7 mock  # only these should be installed separately
+    pip install hacking==0.7 mock nose==1.1.2 nose2==0.4.1  # only these should be installed separately
     pip install ./shotgun  # this fuel project is listed in setup.py requirements
     cd nailgun
     python setup.py develop

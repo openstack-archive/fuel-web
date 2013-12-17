@@ -470,11 +470,6 @@ class NailgunReceiver(object):
                         ', '.join(absent_node_names)
                     )
                 status = 'error'
-            elif len(nodes) < 2:
-                status = 'error'
-                if not error_msg:
-                    error_msg = 'At least two nodes are required to be in '\
-                                'the environment for network verification.'
             else:
                 error_nodes = []
                 for node in nodes:

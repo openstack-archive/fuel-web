@@ -290,6 +290,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             _.defaults(this, options);
             var nodeIds = utils.deserializeTabOptions(this.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);});
             this.nodes = new models.Nodes(this.model.get('nodes').getByIds(nodeIds));
+            this.nodes.each(function(node) {node.set({checked: true});});
             this.nodes.cluster = this.model;
             this.nodes.fetch = function(options) {
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: this.cluster.id}}, options));
@@ -480,7 +481,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 observe: 'disabled',
                 stickitChange: role,
                 onGet: _.bind(function(value, options) {
-                    return value ? this.isControllerSelectable(options.stickitChange) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction') : '';
+                    if (value && this.screen.nodes.length) {
+                        return this.isControllerSelectable(options.stickitChange) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
+                    }
+                    return '';
                 }, this)
             };
             return this.stickit(role, bindings);

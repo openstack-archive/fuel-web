@@ -543,23 +543,32 @@
                         }
                     },
                     "savanna": {
+                        "user_password": {
+                            "generator": "password"
+                        },
                         "db_password": {
                             "generator": "password"
                         }
                     },
                     "murano": {
-                        "db_password": {
-                            "generator": "password"
-                        }
-                    },
-                    "heat": {
-                        "db_password": {
+                        "user_password": {
                             "generator": "password"
                         },
                         "rabbit_password": {
                             "generator": "password"
                         },
-                        "rabbit_user": {
+                        "db_password": {
+                            "generator": "password"
+                        }
+                    },
+                    "heat": {
+                        "user_password": {
+                            "generator": "password"
+                        },
+                        "db_password": {
+                            "generator": "password"
+                        },
+                        "rabbit_password": {
                             "generator": "password"
                         }
                     },
@@ -1594,27 +1603,36 @@
                         }
                     },
                     "savanna": {
+                        "user_password": {
+                            "generator": "password"
+                        },
                         "db_password": {
                             "generator": "password"
                         }
                     },
                     "murano": {
-                        "db_password": {
-                            "generator": "password"
-                        }
-                    },
-                    "heat": {
-                        "db_password": {
+                        "user_password": {
                             "generator": "password"
                         },
                         "rabbit_password": {
                             "generator": "password"
                         },
-                        "rabbit_user": {
+                        "db_password": {
                             "generator": "password"
                         }
                     },
-                    "ceilometer": {
+                    "heat": {
+                        "user_password": {
+                            "generator": "password"
+                        },
+                        "db_password": {
+                            "generator": "password"
+                        },
+                        "rabbit_password": {
+                            "generator": "password"
+                        }
+                    },
+                   "ceilometer": {
                         "db_password": {
                             "generator": "password"
                         },

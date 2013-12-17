@@ -38,7 +38,6 @@ from nailgun.api.validators.network \
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.errors import errors
@@ -68,57 +67,6 @@ class ProviderHandler(JSONHandler):
             error.data = "Network configuration can't be changed " \
                          "after, or in deploy."
             raise error
-
-    def launch_verify(self, cluster):
-        try:
-            data = self.validator.validate_networks_update(web.data())
-        except web.webapi.badrequest as exc:
-            task = Task(name='check_networks', cluster=cluster)
-            db().add(task)
-            db().commit()
-            TaskHelper.set_error(task.uuid, exc.data)
-            logger.error(traceback.format_exc())
-
-            json_task = build_json_response(TaskHandler.render(task))
-            raise web.accepted(data=json_task)
-
-        if data.get("networks"):
-            data["networks"] = [
-                n for n in data["networks"] if n.get("name") != "fuelweb_admin"
-            ]
-
-        vlan_ids = [{
-            'name': n['name'],
-            'vlans': NetworkGroup.generate_vlan_ids_list(n)
-        } for n in data['networks']]
-
-        task_manager = VerifyNetworksTaskManager(cluster_id=cluster.id)
-        try:
-            task = task_manager.execute(data, vlan_ids)
-        except errors.CantRemoveOldVerificationTask:
-            raise web.badrequest("You cannot delete running task manually")
-        return TaskHandler.render(task)
-
-
-class NovaNetworkConfigurationVerifyHandler(ProviderHandler):
-    """Network configuration verify handler
-    """
-
-    validator = NovaNetworkConfigurationValidator
-    provider = "nova_network"
-
-    @content_json
-    def PUT(self, cluster_id):
-        """:IMPORTANT: this method should be rewritten to be more RESTful
-
-        :returns: JSONized Task object.
-        :http: * 202 (network checking task failed)
-               * 200 (network verification task started)
-               * 404 (cluster not found in db)
-        """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
-        self.check_net_provider(cluster)
-        return self.launch_verify(cluster)
 
 
 class NovaNetworkConfigurationHandler(ProviderHandler):
@@ -246,13 +194,66 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         raise web.accepted(data=data)
 
 
-class NeutronNetworkConfigurationVerifyHandler(
-        NovaNetworkConfigurationVerifyHandler):
-    validator = NeutronNetworkConfigurationValidator
-    provider = "neutron"
+class NetworkConfigurationVerifyHandler(ProviderHandler):
+    """Network configuration verify handler base
+    """
 
     @content_json
     def PUT(self, cluster_id):
+        """:IMPORTANT: this method should be rewritten to be more RESTful
+
+        :returns: JSONized Task object.
+        :http: * 202 (network checking task failed)
+               * 200 (network verification task started)
+               * 404 (cluster not found in db)
+        """
         cluster = self.get_object_or_404(Cluster, cluster_id)
         self.check_net_provider(cluster)
         return self.launch_verify(cluster)
+
+    def launch_verify(self, cluster):
+        try:
+            data = self.validator.validate_networks_update(web.data())
+        except web.webapi.badrequest as exc:
+            task = Task(name='check_networks', cluster=cluster)
+            db().add(task)
+            db().commit()
+            TaskHelper.set_error(task.uuid, exc.data)
+            logger.error(traceback.format_exc())
+
+            json_task = build_json_response(TaskHandler.render(task))
+            raise web.accepted(data=json_task)
+
+        data["networks"] = [
+            n for n in data["networks"] if n.get("name") != "fuelweb_admin"
+        ]
+
+        vlan_ids = [{
+                    'name': n['name'],
+                    'vlans': cluster.network_manager.generate_vlan_ids_list(
+                        data, cluster, n)
+                    } for n in data['networks']]
+
+        task_manager = VerifyNetworksTaskManager(cluster_id=cluster.id)
+        try:
+            task = task_manager.execute(data, vlan_ids)
+        except errors.CantRemoveOldVerificationTask:
+            raise web.badrequest("You cannot delete running task manually")
+        return TaskHandler.render(task)
+
+
+class NovaNetworkConfigurationVerifyHandler(NetworkConfigurationVerifyHandler):
+    """Nova-Network configuration verify handler
+    """
+
+    validator = NovaNetworkConfigurationValidator
+    provider = "nova_network"
+
+
+class NeutronNetworkConfigurationVerifyHandler(
+        NetworkConfigurationVerifyHandler):
+    """Neutron network configuration verify handler
+    """
+
+    validator = NeutronNetworkConfigurationValidator
+    provider = "neutron"

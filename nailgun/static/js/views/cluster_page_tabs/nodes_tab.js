@@ -500,9 +500,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
     NodeList = Backbone.View.extend({
         className: 'node-list',
         template: _.template(nodeListTemplate),
-        events: {
-            'click .btn-cluster-details': 'toggleSummaryPanel'
-        },
         selectAllBindings: {
             'input[name=select-nodes-common]': {
                 observe: 'checked',
@@ -529,9 +526,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             if (!(e && $(e.target).closest(this.$('.node-list-name')).length)) {
                 this.$('.cluster-details').hide();
             }
-        },
-        toggleSummaryPanel: function() {
-            this.$('.cluster-details').toggle();
         },
         calculateSelectAllCheckedState: function() {
             var availableNodes = this.nodes.filter(function(node) {return node.isSelectable();});

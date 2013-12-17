@@ -516,6 +516,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         # Remove 'vlan_splinters' attribute and check results.
 
         editable_attrs['common'].pop('vlan_splinters', None)
+        editable_attrs['common'].pop('vlan_splinters_trunks', None)
         db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
@@ -523,6 +524,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable.copy()
         self.assertNotIn('vlan_splinters', editable_attrs['common'])
+        self.assertNotIn('vlan_splinters_trunks', editable_attrs['common'])
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
         interfaces = node['network_scheme']['interfaces']
@@ -530,12 +532,15 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertIn('L2', iface_attrs)
             L2_attrs = iface_attrs['L2']
             self.assertIn('vlan_splinters', L2_attrs)
+            self.assertIn('vlan_splinters_trunks', L2_attrs)
             self.assertEquals(L2_attrs['vlan_splinters'], 'off')
+            self.assertEquals(L2_attrs['vlan_splinters_trunks'], 'off')
             self.assertNotIn('trunks', L2_attrs)
 
         # Set 'vlan_splinters' to False and check results.
 
         editable_attrs['common']['vlan_splinters'] = {'value': False}
+        editable_attrs['common']['vlan_splinters_trunks'] = {'value': False}
         db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
@@ -543,6 +548,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable
         self.assertFalse(editable_attrs['common']['vlan_splinters']['value'])
+        self.assertFalse(editable_attrs['common']['vlan_splinters_trunks']['value'])
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
         interfaces = node['network_scheme']['interfaces']
@@ -583,6 +589,36 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             )
         self.assertEquals(len(vlan_set), 0)
 
+    def test_vlan_splinters_trunks_true_gre(self):
+        cluster = self._create_cluster_for_vlan_splinters('gre')
+        editable_attrs = cluster.attributes.editable.copy()
+
+        # Set 'vlan_splinters' to True and check results.
+        editable_attrs['common'].setdefault(
+            'vlan_splinters_trunks', {'value': True}
+        )['value'] = True
+        db.refresh(cluster.attributes)
+        cluster.attributes.editable = editable_attrs
+        self.db.commit()
+
+        vlan_set = set(
+            [ng.vlan_start for ng in cluster.network_groups if ng.vlan_start]
+        )
+        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        interfaces = node['network_scheme']['interfaces']
+        for iface_attrs in interfaces.itervalues():
+            self.assertIn('L2', iface_attrs)
+            L2_attrs = iface_attrs['L2']
+            self.assertIn('vlan_splinters_trunks', L2_attrs)
+            self.assertEquals(L2_attrs['vlan_splinters_trunks'], 'auto')
+            self.assertIn('trunks', L2_attrs)
+            self.assertIn(0, L2_attrs['trunks'])
+            map(
+                lambda n: vlan_set.remove(n) if n else None,
+                L2_attrs['trunks']
+            )
+        self.assertEquals(len(vlan_set), 0)
+
     def test_vlan_splinters_true_vlan(self):
         cluster = self._create_cluster_for_vlan_splinters('vlan')
         editable_attrs = cluster.attributes.editable.copy()
@@ -610,6 +646,41 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             L2_attrs = iface_attrs['L2']
             self.assertIn('vlan_splinters', L2_attrs)
             self.assertEquals(L2_attrs['vlan_splinters'], 'auto')
+            self.assertIn('trunks', L2_attrs)
+            self.assertIn(0, L2_attrs['trunks'])
+            map(
+                lambda n: vlan_set.remove(n) if n else None,
+                L2_attrs['trunks']
+            )
+        self.assertEquals(len(vlan_set), 0)
+
+    def test_vlan_splinters_trunks_true_vlan(self):
+        cluster = self._create_cluster_for_vlan_splinters('vlan')
+        editable_attrs = cluster.attributes.editable.copy()
+
+        # Set 'vlan_splinters_trunks' to True and check results.
+        editable_attrs['common'].setdefault(
+            'vlan_splinters_trunks', {'value': True}
+        )['value'] = True
+        db.refresh(cluster.attributes)
+        cluster.attributes.editable = editable_attrs
+        self.db.commit()
+
+        vlan_set = set(
+            [ng.vlan_start for ng in cluster.network_groups if ng.vlan_start]
+        )
+        private_vlan_range = cluster.neutron_config.L2["phys_nets"][
+            "physnet2"]["vlan_range"]
+        vlan_set.update(xrange(*private_vlan_range))
+        vlan_set.add(private_vlan_range[1])
+
+        node = self.serializer.serialize(cluster, cluster.nodes)[0]
+        interfaces = node['network_scheme']['interfaces']
+        for iface_attrs in interfaces.itervalues():
+            self.assertIn('L2', iface_attrs)
+            L2_attrs = iface_attrs['L2']
+            self.assertIn('vlan_splinters_trunks', L2_attrs)
+            self.assertEquals(L2_attrs['vlan_splinters_trunks'], 'auto')
             self.assertIn('trunks', L2_attrs)
             self.assertIn(0, L2_attrs['trunks'])
             map(

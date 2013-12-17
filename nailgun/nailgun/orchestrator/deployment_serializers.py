@@ -669,12 +669,16 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             'vlan_splinters', {}
         ).get('value')
 
+        use_vlan_splinters_trunks = node.cluster.attributes.editable['common'].get(
+            'vlan_splinters_trunks', {}
+        ).get('value')
+
         # Fill up interfaces and add bridges for them.
         for iface in node.interfaces:
             # Handle vlan splinters.
             attrs['interfaces'][iface.name] = {
                 'L2': cls._get_vlan_splinters_desc(
-                    use_vlan_splinters, iface, node.cluster
+                    use_vlan_splinters, use_vlan_splinters_trunks, iface, node.cluster
                 )
             }
 
@@ -762,13 +766,22 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         return attrs
 
     @classmethod
-    def _get_vlan_splinters_desc(cls, use_vlan_splinters, iface,
+    def _get_vlan_splinters_desc(cls, use_vlan_splinters, use_vlan_splinters_trunks, iface,
                                  cluster):
         iface_attrs = {}
-        if not use_vlan_splinters:
+
+        if use_vlan_splinters_trunks:
+            iface_attrs['vlan_splinters_trunks'] = 'auto'
+        else:
+            iface_attrs['vlan_splinters_trunks'] = 'off'
+
+        if use_vlan_splinters:
+            iface_attrs['vlan_splinters'] = 'auto'
+        else
             iface_attrs['vlan_splinters'] = 'off'
+
+        if not use_vlan_splinters and not use_vlan_splinters_trunks:
             return iface_attrs
-        iface_attrs['vlan_splinters'] = 'auto'
         trunks = [0]
 
         for ng in iface.assigned_networks:

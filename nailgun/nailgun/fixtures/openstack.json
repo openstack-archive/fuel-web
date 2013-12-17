@@ -351,8 +351,15 @@
                         },
                         "vlan_splinters": {
                             "value": false,
-                            "label": "Enable 'OVS VLAN splinters' feature (Neutron only)",
-                            "description": "Use VLAN splinters Open vSwitch method on necessary network interfaces",
+                            "label": "Enable 'OVS VLAN splinters' soft trunks workaround (Neutron only)",
+                            "description": "Configure OVS to use VLAN splinters workaround with soft trunk detection. This may resolve issues that might be encountered when using VLAN tags with OVS and Neutron on Kernels <3.3 (CentOS).",
+                            "weight": 45,
+                            "type": "checkbox"
+                        },
+                        "vlan_splinters_trunks": {
+                            "value": false,
+                            "label": "Enable 'OVS VLAN splinters' hard trunks workaround (Neutron only)",
+                            "description": "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be pre-defined. This may work better than soft trunks especially if you still see network problems using soft trunks",
                             "weight": 45,
                             "type": "checkbox"
                         },
@@ -1386,8 +1393,15 @@
                         },
                         "vlan_splinters": {
                             "value": false,
-                            "label": "Enable 'OVS VLAN splinters' feature (Neutron only)",
-                            "description": "Use VLAN splinters Open vSwitch method on necessary network interfaces",
+                            "label": "Enable 'OVS VLAN splinters' soft trunks workaround (Neutron only)",
+                            "description": "Configure OVS to use VLAN splinters workaround with soft trunk detection. This may resolve issues that might be encountered when using VLAN tags with OVS and Neutron on Kernels <3.3 (CentOS).",
+                            "weight": 45,
+                            "type": "checkbox"
+                        },
+                        "vlan_splinters_trunks": {
+                            "value": false,
+                            "label": "Enable 'OVS VLAN splinters' hard trunks workaround (Neutron only)",
+                            "description": "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be pre-defined. This may work better than soft trunks especially if you still see network problems using soft trunks",
                             "weight": 45,
                             "type": "checkbox"
                         },

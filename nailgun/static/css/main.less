@@ -1,5 +1,6 @@
 @import 'fonticon.css';
 @import 'bootstrap.css';
+@import 'retina.less';
 
 html {
   background-color: #39444F;
@@ -994,33 +995,34 @@ label.error {
 
 .cluster-tabs > li > a { margin-right: 3px;}
 .cluster-tabs > li > a > b {display: block; width: 30px; height: 30px; margin: -5px auto -5px auto;}
-.tab-nodes-normal    {background: url(../img/tab_icons.png) no-repeat   0px   0px;}
-.tab-nodes-good      {background: url(../img/tab_icons.png) no-repeat -30px   0px;}
-.tab-nodes-bad       {background: url(../img/tab_icons.png) no-repeat -60px   0px;}
 
-.tab-network-normal  {background: url(../img/tab_icons.png) no-repeat   0px -30px;}
-.tab-network-good    {background: url(../img/tab_icons.png) no-repeat -30px -30px;}
-.tab-network-bad     {background: url(../img/tab_icons.png) no-repeat -60px -30px;}
+.tab-nodes-normal  {.at2x('../img/tab_icons.png', 0px, 0px, 90px);}
+.tab-nodes-good    {.at2x('../img/tab_icons.png', -30px, 0px, 90px);}
+.tab-nodes-bad     {.at2x('../img/tab_icons.png', -60px, 0px, 90px);}
 
-.tab-settings-normal {background: url(../img/tab_icons.png) no-repeat   0px -60px;}
-.tab-settings-good   {background: url(../img/tab_icons.png) no-repeat -30px -60px;}
-.tab-settings-bad    {background: url(../img/tab_icons.png) no-repeat -60px -60px;}
+.tab-network-normal  {.at2x('../img/tab_icons.png', 0px, -30px, 90px);}
+.tab-network-good    {.at2x('../img/tab_icons.png', -30px, -30px, 90px);}
+.tab-network-bad     {.at2x('../img/tab_icons.png', -60px, -30px, 90px);}
 
-.tab-actions-normal {background: url(../img/tab_icons.png) no-repeat   0px -90px;}
-.tab-actions-good   {background: url(../img/tab_icons.png) no-repeat -30px -90px;}
-.tab-actions-bad    {background: url(../img/tab_icons.png) no-repeat -60px -90px;}
+.tab-settings-normal {.at2x('../img/tab_icons.png', 0px, -60px, 90px);}
+.tab-settings-good   {.at2x('../img/tab_icons.png', -30px, -60px, 90px);}
+.tab-settings-bad    {.at2x('../img/tab_icons.png', -60px, -60px, 90px);}
 
-.tab-logs-normal {background: url(../img/tab_icons.png) no-repeat   0px -120px;}
-.tab-logs-good   {background: url(../img/tab_icons.png) no-repeat -30px -120px;}
-.tab-logs-bad    {background: url(../img/tab_icons.png) no-repeat -60px -120px;}
+.tab-actions-normal {.at2x('../img/tab_icons.png', 0px, -90px, 90px);}
+.tab-actions-good   {.at2x('../img/tab_icons.png', -30px, -90px, 90px);}
+.tab-actions-bad    {.at2x('../img/tab_icons.png', -60px, -90px, 90px);}
 
-.tab-redhat-normal {background: url(../img/tab_icons.png) no-repeat   0px -150px;}
-.tab-redhat-good   {background: url(../img/tab_icons.png) no-repeat -30px -150px;}
-.tab-redhat-bad    {background: url(../img/tab_icons.png) no-repeat -60px -150px;}
+.tab-logs-normal {.at2x('../img/tab_icons.png', 0px, -120px, 90px);}
+.tab-logs-good   {.at2x('../img/tab_icons.png', -30px, -120px, 90px);}
+.tab-logs-bad    {.at2x('../img/tab_icons.png', -60px, -120px, 90px);}
 
-.tab-healthcheck-normal {background: url(../img/tab_icons.png) no-repeat   0px -180px;}
-.tab-healthcheck-good   {background: url(../img/tab_icons.png) no-repeat -30px -180px;}
-.tab-healthcheck-bad    {background: url(../img/tab_icons.png) no-repeat -60px -180px;}
+.tab-redhat-normal {.at2x('../img/tab_icons.png', 0px, -150px, 90px);}
+.tab-redhat-good   {.at2x('../img/tab_icons.png', -30px, -150px, 90px);}
+.tab-redhat-bad    {.at2x('../img/tab_icons.png', -60px, -150px, 90px);}
+
+.tab-healthcheck-normal {.at2x('../img/tab_icons.png', 0px, -180px, 90px);}
+.tab-healthcheck-good   {.at2x('../img/tab_icons.png', -30px, -180px, 90px);}
+.tab-healthcheck-bad    {.at2x('../img/tab_icons.png', -60px, -180px, 90px);}
 
 .cluster-tabs li a:hover {
   border-color: #404c5c #404c5c #404c5c;

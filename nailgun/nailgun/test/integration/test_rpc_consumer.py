@@ -160,39 +160,6 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.assertEqual(task.get('message'), '')
         self.assertEqual(task['result'], error_nodes)
 
-    def test_verify_networks_resp_empty_nodes_default_error(self):
-        self.env.create(
-            cluster_kwargs={},
-            nodes_kwargs=[
-                {"api": False},
-                {"api": False}
-            ]
-        )
-        cluster_db = self.env.clusters[0]
-        node1, node2 = self.env.nodes
-
-        task = Task(
-            name="super",
-            cluster_id=cluster_db.id
-        )
-        task.cache = {
-            "args": {
-                'nodes': []
-            }
-        }
-        self.db.add(task)
-        self.db.commit()
-
-        kwargs = {'task_uuid': task.uuid,
-                  'status': 'ready',
-                  'nodes': []}
-        self.receiver.verify_networks_resp(**kwargs)
-        self.db.refresh(task)
-        self.assertEqual(task.status, "error")
-        error_msg = 'At least two nodes are required to be in ' \
-                    'the environment for network verification.'
-        self.assertEqual(task.message, error_msg)
-
     def test_verify_networks_resp_empty_nodes_custom_error(self):
         self.env.create(
             cluster_kwargs={},

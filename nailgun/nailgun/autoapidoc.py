@@ -36,7 +36,11 @@ class SampleGenerator(object):
 
     @classmethod
     def _ishandler(cls, obj):
-        return inspect.isclass(obj) and issubclass(obj, JSONHandler)
+        try:
+            return inspect.isclass(obj) and issubclass(obj, JSONHandler) and \
+                reverse(obj.__name__, {})
+        except KeyError:
+            return False
 
     @classmethod
     def _ishandlermethod(cls, obj):

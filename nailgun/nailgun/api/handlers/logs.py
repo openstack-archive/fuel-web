@@ -87,20 +87,21 @@ class LogEntryCollectionHandler(JSONHandler):
         - *max_entries* - max number of entries to load
 
         :returns: Collection of log entries, log file size
-        and if there are new entries.
-        :http: * 200 (OK)
-               * 400 (invalid *date_before* value)
-               * 400 (invalid *date_after* value)
-               * 400 (invalid *source* value)
-               * 400 (invalid *node* value)
-               * 400 (invalid *level* value)
-               * 400 (invalid *to* value)
-               * 400 (invalid *max_entries* value)
-               * 404 (log file not found)
-               * 404 (log files dir not found)
-               * 404 (node not found)
-               * 500 (node has no assigned ip)
-               * 500 (invalid regular expression in config)
+            and if there are new entries.
+        :http:
+            * 200 (OK)
+            * 400 (invalid *date_before* value)
+            * 400 (invalid *date_after* value)
+            * 400 (invalid *source* value)
+            * 400 (invalid *node* value)
+            * 400 (invalid *level* value)
+            * 400 (invalid *to* value)
+            * 400 (invalid *max_entries* value)
+            * 404 (log file not found)
+            * 404 (log files dir not found)
+            * 404 (node not found)
+            * 500 (node has no assigned ip)
+            * 500 (invalid regular expression in config)
         """
         user_data = web.input()
         date_before = user_data.get('date_before')

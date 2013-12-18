@@ -17,4 +17,3 @@ wsgilog==0.3
 wsgiref==0.1.2
 fysom==1.0.11
 jsonschema==2.0.0
-Shotgun==0.1.0

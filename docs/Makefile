@@ -48,7 +48,7 @@ $(PLANTUML):
 	$(ACTION.TOUCH)
 
 html: $(PLANTUML)
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	$(SPHINXBUILD) -b html -W $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 

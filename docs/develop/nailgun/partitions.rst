@@ -175,8 +175,8 @@ corresponding to one of the node's roles, like this::
 * *allocate_size* - can be "min" or "all"
   * *min* - allocate volume with minimal size
   * *all* - allocate all free space for
-    volume, if serveral volumes have this key
-    then free space will be allocated equally
+  volume, if sereral volumes have this key
+  then free space will be allocated equally
 
 Setting Volume Parameters from Nailgun Settings
 -----------------------------------------------

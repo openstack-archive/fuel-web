@@ -260,8 +260,13 @@ class NodeAgent
 
     Dir["/sys/block/*"].each do |block_device_dir|
       basename_dir = File.basename(block_device_dir)
+      # Entries in /sys/block for cciss look like cciss!c0d1 while
+      # the entries in /dev look like /dev/cciss/c0d1. udevadm uses
+      # the entry in /dev so we need to replace the ! to get a valid
+      # device name.
+      devname = basename_dir.gsub(/!/, '/')
 
-      properties = `udevadm info --query=property --export --name=#{basename_dir}`.inject({}) do |result, raw_propety|
+      properties = `udevadm info --query=property --export --name=#{devname}`.inject({}) do |result, raw_propety|
        key, value = raw_propety.split(/\=/)
        result.update(key.strip => value.strip.chomp("'").reverse.chomp("'").reverse)
       end
@@ -271,7 +276,9 @@ class NodeAgent
       end
       # look at https://github.com/torvalds/linux/blob/master/Documentation/devices.txt
       # KVM virtio volumes has code 252 in CentOS, but 253 in Ubuntu
-      if [3, 8, 202, 252, 253].include?(properties['MAJOR'].to_i) && removable =~ /^0$/
+      # Please also update the device codes here
+      # https://github.com/stackforge/fuel-astute/blob/master/mcagents/erase_node.rb#L81
+      if [3, 8, 104, 105, 106, 107, 108, 109, 110, 111, 202, 252, 253].include?(properties['MAJOR'].to_i) && removable =~ /^0$/
         # Exclude LVM volumes (in CentOS - 253, in Ubuntu - 252) using additional check
         @blocks << basename_dir unless properties['DEVPATH'].include?('virtual')
       end

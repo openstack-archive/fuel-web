@@ -128,7 +128,7 @@ contained class.::
     }
 
     Package[$package] -> File['example_config', 'example_config_dir'] ~> 
-Service['example_config']
+      Service['example_config']
 
   }
 

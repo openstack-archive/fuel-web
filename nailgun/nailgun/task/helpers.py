@@ -422,7 +422,7 @@ class TaskHelper(object):
             db().add(task)
             db().commit()
             full_err_msg = u"\n".join(err_messages)
-            raise errors.NetworkCheckError(full_err_msg, add_client=False)
+            raise errors.NetworkCheckError(full_err_msg)
 
     @classmethod
     def prepare_for_provisioning(cls, nodes):

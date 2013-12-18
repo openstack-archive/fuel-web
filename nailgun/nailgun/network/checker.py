@@ -69,8 +69,7 @@ class NetworkCheck(object):
                         break
                 else:
                     raise errors.NetworkCheckError(
-                        u"Invalid network ID: {0}".format(data_net['id']),
-                        add_client=False)
+                        u"Invalid network ID: {0}".format(data_net['id']))
 
         self.result = []
         self.err_msgs = []
@@ -355,7 +354,7 @@ class NetworkCheck(object):
                         break
                 else:
                     err_msg = u"Wrong VLAN range for Neutron L2.\n"
-                    raise errors.NetworkCheckError(err_msg, add_client=False)
+                    raise errors.NetworkCheckError(err_msg)
 
                 net_intersect = [name for name, vlan in tagged_nets.iteritems()
                                  if vrange[0] <= vlan <= vrange[1]]
@@ -367,7 +366,7 @@ class NetworkCheck(object):
                               u"Networks VLAN tags must not intersect " \
                               u"with Neutron L2 VLAN ID range.". \
                         format(nets_with_errors)
-                    raise errors.NetworkCheckError(err_msg, add_client=False)
+                    raise errors.NetworkCheckError(err_msg)
 
             # check networks VLAN IDs should not intersect
             net_intersect = [name for name, vlan in tagged_nets.iteritems()
@@ -376,7 +375,7 @@ class NetworkCheck(object):
                 err_msg = u"{0} networks use the same VLAN tags. " \
                           u"You should assign different VLAN tag " \
                           u"to every network.".format(", ".join(net_intersect))
-                raise errors.NetworkCheckError(err_msg, add_client=False)
+                raise errors.NetworkCheckError(err_msg)
 
     def neutron_check_network_group_sizes(self):
         """Check networks sizes defined by CIDRs are not smaller then
@@ -561,7 +560,7 @@ class NetworkCheck(object):
                       "admin (PXE) network. You should move them to " \
                       "another physical interfaces:\n{0}". \
                 format("\n".join(nodes_with_errors))
-            raise errors.NetworkCheckError(err_msg, add_client=False)
+            raise errors.NetworkCheckError(err_msg)
 
         # check if there any networks
         # on the same interface as private network (for vlan)
@@ -600,7 +599,7 @@ class NetworkCheck(object):
                           "private network. You should move them to " \
                           "another physical interfaces:\n{0}". \
                     format("\n".join(nodes_with_errors))
-                raise errors.NetworkCheckError(err_msg, add_client=False)
+                raise errors.NetworkCheckError(err_msg)
 
         # check untagged networks intersection
         untagged_nets = set(
@@ -639,7 +638,7 @@ class NetworkCheck(object):
                           "You should assign them to " \
                           "different physical interfaces:\n{0}". \
                     format("\n".join(nodes_with_errors))
-                raise errors.NetworkCheckError(err_msg, add_client=False)
+                raise errors.NetworkCheckError(err_msg)
 
     def neutron_check_l3_addresses_not_match_subnet_and_broadcast(self):
         """check virtual l3 network address ranges and gateway don't intersect

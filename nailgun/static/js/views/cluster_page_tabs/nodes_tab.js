@@ -503,28 +503,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         events: {
             'click .btn-cluster-details': 'toggleSummaryPanel'
         },
-        selectAllBindings: {
-            'input[name=select-nodes-common]': {
-                observe: 'checked',
-                stickitChange: true,
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled'
-                }]
-            }
-        },
-        selectNodes: function(model, value, options) {
-            if (options.stickitChange) {
-                _.each(this.subViews, function(nodeGroup) {
-                    if (!nodeGroup.selectAllCheckbox.get('disabled')) {
-                        nodeGroup.selectAllCheckbox.set('checked', value);
-                    }
-                });
-                _.each(this.nodes.where({disabled: false}), function(node) {
-                    node.set('checked', value);
-                });
-            }
-        },
         hideSummaryPanel: function(e) {
             if (!(e && $(e.target).closest(this.$('.node-list-name')).length)) {
                 this.$('.cluster-details').hide();
@@ -573,8 +551,29 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 checked: false,
                 disabled: false
             });
-            this.selectAllCheckbox.on('change:checked', this.selectNodes, this);
             this.nodes.on('change:checked', this.calculateSelectAllCheckedState, this);
+        },
+        stickitSelectAllCheckbox: function() {
+            var bindings = {
+                'input[name=select-nodes-common]': {
+                    observe: 'checked',
+                    onSet: _.bind(function(value) {
+                        _.each(this.subViews, function(nodeGroup) {
+                            if (!nodeGroup.selectAllCheckbox.get('disabled')) {
+                                nodeGroup.selectAllCheckbox.set('checked', value);
+                            }
+                        });
+                        _.each(this.nodes.where({disabled: false}), function(node) {
+                            node.set('checked', value);
+                        });
+                    }, this),
+                    attributes: [{
+                        name: 'disabled',
+                        observe: 'disabled'
+                    }]
+                }
+            };
+            this.stickit(this.selectAllCheckbox, bindings);
         },
         renderNodeGroups: function(nodeGroups) {
             this.$('.nodes').html('');
@@ -601,7 +600,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.groupNodes();
             $('html').on(this.eventNamespace, _.bind(this.hideSummaryPanel, this));
             Backbone.history.on('route', this.hideSummaryPanel, this);
-            this.stickit(this.selectAllCheckbox, this.selectAllBindings);
+            this.stickitSelectAllCheckbox();
             return this;
         }
     });
@@ -609,24 +608,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
     NodeGroup = Backbone.View.extend({
         className: 'node-group',
         template: _.template(nodeGroupTemplate),
-        selectAllBindings: {
-            'input[name=select-node-group]': {
-                observe: 'checked',
-                stickitChange: true,
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled'
-                }]
-            }
-        },
-        selectNodes: function(model, value, options) {
-            if (options.stickitChange) {
-                _.each(this.nodes.where({disabled: false}), function(node) {
-                    node.set('checked', value);
-                });
-                this.nodeList.calculateSelectAllCheckedState();
-            }
-        },
         calculateSelectAllCheckedState: function() {
             var availableNodes = this.nodes.filter(function(node) {return node.isSelectable();});
             this.selectAllCheckbox.set('checked', availableNodes.length && this.nodes.where({checked: true}).length == availableNodes.length);
@@ -638,13 +619,25 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.selectAllCheckbox = new Backbone.Model({
-                checked: false,
-                disabled: false
-            });
-            this.selectAllCheckbox.on('change:checked', this.selectNodes, this);
+            this.selectAllCheckbox = new Backbone.Model({checked: false, disabled: false});
+            this.selectAllCheckbox.on('change:checked', this.nodeList.calculateSelectAllCheckedState, this.nodeList);
             this.selectAllCheckbox.on('change:disabled', this.nodeList.calculateSelectAllDisabledState, this.nodeList);
             this.nodes.on('change:checked', this.calculateSelectAllCheckedState, this);
+        },
+        stickitSelectAllCheckbox: function() {
+            var bindings = {
+                'input[name=select-node-group]': {
+                    observe: 'checked',
+                    onSet: _.bind(function(value) {
+                        _.each(this.nodes.where({disabled: false}), function(node) {node.set('checked', value);});
+                    }, this),
+                    attributes: [{
+                        name: 'disabled',
+                        observe: 'disabled'
+                    }]
+                }
+            };
+            this.stickit(this.selectAllCheckbox, bindings);
         },
         renderNode: function(node) {
             var nodeView = new Node({
@@ -662,7 +655,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 nodes: this.nodes
             })).i18n();
             this.nodes.each(this.renderNode, this);
-            this.stickit(this.selectAllCheckbox, this.selectAllBindings);
+            this.stickitSelectAllCheckbox();
             this.calculateSelectAllCheckedState();
             this.calculateSelectAllDisabledState();
             return this;

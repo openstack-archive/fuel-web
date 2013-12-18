@@ -25,6 +25,8 @@ All sections below assume you start in your clone of the **fuel-web** repository
 Please ensure you use updated information on the versions of packages
 and their dependencies (apt-get update).
 
+.. _nailgun_dependencies:
+
 Setup for Nailgun Unit Tests
 ----------------------------
 
@@ -51,10 +53,9 @@ Setup for Nailgun Unit Tests
    There is a file called "setup.py" which can be used to install all Python dependencies,
    so you can install pip and then all of them at once::
 
-    pip install hacking==0.7 mock  # only these should be installed separately
     pip install ./shotgun  # this fuel project is listed in setup.py requirements
     cd nailgun
-    python setup.py develop
+    pip install -r test-requirements.txt
     cd ..
 
 #. Create required folder for log files::
@@ -134,7 +135,7 @@ Astute and Naily
 #. Install Ruby dependencies::
 
     sudo apt-get install git curl
-    \curl -L https://get.rvm.io | bash -s stable
+    curl -L https://get.rvm.io | bash -s stable
     rvm install 1.9.3
 
 #. Install or update dependencies and run unit tests::
@@ -285,12 +286,7 @@ package in Ubuntu is outdated)::
 Building Documentation
 ----------------------
 
-#. You will need the following software to build documentation::
-
-    sudo apt-get install librsvg2-bin rst2pdf python-sphinx
-    sudo pip install sphinxcontrib-plantuml
-    sudo apt-get install python-sphinxcontrib.blockdiag # on Ubuntu 12.10 or higher
-    sudo pip install sphinxcontrib-blockdiag # on Ubuntu 12.04
+#. You will need to follow steps from :ref:`nailgun_dependencies` section to build documentation::
 
 #. Look at the list of available formats and generate the one you need::
 

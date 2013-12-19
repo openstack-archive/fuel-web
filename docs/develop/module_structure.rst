@@ -250,9 +250,7 @@ We have specified source as a special puppet URL scheme with module's and
 file's name. This file will be placed to specified location during puppet run. 
 But on each run Puppet will check this files checksum overwriting it if it 
 changes so don't use this method with mutable data. Puppet's fileserving works 
-both in client-server and masterless modes but unlike template requires 
-managed server to have access to master during catalog run because file's 
-content is not included into catalog.
+both in client-server and masterless modes.
 
 Ok, we have all classes and resources we need to manage our hypothetical 
 example service. Let's try to put everything together. Our example class 

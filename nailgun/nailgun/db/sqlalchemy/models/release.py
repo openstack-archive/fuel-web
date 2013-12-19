@@ -75,9 +75,10 @@ class Release(Base):
         for role in self.role_list:
             if role.name not in new_roles:
                 db().delete(role)
-            else:
-                new_roles.remove(role.name)
-        for new_role in new_roles:
-            self.role_list.append(
-                Role(name=new_role, release=self)
-            )
+        added_roles = [r.name for r in self.role_list]
+        for role in new_roles:
+            if role not in added_roles:
+                self.role_list.append(
+                    Role(name=role, release=self)
+                )
+                added_roles.append(role)

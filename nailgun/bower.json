@@ -6,7 +6,6 @@
         "requirejs-text": "2.0.10",
         "require-css": "0.1.0",
         "lodash": "1.1.1",
-        "retina.js": "1.1.0",
         "autoNumeric": "http://github.com/BobKnothe/autoNumeric/zipball/1.9.12",
         "jquery.timeout": "http://jquery-timeout.googlecode.com/files/jquery.timeout-1.1.0.js",
         "backbone.stickit": "https://raw.github.com/NYTimes/backbone.stickit/7437202ec91863aa29a6ad31b0bd00c6b130f506/backbone.stickit.js",
@@ -26,9 +25,6 @@
         },
         "lodash": {
             "js": "lodash.js"
-        },
-        "retina.js": {
-            "js": "src/retina.js"
         },
         "autoNumeric": {
             "js": "autoNumeric.js"

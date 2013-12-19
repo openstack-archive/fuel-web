@@ -103,7 +103,7 @@ class TestFixture(BaseIntegrationTest):
 
     def test_fixture_roles_order(self):
         data = '''[{
-            "pk": 2,
+            "pk": 1,
             "model": "nailgun.release",
             "fields": {
                 "name": "CustomFixtureRelease1",
@@ -139,3 +139,22 @@ class TestFixture(BaseIntegrationTest):
         self.assertEqual(len(rel), 1)
         self.assertEqual(list(rel[0].roles),
                          ["compute", "ceph-osd", "controller", "cinder"])
+
+        data = '''[{
+            "pk": 3,
+            "model": "nailgun.release",
+            "fields": {
+                "name": "CustomFixtureRelease3",
+                "version": "0.0.1",
+                "description": "Sample release for testing",
+                "operating_system": "CentOS",
+                "roles": ["compute", "cinder", "controller", "cinder"]
+            }
+        }]'''
+        upload_fixture(cStringIO.StringIO(data), loader=json)
+        rel = self.db.query(Release).filter(
+            Release.name == u"CustomFixtureRelease3"
+        ).all()
+        self.assertEqual(len(rel), 1)
+        self.assertEqual(list(rel[0].roles),
+                         ["compute", "cinder", "controller"])

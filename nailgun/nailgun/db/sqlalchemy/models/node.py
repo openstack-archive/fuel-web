@@ -22,6 +22,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Unicode
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 
 from nailgun.db import db
@@ -50,6 +51,9 @@ class PendingNodeRoles(Base):
 
 class Role(Base):
     __tablename__ = 'roles'
+    __table_args__ = (
+        UniqueConstraint('name', 'release_id'),
+    )
     id = Column(Integer, primary_key=True)
     release_id = Column(
         Integer,

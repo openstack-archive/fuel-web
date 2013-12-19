@@ -12,7 +12,6 @@ See corresponding sequence diagram and more information here: :ref:`deploy_via_e
         [Async RPC consumer(Naily)] --> [Orchestrator]
         [Orchestrator] --> [MCollective]
         [Orchestrator] <-- [YAML data source]
-        [Puppet Master] --> [ENC Script]
         [ENC Script] --> [YAML data source]
     }
     package "Target Node" {
@@ -23,7 +22,6 @@ See corresponding sequence diagram and more information here: :ref:`deploy_via_e
     CLI_User --> [Orchestrator]
 
     [MCollective] --> [MCollective Agent]
-    [Puppet] --> [Puppet Master]
 
 .. _deploy_via_enc_sequence:
 
@@ -47,12 +45,8 @@ Alternative Implementation for deployment via ENC
     |||
     Orchestrator -> MC: run puppet
     MC -> Puppet: runonce
-    Puppet -> Puppet_master: get modules,class
-    Puppet_master -> ENC: get class
     ENC -> YAML_file: get class
     YAML_file --> ENC: class to deploy
-    ENC --> Puppet_master: class
-    Puppet_master --> Puppet: modules, class
     Puppet -> Puppet: applies $role
     Puppet --> MC: done
     MC --> Orchestrator: deploy is done
@@ -65,10 +59,8 @@ Alternative schema of deployment is different in following:
 
 * Naily stores all data about deployment into YAML file before the deployment, and then calls Orchestrator
 * Orchestrator loads nodes information from YAML and calls puppet via MCollective
-* Puppet requests data from Puppet master
 * Puppet uses `ENC extension <http://docs.puppetlabs.com/guides/external_nodes.html>`_ to get information what
-  classes should be applied on particular node. If try to explain in a few
-  words what ENC is - it is Puppet Master's extension to call external user defined script
+  classes should be applied on particular node.
 * ENC script loads all required data from YAML file
 * YAML file could be replaced by some NoSQL DB
 
@@ -82,7 +74,6 @@ Pros:
 * Easy. Put file on node via MCollective, and we know what will be executed there. It's easy to check what have been
   executed last time.
 * No additional stateful components. Otherwise it could lead to data inconsistency
-* Easy to switch into configuration without Puppet Master or even replace it to Chef Solo
 * Requires time to place data on nodes before puppet run, and implementation in syncronious way - puppet should not
   run before the node receive it's role.
 
@@ -103,8 +94,6 @@ Cons:
 * Naily should know the data structure in YAML file to do the merge. (however it can just call Orchestrator with
   metadata, and Orchestrator will write data to YAML file)
 * Requires additional stateful component - YAML file, what may lead to data inconsistency
-* Puppet Master must be installed on the same node as Orchestrator (to access YAML file). Even if YAML file
-  is replaced to NoSQL DB, ENC script still has to be present on Puppet Master node.
 * With increase of deployment complexity and metadata, YAML file will increase in size. It also should contain
   information about all clusters and all nodes consequently, which could become a bottleneck for loading data
   in case of hundrends nodes and thousand requests. Separation of YAML structure in cluster-based will not help

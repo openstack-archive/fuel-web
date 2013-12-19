@@ -56,7 +56,8 @@ class Release(Base):
     role_list = relationship(
         "Role",
         backref="release",
-        cascade="all,delete"
+        cascade="all,delete",
+        order_by="Role.id"
     )
     clusters = relationship(
         "Cluster",
@@ -70,7 +71,7 @@ class Release(Base):
 
     @roles.setter
     def roles(self, roles):
-        new_roles = set(roles)
+        new_roles = list(roles)
         for role in self.role_list:
             if role.name not in new_roles:
                 db().delete(role)

@@ -100,3 +100,42 @@ class TestFixture(BaseIntegrationTest):
             Release.name == u"CustomFixtureRelease"
         )
         self.assertEqual(len(list(check)), 1)
+
+    def test_fixture_roles_order(self):
+        data = '''[{
+            "pk": 2,
+            "model": "nailgun.release",
+            "fields": {
+                "name": "CustomFixtureRelease1",
+                "version": "0.0.1",
+                "description": "Sample release for testing",
+                "operating_system": "CentOS",
+                "roles": ["controller", "compute", "cinder", "ceph-osd"]
+            }
+        }]'''
+        upload_fixture(cStringIO.StringIO(data), loader=json)
+        rel = self.db.query(Release).filter(
+            Release.name == u"CustomFixtureRelease1"
+        ).all()
+        self.assertEqual(len(rel), 1)
+        self.assertEqual(list(rel[0].roles),
+                         ["controller", "compute", "cinder", "ceph-osd"])
+
+        data = '''[{
+            "pk": 2,
+            "model": "nailgun.release",
+            "fields": {
+                "name": "CustomFixtureRelease2",
+                "version": "0.0.1",
+                "description": "Sample release for testing",
+                "operating_system": "CentOS",
+                "roles": ["compute", "ceph-osd", "controller", "cinder"]
+            }
+        }]'''
+        upload_fixture(cStringIO.StringIO(data), loader=json)
+        rel = self.db.query(Release).filter(
+            Release.name == u"CustomFixtureRelease2"
+        ).all()
+        self.assertEqual(len(rel), 1)
+        self.assertEqual(list(rel[0].roles),
+                         ["compute", "ceph-osd", "controller", "cinder"])

@@ -67,7 +67,7 @@ requirejs.config({
             deps: ['text!i18n/translation.json', 'jquery'],
             init: function(translation, $) {
                 'use strict';
-                $.i18n.init({resStore: JSON.parse(translation)});
+                $.i18n.init({resStore: JSON.parse(translation), fallbackLng: 'en-US'});
             }
         },
         'jquery-checkbox': {

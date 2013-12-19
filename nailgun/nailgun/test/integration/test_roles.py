@@ -44,6 +44,53 @@ class TestRoles(BaseIntegrationTest):
         self.assertIn(test_role_name, new_roles)
         self.assertLessEqual(old_roles, set(new_roles))
 
+    def test_roles_add_and_remove(self):
+        self.env.create_release()
+        resp = self.app.get(
+            reverse('ReleaseCollectionHandler'),
+            headers=self.default_headers
+        )
+        test_role_name = "testrole"
+
+        release_json = json.loads(resp.body)[0]
+        old_roles = list(release_json["roles"])
+        release_json["roles"].append(test_role_name)
+        release_json["roles"].remove(old_roles[0])
+        expected_roles = list(release_json["roles"])
+
+        resp = self.app.put(
+            reverse('ReleaseHandler',
+                    kwargs={"release_id": release_json["id"]}),
+            json.dumps(release_json),
+            headers=self.default_headers
+        )
+        new_roles = json.loads(resp.body)["roles"]
+        self.assertEqual(expected_roles, new_roles)
+
+    def test_roles_add_duplicated(self):
+        self.env.create_release()
+        resp = self.app.get(
+            reverse('ReleaseCollectionHandler'),
+            headers=self.default_headers
+        )
+        test_role_name = "testrole"
+
+        release_json = json.loads(resp.body)[0]
+        old_roles = list(release_json["roles"])
+        release_json["roles"].append(test_role_name)
+        expected_roles = list(release_json["roles"])
+        # add some duplicates
+        release_json["roles"].extend(old_roles)
+
+        resp = self.app.put(
+            reverse('ReleaseHandler',
+                    kwargs={"release_id": release_json["id"]}),
+            json.dumps(release_json),
+            headers=self.default_headers
+        )
+        new_roles = json.loads(resp.body)["roles"]
+        self.assertEqual(expected_roles, new_roles)
+
     def test_roles_delete(self):
         self.env.create_release()
         resp = self.app.get(

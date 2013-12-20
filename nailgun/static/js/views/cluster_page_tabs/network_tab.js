@@ -209,11 +209,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             var task = this.model.task('verify_networks', 'error') || this.model.task('check_networks', 'error');
             if (task && task.get('result').length) {
                 _.each(task.get('result'), function(failedNetwork) {
-                    _.each(failedNetwork.errors, function(field) {
-                        this.$('div[data-network-id=' + failedNetwork.id + ']').find('.' + field).children().addClass('error');
-                    }, this);
-                   _.each(failedNetwork.range_errors, function (idx) {
-                        this.$('div[data-network-id=' + failedNetwork.id + ']').find('.ip-range-row:eq('+idx+') input').addClass('error');
+                    _.each(failedNetwork.id, function(id) {
+                        _.each(failedNetwork.errors, function(field) {
+                            this.$('div[data-network-id=' + id + ']').find('.' + field).children().addClass('error');
+                        }, this);
                     }, this);
                 }, this);
             }

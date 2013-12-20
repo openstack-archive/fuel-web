@@ -121,9 +121,8 @@ class NetworkCheck(object):
                     u"physical interface. You should assign them to "
                     u"different physical interfaces. Affected:\n{0}".format(
                         "\n".join(nodes_with_errors)))
-                self.result.append({"id": [],
-                                    "range_errors": [],
-                                    "errors": ["untagged"]})
+                self.result.append({"ids": [],
+                                    "errors": []})
         self.expose_error_messages()
 
     def check_public_floating_assignment(self):
@@ -143,9 +142,8 @@ class NetworkCheck(object):
                 u"same physical interface. These networks must be assigned "
                 u"to the same physical interface. "
                 u"Affected nodes:\n{0}".format(", ".join(err_nodes)))
-            self.result.append({"id": [],
-                                "range_errors": [],
-                                "errors": ["public_floating"]})
+            self.result.append({"ids": [],
+                                "errors": []})
         self.expose_error_messages()
 
     def check_network_address_spaces_intersection(self):
@@ -176,9 +174,8 @@ class NetworkCheck(object):
                         )
                     )
                     self.result.append({
-                        "id": [int(ngs[0]["id"]), int(ngs[1]["id"])],
-                        "range_errors": [str(addrs[0]), str(addrs[1])],
-                        "errors": ["cidr"]
+                        "ids": [int(ngs[0]["id"]), int(ngs[1]["id"])],
+                        "errors": ["cidr", "ip_ranges"]
                     })
         self.expose_error_messages()
 
@@ -196,9 +193,8 @@ class NetworkCheck(object):
         if not pub_cidr:
             self.err_msgs.append(
                 u"Invalid gateway or netmask for public network")
-            self.result.append({"id": int(ng["id"]),
-                                "range_errors": [],
-                                "errors": ["netmask"]})
+            self.result.append({"ids": [int(ng["id"])],
+                                "errors": ["gateway", "netmask"]})
             self.expose_error_messages()
         ng['cidr'] = pub_cidr
         # Check intersection of networks address spaces inside
@@ -214,18 +210,17 @@ class NetworkCheck(object):
                             u"Address space intersection between ranges "
                             "of {0} network.".format(ng['name'])
                         )
-                        self.result.append({"id": int(ng["id"]),
-                                            "range_errors": [],
-                                            "errors": ["range"]})
+                        self.result.append({"ids": [int(ng["id"])],
+                                            "errors": ["ip_ranges"]})
                     if pub_gw in npair[0] or pub_gw in npair[1]:
                         self.err_msgs.append(
                             u"Address intersection between "
                             u"public gateway and IP range "
                             u"of {0} network.".format(ng['name'])
                         )
-                        self.result.append({"id": int(ng["id"]),
-                                            "range_errors": [],
-                                            "errors": ["gateway"]})
+                        self.result.append({"ids": [int(ng["id"])],
+                                            "errors": ["gateway",
+                                                       "ip_ranges"]})
                 # Check that Public IP ranges are in Public CIDR
                 if ng['name'] == 'public':
                     for net in nets:
@@ -235,9 +230,9 @@ class NetworkCheck(object):
                                 u"Public gateway and public ranges "
                                 u"are not in one CIDR."
                             )
-                            self.result.append({"id": int(ng["id"]),
-                                                "range_errors": [],
-                                                "errors": ["range"]})
+                            self.result.append({"ids": [int(ng["id"])],
+                                                "errors": ["gateway",
+                                                           "ip_ranges"]})
         self.expose_error_messages()
 
     def check_vlan_ids_range_and_intersection(self):
@@ -257,10 +252,9 @@ class NetworkCheck(object):
                     u"VLAN ID(s) is out of range for "
                     "{0} network.".format(name)
                 )
-                self.result.append({"id": [int(n["id"]) for n in self.networks
-                                           if n['name'] == name][0],
-                                    "range_errors": [],
-                                    "errors": ["vlan"]})
+                self.result.append({"ids": [int(n["id"]) for n in self.networks
+                                            if n['name'] == name],
+                                    "errors": ["vlan_start"]})
         for net in combinations(tagged_nets.keys(), 2):
             range1 = tagged_nets[net[0]]
             range2 = tagged_nets[net[1]]
@@ -271,11 +265,10 @@ class NetworkCheck(object):
                         u"{0} networks don't use the same VLAN ID(s). "
                         "These networks must use "
                         "the same VLAN ID(s).".format(", ".join(net)))
-                    self.result.append({"id": [int(n["id"])
-                                               for n in self.networks
-                                               if n['name'] in net],
-                                        "range_errors": [],
-                                        "errors": ["vlan"]})
+                    self.result.append({"ids": [int(n["id"])
+                                                for n in self.networks
+                                                if n['name'] in net],
+                                        "errors": ["vlan_start"]})
                 continue
             if range1[0] <= range2[0] + range2[1] \
                     and range2[0] <= range1[0] + range1[1]:
@@ -283,11 +276,10 @@ class NetworkCheck(object):
                     u"{0} networks use the same VLAN ID(s). "
                     "You should assign different VLAN IDs "
                     "to every network.".format(", ".join(net)))
-                self.result.append({"id": [int(n["id"])
-                                           for n in self.networks
-                                           if n['name'] in net],
-                                    "range_errors": [],
-                                    "errors": ["vlan"]})
+                self.result.append({"ids": [int(n["id"])
+                                            for n in self.networks
+                                            if n['name'] in net],
+                                    "errors": ["vlan_start"]})
         self.expose_error_messages()
 
     def check_networks_amount(self):
@@ -305,16 +297,14 @@ class NetworkCheck(object):
                         u"Network amount for '{0}' is more than 1".format(
                             ng['name'])
                     )
-                    self.result.append({"id": int(ng["id"]),
-                                        "range_errors": [],
+                    self.result.append({"ids": [int(ng["id"])],
                                         "errors": ["amount"]})
                 elif netmanager == 'FlatDHCPManager':
                     self.err_msgs.append(
                         u"Network amount for 'fixed' is more than 1 "
                         "while using FlatDHCP manager."
                     )
-                    self.result.append({"id": int(ng["id"]),
-                                        "range_errors": [],
+                    self.result.append({"ids": [int(ng["id"])],
                                         "errors": ["amount"]})
             if ng['name'] == 'fixed':
                 net_size = int(ng.get('network_size'))
@@ -327,9 +317,8 @@ class NetworkCheck(object):
                         u"fixed CIDR ({1}) and size of one fixed network "
                         u"({2}).".format(net_amount, ng['cidr'], net_size)
                     )
-                    self.result.append({"id": int(ng["id"]),
-                                        "range_errors": [],
-                                        "errors": ["net_size"]})
+                    self.result.append({"ids": [int(ng["id"])],
+                                        "errors": ["amount", "network_size"]})
         self.expose_error_messages()
 
     def neutron_check_segmentation_ids(self):
@@ -391,9 +380,8 @@ class NetworkCheck(object):
                         u"is less than required".format(ng['name'])
                     )
                     self.result.append({
-                        "id": int(ng["id"]),
-                        "range_errors": [],
-                        "errors": ["size"]
+                        "ids": [int(ng["id"])],
+                        "errors": ["network_size"]
                     })
         self.expose_error_messages()
 
@@ -407,33 +395,28 @@ class NetworkCheck(object):
         if not public_cidr:
             self.err_msgs.append(
                 u"Invalid gateway or netmask for public network")
-            self.result.append({"id": int(public["id"]),
-                                "range_errors": [],
-                                "errors": ["netmask"]})
+            self.result.append({"ids": [int(public["id"])],
+                                "errors": ["gateway", "netmask"]})
             self.expose_error_messages()
         public['cidr'] = str(public_cidr)
 
-        net_errors = []
         # check intersection of address ranges
         # between all networks
         for ngs in combinations(self.networks, 2):
-            net_errors = []
             if ngs[0].get('cidr') and ngs[1].get('cidr'):
                 cidr1 = netaddr.IPNetwork(ngs[0]['cidr'])
                 cidr2 = netaddr.IPNetwork(ngs[1]['cidr'])
                 if self.net_man.is_cidr_intersection(cidr1, cidr2):
-                    net_errors.append("cidr")
                     self.err_msgs.append(
                         u"Address space intersection "
                         u"between networks:\n{0}".format(
                             ", ".join([ngs[0]['name'], ngs[1]['name']])
                         )
                     )
-            if net_errors:
-                self.result.append({
-                    "id": [int(ngs[0]["id"]), int(ngs[1]["id"])],
-                    "errors": net_errors
-                })
+                    self.result.append({
+                        "ids": [int(ngs[0]["id"]), int(ngs[1]["id"])],
+                        "errors": ["cidr"]
+                    })
         self.expose_error_messages()
 
         # check Floating Start and Stop IPs belong to Public CIDR
@@ -444,7 +427,6 @@ class NetworkCheck(object):
         fl_range = pre_net['net04_ext']['L3']['floating']
         fl_ip_range = netaddr.IPRange(fl_range[0], fl_range[1])
         if fl_ip_range not in public_cidr:
-            net_errors.append("float_range")
             self.err_msgs.append(
                 u"Floating address range {0}:{1} is not in public "
                 u"address space {2}.".format(
@@ -453,7 +435,8 @@ class NetworkCheck(object):
                     public['cidr']
                 )
             )
-            self.result = [{"id": int(public["id"]), "errors": net_errors}]
+            self.result = [{"ids": [int(public["id"])],
+                            "errors": ["cidr", "ip_ranges"]}]
         self.expose_error_messages()
 
         # Check intersection of networks address spaces inside
@@ -473,17 +456,15 @@ class NetworkCheck(object):
                         u"Address space intersection between ranges "
                         u"of public network."
                     )
-                self.result.append({"id": int(public["id"]),
-                                    "range_errors": [],
-                                    "errors": ["range"]})
+                self.result.append({"ids": [int(public["id"])],
+                                    "errors": ["ip_ranges"]})
             if public_gw in npair[0] or public_gw in npair[1]:
                 self.err_msgs.append(
                     u"Address intersection between public gateway "
                     u"and IP range of public network."
                 )
-                self.result.append({"id": int(public["id"]),
-                                    "range_errors": [],
-                                    "errors": ["gateway"]})
+                self.result.append({"ids": [int(public["id"])],
+                                    "errors": ["gateway", "ip_ranges"]})
         self.expose_error_messages()
 
         # Check that Public IP ranges are in Public CIDR
@@ -493,9 +474,8 @@ class NetworkCheck(object):
                     u"Public gateway and public ranges "
                     u"are not in one CIDR."
                 )
-                self.result.append({"id": int(public["id"]),
-                                    "range_errors": [],
-                                    "errors": ["range"]})
+                self.result.append({"ids": [int(public["id"])],
+                                    "errors": ["gateway", "ip_ranges"]})
         self.expose_error_messages()
 
         # check internal Gateway is in Internal CIDR
@@ -503,7 +483,9 @@ class NetworkCheck(object):
         if internal.get('cidr') and internal.get('gateway'):
             cidr = netaddr.IPNetwork(internal['cidr'])
             if netaddr.IPAddress(internal['gateway']) not in cidr:
-                net_errors.append("gateway")
+                self.result.append({"ids": [],
+                                    "name": ["internal"],
+                                    "errors": ["gateway"]})
                 self.err_msgs.append(
                     u"Internal gateway {0} is not in internal "
                     u"address space {1}.".format(
@@ -511,19 +493,19 @@ class NetworkCheck(object):
                     )
                 )
             if self.net_man.is_range_intersection(fl_ip_range, cidr):
-                net_errors.append("cidr")
+                self.result.append({"ids": [],
+                                    "name": ["internal", "external"],
+                                    "errors": ["cidr", "ip_ranges"]})
                 self.err_msgs.append(
                     u"Intersection between internal CIDR and floating range."
                 )
         else:
-            net_errors.append("format")
+            self.result.append({"ids": [],
+                                "name": ["internal"],
+                                "errors": ["cidr", "gateway"]})
             self.err_msgs.append(
                 u"Internal gateway or CIDR specification is invalid."
             )
-        if net_errors:
-            self.result.append({"id": None,
-                                "name": "internal",
-                                "errors": net_errors})
         self.expose_error_messages()
 
     def neutron_check_interface_mapping(self):
@@ -659,9 +641,9 @@ class NetworkCheck(object):
                 u"either subnet address or broadcast address "
                 u"of public network.".format(str(ext_fl_r))
             )
-            self.result.append({"id": 0,
-                                "range_errors": [],
-                                "errors": ["range"]})
+            self.result.append({"ids": [],
+                                "name": ["external"],
+                                "errors": ["ip_ranges"]})
 
         int_cidr = netaddr.IPNetwork(pre_net['net04']['L3']['cidr']).cidr
         int_gw = netaddr.IPAddress(pre_net['net04']['L3']['gateway'])
@@ -670,8 +652,8 @@ class NetworkCheck(object):
                 u"Neutron L3 internal network gateway address is equal to "
                 u"either subnet address or broadcast address of the network."
             )
-            self.result.append({"id": 0,
-                                "range_errors": [],
+            self.result.append({"ids": [],
+                                "name": ["internal"],
                                 "errors": ["gateway"]})
         self.expose_error_messages()
 
@@ -691,18 +673,16 @@ class NetworkCheck(object):
                         u"A, B, C network classes. It must belong to either "
                         u"A, B or C network class.".format(n["name"])
                     )
-                    self.result.append({"id": int(n["id"]),
-                                        "range_errors": [],
-                                        "errors": ["net_class"]})
+                    self.result.append({"ids": [int(n["id"])],
+                                        "errors": ["cidr", "ip_ranges"]})
                 elif cidr in netaddr.IPNetwork('127.0.0.0/8'):
                     self.err_msgs.append(
                         u"{0} network address space is inside loopback range "
                         u"(127.0.0.0/8). It must have no intersection with "
                         u"loopback range.".format(n["name"])
                     )
-                    self.result.append({"id": int(n["id"]),
-                                        "range_errors": [],
-                                        "errors": ["loopback"]})
+                    self.result.append({"ids": [int(n["id"])],
+                                        "errors": ["cidr", "ip_ranges"]})
         self.expose_error_messages()
 
     def check_network_addresses_not_match_subnet_and_broadcast(self):
@@ -721,8 +701,7 @@ class NetworkCheck(object):
                             u"subnet address or broadcast address "
                             u"of the network.".format(n["name"])
                         )
-                        self.result.append({"id": int(n["id"]),
-                                            "range_errors": [],
+                        self.result.append({"ids": [int(n["id"])],
                                             "errors": ["gateway"]})
                 if n.get('ip_ranges'):
                     for r in n['ip_ranges']:
@@ -733,9 +712,8 @@ class NetworkCheck(object):
                                 u"either subnet address or broadcast address "
                                 u"of the network.".format(n["name"], str(ipr))
                             )
-                            self.result.append({"id": int(n["id"]),
-                                                "range_errors": [],
-                                                "errors": ["range"]})
+                            self.result.append({"ids": [int(n["id"])],
+                                                "errors": ["ip_ranges"]})
         self.expose_error_messages()
 
     def check_configuration(self):

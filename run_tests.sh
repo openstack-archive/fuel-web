@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#FAKE! Testing Jenkins job
 function drop_db {
   nailgun/manage.py dropdb >> /dev/null
   exit 1

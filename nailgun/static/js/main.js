@@ -30,7 +30,7 @@ requirejs.config({
         coccyx: 'js/libs/custom/coccyx',
         bootstrap: 'js/libs/custom/bootstrap.min',
         text: 'js/libs/bower/requirejs-text/js/text',
-        retina: 'js/libs/custom/retina',
+        retina: 'js/libs/bower/retina.js/js/retina',
         i18next: 'js/libs/bower/i18next/js/i18next-1.7.1',
         underscore: 'js/libs/bower/lodash/js/lodash',
         deepModel: 'js/libs/bower/backbone-deep-model/js/deep-model',

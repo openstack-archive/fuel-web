@@ -22,6 +22,7 @@ from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql.expression import not_
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
@@ -70,14 +71,13 @@ class Release(Base):
         return [role.name for role in self.role_list]
 
     @roles.setter
-    def roles(self, roles):
-        new_roles = list(roles)
-        for role in self.role_list:
-            if role.name not in new_roles:
-                db().delete(role)
-            else:
-                new_roles.remove(role.name)
-        for new_role in new_roles:
-            self.role_list.append(
-                Role(name=new_role, release=self)
-            )
+    def roles(self, new_roles):
+        db().query(Role).filter(not_(Role.name.in_(new_roles))).\
+            delete(synchronize_session='fetch')
+        added_roles = self.roles
+        for role in new_roles:
+            if role not in added_roles:
+                self.role_list.append(
+                    Role(name=role, release=self)
+                )
+                added_roles.append(role)

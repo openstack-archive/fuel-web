@@ -94,12 +94,12 @@ require([
     'coccyx',
     'i18next',
     'bootstrap',
-    'retina',
     'jquery-checkbox',
     'jquery-timeout',
     'jquery-ui',
     'jquery-autoNumeric',
     'styles',
+    'retina',
     'app'
 ], function() {
     'use strict';

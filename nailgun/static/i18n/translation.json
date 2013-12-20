@@ -82,19 +82,19 @@
             },
             "support_page": {
                 "title": "Support",
-                "contact_text": "Do not hesitate to report a problem or suggest an improvement by clicking the button below. We will get back to you as soon as possible.",
-                "irc_text": "If you have any questions, you can reach out developers at IRC channel",
-                "log_text": "If you have encountered some bugs or errors while using Fuel, you may also need to provide the support team with Fuel logs. You can download them by clicking the button below.",
+                "contact_text": "If you need to report a problem or just suggest an improvement, click the button below. We will get back to you as soon as possible.",
+                "irc_text": "If you have any questions, you can also reach out developers on the IRC channel",
+                "log_text": "If you have encountered some bugs or errors, you may also need to provide the support team with deployment and operational logs. You can download them all at once by clicking the button below.",
                 "contact_support": "Contact support",
-                "register_fuel_title": "Register FUEL",
-                "register_fuel_content": "Registering will ensure that you receive important notifications about issues and new versions of Fuel. In addition, you will receive access to our basic support services for the next 30 days!",
+                "register_fuel_title": "Register Fuel",
+                "register_fuel_content": "Registering will ensure that you receive important notifications about issues and new versions of Mirantis products. In addition, you will receive complementary access to our basic support services for the next 30 days!",
                 "download_diagnostic_snapshot_text": "Download Diagnostic Snapshot",
                 "gen_logs_snapshot_text": "Generating logs snapshot...",
                 "loading": "Loading...",
                 "gen_diagnostic_snapshot_text": "Generate diagnostic snapshot",
                 "diagnostic_snapshot": "Diagnostic Snapshot",
                 "capacity_audit": "Capacity Audit",
-                "capacity_audit_text": "View and download capacity log.",
+                "capacity_audit_text": "To better manage your resources, you can run this report to find out what OpenStack roles have been deployed across all of your environments.",
                 "view_capacity_audit": "View Capacity Audit"
             },
             "release_page": {
@@ -138,7 +138,7 @@
                         "title": "Configure interfaces on __name__",
                         "title_plural": "Configure interfaces on __count__ nodes",
                         "speed": "Speed",
-                        "drag_and_drop_description": "Use drag and drop to move logical networks between physical interfaces"
+                        "drag_and_drop_description": "You can drag and drop logical networks between physical interfaces"
                     },
                     "configure_disks": {
                         "title": "Configure disks on __name__",
@@ -156,7 +156,7 @@
                         "cant_configure_disks": "Unable to configure disks",
                         "cant_configure_interfaces": "Unable to configure interfaces",
                         "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
-                        "interfaces_configuration_warning": "Only not deployed nodes with an identical number of network interfaces can be configured together in the same action."
+                        "interfaces_configuration_warning": "Only undeployed nodes with an identical number of network interfaces can be configured together in the same action."
                     },
                     "node": {
                         "status": {
@@ -180,7 +180,7 @@
                     "back_to_nodes_button": "Back To Node List",
                     "unallocated_nodes": "Unallocated Nodes",
                     "no_selected_nodes": "There are no selected nodes to edit.",
-                    "disk_configuration_reset_warning": "Disk configuration will be reset to default after roles change",
+                    "disk_configuration_reset_warning": "Disk configuration will be reset to default after roles change.",
                     "no_nodes_in_environment": "To add nodes to the environment, select the Add Nodes option, choose the nodes you want to allocate and assign roles to each.",
                     "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes.",
                     "one_controller_restriction": "Only one controller can be assigned in a multi-node deployment that is not Highly-Available (HA).",
@@ -251,17 +251,17 @@
                         "invalid_netmask": "Invalid netmask",
                         "invalid_gateway": "Invalid gateway",
                         "invalid_amount": "Invalid amount of networks",
-                        "gateway_is_out_of_ip_range": "Gateway is out of Public IP range",
-                        "gateway_is_out_of_internal_ip_range": "Gateway is out of internal network IP range",
-                        "need_more_vlan": "Number of networks needs more VLAN IDs than available. Check VLAN ID Range field.",
+                        "gateway_is_out_of_ip_range": "This Gateway address is outside of the Public IP range",
+                        "gateway_is_out_of_internal_ip_range": "This Gateway address is out of the internal network IP range",
+                        "need_more_vlan": "The number of networks defined needs more VLAN IDs than available. Check VLAN ID Range field.",
                         "invalid_nameserver": "Invalid nameserver",
                         "invalid_id_start": "Invalid ID range start",
                         "invalid_id_end": "Invalid ID range end",
-                        "invalid_id_range": "ID range start is greater than ID range end",
-                        "id_intersection": "There is an intersection with VLAN ID of other networks. Please set another ID range",
+                        "invalid_id_range": "The ID range start is greater than ID range end",
+                        "id_intersection": "There is an intersection with the VLAN ID of other networks. Please set another ID range",
                         "invalid_mac": "Invalid MAC address",
-                        "ip_start_is_out_of_ip_range": "IP start is out of IP range",
-                        "ip_end_is_out_of_ip_range": "IP end is out of IP range"
+                        "ip_start_is_out_of_ip_range": "The IP start is outside of the IP range",
+                        "ip_end_is_out_of_ip_range": "The IP end is outside  of the IP range"
                     }
                 },
                 "logs_tab": {
@@ -275,7 +275,7 @@
                     "source_alert": "Unable to fetch log sources.",
                     "date": "Date",
                     "message": "Message",
-                    "bottom_text": "Some previous lines skipped. Show more lines",
+                    "bottom_text": "Some previous lines have been skipped. Show more lines",
                     "all_logs": "All",
                     "no_log_text": "No log entries match current filters."
                 },
@@ -301,7 +301,7 @@
                 "fuel_uuid": "Fuel UUID",
                 "env_name": "Environment Name",
                 "node_count": "Node Count",
-                "total_number_alloc_nodes": "Total number of allocated node",
+                "total_number_alloc_nodes": "Total number of allocated nodes",
                 "total_number_unalloc_nodes": "Total number of unallocated nodes",
                 "node_role": "Node role(s)",
                 "nodes_with_config": "Number of nodes with this configuration",
@@ -352,13 +352,13 @@
                         "install_savanna": "Install Savanna",
                         "install_savanna_description": "Savanna enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
                         "install_murano": "Install Murano",
-                        "install_murano_description": "Murano enables windows based datacenter services like Active Directory, IIS, Microsoft SQL and ASP.NET to be deployed on OpenStack.",
-                        "install_ceilometer": "Install Ceilometer",
+                        "install_murano_description": "Murano enables Windows or Linux based datacenter services like Active Directory, IIS, Apache, Microsoft SQL and ASP.NET to be deployed on OpenStack.",
+                        "install_ceilometer": "Install Ceilometer (OpenStack Telemetry)",
                         "install_ceilometer_description": "Ceilometer provides metering and monitoring of an OpenStack cloud."
                     },
                     "ready": {
                         "title": "Finish",
-                        "env_select_deploy": "Your environment is now ready for deployment! You can select",
+                        "env_select_deploy": "Your environment is now ready for deployment! After clicking on the Create button, you can select",
                         "or_make_config_choice": "or make additional configuration choices in the Fuel",
                         "console": "console.",
                         "deploy": "Deploy Changes",
@@ -395,7 +395,7 @@
                     "changed": "Changed",
                     "deleted": "Deleted",
                     "deploy": "Deploy",
-                    "redeployment_needed": "Some nodes have error status after deployment. Redeployment is needed."
+                    "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed."
                 },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",
@@ -432,7 +432,7 @@
                     "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes."
                 },
                 "error_occured": {
-                    "alert_text": "Server error has occured. Please contact the administrators.",
+                    "alert_text": "A server error has occured. Please contact the administrators.",
                     "see_logs": "See the logs"
                 }
             }

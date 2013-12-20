@@ -181,7 +181,8 @@ class ClusterCollectionHandler(JSONHandler):
             "name",
             "mode",
             "net_provider",
-            "net_segment_type"
+            "net_segment_type",
+            "status"
         ):
             if data.get(field):
                 setattr(cluster, field, data.get(field))

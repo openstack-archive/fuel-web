@@ -138,6 +138,29 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         self.assertEquals(mocked_rpc.called, False)
 
     @fake_tasks()
+    def test_verify_networks_less_than_2_nodes_error(self,
+                                                     macs_mock):
+        macs_mock.return_value = self.master_macs
+        self.db.delete(self.env.nodes[0])
+        self.db.commit()
+
+        resp = self.app.get(
+            reverse(
+                'NovaNetworkConfigurationHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}
+            ),
+            headers=self.default_headers
+        )
+        nets = json.loads(resp.body)
+
+        task = self.env.launch_verify_networks(nets)
+        self.db.refresh(task)
+        self.assertEqual(task.status, "error")
+        error_msg = 'At least two nodes are required to be in ' \
+                    'the environment for network verification.'
+        self.assertEqual(task.message, error_msg)
+
+    @fake_tasks()
     def test_network_verify_if_old_task_is_running(self,
                                                    macs_mock):
         macs_mock.return_value = self.master_macs
@@ -189,21 +212,6 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
             "name": "eth2",
             "current_speed": None}])
         self.env.create(
-            cluster_kwargs={
-                'net_provider': 'neutron',
-                'net_segment_type': 'vlan'
-            },
-            nodes_kwargs=[
-                {
-                    'api': True,
-                    'roles': ['controller'],
-                    'pending_addition': True,
-                    'meta': meta,
-                    'mac': "00:00:00:00:00:66"
-                },
-            ]
-        )
-        self.env.create(
             cluster_kwargs={'status': 'operational',
                             'net_provider': 'neutron',
                             'net_segment_type': 'vlan'},
@@ -217,7 +225,6 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
             ]
         )
         self.cluster = self.env.clusters[0]
-        self.cluster.status = 'operational'
         self.db.commit()
 
     @fake_tasks(fake_rpc=False)

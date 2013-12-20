@@ -504,8 +504,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             })).i18n();
             if (disabledDueToRelease) {
                 this.$('input[type=checkbox]').prop('disabled', true);
-            }
-            if (disabledDueToNetworkMode) {
+            } else if (disabledDueToNetworkMode) {
                 this.$('input[name=murano]').prop('disabled', true);
             }
             return this;

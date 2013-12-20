@@ -1,0 +1,21 @@
+Fuel UI Internationalization Guidelines
+============================
+Fuel UI internationalization is done using `i18next <http://i18next.com/>`_
+library. Please read `i18next documentation
+<http://i18next.com/pages/doc_features.html>`_ first.
+
+All translations are stored in nailgun/static/i18n/translation.json
+
+If you want to add new strings to the translations file, follow these rules:
+
+#. Use words describing placement of strings like "button", "title", "summary",
+   "description", "label" and place them at the end of the key
+   (like "apply_button", "cluster_description", etc.). One-word strings may
+   look better without any of these suffixes.
+#. Do NOT use shortcuts ("bt" instead of "button", "descr" instead of
+   "description", etc.)
+#. Nest keys if it makes sense, for example, if there are a few values
+   for statuses, etc.
+#. If some keys are used in a few places (for example, in utils), move them to
+   "common.*" namespace.
+#. Use defaultValue ONLY with dynamically generated keys.

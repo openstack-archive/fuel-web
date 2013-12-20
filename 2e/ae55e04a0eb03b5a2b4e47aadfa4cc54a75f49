@@ -1,0 +1,10 @@
+Change-Id: I2eae55e04a0eb03b5a2b4e47aadfa4cc54a75f49
+Verified+2: Jenkins
+Approved+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Code-Review+2: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 20 Dec 2013 13:27:30 +0000
+Reviewed-on: https://review.openstack.org/63404
+Project: stackforge/fuel-web
+Branch: refs/heads/master

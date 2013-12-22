@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Approved+1: Mike Scherbakov <mscherbakov@mirantis.com>
+Code-Review+2: Mike Scherbakov <mscherbakov@mirantis.com>
+Approved+1: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Code-Review+1: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Sun, 22 Dec 2013 08:57:42 +0000
+Reviewed-on: https://review.openstack.org/63153
+Project: stackforge/fuel-web
+Branch: refs/heads/master

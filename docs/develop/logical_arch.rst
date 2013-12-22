@@ -62,7 +62,6 @@ Logical Architecture Diagram:
         [RPC Consumer (Naily)] --> [RPC Receiver] : AMQP
         [RPC Consumer (Naily)] --> [Orchestrator (Astute)] : AMQP
         [Orchestrator (Astute)] --> [MCollective]
-        [Puppet Master]
     }
     package "Target Node" {
         [MCollective Agent] --> [Puppet]
@@ -77,7 +76,6 @@ Logical Architecture Diagram:
     [Orchestrator (Astute)] --> [Provisioner (Cobbler)] : XML-RPC
 
     [MCollective] --> [MCollective Agent]
-    [Puppet] --> [Puppet Master]
 
 ..    CLI User --> [Provisioner(cobbler)]
 

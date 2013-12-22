@@ -7,7 +7,6 @@
    develop/sequence
    develop/env
    develop/nailgun
-   develop/alternatives
    develop/api_doc
    develop/module_structure
    develop/fuel_settings

@@ -85,8 +85,6 @@ Details on Cluster Provisioning & Deployment (via Facter extension)
 
     Astute -> MC: run puppet
     MC -> Puppet: runonce
-    Puppet -> Puppet_master: get modules,class
-    Puppet_master --> Puppet: modules, class
     Puppet -> Facter: get facts
     Facter --> Puppet: set facts and parse astute.yaml
 
@@ -110,8 +108,7 @@ MCollective plugin to push data to a special file */etc/astute.yaml* on the
 target system.
 Data include role and all other variables needed for deployment. Then, Astute 
 calls puppetd MCollective plugin to start deployment. Puppet is started on 
-nodes, and requests Puppet master for modules and manifests.  *site.pp* on 
-Master node defines one common class for every node.
+nodes.
 
 Accordingly, puppet agent starts its run. Modules contain facter extension, 
 which runs before deployment. Extension reads data from */etc/astute.yaml* 

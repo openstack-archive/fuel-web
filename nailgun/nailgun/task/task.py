@@ -376,16 +376,17 @@ class CheckNetworksTask(object):
 
 
 class CheckBeforeDeploymentTask(object):
-    @classmethod
-    def execute(cls, task):
-        cls.__check_controllers_count(task)
-        cls.__check_disks(task)
-        cls.__check_ceph(task)
-        cls.__check_volumes(task)
-        cls.__check_network(task)
 
     @classmethod
-    def __check_controllers_count(cls, task):
+    def execute(cls, task):
+        cls._check_controllers_count(task)
+        cls._check_disks(task)
+        cls._check_ceph(task)
+        cls._check_volumes(task)
+        cls._check_network(task)
+
+    @classmethod
+    def _check_controllers_count(cls, task):
         controllers_count = len(filter(
             lambda node: 'controller' in node.all_roles,
             task.cluster.nodes)
@@ -402,37 +403,49 @@ class CheckBeforeDeploymentTask(object):
                 "controllers" % (cluster_mode))
 
     @classmethod
-    def __check_disks(cls, task):
+    def _check_disks(cls, task):
         try:
             for node in task.cluster.nodes:
-                node.volume_manager.check_disk_space_for_deployment()
+                if cls._is_disk_checking_required(node):
+                    node.volume_manager.check_disk_space_for_deployment()
         except errors.NotEnoughFreeSpace:
             raise errors.NotEnoughFreeSpace(
                 u"Node '%s' has insufficient disk space" %
                 node.human_readable_name)
 
     @classmethod
-    def __check_volumes(cls, task):
+    def _check_volumes(cls, task):
         try:
             for node in task.cluster.nodes:
-                node.volume_manager.check_volume_sizes_for_deployment()
+                if cls._is_disk_checking_required(node):
+                    node.volume_manager.check_volume_sizes_for_deployment()
         except errors.NotEnoughFreeSpace as e:
             raise errors.NotEnoughFreeSpace(
                 u"Node '%s' has insufficient disk space\n%s" % (
                     node.human_readable_name, e.message))
 
     @classmethod
-    def __check_ceph(cls, task):
+    def _check_ceph(cls, task):
         storage = task.cluster.attributes.merged_attrs()['storage']
         for option in storage:
             if '_ceph' in option and\
                storage[option] and\
                storage[option]['value'] is True:
-                cls.__check_ceph_osds(task)
+                cls._check_ceph_osds(task)
                 return
 
     @classmethod
-    def __check_ceph_osds(cls, task):
+    def _is_disk_checking_required(cls, node):
+        """Disk checking required in case if node is not provisioned.
+        """
+        if node.status in ('ready', 'deploying') or \
+           (node.status == 'error' and node.error_type != 'provision'):
+            return False
+
+        return True
+
+    @classmethod
+    def _check_ceph_osds(cls, task):
         osd_count = len(filter(
             lambda node: 'ceph-osd' in node.all_roles,
             task.cluster.nodes))
@@ -445,7 +458,7 @@ class CheckBeforeDeploymentTask(object):
                 (osd_count, osd_pool_size))
 
     @classmethod
-    def __check_network(cls, task):
+    def _check_network(cls, task):
         nodes_count = len(task.cluster.nodes)
 
         public_network = filter(

@@ -191,23 +191,29 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }
             ];
         },
+        actualizePendingRoles: function(node, roles, options) {
+            if (!options.nodeList && !options.assign) {
+                node.set({pending_roles: node.previous('pending_roles')});
+            }
+        },
         initialize: function() {
             this.nodes.on('resize', this.render, this);
             if (this instanceof AddNodesScreen || this instanceof EditNodesScreen) {
+                this.nodes.on('change:pending_roles', this.actualizePendingRoles, this);
                 this.model.on('change:status', _.bind(function() {app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});}, this));
             }
             this.scheduleUpdate();
             var defaultButtonModelsData = {
-                'visible': false,
-                'disabled': false,
-                'invalid': false
+                visible: false,
+                disabled: true,
+                invalid: false
             };
-            this.addNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'visible': true}));
-            this.deleteNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
-            this.editRolesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
-            this.configureDisksButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
-            this.configureInterfacesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
-            this.applyChangesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
+            this.addNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {visible: true, disabled: false}));
+            this.deleteNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {disabled: false}));
+            this.editRolesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
+            this.configureDisksButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
+            this.configureInterfacesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
+            this.applyChangesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -244,7 +250,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             _.defaults(this, options);
             this.nodes = this.model.get('nodes');
-            this.nodes.cluster = this.model;
             var clusterId = this.model.id;
             this.nodes.fetch = function(options) {
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: clusterId}}, options));
@@ -253,7 +258,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
             this.constructor.__super__.initialize.apply(this, arguments);
-            this.nodes.fetch();
+            this.nodes.fetch({nodeList: true});
         },
         bindTaskEvents: function(task) {
             return (task.get('name') == 'deploy' || task.get('name') == 'verify_networks') ? task.on('change:status', this.render, this) : null;
@@ -272,15 +277,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
             };
             this.constructor.__super__.initialize.apply(this, arguments);
-            this.nodes.parse = function(response) {
-                return _.map(response, function(node) {
-                    return _.omit(node, 'pending_roles');
-                });
-            };
-            this.nodes.fetch().done(_.bind(function() {
-                this.nodes.each(function(node) {node.set({pending_roles: []}, {silent: true});});
-                this.render();
-            }, this));
+            this.nodes.fetch();
         }
     });
 
@@ -296,9 +293,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: this.cluster.id}}, options));
             };
             this.nodes.parse = function(response) {
-                return _.map(_.filter(response, function(node) {return _.contains(nodeIds, node.id);}), function(node) {
-                    return _.omit(node, 'pending_roles');
-                });
+                return _.filter(response, function(node) {return _.contains(nodeIds, node.id);});
             };
             this.constructor.__super__.initialize.apply(this, arguments);
         }
@@ -411,7 +406,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             _.each(this.collection.where({indeterminate: false}), function(role) {
                 _.each(this.nodes.filter(function(node) {return !node.hasRole(role.get('name'), true);}), function(node) {
                     var pending_roles = role.get('checked') ? _.uniq(_.union(node.get('pending_roles'), role.get('name'))) : _.difference(node.get('pending_roles'), role.get('name'));
-                    node.set({pending_roles: pending_roles});
+                    node.set({pending_roles: pending_roles}, {assign: true});
                 });
             }, this);
         },
@@ -958,7 +953,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.screen = this.group.nodeList.screen;
             this.eventNamespace = 'click.editnodename' + this.node.id;
             this.node.set('checked', this.screen instanceof EditNodesScreen);
-            this.node.on('change:name', this.render, this);
             this.node.on('change:checked change:online', this.onNodeSelection, this);
             this.node.on('change:pending_deletion change:status change:online', this.calculateNodeDisabledState, this);
             this.node.on('change:disabled', this.group.calculateSelectAllDisabledState, this.group);

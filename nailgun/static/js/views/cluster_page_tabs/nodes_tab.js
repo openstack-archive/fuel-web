@@ -278,7 +278,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 });
             };
             this.nodes.fetch().done(_.bind(function() {
-                this.nodes.each(function(node) {node.set({pending_roles: []}, {silent: true});});
+                this.nodes.each(function(node) {
+                    node.set({pending_roles: []}, {silent: true});
+                    node.parse = function(response) {return _.omit(response, 'pending_roles');};
+                });
                 this.render();
             }, this));
         }
@@ -958,7 +961,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.screen = this.group.nodeList.screen;
             this.eventNamespace = 'click.editnodename' + this.node.id;
             this.node.set('checked', this.screen instanceof EditNodesScreen);
-            this.node.on('change:name', this.render, this);
             this.node.on('change:checked change:online', this.onNodeSelection, this);
             this.node.on('change:pending_deletion change:status change:online', this.calculateNodeDisabledState, this);
             this.node.on('change:disabled', this.group.calculateSelectAllDisabledState, this.group);

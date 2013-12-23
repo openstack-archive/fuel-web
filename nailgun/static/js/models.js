@@ -538,7 +538,7 @@ define(['utils', 'deepModel'], function(utils) {
                     } else if (attr == 'gateway') {
                         if (utils.validateIP(network.get('gateway'))) {
                             networkErrors.gateway = $.t('cluster_page.network_tab.validation.invalid_gateway');
-                        } else if (network.get('name') == 'public' && publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, network.get('gateway'))) {
+                        } else if (!_.isNull(network.get('gateway')) && network.get('name') == 'public' && publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, network.get('gateway'))) {
                             networkErrors.gateway = $.t('cluster_page.network_tab.validation.gateway_is_out_of_ip_range');
                         }
                     } else if (attr == 'amount') {

@@ -153,7 +153,7 @@ define(['utils', 'deepModel'], function(utils) {
         },
         getRolesSummary: function() {
             var rolesMetaData = this.collection.cluster.get('release').get('roles_metadata');
-            return _.map(this.sortedRoles(), function(role) {return rolesMetaData[role].name;}).join(' + ');
+            return _.map(this.sortedRoles(), function(role) {return rolesMetaData[role].name;}).join(', ');
         },
         getHardwareSummary: function() {
             return $.t('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + $.t('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
@@ -195,7 +195,7 @@ define(['utils', 'deepModel'], function(utils) {
             if (attr == 'hardware') {
                 return this.groupBy(function(node) {return node.getHardwareSummary();});
             }
-            return this.groupBy(function(node) {return node.getRolesSummary() + ' + ' + node.getHardwareSummary();});
+            return this.groupBy(function(node) {return node.getRolesSummary() + '; \u00A0' + node.getHardwareSummary();});
         }
     });
 

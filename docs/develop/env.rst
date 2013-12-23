@@ -13,20 +13,19 @@ master node installation ISO, and generate documentation.
 Getting the Source Code
 -----------------------
 
-Clone the Mirantis Fuel repositories from GitHub::
+Source code of OpenStack Fuel can be found on Stackforge::
 
     git clone https://github.com/stackforge/fuel-main
     git clone https://github.com/stackforge/fuel-web
     git clone https://github.com/stackforge/fuel-astute
     git clone https://github.com/stackforge/fuel-ostf
-    git clone https://github.com/Mirantis/fuel
-
-All sections below assume you start in your clone of the **fuel-web** repository.
-Please ensure you use updated information on the versions of packages
-and their dependencies (apt-get update).
+    git clone https://github.com/stackforge/fuel-library
+    git clone https://github.com/stackforge/fuel-docs
 
 Setup for Nailgun Unit Tests
 ----------------------------
+
+#. Nailgun can be found in fuel-web/nailgun
 
 #. Install and configure PostgreSQL database::
 
@@ -96,6 +95,7 @@ Setup for Web UI Tests
 #. Run full Web UI test suite (this will wipe your Nailgun database in
    PostgreSQL)::
 
+    cd fuel-web
     ./run_tests.sh --jslint
     ./run_tests.sh --ui-tests
 
@@ -131,6 +131,8 @@ Running Nailgun in Fake Mode
 Astute and Naily
 ----------------
 
+#. Astute and Naily can be found in fuel-astute repository
+
 #. Install Ruby dependencies::
 
     sudo apt-get install git curl
@@ -139,13 +141,13 @@ Astute and Naily
 
 #. Install or update dependencies and run unit tests::
 
-    cd astute
+    cd fuel-astute
     ./run_tests.sh
 
 #. (optional) Run Astute MCollective integration test (you'll need to
    have MCollective server running for this to work)::
 
-    cd astute
+    cd fuel-astute
     bundle exec rspec spec/integration/mcollective_spec.rb
 
 Building the Fuel ISO

@@ -19,16 +19,52 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.errors import errors
+from nailgun.network.checker import NetworkCheck
+from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
 
+orig_expose_error_messages = TaskHelper.expose_network_check_error_messages
+
+
 class TestNetworkChecking(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestNetworkChecking, self).setUp()
+        #orig_expose_error_messages = \
+        #    TaskHelper.expose_network_check_error_messages
+        TaskHelper.expose_network_check_error_messages = \
+            TestNetworkChecking.check_and_expose_error_messages
 
     def find_net_by_name(self, name):
         for net in self.nets['networks']:
             if net['name'] == name:
                 return net
+
+    @classmethod
+    def check_and_expose_error_messages(cls, task, result, err_messages):
+        if result:
+            if type(result) is not list:
+                raise errors.NetworkCheckResultFormatError(
+                    u'"result" is expected to be a list')
+            ng_fields = NetworkGroup.__mapper__.columns.keys() + ["ip_ranges"]
+            for res in result:
+                if 'ids' in res:
+                    if type(res['ids']) is not list:
+                        raise errors.NetworkCheckResultFormatError(
+                            u'"ids" field is expected to be a list')
+                if 'errors' in res:
+                    if type(res['errors']) is not list:
+                        raise errors.NetworkCheckResultFormatError(
+                            u'"errors" field is expected to be a list')
+                    for f in res['errors']:
+                        if f not in ng_fields:
+                            raise errors.NetworkCheckResultFormatError(
+                                u'"errors" field must contain '
+                                u'NetworkGroup fields names only')
+        return orig_expose_error_messages(task, result, err_messages)
 
 
 class TestNovaHandlers(TestNetworkChecking):
@@ -575,6 +611,78 @@ class TestNovaHandlers(TestNetworkChecking):
             "fixed network gateway address is equal to either subnet address "
             "or broadcast address of the network."
         )
+
+    def test_checker_message_format(self):
+        admin_ng = self.env.network_manager.get_admin_network_group()
+        self.find_net_by_name('fixed')["cidr"] = admin_ng.cidr
+
+        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
+                                          expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertIn(
+            "Address space intersection between networks:\n",
+            task['message'])
+        self.assertIn("admin (PXE)", task['message'])
+        self.assertIn("fixed", task['message'])
+
+        orig_expose = NetworkCheck.expose_error_messages
+
+        def expose_bad_error_messages1(inst):
+            if len(inst.result) > 0:
+                inst.result[0]["ids"] = 0
+            return orig_expose(inst)
+
+        NetworkCheck.expose_error_messages = expose_bad_error_messages1
+        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
+                                          expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            '"ids" field is expected to be a list',
+            task['message'])
+
+        def expose_bad_error_messages2(inst):
+            if len(inst.result) > 0:
+                inst.result[0]["errors"] = 0
+            return orig_expose(inst)
+
+        NetworkCheck.expose_error_messages = expose_bad_error_messages2
+        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
+                                          expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            '"errors" field is expected to be a list',
+            task['message'])
+
+        def expose_bad_error_messages3(inst):
+            if len(inst.result) > 0:
+                inst.result[0]["errors"] = ["not-a-net-group-field"]
+            return orig_expose(inst)
+
+        NetworkCheck.expose_error_messages = expose_bad_error_messages3
+        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
+                                          expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertEquals(
+            '"errors" field must contain NetworkGroup fields names only',
+            task['message'])
+
+        NetworkCheck.expose_error_messages = orig_expose
 
 
 class TestNeutronHandlersGre(TestNetworkChecking):

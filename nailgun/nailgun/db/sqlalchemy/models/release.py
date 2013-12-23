@@ -72,8 +72,8 @@ class Release(Base):
 
     @roles.setter
     def roles(self, new_roles):
-        db().query(Role).filter(not_(Role.name.in_(new_roles))).\
-            delete(synchronize_session='fetch')
+        db().query(Role).filter(not_(Role.name.in_(new_roles))).filter(
+            Role.release_id == self.id).delete(synchronize_session='fetch')
         added_roles = self.roles
         for role in new_roles:
             if role not in added_roles:

@@ -158,3 +158,10 @@ class TestFixture(BaseIntegrationTest):
         self.assertEqual(len(rel), 1)
         self.assertEqual(list(rel[0].roles),
                          ["compute", "cinder", "controller"])
+        # check previously added release roles
+        prev_rel = self.db.query(Release).filter(
+            Release.name == u"CustomFixtureRelease2"
+        ).all()
+        self.assertEqual(len(prev_rel), 1)
+        self.assertEqual(list(prev_rel[0].roles),
+                         ["compute", "ceph-osd", "controller", "cinder"])

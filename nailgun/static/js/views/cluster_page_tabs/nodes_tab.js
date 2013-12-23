@@ -880,6 +880,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             $('html').off(this.eventNamespace);
             this.renaming = false;
             this.render();
+            this.screen.roles.assignRoles();
         },
         applyNewNodeName: function() {
             var name = $.trim(this.$('.name input').val());

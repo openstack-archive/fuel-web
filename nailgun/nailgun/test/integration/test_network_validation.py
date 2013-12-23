@@ -30,6 +30,52 @@ class TestNetworkChecking(BaseIntegrationTest):
             if net['name'] == name:
                 return net
 
+    def check_result_format(self, task):
+        if task.get('result'):
+            result = task['result']
+            self.assertIsInstance(result, list)
+            ng_fields = \
+                NetworkGroup.__mapper__.columns.keys() + ["ip_ranges"]
+            for res in result:
+                if 'ids' in res:
+                    self.assertIsInstance(res['ids'], list)
+                if 'errors' in res:
+                    self.assertIsInstance(res['errors'], list)
+                    for f in res['errors']:
+                        self.assertIn(f, ng_fields)
+
+    def set_cluster_changes_w_error(self, cluster_id):
+        resp = self.env.cluster_changes_put(cluster_id)
+        self.assertEquals(resp.status, 200)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'deploy')
+        self.check_result_format(task)
+        return task
+
+    def update_nova_networks_w_error(self, cluster_id, nets):
+        resp = self.env.nova_networks_put(cluster_id, nets,
+                                          expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.check_result_format(task)
+        return task
+
+    def update_neutron_networks_w_error(self, cluster_id, nets):
+        resp = self.env.neutron_networks_put(cluster_id, nets,
+                                             expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.check_result_format(task)
+        return task
+
 
 class TestNovaHandlers(TestNetworkChecking):
 
@@ -68,13 +114,7 @@ class TestNovaHandlers(TestNetworkChecking):
         admin_ng = self.env.network_manager.get_admin_network_group()
         self.find_net_by_name('fixed')["cidr"] = admin_ng.cidr
 
-        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
-                                          expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
             "Address space intersection between networks:\n",
             task['message'])
@@ -88,13 +128,7 @@ class TestNovaHandlers(TestNetworkChecking):
             [str(IPAddress(cidr.first + 2)), str(IPAddress(cidr.last))]
         ]
 
-        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
-                                          expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
             "Address space intersection between networks:\n",
             task['message'])
@@ -109,14 +143,8 @@ class TestNovaHandlers(TestNetworkChecking):
         net_with_invalid_netmask['netmask'] = '255.255.255.2'
 
         for net in [net_without_netmask, net_with_invalid_netmask]:
-            resp = self.env.nova_networks_put(self.cluster.id,
-                                              {'networks': [net]},
-                                              expect_errors=True)
-            self.assertEquals(resp.status, 202)
-            task = json.loads(resp.body)
-            self.assertEquals(task['status'], 'error')
-            self.assertEquals(task['progress'], 100)
-            self.assertEquals(task['name'], 'check_networks')
+            task = self.update_nova_networks_w_error(self.cluster.id,
+                                                     {'networks': [net]})
             self.assertEquals(
                 task['message'],
                 'Invalid gateway or netmask for public network')
@@ -125,13 +153,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('management')["cidr"] = \
             self.find_net_by_name('storage')["cidr"]
 
-        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
-                                          expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
             "Address space intersection between networks:\n",
             task['message'])
@@ -142,13 +164,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('management')["vlan_start"] = None
         self.env.nova_networks_put(self.cluster.id, self.nets)
 
-        resp = self.env.cluster_changes_put(self.cluster.id)
-        self.assertEquals(resp.status, 200)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'deploy')
-
+        task = self.set_cluster_changes_w_error(self.cluster.id)
         self.assertIn(
             'Some untagged networks are assigned to the same physical '
             'interface. You should assign them to different physical '
@@ -166,13 +182,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["netmask"] = '255.255.255.0'
         self.find_net_by_name('management')["cidr"] = '192.18.17.0/25'
 
-        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
-                                          expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
             "Address space intersection between networks:\n",
             task['message'])
@@ -189,8 +199,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["gateway"] = '192.18.17.1'
         self.find_net_by_name('public')["netmask"] = '255.255.255.0'
 
-        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
-                                          expect_errors=True)
+        resp = self.env.nova_networks_put(self.cluster.id, self.nets)
         self.assertEquals(resp.status, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
@@ -203,13 +212,7 @@ class TestNovaHandlers(TestNetworkChecking):
              ['192.18.17.129', '192.18.17.190']]
         self.find_net_by_name('public')["gateway"] = '192.18.17.1'
 
-        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
-                                          expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Address space intersection between ranges of public network."
@@ -222,13 +225,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["gateway"] = '192.18.18.1'
         self.find_net_by_name('public')["netmask"] = '255.255.255.0'
 
-        resp = self.env.nova_networks_put(self.cluster.id, self.nets,
-                                          expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Public gateway and public ranges are not in one CIDR."
@@ -393,13 +390,7 @@ class TestNovaHandlers(TestNetworkChecking):
                             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
 
-        resp = self.env.cluster_changes_put(self.cluster.id)
-        self.assertEquals(resp.status, 200)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'deploy')
-
+        task = self.set_cluster_changes_w_error(self.cluster.id)
         self.assertIn(
             "Public and floating networks are not assigned to the "
             "same physical interface. These networks must be assigned "
@@ -607,6 +598,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.assertEquals(task['status'], 'ready')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
+
         ngs_created = self.db.query(NetworkGroup).filter(
             NetworkGroup.name.in_([n['name'] for n in self.nets['networks']])
         ).all()
@@ -632,12 +624,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             node_db.id,
             [{"interfaces": ifaces, "id": node_db.id}])
 
-        resp = self.env.cluster_changes_put(self.cluster.id)
-        self.assertEquals(resp.status, 200)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'deploy')
+        task = self.set_cluster_changes_w_error(self.cluster.id)
         self.assertEquals(
             task['message'].find(
                 "Some networks are "
@@ -651,13 +638,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         admin_ng = self.env.network_manager.get_admin_network_group()
         self.find_net_by_name('storage')["cidr"] = admin_ng.cidr
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
             "Address space intersection between networks:\n",
             task['message'])
@@ -670,12 +651,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
         self.env.neutron_networks_put(self.cluster.id, self.nets)
 
-        resp = self.env.cluster_changes_put(self.cluster.id)
-        self.assertEquals(resp.status, 200)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'deploy')
+        task = self.set_cluster_changes_w_error(self.cluster.id)
         self.assertEquals(
             task['message'].find(
                 "Some untagged networks are "
@@ -691,13 +667,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         virt_nets['net04_ext']['L3']['floating'] = ['172.16.10.130',
                                                     '172.16.10.254']
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Public gateway and public ranges are not in one CIDR."
@@ -707,13 +677,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('public')['cidr'] = '172.16.10.0/24'
         self.find_net_by_name('public')['gateway'] = '172.16.10.1'
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Floating address range 172.16.0.130:172.16.0.254 is not in "
@@ -724,13 +688,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('management')['cidr'] = \
             self.find_net_by_name('storage')['cidr']
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
             "Address space intersection between networks:\n",
             task['message'])
@@ -740,13 +698,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
     def test_network_checking_fails_if_public_gw_ranges_intersect(self):
         self.find_net_by_name('public')['gateway'] = '172.16.0.11'
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Address intersection between public gateway "
@@ -758,13 +710,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             [['172.16.0.2', '172.16.0.77'],
              ['172.16.0.55', '172.16.0.121']]
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Address space intersection between ranges "
@@ -792,13 +738,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
     def test_network_checking_fails_if_network_cidr_too_small(self):
         self.find_net_by_name('management')['cidr'] = '192.168.0.0/25'
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "CIDR size for network 'management' "
@@ -830,13 +770,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('management')['vlan_start'] = '111'
         self.find_net_by_name('storage')['vlan_start'] = '111'
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
             " networks use the same VLAN tags. "
             "You should assign different VLAN tag "
@@ -849,13 +783,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         int = self.nets['neutron_parameters']['predefined_networks']['net04']
         int['L3']['gateway'] = '172.16.10.1'
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Internal gateway 172.16.10.1 is not in "
@@ -867,13 +795,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         int['L3']['cidr'] = '172.16.0.128/26'
         int['L3']['gateway'] = '172.16.0.129'
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Intersection between internal CIDR and floating range."
@@ -881,13 +803,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
     def test_network_fit_abc_classes_exclude_loopback(self):
         self.find_net_by_name('management')['cidr'] = '127.19.216.0/24'
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "management network address space is inside loopback range "
@@ -896,13 +812,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         )
 
         self.find_net_by_name('management')['cidr'] = '227.19.216.0/24'
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "management network address space does not belong to "
@@ -912,13 +822,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
     def test_network_gw_and_ranges_intersect_w_subnet_or_broadcast(self):
         self.find_net_by_name('public')['gateway'] = '172.16.0.0'
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "public network gateway address is equal to either subnet address "
@@ -926,13 +830,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         )
 
         self.find_net_by_name('public')['gateway'] = '172.16.0.255'
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "public network gateway address is equal to either subnet address "
@@ -942,13 +840,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('public')['gateway'] = '172.16.0.125'
         self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.0',
                                                          '172.16.0.122']]
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "public network IP range [172.16.0.0-172.16.0.122] intersect "
@@ -957,13 +849,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
         self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.255',
                                                          '172.16.0.255']]
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "public network IP range [172.16.0.255-172.16.0.255] intersect "
@@ -975,13 +861,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         virt_nets = self.nets['neutron_parameters']['predefined_networks']
         virt_nets['net04_ext']['L3']['floating'] = ['172.16.0.0',
                                                     '172.16.0.33']
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Neutron L3 external floating range [172.16.0.0-172.16.0.33] "
@@ -991,13 +871,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
         virt_nets['net04_ext']['L3']['floating'] = ['172.16.0.155',
                                                     '172.16.0.255']
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Neutron L3 external floating range [172.16.0.155-172.16.0.255] "
@@ -1009,13 +883,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
                                                     '172.16.0.199']
         virt_nets['net04']['L3']['cidr'] = '192.168.111.0/24'
         virt_nets['net04']['L3']['gateway'] = '192.168.111.0'
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Neutron L3 internal network gateway address is equal to "
@@ -1023,13 +891,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         )
 
         virt_nets['net04']['L3']['gateway'] = '192.168.111.255'
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets,
-                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "Neutron L3 internal network gateway address is equal to "
@@ -1068,6 +930,7 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
         self.assertEquals(task['status'], 'ready')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
+
         ngs_created = self.db.query(NetworkGroup).filter(
             NetworkGroup.name.in_([n['name'] for n in self.nets['networks']])
         ).all()
@@ -1097,12 +960,7 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
             self.env.nodes[0].id,
             [{"interfaces": ifaces, "id": self.env.nodes[0].id}])
 
-        resp = self.env.cluster_changes_put(self.cluster.id)
-        self.assertEquals(resp.status, 200)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'deploy')
+        task = self.set_cluster_changes_w_error(self.cluster.id)
         self.assertIn(
             "Some networks are "
             "assigned to the same physical interface as "
@@ -1115,12 +973,7 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
     def test_network_checking_failed_if_networks_tags_in_neutron_range(self):
         self.find_net_by_name('storage')['vlan_start'] = 1000
 
-        resp = self.env.neutron_networks_put(self.cluster.id, self.nets)
-        self.assertEquals(resp.status, 202)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
             "VLAN tags of storage network(s) intersect with "

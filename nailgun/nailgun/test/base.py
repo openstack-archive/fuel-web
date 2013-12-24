@@ -51,8 +51,10 @@ from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import RedHatAccount
-from nailgun.db.sqlalchemy.models import Release
 from nailgun.db.sqlalchemy.models import Task
+
+# here come objects
+from nailgun.objects import Release
 
 from nailgun.network.manager import NetworkManager
 from nailgun.wsgi import build_app
@@ -123,11 +125,8 @@ class Environment(object):
                 self.db.query(Release).get(release['id'])
             )
         else:
-            release = Release()
-            for field, value in release_data.iteritems():
-                setattr(release, field, value)
-            self.db.add(release)
-            self.db.commit()
+            release = Release.create(release_data)
+            db().commit()
             self.releases.append(release)
         return release
 

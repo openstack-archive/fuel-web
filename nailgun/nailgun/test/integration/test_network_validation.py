@@ -1113,7 +1113,7 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
             self.assertIn(net, task['message'])
 
     def test_network_checking_failed_if_networks_tags_in_neutron_range(self):
-        self.find_net_by_name('storage')['vlan_start'] += 1000
+        self.find_net_by_name('storage')['vlan_start'] = 1000
 
         resp = self.env.neutron_networks_put(self.cluster.id, self.nets)
         self.assertEquals(resp.status, 202)

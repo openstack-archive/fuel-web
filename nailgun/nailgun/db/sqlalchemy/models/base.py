@@ -24,8 +24,10 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from nailgun.db.sqlalchemy.models.fields import JSON
 
+from nailgun.openstack.common.db.sqlalchemy import models
 
-Base = declarative_base()
+
+Base = declarative_base(cls=models.ModelBase)
 
 
 class CapacityLog(Base):

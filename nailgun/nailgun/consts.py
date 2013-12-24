@@ -14,30 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-Handlers dealing with releases
-"""
-
-from nailgun.api.handlers.base import CollectionHandler
-from nailgun.api.handlers.base import SingleHandler
-
-from nailgun.api.validators.release import ReleaseValidator
-
-from nailgun.objects import Release as ReleaseObject
-from nailgun.objects import ReleaseCollection
+from collections import namedtuple
 
 
-class ReleaseHandler(SingleHandler):
-    """Release single handler
-    """
-
-    single = ReleaseObject
-    validator = ReleaseValidator
+Enum = lambda *values: namedtuple('Enum', values)(*values)
 
 
-class ReleaseCollectionHandler(CollectionHandler):
-    """Release collection handler
-    """
-
-    validator = ReleaseValidator
-    collection = ReleaseCollection
+RELEASE_STATES = Enum(
+    'not_available',
+    'downloading',
+    'error',
+    'available'
+)

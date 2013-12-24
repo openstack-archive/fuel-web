@@ -110,3 +110,11 @@ class ReleaseValidator(BasicValidator):
                     log_message=True
                 )
         return d
+
+    @classmethod
+    def validate_delete(cls, instance):
+        if instance.clusters:
+            raise errors.CannotDelete(
+                "Can't delete release with "
+                "clusters assigned"
+            )

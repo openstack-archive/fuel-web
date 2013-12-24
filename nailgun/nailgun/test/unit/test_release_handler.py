@@ -25,7 +25,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_release_put_change_name_and_version(self):
         release = self.env.create_release(api=False)
         resp = self.app.put(
-            reverse('ReleaseHandler', kwargs={'release_id': release.id}),
+            reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
             params=json.dumps({
                 'name': 'modified release',
                 'version': '5.1'
@@ -43,7 +43,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_release_put_returns_400_if_no_body(self):
         release = self.env.create_release(api=False)
         resp = self.app.put(
-            reverse('ReleaseHandler', kwargs={'release_id': release.id}),
+            reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
             "",
             headers=self.default_headers,
             expect_errors=True)
@@ -53,7 +53,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=False)
         resp = self.app.delete(
             reverse('ReleaseHandler',
-                    kwargs={'release_id': cluster.release.id}),
+                    kwargs={'obj_id': cluster.release.id}),
             headers=self.default_headers,
             expect_errors=True
         )

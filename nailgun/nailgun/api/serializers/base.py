@@ -17,6 +17,8 @@
 
 class BasicSerializer(object):
 
+    fields = ()
+
     @classmethod
     def serialize(cls, instance, fields=None):
         data_dict = {}

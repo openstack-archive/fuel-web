@@ -66,18 +66,26 @@ class Release(Base):
         cascade="all,delete"
     )
 
+    #TODO(enchantner): get rid of properties
+
     @property
     def roles(self):
         return [role.name for role in self.role_list]
 
     @roles.setter
     def roles(self, new_roles):
-        db().query(Role).filter(not_(Role.name.in_(new_roles))).filter(
-            Role.release_id == self.id).delete(synchronize_session='fetch')
+        db().query(Role).filter(
+            not_(Role.name.in_(new_roles))
+        ).filter(
+            Role.release_id == self.id
+        ).delete(synchronize_session='fetch')
+
         added_roles = self.roles
         for role in new_roles:
             if role not in added_roles:
-                self.role_list.append(
-                    Role(name=role, release=self)
+                new_role = Role(
+                    name=role,
+                    release=self
                 )
+                db().add(new_role)
                 added_roles.append(role)

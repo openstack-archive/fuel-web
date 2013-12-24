@@ -82,7 +82,7 @@ from nailgun.api.handlers.version import VersionHandler
 urls = (
     r'/releases/?$',
     ReleaseCollectionHandler,
-    r'/releases/(?P<release_id>\d+)/?$',
+    r'/releases/(?P<obj_id>\d+)/?$',
     ReleaseHandler,
 
     r'/clusters/?$',

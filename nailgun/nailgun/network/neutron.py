@@ -109,7 +109,7 @@ class NeutronManager(NetworkManager):
         elif cluster.net_segment_type == 'vlan':
             res["phys_nets"]["physnet2"]["vlan_range"] = [
                 1000,
-                2999
+                1050
             ]
         return res
 

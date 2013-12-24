@@ -288,7 +288,7 @@ package in Ubuntu is outdated)::
 Building Documentation
 ----------------------
 
-#. You will need to follow steps from :ref:`nailgun_dependencies` section to build documentation::
+#. You will need to follow steps from :ref:`nailgun_dependencies` section to build documentation.
 
 #. Look at the list of available formats and generate the one you need::
 

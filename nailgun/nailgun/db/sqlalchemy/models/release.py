@@ -24,6 +24,7 @@ from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import not_
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
@@ -35,20 +36,19 @@ class Release(Base):
     __table_args__ = (
         UniqueConstraint('name', 'version'),
     )
-    STATES = (
-        'not_available',
-        'downloading',
-        'error',
-        'available'
-    )
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(100), nullable=False)
     version = Column(String(30), nullable=False)
     description = Column(Unicode)
     operating_system = Column(String(50), nullable=False)
-    state = Column(Enum(*STATES, name='release_state'),
-                   nullable=False,
-                   default='not_available')
+    state = Column(
+        Enum(
+            *consts.RELEASE_STATES,
+            name='release_state'
+        ),
+        nullable=False,
+        default='not_available'
+    )
     networks_metadata = Column(JSON, default=[])
     attributes_metadata = Column(JSON, default={})
     volumes_metadata = Column(JSON, default={})
@@ -66,18 +66,26 @@ class Release(Base):
         cascade="all,delete"
     )
 
+    #TODO(enchantner): get rid of properties
+
     @property
     def roles(self):
         return [role.name for role in self.role_list]
 
     @roles.setter
     def roles(self, new_roles):
-        db().query(Role).filter(not_(Role.name.in_(new_roles))).filter(
-            Role.release_id == self.id).delete(synchronize_session='fetch')
+        db().query(Role).filter(
+            not_(Role.name.in_(new_roles))
+        ).filter(
+            Role.release_id == self.id
+        ).delete(synchronize_session='fetch')
+
         added_roles = self.roles
         for role in new_roles:
             if role not in added_roles:
-                self.role_list.append(
-                    Role(name=role, release=self)
+                new_role = Role(
+                    name=role,
+                    release=self
                 )
+                db().add(new_role)
                 added_roles.append(role)

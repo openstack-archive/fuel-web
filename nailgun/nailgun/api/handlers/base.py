@@ -137,3 +137,90 @@ class BaseHandler(object):
             raise web.notfound('{0} not found'.format(model.__name__))
 
         return node_query
+
+
+class SingleHandler(BaseHandler):
+
+    validator = BasicValidator
+    single = None
+
+    @content_json
+    def GET(self, obj_id):
+        """:returns: JSONized REST object.
+        :http: * 200 (OK)
+               * 404 (object not found in db)
+        """
+        obj = self.get_object_or_404(
+            self.single.model,
+            obj_id
+        )
+        return self.single.to_json(obj)
+
+    @content_json
+    def PUT(self, obj_id):
+        """:returns: JSONized REST object.
+        :http: * 200 (OK)
+               * 404 (object not found in db)
+        """
+        obj = self.get_object_or_404(
+            self.single.model,
+            obj_id
+        )
+
+        try:
+            data = self.checked_data(
+                self.validator.validate_update,
+                instance=obj
+            )
+        except (errors.AlreadyExists, errors.InvalidData) as exc:
+            raise web.badrequest(str(exc))
+
+        self.single.update(obj, data)
+        return self.single.to_json(obj)
+
+    def DELETE(self, obj_id):
+        """:returns: Empty string
+        :http: * 204 (object successfully deleted)
+               * 404 (object not found in db)
+        """
+        obj = self.get_object_or_404(
+            self.single.model,
+            obj_id
+        )
+
+        try:
+            self.validator.validate_delete(obj)
+        except errors.CannotDelete as exc:
+            raise web.badrequest(str(exc))
+
+        self.single.delete(obj)
+        raise web.webapi.HTTPError(
+            status="204 No Content",
+            data=""
+        )
+
+
+class CollectionHandler(BaseHandler):
+
+    validator = BasicValidator
+    collection = None
+
+    @content_json
+    def GET(self):
+        """:returns: Collection of JSONized REST objects.
+        :http: * 200 (OK)
+        """
+        return self.collection.to_json()
+
+    @content_json
+    def POST(self):
+        """:returns: JSONized REST object.
+        :http: * 201 (object successfully created)
+               * 400 (invalid object data specified)
+               * 409 (object with such parameters already exists)
+        """
+        data = self.checked_data()
+        new_obj = self.collection.create(data)
+        return web.webapi.created(
+            self.collection.single.to_json(new_obj)
+        )

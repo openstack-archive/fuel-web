@@ -65,7 +65,8 @@ class CapacityLogHandler(BaseHandler):
         raise web.accepted(data=data)
 
 
-class CapacityLogCsvHandler(object):
+class CapacityLogCsvHandler(BaseHandler):
+
     def GET(self):
         capacity_log = db().query(CapacityLog).\
             order_by(CapacityLog.datetime.desc()).first()

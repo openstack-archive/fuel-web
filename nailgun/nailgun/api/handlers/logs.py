@@ -288,7 +288,7 @@ class LogEntryCollectionHandler(BaseHandler):
         }
 
 
-class LogPackageHandler(object):
+class LogPackageHandler(BaseHandler):
     """Log package handler
     """
     @content_json

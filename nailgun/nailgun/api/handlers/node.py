@@ -604,7 +604,7 @@ class NodeNICsVerifyHandler(BaseHandler):
         return map(self.render, topo, fields=fields_with_conflicts)
 
 
-class NodesAllocationStatsHandler(object):
+class NodesAllocationStatsHandler(BaseHandler):
     """Node allocation stats handler
     """
 

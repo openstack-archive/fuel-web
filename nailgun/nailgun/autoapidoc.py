@@ -38,7 +38,7 @@ class SampleGenerator(object):
     @classmethod
     def _ishandler(cls, obj):
             return inspect.isclass(obj) and issubclass(obj, JSONHandler) and \
-                obj.__name__ in urls[::2]
+                obj.__name__ in urls[1::2]
 
     @classmethod
     def _ishandlermethod(cls, obj):

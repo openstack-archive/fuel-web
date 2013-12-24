@@ -14,30 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-Handlers dealing with releases
-"""
+from nailgun.objects.base import NailgunObject
+from nailgun.objects.base import NailgunCollection
 
-from nailgun.api.handlers.base import CollectionHandler
-from nailgun.api.handlers.base import SingleHandler
-
-from nailgun.api.validators.release import ReleaseValidator
-
-from nailgun.objects import Release as ReleaseObject
-from nailgun.objects import ReleaseCollection
-
-
-class ReleaseHandler(SingleHandler):
-    """Release single handler
-    """
-
-    single = ReleaseObject
-    validator = ReleaseValidator
-
-
-class ReleaseCollectionHandler(CollectionHandler):
-    """Release collection handler
-    """
-
-    validator = ReleaseValidator
-    collection = ReleaseCollection
+from nailgun.objects.release import Release
+from nailgun.objects.release import ReleaseCollection

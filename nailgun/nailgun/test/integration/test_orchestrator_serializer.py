@@ -470,6 +470,26 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 self.assertEquals(attrs['storage_address'],
                                   node['storage_address'])
 
+    def test_neutron_l3_gateway(self):
+        cluster = self.create_env('multinode', 'gre')
+        test_gateway = "192.168.111.255"
+        public_ng = self.db.query(NetworkGroup).filter(
+            NetworkGroup.name == 'public'
+        ).filter(
+            NetworkGroup.cluster_id == cluster.id
+        ).first()
+        public_ng.gateway = test_gateway
+        self.db.add(public_ng)
+        self.db.commit()
+
+        facts = self.serializer.serialize(cluster, cluster.nodes)
+
+        pd_nets = facts[0]["quantum_settings"]["predefined_networks"]
+        self.assertEquals(
+            pd_nets["net04_ext"]["L3"]["gateway"],
+            test_gateway
+        )
+
     def test_gre_segmentation(self):
         cluster = self.create_env('multinode', 'gre')
         facts = self.serializer.serialize(cluster, cluster.nodes)

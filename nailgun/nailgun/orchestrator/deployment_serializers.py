@@ -607,10 +607,16 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         for net, net_conf in attrs['predefined_networks'].iteritems():
             cidr = net_conf["L3"].pop("cidr")
-            net_conf["L3"]["subnet"] = pub.cidr if net == "net04_ext" else cidr
-            net_conf["L3"]["gateway"] = str(
-                IPNetwork(net_conf["L3"]["subnet"])[1]
-            )
+            if net == "net04_ext":
+                net_conf["L3"]["subnet"] = pub.cidr
+                if pub.gateway:
+                    net_conf["L3"]["gateway"] = pub.gateway
+                else:
+                    net_conf["L3"]["gateway"] = str(IPNetwork(pub.cidr)[1])
+            else:
+                net_conf["L3"]["subnet"] = cidr
+                if not net_conf["L3"]["gateway"]:
+                    net_conf["L3"]["gateway"] = str(IPNetwork(cidr)[1])
             net_conf["L3"]["floating"] = join_range(
                 net_conf["L3"]["floating"]
             )

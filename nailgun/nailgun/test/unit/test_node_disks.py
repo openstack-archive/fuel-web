@@ -665,6 +665,29 @@ class TestVolumeManager(BaseIntegrationTest):
             errors.NotEnoughFreeSpace,
             node.volume_manager.check_volume_sizes_for_deployment)
 
+    def update_ram_and_assert_swap_size(self, node, size, swap_size):
+        new_meta = deepcopy(node.meta)
+        new_meta['memory']['total'] = (1024 ** 2) * size
+        node.meta = new_meta
+        self.env.db.commit()
+        self.assertEquals(node.volume_manager._calc_swap_size(), swap_size)
+
+    def test_root_size_calculation(self):
+        node = self.create_node('controller')
+
+        self.update_ram_and_assert_swap_size(node, 2, 4)
+
+        self.update_ram_and_assert_swap_size(node, 2048, 4096)
+        self.update_ram_and_assert_swap_size(node, 2049, 2049)
+
+        self.update_ram_and_assert_swap_size(node, 8192, 8192)
+        self.update_ram_and_assert_swap_size(node, 8193, 4096)
+
+        self.update_ram_and_assert_swap_size(node, 65536, 32768)
+        self.update_ram_and_assert_swap_size(node, 65537, 4096)
+
+        self.update_ram_and_assert_swap_size(node, 81920, 4096)
+
 
 class TestDisks(BaseIntegrationTest):
 

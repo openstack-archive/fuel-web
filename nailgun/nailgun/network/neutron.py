@@ -127,20 +127,20 @@ class NeutronManager(NetworkManager):
             ifaces = [node.admin_interface]
         # assign private network to dedicated NIC for vlan
         if node.cluster.net_segment_type == 'vlan':
-            map(ifaces[0].assigned_networks.append,
+            map(ifaces[0].assigned_networks_list.append,
                 filter(lambda ng: ng.name != 'private',
                        cls.get_cluster_networkgroups_by_node(node)))
             if len(ifaces) > 1:
                 ifaces.pop(0)
-            map(ifaces[0].assigned_networks.append,
+            map(ifaces[0].assigned_networks_list.append,
                 filter(lambda ng: ng.name == 'private',
                        cls.get_cluster_networkgroups_by_node(node)))
         # assign all remaining networks
         else:
-            map(ifaces[0].assigned_networks.append,
+            map(ifaces[0].assigned_networks_list.append,
                 cls.get_cluster_networkgroups_by_node(node))
 
-        node.admin_interface.assigned_networks.append(
+        node.admin_interface.assigned_networks_list.append(
             cls.get_admin_network_group()
         )
 
@@ -166,13 +166,13 @@ class NeutronManager(NetworkManager):
         for nic in node.interfaces:
 
             if nic == node.admin_interface:
-                nic.allowed_networks.append(
+                nic.allowed_networks_list.append(
                     cls.get_admin_network_group()
                 )
                 continue
 
             for ng in cls.get_cluster_networkgroups_by_node(node):
-                nic.allowed_networks.append(ng)
+                nic.allowed_networks_list.append(ng)
 
         db().commit()
 

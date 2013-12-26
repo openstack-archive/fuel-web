@@ -373,7 +373,7 @@ def environment(params):
     """
     if not has_arguments(params) or params.list:
         acceptable_keys = ["id", "status", "name", "mode",
-                           "release", "changes"]
+                           "release_id", "changes"]
         data = json_api_get_request("clusters/")
         if params.env:
             data = filter(
@@ -385,7 +385,7 @@ def environment(params):
             format_table(
                 data,
                 acceptable_keys=acceptable_keys,
-                subdict_keys=[("release", u"id")]
+                subdict_keys=[("release_id", u"id")]
             )
         )
     elif params.create:
@@ -600,8 +600,11 @@ def quote_and_join(words):
 def validate_roles(cluster_id, roles):
     roles = set(roles)
     cluster = json_api_get_request("clusters/{0}/".format(cluster_id))
-    roles_metadata = cluster["release"]["roles_metadata"]
-    not_valid_roles = roles - set(cluster["release"]["roles"])
+    release = json_api_get_request("releases/{0}/".format(
+        cluster["release_id"]
+    ))
+    roles_metadata = release["roles_metadata"]
+    not_valid_roles = roles - set(release["roles"])
     if not_valid_roles:
         print_error(
             "{0} are not valid roles for environment {1}"

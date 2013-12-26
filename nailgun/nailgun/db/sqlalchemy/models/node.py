@@ -214,7 +214,7 @@ class Node(Base):
 
         admin_ng = NetworkManager.get_admin_network_group()
         for interface in self.interfaces:
-            if admin_ng in interface.assigned_networks:
+            if admin_ng in interface.assigned_networks_list:
                 return interface
 
         for interface in self.interfaces:
@@ -291,14 +291,36 @@ class NodeNICInterface(Base):
     mac = Column(LowercaseString(17), nullable=False)
     max_speed = Column(Integer)
     current_speed = Column(Integer)
-    allowed_networks = relationship(
+    allowed_networks_list = relationship(
         "NetworkGroup",
         secondary=AllowedNetworks.__table__,
         order_by="NetworkGroup.id")
-    assigned_networks = relationship(
+    assigned_networks_list = relationship(
         "NetworkGroup",
         secondary=NetworkAssignment.__table__,
         order_by="NetworkGroup.id")
     ip_addr = Column(String(25))
     netmask = Column(String(25))
     state = Column(String(25))
+
+    @property
+    def allowed_networks(self):
+        return [
+            {"id": n.id, "name": n.name}
+            for n in self.allowed_networks_list
+        ]
+
+    @allowed_networks.setter
+    def allowed_networks(self, value):
+        self.allowed_networks_list = value
+
+    @property
+    def assigned_networks(self):
+        return [
+            {"id": n.id, "name": n.name}
+            for n in self.assigned_networks_list
+        ]
+
+    @assigned_networks.setter
+    def assigned_networks(self, value):
+        self.assigned_networks_list = value

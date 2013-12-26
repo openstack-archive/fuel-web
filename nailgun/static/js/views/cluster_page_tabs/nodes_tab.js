@@ -447,7 +447,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             _.defaults(this, options);
             this.cluster = this.screen.tab.model;
-            this.collection = new Backbone.Collection(_.map(this.cluster.availableRoles(), function(role) {
+            this.collection = new Backbone.Collection(_.map(this.cluster.get('release').get('roles'), function(role) {
                 var roleData = this.cluster.get('release').get('roles_metadata')[role];
                 var nodesWithRole = this.nodes.filter(function(node) {return node.hasRole(role);});
                 return {

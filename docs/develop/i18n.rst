@@ -19,3 +19,20 @@ If you want to add new strings to the translations file, follow these rules:
 #. If some keys are used in a few places (for example, in utils), move them to
    "common.*" namespace.
 #. Use defaultValue ONLY with dynamically generated keys.
+
+Using Grunt task to validate translations
+=========================================
+You can use the custom Grunt (http://gruntjs.com/) task to validate your translation keys.
+To run the task perform the following steps:
+
+#. Open terminal and cd to fuel-web/nailgun directory.
+#. Run "grunt i18n:validate" to start executing the task.
+   If the number of keys and their values mathces you will see "No mismatches found!"
+   success string, else - you'll see the list of mismatching keys.
+
+Grunt task "i18n:validate" can have argument - either one, or comma-separated list of languages
+to compare with basic English en-US translation. Just type "grunt i18n:validate:zh-CN" to perform
+analysis only among English and Chinese keys. Or you can also type "grunt i18n:validate:zh-CN,ru-RU"
+to perform analysis among English-Chinese and English-Russian keys.
+
+Enjoy!

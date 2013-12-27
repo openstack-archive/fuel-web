@@ -528,8 +528,8 @@ define(['utils', 'deepModel'], function(utils) {
                         }
                     } else if (attr == 'netmask' && utils.validateNetmask(network.get('netmask'))) {
                         networkErrors.netmask = $.t('cluster_page.network_tab.validation.invalid_netmask');
-                    } else if (attr == 'gateway' && !_.isNull(network.get(attr))) {
-                        if (utils.validateIP(network.get('gateway'))) {
+                    } else if (attr == 'gateway') {
+                        if (_.isNull(network.get(attr)) || utils.validateIP(network.get('gateway'))) {
                             networkErrors.gateway = $.t('cluster_page.network_tab.validation.invalid_gateway');
                         } else if (network.get('name') == 'public' && publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, network.get('gateway'))) {
                             networkErrors.gateway = $.t('cluster_page.network_tab.validation.gateway_is_out_of_ip_range');

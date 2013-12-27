@@ -19,7 +19,18 @@
                     "kb": "KB",
                     "mb": "MB",
                     "gb": "GB",
-                    "tb": "TB"
+                    "tb": "TB",
+                    "temp": {
+                        "my1": {
+                            "my2": {
+                                "my3":{
+                                    "my4": {
+                                        "my5": "5"
+                                    }
+                                }
+                            }
+                        }
+                    }
                 },
                 "node":"__count__ node",
                 "node_plural":"__count__ nodes"
@@ -464,7 +475,18 @@
                     "kb": "KB",
                     "mb": "MB",
                     "gb": "GB",
-                    "tb": "TB"
+                    "tb": "TB",
+                    "temp": {
+                        "my1": {
+                            "my2": {
+                                "my3":{
+                                    "my4": {
+                                           "jjj": "ll"
+                                    }
+                                }
+                            }
+                        }
+                    }
                 },
                 "node":"__count__个节点",
                 "node_plural":"__count__个节点"

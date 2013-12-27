@@ -91,6 +91,64 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
+    grunt.loadNpmTasks('grunt-debug-task');
     grunt.registerTask('build', ['bower', 'less', 'requirejs']);
     grunt.registerTask('default', ['build']);
+    grunt.registerTask('validate_translations', function() {
+        var _ = require('lodash-node');
+        var file = 'static/i18n/translation.json',
+            fileContents = grunt.file.readJSON(file),
+            englishTranslations = _.pluck(fileContents, 'translation')[0],
+            chineseTranslations = _.pluck(fileContents, 'translation')[1],
+            GlobalValues = {};
+        GlobalValues.languageToCompareToEnglish = 'Chinese';
+        GlobalValues.viceVersaComparison = false;
+        initializeForCalculation(englishTranslations, chineseTranslations);
+
+        GlobalValues.viceVersaComparison = true;
+        initializeForCalculation(chineseTranslations, englishTranslations);
+
+        function initializeForCalculation(obj1, obj2) {
+            GlobalValues.stackedValues = [];
+            GlobalValues.path = [];
+            GlobalValues.arrayToCompareWith = obj2;
+            GlobalValues.missingKeys = [];
+            grunt.log.writeln();
+            grunt.log.writeln('Comparing translation keys...');
+            grunt.log.writeln();
+            compare(obj1);
+            (GlobalValues.missingKeys.length) ? displayMissingKeys() : grunt.log.oklns('No mismatches found!');
+        }
+        function compare(obj) {
+            _.each(obj, function (value, key) {
+                if (!_.isArray(value)) {
+                    if (!_.contains(_.keys(getLastObject()), key)) {
+                        GlobalValues.missingKeys.push(GlobalValues.stackedValues.join('.')+'.'+key);
+                    }
+                    else {
+                        if (_.isObject(value)) {
+                            GlobalValues.stackedValues.push(key);
+                            compare(value);
+                            GlobalValues.stackedValues.pop();
+                        }
+                    }
+                }
+            });
+        }
+        function getLastObject() {
+            var temp = GlobalValues.arrayToCompareWith;
+            _.each(GlobalValues.stackedValues, function (elem, index) {
+                temp = temp[elem];
+            }, this);
+            return temp;
+        }
+        function displayMissingKeys() {
+            (GlobalValues.viceVersaComparison)
+                ? grunt.log.errorlns('The list of keys present in ' + GlobalValues.languageToCompareToEnglish + ' but absent in English:')
+                : grunt.log.errorlns('The list of keys missing in ' + GlobalValues.languageToCompareToEnglish + ':');
+            _.each(GlobalValues.missingKeys, function(elem) {
+                grunt.log.writeln(elem);
+            });
+        }
+    });
 };

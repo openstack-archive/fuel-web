@@ -91,6 +91,50 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
+    grunt.loadNpmTasks('grunt-debug-task');
     grunt.registerTask('build', ['bower', 'less', 'requirejs']);
     grunt.registerTask('default', ['build']);
+    grunt.registerTask('validate_translations', function() {
+       var _ = require('lodash-node');
+        var file = 'static/i18n/translation.json';
+        var fileContents = grunt.file.readJSON(file);
+        var englishTranslations = _.pluck(fileContents, 'translation')[0];
+        var chineseTranslations = _.pluck(fileContents, 'translation')[1];
+        var englishTranslationStack = [];
+        var chineseTranslationStack = [];
+       _.map(englishTranslations, function(el){
+            englishTranslationStack.push(_.keys(el));
+            return _.map(el, function(el2) {
+                return (_.isObject(el2)) ? englishTranslationStack.push(_.keys(el2)) : el2;
+            });
+        });
+       _.map(chineseTranslations, function(el){
+           chineseTranslationStack.push(_.keys(el));
+           return _.map(el, function(el2) {
+               return (_.isObject(el2)) ? chineseTranslationStack.push(_.keys(el2)) : el2;
+           });
+       });
+        for (var i= 0; i<englishTranslationStack.length; i++) {
+            for (var j=0; j<chineseTranslationStack.length; j++) {
+                if (i==j) {
+                     if (englishTranslationStack[i].length != chineseTranslationStack[j].length) {
+                         var translationsHavingMoreKeys,
+                             translationHavingLessKeys;
+                         if (englishTranslationStack[i].length > chineseTranslationStack[j].length) {
+                             translationsHavingMoreKeys = englishTranslationStack[i];
+                             translationHavingLessKeys = chineseTranslationStack[j];
+                         } else {
+                             translationsHavingMoreKeys = englishTranslationStack[i];
+                             translationHavingLessKeys = chineseTranslationStack[j];
+                         }
+                         _.each(translationsHavingMoreKeys, function (key) {
+                             if (_.indexOf(translationHavingLessKeys, key) < 0) {
+                                   grunt.log.errorlns('Mismatches found! The missing key - '+ key);
+                             }
+                         });
+                    }
+                }
+            }
+        }
+    });
 };

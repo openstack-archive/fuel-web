@@ -91,6 +91,8 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
+    grunt.loadNpmTasks('grunt-debug-task');
     grunt.registerTask('build', ['bower', 'less', 'requirejs']);
     grunt.registerTask('default', ['build']);
+    grunt.task.loadTasks('grunt');
 };

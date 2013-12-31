@@ -5,39 +5,35 @@
 <div class="modal-body display-changes-dialog">
 
   <!-- Changes list -->
-  <% var addedNodes = cluster.get('nodes').where({pending_addition: true}).length %>
-  <% if (addedNodes) { %>
-    <div class="deploy-task-name"><%- $.t("dialog.display_changes.added_node", {nodesCount: addedNodes }) %></div>
+  <% var nodes = cluster.get('nodes') %>
+  <% var addedNodes = nodes.where({pending_addition: true}) %>
+  <% if (addedNodes.length) { %>
+    <div class="deploy-task-name"><%- $.t("dialog.display_changes.added_node", {nodesCount: addedNodes.length }) %></div>
   <% } %>
-  <% var deletedNodes = cluster.get('nodes').where({pending_deletion: true}).length %>
-  <% if (deletedNodes) { %>
-    <div class="deploy-task-name"><%- $.t("dialog.display_changes.deleted_node", {nodesCount: deletedNodes }) %></div>
+  <% var deletedNodes = nodes.where({pending_deletion: true}) %>
+  <% if (deletedNodes.length) { %>
+    <div class="deploy-task-name"><%- $.t("dialog.display_changes.deleted_node", {nodesCount: deletedNodes.length }) %></div>
   <% } %>
-  <% var reconfiguredNodes = cluster.get('nodes').filter(function(node) {return !node.get('pending_addition') && !node.get('pending_deletion') && !_.isEmpty(node.get('pending_roles'));}).length %>
-  <% if (reconfiguredNodes) { %>
-    <div class="deploy-task-name"><%- $.t("dialog.display_changes.reconfigured_node", {nodesCount: reconfiguredNodes }) %></div>
+  <% var reconfiguredNodes = nodes.filter(function(node) {return !node.get('pending_addition') && !node.get('pending_deletion') && !_.isEmpty(node.get('pending_roles'));}) %>
+  <% if (reconfiguredNodes.length) { %>
+    <div class="deploy-task-name"><%- $.t("dialog.display_changes.reconfigured_node", {nodesCount: reconfiguredNodes.length }) %></div>
   <% } %>
 
-  <%
-    var settingsChangesDescriptions = {
+  <% var settingsChangesDescriptions = {
       'attributes': $.t("dialog.display_changes.settings_changes.attrs"),
       'networks': $.t("dialog.display_changes.settings_changes.networks"),
       'disks': $.t("dialog.display_changes.settings_changes.disks")
-    }
-  %>
-  <% var nodes = [];
-    _.each(cluster.get('changes'), function(change) {
-      if (_.isArray(change)) {
-        nodes.push(_.last(change));
-      } else { %>
-        <div class="deploy-task-name"><%- $.t("dialog.display_changes.changed_task_name", {item:  settingsChangesDescriptions[change] }) %> </div>
-  <% }}) %>
-  <% if (nodes.length) { %>
-    <div class="deploy-task-item"><%= settingsChangesDescriptions.disks %></div>
+  } %>
+  <% _.each(_.reject(cluster.get('changes'), {name: 'disks'}), function(change) { %>
+    <div class="deploy-task-name"><%- $.t("dialog.display_changes.changed_task_name", {item: settingsChangesDescriptions[change.name] }) %> </div>
+  <% }) %>
+  <% var nodesWithChangedDisks = _.pluck(_.where(cluster.get('changes'), {name: 'disks'}), 'node_id') %>
+  <% if (nodesWithChangedDisks.length) { %>
+    <div class="deploy-task-name"><%- $.t("dialog.display_changes.changed_task_name", {item: settingsChangesDescriptions.disks }) %> </div>
     <ul>
-      <% _.each(nodes, function(node) { %>
-        <% if (cluster.get('nodes').get(node)) { %>
-          <li><%= cluster.get('nodes').get(node).get('name') %></li>
+      <% _.each(nodesWithChangedDisks, function(nodeId) { %>
+        <% if (nodes.get(nodeId)) { %>
+          <li><%- nodes.get(nodeId).get('name') %></li>
         <% } %>
       <% }) %>
     </ul>

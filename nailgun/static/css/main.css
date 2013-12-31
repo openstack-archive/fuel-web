@@ -1647,6 +1647,7 @@ input.vlan-tagging {
 
 .display-changes-dialog > ul {
   margin-left: 35px;
+  font-size: 13px;
 }
 
 .pending-deletion-flag {

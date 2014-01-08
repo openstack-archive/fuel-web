@@ -6,7 +6,7 @@
             "name": "Havana on CentOS 6.4",
             "version": "2013.2.1",
             "operating_system": "CentOS",
-            "description": "This option will install the OpenStack Havana packages using CentOS as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment.",
+            "description": "This option will install the OpenStack Havana packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment.",
             "state": "available",
             "modes_metadata": {
                 "multinode": {

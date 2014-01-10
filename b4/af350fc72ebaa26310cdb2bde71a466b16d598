@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Approved+1: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Code-Review+2: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Code-Review+1: Andrew Woodward <xarses@gmail.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: David J. Easter <deaster@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 10 Jan 2014 18:18:57 +0000
+Reviewed-on: https://review.openstack.org/65537
+Project: stackforge/fuel-web
+Branch: refs/heads/master

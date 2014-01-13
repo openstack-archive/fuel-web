@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+1: Matthew Mosesohn <mmosesohn@mirantis.com>
+Approved+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Code-Review+2: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Mon, 13 Jan 2014 16:52:12 +0000
+Reviewed-on: https://review.openstack.org/66320
+Project: stackforge/fuel-web
+Branch: refs/heads/master

@@ -382,9 +382,9 @@
                     "reconfigured_node": "Reconfigured roles of  __nodesCount__ node.",
                     "reconfigured_node_plural": "Reconfigured roles of  __nodesCount__ nodes.",
                     "settings_changes": {
-                        "attrs": "OpenStack settings",
-                        "networks": "Network settings",
-                        "disks": "Changed disk configuration of the following nodes:"
+                        "attrs": "OpenStack settings.",
+                        "networks": "network settings.",
+                        "disks": "disk configuration of the following nodes:"
                     },
                     "warnings": {
                         "controller": "Environment should have __nodeSize__ controller node",

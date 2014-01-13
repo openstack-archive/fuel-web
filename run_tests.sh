@@ -163,7 +163,7 @@ function run_ui_tests {
         echo -n "Killing old test server... "
         sleep 5
     fi
-    test_server_log_file=`tempfile`
+    test_server_log_file=`mktemp /tmp/temp.XXXX`
     for test_file in $ui_test_files; do
         echo -n "Starting test server for $test_file ... "
         ./manage.py dropdb > /dev/null
@@ -236,7 +236,7 @@ function run_cli_tests {
         echo -n "Killing old test server... "
         sleep 5
     fi
-    test_server_log_file=`tempfile`
+    test_server_log_file=`mktemp /tmp/temp.XXXX`
     # for test_file in $ui_test_files; do
     echo -n "Starting test server ... "
     ./manage.py dropdb > /dev/null

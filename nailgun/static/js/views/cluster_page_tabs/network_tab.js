@@ -331,7 +331,12 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             var target = $(e.currentTarget);
             this.composeIpRangesRows(target, addRange);
             if (target.hasClass('use-vlan-tagging')) { // toggle VLAN ID input field on checkbox
-                target.parents('.range-row').find('.parameter-control:last').toggle(target.is(':checked'));
+                var vlanIdControl = target.parents('.range-row').find('.parameter-control:last');
+                var isChecked = target.is(':checked');
+                vlanIdControl.toggle(isChecked);
+                if (isChecked) {
+                    vlanIdControl.find('input').focus();
+                }
             }
             if (target.attr('name') == 'fixed-amount') {// storing fixedAmount
                 this.tab.fixedAmount = parseInt(target.val(), 10) || this.tab.fixedAmount;

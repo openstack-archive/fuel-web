@@ -83,7 +83,7 @@
             "support_page": {
                 "title": "Support",
                 "contact_text": "If you need to report a problem or just suggest an improvement, click the button below. We will get back to you as soon as possible.",
-                "irc_text": "If you have any questions, you can also reach out developers on the IRC channel",
+                "irc_text": "If you have any questions, you can also reach out to developers on the IRC channel",
                 "log_text": "If you have encountered some bugs or errors, you may also need to provide the support team with deployment and operational logs. You can download them all at once by clicking the button below.",
                 "contact_support": "Contact support",
                 "register_fuel_title": "Register Fuel",

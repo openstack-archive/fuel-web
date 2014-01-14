@@ -22,9 +22,9 @@ import json
 import traceback
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
 
 from nailgun.api.serializers.network_configuration \
@@ -49,7 +49,7 @@ from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
 
-class ProviderHandler(JSONHandler):
+class ProviderHandler(BaseHandler):
     """Base class for network configuration handlers
     """
 

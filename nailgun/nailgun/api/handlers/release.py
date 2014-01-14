@@ -22,14 +22,14 @@ import json
 
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.validators.release import ReleaseValidator
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Release
 
 
-class ReleaseHandler(JSONHandler):
+class ReleaseHandler(BaseHandler):
     """Release single handler
     """
 
@@ -95,7 +95,7 @@ class ReleaseHandler(JSONHandler):
         )
 
 
-class ReleaseCollectionHandler(JSONHandler):
+class ReleaseCollectionHandler(BaseHandler):
     """Release collection handler
     """
 

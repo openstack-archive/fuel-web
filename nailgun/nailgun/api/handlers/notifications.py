@@ -20,15 +20,15 @@ Handlers dealing with notifications
 
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.validators.notification import NotificationValidator
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.settings import settings
 
 
-class NotificationHandler(JSONHandler):
+class NotificationHandler(BaseHandler):
     """Notification single handler
     """
 
@@ -46,7 +46,7 @@ class NotificationHandler(JSONHandler):
 
     @classmethod
     def render(cls, instance, fields=None):
-        json_data = JSONHandler.render(instance, fields=cls.fields)
+        json_data = BaseHandler.render(instance, fields=cls.fields)
         json_data["time"] = ":".join([
             instance.datetime.strftime("%H"),
             instance.datetime.strftime("%M"),
@@ -84,7 +84,7 @@ class NotificationHandler(JSONHandler):
         return self.render(notification)
 
 
-class NotificationCollectionHandler(JSONHandler):
+class NotificationCollectionHandler(BaseHandler):
 
     validator = NotificationValidator
 

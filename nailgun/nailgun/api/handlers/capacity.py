@@ -20,9 +20,9 @@ import tempfile
 
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
@@ -33,7 +33,7 @@ Capacity audit handlers
 """
 
 
-class CapacityLogHandler(JSONHandler):
+class CapacityLogHandler(BaseHandler):
     """Task single handler
     """
 

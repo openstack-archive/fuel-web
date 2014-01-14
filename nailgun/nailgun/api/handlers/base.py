@@ -63,7 +63,7 @@ def build_json_response(data):
     return data
 
 
-class JSONHandler(object):
+class BaseHandler(object):
     validator = BasicValidator
     serializer = BasicSerializer
 

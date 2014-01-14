@@ -18,12 +18,12 @@
 Product info handlers
 """
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.settings import settings
 
 
-class VersionHandler(JSONHandler):
+class VersionHandler(BaseHandler):
     """Version info handler
     """
 

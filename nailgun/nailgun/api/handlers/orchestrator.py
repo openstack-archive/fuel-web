@@ -18,8 +18,8 @@ import traceback
 
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.api.validators.node import NodesFilterValidator
 
@@ -57,7 +57,7 @@ class NodesFilterMixin(object):
         return self.get_default_nodes(cluster)
 
 
-class DefaultOrchestratorInfo(NodesFilterMixin, JSONHandler):
+class DefaultOrchestratorInfo(NodesFilterMixin, BaseHandler):
     """Base class for default orchestrator data.
     Need to redefine serializer variable
     """
@@ -76,7 +76,7 @@ class DefaultOrchestratorInfo(NodesFilterMixin, JSONHandler):
         return self._serializer.serialize(cluster, nodes)
 
 
-class OrchestratorInfo(JSONHandler):
+class OrchestratorInfo(BaseHandler):
     """Base class for replaced data."""
 
     def get_orchestrator_info(self, cluster):
@@ -165,7 +165,7 @@ class DeploymentInfo(OrchestratorInfo):
         return cluster.replaced_deployment_info
 
 
-class SelectedNodesBase(NodesFilterMixin, JSONHandler):
+class SelectedNodesBase(NodesFilterMixin, BaseHandler):
     """Base class for running task manager on selected nodes."""
 
     @content_json

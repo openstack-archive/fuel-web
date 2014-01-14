@@ -27,8 +27,8 @@ import time
 
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
@@ -70,7 +70,7 @@ def read_backwards(file, bufsize=4096):
             return
 
 
-class LogEntryCollectionHandler(JSONHandler):
+class LogEntryCollectionHandler(BaseHandler):
     """Log entry collection handler
     """
 
@@ -307,7 +307,7 @@ class LogPackageHandler(object):
         return TaskHandler.render(task)
 
 
-class LogSourceCollectionHandler(JSONHandler):
+class LogSourceCollectionHandler(BaseHandler):
     """Log source collection handler
     """
 
@@ -319,7 +319,7 @@ class LogSourceCollectionHandler(JSONHandler):
         return settings.LOGS
 
 
-class LogSourceByNodeCollectionHandler(JSONHandler):
+class LogSourceByNodeCollectionHandler(BaseHandler):
     """Log source by node collection handler
     """
 

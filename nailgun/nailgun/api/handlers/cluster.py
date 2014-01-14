@@ -22,8 +22,8 @@ import json
 import traceback
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.api.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
@@ -42,7 +42,7 @@ from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 
 
-class ClusterHandler(JSONHandler):
+class ClusterHandler(BaseHandler):
     """Cluster single handler
     """
 
@@ -134,7 +134,7 @@ class ClusterHandler(JSONHandler):
         )
 
 
-class ClusterCollectionHandler(JSONHandler):
+class ClusterCollectionHandler(BaseHandler):
     """Cluster collection handler
     """
 
@@ -221,7 +221,7 @@ class ClusterCollectionHandler(JSONHandler):
             raise web.badrequest(e.message)
 
 
-class ClusterChangesHandler(JSONHandler):
+class ClusterChangesHandler(BaseHandler):
     """Cluster changes handler
     """
 
@@ -271,7 +271,7 @@ class ClusterChangesHandler(JSONHandler):
         return TaskHandler.render(task)
 
 
-class ClusterAttributesHandler(JSONHandler):
+class ClusterAttributesHandler(BaseHandler):
     """Cluster attributes handler
     """
 
@@ -324,7 +324,7 @@ class ClusterAttributesHandler(JSONHandler):
         return {"editable": cluster.attributes.editable}
 
 
-class ClusterAttributesDefaultsHandler(JSONHandler):
+class ClusterAttributesDefaultsHandler(BaseHandler):
     """Cluster default attributes handler
     """
 
@@ -380,7 +380,7 @@ class ClusterAttributesDefaultsHandler(JSONHandler):
         return {"editable": cluster.attributes.editable}
 
 
-class ClusterGeneratedData(JSONHandler):
+class ClusterGeneratedData(BaseHandler):
     """Cluster generated data
     """
 

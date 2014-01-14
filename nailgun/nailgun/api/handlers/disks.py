@@ -21,8 +21,8 @@ Handlers dealing with disks
 import traceback
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.validators.node import NodeDisksValidator
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
@@ -32,7 +32,7 @@ from nailgun.logger import logger
 from nailgun.volumes.manager import DisksFormatConvertor
 
 
-class NodeDisksHandler(JSONHandler):
+class NodeDisksHandler(BaseHandler):
     """Node disks handler
     """
 
@@ -75,7 +75,7 @@ class NodeDisksHandler(JSONHandler):
             node.attributes.volumes)
 
 
-class NodeDefaultsDisksHandler(JSONHandler):
+class NodeDefaultsDisksHandler(BaseHandler):
     """Node default disks handler
     """
 
@@ -95,7 +95,7 @@ class NodeDefaultsDisksHandler(JSONHandler):
         return volumes
 
 
-class NodeVolumesInformationHandler(JSONHandler):
+class NodeVolumesInformationHandler(BaseHandler):
     """Node volumes information handler
     """
 

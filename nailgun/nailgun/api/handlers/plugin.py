@@ -22,13 +22,13 @@ Handlers dealing with plugins
 import json
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.plugin.manager import PluginManager
 
 
-class PluginCollectionHandler(JSONHandler):
+class PluginCollectionHandler(BaseHandler):
 
     @content_json
     def GET(self):
@@ -43,7 +43,7 @@ class PluginCollectionHandler(JSONHandler):
         return TaskHandler.render(task)
 
 
-class PluginHandler(JSONHandler):
+class PluginHandler(BaseHandler):
 
     @content_json
     def GET(self, plugin_id):

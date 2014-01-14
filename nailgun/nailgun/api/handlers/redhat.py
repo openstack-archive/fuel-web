@@ -20,9 +20,9 @@ import traceback
 
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.api.validators.redhat import RedHatAccountValidator
 from nailgun.db import db
@@ -32,7 +32,7 @@ from nailgun.logger import logger
 from nailgun.task.manager import RedHatSetupTaskManager
 
 
-class RedHatAccountHandler(JSONHandler):
+class RedHatAccountHandler(BaseHandler):
     """Red Hat account handler
     """
 
@@ -86,7 +86,7 @@ class RedHatAccountHandler(JSONHandler):
         return self.render(account)
 
 
-class RedHatSetupHandler(JSONHandler):
+class RedHatSetupHandler(BaseHandler):
     """Red Hat setup handler
     """
 

@@ -17,7 +17,7 @@
 import inspect
 import json
 
-from nailgun.api.handlers.base import JSONHandler
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.urls.v1 import urls
 from nailgun.test.base import reverse
 
@@ -37,12 +37,12 @@ class SampleGenerator(object):
 
     @classmethod
     def _ishandler(cls, obj):
-            return inspect.isclass(obj) and issubclass(obj, JSONHandler) and \
+            return inspect.isclass(obj) and issubclass(obj, BaseHandler) and \
                 obj.__name__ in urls[::2]
 
     @classmethod
     def _ishandlermethod(cls, obj):
-        return inspect.ismethod(obj) and issubclass(obj.im_class, JSONHandler)
+        return inspect.ismethod(obj) and issubclass(obj.im_class, BaseHandler)
 
     @classmethod
     def generate_handler_url_doc(cls, handler):

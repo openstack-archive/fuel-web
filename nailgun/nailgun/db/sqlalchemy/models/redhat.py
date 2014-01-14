@@ -21,6 +21,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.base import list_attrs
 
 
 class RedHatAccount(Base):
@@ -34,3 +35,8 @@ class RedHatAccount(Base):
                           nullable=False)
     satellite = Column(String(250))
     activation_key = Column(String(300))
+
+    def __repr__(self):
+        return "RedHatAccount\n" + list_attrs(["id", "username", "password",
+                                               "license_type", "satellite",
+                                               "activation_key"], self).__str__()

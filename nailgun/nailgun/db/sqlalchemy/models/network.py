@@ -22,6 +22,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import String
 
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.base import list_attrs
 
 
 class IPAddr(Base):
@@ -35,6 +36,10 @@ class IPAddr(Base):
     network_data = relationship("NetworkGroup")
     node_data = relationship("Node")
 
+    def __repr__(self):
+        return "IPAddr\n" + list_attrs(["id", "network", "node",
+                                        "ip_addr", "network_data",
+                                        "node_data"], self).__str__()
 
 class IPAddrRange(Base):
     __tablename__ = 'ip_addr_ranges'
@@ -42,6 +47,10 @@ class IPAddrRange(Base):
     network_group_id = Column(Integer, ForeignKey('network_groups.id'))
     first = Column(String(25), nullable=False)
     last = Column(String(25), nullable=False)
+
+    def __repr__(self):
+        return "IPAddrRange\n" + list_attrs(["id", "network_group_id",
+                                             "first", "last"], self).__str__()
 
 
 class NetworkGroup(Base):
@@ -94,6 +103,12 @@ class NetworkGroup(Base):
                     return net
         return {}
 
+    def __repr__(self):
+        return "NetworkGroup\n" + list_attrs(["id", "name",
+                                              "release", "cluster_id",
+                                              "network_size", "amount",
+                                              "vlan_start", "cidr", "gateway",
+                                              "netmask"], self).__str__()
 
 class AllowedNetworks(Base):
     __tablename__ = 'allowed_networks'
@@ -109,6 +124,10 @@ class AllowedNetworks(Base):
         nullable=False
     )
 
+    def __repr__(self):
+        return "AllowedNetworks\n" + list_attrs(["id", "network_id",
+                                                 "interface_id"],
+                                                self).__str__()
 
 class NetworkAssignment(Base):
     __tablename__ = 'net_assignments'
@@ -123,3 +142,8 @@ class NetworkAssignment(Base):
         ForeignKey('node_nic_interfaces.id', ondelete="CASCADE"),
         nullable=False
     )
+
+    def __repr__(self):
+        return "NetworkAssignment\n" + list_attrs(["id", "network_id",
+                                                   "interface_id"],
+                                                  self).__str__()

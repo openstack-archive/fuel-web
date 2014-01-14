@@ -29,6 +29,7 @@ from sqlalchemy.orm import relationship, backref
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.base import list_attrs
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.release import Release
 from nailgun.logger import logger
@@ -50,6 +51,9 @@ class ClusterChanges(Base):
         Enum(*POSSIBLE_CHANGES, name='possible_changes'),
         nullable=False
     )
+    def __repr__(self):
+        return "ClusterChanges\n" + list_attrs(["id", "cluster_id", "node_id",
+                                                "name"], self).__str__()
 
 
 class Cluster(Base):
@@ -227,6 +231,15 @@ class Cluster(Base):
             from nailgun.network.nova_network import NovaNetworkManager
             return NovaNetworkManager
 
+    def __repr__(self):
+        return "Cluster\n" + list_attrs(["id", "name", "mode", "status",
+                                         "net_provider", "net_l23_provider",
+                                         "net_segment_type", "net_manager",
+                                         "grouping", "release_id",
+                                         "dns_nameservers",
+                                         "replaced_deployment_info",
+                                         "replaced_provisioning_info",
+                                         "is_customized"], self).__str__()
 
 class AttributesGenerators(object):
     @classmethod
@@ -301,3 +314,7 @@ class Attributes(Base):
                 })
             attrs.pop('additional_components')
         return attrs
+
+    def __repr__(self):
+        return "Attributes\n" + list_attrs(["id",
+                                            "cluster_id"], self).__str__()

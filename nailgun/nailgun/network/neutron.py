@@ -111,35 +111,6 @@ class NeutronManager(NetworkManager):
         return {}
 
     @classmethod
-    def assign_networks_by_default(cls, node):
-        cls.clear_assigned_networks(node)
-        # exclude admin interface if it is not only the interface
-        ifaces = [iface for iface in node.interfaces
-                  if iface.id != node.admin_interface.id]
-        if not ifaces:
-            ifaces = [node.admin_interface]
-        # assign private network to dedicated NIC for vlan
-        if node.cluster.net_segment_type == 'vlan':
-            map(ifaces[0].assigned_networks_list.append,
-                filter(lambda ng: ng.name != 'private',
-                       cls.get_cluster_networkgroups_by_node(node)))
-            if len(ifaces) > 1:
-                ifaces.pop(0)
-            map(ifaces[0].assigned_networks_list.append,
-                filter(lambda ng: ng.name == 'private',
-                       cls.get_cluster_networkgroups_by_node(node)))
-        # assign all remaining networks
-        else:
-            map(ifaces[0].assigned_networks_list.append,
-                cls.get_cluster_networkgroups_by_node(node))
-
-        node.admin_interface.assigned_networks_list.append(
-            cls.get_admin_network_group()
-        )
-
-        db().commit()
-
-    @classmethod
     def get_allowed_nic_networkgroups(cls, node, nic):
         """Get all allowed network groups
         """

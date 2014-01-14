@@ -386,6 +386,21 @@ class NetworkManager(object):
         db().commit()
 
     @classmethod
+    def assign_networks_by_default(cls, node):
+        cls.clear_assigned_networks(node)
+
+        nics = dict((nic.id, nic) for nic in node.interfaces)
+        def_set = cls.get_default_networks_assignment(node)
+        for nic in def_set:
+            ng_ids = [ng['id'] for ng in nic['assigned_networks']]
+            nics[nic['id']].assigned_networks_list.extend(
+                filter(lambda ng: ng.id in ng_ids,
+                       cls.get_cluster_networkgroups_by_node(node) +
+                       [cls.get_admin_network_group()])
+            )
+        db().commit()
+
+    @classmethod
     def get_cluster_networkgroups_by_node(cls, node):
         """Method for receiving cluster network groups by node.
 

@@ -25,7 +25,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import not_
 
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.base import Base, list_attrs
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Role
 
@@ -81,3 +81,8 @@ class Release(Base):
                     Role(name=role, release=self)
                 )
                 added_roles.append(role)
+
+    def __repr__(self):
+        return "Release\n" + list_attrs(["id", "name", "version",
+                                         "description", "operating_system",
+                                         "state"], self).__str__()

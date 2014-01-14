@@ -21,16 +21,6 @@ from nailgun.network.manager import NetworkManager
 class NovaNetworkManager(NetworkManager):
 
     @classmethod
-    def assign_networks_by_default(cls, node):
-        cls.clear_assigned_networks(node)
-
-        for nic in node.interfaces:
-            map(nic.assigned_networks_list.append,
-                cls.get_default_nic_networkgroups(node, nic))
-
-        db().commit()
-
-    @classmethod
     def get_default_networks_assignment(cls, node):
         nics = []
         for nic in node.interfaces:

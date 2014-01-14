@@ -49,6 +49,8 @@
                             "notation": "ip_ranges",
                             "render_type": "ip_ranges",
                             "render_addr_mask": null,
+                            "use_same_vlan_nic": 1,
+                            "map_priority": 0,
                             "assign_vip": false
                         },
                         {
@@ -63,6 +65,8 @@
                             "calculate_cidr": true,
                             "render_type": null,
                             "render_addr_mask": "public",
+                            "use_same_vlan_nic": 1,
+                            "map_priority": 0,
                             "assign_vip": true
                         },
                         {
@@ -73,6 +77,7 @@
                             "notation": "cidr",
                             "render_type": "cidr",
                             "render_addr_mask": "internal",
+                            "map_priority": 1,
                             "assign_vip": true
                         },
                         {
@@ -83,6 +88,7 @@
                             "notation": "cidr",
                             "render_type": "cidr",
                             "render_addr_mask": "storage",
+                            "map_priority": 1,
                             "assign_vip": false
                         },
                         {
@@ -94,6 +100,7 @@
                             "notation": "cidr",
                             "render_type": "cidr",
                             "render_addr_mask": null,
+                            "map_priority": 1,
                             "assign_vip": false
                         }
                     ]
@@ -110,6 +117,7 @@
                             "calculate_cidr": true,
                             "render_type": null,
                             "render_addr_mask": "public",
+                            "map_priority": 0,
                             "assign_vip": true
                         },
                         {
@@ -120,6 +128,7 @@
                             "notation": "cidr",
                             "render_type": "cidr",
                             "render_addr_mask": "internal",
+                            "map_priority": 1,
                             "assign_vip": true
                         },
                         {
@@ -130,6 +139,7 @@
                             "notation": "cidr",
                             "render_type": "cidr",
                             "render_addr_mask": "storage",
+                            "map_priority": 1,
                             "assign_vip": false
                         },
                         {
@@ -140,6 +150,7 @@
                             "notation": null,
                             "render_type": null,
                             "render_addr_mask": null,
+                            "map_priority": 1,
                             "assign_vip": false
                         }
                     ],

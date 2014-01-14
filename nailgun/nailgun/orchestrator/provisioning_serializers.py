@@ -67,7 +67,7 @@ class ProvisioningSerializer(object):
             'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
             'netboot_enabled': '1',
             'kernel_options': {
-                'netcfg/choose_interface': node.admin_interface.name,
+                'netcfg/choose_interface': node.admin_interface.mac,
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'ks_spaces': node.attributes.volumes,

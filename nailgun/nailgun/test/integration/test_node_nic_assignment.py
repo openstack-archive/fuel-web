@@ -48,10 +48,12 @@ class TestClusterHandlers(BaseIntegrationTest):
         response = json.loads(resp.body)
 
         for resp_nic in response:
+            net_names = [net['name'] for net in resp_nic['assigned_networks']]
             if resp_nic['mac'] == mac:
-                self.assertEquals(len(resp_nic['assigned_networks']), 1)
+                self.assertTrue("fuelweb_admin" in net_names)
             else:
-                self.assertGreater(len(resp_nic['assigned_networks']), 0)
+                self.assertTrue("public" in net_names)
+            self.assertGreater(len(resp_nic['assigned_networks']), 0)
 
     def test_allowed_networks_when_node_added(self):
         mac = '123'
@@ -134,10 +136,12 @@ class TestNodeHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
         for resp_nic in response:
+            net_names = [net['name'] for net in resp_nic['assigned_networks']]
             if resp_nic['mac'] == mac:
-                self.assertEquals(len(resp_nic['assigned_networks']), 1)
+                self.assertTrue("fuelweb_admin" in net_names)
             else:
-                self.assertGreater(len(resp_nic['assigned_networks']), 0)
+                self.assertTrue("public" in net_names)
+            self.assertGreater(len(resp_nic['assigned_networks']), 0)
             self.assertGreater(len(resp_nic['allowed_networks']), 0)
 
     def test_network_assignment_when_node_added(self):
@@ -162,11 +166,92 @@ class TestNodeHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
         for resp_nic in response:
+            net_names = [net['name'] for net in resp_nic['assigned_networks']]
             if resp_nic['mac'] == mac:
-                self.assertEquals(len(resp_nic['assigned_networks']), 1)
+                self.assertTrue("fuelweb_admin" in net_names)
             else:
-                self.assertGreater(len(resp_nic['assigned_networks']), 0)
+                self.assertTrue("public" in net_names)
+            self.assertGreater(len(resp_nic['assigned_networks']), 0)
             self.assertGreater(len(resp_nic['allowed_networks']), 0)
+
+    def test_assignment_when_network_cfg_changed_then_node_added(self):
+        cluster = self.env.create_cluster(api=True)
+
+        resp = self.env.nova_networks_get(cluster['id'])
+        nets = json.loads(resp.body)
+        for net in nets['networks']:
+            if net['name'] == 'management':
+                net['vlan_start'] = None
+        resp = self.env.nova_networks_put(cluster['id'], nets)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        mac = '123'
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': 'abc'},
+             {'name': 'eth2', 'mac': 'bcd'}])
+        node = self.env.create_node(api=True, meta=meta, mac=mac)
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            headers=self.default_headers
+        )
+        self.assertEquals(resp.status, 200)
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        response = json.loads(resp.body)
+        net_name_per_nic = [['fuelweb_admin', 'storage', 'fixed'],
+                            ['public', 'floating'],
+                            ['management']]
+        for i, nic in enumerate(response):
+            net_names = set([net['name'] for net in nic['assigned_networks']])
+            self.assertEqual(set(net_name_per_nic[i]), net_names)
+            self.assertGreater(len(nic['allowed_networks']), 0)
+
+        for net in nets['networks']:
+            if net['name'] in ('public', 'floating'):
+                net['vlan_start'] = 111
+            if net['name'] == 'management':
+                net['vlan_start'] = 112
+        resp = self.env.nova_networks_put(cluster['id'], nets)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
+
+        mac = '234'
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': 'cde'},
+             {'name': 'eth2', 'mac': 'def'}])
+        node = self.env.create_node(api=True, meta=meta, mac=mac)
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            headers=self.default_headers
+        )
+        self.assertEquals(resp.status, 200)
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        response = json.loads(resp.body)
+        net_name_per_nic = [['fuelweb_admin', 'storage', 'fixed',
+                            'public', 'floating', 'management'],
+                            [], []]
+        for i, nic in enumerate(response):
+            net_names = set([net['name'] for net in nic['assigned_networks']])
+            self.assertEqual(set(net_name_per_nic[i]), net_names)
+            self.assertGreater(len(nic['allowed_networks']), 0)
 
     def test_assignment_is_removed_when_delete_node_from_cluster(self):
         cluster = self.env.create_cluster(api=True)

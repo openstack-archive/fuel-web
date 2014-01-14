@@ -131,7 +131,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         )
         for n in self.env.nodes:
             self.assertIn(
-                '"floating", "storage", "public" networks '
+                '"admin (PXE)", "storage" networks '
                 'at node "{0}"'.format(n.name),
                 task.message
             )

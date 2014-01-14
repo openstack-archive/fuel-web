@@ -28,10 +28,26 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 Base = declarative_base()
 
 
+def list_attrs(names, o):
+    from UserString import MutableString
+    out_str = MutableString()
+    longest_name = sorted(names, key=len, reverse=True)[0]
+    column_width = len(longest_name)
+    for n in names:
+        spacer = " " * (column_width - len(n))
+        out_str += (n + spacer + " : ")
+        out_str += (getattr(o, n).__repr__() + "\n")
+    return out_str
+
+
 class GlobalParameters(Base):
     __tablename__ = 'global_parameters'
     id = Column(Integer, primary_key=True)
     parameters = Column(JSON, default={})
+
+    def __repr__(self):
+        return "GlobalParameters\n" + list_attrs(["id", "parameters"],
+                                                 self).__str__()
 
 
 class CapacityLog(Base):
@@ -40,3 +56,7 @@ class CapacityLog(Base):
     id = Column(Integer, primary_key=True)
     report = Column(JSON)
     datetime = Column(DateTime, default=datetime.now())
+
+    def __repr__(self):
+        return "CapacityLog\n" + list_attrs(["id", "report", "datetime"],
+                                            self).__str__()

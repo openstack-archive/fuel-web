@@ -22,6 +22,7 @@ from sqlalchemy import Integer
 from sqlalchemy import Text
 
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.base import list_attrs
 
 
 class Notification(Base):
@@ -57,3 +58,9 @@ class Notification(Base):
         default='unread'
     )
     datetime = Column(DateTime, nullable=False)
+
+    def __repr__(self):
+        return "Notification\n" + list_attrs(["id", "cluster_id", "node_id",
+                                              "task_id", "topic", "message",
+                                              "status", "datetime"],
+                                             self).__str__()

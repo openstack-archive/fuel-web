@@ -20,6 +20,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.base import list_attrs
 
 
 class Plugin(Base):
@@ -31,3 +32,7 @@ class Plugin(Base):
     name = Column(String(128), nullable=False, unique=True)
     state = Column(String(128), nullable=False, default='registered')
     version = Column(String(128), nullable=False)
+
+    def __repr__(self):
+        return "Plugin\n" + list_attrs(["id", "type", "name", "state",
+                                        "version"], self).__str__()

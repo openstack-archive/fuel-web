@@ -27,6 +27,7 @@ from sqlalchemy.orm import relationship, backref
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.base import list_attrs
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
 from nailgun.db.sqlalchemy.models.network import AllowedNetworks
@@ -41,12 +42,20 @@ class NodeRoles(Base):
     role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id'))
 
+    def __repr__(self):
+        return "NodeRoles\n" + list_attrs(["id", "role", "node"],
+                                          self).__str__()
+
 
 class PendingNodeRoles(Base):
     __tablename__ = 'pending_node_roles'
     id = Column(Integer, primary_key=True)
     role = Column(Integer, ForeignKey('roles.id', ondelete="CASCADE"))
     node = Column(Integer, ForeignKey('nodes.id'))
+
+    def __repr__(self):
+        return "PendingNodeRoles\n" + list_attrs(["id", "role", "node"],
+                                                 self).__str__()
 
 
 class Role(Base):
@@ -61,6 +70,10 @@ class Role(Base):
         nullable=False
     )
     name = Column(String(50), nullable=False)
+
+    def __repr__(self):
+        return "Role\n" + list_attrs(["id", "release_id", "name"],
+                                     self).__str__()
 
 
 class Node(Base):
@@ -271,6 +284,15 @@ class Node(Base):
         data["interfaces"] = result
         self.meta = data
 
+    def __repr__(self):
+        return "Node\n" + list_attrs(["id", "cluster_id", "name", "status",
+                                      "meta", "mac", "ip", "fqdn",
+                                      "manufacturer", "platform_name",
+                                      "progress", "os_platform",
+                                      "pending_addition", "pending_deletion",
+                                      "error_type", "error_msg", "timestamp",
+                                      "online"], self).__str__()
+
 
 class NodeAttributes(Base):
     __tablename__ = 'node_attributes'
@@ -278,6 +300,10 @@ class NodeAttributes(Base):
     node_id = Column(Integer, ForeignKey('nodes.id'))
     volumes = Column(JSON, default=[])
     interfaces = Column(JSON, default={})
+
+    def __repr__(self):
+        return "NodeAttributes\n" + list_attrs(["id", "node_id", "volumes",
+                                                "interfaces"], self).__str__()
 
 
 class NodeNICInterface(Base):
@@ -324,3 +350,10 @@ class NodeNICInterface(Base):
     @assigned_networks.setter
     def assigned_networks(self, value):
         self.assigned_networks_list = value
+
+    def __repr__(self):
+        return "NodeNicInterface\n" + list_attrs(["id", "node_id", "name",
+                                                  "mac", "max_speed",
+                                                  "current_speed", "ip_addr",
+                                                  "netmask", "state"],
+                                                 self).__str__()

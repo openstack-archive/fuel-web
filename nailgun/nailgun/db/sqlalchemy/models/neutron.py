@@ -20,6 +20,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.base import list_attrs
 from nailgun.db.sqlalchemy.models.fields import JSON
 
 
@@ -42,3 +43,9 @@ class NeutronConfig(Base):
         nullable=False,
         default='vlan'
     )
+
+    def __repr__(self):
+        return "NeutronConfig\n" + list_attrs(["id", "cluster_id",
+                                               "parameters", "L2", "L3",
+                                               "predefined_networks"],
+                                              self).__str__()

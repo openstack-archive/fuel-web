@@ -18,7 +18,7 @@ from datetime import datetime
 from unittest import TestCase
 
 from paste.fixture import TestApp
-from sqlalchemy.orm.events import orm
+from sqlalchemy import orm
 
 from nailgun.db import engine
 from nailgun.db import flush

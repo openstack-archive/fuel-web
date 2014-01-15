@@ -126,6 +126,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 deferred = new $.Deferred();
                 deferred.reject();
             }
+            this.model.fetchRelated('tasks').done(_.bind(function() {
+                this.page.removeFinishedTasks();
+            }, this));
             return deferred;
         },
         scheduleUpdate: function() {
@@ -211,6 +214,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             } else {
                 this.setInitialData();
             }
+            this.model.get('tasks').reset();
         },
         showVerificationErrors: function() {
             var task = this.model.task('verify_networks', 'error') || this.model.task('check_networks', 'error');

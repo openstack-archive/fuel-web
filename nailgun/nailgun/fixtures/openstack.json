@@ -466,7 +466,7 @@
                     },
                     "storage": {
                         "volumes_lvm": {
-                            "value": false,
+                            "value": true,
                             "label": "Cinder LVM over iSCSI for volumes",
                             "description": "Requires at least one Storage - Cinder LVM node.",
                             "weight": 10,
@@ -965,7 +965,7 @@
                     },
                     "storage": {
                         "volumes_lvm": {
-                            "value": false,
+                            "value": true,
                             "label": "Cinder LVM over iSCSI for volumes",
                             "description": "Requires at least one Storage - Cinder LVM node.",
                             "weight": 10,
@@ -1526,7 +1526,7 @@
                     },
                     "storage": {
                         "volumes_lvm": {
-                            "value": false,
+                            "value": true,
                             "label": "Cinder LVM over iSCSI for volumes",
                             "description": "Requires at least one Storage - Cinder LVM node.",
                             "weight": 10,

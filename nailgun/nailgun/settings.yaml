@@ -465,6 +465,10 @@ DUMP:
         to_file: brctl_show.txt
       - type: dir
         path: /etc/sysconfig/network-scripts
+      - type: file
+        path: /etc/resolv.conf
+      - type: file
+        path: /etc/dnsmasq.conf
     slave:
       - type: file
         path: /etc/astute.yaml
@@ -540,3 +544,8 @@ DUMP:
         path: /etc/network/interfaces.d
       - type: file
         path: /etc/network/interfaces
+      - type: file
+        path: /root/post-partition.log
+      - type: command
+        command: blkid -o list
+        to_file: blkid_o_list.txt

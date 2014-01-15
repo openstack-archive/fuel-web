@@ -126,6 +126,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 deferred = new $.Deferred();
                 deferred.reject();
             }
+            this.model.fetchRelated('tasks').done(_.bind(function() {
+                this.page.removeFinishedTasks();
+            }, this));
             return deferred;
         },
         scheduleUpdate: function() {

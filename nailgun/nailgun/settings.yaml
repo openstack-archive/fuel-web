@@ -8,6 +8,7 @@ VERSION:
   astute_sha: "Unknown build"
   fuellib_sha: "Unknown build"
   ostf_sha: "Unknown build"
+  mirantis: "no"
 
 FUEL_KEY: "Unknown"
 

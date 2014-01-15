@@ -107,7 +107,14 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                             this.page.removeFinishedTasks().always(_.bind(function() {
                                 this.defaultButtonsState(false);
                                 this.model.fetch();
-                                this.model.fetchRelated('tasks');
+                                this.model.fetchRelated('tasks').done(_.bind(function() {
+                                    var tasks = this.model.get('tasks');
+                                    if (tasks) {
+                                        tasks.each(function(task) {
+                                            task.destroy({extremelySilent:true});
+                                        }, this);
+                                    }
+                                }, this));
                             }, this));
                         } else {
                             this.hasChanges = false;

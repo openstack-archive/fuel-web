@@ -56,7 +56,7 @@ class TestHandlers(BaseIntegrationTest):
         common_attrs = {
             'deployment_mode': 'ha_compact',
 
-            'management_vip': '192.168.0.2',
+            'management_vip': '192.168.0.1',
             'public_vip': '172.16.0.2',
 
             'fixed_network_range': '10.0.0.0/16',
@@ -107,9 +107,9 @@ class TestHandlers(BaseIntegrationTest):
             admin_ip = admin_ips.pop()
             for role in sorted(node.roles + node.pending_roles):
                 assigned_ips[node_id] = {}
-                assigned_ips[node_id]['internal'] = '192.168.0.%d' % (i + 3)
+                assigned_ips[node_id]['internal'] = '192.168.0.%d' % (i + 2)
                 assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
-                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 2)
+                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 1)
                 assigned_ips[node_id]['admin'] = admin_ip
 
                 nodes_list.append({
@@ -325,7 +325,7 @@ class TestHandlers(BaseIntegrationTest):
         common_attrs = {
             'deployment_mode': 'ha_compact',
 
-            'management_vip': '192.168.0.2',
+            'management_vip': '192.168.0.1',
             'public_vip': '172.16.0.2',
 
             'management_network_range': '192.168.0.0/24',
@@ -417,9 +417,9 @@ class TestHandlers(BaseIntegrationTest):
             admin_ip = admin_ips.pop()
             for role in sorted(node.roles + node.pending_roles):
                 assigned_ips[node_id] = {}
-                assigned_ips[node_id]['management'] = '192.168.0.%d' % (i + 3)
+                assigned_ips[node_id]['management'] = '192.168.0.%d' % (i + 2)
                 assigned_ips[node_id]['public'] = '172.16.0.%d' % (i + 3)
-                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 2)
+                assigned_ips[node_id]['storage'] = '192.168.1.%d' % (i + 1)
                 assigned_ips[node_id]['admin'] = admin_ip
 
                 nodes_list.append({
@@ -528,7 +528,7 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-storage"],
-                                "tags": [101, 0]},
+                                "tags": [102, 0]},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-ex"],
@@ -536,7 +536,7 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-mgmt"],
-                                "tags": [100, 0]}
+                                "tags": [101, 0]}
                         ]
                     }
                 }

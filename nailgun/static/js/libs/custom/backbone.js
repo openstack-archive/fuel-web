@@ -504,25 +504,32 @@
       options = options ? _.clone(options) : {};
       var model = this;
       var success = options.success;
+      var xhr;
 
-      var destroy = function() {
-        model.trigger('destroy', model, model.collection, options);
-      };
-
-      options.success = function(resp) {
-        if (options.wait || model.isNew()) destroy();
-        if (success) success(model, resp, options);
-        if (!model.isNew()) model.trigger('sync', model, resp, options);
-      };
-
-      if (this.isNew()) {
-        options.success();
-        return false;
+      // custom options to prevent any parent model event bubbling
+      if (options.extremelySilent) {
+        xhr = this.sync('delete', this, options);
       }
-      wrapError(this, options);
+      else {
+        var destroy = function() {
+          model.trigger('destroy', model, model.collection, options);
+        };
 
-      var xhr = this.sync('delete', this, options);
-      if (!options.wait) destroy();
+        options.success = function(resp) {
+          if (options.wait || model.isNew()) destroy();
+          if (success) success(model, resp, options);
+          if (!model.isNew()) model.trigger('sync', model, resp, options);
+        };
+
+        if (this.isNew()) {
+          options.success();
+          return false;
+        }
+
+        wrapError(this, options);
+        xhr = this.sync('delete', this, options);
+        if (!options.wait) destroy();
+      }
       return xhr;
     },
 

@@ -22,12 +22,12 @@ import base64
 import json
 
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.settings import settings
 
 
-class FuelKeyHandler(JSONHandler):
+class FuelKeyHandler(BaseHandler):
     """ Fuel key handler"""
 
     @content_json

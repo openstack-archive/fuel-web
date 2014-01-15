@@ -16,8 +16,8 @@
 
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Task
 
@@ -26,7 +26,7 @@ Handlers dealing with tasks
 """
 
 
-class TaskHandler(JSONHandler):
+class TaskHandler(BaseHandler):
     """Task single handler
     """
 
@@ -70,7 +70,7 @@ class TaskHandler(JSONHandler):
         )
 
 
-class TaskCollectionHandler(JSONHandler):
+class TaskCollectionHandler(BaseHandler):
     """Task collection handler
     """
 

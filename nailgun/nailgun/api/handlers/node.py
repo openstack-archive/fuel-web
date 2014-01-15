@@ -26,8 +26,8 @@ from sqlalchemy.orm import joinedload
 
 import web
 
+from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.base import JSONHandler
 from nailgun.api.validators.network import NetAssignmentValidator
 from nailgun.api.validators.node import NodeValidator
 from nailgun.db import db
@@ -42,7 +42,7 @@ from nailgun.network.topology import TopoChecker
 from nailgun import notifier
 
 
-class NodeHandler(JSONHandler):
+class NodeHandler(BaseHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
@@ -54,7 +54,7 @@ class NodeHandler(JSONHandler):
     def render(cls, instance, fields=None):
         json_data = None
         try:
-            json_data = JSONHandler.render(instance, fields=cls.fields)
+            json_data = BaseHandler.render(instance, fields=cls.fields)
             json_data['network_data'] = NetworkManager.get_node_networks(
                 instance.id)
         except Exception:
@@ -152,7 +152,7 @@ class NodeHandler(JSONHandler):
         )
 
 
-class NodeCollectionHandler(JSONHandler):
+class NodeCollectionHandler(BaseHandler):
     """Node collection handler
     """
 
@@ -171,7 +171,7 @@ class NodeCollectionHandler(JSONHandler):
         networks_grouped = network_manager.get_networks_grouped_by_cluster()
         for node in nodes:
             try:
-                json_data = JSONHandler.render(node, fields=cls.fields)
+                json_data = BaseHandler.render(node, fields=cls.fields)
 
                 json_data['network_data'] = network_manager.\
                     get_node_networks_optimized(
@@ -449,7 +449,7 @@ class NodeCollectionHandler(JSONHandler):
         return self.render(nodes)
 
 
-class NodeNICsHandler(JSONHandler):
+class NodeNICsHandler(BaseHandler):
     """Node network interfaces handler
     """
 
@@ -491,7 +491,7 @@ class NodeNICsHandler(JSONHandler):
         return map(self.render, node.interfaces)
 
 
-class NodeCollectionNICsHandler(JSONHandler):
+class NodeCollectionNICsHandler(BaseHandler):
     """Node collection network interfaces handler
     """
 
@@ -522,7 +522,7 @@ class NodeCollectionNICsHandler(JSONHandler):
         ]
 
 
-class NodeNICsDefaultHandler(JSONHandler):
+class NodeNICsDefaultHandler(BaseHandler):
     """Node default network interfaces handler
     """
 
@@ -574,7 +574,7 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
         return map(self.render, nodes)
 
 
-class NodeNICsVerifyHandler(JSONHandler):
+class NodeNICsVerifyHandler(BaseHandler):
     """Node NICs verify handler
     Class is proof of concept. Not ready for use.
     """

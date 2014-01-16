@@ -87,6 +87,37 @@ def load_db_parsers(subparsers):
     )
 
 
+def load_alembic_parsers(migrate_parser):
+    alembic_parser = migrate_parser.add_subparsers(
+        dest="alembic_command",
+        help='alembic command'
+    )
+    for name in ['current', 'history', 'branches']:
+        parser = alembic_parser.add_parser(name)
+
+    for name in ['upgrade', 'downgrade']:
+        parser = alembic_parser.add_parser(name)
+        parser.add_argument('--delta', type=int)
+        parser.add_argument('--sql', action='store_true')
+        parser.add_argument('revision', nargs='?')
+
+    parser = alembic_parser.add_parser('stamp')
+    parser.add_argument('--sql', action='store_true')
+    parser.add_argument('revision')
+
+    parser = alembic_parser.add_parser('revision')
+    parser.add_argument('-m', '--message')
+    parser.add_argument('--autogenerate', action='store_true')
+    parser.add_argument('--sql', action='store_true')
+
+
+def load_db_migrate_parsers(subparsers):
+    migrate_parser = subparsers.add_parser(
+        'migrate', help='dealing with DB migration'
+    )
+    load_alembic_parsers(migrate_parser)
+
+
 def load_test_parsers(subparsers):
     subparsers.add_parser(
         'test', help='run unit tests'
@@ -155,6 +186,11 @@ def action_dropdb(params):
     logger.info("Done")
 
 
+def action_migrate(params):
+    from nailgun.db.migration import action_migrate_alembic
+    action_migrate_alembic(params)
+
+
 def action_test(params):
     from nailgun.logger import logger
     from nailgun.unit_test import TestRunner
@@ -166,7 +202,6 @@ def action_test(params):
 
 def action_dump_settings(params):
     from nailgun.settings import settings
-
     sys.stdout.write(settings.dump())
 
 
@@ -209,6 +244,7 @@ if __name__ == "__main__":
 
     load_run_parsers(subparsers)
     load_db_parsers(subparsers)
+    load_db_migrate_parsers(subparsers)
     load_test_parsers(subparsers)
     load_shell_parsers(subparsers)
     load_settings_parsers(subparsers)

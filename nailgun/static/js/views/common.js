@@ -237,7 +237,14 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             this.render();
         },
         render: function() {
-            this.$el.html(this.template({path: this.path}));
+            var clusterName = _.last(this.path);
+            var breadCrumbInfo = {path: this.path, leaveNameAsIs: false};
+            if (!_.isUndefined(clusterName)) {
+                if (clusterName[0] == '.') {
+                    breadCrumbInfo =  {path: this.path, leaveNameAsIs: true};
+                }
+            }
+            this.$el.html(this.template(breadCrumbInfo));
             return this;
         }
     });

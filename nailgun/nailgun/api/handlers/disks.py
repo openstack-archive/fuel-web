@@ -106,14 +106,12 @@ class NodeVolumesInformationHandler(BaseHandler):
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(Node, node_id)
-
-        volumes_info = []
         try:
             volumes_info = DisksFormatConvertor.get_volumes_info(node)
         except errors.CannotFindVolumesInfoForRole:
             logger.error(traceback.format_exc())
             raise web.notfound(
                 message='Cannot calculate volumes info. '
-                'Please, add node to a cluster.')
+                'Please, add node to an environment.')
 
         return volumes_info

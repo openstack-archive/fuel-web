@@ -87,8 +87,12 @@ def get_node_spaces(node):
     Sets key `_allocate_size` which used only for internal calculation
     and not used in partitioning system.
     """
+    if node.cluster is None:
+        raise errors.CannotFindVolumesInfoForRole(
+            "Cannot find volumes info for role, "
+            "node must be assigned to an environment."
+        )
     node_spaces = []
-
     role_mapping = node.cluster.release.volumes_metadata[
         'volumes_roles_mapping']
     all_spaces = node.cluster.release.volumes_metadata['volumes']

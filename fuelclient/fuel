@@ -514,7 +514,8 @@ def node(params):
         put_response = json_api_put_request("nodes/", data)
         print_to_output(
             put_response,
-            "Nodes with ids {0} were removed from environment with id {1}."
+            "Nodes with ids {0} were marked for removal "
+            "from environment with id {1}."
             .format(
                 node_ids,
                 nodes_clusters[node_ids[0]]

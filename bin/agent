@@ -423,7 +423,7 @@ class NodeAgent
       detailed_data = _detailed
       res.merge!({
         :ip  => ((_master_ip detailed_data or @os[:ipaddress]) rescue nil),
-        :mac  => ((_master_mac detailed_data or @os[:mac]) rescue nil),
+        :mac  => ((_master_mac detailed_data or @os[:macaddress]) rescue nil),
         :manufacturer => _manufacturer,
         :platform_name => _product_name,
         :meta => detailed_data

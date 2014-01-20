@@ -135,7 +135,8 @@
                     "settings": "Settings",
                     "logs": "Logs",
                     "healthcheck": "Health Check",
-                    "actions": "Actions"
+                    "actions": "Actions",
+                    "fencing": "HA Fencing"
                 },
                 "nodes_tab": {
                     "roles": "Roles",
@@ -320,6 +321,9 @@
                     "expected_duration": "Expected Duration",
                     "actual_duration": "Actual Duration",
                     "status": "Status"
+                },
+                "fencing_tab": {
+                    "title": "HA Fencing"
                 },
                 "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",

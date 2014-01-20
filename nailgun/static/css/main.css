@@ -4126,6 +4126,7 @@ input.input-append {
 .healthcheck-table {margin: 0px 0px 30px 0px; }
 .healthcheck-table th {font-weight: normal;}
 .healthcheck-table th label {margin: 0;}
+.healthcheck-table th label.testset-name {font-weight: bold;}
 .healthcheck-name {font-size: 15px; margin: 5px 0px 5px 0px;}
 .healthcheck-duration {font-size: 15px; margin: 5px 0px 5px 0px; text-align: center; color: #777777}
 .healthcheck-status {font-size: 20px; margin-top: 3px; text-align: center;}
@@ -4136,9 +4137,11 @@ input.input-append {
 .healthcheck-status-stopped, .healthcheck-status-unknown, .healthcheck-status-wait_running {color: #999999;}
 .healthcheck-status-success {color: #2e8701;}
 .healthcheck-status-failure, .healthcheck-status-error {color: #890000;}
+.healthcheck-table .healthcheck-col-select {width: 24px;}
 .healthcheck-table .healthcheck-col-status {width: 50px; text-align: center;}
 .healthcheck-table .healthcheck-col-duration {width: 120px; text-align: center;}
-.healthcheck-table th.healthcheck-col-duration, .healthcheck-table th.healthcheck-col-status {padding: 12px 0 12px 0;}
+.healthcheck-table th {padding-top: 12px; padding-bottom: 12px;}
+.healthcheck-table th.healthcheck-col-select {padding-top: 0; padding-bottom: 10px;}
 
 /* Cluster toolbar */
 .cluster-toolbar {

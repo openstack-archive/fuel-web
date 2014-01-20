@@ -25,12 +25,13 @@ define(
     'views/cluster_page_tabs/logs_tab',
     'views/cluster_page_tabs/actions_tab',
     'views/cluster_page_tabs/healthcheck_tab',
+    'views/cluster_page_tabs/fencing_tab',
     'text!templates/cluster/page.html',
     'text!templates/cluster/customization_message.html',
     'text!templates/cluster/deployment_result.html',
     'text!templates/cluster/deployment_control.html'
 ],
-function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
+function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, FencingTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
     'use strict';
     var ClusterPage, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
 
@@ -42,7 +43,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         title: function() {
             return this.model.get('name');
         },
-        tabs: ['nodes', 'network', 'settings', 'logs', 'healthcheck', 'actions'],
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),
         events: {
@@ -193,6 +193,14 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         initialize: function(options) {
             _.defaults(this, options);
+            this.tabs = ['nodes', 'network', 'settings', 'logs', 'healthcheck', 'actions'];
+            if (this.model.get('mode') != 'multinode') { // add Fencing tab to HA cluster
+                this.tabs.splice(_.indexOf(this.tabs, 'settings')+1, 0, 'fencing'); // add Fencing tab exactly after Settings Tab
+            }
+            if (!_.contains(this.tabs, options.activeTab)) {
+                app.showCluster(this.model.id);
+                return;
+            }
             this.model.on('change:name', this.onNameChange, this);
             this.scheduleUpdate();
             this.eventNamespace = 'unsavedchanges' + this.activeTab;
@@ -225,7 +233,8 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 'settings': SettingsTab,
                 'actions': ActionsTab,
                 'logs': LogsTab,
-                'healthcheck': HealthCheckTab
+                'healthcheck': HealthCheckTab,
+                'fencing': FencingTab
             };
             if (_.has(tabs, this.activeTab)) {
                 this.tab = new tabs[this.activeTab]({model: this.model, tabOptions: this.tabOptions, page: this});

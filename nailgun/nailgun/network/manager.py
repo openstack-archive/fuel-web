@@ -629,6 +629,9 @@ class NetworkManager(object):
                 # Interface was founded
                 admin_interface = interface
                 break
+            elif interface['mac'].lower() == node.mac.lower():
+                admin_interface = interface
+                break
 
         if not admin_interface:
             raise errors.InvalidInterfacesInfo(

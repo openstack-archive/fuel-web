@@ -85,7 +85,7 @@
                 "contact_text": "If you need to report a problem or just suggest an improvement, click the button below. We will get back to you as soon as possible.",
                 "irc_text": "If you have any questions, you can also reach out to developers on the IRC channel",
                 "log_text": "If you have encountered some bugs or errors, you may also need to provide the support team with deployment and operational logs. You can download them all at once by clicking the button below.",
-                "contact_support": "Contact support",
+                "contact_support": "Contact Support",
                 "register_fuel_title": "Register Fuel",
                 "register_fuel_content": "Registering will ensure that you receive important notifications about issues and new versions of Mirantis products. In addition, you will receive complementary access to our basic support services for the next 30 days!",
                 "download_diagnostic_snapshot_text": "Download Diagnostic Snapshot",

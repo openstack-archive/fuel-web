@@ -218,9 +218,9 @@ Now we need to write the pxelinux configuration file. It will be located here
     MENU LABEL Install ^FUEL
     KERNEL /fuel/isolinux/vmlinuz
     INITRD /fuel/isolinux/initrd.img
-    APPEND ks=nfs:10.20.0.1:/var/lib/tftpboot/fuel/ks.cfg \
+    APPEND biosdevname=0 ks=nfs:10.20.0.1:/var/lib/tftpboot/fuel/ks.cfg \
       repo=nfs:10.20.0.1:/var/lib/tftpboot/fuel ip=10.20.0.2 netmask=255.255.255.0 \
-      dns1=10.20.0.1 hostname=fuel.mirantis.com
+      gw=10.20.0.1 dns1=10.20.0.1 hostname=fuel.mirantis.com showmenu=no
 
     LABEL reboot
     MENU LABEL ^Reboot

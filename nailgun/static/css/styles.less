@@ -88,7 +88,7 @@
 }
 
 // Box Shadow mix
-.box-shadow-mixin-mix(@box-shadow-value1, @box-shadow-value2) {
+.box-shadow-mixin-two(@box-shadow-value1, @box-shadow-value2) {
   -webkit-box-shadow: @box-shadow-value1, @box-shadow-value2;
   -moz-box-shadow: @box-shadow-value1, @box-shadow-value2;
   box-shadow: @box-shadow-value1, @box-shadow-value2;
@@ -137,6 +137,15 @@
   filter: ~"progid:DXImageTransform.Microsoft.gradient( startColorstr='@{gradient-top}', endColorstr='@{gradient-bottom}',GradientType=0 )"; /* IE6-8 */
 }
 
+
+.css-background-image-linear-bottom (@start-color, @end-color) {
+  background-image: -webkit-linear-gradient(bottom, @start-color, @end-color);
+  background-image: -moz-linear-gradient(bottom,@start-color, @end-color);
+  background-image: -o-linear-gradient(bottom, @start-color, @end-color);
+  background-image: -ms-linear-gradient(bottom, @start-color, @end-color);
+  background-image: linear-gradient(to top, @start-color, @end-color);
+}
+
 // Common variables
 // -------------------------
 
@@ -149,7 +158,7 @@
 // Footer variables
 // -------------------------
 
-@footer-height: 40px;
+@footer-height: 70px;
 @footer-width: 1030px;
 
 // Navigation variables
@@ -204,7 +213,7 @@
   font-size: 14px;
   color: @color;
   background: @background-color;
-  .box-shadow-mixin-mix (@box-shadow-color-start, @box-shadow-color-end);
+  .box-shadow-mixin-two (@box-shadow-color-start, @box-shadow-color-end);
   border: solid 1px @border-color;
   .css-linear-gradient-filter(@gradient-color-start, @gradient-color-end);
 }
@@ -325,7 +334,6 @@ h6.page-title {
     display: inline;
     font-size: 11px;
     text-shadow: @text-shadow-none;
-    .margin-padding-mixin(-2px 0 0 );
   }
 }
 
@@ -351,16 +359,46 @@ h6.page-title {
 }
 
 .footer-box {
-  border-top: 1px solid @color-fiter-box-border;
-  height: 20px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 4px;
+  height: 50px;
+}
+
+.footer-logo {
+  display: block;
+  float: left;
+  width: 67px;
+  height: 34px;
+  background: url(../img/mirantis-logo-small2.png) no-repeat top left;
+  margin: 8px 0px 0px 10px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.footer-logo:hover {
+  display: block;
+  float: left;
+  width: 67px;
+  height: 34px;
+  background: url(../img/mirantis-logo-small2.png) no-repeat 0px -34px;
+  margin: 8px 0px 0px 10px;
+  overflow: hidden;
+}
+
+.footer-copyright {
+  display: block;
+  padding: 14px 20px 0px 20px;
+  color: #f0f0f0;
+  font-size: 11px;
+  margin-top: 0px;
 }
 
 .footer-version {
   color: @fuel-dark-grey-blue;
   display: block;
   font-size: 11px;
-  margin-top: 9px;
-  padding: 0;
+  margin-top: 0px;
+  padding: 14px 20px 0px 20px;
 }
 
 .footer-lang {
@@ -535,7 +573,7 @@ h6.page-title {
       -moz-border-radius: 3px;
       border-radius: 3px;
       background-color: @fuel-dark-red;
-      .box-shadow-mixin-mix(@navbar-box-shadow-start, @navbar-box-shadow-end);
+      .box-shadow-mixin-two(@navbar-box-shadow-start, @navbar-box-shadow-end);
       border: solid 1px #cf600e;
       .css-linear-gradient(@navbar-badge-gradient-from, @navbar-badge-gradient-to, bottom, top);
     }
@@ -1878,10 +1916,11 @@ input.vlan-tagging {
   &.active,
   &:active {
     .btn-active-state-mixin;
-    .box-shadow-mixin-mix(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+    .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
   &.disabled,
-  &[disabled] {
+  &[disabled],
+  &[disabled]:hover {
     cursor: default;
     color: @fuel-dark;
     background-color: #dddddd;
@@ -1896,13 +1935,16 @@ input.vlan-tagging {
 .btn-success {
   .btn-mixin(@fuel-white-color, @fuel-dark-red, 0 1px 2px rgba(0,0,0,.25), inset 0 0 0 1px rgba(255,255,255,.25), #4a954a, #61c161, #51a451);
   &:hover {
-    text-decoration: none;
-    .btn-mixin(#efefef, none, 0 1px 1px rgba(0,0,0,.1), inset 0 0 0 1px rgba(255,255,255,.15), #4a954a, #59b259, #4c9a4c);
+     background: linear-gradient(to top, #4C9A4C, #59B259) repeat scroll 0 0 rgba(0, 0, 0, 0);
+     border: 1px solid #4A954A;
+     text-decoration: none;
+     color: #efefef;
+    .box-shadow-mixin-two(0 1px 1px rgba(0,0,0,.1), inset 0 0 0 1px rgba(255,255,255,.15));
   }
   &.active,
   &:active {
     .btn-active-state-mixin(#52a652, #d9d9d9);
-    .box-shadow-mixin-mix(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+    .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
 }
 
@@ -1915,7 +1957,7 @@ input.vlan-tagging {
   &.active,
   &:active {
     .btn-active-state-mixin(#ad342e, #d9d9d9);
-    .box-shadow-mixin-mix(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+    .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
 }
 
@@ -1928,7 +1970,7 @@ input.vlan-tagging {
   &.active,
   &:active {
     .btn-active-state-mixin(#da860e, #d9d9d9);
-    .box-shadow-mixin-mix(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+    .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
 }
 
@@ -1941,7 +1983,7 @@ input.vlan-tagging {
   &.active,
   &:active {
     .btn-active-state-mixin(#0044b7, #d9d9d9);
-    .box-shadow-mixin-mix(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+    .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
 }
 
@@ -1954,7 +1996,7 @@ input.vlan-tagging {
   &.active,
   &:active {
     .btn-active-state-mixin(#161616, #d9d9d9);
-    .box-shadow-mixin-mix(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+    .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
 }
 
@@ -1967,7 +2009,7 @@ input.vlan-tagging {
   &.active,
   &:active {
     .btn-active-state-mixin(#007cba, #d9d9d9);
-    .box-shadow-mixin-mix(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+    .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
 }
 
@@ -2106,7 +2148,7 @@ input.vlan-tagging {
     -moz-border-radius: 4px;
     border-radius: 4px;
     background-color: #59616b;
-    .box-shadow-mixin-mix(0 1px 4px rgba(0,0,0,.15), inset 0 0 0 1px rgba(255,255,255,.12));
+    .box-shadow-mixin-two(0 1px 4px rgba(0,0,0,.15), inset 0 0 0 1px rgba(255,255,255,.12));
     border: solid 1px #393e45;
     .css-linear-gradient(#5e6671, #555c66);
   }
@@ -2158,7 +2200,7 @@ input.vlan-tagging {
   height: 12px;
   .border-radius-mixin;
   background-color: #b5bbbc;
-  .box-shadow-mixin-mix(0 1px rgba(255,255,255,.25), inset 0 1px 6px rgba(0,0,0,.25));
+  .box-shadow-mixin-two(0 1px rgba(255,255,255,.25), inset 0 1px 6px rgba(0,0,0,.25));
   > .bar {
     height: 12px;
     .border-radius-mixin;

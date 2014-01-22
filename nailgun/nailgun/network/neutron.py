@@ -111,35 +111,6 @@ class NeutronManager(NetworkManager):
         return {}
 
     @classmethod
-    def assign_networks_by_default(cls, node):
-        cls.clear_assigned_networks(node)
-        # exclude admin interface if it is not only the interface
-        ifaces = [iface for iface in node.interfaces
-                  if iface.id != node.admin_interface.id]
-        if not ifaces:
-            ifaces = [node.admin_interface]
-        # assign private network to dedicated NIC for vlan
-        if node.cluster.net_segment_type == 'vlan':
-            map(ifaces[0].assigned_networks_list.append,
-                filter(lambda ng: ng.name != 'private',
-                       cls.get_cluster_networkgroups_by_node(node)))
-            if len(ifaces) > 1:
-                ifaces.pop(0)
-            map(ifaces[0].assigned_networks_list.append,
-                filter(lambda ng: ng.name == 'private',
-                       cls.get_cluster_networkgroups_by_node(node)))
-        # assign all remaining networks
-        else:
-            map(ifaces[0].assigned_networks_list.append,
-                cls.get_cluster_networkgroups_by_node(node))
-
-        node.admin_interface.assigned_networks_list.append(
-            cls.get_admin_network_group()
-        )
-
-        db().commit()
-
-    @classmethod
     def get_allowed_nic_networkgroups(cls, node, nic):
         """Get all allowed network groups
         """
@@ -168,59 +139,6 @@ class NeutronManager(NetworkManager):
                 nic.allowed_networks_list.append(ng)
 
         db().commit()
-
-    @classmethod
-    def get_default_networks_assignment(cls, node):
-        """Assign all network groups except admin to one NIC,
-        admin network group has its own NIC by default - gre
-        Assign all network groups except admin and private to one NIC,
-        admin and private network groups has their own NICs by default - vlan
-        """
-        nics = []
-        to_be_assigned = set([ng.name for ng in node.cluster.network_groups] +
-                             [cls.get_admin_network_group().name])
-        for i, nic in enumerate(node.interfaces):
-            nic_dict = {
-                "id": nic.id,
-                "name": nic.name,
-                "mac": nic.mac,
-                "max_speed": nic.max_speed,
-                "current_speed": nic.current_speed
-            }
-            if to_be_assigned:
-                if nic == node.admin_interface:
-                    admin_ng = cls.get_admin_network_group()
-                    assigned_ngs = [admin_ng]
-                else:
-                    if node.cluster.net_segment_type == 'vlan':
-                        if "public" in to_be_assigned:
-                            assigned_ngs = filter(
-                                lambda ng: ng.name != "private",
-                                node.cluster.network_groups)
-                        else:
-                            assigned_ngs = filter(
-                                lambda ng: ng.name == "private",
-                                node.cluster.network_groups)
-                    else:
-                        assigned_ngs = [ng
-                                        for ng in node.cluster.network_groups]
-
-                for ng in assigned_ngs:
-                    nic_dict.setdefault('assigned_networks', []).append(
-                        {'id': ng.id, 'name': ng.name})
-                to_be_assigned -= set([ng.name for ng in assigned_ngs])
-
-            allowed_ngs = cls.get_allowed_nic_networkgroups(
-                node,
-                nic
-            )
-
-            for ng in allowed_ngs:
-                nic_dict.setdefault('allowed_networks', []).append(
-                    {'id': ng.id, 'name': ng.name})
-
-            nics.append(nic_dict)
-        return nics
 
     @classmethod
     def update(cls, cluster, network_configuration):

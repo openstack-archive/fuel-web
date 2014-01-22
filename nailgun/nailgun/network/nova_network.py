@@ -21,47 +21,6 @@ from nailgun.network.manager import NetworkManager
 class NovaNetworkManager(NetworkManager):
 
     @classmethod
-    def assign_networks_by_default(cls, node):
-        cls.clear_assigned_networks(node)
-
-        for nic in node.interfaces:
-            map(nic.assigned_networks_list.append,
-                cls.get_default_nic_networkgroups(node, nic))
-
-        db().commit()
-
-    @classmethod
-    def get_default_networks_assignment(cls, node):
-        nics = []
-        for nic in node.interfaces:
-            nic_dict = {
-                "id": nic.id,
-                "name": nic.name,
-                "mac": nic.mac,
-                "max_speed": nic.max_speed,
-                "current_speed": nic.current_speed
-            }
-
-            assigned_ngs = cls.get_default_nic_networkgroups(
-                node, nic)
-
-            for ng in assigned_ngs:
-                nic_dict.setdefault('assigned_networks', []).append(
-                    {'id': ng.id, 'name': ng.name})
-
-            allowed_ngs = cls.get_allowed_nic_networkgroups(
-                node,
-                nic
-            )
-
-            for ng in allowed_ngs:
-                nic_dict.setdefault('allowed_networks', []).append(
-                    {'id': ng.id, 'name': ng.name})
-
-            nics.append(nic_dict)
-        return nics
-
-    @classmethod
     def get_default_nic_networkgroups(cls, node, nic):
         """Assign all network groups except admin to one NIC,
         admin network group has its own NIC by default

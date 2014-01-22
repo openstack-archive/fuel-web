@@ -1027,39 +1027,14 @@ class TestHandlers(BaseIntegrationTest):
                 }
             ]
         )
-
         cluster_id = self.env.clusters[0].id
-        node_db = self.env.nodes[0]
 
         resp = self.env.nova_networks_get(cluster_id)
         nets = json.loads(resp.body)
         for net in nets["networks"]:
             if net["name"] in ["management", ]:
                 net["vlan_start"] = None
-
         self.env.nova_networks_put(cluster_id, nets)
-
-        resp = self.app.get(reverse('NodeNICsHandler',
-                                    kwargs={'node_id': node_db.id}),
-                            headers=self.default_headers)
-        nics = json.loads(resp.body)
-
-        for nic in nics:
-            for net in nic['assigned_networks']:
-                if net['name'] == 'fuelweb_admin':
-                    admin_nic = nic
-                else:
-                    other_nic = nic
-                    if net['name'] == 'management':
-                        mgmt = net
-        other_nic['assigned_networks'].remove(mgmt)
-        admin_nic['assigned_networks'].append(mgmt)
-
-        resp = self.app.put(reverse('NodeNICsHandler',
-                                    kwargs={'node_id': node_db.id}),
-                            json.dumps(nics),
-                            headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
 
         supertask = self.env.launch_deployment()
         self.env.wait_error(supertask)

@@ -386,6 +386,95 @@ class NetworkManager(object):
         db().commit()
 
     @classmethod
+    def get_default_networks_assignment(cls, node):
+        """Return default Networks-to-NICs assignment for given node based on
+        networks metadata and get_allowed_nic_networkgroups() results
+        """
+        nics = []
+        ngs = node.cluster.network_groups + [cls.get_admin_network_group()]
+        ngs_by_id = dict((ng.id, ng) for ng in ngs)
+        # sort Network Groups ids by map_priority (0 for admin having no meta)
+        to_assign_ids = list(zip(*sorted(
+            [[ng.id, ng.meta['map_priority'] if ng.meta else 0] for ng in ngs],
+            key=lambda x: x[1]))[0])
+        for i, nic in enumerate(node.interfaces):
+            nic_dict = {
+                "id": nic.id,
+                "name": nic.name,
+                "mac": nic.mac,
+                "max_speed": nic.max_speed,
+                "current_speed": nic.current_speed
+            }
+            allowed_ngs = cls.get_allowed_nic_networkgroups(
+                node,
+                nic
+            )
+            nic_dict['allowed_networks'] = [{'id': ng.id, 'name': ng.name}
+                                            for ng in allowed_ngs]
+
+            if to_assign_ids:
+                allowed_ids = set([ng.id for ng in allowed_ngs])
+                can_assign = [id for id in to_assign_ids
+                              if id in allowed_ids]
+                assigned_ids = set()
+                untagged_cnt = 0
+                same_nic_groups = set()
+                for id in can_assign:
+                    ng = ngs_by_id[id]
+                    dedicated = \
+                        'dedicated_nic' in ng.meta and ng.meta['dedicated_nic']
+                    untagged = ng.vlan_start is None
+                    same_nic = ng.meta['use_same_vlan_nic'] \
+                        if 'use_same_vlan_nic' in ng.meta else None
+                    to_be_added = False
+                    if dedicated:
+                        if not assigned_ids:
+                            to_be_added = True
+                    elif untagged:
+                        if untagged_cnt == 0 or same_nic in same_nic_groups:
+                            to_be_added = True
+                    else:
+                        to_be_added = True
+                    if to_be_added:
+                        assigned_ids.add(id)
+                        if untagged:
+                            untagged_cnt += 1
+                        if same_nic:
+                            same_nic_groups.add(same_nic)
+                        if dedicated:
+                            break
+
+                for id in assigned_ids:
+                    nic_dict.setdefault('assigned_networks', []).append(
+                        {'id': ngs_by_id[id].id, 'name': ngs_by_id[id].name})
+                    to_assign_ids.remove(id)
+
+            nics.append(nic_dict)
+
+        if to_assign_ids:
+            # Assign remaining networks to NIC #0
+            # as all the networks must be assigned.
+            # But network check will not pass if we get here.
+            for id in to_assign_ids:
+                nics[0].setdefault('assigned_networks', []).append(
+                    {'id': ngs_by_id[id].id, 'name': ngs_by_id[id].name})
+        return nics
+
+    @classmethod
+    def assign_networks_by_default(cls, node):
+        cls.clear_assigned_networks(node)
+
+        nics = dict((nic.id, nic) for nic in node.interfaces)
+        def_set = cls.get_default_networks_assignment(node)
+        for nic in def_set:
+            if 'assigned_networks' in nic:
+                ng_ids = [ng['id'] for ng in nic['assigned_networks']]
+                nics[nic['id']].assigned_networks_list = list(
+                    db().query(NetworkGroup).filter(
+                        NetworkGroup.id.in_(ng_ids)))
+        db().commit()
+
+    @classmethod
     def get_cluster_networkgroups_by_node(cls, node):
         """Method for receiving cluster network groups by node.
 

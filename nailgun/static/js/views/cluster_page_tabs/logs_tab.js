@@ -224,6 +224,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                     this.scheduleUpdate();
                 }, this))
                 .fail(_.bind(function() {
+                    this.$('.table-logs').hide();
                     this.$('.logs-fetch-error').show();
                     this.$('.show-logs-btn').removeClass('disabled');
                 }, this))

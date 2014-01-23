@@ -218,7 +218,7 @@ class NetAssignmentValidator(BasicValidator):
             )
         network_group_ids = set([ng.id for ng in db_network_groups])
 
-        admin_ng_id = NetworkManager.get_admin_network_group_id()
+        network_group_ids.add(NetworkManager.get_admin_network_group_id())
 
         for iface in interfaces:
             db_iface = filter(
@@ -235,15 +235,14 @@ class NetAssignmentValidator(BasicValidator):
             db_iface = db_iface[0]
 
             for net in iface['assigned_networks']:
-                if net['id'] not in network_group_ids and not \
-                        net['id'] == admin_ng_id:
+                if net['id'] not in network_group_ids:
                     raise errors.InvalidData(
                         "Node '%d' shouldn't be connected to"
                         " network with ID '%d'" %
                         (node['id'], net['id']),
                         log_message=True
                     )
-                elif net['id'] != admin_ng_id:
+                else:
                     network_group_ids.remove(net['id'])
 
         # Check if there are unassigned networks for this node.

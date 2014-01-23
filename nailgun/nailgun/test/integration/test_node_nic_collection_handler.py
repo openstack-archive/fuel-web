@@ -15,6 +15,7 @@
 #    under the License.
 
 import json
+from copy import deepcopy
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -35,15 +36,17 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
-        response = json.loads(resp.body)
-        a_nets = filter(lambda nic: nic['mac'] == mac,
-                        response)[0]['assigned_networks']
-        for resp_nic in response:
-            if resp_nic['mac'] == mac:
-                resp_nic['assigned_networks'] = []
-            else:
-                resp_nic['assigned_networks'] = a_nets
-        node_json = response
+        interfaces = json.loads(resp.body)
+        an_key = 'assigned_networks'
+        used_iface = filter(lambda x: x[an_key], interfaces)[0]
+        another_iface = filter(
+            lambda x: x['id'] != used_iface['id'],
+            interfaces
+        )[0]
+        used_iface[an_key], another_iface[an_key] = (
+            another_iface[an_key], used_iface[an_key]
+        )
+        node_json = interfaces
         resp = self.app.put(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             json.dumps(node_json),
@@ -51,3 +54,91 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status, 200)
         new_response = json.loads(resp.body)
         self.assertEquals(new_response, node_json)
+
+    def test_collection_put_handler_with_one_node(self):
+        cluster = self.env.create_cluster(api=True)
+        mac = '123'
+        meta = {}
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'eth0', 'mac': mac},
+            {'name': 'eth1', 'mac': '654'}])
+        node = self.env.create_node(api=True, meta=meta, mac=mac,
+                                    cluster_id=cluster['id'])
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        interfaces = json.loads(resp.body)
+        an_key = 'assigned_networks'
+        used_iface = filter(lambda x: x[an_key], interfaces)[0]
+        another_iface = filter(
+            lambda x: x['id'] != used_iface['id'],
+            interfaces
+        )[0]
+        used_iface[an_key], another_iface[an_key] = (
+            another_iface[an_key], used_iface[an_key]
+        )
+        node_json = [{u'id': node['id'], u'interfaces': interfaces}]
+        resp = self.app.put(
+            reverse('NodeCollectionNICsHandler'),
+            json.dumps(node_json),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        new_response = json.loads(resp.body)
+        self.assertEquals(new_response, node_json)
+
+    def test_try_to_assign_not_all_networks(self):
+        cluster = self.env.create_cluster(api=True)
+        mac = '123'
+        meta = {}
+        self.env.set_interfaces_in_meta(meta, [
+            {'name': 'eth0', 'mac': mac},
+            {'name': 'eth1', 'mac': '654'}])
+        node = self.env.create_node(api=True, meta=meta, mac=mac,
+                                    cluster_id=cluster['id'])
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        interfaces = json.loads(resp.body)
+        an_key = 'assigned_networks'
+
+        # Remove a non-PXE interface.
+        interfaces_to_send = deepcopy(interfaces)
+        node_json = [{u'id': node['id'], u'interfaces': interfaces_to_send}]
+        for i in interfaces_to_send:
+            for n in i[an_key]:
+                if n['name'] != 'fuelweb_admin':
+                    i[an_key].remove(n)
+                    break
+        resp = self.app.put(
+            reverse('NodeCollectionNICsHandler'),
+            json.dumps(node_json),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 500)
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        self.assertEquals(interfaces, json.loads(resp.body))
+
+        # Remove a PXE interface
+        interfaces_to_send = deepcopy(interfaces)
+        node_json = [{u'id': node['id'], u'interfaces': interfaces_to_send}]
+        for i in interfaces_to_send:
+            for n in i[an_key]:
+                if n['name'] == 'fuelweb_admin':
+                    i[an_key].remove(n)
+                    break
+        resp = self.app.put(
+            reverse('NodeCollectionNICsHandler'),
+            json.dumps(node_json),
+            headers=self.default_headers,
+            expect_errors=True)
+        self.assertEquals(resp.status, 500)
+        resp = self.app.get(
+            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        self.assertEquals(interfaces, json.loads(resp.body))

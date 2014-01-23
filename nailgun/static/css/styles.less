@@ -1490,17 +1490,14 @@ label.error {
   label.hide { display: none; }
   input.mini { width: 91px; }
   .range-row { margin-left: 199px; }
-}
-
-.networks-table .ip-ranges-control, .neutron-parameters .ranges-control {
-  width: 20px;
-  margin-top: 3px;
-  float: left;
-  margin-left: 0 !important;
-}
-
-.networks-table .ip-ranges, .neutron-parameters .nameservers-row button {
-  padding: 0;
+  .ip-ranges, .nameservers-row button {padding: 0;}
+  .ip-ranges-control, .ranges-control {
+    width: 20px;
+    margin-top: 3px;
+    float: left;
+    margin-left: 0 !important;
+    .btn-link {padding: 0;}
+  }
 }
 
 .parameter-control.vlan-tagging {

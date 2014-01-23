@@ -408,7 +408,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 this.$('.ip-ranges-rows').append(this.rangeTemplate({
                     index: rangeIndex,
                     rangeControls: true,
-                    removalPossible: rangeIndex < this.network.get('ip_ranges').length - 1,
+                    removalPossible: this.network.get('ip_ranges').length > 1,
                     locked: this.tab.isLocked()
                 }));
                 _.each(range, function(ip, index) {

@@ -147,9 +147,10 @@ function run_ui_tests {
     echo -n "Compressing UI... "
     compressed_static_dir=/tmp/static_compressed
     rm -rf $compressed_static_dir && mkdir -p $compressed_static_dir
-    grunt build --static-dir=$compressed_static_dir > /dev/null
+    grunt_output=$(grunt build --static-dir=$compressed_static_dir 2>&1)
     if [ $? -ne 0 ]; then
         echo "Failed!"
+        echo "$grunt_output"
         exit 1
     fi
     echo "Done"

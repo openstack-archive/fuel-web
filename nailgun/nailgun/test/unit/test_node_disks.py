@@ -458,6 +458,17 @@ class TestVolumeManager(BaseIntegrationTest):
 
             self.assertEquals(volumes_size, disk['size'])
 
+    def test_volume_request_without_cluster(self):
+        self.env.create_node(api=True)
+        node = self.env.nodes[-1]
+        resp = self.app.get(
+            reverse('NodeVolumesInformationHandler',
+                    kwargs={'node_id': node.id}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEquals(404, resp.status)
+
     def test_allocates_all_free_space_for_os_for_controller_role(self):
         node = self.create_node('controller')
         disks = only_disks(node.volume_manager.volumes)

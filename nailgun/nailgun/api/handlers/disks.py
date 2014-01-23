@@ -27,7 +27,6 @@ from nailgun.api.validators.node import NodeDisksValidator
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
-from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.volumes.manager import DisksFormatConvertor
 
@@ -106,14 +105,10 @@ class NodeVolumesInformationHandler(BaseHandler):
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(Node, node_id)
-
-        volumes_info = []
-        try:
-            volumes_info = DisksFormatConvertor.get_volumes_info(node)
-        except errors.CannotFindVolumesInfoForRole:
+        if node.cluster is None:
             logger.error(traceback.format_exc())
             raise web.notfound(
                 message='Cannot calculate volumes info. '
-                'Please, add node to a cluster.')
-
+                'Please, add node to an environment.')
+        volumes_info = DisksFormatConvertor.get_volumes_info(node)
         return volumes_info

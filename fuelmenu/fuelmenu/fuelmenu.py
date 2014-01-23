@@ -284,7 +284,7 @@ class FuelSetup(object):
                     self.footer.set_text("Checking and applying module: %s"
                                          % modulename)
                     self.refreshScreen()
-
+                    module.refresh()
                     if module.apply(None):
                         log.info("Saving module: %s" % modulename)
                     else:

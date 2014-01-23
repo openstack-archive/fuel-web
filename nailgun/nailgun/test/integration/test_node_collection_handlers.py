@@ -294,6 +294,16 @@ class TestHandlers(BaseIntegrationTest):
         self.assertNotEquals(node.timestamp, timestamp)
         self.assertEquals('new', node.manufacturer)
 
+    def test_node_create_ip_not_in_admin_range(self):
+        node = self.env.create_node(api=False)
+
+        # Set IP outside of admin network range on eth1
+        node.meta['interfaces'][1]['ip'] = '10.21.0.3'
+        self.env.network_manager.update_interfaces_info(node)
+
+        # node.mac == eth0 mac so eth0 should now be admin interface
+        self.assertEquals(node.admin_interface.name, 'eth0')
+
     def test_node_create_ext_mac(self):
         node1 = self.env.create_node(
             api=False

@@ -119,13 +119,14 @@ end
 
 
 class NodeAgent
-  def initialize(logger, url=nil)
+  def initialize(logger, url=nil, admin_net=nil)
     @logger = logger
 
     @api_default_address = "localhost"
     @api_default_port = "8000"
 
     @api_url = url
+    @admin_net = admin_net
 
     if @api_url
       @api_url.chomp!('/')
@@ -460,8 +461,8 @@ class NodeAgent
         # data works very slow on some environments
         # https://bugs.launchpad.net/fuel/+bug/1284571
         if v[:family] == 'inet' && !(IPAddr.new(k) rescue nil).nil?
-          net = IPAddr.new("#{k}/#{v[:netmask]}")
-          if net.include? @api_ip
+          net = IPAddr.new(@admin_net)
+          if net.include? k
             mac = intinfo[:addresses].find { |_, info| info[:family] == 'lladdr' }[0]
             return {:ip => k, :mac => mac}
           end
@@ -541,6 +542,7 @@ end
 begin
   logger.info("Trying to load agent config #{AGENT_CONFIG}")
   url = YAML.load_file(AGENT_CONFIG)['url']
+  admin_net = YAML.load_file(AGENT_CONFIG)['admin_net']
   logger.info("Obtained service url from config file: '#{url}'")
 rescue Exception => e
   logger.info("Could not get url from configuration file: #{e.message}, trying other ways..")
@@ -550,7 +552,7 @@ sleep_time = rand(30)
 logger.debug("Sleep for #{sleep_time} seconds before sending request")
 sleep(sleep_time)
 
-agent = NodeAgent.new(logger, url)
+agent = NodeAgent.new(logger, url, admin_net)
 agent.update_state
 
 begin

@@ -1597,9 +1597,17 @@ actions = {
     "task": {
         "action": task,
         "args": [
-            get_delete_arg("Delete task with some task-id."),
             {
-                "args": ["--tid", "--task-id"],
+                "args": ["-d", "--delete"],
+                "params": {
+                    "dest": "delete",
+                    "action": "store_true",
+                    "help": "Delete task with some task-id.",
+                    "default": False
+                }
+            },
+            {
+                "args": ["-t", "--task-id"],
                 "params": {
                     "dest": "tid",
                     "action": "store",

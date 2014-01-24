@@ -18,7 +18,6 @@
 Handlers dealing with disks
 """
 
-import traceback
 import web
 
 from nailgun.api.handlers.base import BaseHandler
@@ -27,7 +26,6 @@ from nailgun.api.validators.node import NodeDisksValidator
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
-from nailgun.logger import logger
 from nailgun.volumes.manager import DisksFormatConvertor
 
 
@@ -106,7 +104,6 @@ class NodeVolumesInformationHandler(BaseHandler):
         """
         node = self.get_object_or_404(Node, node_id)
         if node.cluster is None:
-            logger.error(traceback.format_exc())
             raise web.notfound(
                 message='Cannot calculate volumes info. '
                 'Please, add node to an environment.')

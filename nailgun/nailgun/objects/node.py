@@ -18,6 +18,9 @@ import traceback
 
 from datetime import datetime
 
+from netaddr import IPAddress
+from netaddr import IPNetwork
+
 from nailgun import consts
 
 from nailgun.api.serializers.node import NodeSerializer
@@ -51,6 +54,7 @@ class Node(NailgunObject):
                 "type": "string",
                 "enum": list(consts.NODE_STATUSES)
             },
+            "group_id": {"type": "number"},
             "meta": {"type": "object"},
             "mac": {"type": "string"},
             "api": {"type": "string"},
@@ -128,6 +132,9 @@ class Node(NailgunObject):
         if new_node_cluster_id:
             cls.add_into_cluster(new_node, new_node_cluster_id)
 
+        # Assign node group
+        cls.assign_group(new_node)
+
         # updating roles
         if roles is not None:
             cls.update_roles(new_node, roles)
@@ -140,6 +147,28 @@ class Node(NailgunObject):
 
         cls.create_discover_notification(new_node)
         return new_node
+
+    @classmethod
+    def assign_group(cls, instance):
+        if instance.group_id is None and instance.ip:
+            admin_ngs = db().query(models.NetworkGroup).filter_by(
+                name="fuelweb_admin")
+            ip = IPAddress(instance.ip)
+            for ng in admin_ngs:
+                if ip in IPNetwork(ng.cidr):
+                    instance.group_id = ng.group_id
+                    break
+            if instance.group_id is None and instance.error_type is None:
+                msg = (
+                    u"Failed to match node '{0}' with group_id. Add "
+                    "fuelweb_admin NetworkGroup to match '{1}'"
+                ).format(
+                    instance.name or instance.mac,
+                    instance.ip
+                )
+                logger.warning(msg)
+            db().add(instance)
+            db().flush()
 
     @classmethod
     def create_attributes(cls, instance):
@@ -270,6 +299,14 @@ class Node(NailgunObject):
                     cluster_changed = True
                     cls.add_into_cluster(instance, new_cluster_id)
 
+        if "group_id" in data:
+            new_group_id = data.pop("group_id")
+            if instance.group_id != new_group_id:
+                nm = Cluster.get_network_manager(instance.cluster)
+                nm.clear_assigned_networks(instance)
+            instance.group_id = new_group_id
+            cls.add_into_cluster(instance, instance.cluster_id)
+
         # calculating flags
         roles_changed = (
             roles is not None and set(roles) != set(instance.roles)
@@ -388,12 +425,15 @@ class Node(NailgunObject):
         node_dict = super(Node, cls).to_dict(instance, fields=fields)
         net_manager = Cluster.get_network_manager(instance.cluster)
         ips_mapped = net_manager.get_grouped_ips_by_node()
-        networks_grouped = net_manager.get_networks_grouped_by_cluster()
+        networks_grouped = net_manager.get_networks_grouped_by_node_group()
+        group_id = instance.group_id
+        if not group_id:
+            group_id = getattr(instance.cluster, 'default_group', None)
 
         node_dict['network_data'] = net_manager.get_node_networks_optimized(
             instance,
             ips_mapped.get(instance.id, []),
-            networks_grouped.get(instance.cluster_id, [])
+            networks_grouped.get(group_id, [])
         )
         return node_dict
 

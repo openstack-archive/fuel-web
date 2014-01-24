@@ -118,6 +118,7 @@ class Cluster(NailgunObject):
         assign_nodes = data.pop("nodes", [])
 
         new_cluster = super(Cluster, cls).create(data)
+        new_cluster.create_default_group()
 
         cls.create_attributes(new_cluster)
 

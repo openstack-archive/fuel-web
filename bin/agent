@@ -314,10 +314,20 @@ class NodeAgent
     @os[:dmi][:system][:serial_number].strip rescue nil
   end
 
+  # Returns unique identifier of machine
+  # * for kvm virtual node will contain virsh UUID
+  # * for physical HW that would be unique chassis id (from BIOS settings)
+  # * for other hypervizors - not tested
+  def uuid
+    node_uuid = @os.fetch(:dmi, {}).fetch(:system, {}).fetch(:uuid, nil)
+    node_uuid && node_uuid.strip
+  end
+
   def _system_info
     {
       :manufacturer => _manufacturer,
       :serial => _serial,
+      :uuid => uuid,
       :product => _product_name,
       :family => (@os[:dmi][:system][:family].strip rescue nil),
       :version => (@os[:dmi][:system][:version].strip rescue nil),

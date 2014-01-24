@@ -171,6 +171,7 @@ class Cluster(NailgunObject):
 
         data["fuel_version"] = settings.VERSION["release"]
         new_cluster = super(Cluster, cls).create(data)
+        new_cluster.create_default_group()
 
         cls.create_attributes(new_cluster)
 

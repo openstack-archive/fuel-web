@@ -711,7 +711,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         public_ng = self.db.query(NetworkGroup).filter(
             NetworkGroup.name == 'public'
         ).filter(
-            NetworkGroup.cluster_id == cluster.id
+            NetworkGroup.group_id == cluster.default_group
         ).first()
         public_ng.gateway = test_gateway
         self.db.add(public_ng)

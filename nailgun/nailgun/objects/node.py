@@ -22,6 +22,8 @@ import traceback
 
 from datetime import datetime
 
+from netaddr import IPAddress
+from netaddr import IPNetwork
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
 
@@ -66,6 +68,7 @@ class Node(NailgunObject):
                 "type": "string",
                 "enum": list(consts.NODE_STATUSES)
             },
+            "group_id": {"type": "number"},
             "meta": {"type": "object"},
             "mac": {"type": "string"},
             "fqdn": {"type": "string"},
@@ -221,6 +224,24 @@ class Node(NailgunObject):
 
         cls.create_discover_notification(new_node)
         return new_node
+
+    @classmethod
+    def assign_group(cls, instance):
+        if instance.group_id is None and instance.ip:
+            admin_ngs = db().query(models.NetworkGroup).filter_by(
+                name="fuelweb_admin")
+            ip = IPAddress(instance.ip)
+
+            for ng in admin_ngs:
+                if ip in IPNetwork(ng.cidr):
+                    instance.group_id = ng.group_id
+                    break
+
+        if not instance.group_id:
+            instance.group_id = instance.cluster.default_group
+
+        db().add(instance)
+        db().flush()
 
     @classmethod
     def create_attributes(cls, instance):
@@ -401,6 +422,10 @@ class Node(NailgunObject):
 
         if new_meta:
             instance.update_meta(new_meta)
+            # The call to update_interfaces will execute a select query for
+            # the current instance. This appears to overwrite the object in the
+            # current session and we lose the meta changes.
+            db().flush()
             # smarter check needed
             cls.update_interfaces(instance)
 
@@ -423,6 +448,14 @@ class Node(NailgunObject):
                     # assigning node to cluster
                     cluster_changed = True
                     cls.add_into_cluster(instance, new_cluster_id)
+
+        if "group_id" in data:
+            new_group_id = data.pop("group_id")
+            if instance.group_id != new_group_id:
+                nm = Cluster.get_network_manager(instance.cluster)
+                nm.clear_assigned_networks(instance)
+            instance.group_id = new_group_id
+            cls.add_into_cluster(instance, instance.cluster_id)
 
         # calculating flags
         roles_changed = (
@@ -582,7 +615,7 @@ class Node(NailgunObject):
         """
         instance.cluster_id = cluster_id
         db().flush()
-
+        cls.assign_group(instance)
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)

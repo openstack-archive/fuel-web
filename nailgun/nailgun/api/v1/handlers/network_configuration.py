@@ -149,10 +149,6 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
     @content_json
     def PUT(self, cluster_id):
         data = jsonutils.loads(web.data())
-        if data.get("networks"):
-            data["networks"] = [
-                n for n in data["networks"] if n.get("name") != "fuelweb_admin"
-            ]
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
 

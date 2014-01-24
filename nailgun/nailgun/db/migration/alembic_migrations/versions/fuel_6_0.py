@@ -127,6 +127,20 @@ def upgrade_schema():
                         default={}
                     ),
                     sa.PrimaryKeyConstraint('id'))
+    op.create_table(
+        'nodegroups',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('cluster_id', sa.Integer(), nullable=True),
+        sa.Column('name', sa.String(length=50), nullable=False),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id']),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_unique_constraint(None, 'clusters', ['name'])
+    op.add_column(
+        u'network_groups',
+        sa.Column('group_id', sa.Integer(), nullable=True)
+    )
+    op.add_column(u'nodes', sa.Column('group_id', sa.Integer(), nullable=True))
 
 
 def upgrade_data():
@@ -135,6 +149,7 @@ def upgrade_data():
     # do not deploy 5.0.x series
     upgrade_release_set_deployable_false(
         connection, ['2014.1', '2014.1.1-5.0.1', '2014.1.1-5.0.2'])
+    upgrade_node_groups(connection)
 
     # In Fuel 5.x default releases do not have filled orchestrator_data,
     # and defaults one have been used. In Fuel 6.0 we're going to change
@@ -153,6 +168,41 @@ def downgrade_schema():
     op.drop_table('action_logs')
     op.drop_table('master_node_settings')
     map(drop_enum, ENUMS)
+    op.drop_column(u'nodes', 'group_id')
+    op.drop_column(u'network_groups', 'group_id')
+    op.drop_column(u'releases', 'wizard_metadata')
+    op.drop_table('nodegroups')
+
+
+def upgrade_node_groups(connection):
+    cluster_select = sa.text("SELECT id from clusters")
+    node_sel = sa.text("SELECT id FROM nodes WHERE cluster_id=:cluster_id")
+    node_update = sa.text(
+        """UPDATE nodes
+        SET group_id=(SELECT id FROM nodegroups WHERE cluster_id=:cluster_id)
+        WHERE id=:id""")
+    group_insert = sa.text("""INSERT INTO nodegroups (cluster_id, name)
+        VALUES(:cluster_id, 'default')""")
+    net_select = sa.text("""SELECT id FROM network_groups WHERE
+        cluster_id=:cluster_id""")
+    net_update = sa.text("""UPDATE network_groups
+        SET group_id=(SELECT id FROM nodegroups WHERE cluster_id=:cluster_id)
+        WHERE id=:id""")
+
+    clusters = connection.execute(cluster_select)
+
+    for cluster in clusters:
+        connection.execute(group_insert, cluster_id=cluster[0])
+
+        # Assign nodes to the newly created node group
+        nodes = connection.execute(node_sel, cluster_id=cluster[0])
+        for node in nodes:
+            connection.execute(node_update, cluster_id=cluster[0], id=node[0])
+
+        # Assign networks to the newly created node group
+        nets = connection.execute(net_select, cluster_id=cluster[0])
+        for net in nets:
+            connection.execute(net_update, cluster_id=cluster[0], id=net[0])
 
 
 def downgrade_data():

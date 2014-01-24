@@ -68,6 +68,7 @@ class TestProvisioning(BaseIntegrationTest):
         cluster = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster)
         nodes_ids = map(lambda n: n.id, self.env.nodes)
+        self.env.network_manager.assign_ips(nodes_ids, 'fuelweb_admin')
         self.env.network_manager.assign_ips(nodes_ids, 'management')
         self.env.network_manager.assign_ips(nodes_ids, 'storage')
         self.env.network_manager.assign_ips(nodes_ids, 'public')

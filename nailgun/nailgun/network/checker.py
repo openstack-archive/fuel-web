@@ -66,6 +66,8 @@ class NetworkCheck(object):
                         if data_net.get('meta'):
                             data_net.pop('meta')
                         net.update(data_net)
+                        if data_net.get('name') == 'fuelweb_admin':
+                            net.update(name='admin (PXE)')
                         break
                 else:
                     raise errors.NetworkCheckError(
@@ -168,8 +170,8 @@ class NetworkCheck(object):
                     "errors": ["cidr"]
                 })
         # Check for intersection with floating ranges
-        nets_w_cidr = filter(lambda n: n['meta']['notation'] == 'cidr',
-                             self.networks)
+        nets_w_cidr = [n for n in self.networks
+                       if n.get('cidr') and n['name'] != 'public']
         fl_ranges = [netaddr.IPRange(v[0], v[1])
                      for v in self.network_config['floating_ranges']]
         for net_vs_range in product(nets_w_cidr, fl_ranges):

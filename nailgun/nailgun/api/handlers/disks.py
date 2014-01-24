@@ -106,7 +106,6 @@ class NodeVolumesInformationHandler(BaseHandler):
         """
         node = self.get_object_or_404(Node, node_id)
         if node.cluster is None:
-            logger.error(traceback.format_exc())
             raise web.notfound(
                 message='Cannot calculate volumes info. '
                 'Please, add node to an environment.')

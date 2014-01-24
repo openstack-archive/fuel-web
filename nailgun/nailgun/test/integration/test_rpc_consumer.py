@@ -1071,7 +1071,8 @@ class TestConsumer(BaseIntegrationTest):
             cluster_id=cluster_id
         )
         networks = self.db.query(NetworkGroup).\
-            filter(NetworkGroup.cluster_id == cluster_id).all()
+            filter(NetworkGroup.group_id ==
+                   self.env.clusters[0].default_group).all()
 
         vlans = []
         for net in networks:
@@ -1113,8 +1114,9 @@ class TestConsumer(BaseIntegrationTest):
         self.assertEqual(len(nots_db), 0)
 
         nets_db = self.db.query(NetworkGroup).\
-            filter(NetworkGroup.cluster_id == cluster_id).all()
-        self.assertEqual(len(nets_db), 0)
+            filter(NetworkGroup.group_id ==
+                   self.env.clusters[0].default_group).all()
+        self.assertEquals(len(nets_db), 0)
 
         task_db = self.db.query(Task)\
             .filter_by(cluster_id=cluster_id).all()
@@ -1170,5 +1172,6 @@ class TestConsumer(BaseIntegrationTest):
         self.assertNotEqual(len(nots_db), 0)
 
         nets_db = self.db.query(NetworkGroup).\
-            filter(NetworkGroup.cluster_id == cluster_db.id).all()
+            filter(NetworkGroup.group_id ==
+                   self.env.clusters[0].default_group).all()
         self.assertNotEqual(len(nets_db), 0)

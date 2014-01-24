@@ -40,6 +40,8 @@ from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageHandler
 from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
 from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
+from nailgun.api.v1.handlers.node_group import NodeGroupCollectionHandler
+from nailgun.api.v1.handlers.node_group import NodeGroupHandler
 
 from nailgun.api.v1.handlers.network_configuration \
     import NeutronNetworkConfigurationHandler
@@ -131,10 +133,16 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/update/?$',
     ClusterUpdateHandler,
 
+
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
     NodeAssignmentHandler,
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
     NodeUnassignmentHandler,
+
+    r'/nodegroups/?$',
+    NodeGroupCollectionHandler,
+    r'/nodegroups/(?P<obj_id>\d+)/?$',
+    NodeGroupHandler,
 
     r'/nodes/?$',
     NodeCollectionHandler,

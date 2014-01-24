@@ -33,7 +33,7 @@ class NodeAction(Action):
     """
     action_name = "node"
     acceptable_keys = ("id", "status", "name", "cluster", "ip",
-                       "mac", "roles", "pending_roles", "online")
+                       "mac", "roles", "pending_roles", "online", "group_id")
 
     def __init__(self):
         super(NodeAction, self).__init__()
@@ -49,7 +49,7 @@ class NodeAction(Action):
                 Args.get_delete_from_db_arg(
                     "Delete specific nodes only from fuel db.\n"
                     "User should still delete node from cobbler"),
-                Args.get_provision_arg("Provision specific nodes.")
+                Args.get_provision_arg("Provision specific nodes."),
             ),
             group(
                 Args.get_default_arg(

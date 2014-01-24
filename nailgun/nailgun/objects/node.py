@@ -18,6 +18,9 @@ import traceback
 
 from datetime import datetime
 
+from ipaddr import IPAddress
+from ipaddr import IPNetwork
+
 from nailgun import consts
 
 from nailgun.api.serializers.node import NodeSerializer
@@ -130,6 +133,9 @@ class Node(NailgunObject):
         if new_node_cluster_id:
             cls.add_into_cluster(new_node, new_node_cluster_id)
 
+        # Assign node group
+        cls.assign_group(new_node)
+
         # updating roles
         if roles is not None:
             cls.update_roles(new_node, roles)
@@ -142,6 +148,28 @@ class Node(NailgunObject):
 
         cls.create_discover_notification(new_node)
         return new_node
+
+    @classmethod
+    def assign_group(cls, instance):
+        if instance.group_id is None and instance.ip:
+            admin_ngs = db().query(models.NetworkGroup).filter_by(
+                name="fuelweb_admin")
+            ip = IPAddress(instance.ip)
+            for ng in admin_ngs:
+                if ip in IPNetwork(ng.cidr):
+                    instance.group_id = ng.group_id
+                    break
+            if instance.group_id is None and instance.error_type is None:
+                msg = (
+                    u"Failed to match node '{0}' with group_id. Add "
+                    "fuelweb_admin NetworkGroup to match '{1}'"
+                ).format(
+                    instance.name or instance.mac,
+                    instance.ip
+                )
+                logger.warning(msg)
+            db().add(instance)
+            db().flush()
 
     @classmethod
     def create_attributes(cls, instance):
@@ -264,6 +292,13 @@ class Node(NailgunObject):
                     # assigning node to cluster
                     cluster_changed = True
                     cls.add_into_cluster(instance, new_cluster_id)
+
+        if "group_id" in data:
+            new_group_id = data.pop("group_id")
+            if instance.group_id != new_group_id:
+                NetworkManager.clear_assigned_networks()
+            instance.group_id = new_group_id
+            cls.add_into_cluster(instance, instance.cluster_id)
 
         # calculating flags
         roles_changed = (

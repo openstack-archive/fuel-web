@@ -40,6 +40,9 @@ from nailgun.api.handlers.logs import LogPackageHandler
 from nailgun.api.handlers.logs import LogSourceByNodeCollectionHandler
 from nailgun.api.handlers.logs import LogSourceCollectionHandler
 
+from nailgun.api.handlers.node_group import NodeGroupCollectionHandler
+from nailgun.api.handlers.node_group import NodeGroupHandler
+
 from nailgun.api.handlers.network_configuration \
     import NeutronNetworkConfigurationHandler
 from nailgun.api.handlers.network_configuration \
@@ -51,13 +54,12 @@ from nailgun.api.handlers.network_configuration \
 
 from nailgun.api.handlers.node import NodeAgentHandler
 from nailgun.api.handlers.node import NodeCollectionHandler
-from nailgun.api.handlers.node import NodeHandler
-from nailgun.api.handlers.node import NodesAllocationStatsHandler
-
 from nailgun.api.handlers.node import NodeCollectionNICsDefaultHandler
 from nailgun.api.handlers.node import NodeCollectionNICsHandler
+from nailgun.api.handlers.node import NodeHandler
 from nailgun.api.handlers.node import NodeNICsDefaultHandler
 from nailgun.api.handlers.node import NodeNICsHandler
+from nailgun.api.handlers.node import NodesAllocationStatsHandler
 
 from nailgun.api.handlers.notifications import NotificationCollectionHandler
 from nailgun.api.handlers.notifications import NotificationHandler
@@ -134,6 +136,11 @@ urls = (
     NodeAssignmentHandler,
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
     NodeUnassignmentHandler,
+
+    r'/nodegroups/?$',
+    NodeGroupCollectionHandler,
+    r'/nodegroups/(?P<obj_id>\d+)/?$',
+    NodeGroupHandler,
 
     r'/nodes/?$',
     NodeCollectionHandler,

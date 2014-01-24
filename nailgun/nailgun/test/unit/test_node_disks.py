@@ -272,7 +272,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
             self.assertEquals(len(disk['volumes']), len(vgs))
 
     def test_get_default_attrs(self):
-        self.env.create_node(api=True)
+        self.env.create_node(api=False)
         node_db = self.env.nodes[0]
         volumes_from_api = self.get(node_db.id)
 

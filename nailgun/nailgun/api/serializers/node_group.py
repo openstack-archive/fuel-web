@@ -14,21 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.objects.base import NailgunObject
-from nailgun.objects.base import NailgunCollection
+from nailgun.api.serializers.base import BasicSerializer
 
-from nailgun.objects.release import Release
-from nailgun.objects.release import ReleaseCollection
 
-from nailgun.objects.cluster import Attributes
-from nailgun.objects.cluster import Cluster
-from nailgun.objects.cluster import ClusterCollection
+class NodeGroupSerializer(BasicSerializer):
 
-from nailgun.objects.node import Node
-from nailgun.objects.node import NodeCollection
-
-from nailgun.objects.task import Task
-from nailgun.objects.task import TaskCollection
-
-from nailgun.objects.node_group import NodeGroup
-from nailgun.objects.node_group import NodeGroupCollection
+    fields = (
+        "id",
+        "cluster",
+        "name"
+    )

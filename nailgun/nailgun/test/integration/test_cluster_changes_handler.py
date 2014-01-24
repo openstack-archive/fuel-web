@@ -81,7 +81,7 @@ class TestHandlers(BaseIntegrationTest):
 
             'management_interface': 'eth0.101',
             'fixed_interface': 'eth0.103',
-            'admin_interface': 'eth1',
+            'fuelweb_admin_interface': 'eth1',
             'storage_interface': 'eth0.102',
             'public_interface': 'eth0',
             'floating_interface': 'eth0',
@@ -203,7 +203,8 @@ class TestHandlers(BaseIntegrationTest):
                         'eth0': {
                             'interface': 'eth0',
                             'ipaddr': ['%s/24' % ips['public']],
-                            'gateway': '172.16.0.1'},
+                            'gateway': '172.16.0.1',
+                            'default_gateway': True},
                         'eth0.101': {
                             'interface': 'eth0.101',
                             'ipaddr': ['%s/24' % ips['internal']]},
@@ -297,6 +298,10 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
+                    'gw':
+                    self.env.network_manager.get_default_gateway(n.id),
+                    'admin_net':
+                    self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -311,7 +316,7 @@ class TestHandlers(BaseIntegrationTest):
 
             NetworkManager.assign_admin_ips(n.id, 1)
 
-            admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
+            admin_ip = self.env.network_manager.get_admin_ip_for_node(n.id)
 
             for i in n.interfaces:
                 if 'interfaces' not in pnd:
@@ -596,7 +601,8 @@ class TestHandlers(BaseIntegrationTest):
                             "br-mgmt": {"IP": [ips['management'] + "/24"]},
                             "br-ex": {
                                 "IP": [ips['public'] + "/24"],
-                                "gateway": "172.16.0.1"
+                                "default_gateway": True,
+                                "gateway": "172.16.0.1",
                             },
                             "br-storage": {"IP": [ips['storage'] + "/24"]},
                             "br-fw-admin": {"IP": [ips['admin']]},
@@ -625,6 +631,9 @@ class TestHandlers(BaseIntegrationTest):
                                 "name": u"eth1"},
                             {
                                 "action": "add-br",
+                                "name": "br-ex"},
+                            {
+                                "action": "add-br",
                                 "name": "br-mgmt"},
                             {
                                 "action": "add-br",
@@ -632,9 +641,6 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-br",
                                 "name": "br-fw-admin"},
-                            {
-                                "action": "add-br",
-                                "name": "br-ex"},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-storage"],
@@ -733,7 +739,11 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
-                    'image_data': cluster_attrs['provision']['image_data']
+                    'image_data': cluster_attrs['provision']['image_data'],
+                    'gw':
+                    self.env.network_manager.get_default_gateway(n.id),
+                    'admin_net':
+                    self.env.network_manager.get_admin_network_group(n.id).cidr
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -748,7 +758,7 @@ class TestHandlers(BaseIntegrationTest):
 
             NetworkManager.assign_admin_ips(n.id, 1)
 
-            admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
+            admin_ip = self.env.network_manager.get_admin_ip_for_node(n.id)
 
             for i in n.meta.get('interfaces', []):
                 if 'interfaces' not in pnd:

@@ -106,7 +106,7 @@ class NailgunObject(object):
         :returns: None
         """
         db().delete(instance)
-        db().flush()
+        db().commit()
 
     @classmethod
     def to_dict(cls, instance, fields=None):

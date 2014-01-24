@@ -366,7 +366,7 @@ class VerifyNetworksTask(object):
                 vlans = []
                 for ng in assigned_networks:
                     # Handle FuelWeb admin network first.
-                    if not ng.cluster_id:
+                    if ng.group_id is None:
                         vlans.append(0)
                         continue
                     data_ng = filter(lambda i: i['name'] == ng.name, data)[0]

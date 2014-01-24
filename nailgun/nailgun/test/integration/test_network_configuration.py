@@ -46,7 +46,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                 'network_size',
                 'name',
                 'amount',
-                'cluster_id',
+                'group_id',
                 'vlan_start',
                 'cidr',
                 'id']
@@ -269,7 +269,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                 'network_size',
                 'name',
                 'amount',
-                'cluster_id',
+                'group_id',
                 'vlan_start',
                 'cidr',
                 'id']

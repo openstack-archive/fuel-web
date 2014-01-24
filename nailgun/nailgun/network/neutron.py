@@ -44,7 +44,7 @@ class NeutronManager(NetworkManager):
             NetworkGroup.cidr,
             NetworkGroup.gateway
         ).filter_by(
-            cluster_id=cluster.id,
+            group_id=cluster.default_group,
             name='public'
         ).first()
         net = IPNetwork(public_cidr)

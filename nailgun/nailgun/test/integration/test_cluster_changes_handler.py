@@ -75,7 +75,7 @@ class TestHandlers(BaseIntegrationTest):
 
             'management_interface': 'eth0.101',
             'fixed_interface': 'eth0.103',
-            'admin_interface': 'eth1',
+            'fuelweb_admin_interface': 'eth1',
             'storage_interface': 'eth0.102',
             'public_interface': 'eth0',
             'floating_interface': 'eth0',

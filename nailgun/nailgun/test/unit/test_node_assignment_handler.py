@@ -25,7 +25,10 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         self.env.create(
             cluster_kwargs={"api": True},
             nodes_kwargs=[
-                {"cluster_id": None}
+                {
+                    "cluster_id": None,
+                    "api": True
+                }
             ]
         )
         cluster = self.env.clusters[0]

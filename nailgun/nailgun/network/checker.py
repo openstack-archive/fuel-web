@@ -63,6 +63,8 @@ class NetworkCheck(object):
             for data_net in data['networks']:
                 for net in self.networks:
                     if data_net['id'] == net['id']:
+                        if data_net.get('name') == 'fuelweb_admin':
+                            data_net.update(name='admin (PXE)')
                         if data_net.get('meta'):
                             data_net.pop('meta')
                         net.update(data_net)

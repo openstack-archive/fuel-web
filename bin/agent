@@ -550,7 +550,7 @@ sleep_time = rand(30)
 logger.debug("Sleep for #{sleep_time} seconds before sending request")
 sleep(sleep_time)
 
-agent = NodeAgent.new(logger, url)
+agent = NodeAgent.new(logger, url, admin_net)
 agent.update_state
 
 begin

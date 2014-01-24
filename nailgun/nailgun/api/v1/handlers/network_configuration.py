@@ -18,6 +18,7 @@
 Handlers dealing with network configurations
 """
 
+from copy import deepcopy
 import six
 import traceback
 import web
@@ -149,9 +150,15 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
     @content_json
     def PUT(self, cluster_id):
         data = jsonutils.loads(web.data())
-        if data.get("networks"):
-            data["networks"] = [
-                n for n in data["networks"] if n.get("name") != "fuelweb_admin"
+        net_check = deepcopy(data)
+
+        # We only need to filter the admin networks for the network checking
+        # task. We still need to allow those networks to be updated via the
+        # API.
+        if net_check.get("networks"):
+            net_check["networks"] = [
+                n for n in net_check["networks"]
+                if n.get("name") != "fuelweb_admin"
             ]
         cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
@@ -159,7 +166,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         self.check_if_network_configuration_locked(cluster)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
-        task = task_manager.execute(data)
+        task = task_manager.execute(net_check)
 
         if task.status != consts.TASK_STATUSES.error:
 

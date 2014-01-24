@@ -316,6 +316,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                         return !_.isNull(value);
                     },
                     onSet: _.bind(function(value) {
+                        this.$('input.vlan').toggle(!!value);
                         if (value) {
                             this.$('input.vlan').focus();
                         }
@@ -331,13 +332,6 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 },
                 'input.vlan': {
                     observe: 'vlan_start',
-                    onGet: function(value) {
-                        // hack to define input visibility:
-                        // onGet() stickit method converts null and undefined values to an empty string
-                        // so it's impossible to check null value in visible() method, which suits better to toggle the input
-                        this.$('input.vlan').toggle(!_.isNull(value));
-                        return value;
-                    },
                     onSet: function(value) {
                         return Number(value) || '';
                     },

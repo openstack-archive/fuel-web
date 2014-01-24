@@ -67,7 +67,7 @@ class NetworkGroup(Base):
     # can be nullable only for fuelweb admin net
     release = Column(Integer, ForeignKey('releases.id'))
     # can be nullable only for fuelweb admin net
-    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    group_id = Column(Integer, ForeignKey('nodegroups.id'), nullable=True)
     network_size = Column(Integer, default=256)
     amount = Column(Integer, default=1)
     vlan_start = Column(Integer)

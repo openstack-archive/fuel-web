@@ -44,13 +44,15 @@ class NetworkCheck(object):
         fields = NetworkGroup.__mapper__.columns.keys() + ['meta']
         net = NetworkConfigurationSerializer.serialize_network_group(admin_ng,
                                                                      fields)
-        # change Admin name for UI
+        # change Admin name for UI. Nope
         net.update(name='admin (PXE)')
         self.networks = [net]
         for ng in self.cluster.network_groups:
             net = NetworkConfigurationSerializer.serialize_network_group(
                 ng,
                 fields)
+            if net['name'] == 'fuelweb_admin':
+                continue
             self.networks.append(net)
         # merge with data['networks']
         if 'networks' in data:

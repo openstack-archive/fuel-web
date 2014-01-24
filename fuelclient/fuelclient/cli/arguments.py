@@ -337,6 +337,14 @@ def get_delete_arg(help_msg):
     return get_boolean_arg("delete", help=help_msg)
 
 
+def get_assign_arg(help_msg):
+    return get_boolean_arg("assign", help=help_msg)
+
+
+def get_group_arg(help_msg):
+    return get_set_type_arg("group", help=help_msg)
+
+
 def get_release_arg(help_msg, required=False):
     return get_int_arg(
         "release",

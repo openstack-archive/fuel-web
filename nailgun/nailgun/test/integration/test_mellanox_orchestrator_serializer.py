@@ -57,8 +57,7 @@ class TestMellanox(OrchestratorSerializerTestBase):
             iser_sttr = editable_attrs.setdefault('storage', {})
             iser_sttr.setdefault('iser', {})['value'] = True
             network_group = self.db().query(NetworkGroup)
-            storage = network_group.filter_by(name="storage",
-                                              cluster_id=self.cluster_id)
+            storage = network_group.filter_by(name="storage")
             if iser_vlan:
                 storage.update(
                     {"vlan_start": iser_vlan}, synchronize_session="fetch")

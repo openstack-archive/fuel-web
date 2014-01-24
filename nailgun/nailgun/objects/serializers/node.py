@@ -41,7 +41,8 @@ class NodeSerializer(BasicSerializer):
         'error_type',
         'online',
         'cluster',
-        'network_data'
+        'network_data',
+        'group_id'
     )
 
 

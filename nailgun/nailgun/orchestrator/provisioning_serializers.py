@@ -112,7 +112,8 @@ class ProvisioningSerializer(object):
                 'mco_password': settings.MCO_PASSWORD,
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
-                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')}}
+                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')
+            }}
 
         orchestrator_data = objects.Release.get_orchestrator_data_dict(
             node.cluster.release)
@@ -132,6 +133,10 @@ class ProvisioningSerializer(object):
                 'mlnx_iser_enabled': cluster_attrs['storage']['iser'],
             })
 
+        net_manager = objects.Node.get_network_manager(node)
+        gw = net_manager.get_default_gateway(node.id)
+        serialized_node['ks_meta'].update({'gw': gw})
+
         serialized_node.update(cls.serialize_interfaces(node))
 
         return serialized_node
@@ -141,9 +146,9 @@ class ProvisioningSerializer(object):
         interfaces = {}
         interfaces_extra = {}
         net_manager = objects.Node.get_network_manager(node)
-        admin_ip = net_manager.get_admin_ip_for_node(node)
+        admin_ip = net_manager.get_admin_ip_for_node(node.id)
         admin_netmask = str(netaddr.IPNetwork(
-            net_manager.get_admin_network_group().cidr
+            net_manager.get_admin_network_group(node.id).cidr
         ).netmask)
 
         for interface in node.nic_interfaces:

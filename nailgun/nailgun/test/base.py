@@ -181,6 +181,7 @@ class Environment(object):
             )
         else:
             cluster = Cluster.create(cluster_data)
+            cluster.create_default_group()
             db().commit()
             self.clusters.append(cluster)
 
@@ -209,6 +210,7 @@ class Environment(object):
         node_data = {
             'mac': mac,
             'status': 'discover',
+            'ip': '10.20.0.130',
             'meta': default_metadata
         }
         if kwargs:
@@ -230,6 +232,7 @@ class Environment(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
+            print resp
             self.tester.assertEqual(resp.status_code, expect_http)
             if expect_message:
                 self.tester.assertEqual(resp.body, expect_message)

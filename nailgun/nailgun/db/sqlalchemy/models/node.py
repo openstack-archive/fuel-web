@@ -66,6 +66,19 @@ class Role(Base):
     name = Column(String(50), nullable=False)
 
 
+class NodeGroup(Base):
+    __tablename__ = 'nodegroups'
+    id = Column(Integer, primary_key=True)
+    cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    name = Column(String(50), nullable=False)
+    nodes = relationship("Node")
+    networks = relationship(
+        "NetworkGroup",
+        backref="nodegroup",
+        cascade="delete"
+    )
+
+
 class Node(Base):
     __tablename__ = 'nodes'
     NODE_STATUSES = (
@@ -79,12 +92,14 @@ class Node(Base):
     NODE_ERRORS = (
         'deploy',
         'provision',
-        'deletion'
+        'deletion',
+        'discover',
     )
     id = Column(Integer, primary_key=True)
     uuid = Column(String(36), nullable=False,
                   default=lambda: str(uuid.uuid4()), unique=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    group_id = Column(Integer, ForeignKey('nodegroups.id'), nullable=True)
     name = Column(Unicode(100))
     status = Column(
         Enum(*NODE_STATUSES, name='node_status'),
@@ -234,6 +249,10 @@ class Node(Base):
         for interface in self.interfaces:
             ip_addr = interface.ip_addr
             if NetworkManager.is_ip_belongs_to_admin_subnet(ip_addr):
+                return interface
+
+        for interface in self.interfaces:
+            if interface.mac == self.mac:
                 return interface
 
         logger.warning(u'Cannot find admin interface for node '

@@ -84,6 +84,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             nodes_kwargs=node_args)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        TaskHelper.prepare_for_provisioning(cluster_db.nodes)
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
@@ -109,6 +110,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_serialize_node(self):
         node = self.env.create_node(
             api=True, cluster_id=self.cluster.id, pending_addition=True)
+        TaskHelper.prepare_for_provisioning(self.cluster.nodes)
         TaskHelper.prepare_for_deployment(self.cluster.nodes)
 
         node_db = self.db.query(Node).get(node['id'])
@@ -204,7 +206,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         floating_network_group = self.db.query(NetworkGroup).filter(
             NetworkGroup.name == 'floating'
         ).filter(
-            NetworkGroup.cluster_id == self.cluster.id).first()
+            NetworkGroup.group_id == self.cluster.default_group).first()
 
         # Remove floating ip addr ranges
         self.db.query(IPAddrRange).filter(
@@ -219,6 +221,10 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
             self.db.add(new_ip_range)
         self.db.commit()
+        floating_network_group = self.db.query(NetworkGroup).filter(
+            NetworkGroup.name == 'floating'
+        ).filter(
+            NetworkGroup.group_id == self.cluster.default_group).first()
         facts = self.serializer.serialize(self.cluster, self.cluster.nodes)
 
         for fact in facts:
@@ -278,6 +284,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
                 {'roles': ['cinder'], 'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        TaskHelper.prepare_for_provisioning(cluster_db.nodes)
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
@@ -375,6 +382,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                  'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        TaskHelper.prepare_for_provisioning(cluster_db.nodes)
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
@@ -400,6 +408,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_serialize_node(self):
         node = self.env.create_node(
             api=True, cluster_id=self.cluster.id, pending_addition=True)
+
+        TaskHelper.prepare_for_provisioning(self.cluster.nodes)
         TaskHelper.prepare_for_deployment(self.cluster.nodes)
 
         node_db = self.db.query(Node).get(node['id'])
@@ -465,7 +475,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         public_ng = self.db.query(NetworkGroup).filter(
             NetworkGroup.name == 'public'
         ).filter(
-            NetworkGroup.cluster_id == cluster.id
+            NetworkGroup.group_id == cluster.default_group
         ).first()
         public_ng.gateway = test_gateway
         self.db.add(public_ng)
@@ -514,6 +524,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        TaskHelper.prepare_for_provisioning(cluster_db.nodes)
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
@@ -720,6 +731,8 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+
+        TaskHelper.prepare_for_provisioning(cluster_db.nodes)
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 

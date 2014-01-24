@@ -32,6 +32,7 @@ class TestTaskHelpers(BaseTestCase):
             nodes_kwargs=nodes)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        TaskHelper.prepare_for_provisioning(cluster_db.nodes)
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 

@@ -24,6 +24,9 @@ import traceback
 
 from sqlalchemy.orm import joinedload
 
+from ipaddr import IPAddress
+from ipaddr import IPNetwork
+
 import web
 
 from nailgun.api.handlers.base import BaseHandler
@@ -49,7 +52,7 @@ class NodeHandler(BaseHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster', 'uuid')
+              'error_type', 'online', 'cluster', 'group_id', 'uuid')
     model = Node
     validator = NodeValidator
 
@@ -112,6 +115,17 @@ class NodeHandler(BaseHandler):
                     network_manager = node.cluster.network_manager
                     network_manager.assign_networks_by_default(node)
 
+        # Assign node group
+        if "group_id" in data:
+            old_group_id = node.group_id
+            node.group_id = data["group_id"]
+            if node.group_id != old_group_id:
+                if old_group_id:
+                    network_manager.clear_assigned_networks(node)
+                if node.group_id:
+                    network_manager = node.cluster.network_manager
+                    network_manager.assign_networks_by_default(node)
+
         regenerate_volumes = any((
             'roles' in data and set(data['roles']) != set(node.roles),
             'pending_roles' in data and
@@ -162,7 +176,7 @@ class NodeCollectionHandler(BaseHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster', 'uuid')
+              'error_type', 'online', 'cluster', 'group_id', 'uuid')
 
     validator = NodeValidator
 
@@ -173,13 +187,16 @@ class NodeCollectionHandler(BaseHandler):
         ips_mapped = network_manager.get_grouped_ips_by_node()
         networks_grouped = network_manager.get_networks_grouped_by_cluster()
         for node in nodes:
+            group_id = node.group_id
+            if not group_id and node.cluster:
+                group_id = node.cluster.default_group
             try:
                 json_data = BaseHandler.render(node, fields=cls.fields)
 
                 json_data['network_data'] = network_manager.\
                     get_node_networks_optimized(
                         node, ips_mapped.get(node.id, []),
-                        networks_grouped.get(node.cluster_id, []))
+                        networks_grouped.get(group_id, []))
                 json_list.append(json_data)
             except Exception:
                 logger.error(traceback.format_exc())
@@ -251,6 +268,24 @@ class NodeCollectionHandler(BaseHandler):
                 node.create_meta(value)
             else:
                 setattr(node, key, value)
+
+        if node.group_id is None and node.ip:
+            admin_ngs = db().query(NetworkGroup).filter_by(
+                name="fuelweb_admin")
+            ip = IPAddress(node.ip)
+            for ng in admin_ngs:
+                if ip in IPNetwork(ng.cidr):
+                    node.group_id = ng.group_id
+                    break
+            if node.group_id is None and node.error_type is None:
+                msg = (
+                    u"Failed to match node '{0}' with group_id. Add "
+                    "fuelweb_admin NetworkGroup to match '{1}'"
+                ).format(
+                    node.name or node.mac,
+                    node.ip
+                )
+                logger.warning(msg)
 
         db().add(node)
         db().flush()
@@ -339,6 +374,49 @@ class NodeCollectionHandler(BaseHandler):
                     or self.validator.validate_existent_node_mac_update(nd)
             else:
                 node = q.get(nd["id"])
+
+            is_agent = nd.pop("is_agent") if "is_agent" in nd else False
+            if is_agent:
+                node.timestamp = datetime.now()
+                if not node.online:
+                    node.online = True
+                    msg = u"Node '{0}' is back online".format(
+                        node.human_readable_name)
+                    logger.info(msg)
+                    notifier.notify("discover", msg, node_id=node.id)
+                db().commit()
+
+            if node.group_id is None:
+                admin_ngs = db().query(NetworkGroup).filter_by(
+                    name="fuelweb_admin")
+                ip = IPAddress(node.ip)
+                for ng in admin_ngs:
+                    if ip in IPNetwork(ng.cidr):
+                        node.group_id = ng.group_id
+                        if node.error_type == 'discover':
+                            node.error_type = None
+                            node.error_msg = None
+                            notifier.notify(
+                                "discover",
+                                (
+                                    u"Node '{0}' rejoined with group_id '{1}'"
+                                ).format(
+                                    node.name or node.mac, node.group_id
+                                ),
+                                node_id=node.id
+                            )
+                            node.status = 'rollback'
+                        break
+                if node.group_id is None and node.error_type is None:
+                    msg = (
+                        u"Failed to match node '{0}' with group_id. Add "
+                        "fuelweb_admin NetworkGroup to match '{1}'"
+                    ).format(
+                        node.name or node.mac,
+                        node.ip
+                    )
+                    logger.warning(msg)
+                    notifier.notify("error", msg, node_id=node.id)
 
             old_cluster_id = node.cluster_id
 

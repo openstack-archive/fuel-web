@@ -319,7 +319,6 @@ class NetworkDeploymentSerializer(object):
     def get_common_attrs(cls, cluster, attrs):
         """Cluster network attributes."""
         common = cls.network_provider_cluster_attrs(cluster)
-        common.update(cls.network_ranges(cluster))
         common.update({'master_ip': settings.MASTER_IP})
         common['nodes'] = deepcopy(attrs['nodes'])
 
@@ -363,7 +362,26 @@ class NetworkDeploymentSerializer(object):
         """Returns ranges for network groups
         except range for public network
         """
-        ng_db = db().query(NetworkGroup).filter_by(cluster_id=cluster.id).all()
+        ng_db = db().query(NetworkGroup).filter(
+            NetworkGroup.group_id._in(cluster.groups)
+        ).all()
+        attrs = {}
+        for net in ng_db:
+            net_name = net.name + '_network_range'
+            if net.meta.get("render_type") == 'ip_ranges':
+                attrs[net_name] = cls.get_ip_ranges_first_last(net)
+            elif net.meta.get("render_type") == 'cidr' and net.cidr:
+                attrs[net_name] = net.cidr
+
+        return attrs
+
+    @classmethod
+    def node_network_ranges(cls, node):
+        """Returns ranges for network groups
+        except range for public network for each node
+        """
+        ng_db = db().query(NetworkGroup).\
+            filter_by(group_id=node.group_id).all()
         attrs = {}
         for net in ng_db:
             net_name = net.name + '_network_range'
@@ -404,12 +422,12 @@ class NetworkDeploymentSerializer(object):
     @staticmethod
     def get_admin_ip_w_prefix(node):
         """Getting admin ip and assign prefix from admin network."""
-        network_manager = NetworkManager
-        admin_ip = network_manager.get_admin_ip_for_node(node)
+        nm = NetworkManager
+        admin_ip = nm.get_admin_ip_for_node(node)
         admin_ip = IPNetwork(admin_ip)
 
         # Assign prefix from admin network
-        admin_net = IPNetwork(network_manager.get_admin_network_group().cidr)
+        admin_net = IPNetwork(nm.get_admin_network_group(node.id).cidr)
         admin_ip.prefixlen = admin_net.prefixlen
 
         return str(admin_ip)
@@ -444,7 +462,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         attrs = {'network_manager': cluster.net_manager}
 
         fixed_net = db().query(NetworkGroup).filter_by(
-            cluster_id=cluster.id).filter_by(name='fixed').first()
+            group_id=cluster.default_group).filter_by(name='fixed').first()
 
         # network_size is required for all managers, otherwise
         # puppet will use default (255)
@@ -740,9 +758,12 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             # Here we get a dict with network description for this particular
             # node with its assigned IPs and device names for each network.
             netgroup = nm.get_node_network_by_netname(node.id, ngname)
-            attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
+            if netgroup.get('ip'):
+                attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
             netgroups[ngname] = netgroup
-        attrs['endpoints']['br-ex']['gateway'] = netgroups['public']['gateway']
+            if netgroups[ngname].get('gateway'):
+                attrs['endpoints'][brname]['gateway'] =\
+                    netgroups[ngname]['gateway']
 
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:
@@ -794,6 +815,18 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 node.cluster.net_segment_type
             )
 
+        # Fill up all about fuelweb-admin network.
+        admin_net = nm.get_node_network_by_netname(node.id, 'fuelweb_admin')
+        attrs['endpoints'][node.admin_interface.name] = {
+            "IP": [cls.get_admin_ip_w_prefix(node)],
+        }
+
+        if admin_net.get('gateway'):
+            attrs['endpoints'][node.admin_interface.name]["gateway"] =\
+                admin_net.get('gateway')
+
+        attrs['roles']['fw-admin'] = node.admin_interface.name
+
         return attrs
 
     @classmethod
@@ -832,6 +865,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 def serialize(cluster, nodes):
     """Serialization depends on deployment mode
     """
+    TaskHelper.prepare_for_provisioning(cluster.nodes)
     TaskHelper.prepare_for_deployment(cluster.nodes)
 
     if cluster.mode == 'multinode':

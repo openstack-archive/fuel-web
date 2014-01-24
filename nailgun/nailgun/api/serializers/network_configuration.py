@@ -15,12 +15,14 @@
 #    under the License.
 
 from nailgun.api.serializers.base import BasicSerializer
+from nailgun.db import db
+from nailgun.db.sqlalchemy.models import NodeGroup
 from nailgun.network.manager import NetworkManager
 
 
 class NetworkConfigurationSerializer(BasicSerializer):
 
-    fields = ('id', 'cluster_id', 'name', 'cidr', 'netmask',
+    fields = ('id', 'group_id', 'name', 'cidr', 'netmask',
               'gateway', 'vlan_start', 'network_size', 'amount', 'meta')
 
     @classmethod
@@ -40,20 +42,18 @@ class NetworkConfigurationSerializer(BasicSerializer):
     def serialize_net_groups_and_vips(cls, cluster):
         result = {}
         net_manager = NetworkManager
+        default_group = db().query(NodeGroup).get(cluster.default_group)
+        nets = default_group.networks + [net_manager.get_admin_network_group()]
         result['networks'] = map(
             cls.serialize_network_group,
-            cluster.network_groups
-        )
-        result['networks'].append(
-            cls.serialize_network_group(
-                net_manager.get_admin_network_group()
-            )
+            nets
         )
         if cluster.is_ha_mode:
             for ng in cluster.network_groups:
                 if ng.meta.get("assign_vip"):
                     result['{0}_vip'.format(ng.name)] = \
                         net_manager.assign_vip(cluster.id, ng.name)
+
         return result
 
 

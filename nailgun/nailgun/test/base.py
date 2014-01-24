@@ -195,6 +195,7 @@ class Environment(object):
             )
         else:
             cluster = Cluster.create(cluster_data)
+            cluster.create_default_group()
             db().commit()
             self.clusters.append(cluster)
         return cluster
@@ -222,6 +223,7 @@ class Environment(object):
         node_data = {
             'mac': mac,
             'status': 'discover',
+            'ip': '10.20.0.130',
             'meta': default_metadata
         }
         if kwargs:
@@ -265,6 +267,7 @@ class Environment(object):
                 for cluster in self.clusters:
                     if cluster.id == cluster_id:
                         node.cluster = cluster
+                        node.group_id = node.cluster.default_group
                         break
                 else:
                     node.cluster_id = cluster_id

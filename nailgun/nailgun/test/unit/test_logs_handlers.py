@@ -118,7 +118,8 @@ class TestLogs(BaseIntegrationTest):
                 'text2',
             ],
         ]
-        cluster = self.env.create_cluster(api=False)
+        self.env.create_cluster()
+        cluster = self.env.clusters[0]
         node = self.env.create_node(cluster_id=cluster.id, ip=node_ip)
         self._create_logfile_for_node(settings.LOGS[0], log_entries)
         self._create_logfile_for_node(settings.LOGS[1], log_entries, node)

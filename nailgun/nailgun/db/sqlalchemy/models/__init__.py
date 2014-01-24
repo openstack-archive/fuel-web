@@ -29,6 +29,7 @@ from nailgun.db.sqlalchemy.models.node import Role
 from nailgun.db.sqlalchemy.models.node import NodeAttributes
 from nailgun.db.sqlalchemy.models.node import NodeBondInterface
 from nailgun.db.sqlalchemy.models.node import NodeNICInterface
+from nailgun.db.sqlalchemy.models.node import NodeGroup
 
 from nailgun.db.sqlalchemy.models.network import NetworkGroup
 from nailgun.db.sqlalchemy.models.network import IPAddr
@@ -45,3 +46,4 @@ from nailgun.db.sqlalchemy.models.notification import Notification
 from nailgun.db.sqlalchemy.models.task import Task
 
 from nailgun.db.sqlalchemy.models.redhat import RedHatAccount
+

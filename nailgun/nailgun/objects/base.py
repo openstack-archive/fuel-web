@@ -128,7 +128,7 @@ class NailgunObject(object):
         :returns: None
         """
         db().delete(instance)
-        db().flush()
+        db().commit()
 
     @classmethod
     def save(cls, instance=None):

@@ -393,6 +393,20 @@ def upgrade():
                         ondelete='CASCADE'),
                     sa.PrimaryKeyConstraint('id')
                     )
+    op.create_table(
+        'nodegroups',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('cluster_id', sa.Integer(), nullable=True),
+        sa.Column('name', sa.String(length=50), nullable=False),
+        sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id']),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_unique_constraint(None, 'clusters', ['name'])
+    op.add_column(
+        u'network_groups',
+        sa.Column('group_id', sa.Integer(), nullable=True)
+    )
+    op.add_column(u'nodes', sa.Column('group_id', sa.Integer(), nullable=True))
 
 
 def downgrade():
@@ -420,3 +434,8 @@ def downgrade():
     op.drop_table('releases')
     op.drop_table('capacity_log')
     op.drop_table('red_hat_accounts')
+    op.drop_column(u'nodes', 'group_id')
+    op.drop_column(u'network_groups', 'group_id')
+    op.drop_constraint(None, 'clusters')
+    op.create_index('clusters_name_key', 'clusters', [u'name'], unique=True)
+    op.drop_table('nodegroups')

@@ -80,7 +80,7 @@ class TestHandlers(BaseIntegrationTest):
 
             'management_interface': 'eth0.101',
             'fixed_interface': 'eth0.103',
-            'admin_interface': 'eth1',
+            'fuelweb_admin_interface': 'eth1',
             'storage_interface': 'eth0.102',
             'public_interface': 'eth0',
             'floating_interface': 'eth0',
@@ -290,6 +290,8 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
+                    'gw':
+                    self.env.network_manager.get_default_gateway(n.id)
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -304,7 +306,7 @@ class TestHandlers(BaseIntegrationTest):
 
             NetworkManager.assign_admin_ips(n.id, 1)
 
-            admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
+            admin_ip = self.env.network_manager.get_admin_ip_for_node(n.id)
 
             for i in n.interfaces:
                 if 'interfaces' not in pnd:
@@ -568,6 +570,7 @@ class TestHandlers(BaseIntegrationTest):
                     'network_scheme': {
                         "version": "1.0",
                         "provider": "ovs",
+                        "other_nets": {},
                         "interfaces": {
                             "eth0": {
                                 "L2": {"vlan_splinters": "off"},
@@ -715,6 +718,8 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
+                    'gw':
+                    self.env.network_manager.get_default_gateway(n.id)
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -729,7 +734,7 @@ class TestHandlers(BaseIntegrationTest):
 
             NetworkManager.assign_admin_ips(n.id, 1)
 
-            admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
+            admin_ip = self.env.network_manager.get_admin_ip_for_node(n.id)
 
             for i in n.meta.get('interfaces', []):
                 if 'interfaces' not in pnd:

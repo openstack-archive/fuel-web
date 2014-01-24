@@ -72,7 +72,7 @@ class TestHandlers(BaseIntegrationTest):
         for clstr in (cluster_db, cluster2_db):
             management_net = self.db.query(NetworkGroup).filter_by(
                 name="management",
-                cluster_id=clstr.id
+                group_id=clstr.default_group
             ).first()
             NovaNetworkManager.update(
                 clstr,
@@ -100,7 +100,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster2_nets = self._get_cluster_networks(cluster2["id"])
 
         for net1, net2 in zip(cluster1_nets, cluster2_nets):
-            for f in ('cluster_id', 'id'):
+            for f in ('group_id', 'id'):
                 del net1[f]
                 del net2[f]
 
@@ -113,12 +113,12 @@ class TestHandlers(BaseIntegrationTest):
         cluster2_nets = self._get_cluster_networks(cluster2_id)
 
         for net1, net2 in zip(cluster1_nets, cluster2_nets):
-            for f in ('cluster_id', 'id'):
+            for f in ('group_id', 'id'):
                 del net1[f]
                 del net2[f]
 
-        cluster1_nets = sorted(cluster1_nets, key=lambda n: n['vlan_start'])
-        cluster2_nets = sorted(cluster2_nets, key=lambda n: n['vlan_start'])
+        cluster1_nets = sorted(cluster1_nets, key=lambda n: n['name'])
+        cluster2_nets = sorted(cluster2_nets, key=lambda n: n['name'])
 
         self.assertEquals(cluster1_nets, cluster2_nets)
 

@@ -51,6 +51,8 @@ class NetworkCheck(object):
             net = NetworkConfigurationSerializer.serialize_network_group(
                 ng,
                 fields)
+            if net['name'] == 'fuelweb_admin':
+                continue
             self.networks.append(net)
         # merge with data['networks']
         if 'networks' in data:

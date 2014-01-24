@@ -71,7 +71,7 @@ class NailgunObject(object):
     @classmethod
     def delete(cls, instance):
         db().delete(instance)
-        db().flush()
+        db().commit()
 
     @classmethod
     def to_dict(cls, instance, fields=None):

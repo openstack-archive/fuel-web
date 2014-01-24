@@ -340,6 +340,14 @@ class TestHandlers(BaseIntegrationTest):
 
         # Set IP outside of admin network range on eth1
         node.meta['interfaces'][1]['ip'] = '10.21.0.3'
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({
+                'mac': node.mac,
+                'meta': node.meta,
+            }),
+            headers=self.default_headers)
+
         self.env.network_manager.update_interfaces_info(node)
 
         # node.mac == eth0 mac so eth0 should now be admin interface

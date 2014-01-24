@@ -246,6 +246,10 @@ class DeploymentMultinodeSerializer(object):
 
         node_attrs.update(self.get_net_provider_serializer(
             node.cluster).get_node_attrs(node))
+        node_attrs.update(
+            self.get_net_provider_serializer(node.cluster).
+            network_ranges(node.group_id)
+        )
         node_attrs.update(self.get_image_cache_max_size(node))
         node_attrs.update(self.generate_test_vm_image_data(node))
         return node_attrs
@@ -416,7 +420,7 @@ class NetworkDeploymentSerializer(object):
     def get_common_attrs(cls, cluster, attrs):
         """Cluster network attributes."""
         common = cls.network_provider_cluster_attrs(cluster)
-        common.update(cls.network_ranges(cluster))
+        common.update(cls.network_ranges(cluster.default_group))
         common.update({'master_ip': settings.MASTER_IP})
         common['nodes'] = deepcopy(attrs['nodes'])
 
@@ -459,11 +463,12 @@ class NetworkDeploymentSerializer(object):
             return NeutronNetworkDeploymentSerializer
 
     @classmethod
-    def network_ranges(cls, cluster):
+    def network_ranges(cls, group_id):
         """Returns ranges for network groups
-        except range for public network
+        except range for public network for each node
         """
-        ng_db = db().query(NetworkGroup).filter_by(cluster_id=cluster.id).all()
+        ng_db = db().query(NetworkGroup).\
+            filter_by(group_id=group_id).all()
         attrs = {}
         for net in ng_db:
             net_name = net.name + '_network_range'
@@ -503,12 +508,12 @@ class NetworkDeploymentSerializer(object):
     @staticmethod
     def get_admin_ip_w_prefix(node):
         """Getting admin ip and assign prefix from admin network."""
-        network_manager = objects.Node.get_network_manager(node)
-        admin_ip = network_manager.get_admin_ip_for_node(node)
+        nm = objects.Node.get_network_manager(node)
+        admin_ip = nm.get_admin_ip_for_node(node.id)
         admin_ip = IPNetwork(admin_ip)
 
         # Assign prefix from admin network
-        admin_net = IPNetwork(network_manager.get_admin_network_group().cidr)
+        admin_net = IPNetwork(nm.get_admin_network_group(node.id).cidr)
         admin_ip.prefixlen = admin_net.prefixlen
 
         return str(admin_ip)
@@ -586,7 +591,6 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """
         network_data = node.network_data
         interfaces = {}
-
         for network in network_data:
             network_name = network['name']
             name = cls.__make_interface_name(network.get('dev'),
@@ -597,7 +601,8 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             if network.get('ip'):
                 interface['ipaddr'].append(network.get('ip'))
 
-            if network_name == 'admin':
+            # Add gateway for public
+            if network_name == 'fuelweb_admin':
                 admin_ip_addr = cls.get_admin_ip_w_prefix(node)
                 interface['ipaddr'].append(admin_ip_addr)
             elif network_name == 'public' and network.get('gateway'):
@@ -903,13 +908,21 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             # Here we get a dict with network description for this particular
             # node with its assigned IPs and device names for each network.
             netgroup = nm.get_node_network_by_netname(node, ngname)
-            attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
+            if netgroup.get('ip'):
+                attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
+            if netgroup.get('gateway'):
+                attrs['endpoints'][brname]['gateway'] = netgroup['gateway']
+
             netgroups[ngname] = netgroup
+
         if objects.Node.should_have_public(node):
             attrs['endpoints']['br-ex']['gateway'] = \
                 netgroups['public']['gateway']
         else:
-            attrs['endpoints']['br-fw-admin']['gateway'] = settings.MASTER_IP
+            gw = nm.get_admin_network_group(node.id).gateway
+            if not gw:
+                gw = settings.MASTER_IP
+            attrs['endpoints']['br-fw-admin']['gateway'] = gw
 
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:
@@ -954,6 +967,17 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             })
         elif node.cluster.network_config.segmentation_type == 'gre':
             attrs['roles']['mesh'] = 'br-mgmt'
+
+        # Include information about all subnets that don't belong to this node.
+        # This is used during deployment to configure routes to all other
+        # networks in the environment.
+        other_nets = nm.get_networks_not_on_node(node)
+        if other_nets:
+            attrs['other_nets'] = {}
+            for ngname, brname in netgroup_mapping:
+                if brname not in attrs['other_nets']:
+                    attrs['other_nets'][brname] = []
+                attrs['other_nets'][brname] = other_nets[ngname]
 
         return attrs
 

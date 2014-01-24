@@ -31,6 +31,10 @@ from nailgun.api.handlers.cluster import ClusterHandler
 from nailgun.api.handlers.cluster import ClusterResetHandler
 from nailgun.api.handlers.cluster import ClusterStopDeploymentHandler
 
+from nailgun.api.handlers.network import NetworkGroupCollectionHandler
+from nailgun.api.handlers.network import NetworkGroupHandler
+from nailgun.api.handlers.network import NetworkGroupNodeHandler
+
 from nailgun.api.handlers.disks import NodeDefaultsDisksHandler
 from nailgun.api.handlers.disks import NodeDisksHandler
 from nailgun.api.handlers.disks import NodeVolumesInformationHandler
@@ -39,6 +43,9 @@ from nailgun.api.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.handlers.logs import LogPackageHandler
 from nailgun.api.handlers.logs import LogSourceByNodeCollectionHandler
 from nailgun.api.handlers.logs import LogSourceCollectionHandler
+
+from nailgun.api.handlers.node_group import NodeGroupCollectionHandler
+from nailgun.api.handlers.node_group import NodeGroupHandler
 
 from nailgun.api.handlers.network_configuration \
     import NeutronNetworkConfigurationHandler
@@ -51,13 +58,12 @@ from nailgun.api.handlers.network_configuration \
 
 from nailgun.api.handlers.node import NodeAgentHandler
 from nailgun.api.handlers.node import NodeCollectionHandler
-from nailgun.api.handlers.node import NodeHandler
-from nailgun.api.handlers.node import NodesAllocationStatsHandler
-
 from nailgun.api.handlers.node import NodeCollectionNICsDefaultHandler
 from nailgun.api.handlers.node import NodeCollectionNICsHandler
+from nailgun.api.handlers.node import NodeHandler
 from nailgun.api.handlers.node import NodeNICsDefaultHandler
 from nailgun.api.handlers.node import NodeNICsHandler
+from nailgun.api.handlers.node import NodesAllocationStatsHandler
 
 from nailgun.api.handlers.notifications import NotificationCollectionHandler
 from nailgun.api.handlers.notifications import NotificationHandler
@@ -130,10 +136,23 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/reset/?$',
     ClusterResetHandler,
 
+
+    r'/clusters/(?P<cluster_id>\d+)/networks/?$',
+    NetworkGroupCollectionHandler,
+    r'/networks/(?P<net_id>\d+)/?$',
+    NetworkGroupHandler,
+    r'/networks/(?P<net_id>\d+)/allow/?$',
+    NetworkGroupNodeHandler,
+
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
     NodeAssignmentHandler,
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
     NodeUnassignmentHandler,
+
+    r'/nodegroups/?$',
+    NodeGroupCollectionHandler,
+    r'/nodegroups/(?P<obj_id>\d+)/?$',
+    NodeGroupHandler,
 
     r'/nodes/?$',
     NodeCollectionHandler,

@@ -212,7 +212,7 @@ class ProvisionTask(object):
 
             admin_net_id = objects.Node.get_network_manager(
                 node
-            ).get_admin_network_group_id()
+            ).get_admin_network_group_id(node.id)
 
             TaskHelper.prepare_syslog_dir(node, admin_net_id)
         db().commit()
@@ -364,7 +364,7 @@ class StopDeploymentTask(object):
                         'slave_name': objects.Node.make_slave_name(n),
                         'admin_ip': objects.Node.get_network_manager(
                             n
-                        ).get_admin_ip_for_node(n)
+                        ).get_admin_ip_for_node(n.id)
                     } for n in nodes_to_stop
                 ],
                 "engine": {
@@ -453,7 +453,7 @@ class BaseNetworkVerification(object):
                 vlans = []
                 for ng in assigned_networks:
                     # Handle FuelWeb admin network first.
-                    if not ng.cluster_id:
+                    if ng.group_id is None:
                         vlans.append(0)
                         continue
                     data_ng = filter(lambda i: i['name'] == ng.name,

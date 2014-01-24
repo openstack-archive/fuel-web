@@ -702,6 +702,16 @@ class VerifyNetworksTaskManager(TaskManager):
             db().commit()
             return task
 
+        if len(self.cluster.node_groups) > 1:
+            task.status = TASK_STATUSES.error
+            task.progress = 100
+            task.message = ('Network verfiication is disabled for '
+                            'environments containing more than one node '
+                            'group.')
+            db().add(task)
+            db().commit()
+            return task
+
         if self.cluster.status in self._blocking_statuses:
             task.status = TASK_STATUSES.error
             task.progress = 100

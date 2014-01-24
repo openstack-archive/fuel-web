@@ -293,7 +293,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                 'ipaddr': ['172.16.0.2/24',
                            '192.168.0.1/24',
                            '192.168.1.1/24'],
-                'gateway': '172.16.0.1'
+                'gateway': '172.16.0.1',
+                'default_gateway': True
             }
         }
         self.datadiff(expected_interfaces, interfaces, ignore_keys=['ipaddr'])
@@ -977,7 +978,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         public_ng = self.db.query(NetworkGroup).filter(
             NetworkGroup.name == 'public'
         ).filter(
-            NetworkGroup.cluster_id == cluster.id
+            NetworkGroup.group_id == cluster.default_group
         ).first()
         public_ng.gateway = test_gateway
         self.db.add(public_ng)

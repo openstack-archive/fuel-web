@@ -7,8 +7,8 @@
             "cidr": "{{settings.ADMIN_NETWORK['cidr']}}",
             "vlan_start": null,
             "meta": {
-                "use_gateway": false,
-                "notation": "cidr",
+                "use_gateway": true,
+                "notation": "ip_ranges",
                 "render_type": null,
                 "render_addr_mask": null,
                 "map_priority": 0,

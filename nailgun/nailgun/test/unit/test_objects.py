@@ -219,6 +219,7 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(node_db.pending_roles, [])
 
         exclude_fields = [
+            "group_id",
             "id",
             "mac",
             "meta",

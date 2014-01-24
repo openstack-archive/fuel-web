@@ -20,6 +20,9 @@ Handlers dealing with nodes
 
 from datetime import datetime
 
+from netaddr import IPAddress
+from netaddr import IPNetwork
+
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
@@ -44,7 +47,6 @@ from nailgun import notifier
 
 
 class NodeHandler(SingleHandler):
-
     single = objects.Node
     validator = NodeValidator
 
@@ -56,7 +58,8 @@ class NodeCollectionHandler(CollectionHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster', 'uuid', 'network_data')
+              'error_type', 'online', 'cluster', 'uuid', 'network_data',
+              'group_id')
 
     validator = NodeValidator
     collection = objects.NodeCollection
@@ -130,6 +133,16 @@ class NodeAgentHandler(BaseHandler):
             raise self.http(404, "Can't find node: {0}".format(nd))
 
         node.timestamp = datetime.now()
+
+        if node.group_id is None:
+            admin_ngs = db().query(NetworkGroup).filter_by(
+                name="fuelweb_admin")
+            ip = IPAddress(node.ip)
+            for ng in admin_ngs:
+                if ip in IPNetwork(ng.cidr):
+                    node.group_id = ng.group_id
+                    break
+
         if not node.online:
             node.online = True
             msg = u"Node '{0}' is back online".format(node.human_readable_name)

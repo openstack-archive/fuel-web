@@ -123,12 +123,14 @@ class DeploymentMultinodeSerializer(object):
     def set_deployment_priorities(cls, nodes):
         """Set priorities of deployment."""
         prior = Priority()
+        for n in cls_by_role(nodes, 'mongo'):
+            n['priority'] = prior.next
 
         for n in cls.by_role(nodes, 'controller'):
             n['priority'] = prior.next
 
         other_nodes_prior = prior.next
-        for n in cls.not_roles(nodes, 'controller'):
+        for n in cls.not_roles(nodes, ['controller', 'mongo']):
             n['priority'] = other_nodes_prior
 
     @classmethod

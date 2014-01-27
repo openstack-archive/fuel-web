@@ -166,6 +166,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     var $el, fieldData = field.split('-');
                     if (_.contains(['floating', 'nameservers'], fieldData[0])) {
                         $el = this.$('.neutron-parameters .' + fieldData[0] + '-row input[name=range' + fieldData[1] + ']');
+                    } else if (field == 'ids') {
+                        $el = this.$('.neutron-parameters input[name=id0], .neutron-parameters input[name=id1]');
                     } else {
                         $el = this.$('.neutron-parameters input[name=' + field + ']');
                     }
@@ -178,9 +180,13 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                         } else {
                             _.each(networkErrors.ip_ranges, _.bind(function(range) {
                                 var row = this.$('.' + network + ' .ip-ranges-rows .range-row:eq(' + range.index + ')');
-                                row.find('input:first').toggleClass('error', !!range.start);
-                                row.find('input:last').toggleClass('error', !!range.end);
-                                row.find('.help-inline').text(range.start || range.end);
+                                if (range.both) {
+                                    row.find('input').addClass('error');
+                                } else {
+                                    row.find('input:first').toggleClass('error', !!range.start);
+                                    row.find('input:last').toggleClass('error', !!range.end);
+                                }
+                                row.find('.help-inline').text(range.start || range.end || range.both);
                             }, this));
                         }
                     }, this));

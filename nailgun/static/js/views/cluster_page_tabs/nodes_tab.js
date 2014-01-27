@@ -44,25 +44,24 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         changeScreen: function(NewScreenView, screenOptions) {
             var options = _.extend({model: this.model, tab: this, screenOptions: screenOptions || []});
-            var newScreen = new NewScreenView(options);
-            var oldScreen = this.screen;
-            if (oldScreen) {
-                if (oldScreen.keepScrollPosition) {
-                    this.scrollPositions[oldScreen.constructorName] = $(window).scrollTop();
+            if (this.screen) {
+                if (this.screen.keepScrollPosition) {
+                    this.scrollPositions[this.screen.constructorName] = $(window).scrollTop();
                 }
-                oldScreen.$el.fadeOut('fast', _.bind(function() {
-                    oldScreen.tearDown();
-                    newScreen.render();
-                    newScreen.$el.hide().fadeIn('fast');
-                    this.$el.html(newScreen.el);
-                    if (newScreen.keepScrollPosition && this.scrollPositions[newScreen.constructorName]) {
-                        $(window).scrollTop(this.scrollPositions[newScreen.constructorName]);
+                this.screen.$el.fadeOut('fast', _.bind(function() {
+                    this.screen.tearDown();
+                    this.screen = new NewScreenView(options);
+                    this.screen.render();
+                    this.screen.$el.hide().fadeIn('fast');
+                    this.$el.html(this.screen.el);
+                    if (this.screen.keepScrollPosition && this.scrollPositions[this.screen.constructorName]) {
+                        $(window).scrollTop(this.scrollPositions[this.screen.constructorName]);
                     }
                 }, this));
             } else {
-                this.$el.html(newScreen.render().el);
+                this.screen = new NewScreenView(options);
+                this.$el.html(this.screen.render().el);
             }
-            this.screen = newScreen;
             this.registerSubView(this.screen);
         },
         initialize: function(options) {
@@ -126,7 +125,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         constructorName: 'NodeListScreen',
         updateInterval: 20000,
         hasChanges: function() {
-            return this instanceof ClusterNodesScreen ? false : !_.isEqual(this.nodes.map(function(node) {return node.get('pending_roles') || [];}), this.initialRoles);
+            return this instanceof ClusterNodesScreen ? false : !_.isEqual(this.nodes.pluck('pending_roles'), this.initialNodes.pluck('pending_roles'));
         },
         scheduleUpdate: function() {
             this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
@@ -191,23 +190,29 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }
             ];
         },
+        actualizePendingRoles: function(node, roles, options) {
+            if (!options.assign) {
+                node.set({pending_roles: node.previous('pending_roles')});
+            }
+        },
         initialize: function() {
             this.nodes.on('resize', this.render, this);
             if (this instanceof AddNodesScreen || this instanceof EditNodesScreen) {
+                this.nodes.on('change:pending_roles', this.actualizePendingRoles, this);
                 this.model.on('change:status', _.bind(function() {app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});}, this));
             }
             this.scheduleUpdate();
             var defaultButtonModelsData = {
-                'visible': false,
-                'disabled': false,
-                'invalid': false
+                visible: false,
+                disabled: true,
+                invalid: false
             };
-            this.addNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'visible': true}));
-            this.deleteNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
-            this.editRolesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
-            this.configureDisksButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
-            this.configureInterfacesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
-            this.applyChangesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {'disabled': true}));
+            this.addNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {visible: true, disabled: false}));
+            this.deleteNodesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData, {disabled: false}));
+            this.editRolesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
+            this.configureDisksButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
+            this.configureInterfacesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
+            this.applyChangesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -215,21 +220,16 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             if (this instanceof EditNodesScreen) {
                 this.$el.append($('<div>').addClass('alert').text($.t('cluster_page.nodes_tab.disk_configuration_reset_warning')));
             }
-            var managementPanel = new NodesManagementPanel({screen: this});
+            var options = {nodes: this.nodes, screen: this};
+            var managementPanel = new NodesManagementPanel(options);
             this.registerSubView(managementPanel);
             this.$el.append(managementPanel.render().el);
             if (this instanceof AddNodesScreen || this instanceof EditNodesScreen) {
-                this.roles = new AssignRolesPanel({
-                    nodes: this.nodes,
-                    screen: this
-                });
+                this.roles = new AssignRolesPanel(options);
                 this.registerSubView(this.roles);
                 this.$el.append(this.roles.render().el);
             }
-            this.nodeList = new NodeList({
-                nodes: this.nodes,
-                screen: this
-            });
+            this.nodeList = new NodeList(options);
             this.registerSubView(this.nodeList);
             this.$el.append(this.nodeList.render().el);
             this.nodeList.calculateSelectAllCheckedState();
@@ -244,7 +244,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             _.defaults(this, options);
             this.nodes = this.model.get('nodes');
-            this.nodes.cluster = this.model;
             var clusterId = this.model.id;
             this.nodes.fetch = function(options) {
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: clusterId}}, options));
@@ -253,7 +252,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
             this.constructor.__super__.initialize.apply(this, arguments);
-            this.nodes.fetch();
+            this.nodes.deferred = this.nodes.fetch().done(_.bind(this.render, this));
         },
         bindTaskEvents: function(task) {
             return (task.get('name') == 'deploy' || task.get('name') == 'verify_networks') ? task.on('change:status', this.render, this) : null;
@@ -272,15 +271,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
             };
             this.constructor.__super__.initialize.apply(this, arguments);
-            this.nodes.parse = function(response) {
-                return _.map(response, function(node) {
-                    return _.omit(node, 'pending_roles');
-                });
-            };
-            this.nodes.fetch().done(_.bind(function() {
-                this.nodes.each(function(node) {node.set({pending_roles: []}, {silent: true});});
-                this.render();
-            }, this));
+            this.nodes.deferred = this.nodes.fetch();
         }
     });
 
@@ -296,9 +287,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: this.cluster.id}}, options));
             };
             this.nodes.parse = function(response) {
-                return _.map(_.filter(response, function(node) {return _.contains(nodeIds, node.id);}), function(node) {
-                    return _.omit(node, 'pending_roles');
-                });
+                return _.filter(response, function(node) {return _.contains(nodeIds, node.id);});
             };
             this.constructor.__super__.initialize.apply(this, arguments);
         }
@@ -319,7 +308,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.nodes = this.screen.nodes;
             this.cluster = this.screen.tab.model;
         },
         groupNodes: function(e) {
@@ -376,6 +364,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             app.navigate('#cluster/' + this.cluster.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: _.pluck(this.nodes.where({checked: true}), 'id')}), {trigger: true});
         },
         goToNodesList: function() {
+            this.nodes.each(_.bind(function(node) {
+                node.set({pending_roles: this.screen.initialNodes.get(node.id).get('pending_roles')}, {silent: true});
+            }, this));
             app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
         },
         showUnavailableGroupConfigurationDialog: function (e) {
@@ -411,7 +402,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             _.each(this.collection.where({indeterminate: false}), function(role) {
                 _.each(this.nodes.filter(function(node) {return !node.hasRole(role.get('name'), true);}), function(node) {
                     var pending_roles = role.get('checked') ? _.uniq(_.union(node.get('pending_roles'), role.get('name'))) : _.difference(node.get('pending_roles'), role.get('name'));
-                    node.set({pending_roles: pending_roles});
+                    node.set({pending_roles: pending_roles}, {assign: true});
                 });
             }, this);
         },
@@ -567,7 +558,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.screen.initialRoles = this.nodes.map(function(node) {return node.get('pending_roles') || [];});
+            this.screen.initialNodes = new models.Nodes(this.nodes.invoke('clone'));
             this.eventNamespace = 'click.click-summary-panel';
             this.selectAllCheckbox = new Backbone.Model({
                 checked: false,
@@ -958,7 +949,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.screen = this.group.nodeList.screen;
             this.eventNamespace = 'click.editnodename' + this.node.id;
             this.node.set('checked', this.screen instanceof EditNodesScreen);
-            this.node.on('change:name', this.render, this);
             this.node.on('change:checked change:online', this.onNodeSelection, this);
             this.node.on('change:pending_deletion change:status change:online', this.calculateNodeDisabledState, this);
             this.node.on('change:disabled', this.group.calculateSelectAllDisabledState, this.group);

@@ -12,6 +12,7 @@
       - controller
       - compute
       - cinder
+      - mongo
     roles_metadata:
       controller:
         name: "Controller"
@@ -23,9 +24,18 @@
         description: "A compute node creates, manages and terminates virtual machine instances."
         conflicts:
           - controller
+          - mongo
       cinder:
         name: "Storage - Cinder LVM"
         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
+      mongo:
+        name: "MongoDB"
+        description: "Storage - MongoDB for Ceilometer"
+        conflicts:
+          - compute
+        requires:
+          settings: "additional_components.ceilometer.value"
+          description: "Ceilometer should be enabled"
     networks_metadata:
       nova_network:
         networks:
@@ -93,6 +103,9 @@
         cinder:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "cinder"}
+        mongo:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "vm"}
         other:
           - {allocate_size: "all", id: "os"}
       volumes:
@@ -317,6 +330,7 @@
       - compute
       - cinder
       - ceph-osd
+      - mongo
     roles_metadata:
       ceph-osd:
         name: "Storage - Ceph OSD"

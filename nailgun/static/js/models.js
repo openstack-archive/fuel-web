@@ -477,6 +477,26 @@ define(['utils', 'deepModel'], function(utils) {
         isNew: function() {
             return false;
         },
+        getValidIPRanges: function(network, errors) {
+            var invalidRanges = _.pluck(errors, 'index');
+            return _.filter(network.get('ip_ranges'), function(range, i) {
+                return range[0] && !_.contains(invalidRanges, i);
+            });
+        },
+        validationMessage: function(param) {
+            return $.t('cluster_page.network_tab.validation.' + param);
+        },
+        validateIpRange: function(range) {
+            var errors = {};
+            if (utils.validateIP(range[0])) {
+                errors.start = this.validationMessage('invalid_ip_start');
+            } else if (utils.validateIP(range[1])) {
+                errors.end = this.validationMessage('invalid_ip_end');
+            } else if (utils.ipToInt(range[0]) - utils.ipToInt(range[1]) > 0) {
+                errors.both = this.validationMessage('invalid_ip_range');
+            }
+            return errors;
+        },
         validate: function(attrs) {
             var errors = {};
             var fixedNetwork = attrs.networks.findWhere({name: 'fixed'});
@@ -489,135 +509,217 @@ define(['utils', 'deepModel'], function(utils) {
             var netProvider = attrs.net_manager ? 'nova_network' : 'neutron';
             attrs.networks.each(function(network) {
                 var networkErrors = {};
-                _.each(network.getAttributes(netProvider), function(attr) {
-                    if (attr == 'ip_ranges') {
-                        var ipRangesErrors = [];
-                        if (_.filter(network.get('ip_ranges'), function(range) {return _.compact(range).length;}).length) {
-                            _.each(network.get('ip_ranges'), function(range, i) {
-                                if (range[0] || range[1]) {
-                                    var error = {index: i};
-                                    if (utils.validateIP(range[0]) || (network.get('name') == 'public' && publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, range[0]))) {
-                                        error.start = $.t('cluster_page.network_tab.validation.invalid_ip_start');
-                                    } else if (utils.validateIP(range[1]) || (network.get('name') == 'public' && publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, range[1]))) {
-                                        error.end = $.t('cluster_page.network_tab.validation.invalid_ip_end');
-                                    } else if (!utils.validateIPrange(range[0], range[1])) {
-                                        error.start = $.t('cluster_page.network_tab.validation.invalid_ip_range');
-                                    }
-                                    if (error.start || error.end) {
-                                        ipRangesErrors.push(error);
+                if (network.get('cidr')) {
+                    networkErrors = _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
+                }
+                if (network.get('netmask') && utils.validateNetmask(network.get('netmask'))) {
+                    networkErrors.netmask = this.validationMessage('invalid_netmask');
+                }
+                if (network.get('amount') && network.get('vlan_start')) {
+                    if (!utils.isNaturalNumber(network.get('amount'))) {
+                        networkErrors.amount = this.validationMessage('invalid_amount');
+                    } else if (network.get('amount') > 4095 - network.get('vlan_start')) {
+                        networkErrors.amount = this.validationMessage('need_more_vlan');
+                    }
+                }
+                if (network.get('vlan_start') && network.get('name') != 'floating' && (!_.isNull(network.get('vlan_start')) || (network.get('name') == 'fixed' && attrs.net_manager == 'VlanManager'))) {
+                    var vlan = network.get('vlan_start');
+                    var forbiddenVlans = _.compact(attrs.networks.map(function(net) {return net.id != network.id && net.get('name') != 'floating' ? net.get('vlan_start') : null;}));
+                    if (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094) {
+                        networkErrors.vlan_start = this.validationMessage('invalid_vlan');
+                    } else if (_.contains(forbiddenVlans, vlan)) {
+                        networkErrors.vlan_start = this.validationMessage('forbidden_vlan');
+                    } else if (netProvider == 'nova_network' && network.get('name') != 'fixed' && utils.validateVlanRange(fixedNetwork.get('vlan_start'), fixedNetwork.get('vlan_start') + fixedNetwork.get('amount') - 1, vlan)) {
+                        networkErrors.vlan_start = this.validationMessage('vlan_is_used_for_fixed_networks');
+                    }
+                }
+                var validRanges;
+                if (network.get('ip_ranges')) {
+                    var networkRanges = network.get('ip_ranges');
+                    var ipRangesErrors = [];
+                    var notEmptyRanges = _.filter(networkRanges, function(range) {return range[0] || range[1];});
+                    if (notEmptyRanges.length) {
+                        _.each(notEmptyRanges, function(range) {
+                            var error = this.validateIpRange(range);
+                            // Public network validation
+                            if (_.isEmpty(error) && network.get('name') == 'public') {
+                                // check IP corresponds to CIDR
+                                if (publicCidr) {
+                                    if (!utils.validateIpCorrespondsToCIDR(publicCidr, range[0])) {
+                                        error.start = this.validationMessage('invalid_ip_start');
+                                    } else if (!utils.validateIpCorrespondsToCIDR(publicCidr, range[1])) {
+                                        error.end = this.validationMessage('invalid_ip_end');
                                     }
                                 }
+                                // check IP is not equal to broadcast or subnet addresses
+                                var netmask = network.get('netmask');
+                                if (_.isEmpty(error) && !networkErrors.netmask) {
+                                    if (range[0] == utils.composeSubnetAddress(range[0], netmask)) {
+                                        error.start = this.validationMessage('ip_start_coincides_with_subnet');
+                                    } else  if (range[0] == utils.composeBroadcastAddress(range[0], netmask)) {
+                                        error.start = this.validationMessage('ip_start_coincides_with_broadcast');
+                                    } else  if (range[1] == utils.composeSubnetAddress(range[1], netmask)) {
+                                        error.end = this.validationMessage('ip_end_coincides_with_subnet');
+                                    } else  if (range[1] == utils.composeBroadcastAddress(range[1], netmask)) {
+                                        error.end = this.validationMessage('ip_end_coincides_with_broadcast');
+                                    }
+                                }
+                            }
+                            if (!_.isEmpty(error)) {
+                                ipRangesErrors.push(_.extend(error, {index: $.inArray(networkRanges, range)}));
+                            }
+                        }, this);
+                        // network IP ranges must not intersect each other
+                        validRanges = this.getValidIPRanges(network, ipRangesErrors);
+                        _.each(validRanges, function(range1, index1) {
+                            _.each(validRanges, function(range2, index2) {
+                                if (index1 != index2 && utils.validateIPRangesIntersection(range1, range2)) {
+                                    ipRangesErrors.push({index: index1, both: this.validationMessage('ip_ranges_intersection')});
+                                }
                             });
-                        } else {
-                            ipRangesErrors.push({index: 0, start: $.t('cluster_page.network_tab.validation.empty_ip_range')});
-                        }
-                        if (ipRangesErrors.length) {
-                            networkErrors.ip_ranges = ipRangesErrors;
-                        }
-                    } else if (attr == 'cidr') {
-                        networkErrors = _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
-                    } else if (attr == 'vlan_start' && network.get('name') != 'floating' && (!_.isNull(network.get('vlan_start')) || (network.get('name') == 'fixed' && attrs.net_manager == 'VlanManager'))) {
-                        var vlan = network.get('vlan_start');
-                        var forbiddenVlans = _.compact(attrs.networks.map(function(net) {return net.id != network.id && net.get('name') != 'floating' ? net.get('vlan_start') : null;}));
-                        if (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094) {
-                            networkErrors.vlan_start = $.t('cluster_page.network_tab.validation.invalid_vlan');
-                        } else if (_.contains(forbiddenVlans, vlan)) {
-                            networkErrors.vlan_start = $.t('cluster_page.network_tab.validation.forbidden_vlan');
-                        } else if (netProvider == 'nova_network' && network.get('name') != 'fixed' && utils.validateVlanRange(fixedNetwork.get('vlan_start'), fixedNetwork.get('vlan_start') + fixedNetwork.get('amount') - 1, vlan)) {
-                            networkErrors.vlan_start = $.t('cluster_page.network_tab.validation.vlan_is_used_for_fixed_networks');
-                        }
-                    } else if (attr == 'netmask' && utils.validateNetmask(network.get('netmask'))) {
-                        networkErrors.netmask = $.t('cluster_page.network_tab.validation.invalid_netmask');
-                    } else if (attr == 'gateway') {
-                        if (utils.validateIP(network.get('gateway'))) {
-                            networkErrors.gateway = $.t('cluster_page.network_tab.validation.invalid_gateway');
-                        } else if (network.get('name') == 'public' && publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, network.get('gateway'))) {
-                            networkErrors.gateway = $.t('cluster_page.network_tab.validation.gateway_is_out_of_ip_range');
-                        }
-                    } else if (attr == 'amount') {
-                        if (!utils.isNaturalNumber(network.get('amount'))) {
-                            networkErrors.amount = $.t('cluster_page.network_tab.validation.invalid_amount');
-                        } else if (network.get('amount') > 4095 - network.get('vlan_start')) {
-                            networkErrors.amount = $.t('cluster_page.network_tab.validation.need_more_vlan');
+                        });
+                    } else {
+                        ipRangesErrors.push({index: 0, both: this.validationMessage('empty_ip_range')});
+                    }
+                    if (ipRangesErrors.length) {
+                        networkErrors.ip_ranges = ipRangesErrors;
+                    }
+                }
+                if (network.get('gateway')) {
+                    var gateway = network.get('gateway');
+                    if (utils.validateIP(gateway)) {
+                        networkErrors.gateway = this.validationMessage('invalid_gateway');
+                    } else if (network.get('name') == 'public') {
+                        if (publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, gateway)) {
+                            networkErrors.gateway = this.validationMessage('gateway_is_out_of_ip_range');
+                        } else { // Public network gateway field must not be in any of Public or Floating IP ranges.
+                            var gatewayInt = utils.ipToInt(gateway);
+                            _.each(validRanges, function(range) {
+                                if (gatewayInt < range[0] || gatewayInt > range[1]) {
+                                    networkErrors.gateway = this.validationMessage('gateway_intersects_ip_ranges');
+                                }
+                            });
                         }
                     }
-                });
+                }
                 if (!_.isEmpty(networkErrors)) {
                     networksErrors[network.get('name')] = networkErrors;
                 }
+            }, this);
+            // networks CIDR should not intersect each other (except Public and Floating networks)
+            attrs.networks.each(function(network) {
+                if (network.get('cidr') && !networksErrors[network.get('name')].cidr) {
+                    var networkCidr = network.get('cidr');
+                    var cidrs = [];
+                    attrs.networks.each(function(net) {
+                        if (!_.contains([network.get('name'), 'public', 'floating', 'fuelweb_admin'], net.get('name'))) {
+                            cidrs.push(net.get('cidr'));
+                        }
+                    });
+                    if (publicCidr) {
+                        cidrs.push(publicCidr);
+                    }
+                    _.each(cidrs, function(cidr) {
+                        if (utils.validateCIDRIntersection(networkCidr, cidr)) {
+                            networksErrors[network.get('name')].cidr = this.validationMessage('cidr_intersection');
+                        }
+                    });
+                }
             });
+            // Floating IP ranges should not intersect Public ranges
+            if (netProvider == 'nova_network') {
+                var publicRanges = this.getValidIPRanges(attrs.networks.findWhere({name: 'public'}), networksErrors['public']);
+                var floatingErrors = networksErrors.floating;
+                var floatingRanges = this.getValidIPRanges(attrs.networks.findWhere({name: 'floating'}), floatingErrors);
+                _.each(floatingRanges, function(floatingRange, index) {
+                    _.each(publicRanges, function(publicRange) {
+                        if (utils.validateIPRangesIntersection(publicRange, floatingRange)) {
+                            var floatingError = {index: index, start: this.validationMessage('ip_range_intersects_public_ranges')};
+                            if (!floatingErrors) {
+                                floatingErrors = {ip_ranges: []};
+                            } else if (!floatingErrors.ip_ranges) {
+                                floatingErrors.ip_ranges = [];
+                            }
+                            floatingErrors.ip_ranges.push(floatingError);
+                        }
+                    });
+                });
+            }
             if (!_.isEmpty(networksErrors)) {
                 errors.networks = networksErrors;
             }
 
             // validate Nova Network configuration
-            var novaNetworkErrors = {};
             if (netProvider == 'nova_network') {
+                var novaNetworkErrors = {};
                 _.each(attrs.dns_nameservers.get('nameservers'), function(nameserver, i) {
                     if (utils.validateIP(nameserver)) {
-                        novaNetworkErrors['nameservers-' + i] =  $.t('cluster_page.network_tab.validation.invalid_nameserver');
+                        novaNetworkErrors['nameservers-' + i] =  this.validationMessage('invalid_nameserver');
                     }
                 });
-            }
-            if (!_.isEmpty(novaNetworkErrors)) {
-                errors.dns_nameservers = novaNetworkErrors;
+                if (!_.isEmpty(novaNetworkErrors)) {
+                    errors.dns_nameservers = novaNetworkErrors;
+                }
             }
 
             // validate Neutron configuration
-            var neutronErrors = {};
             if (netProvider == 'neutron') {
+                var neutronErrors = {};
                 var segmentation = attrs.neutron_parameters.get('segmentation_type');
-
                 var config = attrs.neutron_parameters.get('L2');
                 var idRange = segmentation == 'gre' ? config.tunnel_id_ranges : config.phys_nets.physnet2.vlan_range;
                 var maxId = segmentation == 'gre' ? 65535 : 4094;
+
                 if (!utils.isNaturalNumber(idRange[0]) || idRange[0] < 2 || idRange[0] > maxId) {
-                    neutronErrors.id0 = $.t('cluster_page.network_tab.validation.invalid_id_start');
+                    neutronErrors.id0 = this.validationMessage('invalid_id_start');
                 } else if (!utils.isNaturalNumber(idRange[1]) || idRange[1] < 2 || idRange[1] > maxId) {
-                    neutronErrors.id1 = $.t('cluster_page.network_tab.validation.invalid_id_end');
+                    neutronErrors.id1 = this.validationMessage('invalid_id_end');
                 } else if (idRange[0] > idRange[1]) {
-                    neutronErrors.id0 = $.t('cluster_page.network_tab.validation.invalid_id_range');
+                    neutronErrors.ids = this.validationMessage('invalid_id_range');
                 } else if (segmentation == 'vlan') {
                     _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
                         if (utils.validateVlanRange(idRange[0], idRange[1], vlan)) {
-                            neutronErrors.id0 = $.t('cluster_page.network_tab.validation.id_intersection');
+                            neutronErrors.ids = this.validationMessage('id_intersection');
                         }
-                        return neutronErrors.id0;
                     });
                 }
                 if (config.base_mac == '' || !(_.isString(config.base_mac) && config.base_mac.match(utils.regexes.mac))) {
-                    neutronErrors.base_mac = $.t('cluster_page.network_tab.validation.invalid_mac');
+                    neutronErrors.base_mac = this.validationMessage('invalid_mac');
                 }
 
                 config = attrs.neutron_parameters.get('predefined_networks');
                 var cidr = config.net04.L3.cidr;
                 var gateway = config.net04.L3.gateway;
-                neutronErrors = _.extend(neutronErrors, utils.validateCidr(cidr, 'cidr-int'));
-                if (utils.validateIP(gateway)) {
-                    neutronErrors.gateway = $.t('cluster_page.network_tab.validation.invalid_gateway');
-                } else if (!utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
-                    neutronErrors.gateway = $.t('cluster_page.network_tab.validation.gateway_is_out_of_internal_ip_range');
-                }
                 var floatingIpRange = config.net04_ext.L3.floating;
+
+                neutronErrors = _.extend(neutronErrors, utils.validateCidr(cidr, 'cidr-int'));
                 if (utils.validateIP(floatingIpRange[0])) {
-                    neutronErrors['floating-0'] = $.t('cluster_page.network_tab.validation.invalid_ip_start');
+                    neutronErrors['floating-0'] = this.validationMessage('invalid_ip_start');
                 } else if (publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, floatingIpRange[0])) {
-                    neutronErrors['floating-0'] = $.t('cluster_page.network_tab.validation.ip_start_is_out_of_ip_range');
+                    neutronErrors['floating-0'] = this.validationMessage('ip_start_is_out_of_ip_range');
                 } else if (utils.validateIP(floatingIpRange[1])) {
-                    neutronErrors['floating-1'] = $.t('cluster_page.network_tab.validation.invalid_ip_end');
+                    neutronErrors['floating-1'] = this.validationMessage('invalid_ip_end');
                 } else if (publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, floatingIpRange[1])) {
-                    neutronErrors['floating-1'] = $.t('cluster_page.network_tab.validation.ip_end_is_out_of_ip_range');
+                    neutronErrors['floating-1'] = this.validationMessage('ip_end_is_out_of_ip_range');
                 } else if (!utils.validateIPrange(floatingIpRange[0], floatingIpRange[1])) {
-                    neutronErrors['floating-0'] = $.t('cluster_page.network_tab.validation.invalid_ip_range');
+                    neutronErrors['floating-0'] = this.validationMessage('invalid_ip_range');
+                }
+                if (utils.validateIP(gateway)) {
+                    neutronErrors.gateway = this.validationMessage('invalid_gateway');
+                } else if (!utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
+                    neutronErrors.gateway = this.validationMessage('gateway_is_out_of_internal_ip_range');
+                } else if (!neutronErrors['cidr-int'] && !neutronErrors['floating-0'] && utils.validateIpCorrespondsToCIDR(cidr, floatingIpRange[0])) {
+                    neutronErrors.gateway = this.validationMessage('gateway_intersects_floating_ip_range');
                 }
                 _.each(config.net04.L3.nameservers, function(nameserver, i) {
                     if (utils.validateIP(nameserver)) {
-                        neutronErrors['nameservers-' + i] = $.t('cluster_page.network_tab.validation.invalid_nameserver');
+                        neutronErrors['nameservers-' + i] = this.validationMessage('invalid_nameserver');
                     }
                 });
-            }
-            if (!_.isEmpty(neutronErrors)) {
-                errors.neutron_parameters = neutronErrors;
+
+                if (!_.isEmpty(neutronErrors)) {
+                    errors.neutron_parameters = neutronErrors;
+                }
             }
 
             return _.isEmpty(errors) ? null : errors;

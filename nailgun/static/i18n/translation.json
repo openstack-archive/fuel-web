@@ -204,7 +204,8 @@
                     "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes.",
                     "one_controller_restriction": "Only one controller can be assigned in a multi-node deployment that is not Highly-Available (HA).",
                     "incompatible_roles_warning" : "This role cannot be combined with the other roles already selected.",
-                    "new_controllers_in_ha_mode_restriction": "New controllers cannot be added to an operational environment."
+                    "new_controllers_in_ha_mode_restriction": "New controllers cannot be added to an operational environment.",
+                    "dependent_setting_warning": "This role can not be active due to cluster OpenStack settings."
                 },
                 "settings_tab": {
                     "title": "OpenStack Settings"

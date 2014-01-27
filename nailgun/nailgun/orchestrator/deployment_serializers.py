@@ -125,12 +125,14 @@ class DeploymentMultinodeSerializer(object):
     def set_deployment_priorities(cls, nodes):
         """Set priorities of deployment."""
         prior = Priority()
+        for n in cls.by_role(nodes, 'mongo'):
+            n['priority'] = prior.next
 
         for n in cls.by_role(nodes, 'controller'):
             n['priority'] = prior.next
 
         other_nodes_prior = prior.next
-        for n in cls.not_roles(nodes, 'controller'):
+        for n in cls.not_roles(nodes, ['controller', 'mongo']):
             n['priority'] = other_nodes_prior
 
     @classmethod
@@ -189,6 +191,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
             cls
         ).serialize(cluster, nodes)
         cls.set_primary_controller(serialized_nodes)
+        cls.set_primary_mongo(serialized_nodes)
 
         return serialized_nodes
 
@@ -208,6 +211,23 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                 sorted_nodes, ['controller'])
             if controllers:
                 controllers[0]['role'] = 'primary-controller'
+
+    @classmethod
+    def set_primary_mongo(cls, nodes):
+        """Set primary mongo for the last mongo node
+        node if it not set yet
+        """
+        sorted_nodes = sorted(
+            nodes, key=lambda node: int(node['uid']))
+
+        primary_mongo = cls.filter_by_roles(
+            sorted_nodes, ['primary-mongo'])
+
+        if not primary_mongo:
+            mongo_nodes = cls.filter_by_roles(
+                sorted_nodes, ['mongo'])
+            if mongo_nodes:
+                mongo_nodes[-1]['role'] = 'primary-mongo'
 
     @classmethod
     def get_last_controller(cls, nodes):
@@ -259,6 +279,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         # Assign primary controller in nodes list
         cls.set_primary_controller(common_attrs['nodes'])
+        cls.set_primary_mongo(common_attrs['nodes'])
 
         return common_attrs
 
@@ -271,6 +292,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
     def set_deployment_priorities(cls, nodes):
         """Set priorities of deployment for HA mode."""
         prior = Priority()
+
+        for n in cls.by_role(nodes, 'mongo'):
+            n['priority'] = prior.next
+
+        for n in cls.by_role(nodes, 'primary-mongo'):
+            n['priority'] = prior.next
 
         primary_swift_proxy_piror = prior.next
         for n in cls.by_role(nodes, 'primary-swift-proxy'):
@@ -298,7 +325,9 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                                        'storage',
                                        'primary-controller',
                                        'controller',
-                                       'quantum']):
+                                       'quantum',
+                                       'mongo',
+                                       'primary-mongo']):
             n['priority'] = other_nodes_prior
 
 

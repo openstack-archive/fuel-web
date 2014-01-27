@@ -110,6 +110,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     this.registerSubView(settingGroupView);
                     this.$('.settings').append(settingGroupView.render().el);
                 }, this);
+                this.checkForCephCinderCheckedState();
                 if (this.model.get('net_provider') == 'nova_network') {
                     this.$('input[name=murano]').attr('disabled', true);
                 }
@@ -119,6 +120,19 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 this.stickit(this.settings);
             }
             return this;
+        },
+        //to be removed when backend done
+        checkForCephCinderCheckedState: function() {
+            var lvmInput = $('input[name=volumes_lvm]'),
+                cephInput = $('input[name=volumes_ceph]');
+            if (this.settings.get('storage').volumes_lvm.value) {
+                cephInput.attr('disabled', true);
+                return;
+            }
+            if (this.settings.get('storage').volumes_ceph.value) {
+                lvmInput.attr('disabled', true);
+                return;
+            }
         },
         bindTaskEvents: function(task) {
             return task.get('name') == 'deploy' ? task.on('change:status', this.render, this) : null;
@@ -148,7 +162,26 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         template: _.template(settingsGroupTemplate),
         className: 'fieldset-group wrapper',
         events: {
-            'click span.add-on': 'showPassword'
+            'click span.add-on': 'showPassword',
+            'change input[name=volumes_lvm], input[name=volumes_ceph]': 'handleCephCinder'
+        },
+        handleCephCinder: function(e) {
+            this.checkForCephCinderCheckedState();
+        },
+        //to be removed when backedn done
+        checkForCephCinderCheckedState: function() {
+            var lvmInput = $('input[name=volumes_lvm]'),
+                cephInput = $('input[name=volumes_ceph]');
+            if (lvmInput.is(':checked')) {
+                cephInput.attr('disabled', true);
+                return;
+            }
+            if (cephInput.is(':checked')) {
+                lvmInput.attr('disabled', true);
+                return;
+            }
+            cephInput.attr('disabled', false);
+            lvmInput.attr('disabled', false);
         },
         showPassword: function(e) {
             var input = this.$(e.currentTarget).prev();

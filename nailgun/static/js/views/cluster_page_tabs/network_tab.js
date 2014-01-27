@@ -143,6 +143,12 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         onNewTask: function(task) {
             return this.bindTaskEvents(task) && this.render();
         },
+        composeValidationMessage: function(translationKey, params) {
+            _.each(params, function(value, key) {
+                params[key] = $.t('cluster_page.network_tab.network_parameters.' + value);
+            });
+            return $.t('cluster_page.network_tab.validation.' + translationKey, params);
+        },
         setInitialData: function() {
             this.hasChanges = false;
             this.networkConfiguration = new models.NetworkConfiguration(this.model.get('networkConfiguration').toJSON(), {parse: true});
@@ -155,27 +161,34 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.networkConfiguration.on('invalid', function(model, errors) {
                 _.each(errors.dns_nameservers, _.bind(function(error, field) {
                     var fieldData = field.split('-');
-                    this.$('.nova-nameservers .' + fieldData[0] + '-row input[name=range' + fieldData[1] + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
+                    this.$('.nova-nameservers .' + fieldData[0] + '-row input[name=range' + fieldData[1] + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(this.composeValidationMessage(error.text, error.params));
                 }, this));
                 _.each(errors.neutron_parameters, _.bind(function(error, field) {
                     var $el, fieldData = field.split('-');
                     if (_.contains(['floating', 'nameservers'], fieldData[0])) {
                         $el = this.$('.neutron-parameters .' + fieldData[0] + '-row input[name=range' + fieldData[1] + ']');
+                    } else if (field == 'ids') {
+                        $el = this.$('.neutron-parameters input[name=id0], .neutron-parameters input[name=id1]');
                     } else {
                         $el = this.$('.neutron-parameters input[name=' + field + ']');
                     }
-                    $el.addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
+                    $el.addClass('error').parents('.network-attribute').find('.error .help-inline').text(this.composeValidationMessage(error.text, error.params));
                 }, this));
                 _.each(errors.networks, _.bind(function(networkErrors, network) {
                     _.each(networkErrors, _.bind(function(error, field) {
                         if (field != 'ip_ranges') {
-                            this.$('.' + network + ' input[name=' + field + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
+                            this.$('.' + network + ' input[name=' + field + ']').addClass('error').parents('.network-attribute').find('.error .help-inline').text(this.composeValidationMessage(error.text, error.params));
                         } else {
                             _.each(networkErrors.ip_ranges, _.bind(function(range) {
                                 var row = this.$('.' + network + ' .ip-ranges-rows .range-row:eq(' + range.index + ')');
-                                row.find('input:first').toggleClass('error', !!range.start);
-                                row.find('input:last').toggleClass('error', !!range.end);
-                                row.find('.help-inline').text(range.start || range.end);
+                                if (range.both) {
+                                    row.find('input').addClass('error');
+                                } else {
+                                    row.find('input:first').toggleClass('error', !!range.start);
+                                    row.find('input:last').toggleClass('error', !!range.end);
+                                }
+                                var rangeError = range.start || range.end || range.both;
+                                row.find('.help-inline').text(this.composeValidationMessage(rangeError.text, rangeError.params));
                             }, this));
                         }
                     }, this));
@@ -366,7 +379,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             }
             this.network.set({ip_ranges: ipRanges}, {silent: true});
             this.render();
-            this.tab.networkConfiguration.isValid();
+            this.tab.updateNetworkConfiguration();
         },
         addIPRange: function(e) {
             this.changeIpRanges(e, true);
@@ -392,6 +405,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     }, this);
                 }
             }
+            this.network.on('change:ip_ranges', this.render, this);
             this.network.on('change', this.tab.updateNetworkConfiguration, this.tab);
         },
         renderIpRanges: function() {

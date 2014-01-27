@@ -110,49 +110,71 @@ define(['require'], function(require) {
                 if (match) {
                     var prefix = parseInt(match[1], 10);
                     if (prefix < 2) {
-                        errors[field] = 'Network is too large';
+                        errors[field] = {text: 'large_network'};
                     }
                     if (prefix > 30) {
-                        errors[field] = 'Network is too small';
+                        errors[field] = {text: 'small_network'};
                     }
                 } else {
-                    errors[field] = 'Invalid CIDR';
+                    errors[field] = {text: 'invalid', params: {opt1: 'cidr'}};
                 }
             } else {
-                errors[field] = 'Invalid CIDR';
+                errors[field] = {text: 'invalid', params: {opt1: 'cidr'}};
             }
             return errors;
         },
         validateIP: function(ip) {
             return !_.isString(ip) || !ip.match(utils.regexes.ip);
         },
-        validateIPrange: function(startIP, endIP) {
-            return this.ipIntRepresentation(startIP) - this.ipIntRepresentation(endIP) <= 0;
-        },
         validateNetmask: function(netmask) {
-            return utils.validateIP(netmask) || !this.ipIntRepresentation(netmask).toString(2).match(/^1+00+$/);
+            return utils.validateIP(netmask) || !this.ipToInt(netmask).toString(2).match(/^1+00+$/);
         },
-        ipIntRepresentation: function(ip) {
+        ipToInt: function(ip) {
             return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
         },
-        validateIpCorrespondsToCIDR: function(cidr, ip) {
+        intToIp: function(n) {
             /*jslint bitwise: true*/
-            var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
-            var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
-            var ipToInt = utils.ipIntRepresentation(ip);
-            var result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
+            var octets = [n >>> 24, n >>> 16 & 0xFF, n >>> 8 & 0xFF, n & 0xFF];
             /*jslint bitwise: false*/
-            return result;
+            return octets.join('.');
+        },
+        validateIpCorrespondsToCIDR: function(cidr, ip) {
+            var ipRange = this.cidrToIntRange(cidr);
+            var ipInt = this.ipToInt(ip);
+            return ipInt >= ipRange[0] && ipInt <= ipRange[1];
+        },
+        composeBroadcastAddress: function(subnetAddress, netmask) {
+            /*jslint bitwise: true*/
+            var broadcastAddress = _.map(subnetAddress.split('.'), function(octet, i) {
+                return octet | (netmask.split('.')[i] ^ 255);
+            }).join('.');
+            /*jslint bitwise: false*/
+            return broadcastAddress;
+        },
+        composeSubnetAddress: function(ip, netmask) {
+            /*jslint bitwise: true*/
+            var networkAddress = this.intToIp(this.ipToInt(netmask) & this.ipToInt(ip));
+            /*jslint bitwise: false*/
+            return networkAddress;
         },
         composeCidr: function(ip, netmask) {
-            var netmaskInt = this.ipIntRepresentation(netmask);
-            var ipInt = this.ipIntRepresentation(ip);
-            var networkSize = netmaskInt.toString(2).match(/1/g).length;
-            /*jslint bitwise: true*/
-            var networkAddressInt = netmaskInt & ipInt;
-            var networkAddress = [networkAddressInt >>> 24, networkAddressInt >>> 16 & 0xFF, networkAddressInt >>> 8 & 0xFF, networkAddressInt & 0xFF].join('.');
-            /*jslint bitwise: false*/
-            return networkAddress + '/' + networkSize;
+            var networkSize = this.ipToInt(netmask).toString(2).match(/1/g).length;
+            return utils.composeSubnetAddress(ip, netmask) + '/' + networkSize;
+        },
+        cidrToIntRange: function(cidr) {
+            var ipStartInt = this.ipToInt(cidr.split('/')[0]);
+            var networkSize = Math.pow(2, 32 - cidr.split('/')[1]);
+            return [ipStartInt, ipStartInt + networkSize - 1];
+        },
+        validateIPRangesIntersection: function(range1, range2, intRepresentation) {
+            if (!intRepresentation) {
+                range1 = _.map(range1, function(ip) {return utils.ipToInt(ip);});
+                range2 = _.map(range2, function(ip) {return utils.ipToInt(ip);});
+            }
+            return range1[0] <= range2[1] && range2[0] <= range1[1];
+        },
+        validateCIDRIntersection: function(cidr1, cidr2) {
+            return this.validateIPRangesIntersection(this.cidrToIntRange(cidr1), this.cidrToIntRange(cidr2), true);
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;

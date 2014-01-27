@@ -68,6 +68,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'roles': ['controller', 'cinder'], 'pending_addition': True},
             {'roles': ['compute', 'cinder'], 'pending_addition': True},
             {'roles': ['compute'], 'pending_addition': True},
+            {'roles': ['mongo'], 'pending_addition': True},
             {'roles': [], 'pending_roles': ['cinder'],
              'pending_addition': True}]
         cluster = self.env.create(
@@ -89,6 +90,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assert_nodes_with_role(nodes, 'controller', 1)
         self.assert_nodes_with_role(nodes, 'compute', 2)
         self.assert_nodes_with_role(nodes, 'cinder', 3)
+        self.assert_nodes_with_role(nodes, 'mongo', 1)
 
     def test_serialize_nodes(self):
         serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
@@ -272,6 +274,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
                 {'roles': ['controller', 'cinder'], 'pending_addition': True},
                 {'roles': ['compute', 'cinder'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['mongo'], 'pending_addition': True},
                 {'roles': ['cinder'], 'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
@@ -284,6 +287,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def test_set_deployment_priorities(self):
         nodes = [
+            {'role': 'mongo'},
             {'role': 'primary-swift-proxy'},
             {'role': 'swift-proxy'},
             {'role': 'storage'},
@@ -295,14 +299,15 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         ]
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'primary-swift-proxy', 'priority': 100},
-            {'role': 'swift-proxy', 'priority': 200},
-            {'role': 'storage', 'priority': 300},
-            {'role': 'primary-controller', 'priority': 400},
-            {'role': 'controller', 'priority': 500},
+            {'role': 'mongo', 'priority': 100},
+            {'role': 'primary-swift-proxy', 'priority': 200},
+            {'role': 'swift-proxy', 'priority': 300},
+            {'role': 'storage', 'priority': 400},
+            {'role': 'primary-controller', 'priority': 500},
             {'role': 'controller', 'priority': 600},
-            {'role': 'ceph-osd', 'priority': 700},
-            {'role': 'other', 'priority': 700}
+            {'role': 'controller', 'priority': 700},
+            {'role': 'ceph-osd', 'priority': 800},
+            {'role': 'other', 'priority': 800}
         ]
         self.assertEquals(expected_priorities, nodes)
 
@@ -332,8 +337,8 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def test_get_common_attrs(self):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
-        self.assertEquals(attrs['management_vip'], '192.168.0.7')
-        self.assertEquals(attrs['public_vip'], '172.16.0.8')
+        self.assertEquals(attrs['management_vip'], '192.168.0.8')
+        self.assertEquals(attrs['public_vip'], '172.16.0.9')
 
         # last_contrller
         controllers = self.get_controllers(self.cluster.id)

@@ -705,6 +705,7 @@ class VolumeManager(object):
             'calc_min_vm_size': lambda: gb_to_mb(5),
             'calc_min_glance_size': lambda: gb_to_mb(5),
             'calc_min_cinder_size': lambda: gb_to_mb(1.5),
+            'calc_min_mongo_size': lambda: gb_to_mb(10),
             'calc_total_root_vg': self._calc_total_root_vg,
             # 2GB reuquired for journal, leave 1GB for data
             'calc_min_ceph_size': lambda: gb_to_mb(3),

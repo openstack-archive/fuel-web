@@ -23,6 +23,7 @@
         description: "A compute node creates, manages and terminates virtual machine instances."
         conflicts:
           - controller
+          - mongo
       cinder:
         name: "Storage - Cinder LVM"
         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
@@ -321,10 +322,23 @@
       - compute
       - cinder
       - ceph-osd
+      - mongo
     roles_metadata:
       ceph-osd:
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
+        conflicts:
+          - mongo
+      mongo:
+        name: "Telemetry - MongoDB"
+        description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
+        conflicts:
+          - compute
+          - ceph-osd
+        depends:
+          - condition:
+              "settings:additional_components.ceilometer.value": true
+            warning: "Ceilometer should be enabled"
     networks_metadata:
       neutron:
         networks:
@@ -403,7 +417,19 @@
           - {allocate_size: "full-disk", id: "ceph"}
         controller-ceph-image:
           - {allocate_size: 'all', id: 'os'}
+        mongo:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "mongo"}
       volumes:
+        - id: "mongo"
+          type: "vg"
+          label: "MongoDB"
+          min_size: {generator: "calc_min_mongo_size"}
+          volumes:
+            - mount: "/var/lib/mongo"
+              type: "lv"
+              name: "mongo"
+              file_system: "ext4"
         - id: "ceph"
           type: "partition"
           min_size: {generator: "calc_min_ceph_size"}

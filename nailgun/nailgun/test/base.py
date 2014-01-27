@@ -433,7 +433,7 @@ class Environment(object):
         return meta['interfaces']
 
     def get_default_roles(self):
-        return ['controller', 'compute', 'cinder', 'ceph-osd']
+        return ['controller', 'compute', 'cinder', 'ceph-osd', 'mongo']
 
     def get_default_volumes_metadata(self):
         return self.read_fixtures(

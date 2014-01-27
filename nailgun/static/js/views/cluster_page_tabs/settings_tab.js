@@ -81,6 +81,8 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             // some hacks until settings dependecies are implemented
             this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
             this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
+            this.settings.on('change:storage.volumes_lvm.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_ceph.value': !value});}}, this));
+            this.settings.on('change:storage.volumes_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_lvm.value': !value});}}, this));
             this.settings.on('change', _.bind(this.checkForChanges, this));
         },
         composeBindings: function() {

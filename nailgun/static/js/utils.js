@@ -40,7 +40,7 @@ define(['require'], function(require) {
             return '<a target="_blank" href="' + url + '">' + url + '</a>';
         },
         urlify: function (text) {
-            return utils.linebreaks(text).replace(new RegExp(utils.regexes.url.source, 'g'), utils.composeLink);
+            return this.linebreaks(text).replace(new RegExp(this.regexes.url.source, 'g'), this.composeLink);
         },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;
@@ -103,7 +103,7 @@ define(['require'], function(require) {
             var errors = {};
             var match;
             if (_.isString(cidr)) {
-                match = cidr.match(utils.regexes.cidr);
+                match = cidr.match(this.regexes.cidr);
                 if (match) {
                     var prefix = parseInt(match[1], 10);
                     if (prefix < 2) {
@@ -121,38 +121,74 @@ define(['require'], function(require) {
             return errors;
         },
         validateIP: function(ip) {
-            return !_.isString(ip) || !ip.match(utils.regexes.ip);
+            return !_.isString(ip) || !ip.match(this.regexes.ip);
         },
         validateIPrange: function(startIP, endIP) {
             return this.ipIntRepresentation(startIP) - this.ipIntRepresentation(endIP) <= 0;
         },
         validateNetmask: function(netmask) {
-            return utils.validateIP(netmask) || !this.ipIntRepresentation(netmask).toString(2).match(/^1+00+$/);
+            return this.validateIP(netmask) || !this.ipIntRepresentation(netmask).toString(2).match(/^1+00+$/);
         },
         ipIntRepresentation: function(ip) {
             return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
         },
+        intToIP: function(n) {
+            /*jslint bitwise: true*/
+            var octets = [n >>> 24, n >>> 16 & 0xFF, n >>> 8 & 0xFF, n & 0xFF];
+            /*jslint bitwise: false*/
+            return octets.join('.');
+        },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
             /*jslint bitwise: true*/
-            var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
+            var networkAddressToInt = this.ipIntRepresentation(cidr.split('/')[0]);
             var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
-            var ipToInt = utils.ipIntRepresentation(ip);
+            var ipToInt = this.ipIntRepresentation(ip);
             var result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
             /*jslint bitwise: false*/
             return result;
         },
-        composeCidr: function(ip, netmask) {
+        composeBroadcastAddress: function(ip, netmask) {
+            /*jslint bitwise: true*/
+            var broadcastAddress = _.map(utils.composeSubnetAddress(ip, netmask).split('.'), function(octet, i) {
+                return octet | (netmask.split('.')[i] ^ 255);
+            }).join('.');
+            /*jslint bitwise: false*/
+            return broadcastAddress;
+        },
+        composeSubnetAddress: function(ip, netmask) {
             var netmaskInt = this.ipIntRepresentation(netmask);
             var ipInt = this.ipIntRepresentation(ip);
-            var networkSize = netmaskInt.toString(2).match(/1/g).length;
             /*jslint bitwise: true*/
-            var networkAddressInt = netmaskInt & ipInt;
-            var networkAddress = [networkAddressInt >>> 24, networkAddressInt >>> 16 & 0xFF, networkAddressInt >>> 8 & 0xFF, networkAddressInt & 0xFF].join('.');
+            var networkAddress = this.intToIP(netmaskInt & ipInt);
             /*jslint bitwise: false*/
-            return networkAddress + '/' + networkSize;
+            return networkAddress;
+        },
+        composeCidr: function(ip, netmask) {
+            var networkSize = this.ipIntRepresentation(netmask).toString(2).match(/1/g).length;
+            return utils.composeSubnetAddress(ip, netmask) + '/' + networkSize;
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;
+        },
+        cidrToIPRange: function(cidr) {
+            var ipStart = cidr.split('/')[0];
+            var networkSize = Math.pow(2, 32 - cidr.split('/')[1]);
+            return [ipStart, this.intToIP(this.ipIntRepresentation(ipStart) + networkSize - 1)];
+        },
+        ipRangeIntRepresentation: function(range) {
+            if (!_.isArray(range)) {
+                range = this.cidrToIPRange(range);
+            }
+            range = _.map(range, function(ip) {return utils.ipIntRepresentation(ip);});
+            return range;
+        },
+        validateIPRangesIntersection: function(range1, range2) {
+            range1 = this.ipRangeIntRepresentation(range1);
+            range2 = this.ipRangeIntRepresentation(range2);
+            return range1[0] <= range2[1] && range2[0] <= range1[1];
+        },
+        validateCIDRIntersection: function(cidr1, cidr2) {
+            return this.validateIPRangesIntersection(this.cidrToIPRange(cidr1), this.cidrToIPRange(cidr2));
         }
     };
 

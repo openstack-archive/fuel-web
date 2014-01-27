@@ -427,6 +427,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var release = this.cluster.get('release');
             _.each(roles, function(role) {
                 forbiddenRoles = _.union(forbiddenRoles, release.get('roles_metadata')[role.get('name')].conflicts);
+                // hack here - to be rewritten when backend is prepared
+                if (role.get('name') == 'cinder') {
+                    forbiddenRoles.push('ceph-osd');
+                }
+                if (role.get('name') == 'ceph-osd') {
+                    forbiddenRoles.push('cinder');
+                }
             });
             return _.uniq(forbiddenRoles);
         },

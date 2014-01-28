@@ -31,7 +31,7 @@
         var _define = define;
         _define(['less', 'jquery'], function(less, $) {
             var link = $('<link/>', {
-                href: '/static/css/styles.less',
+                href: '/static/css/styles.less?_=' + (new Date()).getTime(),
                 rel: 'stylesheet/less'
             });
             link.appendTo('head');

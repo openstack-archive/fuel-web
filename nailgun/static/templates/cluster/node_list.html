@@ -16,7 +16,7 @@
           </ul>
           <i class="<%= cluster.get('status') == 'error' ? 'icon-attention text-error' : 'icon-info-circled text-info' %> btn-cluster-details"></i>
         <% } %>
-        <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%= cluster ? cluster.get('name') : $.t('cluster_page.nodes_tab.unallocated_nodes') %></span>
+        <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%- cluster ? cluster.get('name') : $.t('cluster_page.nodes_tab.unallocated_nodes') %></span>
       </div>
       <div class="node-list-name-count">(<%- $.t('common.node', {count: nodes.length}) %>)</div>
     </div>

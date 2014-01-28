@@ -200,7 +200,8 @@ class NetworkCheck(object):
                         )
                         self.result.append({"ids": [int(ng["id"])],
                                             "errors": ["ip_ranges"]})
-                    if pub_gw in npair[0] or pub_gw in npair[1]:
+                for net in nets:
+                    if pub_gw in net:
                         self.err_msgs.append(
                             u"Address intersection between "
                             u"public gateway and IP range "
@@ -209,9 +210,8 @@ class NetworkCheck(object):
                         self.result.append({"ids": [int(ng["id"])],
                                             "errors": ["gateway",
                                                        "ip_ranges"]})
-                # Check that Public IP ranges are in Public CIDR
-                if ng['name'] == 'public':
-                    for net in nets:
+                    # Check that Public IP ranges are in Public CIDR
+                    if ng['name'] == 'public':
                         if net not in pub_cidr and not pub_ranges_err:
                             pub_ranges_err = True
                             self.err_msgs.append(
@@ -445,7 +445,9 @@ class NetworkCheck(object):
                     )
                 self.result.append({"ids": [int(public["id"])],
                                     "errors": ["ip_ranges"]})
-            if public_gw in npair[0] or public_gw in npair[1]:
+        # Check intersection between Public GW and IP ranges
+        for net in ranges:
+            if public_gw in net:
                 self.err_msgs.append(
                     u"Address intersection between public gateway "
                     u"and IP range of public network."

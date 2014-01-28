@@ -790,6 +790,17 @@ class NetworkManager(object):
         return []
 
     @classmethod
+    def get_admin_ip_for_node(cls, node):
+        """Returns first admin IP address for node
+        """
+        admin_net_id = cls.get_admin_network_group_id()
+        admin_ips = set([
+            i.ip_addr for i in db().query(IPAddr).
+            order_by(IPAddr.id).
+            filter_by(node=node.id).
+            filter_by(network=admin_net_id)])
+        return admin_ips.pop()
+
     def get_admin_ips_for_interfaces(cls, node):
         """Returns mapping admin {"inteface name" => "admin ip"}
         """

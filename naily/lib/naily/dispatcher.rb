@@ -27,6 +27,10 @@ module Naily
       args
     end
 
+    #
+    #  Main worker actions
+    #
+
     def download_release(data)
       # Example of message = {
       # {'method': 'download_release',
@@ -119,34 +123,80 @@ module Naily
       task_uuid = data['args']['task_uuid']
       reporter = Naily::Reporter.new(@producer, data['respond_to'], task_uuid)
       nodes = data['args']['nodes']
-      provision_engine = Astute::Provision::Cobbler.new(data['args']['engine'])
-      data['args']['engine_nodes'].each do |name|
-        if provision_engine.system_exists(name)
-          Naily.logger.info("Removing system from cobbler: #{name}")
-          provision_engine.remove_system(name)
-          if not provision_engine.system_exists(name)
-            Naily.logger.info("System has been successfully removed from cobbler: #{name}")
-          else
-            Naily.logger.error("Cannot remove node from cobbler: #{name}")
-          end
-        else
-          Naily.logger.info("System is not in cobbler: #{name}")
-        end
-      end
-      Naily.logger.debug("Cobbler syncing")
-      provision_engine.sync
+      engine = data['args']['engine']
 
-      result = nil
-      if nodes.empty?
+      result = if nodes.empty?
         Naily.logger.debug("#{task_uuid} Node list is empty")
+        nil
       else
-        result = @orchestrator.remove_nodes(reporter, task_uuid, nodes)
+        @orchestrator.remove_nodes(reporter, task_uuid, engine, nodes)
       end
 
       report_result(result, reporter)
     end
 
+    def reset_environment(data)
+      remove_nodes(data)
+    end
+
+    #
+    #  Service worker actions
+    #
+
+    def stop_deploy_task(data, service_data)
+      Naily.logger.debug("'stop_deploy_task' service method called with data: #{data.inspect}")
+      target_task_uuid = data['args']['stop_task_uuid']
+      task_uuid = data['args']['task_uuid']
+
+      return unless task_in_queue?(target_task_uuid, service_data[:tasks_queue])
+
+      reporter = Naily::Reporter.new(@producer, data['respond_to'], task_uuid)
+      result = nil
+
+      Naily.logger.debug("Cancel task #{target_task_uuid}. Start")
+      if target_task_uuid == service_data[:tasks_queue].current_task_id
+        result = stop_current_task(data, service_data, reporter)
+      else
+        replace_future_task(data, service_data)
+      end
+      report_result(result, reporter)
+    end
+
     private
+
+    def task_in_queue?(task_uuid, tasks_queue)
+      tasks_queue.task_in_queue?(task_uuid)
+    end
+
+    def replace_future_task(data, service_data)
+      target_task_uuid = data['args']['stop_task_uuid']
+      task_uuid = data['args']['task_uuid']
+
+      new_task_data = data_for_rm_nodes(data)
+      Naily.logger.info("Replace running task #{target_task_uuid} to new #{task_uuid} with data: #{new_task_data.inspect}")
+      service_data[:tasks_queue].replace_task(target_task_uuid, new_task_data)
+    end
+
+    def stop_current_task(data, service_data, reporter)
+      target_task_uuid = data['args']['stop_task_uuid']
+      task_uuid = data['args']['task_uuid']
+      nodes = data['args']['nodes']
+
+      Naily.logger.info "Try to kill running task #{target_task_uuid}"
+      service_data[:main_work_thread].raise("StopDeploy")
+      sleep 0.1 while service_data[:main_work_thread].status != 'sleep'
+
+      @orchestrator.stop_puppet_deploy(reporter, task_uuid, nodes)
+      result = @orchestrator.remove_nodes(reporter, task_uuid, data['args']['engine'], nodes)
+
+      service_data[:main_work_thread].run
+      return result
+    end
+
+    def data_for_rm_nodes(data)
+      data['method'] = 'remove_nodes'
+      data
+    end
 
     def report_result(result, reporter)
       result = {} unless result.instance_of?(Hash)

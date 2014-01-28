@@ -36,8 +36,8 @@ module Naily
       EM.run do
         run_server
       end
-    rescue => ex
-      Naily.logger.error "Exception during worker initialization: #{ex.inspect}"
+    rescue => e
+      Naily.logger.error "Exception during worker initialization: #{e.inspect},  trace: #{e.backtrace.inspect}"
       sleep 5
       retry
     end
@@ -55,11 +55,16 @@ module Naily
       AMQP.logging = true
       AMQP.connect(connection_options) do |connection|
         @connection = configure_connection(connection)
+
         @channel = create_channel(@connection)
         @exchange = @channel.topic(Naily.config.broker_exchange, :durable => true)
+        @service_channel = create_channel(@connection, prefetch=false)
+        @service_exchange = @service_channel.fanout(Naily.config.broker_service_queue, :auto_delete => true)
+
         @producer = Naily::Producer.new(@exchange)
         @delegate = Naily.config.delegate || Naily::Dispatcher.new(@producer)
-        @server = Naily::Server.new(@channel, @exchange, @delegate, @producer)
+        @server = Naily::Server.new(@channel, @exchange, @delegate, @producer, @service_channel, @service_exchange)
+
         @server.run
       end
     end
@@ -72,8 +77,9 @@ module Naily
       connection
     end
 
-    def create_channel(connection)
-      channel = AMQP::Channel.new(connection, AMQP::Channel.next_channel_id, :prefetch => 1)
+    def create_channel(connection, prefetch=true)
+      prefetch_opts = ( prefetch ? {:prefetch => 1} : {} )
+      channel = AMQP::Channel.new(connection, AMQP::Channel.next_channel_id, prefetch_opts)
       channel.auto_recovery = true
       channel.on_error do |ch, error|
         Naily.logger.fatal "Channel error #{error.inspect}"

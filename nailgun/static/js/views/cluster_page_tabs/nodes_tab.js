@@ -271,7 +271,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
             };
             this.constructor.__super__.initialize.apply(this, arguments);
-            this.nodes.deferred = this.nodes.fetch();
+            this.nodes.deferred = this.nodes.fetch().done(_.bind(this.render, this));
         }
     });
 

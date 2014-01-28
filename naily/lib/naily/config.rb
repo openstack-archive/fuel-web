@@ -59,6 +59,7 @@ module Naily
     conf[:broker_username] = 'mcollective'
     conf[:broker_password] = 'mcollective'
 
+    conf[:broker_cancel_queue] = 'cancel_naily'
     conf[:broker_queue] = 'naily'
     conf[:broker_publisher_queue] = 'nailgun'
     conf[:broker_exchange] = 'nailgun'

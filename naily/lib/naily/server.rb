@@ -13,19 +13,26 @@
 #    under the License.
 
 require 'json'
+require 'naily/cancel_signal'
 
 module Naily
   class Server
-    def initialize(channel, exchange, delegate, producer)
+    def initialize(channel, exchange, delegate, producer, cancel_channel, cancel_exchange)
       @channel  = channel
       @exchange = exchange
       @delegate = delegate
       @producer = producer
+      @cancel_channel = cancel_channel
+      @cancel_exchange = cancel_exchange
+      @cancel_signal = CancelSignal.new
     end
 
     def run
       @queue = @channel.queue(Naily.config.broker_queue, :durable => true)
       @queue.bind @exchange, :routing_key => Naily.config.broker_queue
+
+      @cancel_queue = @cancel_channel.queue("", :exclusive => true, :auto_delete => true).bind(@cancel_exchange)
+
       @loop = Thread.new(&method(:server_loop))
       self
     end
@@ -33,6 +40,7 @@ module Naily
   private
 
     def server_loop
+      consume_two
       loop do
         consume_one do |payload|
           dispatch payload
@@ -54,18 +62,15 @@ module Naily
       @consumer.consume
     end
 
-    def dispatch(payload)
-      Naily.logger.debug "Got message with payload #{payload.inspect}"
-
-      begin
-        messages = JSON.load(payload)
-      rescue => ex
-        Naily.logger.error "Error deserializing payload: #{ex.message}, trace: #{ex.backtrace.inspect}"
-        # TODO: send RPC error response
-        return
+    def consume_two
+      @cancel_queue.subscribe do |_, payload|
+        @cancel_signal.add_messages(parse_data(payload))
+        Naily.logger.debug "Process message from cancel queue: #{payload.inspect}"
       end
+    end
 
-      (messages.is_a?(Array) ? messages : [messages]).each_with_index do |message, i|
+    def dispatch(payload)
+      parse_data(payload).each_with_index do |message, i|
         begin
           dispatch_message message
         rescue StopIteration
@@ -100,7 +105,11 @@ module Naily
       end
 
       Naily.logger.info "Processing RPC call '#{data['method']}'"
-      @delegate.send(data['method'], data)
+      if data['method'].to_s == 'deploy'
+        @delegate.send(data['method'], data, @cancel_signal)
+      else
+        @delegate.send(data['method'], data)
+      end
     end
 
     def return_results(message, results)
@@ -108,6 +117,17 @@ module Naily
         reporter = Naily::Reporter.new(@producer, message['respond_to'], message['args']['task_uuid'])
         reporter.report results
       end
+    end
+
+    def parse_data(data)
+      Naily.logger.debug "Got message with payload #{data.inspect}"
+      messages = nil
+      begin
+        messages = JSON.load(data)
+      rescue => e
+        Naily.logger.error "Error deserializing payload: #{e.message}, trace: #{e.backtrace.inspect}"
+      end
+      messages.is_a?(Array) ? messages : [messages]
     end
 
     def abort_messages(messages)

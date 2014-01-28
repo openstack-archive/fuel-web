@@ -13,77 +13,106 @@
 #    under the License.
 
 require 'json'
+require 'naily/task_queue'
 
 module Naily
   class Server
-    def initialize(channel, exchange, delegate, producer)
+    def initialize(channel, exchange, delegate, producer, service_channel, service_exchange)
       @channel  = channel
       @exchange = exchange
       @delegate = delegate
       @producer = producer
+      @service_channel = service_channel
+      @service_exchange = service_exchange
     end
 
     def run
-      @queue = @channel.queue(Naily.config.broker_queue, :durable => true)
-      @queue.bind @exchange, :routing_key => Naily.config.broker_queue
-      @loop = Thread.new(&method(:server_loop))
+      @queue = @channel.queue(Naily.config.broker_queue, :durable => true).bind(@exchange)
+      @service_queue = @service_channel.queue("", :exclusive => true, :auto_delete => true).bind(@service_exchange)
+
+      @loop = Thread.new(&method(:register_callbacks))
+      @main_work_thread = nil
+      @main_worker_metadata = nil
+      @tasks_queue = TaskQueue.new
       self
     end
 
   private
 
-    def server_loop
-      loop do
-        consume_one do |payload|
-          dispatch payload
-        end
-        Thread.stop
-      end
+    def register_callbacks
+      main_worker
+      service_worker
     end
 
-    def consume_one
+    def main_worker
       @consumer = AMQP::Consumer.new(@channel, @queue)
       @consumer.on_delivery do |metadata, payload|
-        metadata.ack
-        Thread.new do
-          yield payload
-          @loop.wakeup
-        end
-        @consumer.cancel
+        Naily.logger.debug "Process message from worker queue: #{payload.inspect}"
+        perform_main_job(metadata, payload)
       end
       @consumer.consume
     end
 
-    def dispatch(payload)
-      Naily.logger.debug "Got message with payload #{payload.inspect}"
-
-      begin
-        messages = JSON.load(payload)
-      rescue => ex
-        Naily.logger.error "Error deserializing payload: #{ex.message}, trace: #{ex.backtrace.inspect}"
-        # TODO: send RPC error response
-        return
+    def service_worker
+      @service_queue.subscribe do |_, payload|
+        Naily.logger.debug "Process message from service queue: #{payload.inspect}"
+        perform_service_job(nil, payload)
       end
+    end
 
-      (messages.is_a?(Array) ? messages : [messages]).each_with_index do |message, i|
+    def perform_main_job(metadata, payload)
+      @main_worker_metadata = metadata
+
+      @main_work_thread = Thread.new do
+        data = parse_data(payload)
+        @tasks_queue = TaskQueue.new
+
+        @tasks_queue.add_task(data)
+        dispatch(@tasks_queue)
+
+        @main_worker_metadata.ack
+        @main_worker_metadata = nil
+      end
+    end
+
+    def perform_service_job(metadata, payload)
+      Thread.new do
+        service_data = {:main_work_thread => @main_work_thread,
+                        :tasks_queue => @tasks_queue,
+                        :main_worker_metadata => @main_worker_metadata}
+        dispatch(parse_data(payload), service_data)
+      end
+      #t.join
+    end
+
+    def dispatch(data, service_data=nil)
+      data.each_with_index do |message, i|
         begin
-          dispatch_message message
+          dispatch_message message, service_data
         rescue StopIteration
           Naily.logger.debug "Dispatching aborted by #{message['method']}"
           abort_messages messages[(i + 1)..-1]
           break
         rescue => ex
-          Naily.logger.error "Error running RPC method #{message['method']}: #{ex.message}, trace: #{ex.backtrace.inspect}"
-          return_results message, {
-            'status' => 'error',
-            'error'  => "Error occurred while running method '#{message['method']}'. Inspect Orchestrator logs for the details."
-          }
+          if ex.message =~ /StopDeploy/
+            Naily.logger.debug "Stop main work thread!"
+            Thread.stop
+            Naily.logger.debug "Run main work thread!"
+          else
+            Naily.logger.error "Error running RPC method #{message['method']}: #{ex.message}, trace: #{ex.backtrace.inspect}"
+            return_results message, {
+              'status' => 'error',
+              'error'  => "Error occurred while running method '#{message['method']}'. Inspect Orchestrator logs for the details."
+            }
+          end
+          break
         end
       end
     end
 
-    def dispatch_message(data)
+    def dispatch_message(data, service_data=nil)
       Naily.logger.debug "Dispatching message: #{data.inspect}"
+      raise StopIteration if data.nil?
 
       if Naily.config.fake_dispatch
         Naily.logger.debug "Fake dispatch"
@@ -99,8 +128,14 @@ module Naily
         return
       end
 
+      Naily.logger.debug "Main worker task id is #{@tasks_queue.current_task_id}" if service_data.nil?
+
       Naily.logger.info "Processing RPC call '#{data['method']}'"
-      @delegate.send(data['method'], data)
+      if !service_data
+        @delegate.send(data['method'], data)
+      else
+        @delegate.send(data['method'], data, service_data)
+      end
     end
 
     def return_results(message, results)
@@ -108,6 +143,17 @@ module Naily
         reporter = Naily::Reporter.new(@producer, message['respond_to'], message['args']['task_uuid'])
         reporter.report results
       end
+    end
+
+    def parse_data(data)
+      Naily.logger.debug "Got message with payload #{data.inspect}"
+      messages = nil
+      begin
+        messages = JSON.load(data)
+      rescue => e
+        Naily.logger.error "Error deserializing payload: #{e.message}, trace: #{e.backtrace.inspect}"
+      end
+      messages.is_a?(Array) ? messages : [messages]
     end
 
     def abort_messages(messages)

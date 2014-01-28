@@ -94,7 +94,7 @@ class ProvisioningSerializer(object):
         interfaces = {}
         interfaces_extra = {}
         net_manager = NetworkManager
-        admin_ips = net_manager.get_admin_ips_for_interfaces(node)
+        admin_ip = net_manager.get_admin_ip_for_node(node)
         admin_netmask = net_manager.get_admin_network_group().netmask
 
         for interface in node.interfaces:
@@ -102,9 +102,7 @@ class ProvisioningSerializer(object):
 
             interfaces[name] = {
                 'mac_address': interface.mac,
-                'static': '0',
-                'netmask': admin_netmask,
-                'ip_address': admin_ips[name]}
+                'static': '0'}
 
             # interfaces_extra field in cobbler ks_meta
             # means some extra data for network interfaces
@@ -125,6 +123,8 @@ class ProvisioningSerializer(object):
             # configuration yet.
             if interface.mac == node.mac:
                 interfaces[name]['dns_name'] = node.fqdn
+                interfaces[name]['netmask'] = admin_netmask
+                interfaces[name]['ip_address'] = admin_ip
                 interfaces_extra[name]['onboot'] = 'yes'
 
         return {

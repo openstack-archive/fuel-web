@@ -246,7 +246,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             'eth1': {
                 'interface': 'eth1',
                 'ipaddr': [
-                    '10.20.0.130/24']}}
+                    '10.20.0.129/24']}}
 
         self.datadiff(expected_interfaces, interfaces)
 

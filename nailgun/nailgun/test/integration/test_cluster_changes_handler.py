@@ -21,7 +21,6 @@ from mock import patch
 
 import nailgun
 
-from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
@@ -96,12 +95,12 @@ class TestHandlers(BaseIntegrationTest):
         assigned_ips = {}
         i = 0
         admin_ips = [
-            '10.20.0.139/24',
-            '10.20.0.138/24',
-            '10.20.0.135/24',
+            '10.20.0.134/24',
             '10.20.0.133/24',
+            '10.20.0.132/24',
             '10.20.0.131/24',
-            '10.20.0.130/24']
+            '10.20.0.130/24',
+            '10.20.0.129/24']
         for node in nodes_db:
             node_id = node.id
             admin_ip = admin_ips.pop()
@@ -248,14 +247,9 @@ class TestHandlers(BaseIntegrationTest):
                 }
             }
 
-            NetworkManager.assign_admin_ips(
-                n.id,
-                len(n.meta.get('interfaces', []))
-            )
+            NetworkManager.assign_admin_ips(n.id, 1)
 
-            admin_ips = set([i.ip_addr for i in self.db.query(IPAddr).
-                            filter_by(node=n.id).
-                            filter_by(network=admin_net.id)])
+            admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
             for i in n.interfaces:
                 if 'interfaces' not in pnd:
@@ -263,8 +257,6 @@ class TestHandlers(BaseIntegrationTest):
                 pnd['interfaces'][i.name] = {
                     'mac_address': i.mac,
                     'static': '0',
-                    'netmask': admin_net.netmask,
-                    'ip_address': admin_ips.pop(),
                 }
                 if 'interfaces_extra' not in pnd:
                     pnd['interfaces_extra'] = {}
@@ -276,6 +268,8 @@ class TestHandlers(BaseIntegrationTest):
                 if i.mac == n.mac:
                     pnd['interfaces'][i.name]['dns_name'] = n.fqdn
                     pnd['interfaces_extra'][i.name]['onboot'] = 'yes'
+                    pnd['interfaces'][i.name]['ip_address'] = admin_ip
+                    pnd['interfaces'][i.name]['netmask'] = admin_net.netmask
 
             provision_nodes.append(pnd)
 
@@ -407,12 +401,12 @@ class TestHandlers(BaseIntegrationTest):
         assigned_ips = {}
         i = 0
         admin_ips = [
-            '10.20.0.139/24',
-            '10.20.0.138/24',
-            '10.20.0.135/24',
+            '10.20.0.134/24',
             '10.20.0.133/24',
+            '10.20.0.132/24',
             '10.20.0.131/24',
-            '10.20.0.130/24']
+            '10.20.0.130/24',
+            '10.20.0.129/24']
         for node in nodes_db:
             node_id = node.id
             admin_ip = admin_ips.pop()
@@ -605,15 +599,9 @@ class TestHandlers(BaseIntegrationTest):
                 }
             }
 
-            NetworkManager.assign_admin_ips(
-                n.id,
-                len(n.meta.get('interfaces', []))
-            )
+            NetworkManager.assign_admin_ips(n.id, 1)
 
-            admin_ips = set([i.ip_addr
-                             for i in self.db.query(IPAddr).
-                             filter_by(node=n.id).
-                             filter_by(network=admin_net.id)])
+            admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
             for i in n.meta.get('interfaces', []):
                 if 'interfaces' not in pnd:
@@ -621,8 +609,6 @@ class TestHandlers(BaseIntegrationTest):
                 pnd['interfaces'][i['name']] = {
                     'mac_address': i['mac'],
                     'static': '0',
-                    'netmask': admin_net.netmask,
-                    'ip_address': admin_ips.pop(),
                 }
                 if 'interfaces_extra' not in pnd:
                     pnd['interfaces_extra'] = {}
@@ -634,6 +620,8 @@ class TestHandlers(BaseIntegrationTest):
                 if i['mac'] == n.mac:
                     pnd['interfaces'][i['name']]['dns_name'] = n.fqdn
                     pnd['interfaces_extra'][i['name']]['onboot'] = 'yes'
+                    pnd['interfaces'][i['name']]['ip_address'] = admin_ip
+                    pnd['interfaces'][i['name']]['netmask'] = admin_net.netmask
 
             provision_nodes.append(pnd)
 

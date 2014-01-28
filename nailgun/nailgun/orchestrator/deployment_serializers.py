@@ -392,8 +392,7 @@ class NetworkDeploymentSerializer(object):
     def get_admin_ip_w_prefix(node):
         """Getting admin ip and assign prefix from admin network."""
         network_manager = NetworkManager
-        admin_ip = network_manager.get_admin_ips_for_interfaces(
-            node)[node.admin_interface.name]
+        admin_ip = network_manager.get_admin_ip_for_node(node)
         admin_ip = IPNetwork(admin_ip)
 
         # Assign prefix from admin network

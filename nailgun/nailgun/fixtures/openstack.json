@@ -16,7 +16,7 @@
                     "description": "This configuration requires multiple OpenStack controllers (3+) and provides high availability for all OpenStack components, including MySQL/Galera, RabbitMQ, and Cinder, as well as OpenStack API services. Select this configuration if you want to build a production-grade OpenStack cloud with 6 nodes or more."
                 }
             },
-            "roles": ["controller", "compute", "cinder", "ceph-osd"],
+            "roles": ["controller", "compute", "cinder", "ceph-osd", "mongo"],
             "roles_metadata": {
                 "controller": {
                     "name": "Controller",
@@ -35,7 +35,13 @@
                 "ceph-osd": {
                     "name": "Storage - Ceph OSD",
                     "description": "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
-                }
+                },
+                "mongo": {
+                    "name": "Mongo",
+                    "description": "Storage - MongoDB for Ceilometer",
+                    "conflicts": ["compute"],
+                    "depends_on": "editable.additional_components.ceilometer.value"
+                  }
             },
             "networks_metadata": {
                 "nova_network": {

@@ -79,116 +79,103 @@ from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.api.handlers.version import VersionHandler
 
 
-urls = (
-    r'/releases/?$',
-    ReleaseCollectionHandler,
-    r'/releases/(?P<release_id>\d+)/?$',
-    ReleaseHandler,
-
-    r'/clusters/?$',
-    ClusterCollectionHandler,
-    r'/clusters/(?P<cluster_id>\d+)/?$',
-    ClusterHandler,
-    r'/clusters/(?P<cluster_id>\d+)/changes/?$',
-    ClusterChangesHandler,
-    r'/clusters/(?P<cluster_id>\d+)/attributes/?$',
-    ClusterAttributesHandler,
-    r'/clusters/(?P<cluster_id>\d+)/attributes/defaults/?$',
-    ClusterAttributesDefaultsHandler,
-    # nova network-related
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/nova_network/?$',
-    NovaNetworkConfigurationHandler,
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
-    'nova_network/verify/?$',
-    NovaNetworkConfigurationVerifyHandler,
-    # neutron-related
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/neutron/?$',
-    NeutronNetworkConfigurationHandler,
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
-    'neutron/verify/?$',
-    NeutronNetworkConfigurationVerifyHandler,
-
-    r'/clusters/(?P<cluster_id>\d+)/orchestrator/deployment/?$',
-    DeploymentInfo,
-    r'/clusters/(?P<cluster_id>\d+)/orchestrator/deployment/defaults/?$',
-    DefaultDeploymentInfo,
-    r'/clusters/(?P<cluster_id>\d+)/orchestrator/provisioning/?$',
-    ProvisioningInfo,
-    r'/clusters/(?P<cluster_id>\d+)/orchestrator/provisioning/defaults/?$',
-    DefaultProvisioningInfo,
-    r'/clusters/(?P<cluster_id>\d+)/generated/?$',
-    ClusterGeneratedData,
-
-    r'/clusters/(?P<cluster_id>\d+)/provision/?$',
-    ProvisionSelectedNodes,
-    r'/clusters/(?P<cluster_id>\d+)/deploy/?$',
-    DeploySelectedNodes,
-
-    r'/nodes/?$',
-    NodeCollectionHandler,
-    r'/nodes/(?P<node_id>\d+)/?$',
-    NodeHandler,
-    r'/nodes/(?P<node_id>\d+)/disks/?$',
-    NodeDisksHandler,
-    r'/nodes/(?P<node_id>\d+)/disks/defaults/?$',
-    NodeDefaultsDisksHandler,
-    r'/nodes/(?P<node_id>\d+)/volumes/?$',
-    NodeVolumesInformationHandler,
-    r'/nodes/interfaces/?$',
-    NodeCollectionNICsHandler,
-    r'/nodes/interfaces/default_assignment/?$',
-    NodeCollectionNICsDefaultHandler,
-    r'/nodes/(?P<node_id>\d+)/interfaces/?$',
-    NodeNICsHandler,
-    r'/nodes/(?P<node_id>\d+)/interfaces/default_assignment/?$',
-    NodeNICsDefaultHandler,
-    r'/nodes/interfaces_verify/?$',
-    NodeNICsVerifyHandler,
-    r'/nodes/allocation/stats/?$',
-    NodesAllocationStatsHandler,
-    r'/tasks/?$',
-    TaskCollectionHandler,
-    r'/tasks/(?P<task_id>\d+)/?$',
-    TaskHandler,
-
-    r'/notifications/?$',
-    NotificationCollectionHandler,
-    r'/notifications/(?P<notification_id>\d+)/?$',
-    NotificationHandler,
-
-    r'/logs/?$',
-    LogEntryCollectionHandler,
-    r'/logs/package/?$',
-    LogPackageHandler,
-    r'/logs/sources/?$',
-    LogSourceCollectionHandler,
-    r'/logs/sources/nodes/(?P<node_id>\d+)/?$',
-    LogSourceByNodeCollectionHandler,
-
-    r'/registration/key/?$',
-    FuelKeyHandler,
-
-    r'/version/?$',
-    VersionHandler,
-
-    r'/plugins/?$',
-    PluginCollectionHandler,
-    r'/plugins/(?P<plugin_id>\d+)/?$',
-    PluginHandler,
-    r'/redhat/account/?$',
-    RedHatAccountHandler,
-    r'/redhat/setup/?$',
-    RedHatSetupHandler,
-
-    r'/capacity/?$',
-    CapacityLogHandler,
-    r'/capacity/csv/?$',
-    CapacityLogCsvHandler,
-)
-
-urls = [i if isinstance(i, str) else i.__name__ for i in urls]
-
 _locals = locals()
+
+
+urls_dict = {
+    'releases': {
+        '': ReleaseCollectionHandler,
+        '(?P<release_id>\d+)': ReleaseHandler,
+    },
+    'clusters': {
+        '': ClusterCollectionHandler,
+        r'(?P<cluster_id>\d+)': {
+            '': ClusterHandler,
+            'changes': ClusterChangesHandler,
+            'attributes': ClusterAttributesHandler,
+            'attributes/defaults': ClusterAttributesDefaultsHandler,
+            'network_configuration': {
+                'nova_network': {
+                    '': NovaNetworkConfigurationHandler,
+                    'verify': NovaNetworkConfigurationVerifyHandler,
+                },
+                'neutron': {
+                    '': NeutronNetworkConfigurationHandler,
+                    'verify': NeutronNetworkConfigurationVerifyHandler,
+                },
+            },
+            'orchestrator': {
+                'deployment': DeploymentInfo,
+                'deployment/defaults': DefaultDeploymentInfo,
+                'provisioning': ProvisioningInfo,
+                'provisioning/defaults': DefaultProvisioningInfo,
+            },
+            'generated': ClusterGeneratedData,
+            'provision': ProvisionSelectedNodes,
+            'deploy': DeploySelectedNodes,
+        },
+    },
+    'nodes': {
+        '': NodeCollectionHandler,
+        r'(?P<node_id>\d+)': {
+            '': NodeHandler,
+            'disks': NodeDisksHandler,
+            'disks/defaults': NodeDefaultsDisksHandler,
+            'volumes': NodeVolumesInformationHandler,
+            'interfaces': NodeNICsHandler,
+            'interfaces/default_assignment': NodeNICsDefaultHandler,
+        },
+        'interfaces': NodeCollectionNICsHandler,
+        'interfaces/default_assignment': NodeCollectionNICsDefaultHandler,
+        'interfaces_verify': NodeNICsVerifyHandler,
+        'allocation/stats': NodesAllocationStatsHandler,
+    },
+    'tasks': {
+        '': TaskCollectionHandler,
+        '(?P<task_id>\d+)': TaskHandler,
+    },
+    'notifications': {
+        '': NotificationCollectionHandler,
+        '(?P<notification_id>\d+)': NotificationHandler,
+    },
+    'logs': {
+        '': LogEntryCollectionHandler,
+        'package': LogPackageHandler,
+        'sources': LogSourceCollectionHandler,
+        r'sources/nodes/(?P<node_id>\d+)': LogSourceByNodeCollectionHandler,
+    },
+    'registration/key': FuelKeyHandler,
+    'version': VersionHandler,
+    'plugins': {
+        '': PluginCollectionHandler,
+        r'(?P<plugin_id>\d+)': PluginHandler,
+    },
+    'redhat': {
+        'account': RedHatAccountHandler,
+        'setup': RedHatSetupHandler,
+    },
+    'capacity': {
+        '': CapacityLogHandler,
+        'csv': CapacityLogCsvHandler,
+    },
+}
+
+
+def deep_walk(mapping):
+    for k, v in mapping.iteritems():
+        if isinstance(v, dict):
+            for child_path, value in deep_walk(v):
+                yield (k,) + child_path, value
+        else:
+            yield (k,) if k else (), v
+
+
+def preprocess_urls(mapping):
+    for path, value in deep_walk(mapping):
+        yield '/' + '/'.join(path) + '/?$'
+        yield value.__name__
+
+urls = tuple(preprocess_urls(urls_dict))
 
 
 def app():

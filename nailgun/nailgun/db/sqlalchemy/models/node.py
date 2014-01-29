@@ -119,6 +119,13 @@ class Node(Base):
                               cascade="delete",
                               order_by="NodeNICInterface.name")
 
+    fencing_primitives = relationship(
+        "FencingPrimitive",
+        backref="node",
+        cascade="delete",
+        order_by="FencingPrimitive.name"
+    )
+
     @property
     def uid(self):
         return str(self.id)

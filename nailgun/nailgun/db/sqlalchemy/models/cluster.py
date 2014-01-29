@@ -134,6 +134,13 @@ class Cluster(Base):
                                   cascade="all,delete",
                                   uselist=False)
 
+    fencing_config = relationship(
+        "FencingConfiguration",
+        backref="cluster",
+        cascade="all,delete",
+        uselist=False
+    )
+
     def replace_provisioning_info(self, data):
         self.replaced_provisioning_info = data
         self.is_customized = True

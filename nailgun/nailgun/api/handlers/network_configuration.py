@@ -154,6 +154,10 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 
     @content_json
     def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 202 (network checking task created)
+               * 404 (cluster not found in db)
+        """
         data = json.loads(web.data())
         if data.get("networks"):
             data["networks"] = [

@@ -44,3 +44,6 @@ from nailgun.db.sqlalchemy.models.redhat import RedHatAccount
 
 from nailgun.db.sqlalchemy.models.plugin import Plugin
 
+from nailgun.db.sqlalchemy.models.fencing import FencingConfiguration
+from nailgun.db.sqlalchemy.models.fencing import FencingMetadata
+from nailgun.db.sqlalchemy.models.fencing import FencingPrimitive

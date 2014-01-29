@@ -3,88 +3,41 @@
 module.exports = function(grunt) {
     var _ = require('lodash-node');
 
-    grunt.registerTask('i18n', 'Search for missing keys from different locales in translation.json', function(task, param) {
+    grunt.registerTask('i18n-vk', 'Search for missing keys from different locales in translation.json', function(task, param) {
         if (task == 'validate') {
             startValidationTask(param);
         }
 
-        function startValidationTask(language) {
-             var file = 'static/i18n/translation.json',
-                 globalValues = {},
-                 fileContents = grunt.file.readJSON(file),
-                 existingTranslationLanguages = _.keys(fileContents),
-                 optionsLang = _.isUndefined(language) ? existingTranslationLanguages : (_.indexOf(language,',') > 0) ? language.split(',') : language;
-            globalValues.baseLang = 'en-US';
+        function startValidationTask(param) {
+            var baseLocale = 'en-US';
+            var translations = grunt.file.readJSON('static/i18n/translation.json');
+            var existingLocales = _.keys(translations);
+            var locales = param ? param.split(',') : existingLocales;
 
-            if (_.isArray(optionsLang)) {
-                _.each(optionsLang, function(lang){
-                    initializeLanguage(lang, fileContents);
-                });
-            }
-            else {
-                initializeLanguage(optionsLang, fileContents);
-            }
-
-            function initializeLanguage(language, fileContent) {
-                var englishTranslations,
-                    comparingTranslations;
-                if (_.indexOf(_.keys(fileContent), language) < 0) {
-                    grunt.log.errorlns('No language named ' + language + ' found!');
+            var processedTranslations = {};
+            function processTranslations(translations) {
+                function processPiece(base, piece) {
+                    return _.map(piece, function(value, key) {
+                        var localBase = base ? base + '.' + key : key;
+                        return _.isPlainObject(value) ? processPiece(localBase, value) : localBase;
+                    });
                 }
-                else {
-                    englishTranslations = _.first(_.pluck(_.pick(fileContent, globalValues.baseLang), 'translation'));
-                    comparingTranslations = _.first(_.pluck(_.pick(fileContent, language), 'translation'));
-                    globalValues.languageToCompareToEnglish = language;
-                    globalValues.viceVersaComparison = false;
-                    initializeForCalculation(englishTranslations, comparingTranslations);
-                    globalValues.viceVersaComparison = true;
-                    initializeForCalculation(comparingTranslations, englishTranslations);
-                }
+                return _.uniq(_.flatten(processPiece(null, translations.translation))).sort();
             }
+            _.each(_.union(locales, [baseLocale]), function(locale) {
+                processedTranslations[locale] = processTranslations(translations[locale]);
+            });
 
-            function initializeForCalculation(obj1, obj2) {
-                globalValues.stackedKeys = [];
-                globalValues.arrayToCompareWith = obj2;
-                globalValues.missingKeys = [];
-                globalValues.currentDepth = globalValues.arrayToCompareWith;
-                compare(obj1);
-                if (globalValues.missingKeys.length) displayMissingKeys();
+            function compareLocales(locale1, locale2) {
+                return _.without.apply(null, [processedTranslations[locale1]].concat(processedTranslations[locale2]));
             }
+            _.each(_.without(locales, baseLocale), function(locale) {
+                grunt.log.errorlns('The list of keys present in %s but absent in %s:', baseLocale, locale);
+                grunt.log.writeln(compareLocales(baseLocale, locale).join('\n'));
+                grunt.log.errorlns('The list of keys missing in %s:', baseLocale);
+                grunt.log.writeln(compareLocales(locale, baseLocale).join('\n'));
+            });
 
-            function compare(obj) {
-                _.each(obj, function (value, key) {
-                    if (!_.isArray(value)) {
-                        if (!_.contains(_.keys(getLastObject()), key)) {
-                            globalValues.missingKeys.push(globalValues.stackedKeys.join('.')+'.'+key);
-                        }
-                        else {
-                            if (_.isObject(value)) {
-                                globalValues.stackedKeys.push(key);
-                                compare(value);
-                                globalValues.stackedKeys.pop();
-                            }
-                        }
-                    }
-                });
-            }
-
-            function getLastObject() {
-                var temp = globalValues.arrayToCompareWith;
-                _.each(globalValues.stackedKeys, function (elem) {
-                    temp = temp[elem];
-                }, this);
-                return temp;
-            }
-
-            function displayMissingKeys() {
-                grunt.log.writeln();
-                (globalValues.viceVersaComparison)
-                    ? grunt.log.errorlns('The list of keys present in ' + globalValues.languageToCompareToEnglish + ' but absent in '+ globalValues.baseLang + ':')
-                    : grunt.log.errorlns('The list of keys missing in ' + globalValues.languageToCompareToEnglish + ':');
-                _.each(globalValues.missingKeys, function(elem) {
-                    grunt.log.writeln(elem);
-                });
-            }
         }
     });
 };

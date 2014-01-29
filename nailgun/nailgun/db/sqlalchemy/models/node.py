@@ -89,6 +89,7 @@ class Node(Base):
     mac = Column(LowercaseString(17), nullable=False, unique=True)
     ip = Column(String(15))
     fqdn = Column(String(255))
+    uuid = Column(String(64))
     manufacturer = Column(Unicode(50))
     platform_name = Column(String(150))
     progress = Column(Integer, default=0)

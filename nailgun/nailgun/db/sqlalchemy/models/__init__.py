@@ -40,3 +40,6 @@ from nailgun.db.sqlalchemy.models.notification import Notification
 from nailgun.db.sqlalchemy.models.task import Task
 
 from nailgun.db.sqlalchemy.models.redhat import RedHatAccount
+
+from nailgun.db.sqlalchemy.models.fencing import FencingConfiguration
+from nailgun.db.sqlalchemy.models.fencing import FencingPrimitive

@@ -138,8 +138,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         updateBatchActionsButtons: function() {
             var nodes = new models.Nodes(this.nodes.where({checked: true}));
-            this.configureDisksButton.set('disabled', !nodes.length);
-            this.configureInterfacesButton.set('disabled', !nodes.length);
+            var deployedNodes = nodes.where({'status': 'ready'});
+            this.configureDisksButton.set('disabled', !nodes.length || deployedNodes.length > 1);
+            this.configureInterfacesButton.set('disabled', !nodes.length || deployedNodes.length > 1);
             this.deleteNodesButton.set('visible', !!nodes.where({pending_deletion: false}).length && !this.isLocked());
             this.addNodesButton.set('visible', !nodes.length);
             var notDeployedSelectedNodes = nodes.where({online: true, pending_addition: true});
@@ -150,8 +151,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 var noRolesConflict = !_.difference(_.union(nodes.at(0).get('roles'), nodes.at(0).get('pending_roles')), _.union(node.get('roles'), node.get('pending_roles'))).length;
                 noDisksConflict = noDisksConflict && noRolesConflict && _.isEqual(nodes.at(0).resource('disks'), node.resource('disks'));
             });
-            this.configureDisksButton.set('invalid', !noDisksConflict);
-            this.configureInterfacesButton.set('invalid', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1 || !!nodes.where({pending_addition: false}).length);
+            if (!deployedNodes.length) {
+                this.configureDisksButton.set('invalid', !noDisksConflict);
+                this.configureInterfacesButton.set('invalid', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1 || !!nodes.where({status: 'error'}).length);
+            }
         },
         setupButtonsBindings: function() {
             var visibleBindings = {

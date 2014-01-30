@@ -1,14 +1,11 @@
 <div class="edit-node-interfaces wrapper <%= locked ? 'changes-locked' : '' %>">
-  <h3 class="span12">
+  <h3>
     <%- $.t('cluster_page.nodes_tab.configure_interfaces.title', {count: nodes.length, name: nodes.length && nodes.at(0).get('name')}) %>
   </h3>
 
-  <div class="row node-networks">
-    <div class="span4"></div>
-    <div class="span4">
-      <div class="progress progress-striped progress-success active">
-        <div class="bar" style="width: 100%"></div>
-      </div>
+  <div class="node-networks">
+    <div class="progress-bar">
+      <div class="progress progress-striped progress-success active"><div class="bar"></div></div>
     </div>
   </div>
 

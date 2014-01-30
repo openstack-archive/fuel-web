@@ -17,3 +17,4 @@ Development Documentation
    develop/puppet_tips
    develop/pxe_deployment
    develop/i18n
+   develop/ostf_contributors_guide

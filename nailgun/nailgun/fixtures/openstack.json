@@ -38,9 +38,10 @@
                 },
                 "mongo": {
                     "name": "Mongo",
-                    "description": "Storage - MongoDB for ceilometer",
-                    "conflicts": ["compute"]
-                }
+                    "description": "Storage - MongoDB for Ceilometer",
+                    "conflicts": ["compute"],
+                    "depends_on": "editable.additional_components.ceilometer.value"
+                  }
             },
             "networks_metadata": {
                 "nova_network": {

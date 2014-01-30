@@ -16,7 +16,7 @@
           </ul>
           <i class="<%= cluster.get('status') == 'error' ? 'icon-attention text-error' : 'icon-info-circled text-info' %> btn-cluster-details"></i>
         <% } %>
-        <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%= cluster ? cluster.get('name') : $.t('cluster_page.nodes_tab.unallocated_nodes') %></span>
+        <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%- cluster ? cluster.get('name') : $.t('cluster_page.nodes_tab.unallocated_nodes') %></span>
       </div>
       <div class="node-list-name-count">(<%- $.t('common.node', {count: nodes.length}) %>)</div>
     </div>
@@ -26,16 +26,13 @@
   </div>
 </div>
 <div class="row-fluid">
-  <% if (!nodes.deferred || nodes.deferred.state() != 'pending') { %>
+  <% if (nodes.deferred && nodes.deferred.state() == 'pending') { %>
+    <div class="progress-bar">
+      <div class="progress progress-striped progress-success active"><div class="bar"></div></div>
+    </div>
+  <% } else { %>
     <% if (!nodes.length) { %>
       <div class="alert alert-warning"><%- cluster ? edit ? $.t('cluster_page.nodes_tab.no_selected_nodes') : $.t('cluster_page.nodes_tab.no_nodes_in_environment') : $.t('cluster_page.nodes_tab.no_nodes_in_fuel') %></div>
     <% } %>
     <div class="nodes"></div>
-  <% } else { %>
-      <div class="span4"></div>
-      <div class="span4">
-        <div class="progress progress-striped progress-success active">
-          <div class="bar" style="width: 100%"></div>
-        </div>
-      </div>
   <% } %>

@@ -151,7 +151,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 noDisksConflict = noDisksConflict && noRolesConflict && _.isEqual(nodes.at(0).resource('disks'), node.resource('disks'));
             });
             this.configureDisksButton.set('invalid', !noDisksConflict);
-            this.configureInterfacesButton.set('invalid', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1 || !!nodes.where({pending_addition: false}).length);
+            this.configureInterfacesButton.set('invalid', _.uniq(nodes.map(function(node) {return node.resource('interfaces');})).length > 1 || !!nodes.where({status: 'error'}).length);
         },
         setupButtonsBindings: function() {
             var visibleBindings = {

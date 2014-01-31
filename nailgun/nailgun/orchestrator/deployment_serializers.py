@@ -272,6 +272,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         """Set priorities of deployment for HA mode."""
         prior = Priority()
 
+        for n in cls.by_role(nodes, 'mongo'):
+            n['priority'] = prior.next
+
+        for n in cls.by_role(nodes, 'mongo-primary'):
+            n['priority'] = prior.next
+
         primary_swift_proxy_piror = prior.next
         for n in cls.by_role(nodes, 'primary-swift-proxy'):
             n['priority'] = primary_swift_proxy_piror
@@ -298,7 +304,9 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                                        'storage',
                                        'primary-controller',
                                        'controller',
-                                       'quantum']):
+                                       'quantum',
+                                       'mongo',
+                                       'mongo-primary']):
             n['priority'] = other_nodes_prior
 
 

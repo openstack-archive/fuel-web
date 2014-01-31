@@ -255,6 +255,13 @@ class NodeAgent
   def _disk_path_by_name(name)
     dn = "/dev/disk/by-path"
     basepath = Dir["#{dn}/**?"].find{|f| /\/#{name}$/.match(File.readlink(f))}
+    # It is to address the issue which appears when centos
+    # udev names smart array devices like this
+    # /dev/disk/by-path/pci-0000:06:00.0-cciss-disk0
+    # and debian-installer udev names them like this
+    # /dev/disk/by-path/pci-0000:06:00.0 and can not
+    # find device.
+    basepath.sub!(/-cciss-.+/, '')
     basepath.split("/")[2..-1].join("/") if basepath
   end
 

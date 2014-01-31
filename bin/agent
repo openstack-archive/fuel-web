@@ -255,6 +255,7 @@ class NodeAgent
   def _disk_path_by_name(name)
     dn = "/dev/disk/by-path"
     basepath = Dir["#{dn}/**?"].find{|f| /\/#{name}$/.match(File.readlink(f))}
+    basepath.sub!(/-cciss-.+/, '')
     basepath.split("/")[2..-1].join("/") if basepath
   end
 

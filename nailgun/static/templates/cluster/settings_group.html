@@ -1,4 +1,3 @@
-<% var disabled = locked ? 'disabled' : '' %>
 <% var ns = "cluster_page.settings_tab." + groupName + "." %>
 <legend class="openstack-settings"><%- $.t(ns + 'group_name', {defaultValue: groupName.replace('_', ' ')}) %></legend>
 <div class="settings-group" data-settings-group="<%- groupName %>">
@@ -9,7 +8,7 @@
       <label class="parameter-box clearfix">
         <div class="parameter-control">
           <div class="custom-tumbler">
-            <input type="checkbox" name="<%- settingName %>" <%= disabled %> />
+            <input type="checkbox" name="<%- settingName %>" <%= locked || setting.disabled ? 'disabled' : '' %> />
             <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
           </div>
         </div>
@@ -23,7 +22,7 @@
         <label class="parameter-box clearfix">
           <div class="parameter-control">
             <div class="custom-tumbler">
-              <input type="radio" name="<%- settingName %>" value="<%- option['data'] %>" <%= disabled %> />
+              <input type="radio" name="<%- settingName %>" value="<%- option['data'] %>" <%= locked || setting.disabled ? 'disabled' : '' %> />
               <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
           </div>
@@ -39,7 +38,7 @@
       <label class="parameter-box clearfix">
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
         <div class="parameter-control <%= setting.type == 'password' ? 'input-append' : '' %>">
-          <input type="<%= setting.type %>" class="<%= setting.type == 'password' ? 'input-append' : '' %>" name="<%- settingName %>" value="" <%= disabled %> />
+          <input type="<%= setting.type %>" class="<%= setting.type == 'password' ? 'input-append' : '' %>" name="<%- settingName %>" value="" <%= locked || setting.disabled ? 'disabled' : '' %> />
           <% if (setting.type == 'password') { %>
             <span class="add-on"><i class="icon-eye"></i><i class="icon-eye-off hide"></i></span>
           <% } %>

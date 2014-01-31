@@ -36,8 +36,9 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             'click .btn-revert-changes:not([disabled])': 'revertChanges',
             'click .btn-load-defaults:not([disabled])': 'loadDefaults'
         },
-        defaultButtonsState: function(buttonState) {
-            this.$('.btn:not(.btn-load-defaults)').attr('disabled', buttonState);
+        calculateButtonsState: function() {
+            this.$('.btn-revert-changes').attr('disabled', !this.hasChanges());
+            this.$('.btn-apply-changes').attr('disabled', !this.hasChanges() || this.settings.validationError);
             this.$('.btn-load-defaults').attr('disabled', false);
         },
         disableControls: function() {
@@ -45,9 +46,6 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         isLocked: function() {
             return this.model.get('status') != 'new' || !!this.model.task('deploy', 'running');
-        },
-        checkForChanges: function() {
-            this.defaultButtonsState(!this.hasChanges());
         },
         applyChanges: function() {
             this.disableControls();
@@ -72,24 +70,39 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             defaults.fetch({url: _.result(this.model, 'url') + '/attributes/defaults'}).always(_.bind(function() {
                 this.settings = new models.Settings(defaults.get('editable'));
                 this.render();
-                this.checkForChanges();
+                this.calculateButtonsState();
             }, this));
         },
         setInitialData: function() {
             this.previousSettings = _.cloneDeep(this.model.get('settings').get('editable'));
             this.settings = new models.Settings(this.previousSettings);
-            // some hacks until settings dependecies are implemented
-            this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
-            this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
-            this.settings.on('change:storage.volumes_lvm.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_ceph.value': !value});}}, this));
-            this.settings.on('change:storage.volumes_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_lvm.value': !value});}}, this));
-            this.settings.on('change', _.bind(this.checkForChanges, this));
+            //this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
+            this.settings.on('change', _.bind(function() {
+                this.settings.isValid();
+                this.calculateButtonsState();
+            }, this));
         },
         composeBindings: function() {
             this.bindings = {};
             _.each(this.settings.attributes, function(settingsGroup, attr) {
                 _.each(settingsGroup, function(setting, settingTitle) {
-                    this.bindings['input[name=' + settingTitle + ']'] = attr + '.' + settingTitle + '.value';
+                    this.bindings['input[name=' + settingTitle + ']'] = {
+                        observe: attr + '.' + settingTitle + '.value',
+                        onGet: _.bind(function(value, option) {
+                            if (value) {
+                                _.each(setting.requirements, function(requirement) {
+                                    this.settings.set(attr + '.' + requirement + '.value', value);
+                                }, this);
+                                _.each(setting.conflicts, function(conflict) {
+                                    this.settings.set(attr + '.' + conflict + '.value', !value);
+                                }, this);
+                            } else {
+                                _.each(setting.required, function(requirementer) {
+                                    this.settings.set(attr + '.' + requirementer + '.value', value);
+                                }, this);
+                            }
+                        }, this)
+                    };
                 }, this);
             }, this);
         },
@@ -112,6 +125,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     this.registerSubView(settingGroupView);
                     this.$('.settings').append(settingGroupView.render().el);
                 }, this);
+                // should be calculated in nailgun when cluster is created
                 if (this.model.get('net_provider') == 'nova_network') {
                     this.$('input[name=murano]').attr('disabled', true);
                 }

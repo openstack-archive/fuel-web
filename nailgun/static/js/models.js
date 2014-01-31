@@ -270,7 +270,21 @@ define(['utils', 'deepModel'], function(utils) {
         isNew: function() {
             return false;
         },
-        preferredOrder: ['access', 'additional_components', 'common', 'glance', 'syslog', 'storage']
+        preferredOrder: ['access', 'additional_components', 'common', 'glance', 'syslog', 'storage'],
+        validate: function(attrs) {
+            var errors = {};
+            _.each(attrs, function(settingsGroup, attr) {
+                _.each(settingsGroup, function(setting, settingTitle) {
+                    if (setting.validation && setting.validation.regex && !setting.validation.regex.test(setting.value)) {
+                        if (!errors[attr]) {
+                            errors[attr] = {};
+                        }
+                        errors[attr][settingTitle] = setting.validation.error;
+                    }
+                });
+            });
+            return _.isEmpty(errors) ? null : errors;
+        }
     });
 
     models.Disk = Backbone.Model.extend({

@@ -96,8 +96,9 @@ def appstart(keepalive=False):
 
     wsgifunc = build_middleware(app.wsgifunc)
 
+    port = os.environ.get('PORT', settings.LISTEN_PORT)
     run_server(wsgifunc,
-               (settings.LISTEN_ADDRESS, int(settings.LISTEN_PORT)))
+               (settings.LISTEN_ADDRESS, int(port)))
 
     logger.info("Stopping WSGI app...")
     if keep_alive.is_alive():

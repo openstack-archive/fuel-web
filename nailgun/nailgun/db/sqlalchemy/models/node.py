@@ -122,6 +122,8 @@ class Node(Base):
     bond_interfaces = relationship("NodeBondInterface", backref="node",
                                    cascade="delete",
                                    order_by="NodeBondInterface.name")
+    # sha1 hexdigest of incoming node info to avoid useless updates from agent
+    meta_checksum = Column(String(40), default='')
 
     @property
     def interfaces(self):

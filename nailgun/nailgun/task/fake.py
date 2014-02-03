@@ -295,6 +295,35 @@ class FakeDeletionThread(FakeThread):
                             (cores, ram), node_id=node.id)
 
 
+class FakeStopDeploymentThread(FakeThread):
+    def run(self):
+        super(FakeStopDeploymentThread, self).run()
+        receiver = NailgunReceiver
+        kwargs = {
+            'task_uuid': self.task_uuid,
+            'stop_task_uuid': self.data['args']['stop_task_uuid'],
+            'nodes': self.data['args']['nodes'],
+            'status': 'ready',
+            'progress': 100
+        }
+        resp_method = getattr(receiver, self.respond_to)
+        resp_method(**kwargs)
+
+
+class FakeResetEnvironmentThread(FakeThread):
+    def run(self):
+        super(FakeResetEnvironmentThread, self).run()
+        receiver = NailgunReceiver
+        kwargs = {
+            'task_uuid': self.task_uuid,
+            'nodes': self.data['args']['nodes'],
+            'status': 'ready',
+            'progress': 100
+        }
+        resp_method = getattr(receiver, self.respond_to)
+        resp_method(**kwargs)
+
+
 class FakeVerificationThread(FakeThread):
     def run(self):
         super(FakeVerificationThread, self).run()
@@ -500,6 +529,8 @@ FAKE_THREADS = {
     'provision': FakeProvisionThread,
     'deploy': FakeDeploymentThread,
     'remove_nodes': FakeDeletionThread,
+    'stop_deploy_task': FakeStopDeploymentThread,
+    'reset_environment': FakeResetEnvironmentThread,
     'verify_networks': FakeVerificationThread,
     'check_dhcp': FakeCheckingDhcpThread,
     'download_release': DownloadReleaseThread,

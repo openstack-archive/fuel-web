@@ -22,7 +22,7 @@ class TestHandlers(BaseTestCase):
 
     def test_env_action(self):
         #check env help
-        help_msgs = ["usage: fuel [global optional args]",
+        help_msgs = ["usage: fuel --env ENV environment [-h]",
                      "environment [-h] [-l] [-s] [--delete]",
                      "optional arguments:", "--help", "--list", "--set",
                      "--delete", "--rel", "--release", "--env-create,",
@@ -54,7 +54,7 @@ class TestHandlers(BaseTestCase):
             self.check_for_stdout(cmd, msg)
 
     def test_node_action(self):
-        help_msg = ["usage: fuel [global optional args] node [-h] ",
+        help_msg = ["usage: fuel [--env ENV] node [-h] ",
                     "[-l] [-s] [--delete] [--default]", "-h", "--help", "-l",
                     "--list", "-s", "--set", "--delete", "--default", "-d",
                     "--download", "-u", "--upload", "--dir", "--node",

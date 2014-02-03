@@ -253,6 +253,11 @@ class TaskHelper(object):
             cls.__update_cluster_to_deployment_error(cluster)
         elif task.name == 'provision' and task.status == 'error':
             cls.__update_cluster_to_provisioning_error(cluster)
+        elif task.name == 'stop_deployment':
+            if task.status == 'error':
+                cls.__set_cluster_status(cluster, 'error')
+            else:
+                cls.__set_cluster_status(cluster, 'stopped')
 
         db().commit()
 

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #    Copyright 2013 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -125,3 +127,20 @@ class TestHandlers(BaseIntegrationTest):
         test_env = report['environment_stats'][0]
         self.assertEquals(test_env['cluster'], 'test_name')
         self.assertEquals(test_env['nodes'], 6)
+
+    @fake_tasks()
+    def test_capacity_csv_log_with_unicode(self):
+        self.env.create(
+            cluster_kwargs={
+                'name': u'тест'
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}
+            ]
+        )
+        deployment_task = self.env.launch_deployment()
+        self.env.wait_ready(deployment_task)
+
+        self._create_capacity_log()
+        resp = self.app.get(reverse('CapacityLogCsvHandler'))
+        self.assertEquals(200, resp.status)

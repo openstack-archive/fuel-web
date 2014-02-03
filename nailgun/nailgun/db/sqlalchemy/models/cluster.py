@@ -55,7 +55,14 @@ class ClusterChanges(Base):
 class Cluster(Base):
     __tablename__ = 'clusters'
     MODES = ('multinode', 'ha_full', 'ha_compact')
-    STATUSES = ('new', 'deployment', 'operational', 'error', 'remove')
+    STATUSES = (
+        'new',
+        'deployment',
+        'stopped',
+        'operational',
+        'error',
+        'remove'
+    )
     NET_MANAGERS = ('FlatDHCPManager', 'VlanManager')
     GROUPING = ('roles', 'hardware', 'both')
     # Neutron-related
@@ -165,7 +172,7 @@ class Cluster(Base):
 
     @property
     def are_attributes_locked(self):
-        return self.status != "new" or any(
+        return self.status not in ["new", "stopped"] or any(
             map(
                 lambda x: x.name == "deploy" and x.status == "running",
                 self.tasks

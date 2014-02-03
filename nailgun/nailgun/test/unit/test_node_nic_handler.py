@@ -175,10 +175,9 @@ class TestHandlers(BaseIntegrationTest):
         self.env.set_interfaces_in_meta(new_meta, [
             {'name': 'new_nic', 'mac': '12345', 'current_speed': 10,
              'max_speed': 10, 'state': 'down'}])
-        node_data = {'mac': node['mac'], 'is_agent': True,
-                     'meta': new_meta}
+        node_data = {'mac': node['mac'], 'meta': new_meta}
         resp = self.app.put(
-            reverse('NodeCollectionHandler'),
+            reverse('NodeAgentHandler'),
             json.dumps([node_data]),
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
@@ -206,10 +205,9 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta)
 
         meta['interfaces'].append({'name': 'new_nic', 'mac': '643'})
-        node_data = {'mac': node['mac'], 'is_agent': True,
-                     'meta': meta}
+        node_data = {'mac': node['mac'], 'meta': meta}
         resp = self.app.put(
-            reverse('NodeCollectionHandler'),
+            reverse('NodeAgentHandler'),
             json.dumps([node_data]),
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
@@ -259,3 +257,29 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
         self.assertNotEquals(response[0]['mac'], new_mac.lower())
+
+    def test_cache_node_data_from_agent(self):
+        meta = self.env.default_metadata()
+        node = self.env.create_node(api=True, meta=meta)
+        node_data = json.dumps([{'mac': node['mac'], 'meta': meta}])
+
+        resp = self.app.put(
+            reverse('NodeAgentHandler'), node_data,
+            headers=self.default_headers
+        )
+        self.assertEquals(resp.status, 200)
+
+        resp = self.app.put(
+            reverse('NodeAgentHandler'), node_data,
+            headers=self.default_headers,
+            expect_errors=True,
+        )
+        self.assertEquals(resp.status, 304)
+
+        meta['interfaces'].append({'name': 'new_nic', 'mac': '643'})
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            json.dumps([{'mac': node['mac'], 'meta': meta}]),
+            headers=self.default_headers
+        )
+        self.assertEquals(resp.status, 200)

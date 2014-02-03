@@ -448,13 +448,11 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
                 interface['ip'] = admin_ip
 
         resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node_db.id,
-                        'meta': meta,
-                        'is_agent': True}]),
+            reverse('NodeAgentHandler'),
+            json.dumps([{'id': node_db.id, 'meta': meta}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status, 202)
 
         self.db.refresh(node_db)
         self.assertEquals(node_db.admin_interface.mac, mac2)
@@ -462,8 +460,7 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node_db.id,
-                         'cluster_id': None}]),
+            json.dumps([{'id': node_db.id, 'cluster_id': None}]),
             headers=self.default_headers
         )
         self.assertEquals(resp.status, 200)

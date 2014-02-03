@@ -392,6 +392,65 @@ class DeploymentTaskManager(TaskManager):
         return task_deployment
 
 
+class StopDeploymentTaskManager(TaskManager):
+
+    def execute(self):
+        deploy_running = db().query(Task).filter_by(
+            cluster=self.cluster,
+            name='deploy',
+            status='running'
+        ).first()
+        if not deploy_running:
+            raise errors.DeploymentNotRunning(
+                u"Nothing to stop - deployment is "
+                u"not running on environment '{0}'".format(
+                    self.cluster.name or self.cluster.id
+                )
+            )
+
+        task = Task(
+            name="stop_deployment",
+            cluster=self.cluster
+        )
+        db().add(task)
+        db.commit()
+        self._call_silently(
+            task,
+            tasks.StopDeploymentTask,
+            deploy_task=deploy_running
+        )
+        return task
+
+
+class ResetEnvironmentTaskManager(TaskManager):
+
+    def execute(self):
+        deploy_running = db().query(Task).filter_by(
+            cluster=self.cluster,
+            name='deploy',
+            status='running'
+        ).first()
+        if deploy_running:
+            raise errors.DeploymentAlreadyStarted(
+                u"Can't reset environment '{0}' when "
+                u"deployment is running".format(
+                    self.cluster.name or self.cluster.id
+                )
+            )
+
+        task = Task(
+            name="reset_environment",
+            cluster=self.cluster
+        )
+        db().add(task)
+        db.commit()
+        self._call_silently(
+            task,
+            tasks.ResetEnvironmentTask
+        )
+        return task
+
+
 class CheckNetworksTaskManager(TaskManager):
 
     def execute(self, data, check_admin_untagged=False):

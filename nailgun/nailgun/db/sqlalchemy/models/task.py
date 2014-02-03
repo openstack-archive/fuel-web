@@ -46,6 +46,8 @@ class Task(Base):
         'deploy',
         'deployment',
         'provision',
+        'stop_deployment',
+        'reset_environment',
 
         'node_deletion',
         'cluster_deletion',
@@ -95,7 +97,8 @@ class Task(Base):
     parent_id = Column(Integer, ForeignKey('tasks.id'))
     subtasks = relationship(
         "Task",
-        backref=backref('parent', remote_side=[id])
+        backref=backref('parent', remote_side=[id]),
+        cascade="all,delete"
     )
     notifications = relationship(
         "Notification",

@@ -26,7 +26,7 @@ import subprocess
 import sys
 
 logging.basicConfig(stream=sys.stderr)
-logging.getLogger("SomeTest.testSomething").setLevel(logging.DEBUG)
+logging.getLogger("CliTest.ExecutionLog").setLevel(logging.DEBUG)
 
 
 class CliExectutionResult:
@@ -91,7 +91,7 @@ class BaseTestCase(TestCase):
         modified_env = os.environ.copy()
         modified_env["LISTEN_PORT"] = "8003"
         command_args = [" ".join((self.fuel_path, command_line))]
-        log = logging.getLogger("SomeTest.testSomething")
+        log = logging.getLogger("CliTest.ExecutionLog")
         process_handle = subprocess.Popen(
             command_args,
             stdout=subprocess.PIPE,
@@ -131,3 +131,7 @@ class BaseTestCase(TestCase):
         message = output.stdout.split("\n")
         #no env
         self.assertEqual(message[2], '')
+
+    def check_number_of_rows_in_table(self, command, number_of_rows):
+        output = self.run_cli_command(command)
+        self.assertEqual(len(output.stdout.split("\n")), number_of_rows + 3)

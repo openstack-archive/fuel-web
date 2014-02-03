@@ -64,6 +64,42 @@ class DeployProgressError(Exception):
     pass
 
 
+class NodeAction(argparse.Action):
+    """Custom argparse.Action subclass to store node identity
+
+    :returns: list of ids
+    """
+    def __call__(self, _parser, namespace, values, option_string=None):
+        if values:
+            node_identities = set(chain(*values))
+            input_macs = set(n for n in node_identities if ":" in n)
+            only_ids = set()
+            for _id in (node_identities - input_macs):
+                try:
+                    only_ids.add(int(_id))
+                except ValueError:
+                    print_error("'{}' is not valid node id.".format(_id))
+            if input_macs:
+                nodes_mac_to_id_map = dict(
+                    (n["mac"], n["id"])
+                    for n in json_api_get_request("nodes/")
+                )
+                for short_mac in input_macs:
+                    target_node = None
+                    for mac in nodes_mac_to_id_map:
+                        if mac.endswith(short_mac):
+                            target_node = mac
+                            break
+                    if target_node:
+                        only_ids.add(nodes_mac_to_id_map[target_node])
+                    else:
+                        print_error(
+                            'Node with mac endfix "{0}" was not found.'
+                            .format(short_mac)
+                        )
+            setattr(namespace, self.dest, list(only_ids))
+
+
 class SetAction(argparse.Action):
     """Custom argparse.Action subclass to store distinct values
 
@@ -464,9 +500,9 @@ def environment(params):
 def node(params):
     """List and assign available nodes to environments
     """
+    node_ids = params.node
     if params.set:
         check_for_attributes(params, ["node", "role", "env"])
-        node_ids = list(chain(*params.node))
         roles = map(str.lower, params.role)
         if not params.force:
             validate_roles(params.env, roles)
@@ -499,8 +535,6 @@ def node(params):
                     "Environment with id={0} doesn't have nodes to remove."
                     .format(params.env)
                 )
-        else:
-            node_ids = list(chain(*params.node))
         data = map(
             lambda _node_id: {
                 "id": _node_id,
@@ -523,7 +557,6 @@ def node(params):
     elif params.network or params.disk:
         check_for_one_attribute(params, ["default", "download", "upload"])
         check_for_attributes(params, ["node"])
-        node_ids = list(chain(*params.node))
         for node_id in node_ids:
             if params.network:
                 get_node_attribute(
@@ -544,7 +577,7 @@ def node(params):
               'must appear after "--disk" or "--network" flags.')
     elif params.deploy or params.provision:
         check_for_attributes(params, ["node", "env"])
-        node_ids = [str(n) for n in chain(*params.node)]
+        node_ids = map(str, node_ids)
         mode = "deploy" if params.deploy else "provision"
         deploy_nodes_url = "clusters/{0}/{1}/?nodes={2}".format(
             params.env,
@@ -570,7 +603,6 @@ def node(params):
                 data
             )
         elif params.node:
-            node_ids = list(chain(*params.node))
             data = filter(
                 lambda x: x[u"id"] in node_ids,
                 data
@@ -600,11 +632,11 @@ def quote_and_join(words):
 def validate_roles(cluster_id, roles):
     roles = set(roles)
     cluster = json_api_get_request("clusters/{0}/".format(cluster_id))
-    release = json_api_get_request("releases/{0}/".format(
+    _release = json_api_get_request("releases/{0}/".format(
         cluster["release_id"]
     ))
-    roles_metadata = release["roles_metadata"]
-    not_valid_roles = roles - set(release["roles"])
+    roles_metadata = _release["roles_metadata"]
+    not_valid_roles = roles - set(_release["roles"])
     if not_valid_roles:
         print_error(
             "{0} are not valid roles for environment {1}"
@@ -1021,9 +1053,7 @@ def fact(params, info_type):
         info_type
     )
     if params.node:
-        facts_default_url += "/?nodes=" + ",".join(
-            str(n) for n in chain(*params.node)
-        )
+        facts_default_url += "/?nodes=" + ",".join(map(str, params.node))
     facts_url = "clusters/{0}/orchestrator/{1}/".format(
         params.env,
         info_type
@@ -1392,9 +1422,9 @@ def get_node_arg(help_msg):
         "args": ["--node", "--node-id"],
         "params": {
             "dest": "node",
-            "action": "store",
+            "action": NodeAction,
             "nargs": '+',
-            "type": parse_ids,
+            "type": lambda v: v.split(","),
             "help": help_msg,
             "default": None
         }

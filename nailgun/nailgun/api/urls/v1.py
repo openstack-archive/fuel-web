@@ -44,6 +44,7 @@ from nailgun.api.handlers.network_configuration \
 from nailgun.api.handlers.network_configuration \
     import NovaNetworkConfigurationVerifyHandler
 
+from nailgun.api.handlers.node import NodeAgentHandler
 from nailgun.api.handlers.node import NodeCollectionHandler
 from nailgun.api.handlers.node import NodeHandler
 from nailgun.api.handlers.node import NodesAllocationStatsHandler
@@ -126,6 +127,8 @@ urls = (
 
     r'/nodes/?$',
     NodeCollectionHandler,
+    r'/nodes/agent/?$',
+    NodeAgentHandler,
     r'/nodes/(?P<node_id>\d+)/?$',
     NodeHandler,
     r'/nodes/(?P<node_id>\d+)/disks/?$',

@@ -84,10 +84,20 @@ class ApplyChangesTaskManager(TaskManager):
             if task.status == "running":
                 raise errors.DeploymentAlreadyStarted()
             elif task.status in ("ready", "error"):
-                for subtask in task.subtasks:
-                    db().delete(subtask)
                 db().delete(task)
                 db().commit()
+
+        obsolete_tasks = db().query(Task).filter_by(
+            cluster_id=self.cluster.id,
+        ).filter(
+            Task.name.in_([
+                'stop_deployment',
+                'reset_environment'
+            ])
+        )
+        for task in obsolete_tasks:
+            db().delete(task)
+        db().commit()
 
         task_messages = []
 
@@ -390,6 +400,83 @@ class DeploymentTaskManager(TaskManager):
         rpc.cast('naily', deployment_message)
 
         return task_deployment
+
+
+class StopDeploymentTaskManager(TaskManager):
+
+    def execute(self):
+        deploy_running = db().query(Task).filter_by(
+            cluster=self.cluster,
+            name='deploy',
+            status='running'
+        ).first()
+        if not deploy_running:
+            raise errors.DeploymentNotRunning(
+                u"Nothing to stop - deployment is "
+                u"not running on environment '{0}'".format(
+                    self.cluster.id
+                )
+            )
+
+        deployment_task = filter(
+            lambda t: t.name == 'deployment',
+            deploy_running.subtasks
+        )[0]
+
+        task = Task(
+            name="stop_deployment",
+            cluster=self.cluster
+        )
+        db().add(task)
+        db.commit()
+        self._call_silently(
+            task,
+            tasks.StopDeploymentTask,
+            deploy_task=deployment_task
+        )
+        return task
+
+
+class ResetEnvironmentTaskManager(TaskManager):
+
+    def execute(self):
+        deploy_running = db().query(Task).filter_by(
+            cluster=self.cluster,
+            name='deploy',
+            status='running'
+        ).first()
+        if deploy_running:
+            raise errors.DeploymentAlreadyStarted(
+                u"Can't reset environment '{0}' when "
+                u"deployment is running".format(
+                    self.cluster.id
+                )
+            )
+
+        obsolete_tasks = db().query(Task).filter_by(
+            cluster_id=self.cluster.id,
+        ).filter(
+            Task.name.in_([
+                'deploy',
+                'deployment',
+                'stop_deployment'
+            ])
+        )
+        for task in obsolete_tasks:
+            db().delete(task)
+        db().commit()
+
+        task = Task(
+            name="reset_environment",
+            cluster=self.cluster
+        )
+        db().add(task)
+        db.commit()
+        self._call_silently(
+            task,
+            tasks.ResetEnvironmentTask
+        )
+        return task
 
 
 class CheckNetworksTaskManager(TaskManager):

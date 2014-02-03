@@ -40,6 +40,8 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
+from nailgun.task.manager import ResetEnvironmentTaskManager
+from nailgun.task.manager import StopDeploymentTaskManager
 
 
 class ClusterHandler(BaseHandler):
@@ -269,6 +271,76 @@ class ClusterChangesHandler(BaseHandler):
             raise web.badrequest(str(exc))
 
         return TaskHandler.render(task)
+
+
+# TODO(enchantner): refactor these (DRY), maybe
+# by inheritance from base DeferredTaskHandler
+
+
+class ClusterStopDeploymentHandler(BaseHandler):
+
+    @content_json
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 202 (deployment stopping initiated)
+               * 400 (can't stop deployment)
+               * 404 (environment not found in db)
+        """
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+
+        try:
+            logger.info(
+                u"Trying to stop deployment "
+                u"on environment '{0}'".format(
+                    cluster_id
+                )
+            )
+            task_manager = StopDeploymentTaskManager(
+                cluster_id=cluster.id
+            )
+            task = task_manager.execute()
+        except Exception as exc:
+            logger.warn(u'Error during execution '
+                        u'deployment stopping task: {0}'.format(str(exc)))
+            raise web.badrequest(str(exc))
+
+        raise web.webapi.HTTPError(
+            status="202 Accepted",
+            data=TaskHandler.render(task)
+        )
+
+
+class ClusterResetHandler(BaseHandler):
+
+    @content_json
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 202 (environment reset initiated)
+               * 400 (can't reset environment)
+               * 404 (environment not found in db)
+        """
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+
+        try:
+            logger.info(
+                u"Trying to reset environment '{0}'".format(
+                    cluster_id
+                )
+            )
+            task_manager = ResetEnvironmentTaskManager(
+                cluster_id=cluster.id
+            )
+            task = task_manager.execute()
+        except Exception as exc:
+            logger.warn(u'Error during execution '
+                        u'environment resetting '
+                        u'task: {0}'.format(str(exc)))
+            raise web.badrequest(str(exc))
+
+        raise web.webapi.HTTPError(
+            status="202 Accepted",
+            data=TaskHandler.render(task)
+        )
 
 
 class ClusterAttributesHandler(BaseHandler):

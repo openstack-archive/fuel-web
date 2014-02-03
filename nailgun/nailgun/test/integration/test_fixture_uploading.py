@@ -16,6 +16,7 @@
 
 import cStringIO
 import json
+import yaml
 
 from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import Node
@@ -31,75 +32,49 @@ class TestFixture(BaseIntegrationTest):
         check = self.db.query(Node).all()
         self.assertEqual(len(list(check)), 8)
 
-    def test_custom_fixture(self):
+    def test_json_fixture(self):
         data = '''[{
             "pk": 2,
             "model": "nailgun.release",
             "fields": {
-                "name": "CustomFixtureRelease",
+                "name": "JSONFixtureRelease",
                 "version": "0.0.1",
                 "description": "Sample release for testing",
-                "operating_system": "CentOS",
-                "networks_metadata": {
-                    "nova_network": {
-                        "networks": [
-                            {
-                                "name": "floating",
-                                "cidr": "172.16.0.0/24",
-                                "netmask": "255.255.255.0",
-                                "gateway": "172.16.0.1",
-                                "ip_range": ["172.16.0.128", "172.16.0.254"],
-                                "vlan_start": 100,
-                                "network_size": 256,
-                                "assign_vip": false
-                            },
-                            {
-                                "name": "public",
-                                "cidr": "172.16.0.0/24",
-                                "netmask": "255.255.255.0",
-                                "gateway": "172.16.0.1",
-                                "ip_range": ["172.16.0.2", "172.16.0.127"],
-                                "vlan_start": 100,
-                                "assign_vip": true
-                            },
-                            {
-                                "name": "management",
-                                "cidr": "192.168.0.0/24",
-                                "netmask": "255.255.255.0",
-                                "gateway": "192.168.0.1",
-                                "ip_range": ["192.168.0.1", "192.168.0.254"],
-                                "vlan_start": 101,
-                                "assign_vip": true
-                            },
-                            {
-                                "name": "storage",
-                                "cidr": "192.168.1.0/24",
-                                "netmask": "255.255.255.0",
-                                "gateway": "192.168.1.1",
-                                "ip_range": ["192.168.1.1", "192.168.1.254"],
-                                "vlan_start": 102,
-                                "assign_vip": false
-                            },
-                            {
-                                "name": "fixed",
-                                "cidr": "10.0.0.0/16",
-                                "netmask": "255.255.0.0",
-                                "gateway": "10.0.0.1",
-                                "ip_range": ["10.0.0.2", "10.0.255.254"],
-                                "vlan_start": 103,
-                                "assign_vip": false
-                            }
-                        ]
-                    }
-                }
+                "operating_system": "CentOS"
             }
         }]'''
 
         upload_fixture(cStringIO.StringIO(data), loader=json)
         check = self.db.query(Release).filter(
-            Release.name == u"CustomFixtureRelease"
+            Release.name == u"JSONFixtureRelease"
         )
         self.assertEqual(len(list(check)), 1)
+
+    def test_yaml_fixture(self):
+        data = '''---
+- &base_release
+  model: nailgun.release
+  fields:
+    name: BaseRelease
+    version: 0.0.1
+    operating_system: AbstractOS
+- pk: 2
+  extend: *base_release
+  fields:
+    name: YAMLFixtureRelease
+    version: 1.0.0
+    operating_system: CentOS
+'''
+
+        upload_fixture(cStringIO.StringIO(data), loader=yaml)
+        check = self.db.query(Release).filter(
+            Release.name == u"YAMLFixtureRelease"
+        )
+        self.assertEqual(len(list(check)), 1)
+        check = self.db.query(Release).filter(
+            Release.name == u"BaseRelease"
+        )
+        self.assertEqual(len(list(check)), 0)
 
     def test_fixture_roles_order(self):
         data = '''[{

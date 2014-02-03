@@ -465,6 +465,30 @@ class Environment(object):
             if item.get('pk') == pk and item.get('model') == model:
                 return item
 
+    def launch_provisioning_selected(self, nodes_uids=None):
+        if self.clusters:
+            if not nodes_uids:
+                nodes_uids = [n.uid for n in self.clusters[0].nodes]
+            action_url = reverse(
+                'ProvisionSelectedNodes',
+                kwargs={'cluster_id': self.clusters[0].id}
+            ) + '?nodes={0}'.format(','.join(nodes_uids))
+            resp = self.app.put(
+                action_url,
+                '{}',
+                headers=self.default_headers,
+                expect_errors=True
+            )
+            self.tester.assertEquals(200, resp.status)
+            response = json.loads(resp.body)
+            return self.db.query(Task).filter_by(
+                uuid=response['uuid']
+            ).first()
+        else:
+            raise NotImplementedError(
+                "Nothing to provision - try creating cluster"
+            )
+
     def launch_deployment(self):
         if self.clusters:
             resp = self.app.put(
@@ -480,6 +504,46 @@ class Environment(object):
         else:
             raise NotImplementedError(
                 "Nothing to deploy - try creating cluster"
+            )
+
+    def stop_deployment(self, expect_http=202):
+        if self.clusters:
+            resp = self.app.put(
+                reverse(
+                    'ClusterStopDeploymentHandler',
+                    kwargs={'cluster_id': self.clusters[0].id}),
+                expect_errors=True,
+                headers=self.default_headers)
+            self.tester.assertEquals(expect_http, resp.status)
+            if not str(expect_http).startswith("2"):
+                return resp.body
+            response = json.loads(resp.body)
+            return self.db.query(Task).filter_by(
+                uuid=response['uuid']
+            ).first()
+        else:
+            raise NotImplementedError(
+                "Nothing to stop - try creating cluster"
+            )
+
+    def reset_environment(self, expect_http=202):
+        if self.clusters:
+            resp = self.app.put(
+                reverse(
+                    'ClusterResetHandler',
+                    kwargs={'cluster_id': self.clusters[0].id}),
+                expect_errors=True,
+                headers=self.default_headers)
+            self.tester.assertEquals(resp.status, expect_http)
+            if not str(expect_http).startswith("2"):
+                return resp.body
+            response = json.loads(resp.body)
+            return self.db.query(Task).filter_by(
+                uuid=response['uuid']
+            ).first()
+        else:
+            raise NotImplementedError(
+                "Nothing to reset - try creating cluster"
             )
 
     def launch_verify_networks(self, data=None):
@@ -747,6 +811,8 @@ class BaseUnitTest(BaseTestCase):
 
 def fake_tasks(fake_rpc=True,
                mock_rpc=True,
+               tick_count=99,
+               tick_interval=1,
                **kwargs):
     def wrapper(func):
         func = mock.patch(
@@ -755,11 +821,11 @@ def fake_tasks(fake_rpc=True,
         )(func)
         func = mock.patch(
             'nailgun.task.fake.settings.FAKE_TASKS_TICK_COUNT',
-            99
+            tick_count
         )(func)
         func = mock.patch(
             'nailgun.task.fake.settings.FAKE_TASKS_TICK_INTERVAL',
-            1
+            tick_interval
         )(func)
         if fake_rpc and not kwargs:
             func = mock.patch(

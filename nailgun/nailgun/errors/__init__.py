@@ -34,6 +34,7 @@ default_messages = {
     # deployment errors
     "CheckBeforeDeploymentError": "Pre-Deployment check wasn't successful",
     "DeploymentAlreadyStarted": "Deployment already started",
+    "DeploymentNotRunning": "Deployment is not running",
     "DeletionAlreadyStarted": "Environment removal already started",
     "FailedProvisioning": "Failed to start provisioning",
     "WrongNodeStatus": "Wrong node status",

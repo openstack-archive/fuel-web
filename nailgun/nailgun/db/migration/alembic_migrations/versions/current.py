@@ -178,7 +178,10 @@ def upgrade():
         old_task_names_options,      # old options
         new_task_names_options       # new options
     )
-
+    op.add_column(
+        'nodes',
+        sa.Column('meta_checksum', sa.String(length=40), nullable=True)
+    )
     ### end Alembic commands ###
 
 
@@ -309,4 +312,5 @@ def downgrade():
     )
     op.drop_table('net_bond_assignments')
     op.drop_table('node_bond_interfaces')
+    op.drop_column('nodes', 'meta_checksum')
     ### end Alembic commands ###

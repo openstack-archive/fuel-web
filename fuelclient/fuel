@@ -256,15 +256,15 @@ def print_debug(message):
 
 
 def check_for_attributes(params, attributes):
-    not_paseed_checks = [attribute for attribute in attributes
+    not_passed_checks = [attribute for attribute in attributes
                          if not getattr(params, attribute)]
-    if len(not_paseed_checks):
+    if not_passed_checks:
         print_error(
             "{0} required!".format(
                 quote_and_join(
                     map(
                         lambda attr: "--" + attr,
-                        not_paseed_checks
+                        not_passed_checks
                     )
                 )
             )
@@ -291,22 +291,7 @@ def release(params):
     """List and modify currently available releases
     """
     acceptable_keys = ["id", "name", "state", "operating_system", "version"]
-    if not has_arguments(params) or params.list:
-        if params.rel:
-            data = [json_api_get_request(
-                "releases/{0}/"
-                .format(params.rel)
-            )]
-        else:
-            data = json_api_get_request("releases/")
-        print_to_output(
-            data,
-            format_table(
-                data,
-                acceptable_keys=acceptable_keys
-            )
-        )
-    elif params.config:
+    if params.config:
         check_for_attributes(params, ["rel", "username", "password"])
         data = {
             "release_id": params.rel,
@@ -341,12 +326,26 @@ def release(params):
             " were modified."
             .format(params.rel)
         )
+    else:
+        if params.rel:
+            data = [json_api_get_request(
+                "releases/{0}/"
+                .format(params.rel)
+            )]
+        else:
+            data = json_api_get_request("releases/")
+        print_to_output(
+            data,
+            format_table(
+                data,
+                acceptable_keys=acceptable_keys
+            )
+        )
 
 
 def role(params):
     """List all roles for specific release
     """
-    check_for_attributes(params, ["rel"])
     data = json_api_get_request(
         "releases/{0}/"
         .format(params.rel)
@@ -371,24 +370,7 @@ def role(params):
 def environment(params):
     """Create, list and modify currently existing environments(clusters)
     """
-    if not has_arguments(params) or params.list:
-        acceptable_keys = ["id", "status", "name", "mode",
-                           "release_id", "changes"]
-        data = json_api_get_request("clusters/")
-        if params.env:
-            data = filter(
-                lambda x: x[u"id"] == int(params.env),
-                data
-            )
-        print_to_output(
-            data,
-            format_table(
-                data,
-                acceptable_keys=acceptable_keys,
-                subdict_keys=[("release_id", u"id")]
-            )
-        )
-    elif params.create:
+    if params.create:
         check_for_attributes(params, ["name", "rel"])
         data = {
             "nodes": [],
@@ -458,6 +440,23 @@ def environment(params):
             delete_response,
             "Environment with id={0} was deleted."
             .format(params.env)
+        )
+    else:
+        acceptable_keys = ["id", "status", "name", "mode",
+                           "release_id", "changes"]
+        data = json_api_get_request("clusters/")
+        if params.env:
+            data = filter(
+                lambda x: x[u"id"] == int(params.env),
+                data
+            )
+        print_to_output(
+            data,
+            format_table(
+                data,
+                acceptable_keys=acceptable_keys,
+                subdict_keys=[("release_id", u"id")]
+            )
         )
 
 
@@ -696,7 +695,6 @@ def write_node_attribute(url, node_dir_path, attribute):
 def network(params):
     """Show or modify network settings of specific environments
     """
-    check_for_attributes(params, ["env"])
     cluster = json_api_get_request("clusters/{0}/".format(params.env))
     network_url = "clusters/{0}/network_configuration/{1}".format(
         params.env,
@@ -740,7 +738,6 @@ def network(params):
 def settings(params):
     """Show or modify environment settings
     """
-    check_for_attributes(params, ["env"])
     check_for_one_attribute(params, ["default", "download", "upload"])
     settings_url = "clusters/{0}/attributes".format(params.env)
     settings_data = json_api_get_request(settings_url)
@@ -858,7 +855,6 @@ def download_snapshot_with_progress_bar(url, directory):
 def deploy_changes(params):
     """Deploy changes to environments
     """
-    check_for_attributes(params, ["env"])
     put_response = json_api_put_request(
         "clusters/{0}/changes".format(params.env),
         {}
@@ -1010,8 +1006,6 @@ def deployment(params):
 
 
 def fact(params, info_type):
-    check_for_attributes(params, ["env"])
-
     dir_name = os.path.join(
         os.path.abspath(params.dir or os.path.curdir),
         "{0}_{1}".format(info_type, params.env)
@@ -1057,7 +1051,6 @@ def fact(params, info_type):
 def health_check(params):
     """Run health check on environment
     """
-    check_for_attributes(params, ["env"])
     test_sets = json_ostf_get_request(
         'testsets/{0}'.format(params.env)
     )
@@ -1374,7 +1367,7 @@ def get_delete_arg(help_msg):
     }
 
 
-def get_release_arg(help_msg):
+def get_release_arg(help_msg, required=False):
     return {
         "args": ["--rel", "--release"],
         "params": {
@@ -1382,7 +1375,8 @@ def get_release_arg(help_msg):
             "action": "store",
             "type": str,
             "help": help_msg,
-            "default": None
+            "default": None,
+            "required": required
         }
     }
 
@@ -1397,6 +1391,20 @@ def get_node_arg(help_msg):
             "type": parse_ids,
             "help": help_msg,
             "default": None
+        }
+    }
+
+
+def get_env_arg(required=False):
+    return {
+        "args": ["--env", "--env-id"],
+        "params": {
+            "dest": "env",
+            "action": "store",
+            "type": str,
+            "help": "environment id",
+            "default": None,
+            "required": required
         }
     }
 
@@ -1457,12 +1465,13 @@ actions = {
         "action": role,
         "args": [
             get_list_arg("List all roles for specific release"),
-            get_release_arg("Release id")
+            get_release_arg("Release id", required=True)
         ]
     },
     "environment": {
         "action": environment,
         "args": [
+        get_env_arg(),
         get_list_arg("List all available environments."),
         get_set_arg("Set environment parameters (e.g name, deployment mode)"),
         get_delete_arg("Delete environment with specific env or name"),
@@ -1517,6 +1526,7 @@ actions = {
     "node": {
         "action": node,
         "args": [
+            get_env_arg(),
             get_list_arg("List all nodes."),
             get_set_arg("Set role for specific node."),
             get_delete_arg("Delete specific node from environment."),
@@ -1579,6 +1589,7 @@ actions = {
     "network": {
         "action": network,
         "args": [
+            get_env_arg(required=True),
             get_download_arg("Download current network configuration."),
             get_dir_arg("Directory with network data."),
             get_verify_arg("Verify current network configuration."),
@@ -1588,6 +1599,7 @@ actions = {
     "settings": {
         "action": settings,
         "args": [
+            get_env_arg(required=True),
             get_download_arg("Modify current configuration."),
             get_default_arg("Open default configuration."),
             get_upload_arg("Save current changes in configuration."),
@@ -1626,11 +1638,14 @@ actions = {
     },
     "deploy-changes": {
         "action": deploy_changes,
-        "args": []
+        "args": [
+            get_env_arg(required=True),
+        ]
     },
     "health": {
         "action": health_check,
         "args": [
+            get_env_arg(required=True),
             get_list_arg("List all available checks"),
             {
                 "args": ["--check"],
@@ -1649,6 +1664,7 @@ actions = {
 
 def get_args_for_facts(fact_type):
     return [
+        get_env_arg(),
         get_delete_arg("Delete current {0} data.".format(fact_type)),
         get_download_arg("Download current {0} data.".format(fact_type)),
         get_upload_arg("Upload current {0} data.".format(fact_type)),
@@ -1689,21 +1705,20 @@ def prepare_args():
             sys.argv.remove(flag)
             sys.argv.insert(1, flag)
 
-    # move --env or --env-id flags to beginning if declared after action
     for arg in sys.argv:
         if "--env" in arg:
             # if declaration with '=' sign (e.g. --env-id=1)
             if "=" in arg:
                 index_of_env = sys.argv.index(arg)
                 env = sys.argv.pop(index_of_env)
-                sys.argv.insert(1, env)
+                sys.argv.append(env)
             else:
                 try:
                     index_of_env = sys.argv.index(arg)
                     sys.argv.pop(index_of_env)
                     env = sys.argv.pop(index_of_env)
-                    sys.argv.insert(1, env)
-                    sys.argv.insert(1, arg)
+                    sys.argv.append(arg)
+                    sys.argv.append(env)
                 except IndexError:
                     print_error(
                         'Environment id must follow "{0}" flag'
@@ -1724,13 +1739,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         usage="fuel [optional args] <namespace> [action] [flags]",
     )
-    parser.add_argument("--env", "--env-id",
-                        dest="env",
-                        action="store",
-                        type=str,
-                        help="environment id",
-                        default=None
-                        )
     parser.add_argument("--json",
                         dest="json",
                         action="store_true",
@@ -1759,8 +1767,7 @@ if __name__ == '__main__':
     for action, parameters in actions.iteritems():
         action_parser = subparsers.add_parser(
             action,
-            prog="fuel [global optional args] {0}"
-            .format(action),
+            prog="fuel {0}".format(action),
             help=parameters["action"].__doc__
         )
         for argument in parameters.get("args", []):
@@ -1770,16 +1777,13 @@ if __name__ == '__main__':
             )
 
     parsed_params, other_params = parser.parse_known_args()
-    sys.argv.pop(1)
     DEBUG = parsed_params.debug
     JSON = parsed_params.json
     YAML = parsed_params.yaml
     if parsed_params.action not in actions:
         parser.print_help()
         sys.exit(0)
-    current_action = getattr(parsed_params, "action")
-    delattr(parsed_params, "action")
     try:
-        actions[current_action]["action"](parsed_params)
+        actions[parsed_params.action]["action"](parsed_params)
     except Exception as e:
         handle_exceptions(e)

@@ -251,11 +251,11 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
             'disk': 'disk/id/b00b135'})
 
         self.app.put(
-            reverse('NodeCollectionHandler'),
+            reverse('NodeAgentHandler'),
             json.dumps([{
                 "mac": node_db.mac,
-                "meta": new_meta,
-                "is_agent": True}]),
+                "meta": new_meta
+            }]),
             headers=self.default_headers)
 
         self.env.refresh_nodes()

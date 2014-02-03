@@ -20,6 +20,7 @@ import subprocess
 import netaddr
 
 from sqlalchemy import func
+from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import object_mapper
@@ -299,6 +300,40 @@ class DeletionTask(object):
         # /only fake tasks
         logger.debug("Calling rpc remove_nodes method")
         rpc.cast('naily', msg_delete)
+
+
+class StopDeploymentTask(object):
+
+    @classmethod
+    def message(cls, task, deploy_task):
+        nodes_to_stop = db().query(Node).filter(
+            not_(Node.status == 'ready')
+        ).yield_per(100)
+        return {
+            "method": "stop_deploy_task",
+            "respond_to": "stop_deployment_resp",
+            "args": {
+                "task_uuid": task.uuid,
+                "stop_task_uuid": deploy_task.uuid,
+                "nodes": [
+                    {
+                        'id': n.id,
+                        'uid': n.id,
+                        'roles': n.roles
+                    } for n in nodes_to_stop
+                ],
+                "engine": {
+                    "url": settings.COBBLER_URL,
+                    "username": settings.COBBLER_USER,
+                    "password": settings.COBBLER_PASSWORD,
+                }
+            }
+        }
+
+    @classmethod
+    def execute(cls, task, deploy_task):
+        msg_stop = cls.message(task, deploy_task)
+        rpc.cast('naily', msg_stop, service=True)
 
 
 class ClusterDeletionTask(object):

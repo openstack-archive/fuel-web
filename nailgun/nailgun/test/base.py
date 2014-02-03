@@ -487,6 +487,23 @@ class Environment(object):
                 "Nothing to deploy - try creating cluster"
             )
 
+    def stop_deployment(self):
+        if self.clusters:
+            resp = self.app.put(
+                reverse(
+                    'ClusterStopDeploymentHandler',
+                    kwargs={'cluster_id': self.clusters[0].id}),
+                headers=self.default_headers)
+            self.tester.assertEquals(202, resp.status)
+            response = json.loads(resp.body)
+            return self.db.query(Task).filter_by(
+                uuid=response['uuid']
+            ).first()
+        else:
+            raise NotImplementedError(
+                "Nothing to stop - try creating cluster"
+            )
+
     def launch_verify_networks(self, data=None):
         if self.clusters:
             net_urls = {

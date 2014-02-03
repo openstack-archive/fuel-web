@@ -392,6 +392,36 @@ class DeploymentTaskManager(TaskManager):
         return task_deployment
 
 
+class StopDeploymentTaskManager(TaskManager):
+
+    def execute(self):
+        deploy_running = db().query(Task).filter_by(
+            cluster=self.cluster,
+            name='deploy',
+            status='running'
+        ).first()
+        if not deploy_running:
+            raise errors.DeploymentNotRunning(
+                u"Nothing to stop - deployment is "
+                u"not running on cluster {0}".format(
+                    self.cluster.id
+                )
+            )
+
+        task = Task(
+            name="stop_deployment",
+            cluster=self.cluster
+        )
+        db().add(task)
+        db.commit()
+        self._call_silently(
+            task,
+            tasks.StopDeploymentTask,
+            deploy_task=deploy_running
+        )
+        return task
+
+
 class CheckNetworksTaskManager(TaskManager):
 
     def execute(self, data, check_admin_untagged=False):

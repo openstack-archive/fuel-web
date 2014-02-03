@@ -39,7 +39,9 @@ from nailgun.task.helpers import TaskHelper
 def get_task_by_uuid(uuid):
     task = db().query(Task).filter_by(uuid=uuid).first()
     if not task:
-        raise errors.CannotFindTask('Cannot find task with uuid %s' % uuid)
+        raise errors.CannotFindTask(
+            'Cannot find task with uuid {0}'.format(uuid)
+        )
 
     return task
 
@@ -274,7 +276,7 @@ class NailgunReceiver(object):
             node_db = db().query(Node).get(uid)
 
             if not node_db:
-                logger.warn('Task with uid "{0}" not found'.format(uid))
+                logger.warn('Node with uid "{0}" not found'.format(uid))
                 continue
 
             if node.get('status') == 'error':
@@ -423,6 +425,146 @@ class NailgunReceiver(object):
             task.cluster_id
         )
         TaskHelper.update_task_status(task.uuid, status, progress, message)
+
+    @classmethod
+    def stop_deployment_resp(cls, **kwargs):
+        logger.info(
+            "RPC method stop_deployment_resp received: %s" %
+            json.dumps(kwargs)
+        )
+        task_uuid = kwargs.get('task_uuid')
+        nodes = kwargs.get('nodes', [])
+        message = kwargs.get('error')
+        status = kwargs.get('status')
+        progress = kwargs.get('progress')
+
+        task = get_task_by_uuid(task_uuid)
+
+        stop_tasks = db().query(Task).filter_by(
+            cluster_id=task.cluster_id,
+        ).filter(
+            Task.name.in_(["deploy", "deployment"])
+        ).all()
+        if not stop_tasks:
+            logger.warning("stop_deployment_resp: deployment tasks \
+                            not found for environment '%s'!", task.cluster_id)
+
+        if status == "ready":
+            task.cluster.status = "stopped"
+
+            if stop_tasks:
+                map(db().delete, stop_tasks)
+
+            db().commit()
+
+            update_nodes = db().query(Node).filter(
+                Node.id.in_([
+                    n["uid"] for n in nodes
+                ]),
+                Node.cluster_id == task.cluster_id
+            ).yield_per(100)
+
+            update_nodes.update(
+                {
+                    "online": False,
+                    "status": "discover",
+                    "pending_addition": True
+                },
+                synchronize_session='fetch'
+            )
+
+            for n in update_nodes:
+                n.roles, n.pending_roles = n.pending_roles, n.roles
+
+            db().commit()
+
+            message = (
+                u"Deployment of environment '{0}' "
+                u"was successfully stopped".format(
+                    task.cluster.name or task.cluster_id
+                )
+            )
+
+            notifier.notify(
+                "done",
+                message,
+                task.cluster_id
+            )
+
+        TaskHelper.update_task_status(
+            task_uuid,
+            status,
+            progress,
+            message
+        )
+
+    @classmethod
+    def reset_environment_resp(cls, **kwargs):
+        logger.info(
+            "RPC method reset_environment_resp received: %s",
+            json.dumps(kwargs)
+        )
+        task_uuid = kwargs.get('task_uuid')
+        nodes = kwargs.get('nodes')
+        message = kwargs.get('error')
+        status = kwargs.get('status')
+        progress = kwargs.get('progress')
+
+        task = get_task_by_uuid(task_uuid)
+
+        if status == "ready":
+
+            # restoring pending changes
+            task.cluster.status = "new"
+            task.cluster.add_pending_changes("attributes")
+            task.cluster.add_pending_changes("networks")
+
+            for node in task.cluster.nodes:
+                task.cluster.add_pending_changes(
+                    "disks",
+                    node_id=node.id
+                )
+
+            update_nodes = db().query(Node).filter(
+                Node.id.in_([
+                    n["uid"] for n in nodes
+                ]),
+                Node.cluster_id == task.cluster_id
+            ).yield_per(100)
+
+            update_nodes.update(
+                {
+                    "online": False,
+                    "status": "discover",
+                    "pending_addition": True
+                },
+                synchronize_session='fetch'
+            )
+
+            for n in update_nodes:
+                n.roles, n.pending_roles = n.pending_roles, n.roles
+
+            db().commit()
+
+            message = (
+                u"Environment '{0}' "
+                u"was successfully resetted".format(
+                    task.cluster.name or task.cluster_id
+                )
+            )
+
+            notifier.notify(
+                "done",
+                message,
+                task.cluster_id
+            )
+
+        TaskHelper.update_task_status(
+            task.uuid,
+            status,
+            progress,
+            message
+        )
 
     @classmethod
     def verify_networks_resp(cls, **kwargs):

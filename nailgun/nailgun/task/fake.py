@@ -293,6 +293,8 @@ class FakeProvisionThread(FakeThread):
         super(FakeProvisionThread, self).run()
         receiver = NailgunReceiver
 
+        self.sleep(self.tick_interval)
+
         # Since we just add systems to cobbler and reboot nodes
         # We think this task is always successful if it is launched.
         kwargs = {
@@ -341,6 +343,63 @@ class FakeDeletionThread(FakeThread):
                             "New node with %s CPU core(s) "
                             "and %s GB memory is discovered" %
                             (cores, ram), node_id=node.id)
+
+
+class FakeStopDeploymentThread(FakeThread):
+    def run(self):
+        super(FakeStopDeploymentThread, self).run()
+        receiver = NailgunReceiver
+        kwargs = {
+            'task_uuid': self.task_uuid,
+            'stop_task_uuid': self.data['args']['stop_task_uuid'],
+            'nodes': self.data['args']['nodes'],
+            'status': 'ready',
+            'progress': 100
+        }
+        resp_method = getattr(receiver, self.respond_to)
+        resp_method(**kwargs)
+
+        self.sleep(3)
+        nodes_db = db().query(Node).filter(
+            Node.id.in_([
+                n['uid'] for n in self.data['args']['nodes']
+            ])
+        ).all()
+
+        for n in nodes_db:
+            self.sleep(2)
+            n.online = True
+            n.status = "discover"
+            db().add(n)
+            db().commit()
+
+
+class FakeResetEnvironmentThread(FakeThread):
+    def run(self):
+        super(FakeResetEnvironmentThread, self).run()
+        receiver = NailgunReceiver
+        kwargs = {
+            'task_uuid': self.task_uuid,
+            'nodes': self.data['args']['nodes'],
+            'status': 'ready',
+            'progress': 100
+        }
+        resp_method = getattr(receiver, self.respond_to)
+        resp_method(**kwargs)
+
+        self.sleep(3)
+        nodes_db = db().query(Node).filter(
+            Node.id.in_([
+                n['uid'] for n in self.data['args']['nodes']
+            ])
+        ).all()
+
+        for n in nodes_db:
+            self.sleep(2)
+            n.online = True
+            n.status = "discover"
+            db().add(n)
+            db().commit()
 
 
 class FakeVerificationThread(FakeThread):
@@ -548,6 +607,8 @@ FAKE_THREADS = {
     'provision': FakeProvisionThread,
     'deploy': FakeDeploymentThread,
     'remove_nodes': FakeDeletionThread,
+    'stop_deploy_task': FakeStopDeploymentThread,
+    'reset_environment': FakeResetEnvironmentThread,
     'verify_networks': FakeVerificationThread,
     'check_dhcp': FakeCheckingDhcpThread,
     'download_release': DownloadReleaseThread,

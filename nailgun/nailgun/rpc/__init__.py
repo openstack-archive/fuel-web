@@ -46,6 +46,18 @@ naily_queue = Queue(
     routing_key='naily'
 )
 
+naily_service_exchange = Exchange(
+    'naily_service',
+    'fanout',
+    durable=False,
+    auto_delete=True
+)
+
+naily_service_queue = Queue(
+    'naily_service',
+    exchange=naily_service_exchange
+)
+
 nailgun_exchange = Exchange(
     'nailgun',
     'topic',
@@ -59,14 +71,16 @@ nailgun_queue = Queue(
 )
 
 
-def cast(name, message):
+def cast(name, message, service=False):
     logger.debug(
         "RPC cast to orchestrator:\n{0}".format(
             json.dumps(message, indent=4)
         )
     )
+    use_queue = naily_queue if not service else naily_service_queue
+    use_exchange = naily_exchange if not service else naily_service_exchange
     with Connection(conn_str) as conn:
         with conn.Producer(serializer='json') as producer:
             producer.publish(message,
-                             exchange=naily_exchange, routing_key=name,
-                             declare=[naily_queue])
+                             exchange=use_exchange, routing_key=name,
+                             declare=[use_queue])

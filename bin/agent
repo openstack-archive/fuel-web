@@ -446,7 +446,6 @@ class NodeAgent
     end
 
     res[:status] = @node_state if @node_state
-    res[:is_agent] = true
     res
   end
 
@@ -508,19 +507,19 @@ agent = NodeAgent.new(logger, url)
 agent.update_state
 
 begin
-  post_res = agent.post
-  if post_res.status == 409
-    put_res = agent.put
-    new_id = JSON.parse(put_res.body)[0]['id']
-  elsif post_res.status == 201
-    new_id = JSON.parse(post_res.body)['id']
+  put_res = agent.put
+  if [201, 202].include? put_res.status
+    new_id = JSON.parse(put_res.body)['id']
+    mc_config = McollectiveConfig.new(logger)
+    mc_config.replace_identity(new_id)
+    write_data_to_file(logger, '/etc/nailgun_uid', new_id.to_s)
+  elsif put_res.status == 304
+    exit 1
   else
-    logger.error post_res.body
+    logger.error put_res.body
     exit 1
   end
-  mc_config = McollectiveConfig.new(logger)
-  mc_config.replace_identity(new_id)
-  write_data_to_file(logger, '/etc/nailgun_uid', new_id.to_s)
+
 rescue => ex
   # NOTE(mihgen): There is no need to retry - cron will do it for us
   logger.error "#{ex.message}\n#{ex.backtrace}"

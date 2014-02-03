@@ -117,6 +117,8 @@ class Node(Base):
     interfaces = relationship("NodeNICInterface", backref="node",
                               cascade="delete",
                               order_by="NodeNICInterface.name")
+    # sha1 hexdigest of incoming node info to avoid useless updates from agent
+    meta_checksum = Column(String(40), default='')
 
     @property
     def uid(self):

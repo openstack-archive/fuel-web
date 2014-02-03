@@ -252,14 +252,15 @@ class TestHandlers(BaseIntegrationTest):
         )
         node_db = self.env.nodes[0]
         resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([
-                {'mac': node_db.mac, 'is_agent': True,
-                 'status': 'discover', 'manufacturer': 'new'}
-            ]),
+            reverse('NodeAgentHandler'),
+            json.dumps([{
+                'mac': node_db.mac,
+                'status': 'discover',
+                'manufacturer': 'new'
+            }]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status, 202)
         resp = self.app.get(
             reverse('NodeCollectionHandler'),
             headers=self.default_headers
@@ -274,8 +275,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
             json.dumps([
-                {'mac': node.mac, 'status': 'discover',
-                 'manufacturer': 'old'}
+                {'mac': node.mac, 'status': 'discover', 'manufacturer': 'old'}
             ]),
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
@@ -283,13 +283,12 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(node.timestamp, timestamp)
 
         resp = self.app.put(
-            reverse('NodeCollectionHandler'),
+            reverse('NodeAgentHandler'),
             json.dumps([
-                {'mac': node.mac, 'status': 'discover',
-                 'manufacturer': 'new', 'is_agent': True}
+                {'mac': node.mac, 'status': 'discover', 'manufacturer': 'new'}
             ]),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status, 202)
         node = self.db.query(Node).get(node.id)
         self.assertNotEquals(node.timestamp, timestamp)
         self.assertEquals('new', node.manufacturer)

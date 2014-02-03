@@ -57,11 +57,6 @@ class Task(Base):
         'check_dhcp',
         'verify_network_connectivity',
 
-        # plugin
-        'install_plugin',
-        'update_plugin',
-        'delete_plugin',
-
         # red hat
         'redhat_setup',
         'redhat_check_credentials',

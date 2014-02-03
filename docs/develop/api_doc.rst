@@ -52,12 +52,6 @@ Logs API
 .. automodule:: nailgun.api.handlers.logs
 
 
-Plugin API
-----------
-
-.. automodule:: nailgun.api.handlers.plugin
-
-
 Redhat API
 -----------------
 

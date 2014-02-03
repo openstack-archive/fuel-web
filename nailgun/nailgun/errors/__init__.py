@@ -58,10 +58,6 @@ default_messages = {
     # RPC errors
     "CannotFindTask": "Cannot find task",
 
-    # plugin errors
-    "PluginDownloading": "Cannot install plugin",
-    "PluginInitialization": "Cannot initialize plugin",
-
     # unknown
     "UnknownError": "Unknown error"
 }

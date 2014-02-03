@@ -55,7 +55,14 @@ class ClusterChanges(Base):
 class Cluster(Base):
     __tablename__ = 'clusters'
     MODES = ('multinode', 'ha_full', 'ha_compact')
-    STATUSES = ('new', 'deployment', 'operational', 'error', 'remove')
+    STATUSES = (
+        'new',
+        'deployment',
+        'stopped',
+        'operational',
+        'error',
+        'remove'
+    )
     NET_MANAGERS = ('FlatDHCPManager', 'VlanManager')
     GROUPING = ('roles', 'hardware', 'both')
     # Neutron-related

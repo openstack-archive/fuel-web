@@ -95,7 +95,6 @@ class TestTaskManagers(BaseIntegrationTest):
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
         self.assertEquals(len(args[1]['args']['nodes']), 0)
-        self.assertEquals(len(args[1]['args']['engine_nodes']), 0)
 
         self.env.refresh_nodes()
         for n in self.env.nodes:

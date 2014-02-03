@@ -256,15 +256,15 @@ def print_debug(message):
 
 
 def check_for_attributes(params, attributes):
-    not_paseed_checks = [attribute for attribute in attributes
+    not_passed_checks = [attribute for attribute in attributes
                          if not getattr(params, attribute)]
-    if len(not_paseed_checks):
+    if not_passed_checks:
         print_error(
             "{0} required!".format(
                 quote_and_join(
                     map(
                         lambda attr: "--" + attr,
-                        not_paseed_checks
+                        not_passed_checks
                     )
                 )
             )
@@ -1462,6 +1462,7 @@ actions = {
     },
     "environment": {
         "action": environment,
+        "additional_help": "--env ENV",
         "args": [
         get_list_arg("List all available environments."),
         get_set_arg("Set environment parameters (e.g name, deployment mode)"),
@@ -1516,6 +1517,7 @@ actions = {
     },
     "node": {
         "action": node,
+        "additional_help": "[--env ENV]",
         "args": [
             get_list_arg("List all nodes."),
             get_set_arg("Set role for specific node."),
@@ -1578,6 +1580,7 @@ actions = {
     },
     "network": {
         "action": network,
+        "additional_help": "--env ENV",
         "args": [
             get_download_arg("Download current network configuration."),
             get_dir_arg("Directory with network data."),
@@ -1587,6 +1590,7 @@ actions = {
     },
     "settings": {
         "action": settings,
+        "additional_help": "--env ENV",
         "args": [
             get_download_arg("Modify current configuration."),
             get_default_arg("Open default configuration."),
@@ -1620,16 +1624,19 @@ actions = {
     },
     "snapshot": {
         "action": snapshot,
+        "additional_help": "--env ENV",
         "args": [
             get_dir_arg("Directory to which download snapshot.")
         ]
     },
     "deploy-changes": {
         "action": deploy_changes,
+        "additional_help": "--env ENV",
         "args": []
     },
     "health": {
         "action": health_check,
+        "additional_help": "--env ENV",
         "args": [
             get_list_arg("List all available checks"),
             {
@@ -1714,6 +1721,7 @@ def prepare_args():
     for fact_type in [deployment, provisioning]:
         actions[fact_type.__name__] = {
             "action": fact_type,
+            "additional_help": "--env ENV",
             "args": get_args_for_facts(fact_type.__name__)
         }
 
@@ -1759,8 +1767,8 @@ if __name__ == '__main__':
     for action, parameters in actions.iteritems():
         action_parser = subparsers.add_parser(
             action,
-            prog="fuel [global optional args] {0}"
-            .format(action),
+            prog="fuel {0} {1}"
+            .format(parameters.get("additional_help", ""), action),
             help=parameters["action"].__doc__
         )
         for argument in parameters.get("args", []):
@@ -1770,7 +1778,6 @@ if __name__ == '__main__':
             )
 
     parsed_params, other_params = parser.parse_known_args()
-    sys.argv.pop(1)
     DEBUG = parsed_params.debug
     JSON = parsed_params.json
     YAML = parsed_params.yaml

@@ -40,7 +40,7 @@ class NetworkCheck(object):
         self.net_man = self.cluster.network_manager
         self.net_provider = self.cluster.net_provider
         admin_ng = self.net_man.get_admin_network_group()
-        fields = NetworkGroup.__mapper__.columns.keys()
+        fields = NetworkGroup.__mapper__.columns.keys() + ['meta']
         net = NetworkConfigurationSerializer.serialize_network_group(admin_ng,
                                                                      fields)
         # change Admin name for UI
@@ -500,80 +500,84 @@ class NetworkCheck(object):
         """
         # check if there any networks
         # on the same interface as admin network (main)
-        admin_interfaces = map(lambda node: node.admin_interface,
-                               self.cluster.nodes)
-        found_intersection = []
-
-        all_roles = set([n["id"] for n in self.networks
-                         if n != self.networks[0]])
-        for iface in admin_interfaces:
-            nets = dict(
-                (n.id, n.name)
-                for n in iface.assigned_networks_list)
-
-            err_nets = set(nets.keys()) & all_roles
-            if err_nets:
-                err_net_names = [
-                    '"{0}"'.format(nets[i]) for i in err_nets]
-                found_intersection.append(
-                    [iface.node.name, err_net_names])
-
-        if found_intersection:
-            nodes_with_errors = [
-                u'Node "{0}": {1}'.format(
-                    name,
-                    ", ".join(_networks)
-                ) for name, _networks in found_intersection]
-            err_msg = u"Some networks are " \
-                      "assigned to the same physical interface as " \
-                      "admin (PXE) network. You should move them to " \
-                      "another physical interfaces:\n{0}". \
-                format("\n".join(nodes_with_errors))
-            raise errors.NetworkCheckError(err_msg)
-
-        # check if there any networks
-        # on the same interface as private network (for vlan)
-        if self.cluster.net_segment_type == 'vlan':
-            private_interfaces = []
-            # there should be shorter method to do this !
-            for node in self.cluster.nodes:
-                for iface in node.interfaces:
-                    for anet in iface.assigned_networks_list:
-                        if anet.name == 'private':
-                            private_interfaces.append(iface)
-            found_intersection = []
-
-            all_roles = set(n["id"] for n in self.networks
-                            if n["name"] != 'private')
-            for iface in private_interfaces:
-                nets = dict(
-                    (n.id, n.name)
-                    for n in iface.assigned_networks_list)
-
-                err_nets = set(nets.keys()) & all_roles
-                if err_nets:
-                    err_net_names = [
-                        '"{0}"'.format(nets[i]) for i in err_nets]
-                    found_intersection.append(
-                        [iface.node.name, err_net_names])
-
-            if found_intersection:
-                nodes_with_errors = [
-                    u'Node "{0}": {1}'.format(
-                        name,
-                        ", ".join(_networks)
-                    ) for name, _networks in found_intersection]
-                err_msg = u"Some networks are " \
-                          "assigned to the same physical interface as " \
-                          "private network. You should move them to " \
-                          "another physical interfaces:\n{0}". \
-                    format("\n".join(nodes_with_errors))
-                raise errors.NetworkCheckError(err_msg)
+        # admin_interfaces = map(lambda node: node.admin_interface,
+        #                        self.cluster.nodes)
+        # found_intersection = []
+        #
+        # all_roles = set([n["id"] for n in self.networks
+        #                  if n != self.networks[0]])
+        # for iface in admin_interfaces:
+        #     nets = dict(
+        #         (n.id, n.name)
+        #         for n in iface.assigned_networks_list)
+        #
+        #     err_nets = set(nets.keys()) & all_roles
+        #     if err_nets:
+        #         err_net_names = [
+        #             '"{0}"'.format(nets[i]) for i in err_nets]
+        #         found_intersection.append(
+        #             [iface.node.name, err_net_names])
+        #
+        # if found_intersection:
+        #     nodes_with_errors = [
+        #         u'Node "{0}": {1}'.format(
+        #             name,
+        #             ", ".join(_networks)
+        #         ) for name, _networks in found_intersection]
+        #     err_msg = u"Some networks are " \
+        #               "assigned to the same physical interface as " \
+        #               "admin (PXE) network. You should move them to " \
+        #               "another physical interfaces:\n{0}". \
+        #         format("\n".join(nodes_with_errors))
+        #     raise errors.NetworkCheckError(err_msg)
+        #
+        # # check if there any networks
+        # # on the same interface as private network (for vlan)
+        # if self.cluster.net_segment_type == 'vlan':
+        #     private_interfaces = []
+        #     # there should be shorter method to do this !
+        #     for node in self.cluster.nodes:
+        #         for iface in node.interfaces:
+        #             for anet in iface.assigned_networks_list:
+        #                 if anet.name == 'private':
+        #                     private_interfaces.append(iface)
+        #     found_intersection = []
+        #
+        #     all_roles = set(n["id"] for n in self.networks
+        #                     if n["name"] != 'private')
+        #     for iface in private_interfaces:
+        #         nets = dict(
+        #             (n.id, n.name)
+        #             for n in iface.assigned_networks_list)
+        #
+        #         err_nets = set(nets.keys()) & all_roles
+        #         if err_nets:
+        #             err_net_names = [
+        #                 '"{0}"'.format(nets[i]) for i in err_nets]
+        #             found_intersection.append(
+        #                 [iface.node.name, err_net_names])
+        #
+        #     if found_intersection:
+        #         nodes_with_errors = [
+        #             u'Node "{0}": {1}'.format(
+        #                 name,
+        #                 ", ".join(_networks)
+        #             ) for name, _networks in found_intersection]
+        #         err_msg = u"Some networks are " \
+        #                   "assigned to the same physical interface as " \
+        #                   "private network. You should move them to " \
+        #                   "another physical interfaces:\n{0}". \
+        #             format("\n".join(nodes_with_errors))
+        #         raise errors.NetworkCheckError(err_msg)
 
         # check untagged networks intersection
         untagged_nets = set(
             n["id"] for n in filter(
-                lambda n: (n["vlan_start"] is None), self.networks))
+                lambda n: (n['vlan_start'] is None) and
+                          ((not n['meta']) or
+                           ('allow_2nd_untagged' not in n['meta']) or
+                           (not n['meta']['allow_2nd_untagged'])),
+                self.networks))
         if untagged_nets:
             logger.info(
                 "Untagged networks found, "

@@ -10,20 +10,23 @@
 
     <div class="logical-network-box">
       <div class="logical-network-group">
-        <% ifc.get('assigned_networks').each(function(network) { %>
-          <% if (network.get('name') != 'floating') { %>
-            </div><div class="logical-network-group <%- (_.contains(ifc.get('allowed_networks').invoke('get', 'name'), 'fuelweb_admin') && network.get('name') == 'fuelweb_admin') ? 'disabled' : '' %>">
+        <% ifc.get('assigned_networks').each(function(interfaceNetwork) { %>
+          <% var networkName = interfaceNetwork.get('name') %>
+          <% var network = interfaceNetwork.getFullNetwork() %>
+          <% if (networkName != 'floating') { %>
+            </div><div class="logical-network-group <%= network.get('meta').unmovable ? 'disabled' : '' %>">
           <% } %>
-          <div class="logical-network-item" data-name="<%- network.get('name') %>">
-            <div class="name"><%- $.t('network.' + network.get('name'), {defaultValue: network.get('name')}) %></div>
+          <div class="logical-network-item" data-name="<%- networkName %>">
+            <div class="name"><%- $.t('network.' + networkName, {defaultValue: networkName}) %></div>
             <div class="id">
-            <% var vlanStart = network.vlanStart() %>
-            <% if (vlanStart) { %>
-              <% if (network.amount() == 1) { %>
-                VLAN ID: <%- vlanStart %>
+            <% if (network.get('vlan_start')) { %>
+              <% if (network.get('amount') == 1) { %>
+                VLAN ID: <%- network.get('vlan_start') %>
               <% } else { %>
-                VLAN IDs: <%- vlanStart %>-<%- vlanStart + network.amount() - 1 %>
+                VLAN IDs: <%- network.get('vlan_start') %>-<%- network.get('vlan_start') + network.get('amount') - 1 %>
               <% } %>
+            <% } else if (network.get('meta').neutron_vlan_range) { %>
+              <%- $.t('cluster_page.nodes_tab.configure_interfaces.neutron_vlan_range') %>
             <% } %>
             </div>
           </div>

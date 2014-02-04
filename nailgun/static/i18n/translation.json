@@ -29,7 +29,8 @@
                 "success": "Success",
                 "error": "Error",
                 "see_logs": "see the logs",
-                "copyright": "Copyright © 2014 Mirantis. All rights reserved."
+                "copyright": "Copyright © 2014 Mirantis. All rights reserved.",
+                "error_cluster_409": "Cluster with such parameters already exists"
             },
             "node_details": {
                 "cpu": "CPU",
@@ -171,8 +172,6 @@
                     },
                     "node_management_panel": {
                         "group_by": "Group By",
-                        "filter_by": "Filter By",
-                        "filter_placeholder": "Node name/mac",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
                         "cant_configure_disks": "Unable to configure disks",
@@ -370,7 +369,9 @@
                     },
                     "compute": {
                         "title": "Compute",
+                        "kvm_title": "KVM",
                         "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
+                        "qemu_title": "QEMU",
                         "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts"
                     },
                     "network": {

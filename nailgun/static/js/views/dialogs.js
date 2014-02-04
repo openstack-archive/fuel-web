@@ -450,9 +450,13 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 var storageSettings = settings.get('editable').storage;
                 if (storageSettings) {
                     if (this.$('input[name=cinder]:checked').val() == 'ceph' && storageSettings.volumes_ceph) {
+                        storageSettings.volumes_lvm.value = false;
                         storageSettings.volumes_ceph.value = true;
                     } else if (storageSettings.volumes_lvm) {
                         storageSettings.volumes_lvm.value = true;
+                        if (storageSettings.volumes_ceph) {
+                            storageSettings.volumes_ceph.value = false;
+                        }
                     }
                     if (this.$('input[name=glance]:checked').val() == 'ceph' && storageSettings.images_ceph) {
                         storageSettings.images_ceph.value = true;

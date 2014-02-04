@@ -111,36 +111,6 @@ class NeutronManager(NetworkManager):
         return {}
 
     @classmethod
-    def get_allowed_nic_networkgroups(cls, node, nic):
-        """Get all allowed network groups
-        """
-        if nic == node.admin_interface:
-            return [cls.get_admin_network_group()]
-        return cls.get_all_cluster_networkgroups(node)
-
-    @classmethod
-    def allow_network_assignment_to_all_interfaces(cls, node):
-        """Method adds all network groups from cluster
-        to allowed_networks list for all interfaces
-        of specified node.
-
-        :param node: Node object.
-        :type  node: Node
-        """
-        for nic in node.interfaces:
-
-            if nic == node.admin_interface:
-                nic.allowed_networks_list.append(
-                    cls.get_admin_network_group()
-                )
-                continue
-
-            for ng in cls.get_cluster_networkgroups_by_node(node):
-                nic.allowed_networks_list.append(ng)
-
-        db().commit()
-
-    @classmethod
     def update(cls, cluster, network_configuration):
         cls.update_networks(cluster, network_configuration)
 

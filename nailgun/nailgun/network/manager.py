@@ -394,9 +394,12 @@ class NetworkManager(object):
         ngs = node.cluster.network_groups + [cls.get_admin_network_group()]
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
         # sort Network Groups ids by map_priority (0 for admin having no meta)
-        to_assign_ids = list(zip(*sorted(
-            [[ng.id, ng.meta['map_priority'] if ng.meta else 0] for ng in ngs],
-            key=lambda x: x[1]))[0])
+        to_assign_ids = list(
+            zip(*sorted(
+                [[ng.id, ng.meta['map_priority']]
+                 for ng in ngs],
+                key=lambda x: x[1]))[0]
+        )
         for i, nic in enumerate(node.interfaces):
             nic_dict = {
                 "id": nic.id,
@@ -472,6 +475,30 @@ class NetworkManager(object):
                 nics[nic['id']].assigned_networks_list = list(
                     db().query(NetworkGroup).filter(
                         NetworkGroup.id.in_(ng_ids)))
+        db().commit()
+
+    @classmethod
+    def get_allowed_nic_networkgroups(cls, node, nic):
+        """Get all allowed network groups for given node's NIC
+        """
+        ngs = cls.get_all_cluster_networkgroups(node)
+        if nic == node.admin_interface:
+            ngs.append(cls.get_admin_network_group())
+        return ngs
+
+    @classmethod
+    def allow_network_assignment_to_all_interfaces(cls, node):
+        """Method adds all network groups from cluster
+        to allowed_networks list for all interfaces
+        of specified node.
+
+        :param node: Node object.
+        :type  node: Node
+        """
+        for nic in node.interfaces:
+            nic.allowed_networks_list = \
+                cls.get_allowed_nic_networkgroups(node, nic)
+
         db().commit()
 
     @classmethod
@@ -925,7 +952,11 @@ class NetworkManager(object):
         """
         cluster_db = db().query(Cluster).get(cluster_id)
         networks_metadata = cluster_db.release.networks_metadata
-        networks_list = networks_metadata[cluster_db.net_provider]["networks"]
+        # we don't need "admin" NG to be created for each cluster
+        networks_list = filter(
+            lambda netw: netw['name'] != 'fuelweb_admin',
+            networks_metadata[cluster_db.net_provider]['networks']
+        )
         used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
 
         def check_range_in_use_already(cidr_range):
@@ -1006,7 +1037,8 @@ class NetworkManager(object):
                                 ng_db.meta.get("notation") == "cidr":
                             cls.update_range_mask_from_cidr(ng_db, value)
 
-                        setattr(ng_db, key, value)
+                        if key != 'meta':
+                            setattr(ng_db, key, value)
 
                 if ng_db.meta.get("calculate_cidr"):
                     cls.update_cidr_from_gw_mask(ng_db, ng)

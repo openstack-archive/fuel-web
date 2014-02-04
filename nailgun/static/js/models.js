@@ -751,5 +751,46 @@ define(['utils', 'deepModel'], function(utils) {
         urlRoot: '/api/capacity'
     });
 
+    models.WizardPaneModel = Backbone.DeepModel.extend({
+        constructorName: 'WizardPanes',
+        prepareModel: function() {
+            _.each(this.toJSON(), _.bind(function(configurableAttribute) {
+                _.each(configurableAttribute.values, _.bind(function(configurableValue) {
+                    if (configurableValue.restrictions) {
+                        _.each(configurableValue.restrictions.conflicts, _.bind(function(conflict) {
+                            this.set('attributesToTrack', conflict.condition);
+                        }, this));
+                        _.each(configurableValue.restrictions.depends, _.bind(function(depend) {
+                            this.set('attributesToTrack', depend.condition);
+                        }, this));
+                    }
+                }, this));
+            }, this));
+        },
+        stringifyKeys: function(config) {
+            function processPiece(base, piece) {
+                return _.map(piece, function(value, key) {
+                    var localBase = base ? base + '.' + key : key;
+                    return (_.isPlainObject(value)) ? processPiece(localBase, value) : [localBase, value];
+                });
+            }
+            return _.uniq(_.flatten(processPiece(null, config)));
+        },
+        getWarnings: function(config) {
+            var warnings = [];
+            _.each(config, function(configOption) {
+                 if (configOption.restrictions) {
+                    _.each(configOption.restrictions.conflicts, function(conflict) {
+                        warnings.push(conflict.warning);
+                    });
+                    _.find(configOption.restrictions.depends, function(depend) {
+                        warnings.push(depend.warning);
+                    });
+                }
+            });
+            return _.uniq(warnings);
+        }
+    });
+
     return models;
 });

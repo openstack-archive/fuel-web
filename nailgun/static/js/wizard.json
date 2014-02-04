@@ -1,0 +1,117 @@
+{
+  "wizard_setup": [
+    {
+      "key": "name_release",
+      "attributes": {
+        "plugins": [
+        ]
+      }
+    },
+    {
+      "key": "deployment_mode",
+      "attributes": {
+        "plugins": []
+      }
+    },
+    {
+      "key": "compute",
+      "attributes": {
+        "plugins": []
+      }
+    },
+    {
+      "key": "network",
+      "attributes": {
+        "plugins": [
+          {
+            "key": "neutron-gre",
+            "label": "dialog.create_cluster_wizard.network.neutr_gre",
+            "restrictions": {
+              "conflicts": [
+                {
+                  "panelName": "ClusterNameAndReleasePane",
+                  "attributeName": "release",
+                  "attributeType": "operating_system",
+                  "value": "RHEL",
+                  "warning": "dialog.create_cluster_wizard.network.alert"
+                }
+              ]
+            }
+          },
+          {
+            "key": "neutron-vlan",
+            "label": "dialog.create_cluster_wizard.network.neutr_vlan",
+            "restrictions": {
+              "conflicts": [
+                {
+                  "panelName": "ClusterNameAndReleasePane",
+                  "attributeName": "release",
+                  "attributeType": "operating_system",
+                  "value": "RHEL",
+                  "warning": "dialog.create_cluster_wizard.network.alert"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "storage_backends",
+      "attributes": {
+        "plugins": [
+          {
+            "key": "ceph",
+            "label": "dialog.create_cluster_wizard.storage.ceph",
+            "restrictions": {
+              "depends": [
+                {
+                  "panelName": "ClusterNameAndReleasePane",
+                  "attributeName": "release",
+                  "attributeType": "roles",
+                  "value": "ceph-osd",
+                  "warning": "dialog.create_cluster_wizard.storage.alert"
+                }
+             ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "additional_services",
+      "attributes": {
+        "plugins": [
+          {
+            "key": "murano",
+            "label": "dialog.create_cluster_wizard.additional.install_murano",
+            "description": "dialog.create_cluster_wizard.additional.install_murano_description",
+            "restrictions": {
+              "conflicts": [
+                {
+                  "panelName": "ClusterNetworkPane",
+                  "attributeName": "manager",
+                  "value": "nova-network",
+                  "warning": "dialog.create_cluster_wizard.additional.network_mode_alert"
+                },
+                {
+                  "panelName": "ClusterNameAndReleasePane",
+                  "attributeName": "release",
+                  "attributeType": "operating_system",
+                  "value": "RHEL",
+                  "warning": "dialog.create_cluster_wizard.network.alert"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "finish",
+      "attributes": {
+        "plugins": []
+      }
+    }
+  ]
+}

@@ -1548,10 +1548,6 @@ input.vlan-tagging {
   h3 { margin-top: 0; }
 }
 
-.display-changes-dialog > ul {
-  margin-left: 35px;
-}
-
 .pending-deletion-flag {
   display: block;
   position: relative;
@@ -2570,35 +2566,39 @@ input.error:focus {
   }
 }
 
-.action-item-placeholder {
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background-color: #f0f0f0;
-  height: 160px !Important;
-  .box-sizing-mixin;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
-  overflow: hidden;
-  form {
-    h4 {
-      display: block;
-      height: 24px;
-      overflow: hidden;
-      .margin-padding-mixin(17px 20px 10px 20px);
-    }
-    .action-item-description {
-      display: block;
-      height: 42px;
-      overflow: hidden;
-      .margin-padding-mixin(0px 20px 0px 20px);
-    }
-    .important {
-      color: #c03832;
-      font-style: italic;
-    }
-    .action-item-controls {
-      display: block;
-      overflow: hidden;
-      .margin-padding-mixin(20px 20px 0px 20px);
+#tab-actions {
+  div.row-fluid {margin-bottom: 20px;}
+  .action-item-placeholder {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    height: 160px !Important;
+    .box-sizing-mixin;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    overflow: hidden;
+    form {
+      h4 {
+        display: block;
+        height: 24px;
+        overflow: hidden;
+        .margin-padding-mixin(17px 20px 10px 20px);
+      }
+      .action-item-description {
+        display: block;
+        height: 42px;
+        overflow: hidden;
+        .margin-padding-mixin(0px 20px 0px 20px);
+      }
+      .important {
+        color: #c03832;
+        font-style: italic;
+      }
+      .action-item-controls {
+        display: block;
+        overflow: hidden;
+        .margin-padding-mixin(20px 20px 0px 20px);
+        .apply-name-btn { margin-top: -10px; }
+      }
     }
   }
 }
@@ -2745,31 +2745,25 @@ legend {
   width: 185px;
 }
 
-.deploy-task-name {
-  font-size: 13px;
-  padding: 8px 10px 1px 10px;
-  &.header {
-    font-weight: bold;
-  }
-}
-
-.deploy-task-item {
-  padding: 4px 10px;
-}
-
-.deploy-task-notice {
-  .margin-padding-mixin(0, 0px 10px);
-  color: #C03832;
-  font-style: italic;
-  text-align: center;
-}
-
 hr.slim {
   margin: 10px;
 }
 
-.display-changes-dialog .alert-error {
-  margin-top: 10px;
+.display-changes-dialog {
+  ul { margin-left: 35px; }
+  .deploy-task-name {
+    padding: 8px 10px 1px 10px;
+    &.header {
+      font-weight: bold;
+    }
+  }
+  .deploy-task-notice {
+    .margin-padding-mixin(0, 0px 10px);
+    color: #C03832;
+    font-style: italic;
+    text-align: center;
+  }
+  .alert-error { margin-top: 10px; }
 }
 
 .radio-checkbox-group {

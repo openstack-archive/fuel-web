@@ -70,7 +70,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         dismissTaskResult: function() {
             this.$('.task-result').remove();
-            var task = this.tasks.findTask({name: 'redhat_setup', release: this.model.get('release').id, status: 'error'}) || this.model.task('deploy');
+            var task = this.tasks.findTask({name: 'redhat_setup', release: this.model.get('release').id, status: 'error'}) || this.model.task('deploy') || this.model.task('stop_deployment') || this.model.task('reset_environment');
             if (task) {
                 task.destroy();
             }
@@ -117,7 +117,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             }
         },
         scheduleUpdate: function() {
-            var task = this.model.task('deploy', 'running') || this.model.task('verify_networks', 'running') || this.tasks.findTask({name: 'redhat_setup', status: 'running', release: this.model.get('release').id});
+            var task = this.model.task('reset_environment', 'running') || this.model.task('stop_deployment', 'running') || this.model.task('deploy', 'running') || this.model.task('verify_networks', 'running') || this.tasks.findTask({name: 'redhat_setup', status: 'running', release: this.model.get('release').id});
             if (!this.pollingAborted && task) {
                 this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
             }
@@ -132,6 +132,24 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 this.registerDeferred(deploymentTask.fetch().done(_.bind(function() {
                     if (deploymentTask.get('status') != 'running') {
                         this.deploymentFinished();
+                    }
+                }, this)).always(complete));
+                this.registerDeferred(this.model.get('nodes').fetch({data: {cluster_id: this.model.id}}).always(complete));
+            }
+            var stopDeploymentTask = this.model.task('stop_deployment', 'running');
+            if (stopDeploymentTask) {
+                this.registerDeferred(stopDeploymentTask.fetch().done(_.bind(function() {
+                    if (stopDeploymentTask.get('status') != 'running') {
+                        this.clusterActionFinished();
+                    }
+                }, this)).always(complete));
+                this.registerDeferred(this.model.get('nodes').fetch({data: {cluster_id: this.model.id}}).always(complete));
+            }
+            var resetTask = this.model.task('reset_environment', 'running');
+            if (resetTask) {
+                this.registerDeferred(resetTask.fetch().done(_.bind(function() {
+                    if (resetTask.get('status') != 'running') {
+                        this.clusterActionFinished();
                     }
                 }, this)).always(complete));
                 this.registerDeferred(this.model.get('nodes').fetch({data: {cluster_id: this.model.id}}).always(complete));
@@ -151,6 +169,12 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                     }, this))
                 );
             }
+        },
+        clusterActionStarted: function () {
+            $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).done(_.bind(this.scheduleUpdate, this));
+        },
+        clusterActionFinished: function () {
+            $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).done(function() {app.navbar.refresh();});
         },
         deploymentStarted: function() {
             $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).done(_.bind(function() {
@@ -172,7 +196,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             }
         },
         unbindEventsWhileDeploying: function() {
-            // unbind some events while deploying to make progress bar movement smooth and prevent showing wrong cluster status for a moment.
+            // unbind some events while deploying to make progress bar movement smooth
             var task = this.model.task('deploy', 'running');
             if (task) {
                 task.off('change:status', this.deploymentResult.render, this.deploymentResult);
@@ -261,13 +285,13 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.page.tasks.on('add', this.onNewTask, this);
         },
         bindTaskEvents: function(task) {
-            return (task.get('name') == 'deploy' || (task.get('name') == 'redhat_setup' && task.releaseId() == this.model.get('release').id)) ? task.on('change:status', this.render, this) : null;
+            return (task.get('name') == 'reset_environment' || task.get('name') == 'stop_deployment' || task.get('name') == 'deploy' || (task.get('name') == 'redhat_setup' && task.releaseId() == this.model.get('release').id)) ? task.on('change:status', this.render, this) : null;
         },
         onNewTask: function(task) {
             return this.bindTaskEvents(task) && this.render();
         },
         render: function() {
-            var task = this.page.tasks.findTask({name: 'redhat_setup', status: 'error', release: this.model.get('release').id}) || this.model.task('deploy');
+            var task = this.page.tasks.findTask({name: 'redhat_setup', status: 'error', release: this.model.get('release').id}) || this.model.task('reset_environment')  || this.model.task('stop_deployment') || this.model.task('deploy');
             this.$el.html(this.template(_.extend({cluster: this.model, task: task}, this.templateHelpers))).i18n();
             return this;
         }

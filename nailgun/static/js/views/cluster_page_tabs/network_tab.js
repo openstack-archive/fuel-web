@@ -50,7 +50,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         isLocked: function() {
             var task = !!this.model.task('deploy', 'running') || !!this.model.task('verify_networks', 'running');
-            return this.model.get('status') != 'new' || task;
+            return this.model.get('status') != 'new' || task || (this.model.get('status') != 'stopped' && this.model.get('nodes').where({status: 'ready'}).length);
         },
         isVerificationLocked: function() {
             return !!this.model.task('deploy', 'running') || !!this.model.task('verify_networks', 'running');

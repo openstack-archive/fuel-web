@@ -977,7 +977,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         constructorName: 'EditNodeScreen',
         keepScrollPosition: true,
         disableControls: function(disable) {
-            this.$('.btn, input').attr('disabled', disable || this.isLocked());
+            this.updateButtonsState(disable || this.isLocked());
         },
         returnToNodeList: function() {
             if (this.hasChanges()) {
@@ -1003,9 +1003,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-apply:not(:disabled)': 'applyChanges',
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
-        disableControls: function(disable) {
-            this.updateButtonsState(disable || this.isLocked());
-        },
         hasChanges: function() {
             var disks = this.disks.toJSON();
             return !this.nodes.reduce(function(result, node) {
@@ -1019,7 +1016,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         isLocked: function() {
             var forbiddenNodes = _.union(this.nodes.where({pending_addition: true}), this.nodes.where({status: 'error', error_type: 'provision'})).length;
-            return !forbiddenNodes || this.constructor.__super__.isLocked.apply(this);
+            return !forbiddenNodes || (this.model.get('status') != 'stopped' && this.nodes.where({status: 'ready'}).length) || this.constructor.__super__.isLocked.apply(this);
         },
         checkForChanges: function() {
             this.updateButtonsState(this.isLocked());
@@ -1271,9 +1268,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-apply:not(:disabled)': 'applyChanges',
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
-        disableControls: function(disable) {
-            this.updateButtonsState(disable || this.isLocked());
-        },
         checkForNodeNetworksChange: function() {
             var noChanges = true;
             var networks = this.interfaces.getAssignedNetworks();
@@ -1284,7 +1278,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         isLocked: function() {
             var forbiddenNodes = this.nodes.filter(function(node) {return !node.get('pending_addition') || node.get('status') == 'error';});
-            return forbiddenNodes.length || this.constructor.__super__.isLocked.apply(this);
+            return forbiddenNodes.length || (this.model.get('status') != 'stopped' && this.nodes.where({status: 'ready'}).length) || this.constructor.__super__.isLocked.apply(this);
         },
         hasChanges: function() {
             return this.checkForNodeNetworksChange() && this.hasDragged;

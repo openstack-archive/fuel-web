@@ -26,9 +26,15 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
     var ActionsTab = commonViews.Tab.extend({
         template: _.template(actionsTabTemplate),
         events: {
-            'click .rename-cluster-form .apply-name-btn': 'applyNewClusterName',
+            'click .apply-name-btn': 'applyNewClusterName',
             'keydown .rename-cluster-form input': 'onClusterNameInputKeydown',
-            'click .delete-cluster-form .delete-cluster-btn': 'deleteCluster'
+            'click .delete-cluster-btn': 'deleteCluster',
+            'click .stop-deployment-btn': 'stopDeployment',
+            'click .reset-environment-btn': 'resetEnvironment'
+        },
+        checkButtonsAvailability: function() {
+            this.$('.stop-deployment-btn').attr('disabled', !this.model.task('deploy', 'running') || this.model.task('stop_deployment', 'running'));
+            this.$('.reset-environment-btn').attr('disabled', this.model.get('status') == 'new' || this.model.task('deploy', 'running') || this.model.task('stop_deployment', 'running'));
         },
         applyNewClusterName: function() {
             var name = $.trim(this.$('.rename-cluster-form input').val());
@@ -60,13 +66,32 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             this.registerSubView(deleteClusterDialogView);
             deleteClusterDialogView.render();
         },
+        stopDeployment: function() {
+            var stopDeploymentDialogView = new dialogViews.StopDeploymentDialog({model: this.model});
+            this.registerSubView(stopDeploymentDialogView);
+            stopDeploymentDialogView.render();
+        },
+        resetEnvironment: function() {
+            var resetEnvironmentDialogView = new dialogViews.ResetEnvironmentDialog({model: this.model});
+            this.registerSubView(resetEnvironmentDialogView);
+            resetEnvironmentDialogView.render();
+        },
+        bindTaskEvents: function(task) {
+            return task.get('name') == 'deploy' || task.get('name') == 'stop_deployment' ? task.on('change:status', this.render, this) : null;
+        },
+        onNewTask: function(task) {
+            return this.bindTaskEvents(task) && this.render();
+        },
         initialize: function(options) {
             _.defaults(this, options);
-            this.model.on('change:name', this.render, this);
+            this.model.on('change:name change:status', this.render, this);
+            this.model.get('tasks').each(this.bindTaskEvents, this);
+            this.model.get('tasks').on('add', this.onNewTask, this);
             this.model.on('invalid', this.showValidationError, this);
         },
         render: function() {
             this.$el.html(this.template({cluster: this.model})).i18n();
+            this.checkButtonsAvailability();
             return this;
         }
     });

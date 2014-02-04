@@ -1,0 +1,60 @@
+<% if (warningMessage) { %>
+    <div class="alert">
+        <%- warningMessage %>
+    </div>
+<% } %>
+<form class="form-horizontal" onsubmit="return false">
+    <fieldset>
+        <div class="control-group <%- control_classes %>">
+         <% if (customLayout == 'mode') { %>
+             <div class="span5 ">
+         <% } %>
+             <% if (customLayout == 'storage') { %>
+                 <% var storages = ['cinder', 'glance']; %>
+                 <% _.each(storages, _.bind(function(storage) {  %>
+                     <div class="span6">
+                        <h5 data-i18n="dialog.create_cluster_wizard.storage.<%- storage %>"></h5>
+                         <% if (values) { %>
+                             <% _.each(values, _.bind(function(control, index) { %>
+                                 <label class="parameter-box clearfix  <%- label_classes %>">
+                                     <div class="parameter-control">
+                                         <div class="custom-tumbler">
+                                             <input type="<%- type %>" name="<%- storage %>" value="<%- control.data %>" <% if (value == control.data) { %> checked <% } %>/>
+                                          <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                                        </div>
+                                    </div>
+                                    <div class="parameter-name <%- description_classes %>" data-i18n="<%- control.label %>"></div>
+                                 </label>
+                             <% }, this)) %>
+                         <% } %>
+                          <p class="help-block">&nbsp;</p>
+                          <p class="help-block" data-i18n="dialog.create_cluster_wizard.storage.<%- storage %>_help">
+                          </p>
+                     </div>
+                 <% }, this)) %>
+             <% } else { %>
+                 <% if (values) { %>
+                    <% _.each(values, _.bind(function(control, index) { %>
+                        <label class="parameter-box clearfix  <%- label_classes %>">
+                          <div class="parameter-control">
+                            <div class="custom-tumbler">
+                              <input type="<%- type %>" name="<%- pane %>" value="<%- control.data %>" <% if (value == control.data) { %> checked <% } %>/>
+                              <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                            </div>
+                          </div>
+                          <div class="parameter-name <%- description_classes %>" data-i18n="<%- control.label %>"></div>
+                        </label>
+                        <% if (!_.isUndefined(control.description)) { %>
+                            <div class="modal-parameter-description" data-i18n="<%- control.description %>"></div>
+                        <% } %>
+                    <% }, this)) %>
+                <% } %>
+            <% } %>
+        <% if (customLayout == 'mode') { %>
+            </div>
+            <div class="span7">
+                <p class="help-block mode-description"><%- description_mode %></p>
+            </div>
+        <% } %>
+    </fieldset>
+</form>

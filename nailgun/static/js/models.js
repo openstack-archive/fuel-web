@@ -728,5 +728,38 @@ define(['utils', 'deepModel'], function(utils) {
         urlRoot: '/api/capacity'
     });
 
+    models.WizardPaneModel = Backbone.DeepModel.extend({
+        constructorName: 'WizardPanes',
+        prepareModel: function() {
+            _.each(this.toJSON(), _.bind(function(configurableAttribute) {
+                _.each(configurableAttribute.values, _.bind(function(configurableValue) {
+                    if (configurableValue.restrictions) {
+                        _.each(configurableValue.restrictions.conflicts, _.bind(function(conflict) {
+                            this.set('attributesToTrack', conflict.condition);
+                        }, this));
+                        _.each(configurableValue.restrictions.depends, _.bind(function(depend) {
+                            this.set('attributesToTrack', depend.condition);
+                        }, this));
+                    }
+                }, this));
+            }, this));
+        },
+//        initialize: function() {
+//            this.attributesToTrack = [];
+//            this.valuesToTrack = [];
+//        },
+        stringifyKeys: function(config) {
+            function processPiece(base, piece) {
+                return _.map(piece, function(value, key) {
+                    var localBase = base ? base + '.' + key : key;
+                    return (_.isPlainObject(value)) ? processPiece(localBase, value) : [localBase, value];
+                });
+            }
+            return _.uniq(_.flatten(processPiece(null, config)));
+//            this.attributesToTrack.push(unifiedKeys[0]);
+//            this.valuesToTrack.push(unifiedKeys[1]);
+        }
+    });
+
     return models;
 });

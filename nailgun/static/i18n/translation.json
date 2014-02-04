@@ -360,18 +360,21 @@
                     "prev": "Prev",
                     "next": "Next",
                     "create": "Create",
-                    "name_release": {
+                    "nameandrelease": {
                         "title": "Name and Release",
                         "name": "Name",
                         "release_label": "OpenStack Release",
-                        "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment."
+                        "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment.",
+                        "existing_environment": "Environment with name \"__name__\" already exists"
                     },
                     "mode": {
                         "title": "Deployment Mode"
                     },
                     "compute": {
                         "title": "Compute",
+                        "kvm_title": "KVM",
                         "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
+                        "qemu_title": "QEMU",
                         "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts"
                     },
                     "network": {
@@ -391,7 +394,7 @@
                         "glance": "Glance",
                         "glance_help": "By default, Glance image service uses Swift object storage in HA deployment mode, and local storage on the Controller node in simple multi-node mode. Ceph backend requires two or more Ceph-OSD nodes."
                     },
-                    "additional": {
+                    "additionalservices": {
                         "title": "Additional Services",
                         "release_alert": "Additional services are not available in __releaseName__",
                         "network_mode_alert": "Murano is not available for current network mode. Please choose Neutron networking to enable.",

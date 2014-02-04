@@ -588,6 +588,35 @@
         cobbler:
           profile:
             generator_arg: "centos-x86_64"
+- pk: 2
+  extend: *base_release
+  fields:
+    name: "RHOS 3.0 for RHEL 6.4"
+    version: "2013.1.2"
+    operating_system: "RHEL"
+    description: "This option will install the Red Hat Enterprise Linux OpenStack Platform using RHEL as a base operating system.  With high availability features built in, you are getting a robust enterprise-grade OpenStack deployment."
+    state: "not_available"
+    modes_metadata:
+      ha_compact:
+        description: "This configuration requires multiple OpenStack controllers (3+) and provides high availability for all OpenStack components, including MySQL, QPID, and Cinder, as well as OpenStack API services. Select this configuration if you want to build a production-grade OpenStack cloud with 6 nodes or more."
+    attributes_metadata:
+      generated:
+        savanna:
+          enabled: false
+        heat:
+          enabled: false
+        murano:
+          enabled: false
+        storage:
+          volumes_lvm: true
+          volumes_ceph: false
+          images_ceph: false
+          objects_ceph: false
+          ephemeral_ceph: false
+          osd_pool_size: "2"
+        cobbler:
+          profile:
+            generator_arg: "rhel-x86_64"
 - pk: 3
   extend: *full_release
   fields:

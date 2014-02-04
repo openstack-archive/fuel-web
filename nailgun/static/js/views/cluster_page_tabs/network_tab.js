@@ -49,8 +49,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$('.btn, input, select').attr('disabled', true);
         },
         isLocked: function() {
-            var task = !!this.model.task('deploy', 'running') || !!this.model.task('verify_networks', 'running');
-            return this.model.get('status') != 'new' || task;
+            var runningTask = this.model.task('deploy', 'running') || this.model.task('verify_networks', 'running');
+            return runningTask || !this.model.isAvailableForSettingsChanges();
         },
         isVerificationLocked: function() {
             return !!this.model.task('deploy', 'running') || !!this.model.task('verify_networks', 'running');

@@ -96,6 +96,9 @@ define(['utils', 'deepModel'], function(utils) {
         },
         fetchRelated: function(related, options) {
             return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));
+        },
+        isAvailableForSettingsChanges: function() {
+            return this.get('status') == 'new' || (this.get('status') == 'stopped' && !this.get('nodes').where({status: 'ready'}).length);
         }
     });
 
@@ -226,21 +229,29 @@ define(['utils', 'deepModel'], function(utils) {
         comparator: function(task) {
             return task.id;
         },
+        group: function(group) {
+            var taskGroups = {
+                release_setup: ['redhat_setup'],
+                network: ['verify_networks', 'check_networks'],
+                deployment: ['deploy', 'stop_deployment', 'reset_environment']
+            };
+            return taskGroups[group];
+        },
         filterTasks: function(filters) {
-            return _.filter(this.models, function(task) {
+            return this.filter(function(task) {
                 var result = false;
-                if (task.get('name') == filters.name) {
-                    result = true;
-                    if (filters.status) {
-                        if (_.isArray(filters.status)) {
-                            result = _.contains(filters.status, task.get('status'));
-                        } else {
-                            result = filters.status == task.get('status');
+                if (filters.name) {
+                    if (_.contains(utils.composeList(filters.name), task.get('name'))) {
+                        result = true;
+                        if (filters.status) {
+                            result = _.contains(utils.composeList(filters.status), task.get('status'));
+                        }
+                        if (filters.release) {
+                            result = result && filters.release == task.releaseId();
                         }
                     }
-                    if (filters.release) {
-                        result = result && filters.release == task.releaseId();
-                    }
+                } else if (filters.status) {
+                    result = _.contains(utils.composeList(filters.status), task.get('status'));
                 }
                 return result;
             });

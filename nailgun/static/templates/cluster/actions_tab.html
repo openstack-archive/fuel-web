@@ -6,7 +6,7 @@
         <h4 data-i18n="cluster_page.actions_tab.rename_environment"></h4>
         <div class="action-item-controls">
           <input type="text" class="input-xlarge" maxlength="50" value="<%- cluster.get('name') %>">
-          <button class="btn btn-success apply-name-btn" style="margin-top: -10px;"><span data-i18n="common.rename_button"></span></button>
+          <button class="btn btn-success apply-name-btn"><span data-i18n="common.rename_button"></span></button>
         </div>
         <div class="action-item-description">
           <div class="alert alert-error hide"></div>
@@ -20,6 +20,28 @@
         </div>
         <div class="action-item-controls">
           <button class="btn btn-danger delete-cluster-btn" data-i18n="common.delete_button"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="row-fluid">
+    <div class="span6 action-item-placeholder">
+      <form class="stop-deployment-form" onsubmit="return false">
+        <h4 data-i18n="cluster_page.actions_tab.stop_deployment"></h4>
+        <div class="action-item-description important" data-i18n="cluster_page.actions_tab.stop_deployment_alert">
+        </div>
+        <div class="action-item-controls">
+          <button class="btn btn-danger stop-deployment-btn" data-i18n="common.stop_button"></button>
+        </div>
+      </form>
+    </div>
+    <div class="span6 action-item-placeholder">
+      <form class="reset-environment-form" onsubmit="return false">
+        <h4 data-i18n="cluster_page.actions_tab.reset_environment"></h4>
+        <div class="action-item-description" data-i18n="cluster_page.actions_tab.reset_environment_description">
+        </div>
+        <div class="action-item-controls">
+          <button class="btn btn-success reset-environment-btn" data-i18n="common.reset_button"></button>
         </div>
       </form>
     </div>

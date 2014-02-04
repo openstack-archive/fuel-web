@@ -138,7 +138,11 @@
                         "title": "Configure interfaces on __name__",
                         "title_plural": "Configure interfaces on __count__ nodes",
                         "speed": "Speed",
-                        "drag_and_drop_description": "You can drag and drop logical networks between physical interfaces"
+                        "drag_and_drop_description": "You can drag and drop logical networks between physical interfaces",
+                        "neutron_vlan_range": "Neutron VLAN IDs",
+                        "validation": {
+                            "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface"
+                        }
                     },
                     "configure_disks": {
                         "title": "Configure disks on __name__",

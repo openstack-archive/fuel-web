@@ -1,47 +1,18 @@
-<% if (cephDisabledDueToRelease && release) { %>
-  <div class="alert" style="margin:0"><%- $.t("dialog.create_cluster_wizard.storage.alert", { releaseName: release.get('name')} ) %> </div>
-<% } %>
-<% if (cephDisableDueToHypervisorType) { %>
-  <div class="alert" style="margin:0" data-i18n="dialog.create_cluster_wizard.storage.vcenter_alert"></div>
-<% } %>
-<form class="form-horizontal" style="margin:0" onsubmit="return false">
+<form class="form-horizontal" onsubmit="return false">
   <fieldset>
-    <div class="row-fluid control-group" style="margin:0">
-      <div class="span6">
+    <div class="row-fluid control-group">
+      <div class="span6 cinder">
         <h5 data-i18n="dialog.create_cluster_wizard.storage.cinder"></h5>
-        <% _.each(['default', 'ceph'], function(backend) { %>
-          <label class="parameter-box clearfix">
-            <div class="parameter-control">
-              <div class="custom-tumbler">
-                <input type="radio" name="cinder" value="<%- backend %>" />
-                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-              </div>
-            </div>
-            <div class="parameter-name"><%- $.t("dialog.create_cluster_wizard.storage."+backend) %></div>
-          </label>
-	<% }) %>
         <p class="help-block">&nbsp;</p>
         <p class="help-block" data-i18n="dialog.create_cluster_wizard.storage.cinder_help">
         </p>
       </div>
-      <div class="span6">
+      <div class="span6 glance">
         <h5 data-i18n="dialog.create_cluster_wizard.storage.glance"></h5>
-        <% _.each(['default', 'ceph'], function(backend) { %>
-          <label class="parameter-box clearfix">
-            <div class="parameter-control">
-              <div class="custom-tumbler">
-                <input type="radio" name="glance" value="<%- backend %>" />
-                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-              </div>
-            </div>
-            <div class="parameter-name"><%- $.t("dialog.create_cluster_wizard.storage."+backend) %></div>
-          </label>
-        <% }) %>
         <p class="help-block">&nbsp;</p>
         <p class="help-block" data-i18n="dialog.create_cluster_wizard.storage.glance_help">
         </p>
       </div>
     </div>
-
   </fieldset>
 </form>

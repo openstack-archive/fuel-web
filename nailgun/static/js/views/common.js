@@ -23,10 +23,9 @@ define(
     'text!templates/common/notifications.html',
     'text!templates/common/notifications_popover.html',
     'text!templates/common/breadcrumb.html',
-    'text!templates/common/footer.html',
-    'text!templates/common/rhel_credentials.html'
+    'text!templates/common/footer.html'
 ],
-function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notificationsTemplate, notificationsPopoverTemplate, breadcrumbsTemplate, footerTemplate, rhelCredentialsTemplate) {
+function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notificationsTemplate, notificationsPopoverTemplate, breadcrumbsTemplate, footerTemplate) {
     'use strict';
 
     var views = {};
@@ -277,64 +276,6 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
                 locales: this.locales,
                 currentLocale: this.getCurrentLocale()
             })).i18n();
-            return this;
-        }
-    });
-
-    views.RhelCredentialsForm = Backbone.View.extend({
-        visible: true,
-        template: _.template(rhelCredentialsTemplate),
-        events: {
-            'change input[name=license-type]': 'toggle',
-            'keydown input': 'onInputKeydown'
-        },
-        toggle: function() {
-            this.$('.control-group.error').removeClass('error').find('.help-inline').html('');
-            this.$('.control-group.rhn').toggle();
-        },
-        onInputKeydown: function(e) {
-            this.$(e.currentTarget).parents('.control-group').removeClass('error').find('.help-inline').html('');
-        },
-        showValidationError: function(errors) {
-            _.each(errors, function(message, field) {
-                this.$('*[name=' + field + ']').closest('.control-group').addClass('error').find('.help-inline').text(message);
-            }, this);
-        },
-        setCredentials: function() {
-            var licenseType = this.$('input[name=license-type]:checked').val();
-            var accountData = {
-                license_type: licenseType,
-                username: this.$('input[name=username]').val(),
-                password: this.$('input[name=password]').val(),
-                satellite: licenseType == 'rhn' ? this.$('input[name=satellite]').val() : '',
-                activation_key: licenseType == 'rhn' ? this.$('input[name=activation_key]').val() : ''
-            };
-            return this.redHatAccount.set(accountData, {validate: true});
-        },
-        saveCredentials: function() {
-            var task = new models.Task();
-            var options = {
-                method: 'POST',
-                url: '/api/redhat/setup',
-                data: JSON.stringify(_.extend({release_id: this.dialog.release.id}, this.redHatAccount.attributes))
-            };
-            task.deferred = task.save({}, options);
-            return task;
-        },
-        initialize: function(options) {
-            _.defaults(this, options);
-            if (!this.redHatAccount) {
-                this.redHatAccount = new models.RedHatAccount();
-                this.redHatAccount.deferred = this.redHatAccount.fetch();
-            }
-            this.redHatAccount.on('sync', this.render, this);
-            this.redHatAccount.on('invalid', function(model, errors) {
-                this.showValidationError(errors);
-            }, this);
-        },
-        render: function() {
-            this.$el.html(_.result(this, 'visible') ? this.template({account: this.redHatAccount}) : '').i18n();
-            this.$('.control-group.rhn').toggle(this.redHatAccount.get('license_type') == 'rhn');
             return this;
         }
     });

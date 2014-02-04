@@ -9,6 +9,8 @@
                 "apply_button": "Apply",
                 "rename_button": "Rename",
                 "delete_button": "Delete",
+                "stop_button": "Stop",
+                "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
                 "cancel_button": "Cancel",
                 "apply_changes_button": "Apply Changes",
@@ -36,10 +38,11 @@
             "cluster": {
                 "status": {
                     "new": "New",
-                    "deploying": "Deploying",
+                    "deployment": "Deploying",
                     "operational": "Operational",
                     "error": "Error",
-                    "removing": "Removing"
+                    "removing": "Removing",
+                    "stopped": "Stopped"
                 },
                 "mode": {
                     "multinode": "Multi-node",
@@ -193,7 +196,11 @@
                     "title": "Actions",
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
-                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
+                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes.",
+                    "stop_deployment": "Stop Deployment",
+                    "stop_deployment_alert": "Action description is needed.",
+                    "reset_environment": "Reset Environment",
+                    "reset_environment_description": "Action description is needed."
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -295,7 +302,12 @@
                     "actual_duration": "Actual Duration",
                     "status": "Status"
                 },
+                "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
+                "deploy": "",
+                "redhat_setup": "Downloading",
+                "stop_deployment": "Stopping",
+                "reset_environment": "Resetting",
                 "deployment_mode": "Environment Deployment Mode:",
                 "openstack_release": "OpenStack Release:",
                 "environment_status": "Environment Status:"
@@ -436,6 +448,16 @@
                     "important": "Important",
                     "incomplete_actions_text": "There are incompleted actions. Removing of the environment may fail and lead to inconsistent state.",
                     "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes."
+                },
+                "stop_deployment": {
+                    "title": "Stop Deployment",
+                    "important": "Important",
+                    "text": "Action description is needed.",
+                    "provisioning_warning": "Provisioning detected!"
+                },
+                "reset_environment": {
+                    "title": "Reset Environment",
+                    "text": "Action description is needed."
                 },
                 "error_occured": {
                     "alert_text": "A server error has occured. Please contact the administrators.",

@@ -44,7 +44,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.$('.btn, input, select').attr('disabled', true);
         },
         isLocked: function() {
-            return this.model.get('status') != 'new' || !!this.model.task('deploy', 'running');
+            return (this.model.get('status') != 'new' && this.model.get('status') != 'stopped') || !!this.model.task('deploy', 'running') || (this.model.get('status') == 'stopped' && this.model.get('nodes').where({status: 'ready'}).length);
         },
         checkForChanges: function() {
             this.defaultButtonsState(!this.hasChanges());

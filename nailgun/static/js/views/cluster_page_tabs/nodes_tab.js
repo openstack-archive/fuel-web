@@ -1275,12 +1275,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.updateButtonsState(disable || this.isLocked());
         },
         checkForNodeNetworksChange: function() {
-            var noChanges = true;
-            var networks = this.interfaces.getAssignedNetworks();
-            this.nodes.each(function(node) {
-                noChanges = noChanges && _.isEqual(networks, node.interfaces.getAssignedNetworks());
-            }, this);
-            return !noChanges;
+            var chosenNetworks = _.pluck(this.interfaces.toJSON(), 'assigned_networks');
+            return !this.nodes.reduce(function(result, node) {
+                var nodeNetworks = _.pluck(node.interfaces.toJSON(), 'assigned_networks');
+                return result && _.isEqual(chosenNetworks, nodeNetworks);
+            }, true);
         },
         isLocked: function() {
             var forbiddenNodes = this.nodes.filter(function(node) {return !node.get('pending_addition') || node.get('status') == 'error';});
@@ -1317,13 +1316,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     }, this);
                     return Backbone.sync('update', interfaces, {url: _.result(node, 'url') + '/interfaces'});
                 }, this))
-                .done(_.bind(function() {
-                    this.checkForChanges();
-                }, this))
-                .fail(_.bind(function() {
-                    this.checkForChanges();
+                .always(_.bind(this.checkForChanges, this))
+                .fail(function() {
                     utils.showErrorDialog({title: 'Interfaces configuration'});
-                }, this));
+                });
         },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
@@ -1333,31 +1329,26 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     this.render();
                     this.checkForChanges();
                 }, this);
-                $.when.apply($, this.nodes.map(function(node) {
+                this.networkConfiguration = new models.NetworkConfiguration();
+                this.networkConfiguration.url = _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider');
+                this.loading = $.when.apply($, this.nodes.map(function(node) {
                     node.interfaces = new models.Interfaces();
-                    return node.interfaces.fetch({url: _.result(node, 'url') + '/interfaces'});
-                }, this))
-                .done(_.bind(function() {
-                    this.interfaces = new models.Interfaces(this.nodes.at(0).interfaces.toJSON(), {parse: true});
-                    this.interfaces.on('reset', this.render, this);
-                    this.interfaces.on('sync', this.checkForChanges, this);
-                    var networkConfiguration = new models.NetworkConfiguration();
-                    this.loading = networkConfiguration
-                        .fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
-                        .done(_.bind(function() {
-                            // FIXME(vk): modifying models prototypes to use vlan data from NetworkConfiguration
-                            // this mean that these models cannot be used safely in places other than this view
-                            // helper function for template to get vlan_start NetworkConfiguration
-                            models.InterfaceNetwork.prototype.vlanStart = function() {
-                                return networkConfiguration.get('networks').findWhere({name: this.get('name')}).get('vlan_start');
-                            };
-                            models.InterfaceNetwork.prototype.amount = function() {
-                                return networkConfiguration.get('networks').findWhere({name: this.get('name')}).get('amount');
-                            };
-                            this.render();
-                        }, this))
-                        .fail(_.bind(this.goToNodeList, this));
-                }, this));
+                    node.interfaces.url = _.result(node, 'url') + '/interfaces';
+                    return node.interfaces.fetch();
+                }, this).concat(this.networkConfiguration.fetch()))
+                    .done(_.bind(function() {
+                        this.interfaces = new models.Interfaces(this.nodes.at(0).interfaces.toJSON(), {parse: true});
+                        this.interfaces.on('reset', this.render, this);
+                        this.interfaces.on('sync', this.checkForChanges, this);
+                        // FIXME: modifying prototype to easily access NetworkConfiguration model
+                        // should be reimplemented in a less hacky way
+                        var networks = this.networkConfiguration.get('networks');
+                        models.InterfaceNetwork.prototype.getFullNetwork = function() {
+                            return networks.findWhere({name: this.get('name')});
+                        };
+                        this.render();
+                    }, this))
+                    .fail(_.bind(this.goToNodeList, this));
             } else {
                 this.goToNodeList();
             }
@@ -1427,11 +1418,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         updateDropTarget: function(event) {
             this.screen.dropTarget = this;
-        },
-        draggedNetworksAllowed: function() {
-            var dragged = _.invoke(this.screen.draggedNetworks, 'get', 'name');
-            var allowed = this.model.get('allowed_networks').pluck('name');
-            return _.intersection(dragged, allowed).length == dragged.length;
         },
         checkIfEmpty: function() {
             this.$('.network-help-message').toggle(!this.model.get('assigned_networks').length && !this.screen.isLocked());

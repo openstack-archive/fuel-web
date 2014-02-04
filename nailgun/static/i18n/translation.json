@@ -366,20 +366,22 @@
                     "prev": "Prev",
                     "next": "Next",
                     "create": "Create",
+                    "step": "Step",
                     "name_release": {
                         "title": "Name and Release",
                         "name": "Name",
                         "release_label": "OpenStack Release",
-                        "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment."
+                        "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment.",
+                        "existing_environment": "Environment with name \"__name__\" already exists"
                     },
                     "mode": {
                         "title": "Deployment Mode"
                     },
                     "compute": {
                         "title": "Compute",
-                        "kvm": "KVM",
-                        "qemu": "QEMU",
-                        "vcenter": "vCenter",
+                        "kvm_title": "KVM",
+                        "vcenter_title": "vCenter",
+                        "qemu_title": "QEMU",
                         "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
                         "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts",
                         "vcenter_description": "Choose this option if you have a vCenter environment with ESXi servers to be used as hypervisors",

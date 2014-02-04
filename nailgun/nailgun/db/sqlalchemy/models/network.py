@@ -22,6 +22,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy import String
 
 from nailgun.db.sqlalchemy.models.base import Base
+from nailgun.db.sqlalchemy.models.fields import JSON
 
 
 class IPAddr(Base):
@@ -82,32 +83,7 @@ class NetworkGroup(Base):
         "Node",
         secondary=IPAddr.__table__,
         backref="networks")
-
-    @property
-    def meta(self):
-        if self.cluster:
-            meta = self.cluster.release.networks_metadata[
-                self.cluster.net_provider
-            ]["networks"]
-            for net in meta:
-                if net["name"] == self.name:
-                    return net
-        return {}
-
-
-class AllowedNetworks(Base):
-    __tablename__ = 'allowed_networks'
-    id = Column(Integer, primary_key=True)
-    network_id = Column(
-        Integer,
-        ForeignKey('network_groups.id', ondelete="CASCADE"),
-        nullable=False
-    )
-    interface_id = Column(
-        Integer,
-        ForeignKey('node_nic_interfaces.id', ondelete="CASCADE"),
-        nullable=False
-    )
+    meta = Column(JSON, default={})
 
 
 class NetworkAssignment(Base):

@@ -21,57 +21,6 @@ from nailgun.network.manager import NetworkManager
 class NovaNetworkManager(NetworkManager):
 
     @classmethod
-    def get_default_nic_networkgroups(cls, node, nic):
-        """Assign all network groups except admin to one NIC,
-        admin network group has its own NIC by default
-        """
-        if len(node.interfaces) < 2:
-            return (
-                [cls.get_admin_network_group()] +
-                cls.get_all_cluster_networkgroups(node)
-            ) if nic == node.admin_interface else []
-
-        if nic == node.admin_interface:
-            return [cls.get_admin_network_group()]
-        # return get_all_cluster_networkgroups() for the first non-admin NIC
-        # and [] for other NICs
-        for n in node.interfaces:
-            if n == nic:
-                return cls.get_all_cluster_networkgroups(node)
-            if n != node.admin_interface:
-                return []
-
-    @classmethod
-    def allow_network_assignment_to_all_interfaces(cls, node):
-        """Method adds all network groups from cluster
-        to allowed_networks list for all interfaces
-        of specified node.
-
-        :param node: Node object.
-        :type  node: Node
-        """
-        for nic in node.interfaces:
-
-            if nic == node.admin_interface:
-                nic.allowed_networks_list.append(
-                    cls.get_admin_network_group()
-                )
-
-            for ng in cls.get_cluster_networkgroups_by_node(node):
-                nic.allowed_networks_list.append(ng)
-
-        db().commit()
-
-    @classmethod
-    def get_allowed_nic_networkgroups(cls, node, nic):
-        """Get all allowed network groups
-        """
-        ngs = cls.get_all_cluster_networkgroups(node)
-        if nic == node.admin_interface:
-            ngs.append(cls.get_admin_network_group())
-        return ngs
-
-    @classmethod
     def update(cls, cluster, network_configuration):
         cls.update_networks(cluster, network_configuration)
 

@@ -29,7 +29,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
-from nailgun.db.sqlalchemy.models.network import AllowedNetworks
 from nailgun.db.sqlalchemy.models.network import NetworkAssignment
 from nailgun.logger import logger
 from nailgun.volumes.manager import VolumeManager
@@ -291,10 +290,6 @@ class NodeNICInterface(Base):
     mac = Column(LowercaseString(17), nullable=False)
     max_speed = Column(Integer)
     current_speed = Column(Integer)
-    allowed_networks_list = relationship(
-        "NetworkGroup",
-        secondary=AllowedNetworks.__table__,
-        order_by="NetworkGroup.id")
     assigned_networks_list = relationship(
         "NetworkGroup",
         secondary=NetworkAssignment.__table__,
@@ -302,17 +297,6 @@ class NodeNICInterface(Base):
     ip_addr = Column(String(25))
     netmask = Column(String(25))
     state = Column(String(25))
-
-    @property
-    def allowed_networks(self):
-        return [
-            {"id": n.id, "name": n.name}
-            for n in self.allowed_networks_list
-        ]
-
-    @allowed_networks.setter
-    def allowed_networks(self, value):
-        self.allowed_networks_list = value
 
     @property
     def assigned_networks(self):

@@ -40,7 +40,7 @@ class NetworkCheck(object):
         self.net_man = self.cluster.network_manager
         self.net_provider = self.cluster.net_provider
         admin_ng = self.net_man.get_admin_network_group()
-        fields = NetworkGroup.__mapper__.columns.keys()
+        fields = NetworkGroup.__mapper__.columns.keys() + ['meta']
         net = NetworkConfigurationSerializer.serialize_network_group(admin_ng,
                                                                      fields)
         # change Admin name for UI
@@ -498,82 +498,14 @@ class NetworkCheck(object):
     def neutron_check_interface_mapping(self):
         """Check mapping of networks to NICs (Neutron)
         """
-        # check if there any networks
-        # on the same interface as admin network (main)
-        admin_interfaces = map(lambda node: node.admin_interface,
-                               self.cluster.nodes)
-        found_intersection = []
-
-        all_roles = set([n["id"] for n in self.networks
-                         if n != self.networks[0]])
-        for iface in admin_interfaces:
-            nets = dict(
-                (n.id, n.name)
-                for n in iface.assigned_networks_list)
-
-            err_nets = set(nets.keys()) & all_roles
-            if err_nets:
-                err_net_names = [
-                    '"{0}"'.format(nets[i]) for i in err_nets]
-                found_intersection.append(
-                    [iface.node.name, err_net_names])
-
-        if found_intersection:
-            nodes_with_errors = [
-                u'Node "{0}": {1}'.format(
-                    name,
-                    ", ".join(_networks)
-                ) for name, _networks in found_intersection]
-            err_msg = u"Some networks are " \
-                      "assigned to the same physical interface as " \
-                      "admin (PXE) network. You should move them to " \
-                      "another physical interfaces:\n{0}". \
-                format("\n".join(nodes_with_errors))
-            raise errors.NetworkCheckError(err_msg)
-
-        # check if there any networks
-        # on the same interface as private network (for vlan)
-        if self.cluster.net_segment_type == 'vlan':
-            private_interfaces = []
-            # there should be shorter method to do this !
-            for node in self.cluster.nodes:
-                for iface in node.interfaces:
-                    for anet in iface.assigned_networks_list:
-                        if anet.name == 'private':
-                            private_interfaces.append(iface)
-            found_intersection = []
-
-            all_roles = set(n["id"] for n in self.networks
-                            if n["name"] != 'private')
-            for iface in private_interfaces:
-                nets = dict(
-                    (n.id, n.name)
-                    for n in iface.assigned_networks_list)
-
-                err_nets = set(nets.keys()) & all_roles
-                if err_nets:
-                    err_net_names = [
-                        '"{0}"'.format(nets[i]) for i in err_nets]
-                    found_intersection.append(
-                        [iface.node.name, err_net_names])
-
-            if found_intersection:
-                nodes_with_errors = [
-                    u'Node "{0}": {1}'.format(
-                        name,
-                        ", ".join(_networks)
-                    ) for name, _networks in found_intersection]
-                err_msg = u"Some networks are " \
-                          "assigned to the same physical interface as " \
-                          "private network. You should move them to " \
-                          "another physical interfaces:\n{0}". \
-                    format("\n".join(nodes_with_errors))
-                raise errors.NetworkCheckError(err_msg)
-
         # check untagged networks intersection
         untagged_nets = set(
             n["id"] for n in filter(
-                lambda n: (n["vlan_start"] is None), self.networks))
+                lambda n: (n['vlan_start'] is None) and
+                          ((not n['meta']) or
+                           ('neutron_vlan_range' not in n['meta']) or
+                           (not n['meta']['neutron_vlan_range'])),
+                self.networks))
         if untagged_nets:
             logger.info(
                 "Untagged networks found, "
@@ -703,6 +635,26 @@ class NetworkCheck(object):
                                                 "errors": ["ip_ranges"]})
         self.expose_error_messages()
 
+    def check_admin_interface_mapping(self):
+        """Check mapping of admin networks to NICs (both neutron and nova-net)
+        """
+        admin_interfaces = map(lambda node: node.admin_interface,
+                               self.cluster.nodes)
+        admin_id = self.net_man.get_admin_network_group_id()
+        nodes_with_errors = []
+        for nic in admin_interfaces:
+            nets = [n.id
+                    for n in nic.assigned_networks_list
+                    if n.id == admin_id]
+            if not nets:
+                # str() is for tests only where node name is None sometimes
+                nodes_with_errors.append(str(nic.node.name))
+        if nodes_with_errors:
+            err_msg = u"Admin (PXE) network is not assigned to appropriate " \
+                u"physical interface on the following nodes:\n{0}".\
+                format(", ".join(nodes_with_errors))
+            raise errors.NetworkCheckError(err_msg)
+
     def check_configuration(self):
         """check network configuration parameters
         """
@@ -727,3 +679,4 @@ class NetworkCheck(object):
         else:
             self.check_untagged_intersection()
             self.check_public_floating_assignment()
+        self.check_admin_interface_mapping()

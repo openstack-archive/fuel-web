@@ -1,18 +1,21 @@
-<% var descriptions = {redhat_setup: 'Downloading'} %>
-<% if (task) { %>
+<% if (task) {
+  var taskName = task.get('name');
+  var progressBarClass = taskName == 'stop_deployment' || taskName == 'reset_environment' ? 'progress-warning' : 'progress-success';
+  var defaultPercentage = taskName == 'stop_deployment' || taskName == 'reset_environment' ? 100 : 0;
+ %>
   <li class="pull-right deployment-progress-box progress-bar-container">
-    <div class="deployment-control-item-box"><div class="deploying-progress-text-box percentage">0%</div></div>
-    <div class="deployment-control-item-box"><div class="progress progress-success progress-striped progress-deploy active"><div class="bar"></div></div></div>
+    <div class="deployment-control-item-box"><div class="deploying-progress-text-box percentage"><%- defaultPercentage %>%</div></div>
+    <div class="deployment-control-item-box"><div class="progress <%= progressBarClass %> progress-striped progress-deploy active"><div class="bar"></div></div></div>
     <div class="deployment-control-item-box"><div class="deploying-progress-text-box"></div></div>
-    <div class="progress-bar-description"><%= descriptions[task.get('name')] || '' %></div>
+    <div class="progress-bar-description"><%- $.t('cluster_page.' + taskName) %></div>
   </li>
 <% } else { %>
   <li class="pull-right deployment-control-box">
     <% var releaseAvailable = cluster.get('release').get('state') == 'available' %>
-    <div class="deployment-control-item-box"><button class="deploy-btn <%= releaseAvailable && (cluster.hasChanges() || cluster.needsRedeployment()) ? '' : 'disabled' %>"><i class="icon-upload-cloud"></i> <%- $.t("cluster_page.deploy_changes") %></button></div>
+    <div class="deployment-control-item-box"><button class="deploy-btn <%= releaseAvailable && (cluster.hasChanges() || cluster.needsRedeployment()) ? '' : 'disabled' %>"><i class="icon-upload-cloud"></i> <%- $.t('cluster_page.deploy_changes') %></button></div>
     <div class="deployment-control-item-box">
       <% if (cluster.get('nodes').hasChanges()) { %>
-        <button class="btn rollback" role="button" title="Discard Changes"><i class="icon-back-in-time"></i></button>
+        <button class="btn rollback" role="button" title="<%- $.t('cluster_page.discard_changes') %>"><i class="icon-back-in-time"></i></button>
       <% } %>
     </div>
   </li>

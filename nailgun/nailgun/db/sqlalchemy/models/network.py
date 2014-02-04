@@ -21,6 +21,7 @@ from sqlalchemy import Integer
 from sqlalchemy.orm import relationship
 from sqlalchemy import String
 
+from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 
 
@@ -85,29 +86,19 @@ class NetworkGroup(Base):
 
     @property
     def meta(self):
+        meta = None
         if self.cluster:
             meta = self.cluster.release.networks_metadata[
-                self.cluster.net_provider
-            ]["networks"]
-            for net in meta:
+                self.cluster.net_provider]
+        elif self.name == "fuelweb_admin":
+            from nailgun.db.sqlalchemy.models import Release
+            meta = db().query(Release).first().networks_metadata[
+                "nova_network"]
+        if meta:
+            for net in meta["networks"]:
                 if net["name"] == self.name:
                     return net
         return {}
-
-
-class AllowedNetworks(Base):
-    __tablename__ = 'allowed_networks'
-    id = Column(Integer, primary_key=True)
-    network_id = Column(
-        Integer,
-        ForeignKey('network_groups.id', ondelete="CASCADE"),
-        nullable=False
-    )
-    interface_id = Column(
-        Integer,
-        ForeignKey('node_nic_interfaces.id', ondelete="CASCADE"),
-        nullable=False
-    )
 
 
 class NetworkAssignment(Base):

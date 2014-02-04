@@ -162,7 +162,7 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEquals(resp_nic['mac'], nic['mac'])
             self.assertEquals(resp_nic['current_speed'], nic['current_speed'])
             self.assertEquals(resp_nic['max_speed'], nic['max_speed'])
-            for conn in ('assigned_networks', 'allowed_networks'):
+            for conn in ('assigned_networks', ):
                 self.assertEquals(resp_nic[conn], [])
 
     def test_NIC_updates_by_agent(self):
@@ -195,7 +195,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp_nic['current_speed'], nic['current_speed'])
         self.assertEquals(resp_nic['max_speed'], nic['max_speed'])
         self.assertEquals(resp_nic['state'], nic['state'])
-        for conn in ('assigned_networks', 'allowed_networks'):
+        for conn in ('assigned_networks', ):
             self.assertEquals(resp_nic[conn], [])
 
     def test_NIC_adds_by_agent(self):
@@ -231,7 +231,7 @@ class TestHandlers(BaseIntegrationTest):
                               nic.get('current_speed'))
             self.assertEquals(resp_nic['max_speed'], nic.get('max_speed'))
             self.assertEquals(resp_nic['state'], nic.get('state'))
-            for conn in ('assigned_networks', 'allowed_networks'):
+            for conn in ('assigned_networks', ):
                 self.assertEquals(resp_nic[conn], [])
 
     def test_ignore_NIC_id_in_meta(self):

@@ -17,6 +17,7 @@
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.network.manager import NetworkManager
 
 
 class TopoChecker(object):
@@ -25,13 +26,18 @@ class TopoChecker(object):
         db_node = db().query(Node).filter_by(id=node['id']).first()
         interfaces = node['interfaces']
         db_interfaces = db_node.interfaces
-        allowed_network_ids = set([n.id for n in db_node.allowed_networks])
         for iface in interfaces:
             db_iface = filter(
                 lambda i: i.id == iface['id'],
                 db_interfaces
             )
             db_iface = db_iface[0]
+            allowed_network_ids = \
+                [n.id
+                 for n in NetworkManager.get_allowed_nic_networkgroups(
+                     db_node,
+                     db_iface
+                 )]
             for net in iface['assigned_networks']:
                 if net['id'] not in allowed_network_ids:
                     return False

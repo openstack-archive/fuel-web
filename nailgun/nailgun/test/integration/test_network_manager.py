@@ -402,24 +402,6 @@ class TestNovaNetworkManager(BaseIntegrationTest):
             ])
         self.node_db = self.env.nodes[0]
 
-    def test_get_default_nic_networkgroups(self):
-        admin_nic = self.node_db.admin_interface
-        other_iface = self.db.query(NodeNICInterface).filter_by(
-            node_id=self.node_db.id
-        ).filter(
-            not_(NodeNICInterface.id == admin_nic.id)
-        ).first()
-
-        self.assertEquals(
-            other_iface.assigned_networks_list,
-            NovaNetworkManager.get_default_nic_networkgroups(
-                self.node_db, other_iface))
-        self.assertEquals(
-            self.db.query(
-                NodeNICInterface).get(admin_nic.id).assigned_networks_list,
-            NovaNetworkManager.get_default_nic_networkgroups(
-                self.node_db, admin_nic))
-
     def test_get_default_nic_assignment(self):
         admin_nic_id = self.node_db.admin_interface.id
         admin_nets = [n.name for n in self.db.query(

@@ -29,6 +29,14 @@
     networks_metadata:
       nova_network:
         networks:
+          - name: "fuelweb_admin"
+            use_gateway: false
+            notation: "cidr"
+            render_type: null
+            render_addr_mask: null
+            map_priority: 0
+            unmovable: true
+            assign_vip: false
           - name: "floating"
             cidr: "172.16.0.0/24"
             ip_range: ["172.16.0.128", "172.16.0.254"]
@@ -310,6 +318,14 @@
     networks_metadata:
       neutron:
         networks:
+          - name: "fuelweb_admin"
+            use_gateway: false
+            notation: "cidr"
+            render_type: null
+            render_addr_mask: null
+            map_priority: 0
+            unmovable: true
+            assign_vip: false
           - name: "public"
             cidr: "172.16.0.0/24"
             ip_range: ["172.16.0.2", "172.16.0.126"]
@@ -347,7 +363,7 @@
             render_type: null
             render_addr_mask: null
             map_priority: 2
-            dedicated_nic: true
+            allow_2nd_untagged: true
             assign_vip: false
         config:
           parameters:

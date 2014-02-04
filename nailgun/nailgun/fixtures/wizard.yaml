@@ -1,0 +1,96 @@
+---
+wizard_setup:
+  - name_release:
+    step_title: "Name and Release"
+    step_number: 1
+    is_last_step: false
+#    might be optional
+    plugins:
+#      plugins contents
+# might be optional
+    require:
+#    probably array or hash of some options to be selected to unlock this step
+# might be optional
+    depends:
+#    probably array or hash of some options to be selected to unlock this step
+    options:
+      release_list: ''
+  - deployment_mode:
+    step_title: "Deployment Mode"
+    step_number: 2
+    is_last_step: false
+    options:
+      mode_list:
+       - multi-node:
+          title: "Multi-node"
+          description: "In this configuration the OpenStack..."
+       - multi-node-HA:
+          title: "Multi-node with HA"
+          description: "This configuration requires..."
+  - compute:
+    step_title: "Name and Release"
+    step_number: 3
+    is_last_step: false
+    options:
+      compute_types:
+        - kvm:
+          title: "KVM"
+          description: "Choose this type of hypervisor..."
+        - qemu:
+          title: "QEMU"
+  - network:
+     step_title: "Network"
+     step_number: 4
+     is_last_step: false
+      options:
+        networks_list:
+          - nova:
+            title: "Nova-Network"
+          - neutron_gre:
+            title: "Neutron with GRE segmentation"
+          - neutron_vlan:
+            title: "Neutron with VLAN segmentation"
+  - storage_backends:
+     step_title: "Storage Backends"
+     step_number: 5
+     is_last_step: false
+     options:
+       description: "By default, Cinder..."
+       cinder:
+         title: "Cinder"
+         backends:
+           default:
+             title: "Default"
+           ceph:
+             title: "Ceph"
+       glance:
+         title: "Glance"
+         description: "By default, Glance..."
+         backends:
+           default:
+             title: "Default"
+           ceph:
+             title: "Ceph"
+  - additional_services:
+    step_title: "Additonal Services"
+    step_number: 6
+    is_last_step: false
+    options:
+      warning:
+        text: "Murano is not available..."
+      services_list:
+        - savanna:
+          title: "Install Savanna"
+          description: "Savanna enables..."
+        - murano:
+          title: "Install Murano"
+          description: "Murano enables..."
+        - ceilometer:
+          title: "Install Ceilometer (OpenStack Telemetry)"
+          description: "Ceilometer provides..."
+  - finish:
+    step_title: "Finish"
+    step_number: 7
+    is_last_step: true
+    options:
+      description: "Your environment is now..."

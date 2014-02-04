@@ -347,7 +347,7 @@
             render_type: null
             render_addr_mask: null
             map_priority: 2
-            dedicated_nic: true
+            allow_2nd_untagged: true
             assign_vip: false
         config:
           parameters:

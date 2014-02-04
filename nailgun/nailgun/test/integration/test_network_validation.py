@@ -503,36 +503,6 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         ).all()
         self.assertEquals(len(ngs_created), len(self.nets['networks']))
 
-    def test_network_checking_fails_if_network_is_at_admin_iface(self):
-        node_db = self.env.nodes[0]
-        resp = self.env.node_nics_get(node_db.id)
-
-        ifaces = json.loads(resp.body)
-        admin_if = [iface for iface in ifaces
-                    if len(iface["assigned_networks"]) == 1 and
-                    iface["assigned_networks"][0]["name"] == "fuelweb_admin"]
-        self.assertEquals(len(admin_if), 1)
-        other_if = [iface for iface in ifaces
-                    if iface != admin_if[0]]
-        self.assertGreaterEqual(len(other_if), 1)
-        admin_if[0]["assigned_networks"].extend(
-            other_if[0]["assigned_networks"])
-        other_if[0]["assigned_networks"] = []
-
-        self.env.node_collection_nics_put(
-            node_db.id,
-            [{"interfaces": ifaces, "id": node_db.id}])
-
-        task = self.set_cluster_changes_w_error(self.cluster.id)
-        self.assertEquals(
-            task['message'].find(
-                "Some networks are "
-                "assigned to the same physical interface as "
-                "admin (PXE) network. You should move them to "
-                "another physical interfaces:"),
-            0
-        )
-
     def test_network_checking_fails_if_admin_intersection(self):
         admin_ng = self.env.network_manager.get_admin_network_group()
         self.find_net_by_name('storage')["cidr"] = admin_ng.cidr
@@ -821,8 +791,7 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
-            {"name": "eth1", "mac": "00:00:00:00:00:77"},
-            {"name": "eth2", "mac": "00:00:00:00:00:88"}])
+            {"name": "eth1", "mac": "00:00:00:00:00:77"}])
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
@@ -845,40 +814,6 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
             NetworkGroup.name.in_([n['name'] for n in self.nets['networks']])
         ).all()
         self.assertEquals(len(ngs_created), len(self.nets['networks']))
-
-    def test_network_checking_failed_if_private_paired_w_other_network(self):
-        resp = self.env.node_nics_get(self.env.nodes[0].id)
-        ifaces = json.loads(resp.body)
-        priv_nic = [nic for nic in ifaces
-                    if len(nic["assigned_networks"]) == 1 and
-                    nic["assigned_networks"][0]["name"] == "private"]
-        self.assertEqual(len(priv_nic), 1)
-        # only 'private' should be here in default configuration
-        priv_net = priv_nic[0]["assigned_networks"][0]
-        others_nic = [nic for nic in ifaces
-                      if len(nic["assigned_networks"]) > 1]
-        # all networks except 'admin' and 'private' should be here
-        # in default configuration
-        self.assertEqual(len(others_nic), 1)
-        others_nic_net_names = [net['name']
-                                for net in others_nic[0]["assigned_networks"]]
-
-        priv_nic[0]["assigned_networks"].remove(priv_net)
-        others_nic[0]["assigned_networks"].append(priv_net)
-
-        self.env.node_collection_nics_put(
-            self.env.nodes[0].id,
-            [{"interfaces": ifaces, "id": self.env.nodes[0].id}])
-
-        task = self.set_cluster_changes_w_error(self.cluster.id)
-        self.assertIn(
-            "Some networks are "
-            "assigned to the same physical interface as "
-            "private network. You should move them to "
-            "another physical interfaces:",
-            task['message'])
-        for net in others_nic_net_names:
-            self.assertIn(net, task['message'])
 
     def test_network_checking_failed_if_networks_tags_in_neutron_range(self):
         self.find_net_by_name('storage')['vlan_start'] = 1000

@@ -21,11 +21,14 @@ from nailgun.network.manager import NetworkManager
 class NetworkConfigurationSerializer(BasicSerializer):
 
     fields = ('id', 'cluster_id', 'name', 'cidr', 'netmask',
-              'gateway', 'vlan_start', 'network_size', 'amount')
+              'gateway', 'vlan_start', 'network_size', 'amount', 'meta')
 
     @classmethod
     def serialize_network_group(cls, instance, fields=None):
-        data_dict = BasicSerializer.serialize(instance, fields=cls.fields)
+        data_dict = BasicSerializer.serialize(
+            instance,
+            fields=fields if fields else cls.fields
+        )
         data_dict["ip_ranges"] = [
             [ir.first, ir.last] for ir in instance.ip_ranges
         ]

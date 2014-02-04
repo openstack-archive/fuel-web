@@ -371,14 +371,6 @@ class NetworkManager(object):
         return ips.all()
 
     @classmethod
-    def clear_all_allowed_networks(cls, node_id):
-        node_db = db().query(Node).get(node_id)
-        for nic in node_db.interfaces:
-            while nic.allowed_networks_list:
-                nic.allowed_networks_list.pop()
-        db().commit()
-
-    @classmethod
     def clear_assigned_networks(cls, node):
         for nic in node.interfaces:
             while nic.assigned_networks_list:
@@ -394,9 +386,12 @@ class NetworkManager(object):
         ngs = node.cluster.network_groups + [cls.get_admin_network_group()]
         ngs_by_id = dict((ng.id, ng) for ng in ngs)
         # sort Network Groups ids by map_priority (0 for admin having no meta)
-        to_assign_ids = list(zip(*sorted(
-            [[ng.id, ng.meta['map_priority'] if ng.meta else 0] for ng in ngs],
-            key=lambda x: x[1]))[0])
+        to_assign_ids = list(
+            zip(*sorted(
+                [[ng.id, ng.meta['map_priority']]
+                 for ng in ngs],
+                key=lambda x: x[1]))[0]
+        )
         for i, nic in enumerate(node.interfaces):
             nic_dict = {
                 "id": nic.id,
@@ -409,8 +404,8 @@ class NetworkManager(object):
                 node,
                 nic
             )
-            nic_dict['allowed_networks'] = [{'id': ng.id, 'name': ng.name}
-                                            for ng in allowed_ngs]
+            # nic_dict['allowed_networks'] = [{'id': ng.id, 'name': ng.name}
+            #                                 for ng in allowed_ngs]
 
             if to_assign_ids:
                 allowed_ids = set([ng.id for ng in allowed_ngs])
@@ -473,6 +468,15 @@ class NetworkManager(object):
                     db().query(NetworkGroup).filter(
                         NetworkGroup.id.in_(ng_ids)))
         db().commit()
+
+    @classmethod
+    def get_allowed_nic_networkgroups(cls, node, nic):
+        """Get all allowed network groups for given node's NIC
+        """
+        ngs = cls.get_all_cluster_networkgroups(node)
+        if nic == node.admin_interface:
+            ngs.append(cls.get_admin_network_group())
+        return ngs
 
     @classmethod
     def get_cluster_networkgroups_by_node(cls, node):
@@ -994,7 +998,8 @@ class NetworkManager(object):
                 cluster_id=cluster_id,
                 vlan_start=vlan_start,
                 amount=1,
-                network_size=net_size or 1
+                network_size=net_size or 1,
+                meta=net
             )
             db().add(nw_group)
             db().commit()
@@ -1020,7 +1025,8 @@ class NetworkManager(object):
                                 ng_db.meta.get("notation") == "cidr":
                             cls.update_range_mask_from_cidr(ng_db, value)
 
-                        setattr(ng_db, key, value)
+                        if key != 'meta':
+                            setattr(ng_db, key, value)
 
                 if ng_db.meta.get("calculate_cidr"):
                     cls.update_cidr_from_gw_mask(ng_db, ng)

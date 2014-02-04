@@ -98,13 +98,9 @@ class NodeHandler(BaseHandler):
             if node.cluster_id != old_cluster_id:
                 if old_cluster_id:
                     network_manager.clear_assigned_networks(node)
-                    network_manager.clear_all_allowed_networks(node.id)
                 if node.cluster_id:
                     network_manager = node.cluster.network_manager
                     network_manager.assign_networks_by_default(node)
-                    network_manager.allow_network_assignment_to_all_interfaces(
-                        node
-                    )
 
         regenerate_volumes = any((
             'roles' in data and set(data['roles']) != set(node.roles),
@@ -278,7 +274,6 @@ class NodeCollectionHandler(BaseHandler):
         if node.cluster_id:
             network_manager = node.cluster.network_manager
             network_manager.assign_networks_by_default(node)
-            network_manager.allow_network_assignment_to_all_interfaces(node)
 
         try:
             # we use multiplier of 1024 because there are no problems here
@@ -430,13 +425,9 @@ class NodeCollectionHandler(BaseHandler):
             if 'cluster_id' in nd and nd['cluster_id'] != old_cluster_id:
                 if old_cluster_id:
                     network_manager.clear_assigned_networks(node)
-                    network_manager.clear_all_allowed_networks(node.id)
                 if node.cluster:
                     network_manager = node.cluster.network_manager
                     network_manager.assign_networks_by_default(node)
-                    network_manager.allow_network_assignment_to_all_interfaces(
-                        node
-                    )
 
         # we need eagerload everything that is used in render
         nodes = db().query(Node).options(
@@ -458,8 +449,7 @@ class NodeNICsHandler(BaseHandler):
         'state',
         'current_speed',
         'max_speed',
-        'assigned_networks',
-        'allowed_networks'
+        'assigned_networks'
     )
 
     model = NodeNICInterface
@@ -583,8 +573,7 @@ class NodeNICsVerifyHandler(BaseHandler):
             'id',
             'mac',
             'name',
-            ('assigned_networks', 'id', 'name'),
-            ('allowed_networks', 'id', 'name')
+            ('assigned_networks', 'id', 'name')
         )
     )
 

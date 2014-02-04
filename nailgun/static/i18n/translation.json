@@ -370,7 +370,9 @@
                     },
                     "compute": {
                         "title": "Compute",
+                        "kvm_title": "KVM",
                         "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
+                        "qemu_title": "QEMU",
                         "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts"
                     },
                     "network": {

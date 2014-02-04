@@ -1337,7 +1337,12 @@ label.error {
     color: @fuel-dark;
     font-size: 13px;
   }
-  .wizard-footer button {min-width: 90px;}
+  .wizard-footer {
+    bottom: 0;
+    position: absolute;
+    width: 730px;
+    button {min-width: 90px;}
+  }
   .wizard-body { .margin-padding-mixin;  }
 }
 
@@ -1352,6 +1357,7 @@ label.error {
   width: 25%;
   overflow: hidden;
   float: left;
+  height: 370px;
 }
 
 .wizard-steps-content {
@@ -3785,4 +3791,5 @@ i.btn-cluster-details {
 .create-cluster-modal {
   width: 760px;
   margin-left: -380px;
+  min-height: 485px;
 }

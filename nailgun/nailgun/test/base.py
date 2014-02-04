@@ -232,9 +232,11 @@ class Environment(object):
             self.tester.assertEquals(resp.status, expect_http)
             node = json.loads(resp.body)
             node_db = self.db.query(Node).get(node['id'])
-            self._set_interfaces_if_not_set_in_meta(
-                node_db.id,
-                kwargs.get('meta', None))
+            if 'interfaces' not in node_data['meta'] \
+                    or not node_data['meta']['interfaces']:
+                self._set_interfaces_if_not_set_in_meta(
+                    node_db.id,
+                    kwargs.get('meta', None))
             self.nodes.append(node_db)
         else:
             node = Node()
@@ -340,21 +342,10 @@ class Environment(object):
             self.db.add(interface)
             node.interfaces.append(interface)
 
-        # If node in a cluster then add
-        # allowed_networks for all interfaces
-        # and assigned_networks for first interface
-        if node.cluster_id:
-            ng_ids = [ng.id for ng in
-                      self.network_manager.get_all_cluster_networkgroups(node)]
-            allowed_networks = list(self.db.query(NetworkGroup).filter(
-                NetworkGroup.id.in_(ng_ids)))
-
-            for interface in node.interfaces:
-                interface.allowed_networks_list = allowed_networks
-
-            node.interfaces[0].assigned_networks_list = allowed_networks
-
         self.db.commit()
+        # If node in a cluster then assign networks for all interfaces
+        if node.cluster_id:
+            self.network_manager.assign_networks_by_default(node)
         # At least one interface should have
         # same ip as mac in meta
         if node.interfaces and not \
@@ -378,7 +369,6 @@ class Environment(object):
                 'mac': self._generate_random_mac(),
                 'current_speed': 100,
                 'max_speed': 1000,
-                'allowed_networks': allowed_networks,
                 'assigned_networks': allowed_networks
             }
 

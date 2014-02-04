@@ -235,19 +235,20 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         expected_interfaces = {
             'lo': {
                 'interface': 'lo',
-                'ipaddr': ['127.0.0.1/8']},
-            'eth0': {
-                'interface': 'eth0',
-                'ipaddr': [
-                    '192.168.0.1/24',
-                    '172.16.0.2/24',
-                    '192.168.1.1/24'],
-                'gateway': '172.16.0.1'},
+                'ipaddr': ['127.0.0.1/8']
+            },
             'eth1': {
                 'interface': 'eth1',
-                'ipaddr': [
-                    '10.20.0.129/24']}}
-
+                'ipaddr': ['10.20.0.129/24']
+            },
+            'eth0': {
+                'interface': 'eth0',
+                'ipaddr': ['192.168.0.1/24',
+                           '172.16.0.2/24',
+                           '192.168.1.1/24'],
+                'gateway': '172.16.0.1'
+            }
+        }
         self.datadiff(expected_interfaces, interfaces)
 
 

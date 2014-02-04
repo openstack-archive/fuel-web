@@ -50,7 +50,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             'click .rollback': 'discardChanges',
             'click .deploy-btn:not(.disabled)': 'onDeployRequest'
         },
-        removeFinishedTasks: function(tasks) {
+        removeFinishedTasks: function(tasks, removeSilently) {
             if (!tasks) {
                 var names = ['verify_networks', 'check_networks'];
                 tasks = this.model.get('tasks').filter(function(task) {
@@ -60,7 +60,9 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             var requests = [];
             _.each(tasks, function(task) {
                 if (task.get('status') != 'running') {
-                    this.model.get('tasks').remove(task);
+                    if (!removeSilently) {
+                        this.model.get('tasks').remove(task);
+                    }
                     requests.push(task.destroy({silent: true}));
                 }
             }, this);

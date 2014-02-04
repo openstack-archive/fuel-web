@@ -1,5 +1,5 @@
 <% if (disabled && release) { %>
-  <div class="alert" style="margin:0"><%- $.t("dialog.create_cluster_wizard.storage.alert", { releaseName: release.get('name')} ) %> </div>
+  <div class="alert" style="margin:0"><%- $.t(warningMessage, { releaseName: release.get('name')} ) %> </div>
 <% } %>
 <form class="form-horizontal" style="margin:0" onsubmit="return false">
   <fieldset>

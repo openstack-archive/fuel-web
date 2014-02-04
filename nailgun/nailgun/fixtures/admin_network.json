@@ -7,7 +7,16 @@
             "cidr": "{{settings.ADMIN_NETWORK['cidr']}}",
             "netmask": "{{settings.ADMIN_NETWORK['netmask']}}",
             "network_size": "{{settings.ADMIN_NETWORK['size']}}",
-            "vlan_start": null
+            "vlan_start": null,
+            "meta": {
+                "use_gateway": false,
+                "notation": "cidr",
+                "render_type": null,
+                "render_addr_mask": null,
+                "map_priority": 0,
+                "unmovable": true,
+                "assign_vip": false
+            }
         }
     },
     {

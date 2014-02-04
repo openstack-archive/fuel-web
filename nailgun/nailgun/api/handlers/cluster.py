@@ -101,10 +101,7 @@ class ClusterHandler(BaseHandler):
                 map(cluster.nodes.append, nodes_to_add)
                 for node in nodes_to_remove:
                     network_manager.clear_assigned_networks(node)
-                    network_manager.clear_all_allowed_networks(node.id)
                 for node in nodes_to_add:
-                    network_manager.allow_network_assignment_to_all_interfaces(
-                        node)
                     network_manager.assign_networks_by_default(node)
             else:
                 setattr(cluster, key, value)
@@ -198,8 +195,6 @@ class ClusterCollectionHandler(BaseHandler):
                 map(cluster.nodes.append, nodes)
                 db().commit()
                 for node in nodes:
-                    netmanager.allow_network_assignment_to_all_interfaces(
-                        node)
                     netmanager.assign_networks_by_default(node)
 
             raise web.webapi.created(json.dumps(

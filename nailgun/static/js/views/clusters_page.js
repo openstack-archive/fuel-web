@@ -19,12 +19,13 @@ define(
     'utils',
     'views/common',
     'views/dialogs',
+    'views/wizard',
     'text!templates/clusters/page.html',
     'text!templates/clusters/cluster.html',
     'text!templates/clusters/new.html',
     'text!templates/clusters/register_trial.html'
 ],
-function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterTemplate, newClusterTemplate, registerTrialTemplate) {
+function(models, utils, commonViews, dialogViews, wizard, clustersPageTemplate, clusterTemplate, newClusterTemplate, registerTrialTemplate) {
     'use strict';
     var ClustersPage, ClusterList, Cluster, RegisterTrial;
 
@@ -54,7 +55,7 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
             'click .create-cluster': 'createCluster'
         },
         createCluster: function() {
-            app.page.registerSubView(new dialogViews.CreateClusterWizard({collection: this.collection})).render();
+            app.page.registerSubView(new wizard.CreateClusterWizard({collection: this.collection})).render();
         },
         initialize: function() {
             this.collection.on('sync add', this.render, this);

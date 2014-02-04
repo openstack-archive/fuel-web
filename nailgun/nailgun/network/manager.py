@@ -475,6 +475,30 @@ class NetworkManager(object):
         db().commit()
 
     @classmethod
+    def get_allowed_nic_networkgroups(cls, node, nic):
+        """Get all allowed network groups for given node's NIC
+        """
+        ngs = cls.get_all_cluster_networkgroups(node)
+        if nic == node.admin_interface:
+            ngs.append(cls.get_admin_network_group())
+        return ngs
+
+    @classmethod
+    def allow_network_assignment_to_all_interfaces(cls, node):
+        """Method adds all network groups from cluster
+        to allowed_networks list for all interfaces
+        of specified node.
+
+        :param node: Node object.
+        :type  node: Node
+        """
+        for nic in node.interfaces:
+            nic.allowed_networks_list = \
+                cls.get_allowed_nic_networkgroups(node, nic)
+
+        db().commit()
+
+    @classmethod
     def get_cluster_networkgroups_by_node(cls, node):
         """Method for receiving cluster network groups by node.
 

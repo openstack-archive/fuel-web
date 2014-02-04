@@ -25,7 +25,10 @@ class NetworkConfigurationSerializer(BasicSerializer):
 
     @classmethod
     def serialize_network_group(cls, instance, fields=None):
-        data_dict = BasicSerializer.serialize(instance, fields=cls.fields)
+        data_dict = BasicSerializer.serialize(
+            instance,
+            fields=fields if fields else cls.fields
+        )
         data_dict["ip_ranges"] = [
             [ir.first, ir.last] for ir in instance.ip_ranges
         ]

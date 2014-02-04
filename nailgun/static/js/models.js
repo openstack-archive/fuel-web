@@ -745,5 +745,31 @@ define(['utils', 'deepModel'], function(utils) {
         urlRoot: '/api/capacity'
     });
 
+    models.WizardModel = Backbone.DeepModel.extend({
+        constructorName: 'WizardPane',
+        processConfig: function(config) {
+            var result = {};
+            _.each(config, _.bind(function(paneConfig, paneName) {
+                result[paneName] = {};
+                _.each(paneConfig, function(attributeConfig, attribute) {
+                        result[paneName][attribute] = attributeConfig.value || null;
+                });
+            }, this));
+            this.set(result);
+        },
+        restoreDefaultValues: function(config, panesObject) {
+            var result = {};
+            _.each(config, _.bind(function(paneConfig, paneName) {
+                if (panesObject[paneName] == 'unavailable') {
+                    result[paneName] = {};
+                    _.each(paneConfig, function(attributeConfig, attribute) {
+                        result[paneName][attribute] = attributeConfig.value || null;
+                    });
+                }
+            }, this));
+            this.set(result);
+        }
+    });
+
     return models;
 });

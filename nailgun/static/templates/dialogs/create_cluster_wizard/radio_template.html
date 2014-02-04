@@ -1,0 +1,12 @@
+<label class="parameter-box clearfix <%= label_classes %>">
+  <div class="parameter-control">
+    <div class="custom-tumbler">
+      <input type="radio" name="<%= pane %>" value="<%= value %>" />
+      <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+    </div>
+  </div>
+  <div class="parameter-name <%= description_classes %>"><%= label %></div>
+</label>
+<% if (description) { %>
+    <div class="modal-parameter-description"><%= description %></div>
+<% } %>

@@ -729,5 +729,9 @@ define(['utils', 'deepModel'], function(utils) {
         urlRoot: '/api/capacity'
     });
 
+    models.WizardPanes = Backbone.Model.extend({
+        constructorName: 'WizardPanes'
+    });
+
     return models;
 });

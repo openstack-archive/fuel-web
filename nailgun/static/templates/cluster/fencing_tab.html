@@ -1,5 +1,152 @@
-<div class="wrapper">
+<!--
     <div class="row-fluid page-sub-title">
         <h3 class="span8" data-i18n="cluster_page.fencing_tab.title"></h3>
+    </div>
+-->
+
+<style>
+.fencing-agent-block {
+    -moz-box-sizing: border-box;
+    background-color: #f0f0f0;
+    border: 1px solid #A0A0A0;
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+</style>
+
+<div class="wrapper">
+    <div class="row">
+    <div class="page-control-box">
+      <div class="page-control-button-placeholder">
+        <button class="btn btn-load-defaults" data-i18n="common.load_defaults_button">Load Defaults</button>
+        <button disabled="" class="btn btn-revert-changes">Cancel Changes</button>
+        <button disabled="" class="btn btn-success btn-apply-changes" data-i18n="common.save_settings_button">Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="wrapper">
+
+  <div class="row-fluid">
+    <div class="span10">
+        <h3 class="span8">Remote Controls</h3>
+    </div>
+
+    <div class="span1">
+        <button class="btn btn-link pull-right" style="font-size: 22px; margin-top: 5px;"><i class="icon-cancel-circle"></i></button>
+    </div>
+  
+
+  <div class="span1">
+        <button class="btn btn-link pull-right" style="font-size: 22px; margin-top: 5px;"><i class="icon-plus-circle"></i></button>
+    </div>
+  </div>
+    <div class="row-fluid">
+      <div class="span12">
+        <div class="alert hide error-message alert-error" style="display: block;">Error!</div>
+      </div>
+    </div>
+  
+
+  <div class="testsets">
+    <div class="row row-fluid" style="display: none;">
+      <div class="span4"></div>
+      <div class="span4">
+        <div class="progress progress-striped progress-success active">
+          <div style="width: 100%" class="bar"></div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+    <!-- non-select block -->
+    <div class="fencing-agent-block">
+        <div style="height: 52px;">
+            <div style="display: block; float: left; height: 52px; padding: 10px 0 0 12px; width: 50px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;">
+                <div class="custom-tumbler node-checkbox">
+                    <input type="checkbox">
+                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                </div>
+            </div>
+            <div style="float: left; font-size: 16px; height: 52px; min-width: 120px; overflow: hidden; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; padding: 15px 20px 0px 0px;">IPMI</div>
+            <div style="float: left; font-size: 12px; height: 36px; max-width: 800px; overflow: hidden; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; padding: 16px 0px 0px 0px; color: #999999;">Etiam pellentesque lobortis congue. Praesent tincidunt et justo non accumsan. Etiam pellentesque lobortis congue. Praesent tincidunt et justo non accumsan.</div>
+        </div>
+    </div>
+    <!-- non-select block -->
+
+    <!-- non-select block -->
+    <div class="fencing-agent-block">
+        <div style="height: 52px;">
+            <div style="display: block; float: left; height: 52px; padding: 10px 0 0 12px; width: 50px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;">
+                <div class="custom-tumbler node-checkbox">
+                    <input type="checkbox">
+                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                </div>
+            </div>
+            <div style="float: left; font-size: 16px; height: 52px; min-width: 120px; overflow: hidden; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; padding: 15px 20px 0px 0px;">ILO</div>
+            <div style="float: left; font-size: 12px; height: 52px; min-width: 100px; overflow: hidden; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; padding: 16px 0px 0px 0px; color: #999999;">Etiam pellentesque lobortis congue. Praesent tincidunt et justo non accumsan.</div>
+        </div>
+    </div>
+    <!-- non-select block -->
+
+    <!-- non-select block -->
+    <div class="fencing-agent-block">
+        <div style="height: 52px;">
+            <div style="display: block; float: left; height: 52px; padding: 10px 0 0 12px; width: 50px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;">
+                <div class="custom-tumbler node-checkbox">
+                    <input type="checkbox">
+                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                </div>
+            </div>
+            <div style="float: left; font-size: 16px; height: 52px; min-width: 120px; overflow: hidden; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; padding: 15px 20px 0px 0px;">DRAC</div>
+            <div style="float: left; font-size: 12px; height: 52px; min-width: 100px; overflow: hidden; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; padding: 16px 0px 0px 0px; color: #999999;">Etiam pellentesque lobortis congue. Praesent tincidunt et justo non accumsan.</div>
+        </div>
+    </div>
+    <!-- non-select block -->
+
+    <div class="fencing-agent-block">
+
+    	<div style="height: 52px; border-bottom: 1px solid #999999;">
+
+    	<div style="display: block; float: left; height: 52px; padding: 10px 0 0 12px; width: 50px; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box;">
+    		<div class="custom-tumbler node-checkbox">
+        			<input type="checkbox">
+        			<!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+    		</div>
+    	</div>
+
+    	<div style="float: left; font-size: 16px; height: 52px; min-width: 120px; overflow: hidden; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; padding: 15px 20px 0px 0px;">IPMI</div>
+    	<div style="float: left; font-size: 12px; height: 52px; min-width: 100px; overflow: hidden; box-sizing: border-box; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; padding: 16px 0px 0px 0px; color: #999999;">Description</div>
+    	</div>
+
+    	<!-- controller block -->
+    	<div style="float: left; width: 300px; margin: 10px; background: black;">
+    		<div style="display: block; font-size: 14px;">Supermicro X9SCD</div>
+    		<div style="display: block; font-size: 11px;"> CPU: 8 HDD: 1.8 TB RAM: 16.0 GB </div>
+    	</div>
+    	<div style="float: left; margin: 10px;">
+    		<div>Input</div>
+    		<div>Input</div>
+    		<div>Input</div>
+    		<div>Input</div>
+    	</div>
+    	<!-- controller block -->
+
+
+    	<hr style="color: #333333;">
+
+    	<div style="float: left; width: 300px; margin: 10px;">Controller 1<br>Tech Info</div>
+    	<div style="float: left; margin: 10px;">
+    		<div>Input</div>
+    		<div>Input</div>
+    		<div>Input</div>
+    		<div>Input</div>
+    	</div>
+
     </div>
 </div>

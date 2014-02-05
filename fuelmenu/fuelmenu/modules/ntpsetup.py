@@ -13,10 +13,8 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from fuelmenu.common import dialog
 from fuelmenu.common.modulehelper import ModuleHelper
 from fuelmenu.common import nailyfactersettings
-import fuelmenu.common.urwidwrapper as widget
 from fuelmenu.settings import Settings
 import logging
 import re
@@ -37,24 +35,32 @@ class ntpsetup(urwid.WidgetWrap):
         self.parent = parent
 
         #UI details
-        self.header_content = ["NTP Setup", "Note: Leave all NTP servers "
-                               "blank if you do not have Internet access."]
+        self.header_content = ["NTP Setup", "Note: If you continue without "
+                               "NTP, you may have issues with deployment "
+                               "due to time synchronization issues. These "
+                               "problems are exacerbated in virtualized "
+                               "environments."]
 
-        self.fields = ["NTP1", "NTP2", "NTP3"]
+        self.fields = ["ntpenabled", "NTP1", "NTP2", "NTP3"]
         self.defaults = \
             {
-                "NTP1": {"label": "NTP Server 1",
+                "ntpenabled": {"label": "Enable NTP:",
+                               "tooltip": "",
+                               "value": "radio"},
+                "NTP1": {"label": "NTP Server 1:",
                          "tooltip": "NTP Server for time synchronization",
                          "value": "time.nist.gov"},
-                "NTP2": {"label": "NTP Server 2",
+                "NTP2": {"label": "NTP Server 2:",
                          "tooltip": "NTP Server for time synchronization",
                          "value": "time-a.nist.gov"},
-                "NTP3": {"label": "NTP Server 3",
+                "NTP3": {"label": "NTP Server 3:",
                          "tooltip": "NTP Server for time synchronization",
                          "value": "time-b.nist.gov"},
             }
 
         #Load info
+        self.gateway = self.get_default_gateway_linux()
+
         self.oldsettings = self.load()
         self.screen = None
 
@@ -68,22 +74,37 @@ class ntpsetup(urwid.WidgetWrap):
         for index, fieldname in enumerate(self.fields):
             if fieldname == "blank":
                 pass
+            elif fieldname == "ntpenabled":
+                rb_group = self.edits[index].rb_group
+                if rb_group[0].state:
+                    responses["ntpenabled"] = "Yes"
+                else:
+                    responses["ntpenabled"] = "No"
             else:
                 responses[fieldname] = self.edits[index].get_edit_text()
 
         ###Validate each field
         errors = []
-
+        if responses['ntpenabled'] == "No":
+            #Disabled NTP means passing no NTP servers to save method
+            responses = {
+                'NTP1': "",
+                'NTP2': "",
+                'NTP3': ""}
+            self.parent.footer.set_text("No errors found.")
+            log.info("No errors found")
+            return responses
         if all(map(lambda f: (len(responses[f]) == 0), self.fields)):
+            pass
             #We will allow empty if user doesn't need external networking
             #and present a strongly worded warning
-            msg = "If you continue without NTP, you may have issues with "\
-                  + "deployment due to time synchronization issues. These "\
-                  + "problems are exacerbated in virtualized deployments."
+            #msg = "If you continue without NTP, you may have issues with "\
+            #      + "deployment due to time synchronization issues. These "\
+            #      + "problems are exacerbated in virtualized deployments."
 
-            dialog.display_dialog(
-                self, widget.TextLabel(msg), "Empty NTP Warning")
-
+            #dialog.display_dialog(
+            #    self, widget.TextLabel(msg), "Empty NTP Warning")
+        del responses['ntpenabled']
         for ntpfield, ntpvalue in responses.iteritems():
             #NTP must be under 255 chars
             if len(ntpvalue) >= 255:
@@ -107,7 +128,6 @@ class ntpsetup(urwid.WidgetWrap):
                     errors.append(e)
                     errors.append("%s unable to perform NTP: %s"
                                   % self.defaults[ntpfield]['label'])
-
         if len(errors) > 0:
             self.parent.footer.set_text(
                 "Errors: %s First error: %s" % (len(errors), errors[0]))
@@ -141,6 +161,9 @@ class ntpsetup(urwid.WidgetWrap):
     def cancel(self, button):
         ModuleHelper.cancel(self, button)
 
+    def get_default_gateway_linux(self):
+        return ModuleHelper.get_default_gateway_linux()
+
     def load(self):
         #Read in yaml
         defaultsettings = Settings().read(self.parent.defaultsettingsfile)
@@ -150,7 +173,16 @@ class ntpsetup(urwid.WidgetWrap):
         oldsettings = Settings().read(self.parent.settingsfile)
         for setting in self.defaults.keys():
             try:
-                if "/" in setting:
+                if setting == "ntpenabled":
+                    rb_group = \
+                        self.edits[self.fields.index("ntpenabled")].rb_group
+                    if oldsettings[setting]["value"] == "Yes":
+                        rb_group[0].set_state(True)
+                        rb_group[1].set_state(False)
+                    else:
+                        rb_group[0].set_state(False)
+                        rb_group[1].set_state(True)
+                elif "/" in setting:
                     part1, part2 = setting.split("/")
                     self.defaults[setting]["value"] = oldsettings[part1][part2]
                 else:
@@ -190,7 +222,7 @@ class ntpsetup(urwid.WidgetWrap):
         self.oldsettings = newsettings
         #Update defaults
         for index, fieldname in enumerate(self.fields):
-            if fieldname != "blank":
+            if fieldname != "blank" and fieldname in newsettings:
                 self.defaults[fieldname]['value'] = newsettings[fieldname]
 
     def checkNTP(self, server):
@@ -203,10 +235,30 @@ class ntpsetup(urwid.WidgetWrap):
         return (ntp_works == 0)
 
     def refresh(self):
-        pass
+        self.gateway = self.get_default_gateway_linux()
+        log.info("refresh. gateway is %s" % self.gateway)
+        #If gateway is empty, disable NTP
+        if self.gateway is None:
+            for index, fieldname in enumerate(self.fields):
+                if fieldname == "ntpenabled":
+                    log.info("clearing ntp enabled")
+                    log.info("fieldname: %s" % fieldname)
+                    rb_group = self.edits[index].rb_group
+                    rb_group[0].set_state(False)
+                    rb_group[1].set_state(True)
 
-    def radioSelect(self):
-        pass
+    def radioSelect(self, current, state, user_data=None):
+        """Update network details and display information."""
+        ### This makes no sense, but urwid returns the previous object.
+        ### The previous object has True state, which is wrong.
+        ### Somewhere in current.group a RadioButton is set to True.
+        ### Our quest is to find it.
+        for rb in current.group:
+            if rb.get_label() == current.get_label():
+                continue
+            if rb.base_widget.state is True:
+                self.extdhcp = (rb.base_widget.get_label() == "Yes")
+                break
 
     def screenUI(self):
         return ModuleHelper.screenUI(self, self.header_content, self.fields,

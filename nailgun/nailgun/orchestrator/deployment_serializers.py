@@ -675,6 +675,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         ).get('value')
 
         # Fill up interfaces and add bridges for them.
+        bonded_ifaces = [x for x in node.interfaces if x.bond]
         for iface in node.interfaces:
             # Handle vlan splinters.
             attrs['interfaces'][iface.name] = {
@@ -687,15 +688,25 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 # A physical interface for the FuelWeb admin network should
                 # not be used through bridge. Directly only.
                 continue
+            if iface in bonded_ifaces:
+                continue
             attrs['transformations'].append({
                 'action': 'add-br',
                 'name': 'br-%s' % iface.name
             })
-            attrs['transformations'].append({
-                'action': 'add-port',
-                'bridge': 'br-%s' % iface.name,
-                'name': iface.name
-            })
+            if iface.type == 'ether':
+                attrs['transformations'].append({
+                    'action': 'add-port',
+                    'bridge': 'br-%s' % iface.name,
+                    'name': iface.name
+                })
+            elif iface.type == 'bond':
+                attrs['transformations'].append({
+                    'action': 'add-bond',
+                    'bridge': 'br-%s' % iface.name,
+                    'name': iface.name,
+                    'interfaces': [x['name'] for x in iface.slaves]
+                })
 
         nm = NetworkManager
         # Populate IP address information to endpoints.

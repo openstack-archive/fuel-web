@@ -36,6 +36,7 @@ from nailgun.db.sqlalchemy.models import IPAddrRange
 from nailgun.db.sqlalchemy.models import NetworkAssignment
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -660,8 +661,13 @@ class NetworkManager(object):
     @classmethod
     def _update_attrs(cls, node_data):
         node_db = db().query(Node).get(node_data['id'])
-        interfaces = node_data['interfaces']
-        interfaces_db = node_db.interfaces
+        is_ether = lambda x: x['type'] == 'ether'
+        is_bond = lambda x: x['type'] == 'bond'
+        interfaces = filter(is_ether, node_data['interfaces'])
+        bond_interfaces = filter(is_bond, node_data['interfaces'])
+
+        interfaces_db = node_db.nic_interfaces
+        bond_interfaces_db = node_db.bond_interfaces
         for iface in interfaces:
             current_iface = filter(
                 lambda i: i.id == iface['id'],
@@ -677,6 +683,48 @@ class NetworkManager(object):
                 net_assignment.interface_id = current_iface.id
                 db().add(net_assignment)
         db().commit()
+        # Bond. James Bond.
+        # Remove bonds from DB if they are not in a received data.
+        received_bond_ids = [x['id'] for x in bond_interfaces if 'id' in x]
+        unused_bonds = filter(lambda x: x.id not in received_bond_ids,
+                              bond_interfaces_db)
+        map(db.delete, unused_bonds)
+        db.commit()
+
+        for bond in bond_interfaces:
+            if 'id' in bond:
+                bond_db = filter(
+                    lambda i: i.id == bond['id'],
+                    bond_interfaces_db
+                )[0]
+                # Clear all previous assigned networks.
+                map(bond_db.assigned_networks_list.remove,
+                    list(bond_db.assigned_networks_list))
+                # Clear all previous assigned slaves.
+                map(bond_db.slaves.remove, list(bond_db.slaves))
+            else:
+                # Create a bond if not exists.
+                bond_db = NodeBondInterface()
+                bond_db.name = bond['name']
+                bond_db.node_id = node_db.id
+                bond_db.mode = bond['mode']
+                bond_db.hash_policy = bond.get('hash_policy')
+                bond_db.mac = bond.get('mac')
+                bond_db.flags = bond.get('flags', {})
+                db.add(bond_db)
+            db.commit()
+            db.refresh(bond_db)
+
+            # Add new network assignment.
+            map(bond_db.assigned_networks_list.append,
+                [db.query(NetworkGroup).get(ng['id']) for ng
+                 in bond['assigned_networks']])
+            # Add new slaves.
+            map(bond_db.slaves.append,
+                [db.query(NodeNICInterface).filter_by(name=nic['name']).first()
+                 for nic in bond['slaves']])
+            db.commit()
+
         return node_db.id
 
     @classmethod

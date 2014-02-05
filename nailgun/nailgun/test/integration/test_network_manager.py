@@ -386,7 +386,7 @@ class TestNetworkManager(BaseIntegrationTest):
                     admin_network_range.last
                 )
             ),
-            itertools.product((0, 1), ('eth0', 'eth1'))
+            itertools.product((0, 1), ('eth0',))
         )
 
 

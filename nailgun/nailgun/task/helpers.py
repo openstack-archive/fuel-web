@@ -427,12 +427,11 @@ class TaskHelper(object):
     @classmethod
     def prepare_for_provisioning(cls, nodes):
         """Prepare environment for provisioning,
-        update fqdns, assign admin ips
+        update fqdns, assign admin IPs
         """
         cls.update_slave_nodes_fqdn(nodes)
         for node in nodes:
-            NetworkManager.assign_admin_ips(
-                node.id, len(node.meta.get('interfaces', [])))
+            NetworkManager.assign_admin_ips(node.id)
 
     @classmethod
     def prepare_for_deployment(cls, nodes):
@@ -449,8 +448,7 @@ class TaskHelper(object):
             netmanager.assign_ips(nodes_ids, 'storage')
 
             for node in nodes:
-                netmanager.assign_admin_ips(
-                    node.id, len(node.meta.get('interfaces', [])))
+                netmanager.assign_admin_ips(node.id)
 
     @classmethod
     def raise_if_node_offline(cls, nodes):

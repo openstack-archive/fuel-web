@@ -189,6 +189,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
             cls
         ).serialize(cluster, nodes)
         cls.set_primary_controller(serialized_nodes)
+        cls.set_primary_mongo(serialized_nodes)
 
         return serialized_nodes
 
@@ -208,6 +209,23 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                 sorted_nodes, ['controller'])
             if controllers:
                 controllers[0]['role'] = 'primary-controller'
+
+    @classmethod
+    def set_primary_mongo(cls, nodes):
+        """Set primary mongo for the last mongo node
+        node if it not set yet
+        """
+        sorted_nodes = sorted(
+            nodes, key=lambda node: int(node['uid']))
+
+        primary_mongo = cls.filter_by_roles(
+            sorted_nodes, ['mongo-primary'])
+
+        if not primary_mongo:
+            mongo_nodes = cls.filter_by_roles(
+                sorted_nodes, ['mongo'])
+            if mongo_nodes:
+                mongo_nodes[-1]['role'] = 'mongo-primary'
 
     @classmethod
     def get_last_controller(cls, nodes):
@@ -259,6 +277,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         # Assign primary controller in nodes list
         cls.set_primary_controller(common_attrs['nodes'])
+        cls.set_primary_mongo(common_attrs['nodes'])
 
         return common_attrs
 

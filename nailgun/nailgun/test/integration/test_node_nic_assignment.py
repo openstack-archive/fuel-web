@@ -20,7 +20,7 @@ from copy import deepcopy
 from netaddr import IPNetwork
 
 from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import NetworkAssignment
+from nailgun.db.sqlalchemy.models import NetworkNICAssignment
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -111,7 +111,7 @@ class TestClusterHandlers(BaseIntegrationTest):
         self.db.delete(cluster_db)
         self.db.commit()
 
-        net_assignment = self.db.query(NetworkAssignment).all()
+        net_assignment = self.db.query(NetworkNICAssignment).all()
         self.assertEquals(len(net_assignment), 0)
 
 

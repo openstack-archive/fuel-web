@@ -315,6 +315,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 '.use-vlan-tagging': {
                     observe: 'vlan_start',
                     onGet: function(value) {
+                        this.$('input.vlan').toggle(!_.isNull(value));
                         return !_.isNull(value);
                     },
                     onSet: _.bind(function(value) {

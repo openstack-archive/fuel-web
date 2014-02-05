@@ -315,6 +315,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 '.use-vlan-tagging': {
                     observe: 'vlan_start',
                     onGet: function(value) {
+                        // FIXME: input.vlan visibility should be defined in separate 'visible' function using _.isNull(value) check
+                        // but onGet() Stickit method converts null values to empty string
+                        // so, we are forced to toggle input.vlan from .use-vlan-tagging configuration
+                        this.$('input.vlan').toggle(!_.isNull(value));
                         return !_.isNull(value);
                     },
                     onSet: _.bind(function(value) {

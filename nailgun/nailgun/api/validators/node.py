@@ -110,8 +110,9 @@ class NodeValidator(BasicValidator):
             )
         else:
             q = db().query(Node)
+
             if q.filter(Node.mac == d["mac"]).first() or q.join(
-                    NodeNICInterface, Node.interfaces).filter(
+                    NodeNICInterface, Node.nic_interfaces).filter(
                     NodeNICInterface.mac == d["mac"]).first():
                 raise errors.AlreadyExists(
                     "Node with mac {0} already "
@@ -134,7 +135,7 @@ class NodeValidator(BasicValidator):
             data['meta'] = validate_method(data['meta'])
             if 'interfaces' in data['meta']:
                 existent_node = db().query(Node).\
-                    join(NodeNICInterface, Node.interfaces).\
+                    join(NodeNICInterface, Node.nic_interfaces).\
                     filter(NodeNICInterface.mac.in_(
                         [n['mac'] for n in data['meta']['interfaces']]
                     )).first()

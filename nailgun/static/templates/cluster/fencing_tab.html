@@ -1,5 +1,345 @@
-<div class="wrapper">
+<!--
     <div class="row-fluid page-sub-title">
         <h3 class="span8" data-i18n="cluster_page.fencing_tab.title"></h3>
+    </div>
+-->
+
+<div class="wrapper">
+    <div class="row">
+    <div class="page-control-box">
+      <div class="page-control-button-placeholder">
+        <button class="btn btn-load-defaults" data-i18n="common.load_defaults_button">Load Defaults</button>
+        <button disabled="" class="btn btn-revert-changes">Cancel Changes</button>
+        <button disabled="" class="btn btn-success btn-apply-changes" data-i18n="common.save_settings_button">Save Settings</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="wrapper">
+
+  <div class="row-fluid">
+    <div class="span10">
+        <h3 class="span8">Remote Controls</h3>
+    </div>
+
+    <div class="span2">
+        <button class="btn btn-link pull-right fencins-controller-btn"><i class="icon-plus-circle"></i></button>
+        <button class="btn btn-link pull-right fencins-controller-btn"><i class="icon-cancel-circle"></i></button>
+    </div>
+</div>
+
+<div class="row-fluid">
+    <div class="span12">
+        <div class="alert hide error-message alert-error" style="display: block;">Validation Error placeholder</div>
+    </div>
+</div>
+  
+
+    <!-- non-select block -->
+    <div class="fencing-agent-block">
+            <div class="fencing-agent-select">
+                <div class="custom-tumbler node-checkbox">
+                    <input type="checkbox">
+                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                </div>
+            </div>
+            <div class="fencing-agent-name">IPMI</div>
+            <div class="fencing-agent-description">Etiam pellentesque lobortis congue. Praesent tincidunt et justo non accumsan. Etiam pellentesque lobortis congue. Praesent tincidunt et justo non accumsan.</div>
+    </div>
+    <!-- non-select block -->
+
+    <!-- non-select block -->
+    <div class="fencing-agent-block">
+            <div class="fencing-agent-select">
+                <div class="custom-tumbler node-checkbox">
+                    <input type="checkbox">
+                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                </div>
+            </div>
+            <div class="fencing-agent-name">ILO</div>
+            <div class="fencing-agent-description">Etiam pellentesque lobortis congue. Praesent tincidunt et justo non accumsan.</div>
+    </div>
+    <!-- non-select block -->
+
+    <!-- non-select block -->
+    <div class="fencing-agent-block">
+            <div class="fencing-agent-select">
+                <div class="custom-tumbler node-checkbox">
+                    <input type="checkbox">
+                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                </div>
+            </div>
+            <div class="fencing-agent-name">DRAC</div>
+            <div class="fencing-agent-description">Etiam pellentesque lobortis congue. Praesent tincidunt et justo non accumsan.</div>
+    </div>
+    <!-- non-select block -->
+
+
+    <div class="fencing-agent-block fencing-agent-open">
+
+    	<div class="fencing-agent-select">
+    	   <div class="custom-tumbler node-checkbox">
+                    <input type="checkbox">
+                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                </div>
+            </div>
+            <div class="fencing-agent-name">DRAC</div>
+            <div class="fencing-agent-description">Etiam pellentesque lobortis congue. Praesent tincidunt et justo non accumsan.</div>
+            <div class="clearfix"></div>
+
+    	<!-- controller block -->
+            <div class="fencing-agent-settings-block">
+    	   <div class="fencing-agent-controller-info">
+    	           <div class="fencing-agent-controller-name">Supermicro X9SCD</div>
+    	           <div class="fencing-agent-controller-description">CPU: 8 HDD: 1.8 TB RAM: 16.0 GB</div>
+    	   </div>
+
+    	   <div class="fencing-agent-controller-settings">
+
+                        <form class="form-horizontal">
+
+                                <!-- Login item sample start -->
+                                <div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="inputEmail">Login</label>
+                                        <div class="controls">
+                                            <input type="text" id="inputEmail" placeholder="Login">
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Login item sample end -->
+
+    	                    <!-- Password item sample start -->
+                                <div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="inputEmail">Password</label>
+                                        <div class="controls">
+                                            <input type="text" id="inputEmail" placeholder="Password">
+                                        </div>
+                                    </div>   
+                                </div>
+                                <!-- Password item sample end -->
+
+                                <!-- IP item sample start -->
+    	                    <div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="inputEmail">IP Address</label>
+                                        <div class="controls">
+                                            <input type="text" id="inputEmail" placeholder="IP Address">
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- IP item sample end -->
+
+                                <!-- Checkbox item sample start -->
+                                <div>
+                                    <div class="control-group clearfix">
+                                        <label class="control-label checkbox">
+                                        <div class="fencing-agent-controller-checkbox-position">
+                                            <div class="fencing-agent-controller-checkbox">
+                                                <div class="custom-tumbler">
+                                                    <input type="checkbox" class="use-vlan-tagging">
+                                                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                                                </div>
+                                            </div>
+                                            <div class="fencing-agent-controller-checkbox-label">Check me out</div>
+                                        </div>
+                                        </label>
+                                    </div>   
+                                </div>
+                                <!-- Checkbox item sample end -->
+
+                                <!-- Dropdown item sample start -->
+                                <div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="inputEmail">IP Address</label>
+                                        <div class="controls">
+                                            <select>
+                                                <option>1</option>
+                                                <option>2</option>
+                                                <option>3</option>
+                                                <option>4</option>
+                                                <option>5</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Dropdown item sample end -->
+
+                                <!-- Checkbox editable item sample start -->
+                                <div>
+                                    <div class="control-group clearfix">
+                                        <div class="control-label checkbox">
+                                        <div class="fencing-agent-controller-checkbox-position">
+                                            <label class="fencing-agent-controller-checkbox">
+                                                <div class="custom-tumbler">
+                                                    <input type="checkbox" class="use-vlan-tagging">
+                                                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                                                </div>
+                                            </label>
+                                            <div class="fencing-agent-controller-checkbox-label">
+                                                <span>Port 21</span>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>   
+                                </div>
+                                <!-- Checkbox editable item sample end -->
+
+                                <!-- Checkbox with edit legend field sample start -->
+                                <div>
+                                    <div class="control-group clearfix">
+                                        <div class="control-label checkbox">
+                                        <div class="fencing-agent-controller-checkbox-position">
+                                            <label class="fencing-agent-controller-checkbox">
+                                                <div class="custom-tumbler">
+                                                    <input type="checkbox" class="use-vlan-tagging">
+                                                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                                                </div>
+                                            </label>
+                                            <div class="fencing-agent-controller-checkbox-label">
+                                                <div class="fencing-agent-controller-checkbox-edit"><input type="text" class="input-mini"></div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>   
+                                </div>
+                                <!-- Checkbox with edit legend field sample end -->
+
+                   </form>
+    	   </div>
+           <div class="clearfix"></div>
+           </div>
+    	<!-- controller block -->
+
+        <!-- controller block -->
+            <div class="fencing-agent-settings-block">
+           <div class="fencing-agent-controller-info">
+                   <div class="fencing-agent-controller-name">Supermicro X9SCD</div>
+                   <div class="fencing-agent-controller-description">CPU: 8 HDD: 1.8 TB RAM: 16.0 GB</div>
+           </div>
+
+           <div class="fencing-agent-controller-settings">
+
+                        <form class="form-horizontal">
+
+                                <!-- Login item sample start -->
+                                <div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="inputEmail">Login</label>
+                                        <div class="controls">
+                                            <input type="text" id="inputEmail" placeholder="Login">
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Login item sample end -->
+
+                            <!-- Password item sample start -->
+                                <div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="inputEmail">Password</label>
+                                        <div class="controls">
+                                            <input type="text" id="inputEmail" placeholder="Password">
+                                        </div>
+                                    </div>   
+                                </div>
+                                <!-- Password item sample end -->
+
+                                <!-- IP item sample start -->
+                            <div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="inputEmail">IP Address</label>
+                                        <div class="controls">
+                                            <input type="text" id="inputEmail" placeholder="IP Address">
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- IP item sample end -->
+
+                                <!-- Checkbox item sample start -->
+                                <div>
+                                    <div class="control-group clearfix">
+                                        <label class="control-label checkbox">
+                                        <div class="fencing-agent-controller-checkbox-position">
+                                            <div class="fencing-agent-controller-checkbox">
+                                                <div class="custom-tumbler">
+                                                    <input type="checkbox" class="use-vlan-tagging">
+                                                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                                                </div>
+                                            </div>
+                                            <div class="fencing-agent-controller-checkbox-label">Check me out</div>
+                                        </div>
+                                        </label>
+                                    </div>   
+                                </div>
+                                <!-- Checkbox item sample end -->
+
+                                <!-- Dropdown item sample start -->
+                                <div>
+                                    <div class="control-group">
+                                        <label class="control-label" for="inputEmail">IP Address</label>
+                                        <div class="controls">
+                                            <select>
+                                                <option>1</option>
+                                                <option>2</option>
+                                                <option>3</option>
+                                                <option>4</option>
+                                                <option>5</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Dropdown item sample end -->
+
+                                <!-- Checkbox editable item sample start -->
+                                <div>
+                                    <div class="control-group clearfix">
+                                        <div class="control-label checkbox">
+                                        <div class="fencing-agent-controller-checkbox-position">
+                                            <label class="fencing-agent-controller-checkbox">
+                                                <div class="custom-tumbler">
+                                                    <input type="checkbox" class="use-vlan-tagging">
+                                                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                                                </div>
+                                            </label>
+                                            <div class="fencing-agent-controller-checkbox-label">
+                                                <span>Port 21</span>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>   
+                                </div>
+                                <!-- Checkbox editable item sample end -->
+
+                                <!-- Checkbox with edit legend field sample start -->
+                                <div>
+                                    <div class="control-group clearfix">
+                                        <div class="control-label checkbox">
+                                        <div class="fencing-agent-controller-checkbox-position">
+                                            <label class="fencing-agent-controller-checkbox">
+                                                <div class="custom-tumbler">
+                                                    <input type="checkbox" class="use-vlan-tagging">
+                                                    <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+                                                </div>
+                                            </label>
+                                            <div class="fencing-agent-controller-checkbox-label">
+                                                <div class="fencing-agent-controller-checkbox-edit"><input type="text" class="input-mini"></div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </div>   
+                                </div>
+                                <!-- Checkbox with edit legend field sample end -->
+
+                   </form>
+           </div>
+           <div class="clearfix"></div>
+           </div>
+        <!-- controller block -->
+
+            
+
     </div>
 </div>

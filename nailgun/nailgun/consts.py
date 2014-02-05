@@ -17,12 +17,33 @@
 from collections import namedtuple
 
 
-Enum = lambda *values: namedtuple('Enum', values)(*values)
-
+def Enum(*values, **kwargs):
+    names = kwargs.get('names')
+    if names:
+        return namedtuple('Enum', names)(*values)
+    return namedtuple('Enum', values)(*values)
 
 RELEASE_STATES = Enum(
     'not_available',
     'downloading',
     'error',
     'available'
+)
+
+NETWORK_INTERFACE_TYPES = Enum(
+    'ether',
+    'bond'
+)
+
+OVS_BOND_MODES = Enum(
+    'active-backup',
+    'balance-slb',
+    'balance-tcp',
+    'lacp-balance-tcp',
+    names=(
+        'active_backup',
+        'balance_slb',
+        'balance_tcp',
+        'lacp_balance_tcp',
+    )
 )

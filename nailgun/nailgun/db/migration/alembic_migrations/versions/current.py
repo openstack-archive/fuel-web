@@ -15,6 +15,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.fields import LowercaseString
 
 
 def upgrade():
@@ -30,7 +31,66 @@ def upgrade():
     op.drop_table('allowed_networks')
     op.add_column(
         'network_groups',
-        sa.Column('meta', JSON(), nullable=True)
+        sa.Column(
+            'meta',
+            JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
+        'node_nic_interfaces',
+        sa.Column(
+            'parent_id',
+            sa.Integer(),
+            nullable=True
+        )
+    )
+    op.rename_table(
+        'net_assignments',
+        'net_nic_assignments'
+    )
+    op.create_table(
+        'node_bond_interfaces',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer(), nullable=False),
+        sa.Column('name', sa.String(length=32), nullable=False),
+        sa.Column('mac', LowercaseString(length=17), nullable=True),
+        sa.Column('state', sa.String(length=25), nullable=True),
+        sa.Column('flags', JSON(), nullable=True),
+        sa.Column(
+            'mode',
+            sa.Enum(
+                'Active-backup',
+                'Balance-slb',
+                'Balance-tcp',
+                'LACP Balance-tcp',
+                name='bond_mode'
+            ),
+            nullable=False
+        ),
+        sa.ForeignKeyConstraint(
+            ['node_id'],
+            ['nodes.id'],
+            ondelete='CASCADE'
+        ),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table(
+        'net_bond_assignments',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('network_id', sa.Integer(), nullable=False),
+        sa.Column('bond_id', sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(
+            ['bond_id'],
+            ['node_bond_interfaces.id'],
+            ondelete='CASCADE'
+        ),
+        sa.ForeignKeyConstraint(
+            ['network_id'],
+            ['network_groups.id'],
+            ondelete='CASCADE'
+        ),
+        sa.PrimaryKeyConstraint('id')
     )
     ### end Alembic commands ###
 
@@ -134,4 +194,14 @@ def downgrade():
         ),
         sa.PrimaryKeyConstraint('id', name=u'plugins_pkey')
     )
+    op.drop_column(
+        u'node_nic_interfaces',
+        'parent_id'
+    )
+    op.rename_table(
+        'net_nic_assignments',
+        'net_assignments'
+    )
+    op.drop_table('net_bond_assignments')
+    op.drop_table('node_bond_interfaces')
     ### end Alembic commands ###

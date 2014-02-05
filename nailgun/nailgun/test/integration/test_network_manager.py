@@ -201,8 +201,8 @@ class TestNetworkManager(BaseIntegrationTest):
 
         nodes = self.db.query(Node).options(
             joinedload('cluster'),
-            joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks_list')).all()
+            joinedload('net_interfaces'),
+            joinedload('net_interfaces.assigned_networks_list')).all()
 
         ips_mapped = self.env.network_manager.get_grouped_ips_by_node()
         networks_grouped = self.env.network_manager.\

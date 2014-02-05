@@ -346,7 +346,7 @@ class Environment(object):
                 netmask=interface.get('netmask'))
 
             self.db.add(interface)
-            node.interfaces.append(interface)
+            node.nic_interfaces.append(interface)
 
         self.db.commit()
         # If node in a cluster then assign networks for all interfaces
@@ -354,10 +354,10 @@ class Environment(object):
             self.network_manager.assign_networks_by_default(node)
         # At least one interface should have
         # same ip as mac in meta
-        if node.interfaces and not \
-           filter(lambda i: node.mac == i.mac, node.interfaces):
+        if node.nic_interfaces and not \
+           filter(lambda i: node.mac == i.mac, node.nic_interfaces):
 
-            node.interfaces[0].mac = node.mac
+            node.nic_interfaces[0].mac = node.mac
             self.db.commit()
 
     def _add_interfaces_to_node(self, node_id, count=1):

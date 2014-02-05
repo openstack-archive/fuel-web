@@ -14,30 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""
-Handlers dealing with releases
-"""
-
-from nailgun.api.handlers.base import CollectionHandler
-from nailgun.api.handlers.base import SingleHandler
-
-from nailgun.api.validators.release import ReleaseValidator
-
-from nailgun.objects import Release
-from nailgun.objects import ReleaseCollection
+from nailgun.api.serializers.base import BasicSerializer
 
 
-class ReleaseHandler(SingleHandler):
-    """Release single handler
-    """
+class ReleaseSerializer(BasicSerializer):
 
-    single = Release
-    validator = ReleaseValidator
-
-
-class ReleaseCollectionHandler(CollectionHandler):
-    """Release collection handler
-    """
-
-    validator = ReleaseValidator
-    collection = ReleaseCollection
+    fields = (
+        "id",
+        "name",
+        "version",
+        "description",
+        "operating_system",
+        "modes_metadata",
+        "roles",
+        "roles_metadata",
+        "state"
+    )

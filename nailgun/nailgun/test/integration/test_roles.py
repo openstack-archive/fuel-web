@@ -40,7 +40,7 @@ class TestRoles(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('ReleaseHandler',
-                    kwargs={"release_id": release_json["id"]}),
+                    kwargs={"obj_id": release_json["id"]}),
             json.dumps(release_json),
             headers=self.default_headers
         )
@@ -64,7 +64,7 @@ class TestRoles(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('ReleaseHandler',
-                    kwargs={"release_id": release_json["id"]}),
+                    kwargs={"obj_id": release_json["id"]}),
             json.dumps(release_json),
             headers=self.default_headers
         )
@@ -88,7 +88,7 @@ class TestRoles(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('ReleaseHandler',
-                    kwargs={"release_id": release_json["id"]}),
+                    kwargs={"obj_id": release_json["id"]}),
             json.dumps(release_json),
             headers=self.default_headers
         )
@@ -137,7 +137,7 @@ class TestRoles(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('ReleaseHandler',
-                    kwargs={"release_id": release_json["id"]}),
+                    kwargs={"obj_id": release_json["id"]}),
             json.dumps(release_json),
             headers=self.default_headers
         )
@@ -167,7 +167,7 @@ class TestRoles(BaseIntegrationTest):
             reverse(
                 'ReleaseHandler',
                 kwargs={
-                    "release_id": release_json["id"]
+                    "obj_id": release_json["id"]
                 }
             ),
             json.dumps(release_json),

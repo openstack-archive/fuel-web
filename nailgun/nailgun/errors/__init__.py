@@ -22,6 +22,10 @@ default_messages = {
     "AlreadyExists": "Object already exists",
     "DumpRunning": "Dump already running",
 
+    # REST errors
+    "CannotDelete": "Can't delete object",
+    "InvalidField": "Invalid field specified for object",
+
     # node discovering errors
     "InvalidInterfacesInfo": "Invalid interfaces info",
     "InvalidMetadata": "Invalid metadata specified for node",

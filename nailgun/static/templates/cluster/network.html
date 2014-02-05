@@ -39,7 +39,7 @@
                 <div class="parameter-control vlan_end">
                   <input type="text" class="mini" name="vlan_end" value="" disabled />
                 </div>
-                <div class="error"><span class="help-inline"></span></div>
+                <div class="error validation-error"><span class="help-inline"></span></div>
               </div>
             </label>
           <% } else { %>
@@ -58,7 +58,7 @@
                   <input type="text" value="" name="<%- attribute %>" class="vlan vlan-tagging" <%= disabled %>>
                 </div>
               </label>
-              <div class="error"><span class="help-inline"></span></div>
+              <div class="error validation-error"><span class="help-inline"></span></div>
             </div>
           <% } %>
         <% } else { %>
@@ -72,7 +72,7 @@
                 <input type="text" name="<%- attribute %>" value="" <%= disabled %> />
               <% } %>
             </div>
-            <div class="error"><span class="help-inline"></span></div>
+            <div class="error validation-error"><span class="help-inline"></span></div>
           </label>
         <% } %>
       </div>

@@ -28,6 +28,7 @@ import web
 
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
+from nailgun.api.serializers.node import NodeInterfacesSerializer
 from nailgun.api.validators.network import NetAssignmentValidator
 from nailgun.api.validators.node import NodeValidator
 from nailgun.db import db
@@ -189,8 +190,10 @@ class NodeCollectionHandler(BaseHandler):
         user_data = web.input(cluster_id=None)
         nodes = db().query(Node).options(
             joinedload('cluster'),
-            joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks_list'),
+            joinedload('nic_interfaces'),
+            joinedload('nic_interfaces.assigned_networks_list'),
+            joinedload('bond_interfaces'),
+            joinedload('bond_interfaces.assigned_networks_list'),
             joinedload('role_list'),
             joinedload('pending_role_list'))
         if user_data.cluster_id == '':
@@ -432,8 +435,10 @@ class NodeCollectionHandler(BaseHandler):
         # we need eagerload everything that is used in render
         nodes = db().query(Node).options(
             joinedload('cluster'),
-            joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks_list')).\
+            joinedload('nic_interfaces'),
+            joinedload('nic_interfaces.assigned_networks_list'),
+            joinedload('bond_interfaces'),
+            joinedload('bond_interfaces.assigned_networks_list')).\
             filter(Node.id.in_(nodes_updated)).all()
         return self.render(nodes)
 
@@ -442,18 +447,9 @@ class NodeNICsHandler(BaseHandler):
     """Node network interfaces handler
     """
 
-    fields = (
-        'id',
-        'mac',
-        'name',
-        'state',
-        'current_speed',
-        'max_speed',
-        'assigned_networks'
-    )
-
     model = NodeNICInterface
     validator = NetAssignmentValidator
+    serializer = NodeInterfacesSerializer
 
     @content_json
     def GET(self, node_id):
@@ -485,7 +481,7 @@ class NodeCollectionNICsHandler(BaseHandler):
 
     model = NetworkGroup
     validator = NetAssignmentValidator
-    fields = NodeNICsHandler.fields
+    serializer = NodeInterfacesSerializer
 
     @content_json
     def PUT(self):

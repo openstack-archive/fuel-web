@@ -138,3 +138,15 @@ class NeutronManager(NetworkManager):
             vlan_range = l2params["phys_nets"]["physnet2"]["vlan_range"]
             return range(vlan_range[0], vlan_range[1] + 1)
         return [int(ng.get("vlan_start"))] if ng.get("vlan_start") else []
+
+    @classmethod
+    def get_ovs_bond_properties(cls, bond):
+        props = []
+        if bond.mode == 'LACP':
+            props.append('lacp=active')
+            props.append('bond_mode=balance−tcp')
+        else:
+            props.append('bond_mode=%s' % bond.mode)
+        return props
+
+

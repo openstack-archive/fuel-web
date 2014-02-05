@@ -26,3 +26,13 @@ RELEASE_STATES = Enum(
     'error',
     'available'
 )
+
+NETWORK_INTERFACE_TYPES = Enum(
+    'ether',
+    'bond'
+)
+
+OVS_BOND_MODES = namedtuple(
+    'Enum',
+    ('active_backup', 'balance_slb', 'balance_tcp', 'lacp_balance_tcp')
+)('Active-backup', 'Balance-slb', 'Balance-tcp', 'LACP Balance-tcp')

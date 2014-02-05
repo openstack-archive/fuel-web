@@ -97,7 +97,7 @@ class ProvisioningSerializer(object):
         admin_ip = net_manager.get_admin_ip_for_node(node)
         admin_netmask = net_manager.get_admin_network_group().netmask
 
-        for interface in node.interfaces:
+        for interface in node.nic_interfaces:
             name = interface.name
 
             interfaces[name] = {
@@ -139,7 +139,7 @@ class ProvisioningSerializer(object):
                   00:02:03:04:04_eth0,00:02:03:04:05_eth1
         """
         return ','.join((
-            '{0}_{1}'.format(i.mac, i.name) for i in node.interfaces))
+            '{0}_{1}'.format(i.mac, i.name) for i in node.nic_interfaces))
 
     @classmethod
     def get_ssh_key_path(cls, node):

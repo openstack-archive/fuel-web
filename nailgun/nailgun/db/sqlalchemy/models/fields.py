@@ -39,4 +39,6 @@ class LowercaseString(types.TypeDecorator):
     impl = types.String
 
     def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
         return value.lower()

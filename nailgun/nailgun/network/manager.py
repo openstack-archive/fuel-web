@@ -29,13 +29,15 @@ from netaddr import IPRange
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import IPAddrRange
-from nailgun.db.sqlalchemy.models import NetworkAssignment
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import NetworkNICAssignment
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -392,20 +394,21 @@ class NetworkManager(object):
                  for ng in ngs],
                 key=lambda x: x[1]))[0]
         )
-        for i, nic in enumerate(node.interfaces):
+        for i, nic in enumerate(node.nic_interfaces):
             nic_dict = {
                 "id": nic.id,
                 "name": nic.name,
                 "mac": nic.mac,
                 "max_speed": nic.max_speed,
-                "current_speed": nic.current_speed
+                "current_speed": nic.current_speed,
+                "type": nic.type,
             }
-            allowed_ngs = cls.get_allowed_nic_networkgroups(
-                node,
-                nic
-            )
 
             if to_assign_ids:
+                allowed_ngs = cls.get_allowed_nic_networkgroups(
+                    node,
+                    nic
+                )
                 allowed_ids = set([ng.id for ng in allowed_ngs])
                 can_assign = [id for id in to_assign_ids
                               if id in allowed_ids]
@@ -452,6 +455,9 @@ class NetworkManager(object):
             # Assign remaining networks to NIC #0
             # as all the networks must be assigned.
             # But network check will not pass if we get here.
+            logger.warn("Cannot assign all networks appropriately for"
+                        " node %r. Set all unassigned networks to the"
+                        " interface %r" % (node.name, nics[0]['name']))
             for id in to_assign_ids:
                 nics[0].setdefault('assigned_networks', []).append(
                     {'id': ngs_by_id[id].id, 'name': ngs_by_id[id].name})
@@ -677,23 +683,74 @@ class NetworkManager(object):
     @classmethod
     def _update_attrs(cls, node_data):
         node_db = db().query(Node).get(node_data['id'])
-        interfaces = node_data['interfaces']
-        interfaces_db = node_db.interfaces
+        is_ether = lambda x: x['type'] == consts.NETWORK_INTERFACE_TYPES.ether
+        is_bond = lambda x: x['type'] == consts.NETWORK_INTERFACE_TYPES.bond
+        interfaces = filter(is_ether, node_data['interfaces'])
+        bond_interfaces = filter(is_bond, node_data['interfaces'])
+
+        interfaces_db = node_db.nic_interfaces
+        bond_interfaces_db = node_db.bond_interfaces
         for iface in interfaces:
             current_iface = filter(
                 lambda i: i.id == iface['id'],
                 interfaces_db
             )[0]
             # Remove all old network's assignment for this interface.
-            db().query(NetworkAssignment).filter_by(
+            db().query(NetworkNICAssignment).filter_by(
                 interface_id=current_iface.id
             ).delete()
             for net in iface['assigned_networks']:
-                net_assignment = NetworkAssignment()
+                net_assignment = NetworkNICAssignment()
                 net_assignment.network_id = net['id']
                 net_assignment.interface_id = current_iface.id
                 db().add(net_assignment)
         db().commit()
+        # Remove bonds from DB if they are not in a received data.
+        received_bond_ids = [x['id'] for x in bond_interfaces if 'id' in x]
+        unused_bonds = filter(lambda x: x.id not in received_bond_ids,
+                              bond_interfaces_db)
+        map(db.delete, unused_bonds)
+        db.commit()
+
+        for bond in bond_interfaces:
+            if 'id' in bond:
+                bond_db = filter(
+                    lambda i: i.id == bond['id'],
+                    bond_interfaces_db
+                )[0]
+                # Clear all previous assigned networks.
+                map(bond_db.assigned_networks_list.remove,
+                    list(bond_db.assigned_networks_list))
+                # Clear all previous assigned slaves.
+                map(bond_db.slaves.remove, list(bond_db.slaves))
+            else:
+                # Create a bond if not exists.
+                bond_db = NodeBondInterface()
+                bond_db.node_id = node_db.id
+                db.add(bond_db)
+            bond_db.name = bond['name']
+            if 'mode' in bond:
+                bond_db.mode = bond['mode']
+            bond_db.mac = bond.get('mac')
+            bond_db.flags = bond.get('flags', {})
+            db.commit()
+            db.refresh(bond_db)
+
+            # Add new network assignment.
+            map(bond_db.assigned_networks_list.append,
+                [db.query(NetworkGroup).get(ng['id']) for ng
+                 in bond['assigned_networks']])
+            # Add new slaves.
+            for nic in bond['slaves']:
+                bond_db.slaves.append(
+                    db.query(NodeNICInterface).filter_by(
+                        name=nic['name']
+                    ).filter_by(
+                        node_id=node_db.id
+                    ).first()
+                )
+            db.commit()
+
         return node_db.id
 
     @classmethod
@@ -764,7 +821,7 @@ class NetworkManager(object):
         cls.__set_interface_attributes(interface, interface_attrs)
         db().add(interface)
         db().commit()
-        node.interfaces.append(interface)
+        node.nic_interfaces.append(interface)
 
     @classmethod
     def __update_existing_interface(cls, interface_id, interface_attrs):
@@ -913,12 +970,22 @@ class NetworkManager(object):
 
     @classmethod
     def get_node_interface_by_netname(cls, node_id, netname):
-        return db().query(NodeNICInterface).join(
+        iface = db().query(NodeNICInterface).join(
             (NetworkGroup, NodeNICInterface.assigned_networks_list)
         ).filter(
             NetworkGroup.name == netname
         ).filter(
             NodeNICInterface.node_id == node_id
+        ).first()
+        if iface:
+            return iface
+
+        return db().query(NodeBondInterface).join(
+            (NetworkGroup, NodeBondInterface.assigned_networks_list)
+        ).filter(
+            NetworkGroup.name == netname
+        ).filter(
+            NodeBondInterface.node_id == node_id
         ).first()
 
     @classmethod

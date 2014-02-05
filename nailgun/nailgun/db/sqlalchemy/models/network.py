@@ -86,8 +86,8 @@ class NetworkGroup(Base):
     meta = Column(JSON, default={})
 
 
-class NetworkAssignment(Base):
-    __tablename__ = 'net_assignments'
+class NetworkNICAssignment(Base):
+    __tablename__ = 'net_nic_assignments'
     id = Column(Integer, primary_key=True)
     network_id = Column(
         Integer,
@@ -97,5 +97,20 @@ class NetworkAssignment(Base):
     interface_id = Column(
         Integer,
         ForeignKey('node_nic_interfaces.id', ondelete="CASCADE"),
+        nullable=False
+    )
+
+
+class NetworkBondAssignment(Base):
+    __tablename__ = 'net_bond_assignments'
+    id = Column(Integer, primary_key=True)
+    network_id = Column(
+        Integer,
+        ForeignKey('network_groups.id', ondelete="CASCADE"),
+        nullable=False
+    )
+    bond_id = Column(
+        Integer,
+        ForeignKey('node_bond_interfaces.id', ondelete="CASCADE"),
         nullable=False
     )

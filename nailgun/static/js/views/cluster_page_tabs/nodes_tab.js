@@ -1311,7 +1311,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     var interfaces = new models.Interfaces(node.interfaces.toJSON());
                     interfaces.toJSON = _.bind(function() {
                         return interfaces.map(function(ifc, index) {
-                            return _.pick(ifc.attributes, 'id', 'assigned_networks');
+                            return _.pick(ifc.attributes, 'id', 'assigned_networks', 'type', 'slaves');
                         }, this);
                     }, this);
                     return Backbone.sync('update', interfaces, {url: _.result(node, 'url') + '/interfaces'});

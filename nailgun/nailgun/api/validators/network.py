@@ -133,7 +133,14 @@ class NetAssignmentValidator(BasicValidator):
                     ),
                     log_message=True
                 )
-            if 'id' not in iface:
+            if 'type' not in iface:
+                # TODO(ADanin) Beautify an error message.
+                # TODO(ADanin) Check a type value (may be 'ether' or 'bond').
+                raise errors.InvalidData(
+                    "Node '%d': each interface must have a type" % node['id'],
+                    log_message=True
+                )
+            if 'id' not in iface and iface.get('type') != 'bond':
                 raise errors.InvalidData(
                     "Node '%d': each interface should have ID" % node['id'],
                     log_message=True

@@ -455,6 +455,7 @@ class NodeNICsHandler(BaseHandler):
         'id',
         'mac',
         'name',
+        'type',
         'state',
         'current_speed',
         'max_speed',
@@ -472,7 +473,7 @@ class NodeNICsHandler(BaseHandler):
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(Node, node_id)
-        return map(self.render, node.interfaces)
+        return map(self.render, node.interfaces + node.bond_interfaces)
 
     @content_json
     def PUT(self, node_id):
@@ -486,7 +487,7 @@ class NodeNICsHandler(BaseHandler):
 
         NetworkManager._update_attrs(node_data)
         node = self.get_object_or_404(Node, node_id)
-        return map(self.render, node.interfaces)
+        return map(self.render, node.interfaces + node.bond_interfaces)
 
 
 class NodeCollectionNICsHandler(BaseHandler):

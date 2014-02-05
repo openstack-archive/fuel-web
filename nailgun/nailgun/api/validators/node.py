@@ -18,6 +18,7 @@ from nailgun.api.validators.json_schema.disks \
     import disks_simple_format_schema
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 
 
@@ -109,7 +110,9 @@ class NodeValidator(BasicValidator):
             )
         else:
             q = db().query(Node)
-            if q.filter(Node.mac == d["mac"]).first():
+            if q.filter(Node.mac == d["mac"]).first() or q.join(
+                    (NodeNICInterface, Node.interfaces)).filter(
+                    NodeNICInterface.mac == d['mac']).first():
                 raise errors.AlreadyExists(
                     "Node with mac {0} already "
                     "exists - doing nothing".format(d["mac"]),

@@ -26,6 +26,7 @@ from nailgun.db.sqlalchemy.models.node import NodeRoles
 from nailgun.db.sqlalchemy.models.node import PendingNodeRoles
 from nailgun.db.sqlalchemy.models.node import Role
 from nailgun.db.sqlalchemy.models.node import NodeAttributes
+from nailgun.db.sqlalchemy.models.node import NodeBondInterface
 from nailgun.db.sqlalchemy.models.node import NodeNICInterface
 
 from nailgun.db.sqlalchemy.models.network import NetworkGroup

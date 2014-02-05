@@ -21,6 +21,7 @@ from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Table
 from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
@@ -118,6 +119,9 @@ class Node(Base):
     interfaces = relationship("NodeNICInterface", backref="node",
                               cascade="delete",
                               order_by="NodeNICInterface.name")
+    bond_interfaces = relationship("NodeBondInterface", backref="node",
+                                   cascade="delete",
+                                   order_by="NodeBondInterface.name")
 
     @property
     def uid(self):
@@ -302,6 +306,76 @@ class NodeNICInterface(Base):
     ip_addr = Column(String(25))
     netmask = Column(String(25))
     state = Column(String(25))
+    parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
+    type = 'ether'
+
+    @property
+    def allowed_networks(self):
+        return [
+            {"id": n.id, "name": n.name}
+            for n in self.allowed_networks_list
+        ]
+
+    @allowed_networks.setter
+    def allowed_networks(self, value):
+        self.allowed_networks_list = value
+
+    @property
+    def assigned_networks(self):
+        return [
+            {"id": n.id, "name": n.name}
+            for n in self.assigned_networks_list
+        ]
+
+    @assigned_networks.setter
+    def assigned_networks(self, value):
+        self.assigned_networks_list = value
+
+
+bond_allowed_nets_assoc = Table(
+    'bond_allowed_nets', Base.metadata,
+    Column('network_group_id', Integer,
+           ForeignKey('network_groups.id', ondelete="CASCADE")),
+    Column('bond_id', Integer,
+           ForeignKey('node_bond_interfaces.id', ondelete="CASCADE"))
+)
+
+
+bond_assigned_nets_assoc = Table(
+    'bond_assigned_nets', Base.metadata,
+    Column('network_group_id', Integer,
+           ForeignKey('network_groups.id', ondelete="CASCADE")),
+    Column('bond_id', Integer,
+           ForeignKey('node_bond_interfaces.id', ondelete="CASCADE"))
+)
+
+
+class NodeBondInterface(Base):
+    __tablename__ = 'node_bond_interfaces'
+    id = Column(Integer, primary_key=True)
+    node_id = Column(
+        Integer,
+        ForeignKey('nodes.id', ondelete="CASCADE"),
+        nullable=False)
+    name = Column(String(32), nullable=False)
+    mac = Column(LowercaseString(17))
+    allowed_networks_list = relationship(
+        "NetworkGroup",
+        secondary=bond_allowed_nets_assoc,
+        order_by="NetworkGroup.id")
+    assigned_networks_list = relationship(
+        "NetworkGroup",
+        secondary=bond_assigned_nets_assoc,
+        order_by="NetworkGroup.id")
+    state = Column(String(25))
+    flags = Column(JSON, default={})
+    mode = Column(String(20), nullable=False)
+    hash_policy = Column(String(10))
+    slaves = relationship("NodeNICInterface", backref="bond")
+    type = 'bond'
+    current_speed = None
+    max_speed = None
+    
 
     @property
     def allowed_networks(self):

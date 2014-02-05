@@ -23,7 +23,6 @@ from netaddr import IPAddress
 from netaddr import IPNetwork
 from netaddr import IPRange
 from sqlalchemy import not_
-from sqlalchemy.orm import joinedload
 
 import nailgun
 
@@ -199,10 +198,7 @@ class TestNetworkManager(BaseIntegrationTest):
             "management"
         )
 
-        nodes = self.db.query(Node).options(
-            joinedload('cluster'),
-            joinedload('interfaces'),
-            joinedload('interfaces.assigned_networks_list')).all()
+        nodes = self.db.query(Node).all()
 
         ips_mapped = self.env.network_manager.get_grouped_ips_by_node()
         networks_grouped = self.env.network_manager.\

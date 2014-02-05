@@ -21,12 +21,14 @@ from copy import deepcopy
 from netaddr import IPNetwork
 from sqlalchemy import and_
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
+from nailgun.network.neutron import NeutronManager
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from nailgun.utils import dict_merge
@@ -661,6 +663,10 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             },
             'transformations': []
         }
+
+        nm = NeutronManager
+        iface_types = consts.NETWORK_INTERFACE_TYPES
+
         # Add a dynamic data to a structure.
 
         use_vlan_splinters = node.cluster.attributes.editable['common'].get(
@@ -668,23 +674,36 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         ).get('value')
 
         # Fill up interfaces and add bridges for them.
+        bonded_ifaces = [x for x in node.nic_interfaces if x.bond]
         for iface in node.interfaces:
             # Handle vlan splinters.
-            attrs['interfaces'][iface.name] = {
-                'L2': cls._get_vlan_splinters_desc(
-                    use_vlan_splinters, iface, node.cluster
-                )
-            }
+            if iface.type == iface_types.ether:
+                attrs['interfaces'][iface.name] = {
+                    'L2': cls._get_vlan_splinters_desc(
+                        use_vlan_splinters, iface, node.cluster
+                    )
+                }
 
+            if iface in bonded_ifaces:
+                continue
             attrs['transformations'].append({
                 'action': 'add-br',
                 'name': 'br-%s' % iface.name
             })
-            attrs['transformations'].append({
-                'action': 'add-port',
-                'bridge': 'br-%s' % iface.name,
-                'name': iface.name
-            })
+            if iface.type == iface_types.ether:
+                attrs['transformations'].append({
+                    'action': 'add-port',
+                    'bridge': 'br-%s' % iface.name,
+                    'name': iface.name
+                })
+            elif iface.type == iface_types.bond:
+                attrs['transformations'].append({
+                    'action': 'add-bond',
+                    'bridge': 'br-%s' % iface.name,
+                    'name': iface.name,
+                    'interfaces': [x['name'] for x in iface.slaves],
+                    'properties': nm.get_ovs_bond_properties(iface)
+                })
 
         # Add bridges for networks.
         # We have to add them after br-ethXX bridges because it is the way
@@ -696,7 +715,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 'name': brname
             })
 
-        nm = NetworkManager
         # Populate IP address information to endpoints.
         netgroup_mapping = [
             ('storage', 'br-storage'),

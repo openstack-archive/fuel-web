@@ -25,11 +25,13 @@ from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
-from nailgun.db.sqlalchemy.models.network import NetworkAssignment
+from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
+from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.logger import logger
 from nailgun.volumes.manager import VolumeManager
 
@@ -114,9 +116,16 @@ class Node(Base):
                               backref=backref("node"),
                               uselist=False,
                               cascade="all,delete")
-    interfaces = relationship("NodeNICInterface", backref="node",
-                              cascade="delete",
-                              order_by="NodeNICInterface.name")
+    nic_interfaces = relationship("NodeNICInterface", backref="node",
+                                  cascade="delete",
+                                  order_by="NodeNICInterface.name")
+    bond_interfaces = relationship("NodeBondInterface", backref="node",
+                                   cascade="delete",
+                                   order_by="NodeBondInterface.name")
+
+    @property
+    def interfaces(self):
+        return self.nic_interfaces + self.bond_interfaces
 
     @property
     def uid(self):
@@ -292,11 +301,65 @@ class NodeNICInterface(Base):
     current_speed = Column(Integer)
     assigned_networks_list = relationship(
         "NetworkGroup",
-        secondary=NetworkAssignment.__table__,
+        secondary=NetworkNICAssignment.__table__,
         order_by="NetworkGroup.id")
     ip_addr = Column(String(25))
     netmask = Column(String(25))
     state = Column(String(25))
+    parent_id = Column(Integer, ForeignKey('node_bond_interfaces.id'))
+
+    @property
+    def type(self):
+        return consts.NETWORK_INTERFACE_TYPES.ether
+
+    @property
+    def assigned_networks(self):
+        return [
+            {"id": n.id, "name": n.name}
+            for n in self.assigned_networks_list
+        ]
+
+    @assigned_networks.setter
+    def assigned_networks(self, value):
+        self.assigned_networks_list = value
+
+
+class NodeBondInterface(Base):
+    __tablename__ = 'node_bond_interfaces'
+    id = Column(Integer, primary_key=True)
+    node_id = Column(
+        Integer,
+        ForeignKey('nodes.id', ondelete="CASCADE"),
+        nullable=False)
+    name = Column(String(32), nullable=False)
+    mac = Column(LowercaseString(17))
+    assigned_networks_list = relationship(
+        "NetworkGroup",
+        secondary=NetworkBondAssignment.__table__,
+        order_by="NetworkGroup.id")
+    state = Column(String(25))
+    flags = Column(JSON, default={})
+    mode = Column(
+        Enum(
+            *consts.OVS_BOND_MODES,
+            name='bond_mode'
+        ),
+        nullable=False,
+        default=consts.OVS_BOND_MODES[0]
+    )
+    slaves = relationship("NodeNICInterface", backref="bond")
+
+    @property
+    def max_speed(self):
+        return None
+
+    @property
+    def current_speed(self):
+        return None
+
+    @property
+    def type(self):
+        return consts.NETWORK_INTERFACE_TYPES.bond
 
     @property
     def assigned_networks(self):

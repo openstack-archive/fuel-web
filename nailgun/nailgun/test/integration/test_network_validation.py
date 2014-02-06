@@ -339,25 +339,39 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('floating')["vlan_start"] = 111
         self.update_nova_networks_success(self.cluster.id, self.nets)
 
-        node_db = self.env.nodes[0]
+        mac = self.env.generate_random_mac()
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': mac},
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+             {'name': 'eth2', 'mac': self.env.generate_random_mac()}]
+        )
+        node = self.env.create_node(api=True, meta=meta, mac=mac)
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node['id'], 'cluster_id': self.cluster.id}]),
+            headers=self.default_headers
+        )
+        self.assertEquals(resp.status_code, 200)
+
         resp = self.app.get(reverse('NodeNICsHandler',
-                                    kwargs={'node_id': node_db.id}),
+                                    kwargs={'node_id': node['id']}),
                             headers=self.default_headers)
         nics = json.loads(resp.body)
 
         for nic in nics:
+            if not nic.get('assigned_networks'):
+                other_nic = nic
             for net in nic['assigned_networks']:
-                if net['name'] == 'fuelweb_admin':
-                    admin_nic = nic
-                else:
-                    other_nic = nic
-                    if net['name'] == 'public':
-                        public = net
-        other_nic['assigned_networks'].remove(public)
-        admin_nic['assigned_networks'].append(public)
+                if net['name'] == 'public':
+                    public_nic = nic
+                    public = net
+        public_nic['assigned_networks'].remove(public)
+        other_nic.setdefault('assigned_networks', []).append(public)
 
         resp = self.app.put(reverse('NodeNICsHandler',
-                                    kwargs={'node_id': node_db.id}),
+                                    kwargs={'node_id': node['id']}),
                             json.dumps(nics),
                             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)

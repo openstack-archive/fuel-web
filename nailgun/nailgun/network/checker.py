@@ -502,9 +502,7 @@ class NetworkCheck(object):
         untagged_nets = set(
             n["id"] for n in filter(
                 lambda n: (n['vlan_start'] is None) and
-                          ((not n['meta']) or
-                           ('neutron_vlan_range' not in n['meta']) or
-                           (not n['meta']['neutron_vlan_range'])),
+                          (not n['meta'].get('neutron_vlan_range')),
                 self.networks))
         if untagged_nets:
             logger.info(

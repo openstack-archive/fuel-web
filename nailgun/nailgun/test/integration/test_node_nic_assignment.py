@@ -21,7 +21,6 @@ from netaddr import IPNetwork
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkAssignment
-from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -54,25 +53,6 @@ class TestClusterHandlers(BaseIntegrationTest):
             else:
                 self.assertTrue("public" in net_names)
             self.assertGreater(len(resp_nic['assigned_networks']), 0)
-
-    def test_allowed_networks_when_node_added(self):
-        mac = '123'
-        meta = self.env.default_metadata()
-        self.env.set_interfaces_in_meta(
-            meta,
-            [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'abc'}])
-        node = self.env.create_node(api=True, meta=meta, mac=mac)
-        self.env.create_cluster(api=True, nodes=[node['id']])
-
-        node_db = self.db.query(Node).get(node['id'])
-        for nic in node_db.interfaces:
-            self.assertGreater(
-                len(self.env.network_manager.get_allowed_nic_networkgroups(
-                    node_db,
-                    nic)),
-                0
-            )
 
     def test_assignment_is_removed_when_delete_node_from_cluster(self):
         mac = '123'
@@ -223,9 +203,8 @@ class TestNodeHandlers(BaseIntegrationTest):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
-            [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'cde'},
-             {'name': 'eth2', 'mac': 'def'}])
+            [{'name': 'eth0', 'mac': mac}]
+        )
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -239,12 +218,11 @@ class TestNodeHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
-        net_name_per_nic = [['fuelweb_admin', 'storage', 'fixed',
-                            'public', 'floating', 'management'],
-                            [], []]
-        for i, nic in enumerate(response):
-            net_names = set([net['name'] for net in nic['assigned_networks']])
-            self.assertEqual(set(net_name_per_nic[i]), net_names)
+        self.assertEquals(len(response), 1)
+        net_name_per_nic = ['fuelweb_admin', 'storage', 'fixed',
+                            'public', 'floating', 'management']
+        net_names = [net['name'] for net in response[0]['assigned_networks']]
+        self.assertEqual(set(net_name_per_nic), set(net_names))
 
     def test_neutron_assignment_when_network_cfg_changed_then_node_added(self):
         cluster = self.env.create_cluster(api=True,
@@ -301,9 +279,8 @@ class TestNodeHandlers(BaseIntegrationTest):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
-            [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'cde'},
-             {'name': 'eth2', 'mac': 'def'}])
+            [{'name': 'eth0', 'mac': mac}]
+        )
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -317,12 +294,11 @@ class TestNodeHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
-        net_name_per_nic = [['fuelweb_admin', 'storage', 'public',
-                             'management', 'private'],
-                            [], []]
-        for i, nic in enumerate(response):
-            net_names = set([net['name'] for net in nic['assigned_networks']])
-            self.assertEqual(set(net_name_per_nic[i]), net_names)
+        self.assertEquals(len(response), 1)
+        net_name_per_nic = ['fuelweb_admin', 'storage', 'public',
+                            'management', 'private']
+        net_names = [net['name'] for net in response[0]['assigned_networks']]
+        self.assertEqual(set(net_name_per_nic), set(net_names))
 
     def test_assignment_is_removed_when_delete_node_from_cluster(self):
         cluster = self.env.create_cluster(api=True)

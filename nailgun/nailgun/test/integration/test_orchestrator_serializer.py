@@ -802,7 +802,7 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
                 'bridge': 'br-ovsbond0',
                 'interfaces': ['eth1', 'eth2'],
                 'name': 'ovsbond0',
-                'properties': ['bond_mode=%s' % mode]
+                'properties': ['bond_mode={0}'.format(mode)]
             })
 
     def check_bond_with_mode(self, mode):

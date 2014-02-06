@@ -301,6 +301,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         template: _.template(nodesManagementPanelTemplate),
         events: {
             'change select[name=grouping]' : 'groupNodes',
+            'focus input[name=filtering]' : 'expandInput',
+            'blur input[name=filtering]' : 'minifyInput',
+            'keyup input[name=filtering]' : 'filterNodes',
+            'change input[name=filtering]' : 'filterNodes',
+            'input input[name=filtering]' : 'filterNodes',
             'click .btn-delete-nodes:not(:disabled)' : 'showDeleteNodesDialog',
             'click .btn-apply:not(:disabled)' : 'applyChanges',
             'click .btn-group-congiration:not(.conflict):not(:disabled)' : 'goToConfigurationScreen',
@@ -319,6 +324,20 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.cluster.save({grouping: grouping}, {patch: true, wait: true});
             }
             this.screen.nodeList.groupNodes(grouping);
+        },
+        expandInput: function(e) {
+            this.$(e.currentTarget).stop().animate({width:'180px'}, 500);
+        },
+        minifyInput: function(e) {
+            this.$(e.currentTarget).stop().animate({width:'105px'}, 500);
+        },
+        lastFilterValue: '',
+        filterNodes: function(e) {
+            var filterValue = _.escape($.trim(this.$(e.currentTarget).val())).toLowerCase();
+            if (filterValue != this.lastFilterValue) {
+                this.lastFilterValue = filterValue;
+                this.screen.nodeList.filterNodes(filterValue);
+            }
         },
         showDeleteNodesDialog: function() {
             var nodes = new models.Nodes(this.screen.nodes.where({checked: true}));
@@ -538,12 +557,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         groupNodes: function(grouping) {
             if (_.isUndefined(grouping)) {
-                grouping = this.screen instanceof AddNodesScreen ? 'hardware' : this.screen.tab.model.get('grouping');
+                grouping = this.screen instanceof AddNodesScreen ? 'hardware' : this.screen.model.get('grouping');
             }
             var nodeGroups = _.pairs(this.nodes.groupByAttribute(grouping));
             // sort node groups
             if (grouping != 'hardware') {
-                var preferredOrder = this.screen.tab.model.get('release').get('roles');
+                var preferredOrder = this.screen.model.get('release').get('roles');
                 nodeGroups.sort(function(firstGroup, secondGroup) {
                     var firstGroupRoles = firstGroup[1][0].sortedRoles();
                     var secondGroupRoles = secondGroup[1][0].sortedRoles();
@@ -558,6 +577,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             this.renderNodeGroups(nodeGroups);
             this.screen.updateBatchActionsButtons();
+        },
+        filterNodes: function(filterValue) {
+            this.nodes = new models.Nodes(this.screen.nodes.filter(function(node) {
+                return _.contains(node.get('name').toLowerCase(), filterValue) || _.contains(node.get('mac').toLowerCase(), filterValue);
+            }));
+            this.nodes.cluster = this.screen.nodes.cluster;
+            this.render();
         },
         initialize: function(options) {
             _.defaults(this, options);

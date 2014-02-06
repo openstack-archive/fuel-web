@@ -12,6 +12,11 @@
         <% } %>
         <% }) %>
         </select>
+
+    </div>
+    <div class="cluster-toolbar-item  nodes-filter">
+        <label data-i18n="cluster_page.nodes_tab.node_management_panel.filter_by"></label>
+        <input name="filtering" type="text" placeholder="Node name/mac" <%= nodes.length ? '' : 'disabled' %>  />
     </div>
     <% if (clusterNodesScreen) { %>
     <div class="cluster-toolbar-item pull-right">

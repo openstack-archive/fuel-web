@@ -196,9 +196,9 @@ class Environment(object):
         if metadata:
             default_metadata.update(metadata)
 
-        mac = self._generate_random_mac()
+        mac = kwargs.get('mac', self._generate_random_mac())
         if default_metadata['interfaces']:
-            default_metadata['interfaces'][0]['mac'] = kwargs.get('mac', mac)
+            default_metadata['interfaces'][0]['mac'] = mac
 
         node_data = {
             'mac': mac,

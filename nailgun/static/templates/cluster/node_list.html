@@ -18,7 +18,13 @@
         <% } %>
         <span class="<%= cluster ? 'btn-cluster-details' : '' %>"><%- cluster ? cluster.get('name') : $.t('cluster_page.nodes_tab.unallocated_nodes') %></span>
       </div>
-      <div class="node-list-name-count">(<%- $.t('common.node', {count: nodes.length}) %>)</div>
+          <div class="node-list-name-count">
+        <% if (totalNodesAmount != nodes.length) { %>
+          (<%- $.t('cluster_page.nodes_tab.filtered_nodes_count', {filteredNodesCount: nodes.length, count: totalNodesAmount}) %>)
+        <% } else { %>
+          (<%- $.t('common.node', {count: nodes.length}) %>)
+        <% } %>
+      </div>
     </div>
   </div>
   <div class="span2 select-all">
@@ -32,7 +38,13 @@
     </div>
   <% } else { %>
     <% if (!nodes.length) { %>
-      <div class="alert alert-warning"><%- cluster ? edit ? $.t('cluster_page.nodes_tab.no_selected_nodes') : $.t('cluster_page.nodes_tab.no_nodes_in_environment') : $.t('cluster_page.nodes_tab.no_nodes_in_fuel') %></div>
+      <div class="alert alert-warning">
+        <% if (totalNodesAmount) { %>
+          <%- $.t('cluster_page.nodes_tab.no_filtered_nodes_warning') %>
+        <% } else { %>
+          <%- cluster ? edit ? $.t('cluster_page.nodes_tab.no_selected_nodes') : $.t('cluster_page.nodes_tab.no_nodes_in_environment') : $.t('cluster_page.nodes_tab.no_nodes_in_fuel') %>
+        <% } %>
+      </div>
     <% } %>
     <div class="nodes"></div>
   <% } %>

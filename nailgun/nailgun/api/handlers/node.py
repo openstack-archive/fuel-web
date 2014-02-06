@@ -39,7 +39,6 @@ from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
-from nailgun.network.topology import TopoChecker
 from nailgun import notifier
 
 
@@ -556,37 +555,6 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
             rendered_node = self.get_default(self.render(node))
             def_net_nodes.append(rendered_node)
         return map(self.render, nodes)
-
-
-class NodeNICsVerifyHandler(BaseHandler):
-    """Node NICs verify handler
-    Class is proof of concept. Not ready for use.
-    """
-
-    fields = (
-        'id', (
-            'interfaces',
-            'id',
-            'mac',
-            'name',
-            ('assigned_networks', 'id', 'name')
-        )
-    )
-
-    validator = NetAssignmentValidator
-
-    @content_json
-    def POST(self):
-        """:returns: Collection of JSONized Nodes interfaces.
-        :http: * 200 (OK)
-        """
-        data = self.validator.validate_structure(web.data())
-        for node in data:
-            self.validator.verify_data_correctness(node)
-        if TopoChecker.is_assignment_allowed(data):
-            return map(self.render, data)
-        topo, fields_with_conflicts = TopoChecker.resolve_topo_conflicts(data)
-        return map(self.render, topo, fields=fields_with_conflicts)
 
 
 class NodesAllocationStatsHandler(BaseHandler):

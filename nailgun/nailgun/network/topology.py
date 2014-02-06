@@ -21,8 +21,11 @@ from nailgun.network.manager import NetworkManager
 
 
 class TopoChecker(object):
+    """This is POC and isn't in use now.
+    """
     @classmethod
     def _is_assignment_allowed_for_node(cls, node):
+        # This test is useless now
         db_node = db().query(Node).filter_by(id=node['id']).first()
         interfaces = node['interfaces']
         db_interfaces = db_node.interfaces
@@ -34,10 +37,8 @@ class TopoChecker(object):
             db_iface = db_iface[0]
             allowed_network_ids = \
                 [n.id
-                 for n in NetworkManager.get_allowed_nic_networkgroups(
-                     db_node,
-                     db_iface
-                 )]
+                 for n in node.cluster.network_groups +
+                 [NetworkManager.get_admin_network_group()]]
             for net in iface['assigned_networks']:
                 if net['id'] not in allowed_network_ids:
                     return False

@@ -380,7 +380,7 @@ class NetworkManager(object):
     @classmethod
     def get_default_networks_assignment(cls, node):
         """Return default Networks-to-NICs assignment for given node based on
-        networks metadata and get_allowed_nic_networkgroups() results
+        networks metadata
         """
         nics = []
         ngs = node.cluster.network_groups + [cls.get_admin_network_group()]
@@ -392,7 +392,9 @@ class NetworkManager(object):
                  for ng in ngs],
                 key=lambda x: x[1]))[0]
         )
-        for i, nic in enumerate(node.interfaces):
+        ng_ids = set(ng.id for ng in ngs)
+        ng_wo_admin_ids = ng_ids ^ set([cls.get_admin_network_group_id()])
+        for nic in node.interfaces:
             nic_dict = {
                 "id": nic.id,
                 "name": nic.name,
@@ -400,51 +402,33 @@ class NetworkManager(object):
                 "max_speed": nic.max_speed,
                 "current_speed": nic.current_speed
             }
-            allowed_ngs = cls.get_allowed_nic_networkgroups(
-                node,
-                nic
-            )
 
             if to_assign_ids:
-                allowed_ids = set([ng.id for ng in allowed_ngs])
-                can_assign = [id for id in to_assign_ids
-                              if id in allowed_ids]
+                allowed_ids = \
+                    ng_wo_admin_ids if nic != node.admin_interface else ng_ids
+                can_assign = [ng_id for ng_id in to_assign_ids
+                              if ng_id in allowed_ids]
                 assigned_ids = set()
                 untagged_cnt = 0
                 same_nic_groups = set()
-                for id in can_assign:
-                    ng = ngs_by_id[id]
-                    dedicated = \
-                        'dedicated_nic' in ng.meta and ng.meta['dedicated_nic']
-                    untagged = ng.vlan_start is None
-                    as_tagged = \
-                        'neutron_vlan_range' in ng.meta \
-                        and ng.meta['neutron_vlan_range']
-                    same_nic = ng.meta['use_same_vlan_nic'] \
-                        if 'use_same_vlan_nic' in ng.meta else None
-                    to_be_added = False
-                    if dedicated:
-                        if not assigned_ids:
-                            to_be_added = True
-                    elif untagged:
-                        if untagged_cnt == 0 or as_tagged \
-                                or same_nic in same_nic_groups:
-                            to_be_added = True
-                    else:
-                        to_be_added = True
-                    if to_be_added:
-                        assigned_ids.add(id)
-                        if untagged:
+                for ng_id in can_assign:
+                    ng = ngs_by_id[ng_id]
+                    untagged = (ng.vlan_start is None) \
+                        and not ng.meta.get('neutron_vlan_range')
+                    same_nic = ng.meta.get('use_same_vlan_nic')
+                    if untagged:
+                        if untagged_cnt == 0 or same_nic in same_nic_groups:
+                            assigned_ids.add(ng_id)
                             untagged_cnt += 1
-                        if same_nic:
-                            same_nic_groups.add(same_nic)
-                        if dedicated:
-                            break
+                            if same_nic:
+                                same_nic_groups.add(same_nic)
+                    else:
+                        assigned_ids.add(ng_id)
 
-                for id in assigned_ids:
+                for ng_id in assigned_ids:
                     nic_dict.setdefault('assigned_networks', []).append(
-                        {'id': ngs_by_id[id].id, 'name': ngs_by_id[id].name})
-                    to_assign_ids.remove(id)
+                        {'id': ng_id, 'name': ngs_by_id[ng_id].name})
+                    to_assign_ids.remove(ng_id)
 
             nics.append(nic_dict)
 
@@ -452,9 +436,9 @@ class NetworkManager(object):
             # Assign remaining networks to NIC #0
             # as all the networks must be assigned.
             # But network check will not pass if we get here.
-            for id in to_assign_ids:
+            for ng_id in to_assign_ids:
                 nics[0].setdefault('assigned_networks', []).append(
-                    {'id': ngs_by_id[id].id, 'name': ngs_by_id[id].name})
+                    {'id': ng_id, 'name': ngs_by_id[ng_id].name})
         return nics
 
     @classmethod
@@ -470,15 +454,6 @@ class NetworkManager(object):
                     db().query(NetworkGroup).filter(
                         NetworkGroup.id.in_(ng_ids)))
         db().commit()
-
-    @classmethod
-    def get_allowed_nic_networkgroups(cls, node, nic):
-        """Get all allowed network groups for given node's NIC
-        """
-        ngs = cls.get_all_cluster_networkgroups(node)
-        if nic == node.admin_interface:
-            ngs.append(cls.get_admin_network_group())
-        return ngs
 
     @classmethod
     def get_cluster_networkgroups_by_node(cls, node):
@@ -786,14 +761,6 @@ class NetworkManager(object):
                 mac_addresses, node_name))
 
             map(db().delete, interfaces_to_delete)
-
-    @classmethod
-    def get_all_cluster_networkgroups(cls, node):
-        if node.cluster:
-            return db().query(NetworkGroup).filter_by(
-                cluster_id=node.cluster.id
-            ).order_by(NetworkGroup.id).all()
-        return []
 
     @classmethod
     def get_admin_ip_for_node(cls, node):

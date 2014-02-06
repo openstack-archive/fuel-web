@@ -427,6 +427,26 @@ class TestNovaNetworkManager(BaseIntegrationTest):
 
 class TestNeutronManager(BaseIntegrationTest):
 
+    def check_networks_assignment(self, node_db):
+        node_nics = self.db.query(NodeNICInterface).filter_by(
+            node_id=node_db.id
+        ).all()
+
+        def_nics = NeutronManager.get_default_networks_assignment(node_db)
+
+        self.assertEqual(len(node_nics), len(def_nics))
+        for n_nic in node_nics:
+            n_assigned = set(n['name'] for n in n_nic.assigned_networks)
+            for d_nic in def_nics:
+                if d_nic['id'] == n_nic.id:
+                    d_assigned = set(n['name']
+                                     for n in d_nic['assigned_networks']) \
+                        if d_nic.get('assigned_networks') else set()
+                    self.assertEqual(n_assigned, d_assigned)
+                    break
+            else:
+                self.fail("NIC is not found")
+
     def test_gre_get_default_nic_assignment(self):
         self.env.create(
             cluster_kwargs={
@@ -436,32 +456,8 @@ class TestNeutronManager(BaseIntegrationTest):
                 {'api': True,
                  'pending_addition': True}
             ])
-        node_db = self.env.nodes[0]
 
-        admin_nic_id = node_db.admin_interface.id
-        admin_nets = [n.name for n in self.db.query(
-            NodeNICInterface).get(admin_nic_id).assigned_networks_list]
-
-        other_nic = self.db.query(NodeNICInterface).filter_by(
-            node_id=node_db.id
-        ).filter(
-            not_(NodeNICInterface.id == admin_nic_id)
-        ).first()
-        other_nets = [n.name for n in other_nic.assigned_networks_list]
-
-        nics = NeutronManager.get_default_networks_assignment(node_db)
-
-        def_admin_nic = [n for n in nics if n['id'] == admin_nic_id]
-        def_other_nic = [n for n in nics if n['id'] == other_nic.id]
-
-        self.assertEquals(len(def_admin_nic), 1)
-        self.assertEquals(len(def_other_nic), 1)
-        self.assertEquals(
-            set(admin_nets),
-            set([n['name'] for n in def_admin_nic[0]['assigned_networks']]))
-        self.assertEquals(
-            set(other_nets),
-            set([n['name'] for n in def_other_nic[0]['assigned_networks']]))
+        self.check_networks_assignment(self.env.nodes[0])
 
     def test_vlan_get_default_nic_assignment(self):
         meta = self.env.default_metadata()
@@ -479,36 +475,5 @@ class TestNeutronManager(BaseIntegrationTest):
                  'meta': meta,
                  'pending_addition': True}
             ])
-        node_db = self.env.nodes[0]
 
-        admin_nic_id = node_db.admin_interface.id
-        admin_nets = [n.name for n in self.db.query(
-            NodeNICInterface).get(admin_nic_id).assigned_networks_list]
-
-        other_nics = self.db.query(NodeNICInterface).filter_by(
-            node_id=node_db.id
-        ).filter(
-            not_(NodeNICInterface.id == admin_nic_id)
-        ).all()
-        other_nic, empty_nic = None, None
-        for nic in other_nics:
-            names = [n.name for n in nic.assigned_networks_list]
-            if 'public' in names:
-                other_nic = nic
-                other_nets = names
-            elif names == []:
-                empty_nic = nic
-
-        self.assertTrue(other_nic and empty_nic)
-        nics = NeutronManager.get_default_networks_assignment(node_db)
-        def_admin_nic = [n for n in nics if n['id'] == admin_nic_id]
-        def_other_nic = [n for n in nics if n['id'] == other_nic.id]
-
-        self.assertEquals(len(def_admin_nic), 1)
-        self.assertEquals(len(def_other_nic), 1)
-        self.assertEquals(
-            set(admin_nets),
-            set([n['name'] for n in def_admin_nic[0]['assigned_networks']]))
-        self.assertEquals(
-            set(other_nets),
-            set([n['name'] for n in def_other_nic[0]['assigned_networks']]))
+        self.check_networks_assignment(self.env.nodes[0])

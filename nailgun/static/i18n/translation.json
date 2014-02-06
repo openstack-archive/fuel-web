@@ -155,6 +155,7 @@
                     },
                     "node_management_panel": {
                         "group_by": "Group By",
+                        "filter_by": "Filter",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
                         "cant_configure_disks": "Unable to configure disks",

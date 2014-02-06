@@ -43,11 +43,12 @@ class TestHandlers(BaseIntegrationTest):
                 resp_nic['assigned_networks'] = []
             else:
                 resp_nic['assigned_networks'] = a_nets
-        node_json = response
+        nodes_list = [{'id': node['id'], 'interfaces': response}]
+
         resp = self.app.put(
-            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
-            json.dumps(node_json),
+            reverse('NodeCollectionNICsHandler'),
+            json.dumps(nodes_list),
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
         new_response = json.loads(resp.body)
-        self.assertEquals(new_response, node_json)
+        self.assertEquals(new_response, nodes_list)

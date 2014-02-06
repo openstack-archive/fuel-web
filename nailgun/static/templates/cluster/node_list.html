@@ -32,7 +32,9 @@
     </div>
   <% } else { %>
     <% if (!nodes.length) { %>
-      <div class="alert alert-warning"><%- cluster ? edit ? $.t('cluster_page.nodes_tab.no_selected_nodes') : $.t('cluster_page.nodes_tab.no_nodes_in_environment') : $.t('cluster_page.nodes_tab.no_nodes_in_fuel') %></div>
+      <div class="alert alert-warning">
+      <%- totalNodesAmount ? $.t('cluster_page.nodes_tab.no_filtered_nodes_warning') : cluster ? edit ? $.t('cluster_page.nodes_tab.no_selected_nodes') : $.t('cluster_page.nodes_tab.no_nodes_in_environment') : $.t('cluster_page.nodes_tab.no_nodes_in_fuel') %>
+      </div>
     <% } %>
     <div class="nodes"></div>
   <% } %>

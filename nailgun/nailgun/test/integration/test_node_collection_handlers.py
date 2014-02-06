@@ -355,7 +355,7 @@ class TestHandlers(BaseIntegrationTest):
                 expect_errors=(http_code != 201)
             )
 
-            self.assertEquals(response.status, http_code)
+            self.assertEquals(response.status_code, http_code)
 
     def test_node_update_ext_mac(self):
         meta = self.env.default_metadata()

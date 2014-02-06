@@ -46,7 +46,6 @@ from nailgun.logger import logger
 from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
@@ -279,7 +278,7 @@ class Environment(object):
             meta = self.default_metadata()
             if_list = [
                 {
-                    "name": "eth%d" % i,
+                    "name": "eth{0}".format(i),
                     "mac": self.generate_random_mac()
                 }
                 for i in range(if_count)]
@@ -382,29 +381,24 @@ class Environment(object):
     def _add_interfaces_to_node(self, node_id, count=1):
         interfaces = []
         node = self.db.query(Node).get(node_id)
-        ng_ids = [ng.id for ng in
-                  self.network_manager.get_all_cluster_networkgroups(node)]
-        allowed_networks = list(self.db.query(NetworkGroup).filter(
-            NetworkGroup.id.in_(ng_ids)))
+        networks_to_assign = \
+            list(node.cluster.network_groups) if node.cluster else []
 
         for i in xrange(count):
-            nic_dict = {
+            interface = NodeNICInterface({
                 'node_id': node_id,
                 'name': 'eth{0}'.format(i),
                 'mac': self.generate_random_mac(),
                 'current_speed': 100,
                 'max_speed': 1000,
-                'assigned_networks': allowed_networks
-            }
-
-            interface = NodeNICInterface()
-            for k, v in nic_dict.iteritems():
-                setattr(interface, k, v)
-
+                'assigned_networks': networks_to_assign
+            })
             self.db.add(interface)
             self.db.commit()
 
             interfaces.append(interface)
+            # assign all networks to first NIC
+            networks_to_assign = []
 
         return interfaces
 

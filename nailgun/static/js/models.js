@@ -339,37 +339,32 @@ define(['utils', 'deepModel'], function(utils) {
         constructorName: 'Interface',
         parse: function(response) {
             response.assigned_networks = new models.InterfaceNetworks(response.assigned_networks);
-            response.allowed_networks = new models.InterfaceNetworks(response.allowed_networks);
+            response.assigned_networks.interface = this;
             return response;
         },
         toJSON: function(options) {
             return _.extend(this.constructor.__super__.toJSON.call(this, options), {
-                assigned_networks: this.get('assigned_networks').toJSON(),
-                allowed_networks: this.get('allowed_networks').toJSON()
+                assigned_networks: this.get('assigned_networks').toJSON()
             });
         },
         validate: function() {
-            var errors = [],
-                assignedNetworks = this.get('assigned_networks'),
-                allowedNames = this.get('allowed_networks').pluck('name');
-            if (_.contains(allowedNames, 'fuelweb_admin') && allowedNames.length == 1 && assignedNetworks.length > 1) {
-                errors.push('Admin network should be assigned to the dedicated interface where no one other network is assigned too');
+            var errors = [];
+            var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork'));
+            var untaggedNetworks = networks.filter(function(network) {
+                return !network.get('vlan_start');
+            });
+            var maxUntaggedNetworksCount = 1;
+            // public and floating networks are allowed to be assigned to the same interface
+            if (networks.where({name: 'public'}).length && networks.where({name: 'floating'}).length) {
+                maxUntaggedNetworksCount += 1;
             }
-            if (assignedNetworks.where({'name':'private'}).length > 0 && assignedNetworks.length > 1) {
-                errors.push('Private network can not be assigned on the one interface with any other networks');
+            // networks with flag "neutron_vlan_range" behave like tagged and allow to have one more untagged network
+            maxUntaggedNetworksCount += networks.filter(function(network) {
+                return network.get('meta').neutron_vlan_range;
+            }).length;
+            if (untaggedNetworks.length > maxUntaggedNetworksCount) {
+                errors.push($.t('cluster_page.nodes_tab.configure_interfaces.validation.too_many_untagged_networks'));
             }
-            var vlanStartResult = assignedNetworks.invoke('vlanStart'),
-                noVlanStartLength = _.reject(vlanStartResult).length,
-                assignedNetworksWithoutPublicFloatingLength = _.without(assignedNetworks.pluck('name'), 'public', 'floating').length,
-                allowedEmptyVlanStartNumber = 1;
-                if (assignedNetworksWithoutPublicFloatingLength < assignedNetworks.length){
-                    if (_.isEmpty(_.filter(_.invoke(assignedNetworks.where({'name': 'public'}), 'vlanStart')))){
-                        allowedEmptyVlanStartNumber = 2;
-                    }
-                }
-                if (noVlanStartLength > allowedEmptyVlanStartNumber) {
-                    errors.push('Untagged networks can not be assigned to one interface');
-                }
             return errors;
         }
     });
@@ -379,11 +374,6 @@ define(['utils', 'deepModel'], function(utils) {
         model: models.Interface,
         comparator: function(ifc) {
             return ifc.get('name');
-        },
-        getAssignedNetworks: function() {
-            return this.map(function(ifc) {
-                return ifc.get('assigned_networks').toJSON();
-            }, this);
         }
     });
 
@@ -398,20 +388,6 @@ define(['utils', 'deepModel'], function(utils) {
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }
-    });
-
-    models.NodeInterfaceConfiguration = Backbone.Model.extend({
-        constructorName: 'NodeInterfaceConfiguration',
-        parse: function(response) {
-            response.interfaces = new models.Interfaces(response.interfaces);
-            return response;
-        }
-    });
-
-    models.NodeInterfaceConfigurations = Backbone.Collection.extend({
-        url: '/api/nodes/interfaces',
-        constructorName: 'NodeInterfaceConfigurations',
-        model: models.NodeInterfaceConfiguration
     });
 
     models.Network = Backbone.Model.extend({

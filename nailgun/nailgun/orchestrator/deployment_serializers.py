@@ -623,7 +623,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             net_conf['L3']['enable_dhcp'] = enable_dhcp
 
             net_conf["L2"] = nets_l2_configs[net]
-            net_conf['tenant'] = 'admin'
+	    net_conf['tenant'] = cluster.attributes.editable['access']['tenant']['value']
             net_conf["shared"] = False
 
             attrs['predefined_networks'][net] = net_conf

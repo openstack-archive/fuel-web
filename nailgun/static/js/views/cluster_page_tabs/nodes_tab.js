@@ -198,6 +198,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 node.set({pending_roles: node.previous('pending_roles')});
             }
         },
+        updateCheckedNodeList: function() {
+            this.checkedNodeIds = _.pluck(this.nodes.where({checked: true}), 'id');
+        },
         initialize: function() {
             this.nodes.on('resize', this.render, this);
             if (this instanceof AddNodesScreen || this instanceof EditNodesScreen) {
@@ -217,6 +220,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.configureInterfacesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
             this.applyChangesButton = new Backbone.Model(_.extend({}, defaultButtonModelsData));
         },
+        setNodeInitialRoles: function() {
+            this.nodes.each(function(node) {
+                node.initialRoles = node.get('pending_roles');
+            });
+        },
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html('');
@@ -235,6 +243,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.nodeList = new NodeList(options);
             this.registerSubView(this.nodeList);
             this.$el.append(this.nodeList.render().el);
+            this.setNodeInitialRoles();
             this.nodeList.calculateSelectAllCheckedState();
             this.nodeList.calculateSelectAllDisabledState();
             this.setupButtonsBindings();
@@ -284,7 +293,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             _.defaults(this, options);
             var nodeIds = utils.deserializeTabOptions(this.screenOptions[0]).nodes.split(',').map(function(id) {return parseInt(id, 10);});
             this.nodes = new models.Nodes(this.model.get('nodes').getByIds(nodeIds));
-            this.nodes.each(function(node) {node.set({checked: true});});
             this.nodes.cluster = this.model;
             this.nodes.fetch = function(options) {
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: this.cluster.id}}, options));
@@ -301,6 +309,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         template: _.template(nodesManagementPanelTemplate),
         events: {
             'change select[name=grouping]' : 'groupNodes',
+            'keydown input[name=filtering]' : 'filterNodes',
+            'change input[name=filtering]' : 'filterNodes',
+            'input input[name=filtering]' : 'filterNodes',
             'click .btn-delete-nodes:not(:disabled)' : 'showDeleteNodesDialog',
             'click .btn-apply:not(:disabled)' : 'applyChanges',
             'click .btn-group-congiration:not(.conflict):not(:disabled)' : 'goToConfigurationScreen',
@@ -320,6 +331,14 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             this.screen.nodeList.groupNodes(grouping);
         },
+        lastFilterValue: '',
+        filterNodes: _.debounce(function(e) {
+            var filterValue = _.escape($.trim(this.$(e.currentTarget).val())).toLowerCase();
+            if (filterValue != this.lastFilterValue) {
+                this.lastFilterValue = filterValue;
+                this.screen.nodeList.filterNodes(filterValue);
+            }
+        }, 200),
         showDeleteNodesDialog: function() {
             var nodes = new models.Nodes(this.screen.nodes.where({checked: true}));
             nodes.cluster = this.nodes.cluster;
@@ -364,7 +383,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             app.navigate('#cluster/' + this.cluster.id + '/nodes/add', {trigger: true});
         },
         goToEditNodesRolesScreen: function() {
-            app.navigate('#cluster/' + this.cluster.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: _.pluck(this.nodes.where({checked: true}), 'id')}), {trigger: true});
+            app.navigate('#cluster/' + this.cluster.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: this.screen.checkedNodeIds}), {trigger: true});
         },
         goToNodesList: function() {
             this.nodes.each(_.bind(function(node) {
@@ -559,6 +578,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.renderNodeGroups(nodeGroups);
             this.screen.updateBatchActionsButtons();
         },
+        filterNodes: function(filterValue) {
+            this.nodes = new models.Nodes(this.screen.nodes.filter(function(node) {
+                return _.contains(node.get('name').toLowerCase(), filterValue) || _.contains(node.get('mac').toLowerCase(), filterValue);
+            }));
+            this.nodes.cluster = this.screen.nodes.cluster;
+            this.render();
+        },
         initialize: function(options) {
             _.defaults(this, options);
             this.screen.initialNodes = new models.Nodes(this.nodes.invoke('clone'));
@@ -590,6 +616,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({
                 nodes: this.nodes,
+                totalNodesAmount: this.screen.nodes.length,
                 edit: this.screen instanceof EditNodesScreen
             })).i18n();
             this.groupNodes();
@@ -847,8 +874,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         onNodeSelection: function(node, checked, options) {
             if (!checked) {
-                node.set({pending_roles: this.initialRoles}, {assign: true});
+                node.set({pending_roles: this.screen.nodes.get(node.id).initialRoles}, {assign: true});
             }
+            this.screen.updateCheckedNodeList();
             if (this.screen instanceof AddNodesScreen || this.screen instanceof EditNodesScreen) {
                 this.screen.roles.handleChanges();
             } else {
@@ -951,12 +979,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             _.defaults(this, options);
             this.screen = this.group.nodeList.screen;
             this.eventNamespace = 'click.editnodename' + this.node.id;
-            this.node.set('checked', this.screen instanceof EditNodesScreen);
+            this.node.set('checked', this.screen instanceof EditNodesScreen || _.contains(this.screen.checkedNodeIds, this.node.id));
             this.node.on('change:checked change:online', this.onNodeSelection, this);
             this.node.on('change:pending_deletion change:status change:online', this.calculateNodeDisabledState, this);
             this.node.on('change:disabled', this.group.calculateSelectAllDisabledState, this.group);
             this.node.on('change:pending_deletion', this.uncheckNode, this);
-            this.initialRoles = this.node.get('pending_roles');
         },
         render: function() {
             this.tearDownRegisteredSubViews();

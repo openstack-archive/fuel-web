@@ -19,7 +19,8 @@ import os.path
 import setuptools
 
 requires = [
-    'Fabric==1.7.0'
+    'Fabric==1.7.0',
+    'mock==1.0.0'
 ]
 
 major_version = '0.1'

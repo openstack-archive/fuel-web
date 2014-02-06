@@ -67,6 +67,9 @@ class TestHandlers(BaseTestCase):
         for action in ("set", "remove", "--network", "--disk"):
             self.check_if_required("node {0}".format(action))
 
+        self.load_data_to_nailgun_server()
+        self.check_number_of_rows_in_table("node --node 9f:b7,9d:24,ab:aa", 3)
+
     def test_selected_node_deploy_or_provision(self):
         self.load_data_to_nailgun_server()
         self.run_cli_commands((

@@ -37,7 +37,7 @@
                     "description": "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
                 },
                 "mongo": {
-                    "name": "Mongo",
+                    "name": "MongoDB",
                     "description": "Storage - MongoDB for Ceilometer",
                     "conflicts": ["compute"],
                     "depends_on": "editable.additional_components.ceilometer.value"
@@ -1121,9 +1121,9 @@
                     "description": "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
                 },
                 "mongo": {
-                    "name": "Mongo Node",
+                    "name": "MongoDB",
                     "description": "Storage - MongoDB for Ceilometer",
-                    "conflicts": ["compute", "mongo",  "controller"],
+                    "conflicts": ["compute"],
                     "depends_on": "editable.additional_components.ceilometer.value"
                 }
 

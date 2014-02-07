@@ -847,7 +847,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         onNodeSelection: function(node, checked, options) {
             if (!checked) {
-                node.set({pending_roles: this.initialRoles});
+                node.set({pending_roles: this.initialRoles}, {assign: true});
             }
             if (this.screen instanceof AddNodesScreen || this.screen instanceof EditNodesScreen) {
                 this.screen.roles.handleChanges();

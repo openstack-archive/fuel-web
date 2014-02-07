@@ -39,8 +39,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             return this.tests.where({checked: true}).length;
         },
         isLocked: function() {
-            var runningTask = this.model.task('deploy', 'running');
-            return this.model.get('status') == 'error' || runningTask || !this.model.isAvailableForSettingsChanges();
+            return this.model.get('status') == 'error' || !!this.model.tasks('deployment', 'running').length || !this.model.isAvailableForSettingsChanges();
         },
         disableControls: function(disable) {
             var disabledState = disable || this.isLocked();

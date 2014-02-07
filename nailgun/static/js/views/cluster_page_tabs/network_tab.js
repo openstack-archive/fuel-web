@@ -49,11 +49,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$('.btn, input, select').attr('disabled', true);
         },
         isLocked: function() {
-            var runningTask = this.model.task('deploy', 'running') || this.model.task('verify_networks', 'running');
-            return runningTask || !this.model.isAvailableForSettingsChanges();
-        },
-        isVerificationLocked: function() {
-            return !!this.model.task('deploy', 'running') || !!this.model.task('verify_networks', 'running');
+            return !!this.model.tasks({status: 'running'}).length || !this.model.isAvailableForSettingsChanges();
         },
         checkForChanges: function() {
             this.hasChanges = !_.isEqual(this.model.get('networkConfiguration').toJSON(), this.networkConfiguration.toJSON());
@@ -215,7 +211,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             }
         },
         showVerificationErrors: function() {
-            var task = this.model.task('verify_networks', 'error') || this.model.task('check_networks', 'error');
+            var task = this.model.task({group: 'network', status: 'error'});
             if (task && task.get('result').length) {
                 _.each(task.get('result'), function(verificationError) {
                     _.each(verificationError.ids, function(networkId) {
@@ -272,7 +268,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 net_provider: this.model.get('net_provider'),
                 hasChanges: this.hasChanges,
                 locked: this.isLocked(),
-                verificationLocked: this.isVerificationLocked(),
+                verificationLocked: !!this.model.tasks({status: 'running'}).length,
                 segment_type: this.model.get("net_segment_type")
             })).i18n();
             this.stickit(this.networkConfiguration);

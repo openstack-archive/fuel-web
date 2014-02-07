@@ -50,9 +50,7 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
             'click .create-cluster': 'createCluster'
         },
         createCluster: function() {
-            var createClusterWizardView = new dialogViews.CreateClusterWizard({collection: this.collection});
-            app.page.registerSubView(createClusterWizardView);
-            createClusterWizardView.render();
+            app.page.registerSubView(new dialogViews.CreateClusterWizard({collection: this.collection})).render();
         },
         initialize: function() {
             this.collection.on('sync add', this.render, this);
@@ -77,13 +75,13 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
         templateHelpers: _.pick(utils, 'showDiskSize', 'showMemorySize'),
         updateInterval: 3000,
         scheduleUpdate: function() {
-            if (this.model.task('cluster_deletion', ['running', 'ready']) || this.model.task('deploy', 'running')) {
+            if (this.model.tasks('cluster', ['running', 'ready']).length || this.model.tasks('deployment', 'running').length) {
                 this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
             }
         },
         update: function() {
             var deletionTask = this.model.task('cluster_deletion');
-            var deploymentTask = this.model.task('deploy');
+            var deploymentTask = this.model.task('stop_deployment', 'running') || this.model.task({group: 'deployment', status: 'running'});
             var request;
             if (deletionTask) {
                 request = deletionTask.fetch();
@@ -111,7 +109,7 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
             }
         },
         updateProgress: function() {
-            var task = this.model.task('deploy', 'running');
+            var task = this.model.task({group: 'deployment', status: 'running'});
             if (task) {
                 var progress = task.get('progress') || 0;
                 this.$('.bar').css('width', (progress > 3 ? progress : 3) + '%');
@@ -128,7 +126,7 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
                 this.update();
             } else {
                 this.$el.attr('href', '#cluster/' + this.model.id + '/nodes');
-                if (this.model.task('deploy', 'running')) {
+                if (this.model.task({group: 'deployment', status: 'running'})) {
                     this.update();
                 }
             }

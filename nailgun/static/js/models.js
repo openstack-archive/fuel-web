@@ -56,8 +56,13 @@ define(['utils', 'deepModel'], function(utils) {
         groupings: function() {
             return {roles: $.t('cluster_page.nodes_tab.roles'), hardware: $.t('cluster_page.nodes_tab.hardware_info'), both: $.t('cluster_page.nodes_tab.roles_and_hardware_info')};
         },
-        task: function(taskName, status) {
-            return this.get('tasks') && this.get('tasks').findTask({name: taskName, status: status});
+        task: function(filter1, filter2) {
+            var filters = _.isObject(filter1) ? filter1 : {name: filter1, status: filter2};
+            return this.get('tasks') && this.get('tasks').findTask(filters);
+        },
+        tasks: function(filter1, filter2) {
+            var filters = _.isObject(filter1) ? filter1 : {group: filter1, status: filter2};
+            return this.get('tasks') && this.get('tasks').filterTasks(filters);
         },
         hasChanges: function() {
             return this.get('nodes').hasChanges() || (this.get('changes').length && this.get('nodes').currentNodes().length);
@@ -71,7 +76,7 @@ define(['utils', 'deepModel'], function(utils) {
         },
         canAddNodes: function(role) {
             // forbid adding when tasks are running
-            if (this.task('deploy', 'running') || this.task('verify_networks', 'running')) {
+            if (this.tasks({status: 'running'}).length) {
                 return false;
             }
             // forbid add more than 1 controller in simple mode
@@ -82,7 +87,7 @@ define(['utils', 'deepModel'], function(utils) {
         },
         canDeleteNodes: function(role) {
             // forbid deleting when tasks are running
-            if (this.task('deploy', 'running') || this.task('verify_networks', 'running')) {
+            if (this.tasks({status: 'running'}).length) {
                 return false;
             }
             // forbid deleting when there is nothing to delete
@@ -216,6 +221,18 @@ define(['utils', 'deepModel'], function(utils) {
                 id = this.get('result').release_info.release_id;
             } catch (ignore) {}
             return id;
+        },
+        groups: {
+            release_setup: ['redhat_setup'],
+            network: ['verify_networks', 'check_networks'],
+            deployment: ['deploy', 'stop_deployment', 'reset_environment'],
+            cluster: ['cluster_deletion']
+        },
+        matchGroup: function(group) {
+            return _.contains(this.groups[group], this.get('name'));
+        },
+        matchRelease: function(name, release) {
+            return this.get('name') == name && this.releaseId() == release;
         }
     });
 
@@ -229,25 +246,17 @@ define(['utils', 'deepModel'], function(utils) {
         comparator: function(task) {
             return task.id;
         },
-        group: function(group) {
-            var taskGroups = {
-                release_setup: ['redhat_setup'],
-                network: ['verify_networks', 'check_networks'],
-                deployment: ['deploy', 'stop_deployment', 'reset_environment']
-            };
-            return taskGroups[group];
-        },
         filterTasks: function(filters) {
             return this.filter(function(task) {
                 var result = false;
-                if (filters.name) {
-                    if (_.contains(utils.composeList(filters.name), task.get('name'))) {
+                if (filters.group || filters.name) {
+                    if (task.matchGroup(filters.group) || _.contains(utils.composeList(filters.name), task.get('name'))) {
                         result = true;
                         if (filters.status) {
                             result = _.contains(utils.composeList(filters.status), task.get('status'));
                         }
                         if (filters.release) {
-                            result = result && filters.release == task.releaseId();
+                          result = result && task.releaseId() == filters.release;
                         }
                     }
                 } else if (filters.status) {

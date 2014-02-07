@@ -96,7 +96,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});
         },
         isLocked: function() {
-            return !!this.model.task('deploy', 'running');
+            return !!this.model.tasks('deployment', 'running').length;
         },
         initButtons: function() {
             this.loadDefaultsButton = new Backbone.Model({disabled: false});
@@ -385,7 +385,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 cluster: this.cluster,
                 edit: this.screen instanceof EditNodesScreen
             })).i18n();
-            var isDisabled = !!this.cluster.task('deploy', 'running');
+            var isDisabled = !!this.cluster.tasks('deployment', 'running').length;
             this.screen.addNodesButton.set('disabled', isDisabled);
             this.screen.editRolesButton.set('disabled', isDisabled);
             return this;

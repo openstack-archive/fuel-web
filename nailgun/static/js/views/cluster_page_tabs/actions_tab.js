@@ -33,8 +33,9 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             'click .reset-environment-btn': 'resetEnvironment'
         },
         checkButtonsAvailability: function() {
-            this.$('.stop-deployment-btn').attr('disabled', !this.model.task('deploy', 'running') || this.model.task('stop_deployment', 'running'));
-            this.$('.reset-environment-btn').attr('disabled', this.model.get('status') == 'new' || this.model.task('deploy', 'running') || this.model.task('stop_deployment', 'running'));
+            var runnningDeploymentTasks = this.model.tasks('deployment', 'running');
+            this.$('.stop-deployment-btn').attr('disabled', runnningDeploymentTasks.length != 1 || runnningDeploymentTasks[0].get('name') != 'deploy');
+            this.$('.reset-environment-btn').attr('disabled', this.model.get('status') == 'new' || !!runnningDeploymentTasks.length);
         },
         applyNewClusterName: function() {
             var name = $.trim(this.$('.rename-cluster-form input').val());

@@ -19,7 +19,7 @@
 <div class="cluster-status">
   <% if (cluster.task('cluster_deletion', 'running')) { %>
     <%- $.t('cluster.status.removing') %>
-  <% } else if (cluster.task('deploy', 'running')) { %>
+  <% } else if (cluster.task({group: 'deployment', status: 'running'})) { %>
     <div class="cluster-status-deploy">
       <div class="bar" style="width:0"></div>
     </div>

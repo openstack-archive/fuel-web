@@ -104,41 +104,42 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
-    def assign_admin_ips(cls, node_id, num=1):
-        """Method for assigning admin IP addresses to nodes.
+    def assign_admin_ip(cls, node_id):
+        '''Method for assigning admin IP address to nodes/
 
         :param node_id: Node database ID.
         :type  node_id: int
-        :param num: Number of IP addresses for node.
-        :type  num: int
-        :returns: None
-        """
+        '''
         admin_net_id = cls.get_admin_network_group_id()
-        node_admin_ips = db().query(IPAddr).filter_by(
+        node_admin_ip = db().query(IPAddr).filter_by(
             node=node_id,
             network=admin_net_id
-        ).all()
+        ).first()
+        node = db().query(Node).get(node_id)
 
-        if not node_admin_ips or len(node_admin_ips) < num:
-            admin_net = db().query(NetworkGroup).get(admin_net_id)
+        if node_admin_ip is not None:
+            if node_admin_ip.ip_addr == node.ip:
+                # Admin ip was allready assigned
+                return
+            else:
+                # Admin ip was assigned, but is no longer the same
+                db().delete(node_admin_ip)
+
+        if not cls.is_ip_used(node.ip):
             logger.debug(
-                u"Trying to assign admin ips: node=%s count=%s",
-                node_id,
-                num - len(node_admin_ips)
-            )
-            free_ips = cls.get_free_ips(
-                admin_net.id,
-                num=num - len(node_admin_ips)
-            )
-            logger.info(len(free_ips))
-            for ip in free_ips:
-                ip_db = IPAddr(
-                    node=node_id,
-                    ip_addr=ip,
-                    network=admin_net_id
-                )
-                db().add(ip_db)
+                u"Re-used discovered address of '{0}' "
+                "to '{1}'".format(
+                node.name, node.ip))
+            db().add(IPAddr(
+                node=node_id,
+                ip_addr=node.ip,
+                network=admin_net_id))
             db().commit()
+
+        else:
+            logger.debug(
+                u"Failed to re-use address '{0}' was already in use".format(
+                    node.ip))
 
     @classmethod
     def assign_ips(cls, nodes_ids, network_name):
@@ -339,6 +340,22 @@ class NetworkManager(object):
         if len(free_ips) < num:
             raise errors.OutOfIPs()
         return free_ips
+
+    @classmethod
+    def is_ip_used(cls, ip_addr):
+        """Method to determine if an address is already consumed.
+
+        :param ip_addr: IP address to check.
+        :type  ip_addr: int
+        :returns: None if not taken.
+        :returns: (node_id, network_id) if taken.
+        """
+
+        ip = db().query(IPAddr).filter_by(ip_addr=ip_addr).first()
+        if not ip:
+            return False
+        else:
+            return True
 
     @classmethod
     def _get_ips_except_admin(cls, node_id=None,

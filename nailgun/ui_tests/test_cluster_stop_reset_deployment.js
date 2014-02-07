@@ -16,7 +16,7 @@
 casper.start();
 casper.createCluster({name: 'Test Cluster'});
 var nodes = [
-    {status: 'discover', manufacturer: 'Dell', mac: 'C0:8D:DF:52:76:F1'}
+    {status: 'discover', manufacturer: 'Dell', mac: 'C0:8D:DF:52:76:F1', ip: '10.20.0.127'}
 ];
 nodes.forEach(function(node) {
     casper.createNode(node);

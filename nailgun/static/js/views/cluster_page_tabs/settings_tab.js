@@ -67,10 +67,8 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.render();
         },
         loadDefaults: function() {
-            var defaults = new models.Settings();
             this.disableControls();
-            defaults.fetch({url: _.result(this.model, 'url') + '/attributes/defaults'}).always(_.bind(function() {
-                this.settings = new models.Settings(defaults.get('editable'));
+            this.settings.fetch({url: _.result(this.model, 'url') + '/attributes/defaults'}).always(_.bind(function() {
                 this.render();
                 this.checkForChanges();
             }, this));
@@ -78,6 +76,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         setInitialData: function() {
             this.previousSettings = _.cloneDeep(this.model.get('settings').get('editable'));
             this.settings = new models.Settings(this.previousSettings);
+            this.settings.parse = function(response) {return response.editable;};
             // some hacks until settings dependecies are implemented
             this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
             this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));

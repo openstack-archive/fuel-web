@@ -31,6 +31,8 @@ from functools import partial
 from itertools import izip
 from netaddr import IPNetwork
 from random import randint
+from string import join
+
 
 import web
 from webtest import app
@@ -270,6 +272,8 @@ class Environment(object):
                     node.cluster_id = cluster_id
             for key, value in node_data.iteritems():
                 setattr(node, key, value)
+            node.ip = self._generate_node_ip(
+                fallback=self._mac_to_ip(node.mac))
             node.attributes = self.create_attributes()
             node.attributes.volumes = node.volume_manager.gen_volumes_info()
             self.db.add(node)
@@ -298,6 +302,29 @@ class Environment(object):
             self.set_interfaces_in_meta(meta, if_list)
             nodes.append(self.create_node(meta=meta, **kwargs))
         return nodes
+
+    def _mac_to_ip(self, mac):
+        addr = ['127'] + map(lambda x: str(int(x,16)), mac.split(':')[:3])
+        return join(addr, '.')
+
+
+    def _generate_node_ip(self,
+            network_id=None,
+            ip_addr=None,
+            fallback="127.0.0.1"):
+        if ip_addr:
+            return str(ip_addr)
+
+        elif not network_id:
+            network_id = self.network_manager.get_admin_network_group_id
+
+        try:
+            ip_addr = self.network_manager.get_free_ips(network_id)[0]
+        except:
+            pass
+
+        if ip_addr is None:
+            return fallback
 
     def create_rh_account(self, **kwargs):
         username = kwargs.pop("username", "rh_username")

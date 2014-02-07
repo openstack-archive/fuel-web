@@ -183,7 +183,10 @@ class ApplyChangesTaskManager(TaskManager):
                 nodes_to_provision,
                 method_name='message'
             )
-            db().refresh(task_provision)
+            #db().refresh(task_provision) # Fails
+            #db().flush() # Works
+            #db().commit() # Works
+            # No db method also works
 
             # if failed to generate task message for orchestrator
             # then task is already set to error

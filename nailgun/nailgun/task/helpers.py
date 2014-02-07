@@ -476,7 +476,7 @@ class TaskHelper(object):
         for node in nodes:
             objects.Node.get_network_manager(
                 node
-            ).assign_admin_ips(node.id)
+            ).assign_admin_ip(node.id)
 
     @classmethod
     def prepare_for_deployment(cls, nodes):
@@ -495,4 +495,4 @@ class TaskHelper(object):
             netmanager.assign_ips(nodes_ids, 'storage')
 
             for node in nodes:
-                netmanager.assign_admin_ips(node.id)
+                netmanager.assign_admin_ip(node.id)

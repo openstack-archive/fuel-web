@@ -302,7 +302,8 @@ class DisksFormatConvertor(object):
 class Disk(object):
 
     def __init__(self, volumes, generator_method, disk_id, name,
-                 size, boot_is_raid=True, possible_pvs_count=0):
+                 size, boot_is_raid=True, possible_pvs_count=0,
+                 disk_extra=None):
         """Create disk
 
         :param volumes: volumes which need to allocate on disk
@@ -317,6 +318,7 @@ class Disk(object):
         """
         self.call_generator = generator_method
         self.id = disk_id
+        self.extra = disk_extra or []
         self.name = name
         self.size = size
         self.lvm_meta_size = self.call_generator('calc_lvm_meta_size')
@@ -519,6 +521,7 @@ class Disk(object):
     def render(self):
         return {
             'id': self.id,
+            'extra': self.extra,
             'name': self.name,
             'type': 'disk',
             'size': self.size,
@@ -571,7 +574,8 @@ class VolumeManager(object):
                 byte_to_megabyte(d["size"]),
                 boot_is_raid=boot_is_raid,
                 # Count of possible PVs equal to count of allowed VGs
-                possible_pvs_count=len(only_vg(self.allowed_volumes)))
+                possible_pvs_count=len(only_vg(self.allowed_volumes)),
+                disk_extra=d["extra"])
 
             self.disks.append(disk)
 

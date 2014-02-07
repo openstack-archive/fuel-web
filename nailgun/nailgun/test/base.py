@@ -223,7 +223,8 @@ class Environment(object):
         node_data = {
             'mac': mac,
             'status': 'discover',
-            'meta': default_metadata
+            'meta': default_metadata,
+            'ip': self._generate_node_ip(fallback=self._mac_to_ip(mac))
         }
         if kwargs:
             meta = kwargs.pop('meta', None)
@@ -250,19 +251,21 @@ class Environment(object):
             if str(expect_http)[0] != "2":
                 return None
             self.tester.assertEquals(resp.status_code, expect_http)
-            node = json.loads(resp.body)
-            node_db = Node.get_by_uid(node['id'])
+            node_j = json.loads(resp.body)
+            node = Node.get_by_uid(node_j['id'])
             if 'interfaces' not in node_data['meta'] \
                     or not node_data['meta']['interfaces']:
                 self._set_interfaces_if_not_set_in_meta(
-                    node_db.id,
+                    node.id,
                     kwargs.get('meta', None))
-            self.nodes.append(node_db)
+            self.nodes.append(node)
         else:
             node = Node.create(node_data)
             db().commit()
             self.nodes.append(node)
 
+        # TODO:(AWoodward) maybe should be moved into object
+        self.network_manager.assign_admin_ip(node.id)
         return node
 
     def create_nodes_w_interfaces_count(self,
@@ -282,6 +285,29 @@ class Environment(object):
             self.set_interfaces_in_meta(meta, if_list)
             nodes.append(self.create_node(meta=meta, **kwargs))
         return nodes
+
+    def _mac_to_ip(self, mac):
+        addr = ['127'] + map(lambda x: str(int(x, 16)), mac.split(':')[:3])
+        return '.'.join(addr)
+
+    def _generate_node_ip(
+            self,
+            network_id=None,
+            ip_addr=None,
+            fallback="127.0.0.1"):
+        if ip_addr:
+            return str(ip_addr)
+
+        if network_id is None:
+            network_id = self.network_manager.get_admin_network_group_id()
+
+        try:
+            return self.network_manager.get_free_ips(network_id)[0]
+        except AttributeError:
+            pass
+
+        #We failed to assign IP, send fallback
+        return fallback
 
     def create_rh_account(self, **kwargs):
         username = kwargs.pop("username", "rh_username")

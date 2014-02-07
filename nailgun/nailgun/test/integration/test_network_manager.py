@@ -246,9 +246,9 @@ class TestNetworkManager(BaseIntegrationTest):
         network_data = self.env.network_manager.get_node_networks(node.id)
         self.assertEquals(network_data, [])
 
-    def test_assign_admin_ips(self):
+    def test_assign_admin_ip(self):
         node = self.env.create_node()
-        self.env.network_manager.assign_admin_ips(node.id, 2)
+        self.env.network_manager.assign_admin_ip(node.id)
         admin_ng_id = self.env.network_manager.get_admin_network_group_id()
         admin_network_range = self.db.query(IPAddrRange).\
             filter_by(network_group_id=admin_ng_id).all()[0]
@@ -256,52 +256,23 @@ class TestNetworkManager(BaseIntegrationTest):
         admin_ips = self.db.query(IPAddr).\
             filter_by(node=node.id).\
             filter_by(network=admin_ng_id).all()
-        self.assertEquals(len(admin_ips), 2)
-        map(
-            lambda x: self.assertIn(
-                IPAddress(x.ip_addr),
-                IPRange(
-                    admin_network_range.first,
-                    admin_network_range.last
-                )
-            ),
-            admin_ips
+        self.assertEquals(len(admin_ips), 1)
+        self.assertIn(
+            IPAddress(admin_ips[0].ip_addr),
+            IPRange(
+                admin_network_range.first,
+                admin_network_range.last
+            )
         )
 
-    def test_assign_admin_ips_large_range(self):
-        map(self.db.delete, self.db.query(IPAddrRange).all())
-        admin_ng_id = self.env.network_manager.get_admin_network_group_id()
-        mock_range = IPAddrRange(
-            first='10.0.0.1',
-            last='10.255.255.254',
-            network_group_id=admin_ng_id
-        )
-        self.db.add(mock_range)
-        self.db.commit()
-        # Creating two nodes
-        n1 = self.env.create_node()
-        n2 = self.env.create_node()
-        nc = zip([n1.id, n2.id], [2048, 2])
-
-        # Assinging admin IPs on created nodes
-        map(lambda (n, c): self.env.network_manager.assign_admin_ips(n, c), nc)
-
-        # Asserting count of admin node IPs
-        def asserter(x):
-            n, c = x
-            l = len(self.db.query(IPAddr).filter_by(network=admin_ng_id).
-                    filter_by(node=n).all())
-            self.assertEquals(l, c)
-        map(asserter, nc)
-
-    def test_assign_admin_ips_idempotent(self):
+    def test_assign_admin_ip_idempotent(self):
         node = self.env.create_node()
-        self.env.network_manager.assign_admin_ips(node.id, 2)
+        self.env.network_manager.assign_admin_ip(node.id)
         admin_net_id = self.env.network_manager.get_admin_network_group_id()
         admin_ips = set([i.ip_addr for i in self.db.query(IPAddr).
                          filter_by(node=node.id).
                          filter_by(network=admin_net_id).all()])
-        self.env.network_manager.assign_admin_ips(node.id, 2)
+        self.env.network_manager.assign_admin_ip(node.id)
         admin_ips2 = set([i.ip_addr for i in self.db.query(IPAddr).
                           filter_by(node=node.id).
                           filter_by(network=admin_net_id).all()])
@@ -319,7 +290,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.db.commit()
 
         node = self.env.create_node()
-        self.env.network_manager.assign_admin_ips(node.id, 1)
+        self.env.network_manager.assign_admin_ip(node.id)
 
         admin_net_id = self.env.network_manager.get_admin_network_group_id()
 

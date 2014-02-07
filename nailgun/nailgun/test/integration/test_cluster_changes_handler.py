@@ -256,7 +256,7 @@ class TestHandlers(BaseIntegrationTest):
             if vlan_splinters == 'kernel_lt':
                 pnd['ks_meta']['kernel_lt'] = 1
 
-            NetworkManager.assign_admin_ips(n.id, 1)
+            NetworkManager.assign_admin_ip(n.id)
 
             admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 
@@ -623,7 +623,7 @@ class TestHandlers(BaseIntegrationTest):
             if vlan_splinters == 'kernel_lt':
                 pnd['ks_meta']['kernel_lt'] = 1
 
-            NetworkManager.assign_admin_ips(n.id, 1)
+            NetworkManager.assign_admin_ip(n.id)
 
             admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
 

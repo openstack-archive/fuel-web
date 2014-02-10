@@ -198,7 +198,7 @@ def action_run(params):
     if params.config_file:
         settings.update_from_file(params.config_file)
     from nailgun.wsgi import appstart
-    appstart(keepalive=params.keepalive)
+    appstart()
 
 
 if __name__ == "__main__":

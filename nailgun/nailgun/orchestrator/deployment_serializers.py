@@ -651,18 +651,18 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 'br-storage': {},
                 'br-ex': {},
                 'br-mgmt': {},
-                # There should be an endpoint for a fw-admin network.
+                'br-fw-admin': {},
             },
             'roles': {
                 'ex': 'br-ex',
                 'management': 'br-mgmt',
                 'storage': 'br-storage',
-                'fw-admin': ''
+                'fw-admin': 'br-fw-admin',
             },
             'transformations': []
         }
         # Add bridges for networks.
-        for brname in ('br-ex', 'br-mgmt', 'br-storage', 'br-prv'):
+        for brname in ('br-ex', 'br-mgmt', 'br-storage', 'br-fw-admin'):
             attrs['transformations'].append({
                 'action': 'add-br',
                 'name': brname
@@ -683,10 +683,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 )
             }
 
-            if iface.name == node.admin_interface.name:
-                # A physical interface for the FuelWeb admin network should
-                # not be used through bridge. Directly only.
-                continue
             attrs['transformations'].append({
                 'action': 'add-br',
                 'name': 'br-%s' % iface.name
@@ -702,7 +698,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         netgroup_mapping = [
             ('storage', 'br-storage'),
             ('public', 'br-ex'),
-            ('management', 'br-mgmt')
+            ('management', 'br-mgmt'),
+            ('fuelweb_admin', 'br-fw-admin'),
         ]
         netgroups = {}
         for ngname, brname in netgroup_mapping:
@@ -740,6 +737,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             attrs['roles']['private'] = 'br-prv'
 
             attrs['transformations'].append({
+                'action': 'add-br',
+                'name': 'br-prv',
+            })
+
+            attrs['transformations'].append({
                 'action': 'add-patch',
                 'bridges': [
                     'br-%s' % nm.get_node_interface_by_netname(
@@ -757,12 +759,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 'Invalid Neutron segmentation type: %s' %
                 node.cluster.net_segment_type
             )
-
-        # Fill up all about fuelweb-admin network.
-        attrs['endpoints'][node.admin_interface.name] = {
-            "IP": [cls.get_admin_ip_w_prefix(node)]
-        }
-        attrs['roles']['fw-admin'] = node.admin_interface.name
 
         return attrs
 

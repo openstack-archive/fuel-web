@@ -540,8 +540,25 @@ class NetworkManager(object):
         return network_data
 
     @classmethod
+    def _get_admin_node_network(cls, node_id):
+        net = cls.get_admin_network_group()
+        net_cidr = IPNetwork(net.cidr)
+        node = db.query(Node).get(node_id)
+        ip_addr = cls.get_admin_ip_for_node(node)
+        return {
+            'name': net.name,
+            'vlan': net.vlan_start,
+            'ip': "{0}/{1}".format(ip_addr, net_cidr.prefixlen),
+            'netmask': str(net_cidr.netmask),
+            'brd': str(net_cidr.broadcast),
+            'gateway': net.gateway,
+            'dev': node.admin_interface.name
+        }
+
+    @classmethod
     def get_node_network_by_netname(cls, node_id, netname):
         networks = cls.get_node_networks(node_id)
+        networks.append(cls._get_admin_node_network(node_id))
         return filter(
             lambda n: n['name'] == netname, networks)[0]
 

@@ -491,16 +491,30 @@ class TestHandlers(BaseIntegrationTest):
                                 "gateway": "172.16.0.1"
                             },
                             "br-storage": {"IP": [ips['storage'] + "/24"]},
-                            "eth1": {"IP": [ips['admin']]}
+                            "br-fw-admin": {"IP": [ips['admin']]},
                         },
                         "roles": {
                             "management": "br-mgmt",
                             "mesh": "br-mgmt",
                             "ex": "br-ex",
                             "storage": "br-storage",
-                            "fw-admin": "eth1"
+                            "fw-admin": "br-fw-admin",
                         },
                         "transformations": [
+                            {
+                                "action": "add-br",
+                                "name": u"br-eth0"},
+                            {
+                                "action": "add-port",
+                                "bridge": u"br-eth0",
+                                "name": u"eth0"},
+                            {
+                                "action": "add-br",
+                                "name": u"br-eth1"},
+                            {
+                                "action": "add-port",
+                                "bridge": u"br-eth1",
+                                "name": u"eth1"},
                             {
                                 "action": "add-br",
                                 "name": "br-ex"},
@@ -512,14 +526,7 @@ class TestHandlers(BaseIntegrationTest):
                                 "name": "br-storage"},
                             {
                                 "action": "add-br",
-                                "name": "br-prv"},
-                            {
-                                "action": "add-br",
-                                "name": u"br-eth0"},
-                            {
-                                "action": "add-port",
-                                "bridge": u"br-eth0",
-                                "name": u"eth0"},
+                                "name": "br-fw-admin"},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-storage"],
@@ -531,7 +538,11 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-mgmt"],
-                                "tags": [101, 0]}
+                                "tags": [101, 0]},
+                            {
+                                "action": "add-patch",
+                                "bridges": [u"br-eth1", "br-fw-admin"],
+                                "trunks": [0]},
                         ]
                     }
                 }

@@ -243,7 +243,11 @@ class TaskHelper(object):
 
                 cls.__set_cluster_status(cluster, 'operational')
                 cluster.clear_pending_changes()
-            elif task.status == 'error':
+            elif task.status == 'error' and \
+                 not cls.__before_deployment_error(task):
+                # We don't want to set cluster status to
+                # error because we don't want to lock
+                # settings if cluster wasn't delpoyed
                 cls.__set_cluster_status(cluster, 'error')
         elif task.name == 'deployment' and task.status == 'error':
             cls.__update_cluster_to_deployment_error(cluster)
@@ -251,6 +255,20 @@ class TaskHelper(object):
             cls.__update_cluster_to_provisioning_error(cluster)
 
         db().commit()
+
+    @classmethod
+    def __before_deployment_error(cls, task):
+        """Returns True in case of check_before_deployment
+        or check_networks error and if cluster wasn't
+        deployed yet
+        """
+        error_checking_tasks_count = db().query(Task).\
+            filter_by(parent_id=task.id).\
+            filter_by(status='error').\
+            filter(Task.name.in_(
+                ['check_before_deployment', 'check_networks'])).count()
+
+        return task.cluster.status == 'new' and error_checking_tasks_count
 
     @classmethod
     def __update_cluster_to_provisioning_error(cls, cluster):

@@ -50,7 +50,11 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             }
         },
         showValidationError: function(model, error) {
-            this.$('.alert-error').text(_.values(error).join('; ')).show();
+            var errorText = error;
+            if (errorText.name.toLowerCase() == 'conflict') {
+                errorText.name = 'Environment with name '+ $('.rename-cluster-form').find('input').val() + ' already exists';
+            }
+            this.$('.alert-error').text(_.values(errorText).join('; ')).show();
         },
         onClusterNameInputKeydown: function(e) {
             this.$('.alert-error').hide();

@@ -129,6 +129,25 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
             self.assertEquals(node.status, 'error')
             self.assertEquals(node.progress, 0)
 
+    def test_do_not_set_cluster_to_error_if_validation_failed(self):
+        for task_name in ['check_before_deployment', 'check_networks']:
+            supertask = Task(
+                name='deploy',
+                cluster=self.cluster,
+                status='error')
+
+            check_task = Task(
+                name='check_before_deployment',
+                cluster=self.cluster,
+                status='error')
+
+            supertask.subtasks.append(check_task)
+            self.db.add(check_task)
+            self.db.commit()
+
+            TaskHelper.update_cluster_status(supertask.uuid)
+            self.assertEquals(self.cluster.status, 'new')
+
 
 class TestCheckBeforeDeploymentTask(BaseTestCase):
 

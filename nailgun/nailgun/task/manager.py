@@ -98,10 +98,6 @@ class ApplyChangesTaskManager(TaskManager):
         if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
             raise errors.WrongNodeStatus("No changes to deploy")
 
-        self.cluster.status = 'deployment'
-        db().add(self.cluster)
-        db().commit()
-
         supertask = Task(name='deploy', cluster=self.cluster)
         db().add(supertask)
         db().commit()
@@ -195,6 +191,10 @@ class ApplyChangesTaskManager(TaskManager):
             for node in nodes_to_provision:
                 node.status = 'provisioning'
                 db().commit()
+
+        self.cluster.status = 'deployment'
+        db().add(self.cluster)
+        db().commit()
 
         if task_messages:
             rpc.cast('naily', task_messages)

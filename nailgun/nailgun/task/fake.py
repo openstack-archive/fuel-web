@@ -14,11 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from itertools import chain
 from itertools import repeat
 from random import randrange
-from random import shuffle
 import threading
 import time
+
+from fysom import Fysom
 
 from kombu import Connection
 from kombu import Exchange
@@ -32,6 +34,72 @@ from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.network.manager import NetworkManager
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.settings import settings
+
+
+class FSMNodeFlow(Fysom):
+
+    def __init__(self, data):
+        super(FSMNodeFlow, self).__init__({
+            'initial': 'discover',
+            'events': [
+                {'name': 'next',
+                 'src': 'discover',
+                 'dst': 'provisioning'},
+                {'name': 'next',
+                 'src': 'provisioning',
+                 'dst': 'provisioned'},
+                {'name': 'next',
+                 'src': 'provisioned',
+                 'dst': 'deploying'},
+                {'name': 'next',
+                 'src': 'deploying',
+                 'dst': 'ready'},
+                {'name': 'next',
+                 'src': 'error',
+                 'dst': 'error'},
+                {
+                    'name': 'error',
+                    'src': [
+                        'discover',
+                        'provisioning',
+                        'provisioned',
+                        'deployment',
+                        'ready',
+                        'error'
+                    ],
+                    'dst': 'error'
+                }
+            ],
+            'callbacks': {
+                'onnext': self.on_next,
+                'onerror': self.on_error
+            }
+        })
+        self.data = data
+        self.data.setdefault('progress', 0)
+        if data.get('status') == 'error':
+            self.error()
+        else:
+            self.next()
+
+    def on_error(self, e):
+        self.data['status'] = 'error'
+        if e.src in ['discover', 'provisioning']:
+            self.data['error_type'] = 'provision'
+        elif e.src in ['provisioned', 'deploying', 'ready']:
+            self.data['error_type'] = 'deploy'
+        self.data['progress'] = 100
+
+    def on_next(self, e):
+        if e.dst in ['provisioning', 'deploying']:
+            self.data['progress'] = 0
+        self.data['status'] = e.dst
+
+    def update_progress(self, value):
+        self.data['progress'] += value
+        if self.data['progress'] >= 100:
+            self.data['progress'] = 100
+            self.next()
 
 
 class FakeThread(threading.Thread):
@@ -117,6 +185,48 @@ class FakeAmpqThread(FakeThread):
 
 
 class FakeDeploymentThread(FakeAmpqThread):
+
+    def run_until_status(self, smart_nodes, status,
+                         role=None, random_error=False):
+        ready = False
+
+        if random_error:
+            smart_nodes[randrange(0, len(smart_nodes))].error()
+
+        while not ready and not self.stoprequest.isSet():
+            for sn in smart_nodes:
+                continue_cases = (
+                    sn.current in (status, 'error'),
+                    role and (sn.data['role'] != role)
+                )
+                if any(continue_cases):
+                    continue
+
+                sn.update_progress(
+                    randrange(
+                        self.low_tick_count,
+                        self.tick_count
+                    )
+                )
+
+            if role:
+                test_nodes = [
+                    sn for sn in smart_nodes
+                    if sn.data['role'] == role
+                ]
+            else:
+                test_nodes = smart_nodes
+
+            node_ready_status = (
+                (tn.current in (status, 'error'))
+                for tn in test_nodes
+            )
+
+            if all(node_ready_status):
+                ready = True
+
+            yield [sn.data for sn in smart_nodes]
+
     def message_gen(self):
         # TEST: we can fail at any stage:
         # "provisioning" or "deployment"
@@ -133,111 +243,49 @@ class FakeDeploymentThread(FakeAmpqThread):
             'status': 'running'
         }
 
-        next_st = {
-            "discover": "provisioning",
-            "provisioning": "provisioned",
-            "provisioned": "deploying",
-            "deploying": "ready"
+        smart_nodes = [FSMNodeFlow(n) for n in kwargs['nodes']]
+
+        stages_errors = {
+            # no errors - default deployment
+            None: chain(
+                self.run_until_status(smart_nodes, 'provisioned'),
+                self.run_until_status(smart_nodes, 'ready', 'controller'),
+                self.run_until_status(smart_nodes, 'ready')
+            ),
+            # error on provisioning stage
+            'provisioning': chain(
+                self.run_until_status(
+                    smart_nodes,
+                    'provisioned',
+                    random_error=True
+                )
+            ),
+            # error on deployment stage
+            'deployment': chain(
+                self.run_until_status(smart_nodes, 'provisioned'),
+                self.run_until_status(
+                    smart_nodes,
+                    'ready',
+                    'controller',
+                    random_error=True
+                )
+            )
         }
 
-        ready = False
-        while not ready and not self.stoprequest.isSet():
-            for n in kwargs['nodes']:
-                if n['status'] == 'error' or not n['online']:
-                    n['progress'] = 100
-                    n['error_type'] = 'provision'
-                    continue
-                elif n['status'] == 'discover':
-                    n['status'] = next_st[n['status']]
-                    n['progress'] = 0
-                elif n['status'] == 'ready':
-                    n['progress'] = 100
-                elif n['status'] not in ('provisioned',):
-                    n['progress'] += randrange(
-                        self.low_tick_count,
-                        self.tick_count
-                    )
-                    if n['progress'] >= 100:
-                        n['progress'] = 100
-                        n['status'] = next_st[n['status']]
-            if error == "provisioning":
-                self.error = error
-                shuffle(kwargs['nodes'])
-                kwargs['nodes'][0]['status'] = "error"
-                kwargs['nodes'][0]['error_type'] = "provision"
-                kwargs['error'] = error_msg
-                error = None
-            yield kwargs
-            if all(map(
-                lambda n: n['status'] in (
-                    'provisioned',
-                    'error',
-                    'ready'
-                ) or not n['online'],
-                kwargs['nodes']
-            )):
-                ready = True
-            else:
-                self.sleep(self.tick_interval)
-
-        error_nodes = filter(
-            lambda n: n['status'] == 'error',
-            kwargs['nodes']
-        )
-        offline_nodes = filter(
-            lambda n: n['online'] is False,
-            kwargs['nodes']
-        )
-        if error_nodes or offline_nodes:
-            self.error = "offline nodes"
-            kwargs['status'] = 'error'
-            # TEST: set task to ready no matter what
-            if task_ready:
-                kwargs['status'] = 'ready'
-            kwargs['progress'] = 100
-            yield kwargs
-            return
-
-        ready = False
-        while not ready and not self.stoprequest.isSet():
-            for n in kwargs['nodes']:
-                if n['status'] in 'ready':
-                    continue
-                elif n['status'] == 'provisioned':
-                    n['status'] = next_st[n['status']]
-                    n['progress'] = 0
-                else:
-                    n['progress'] += randrange(
-                        self.low_tick_count,
-                        self.tick_count
-                    )
-                    if n['progress'] >= 100:
-                        n['progress'] = 100
-                        n['status'] = next_st[n['status']]
-            if error == "deployment":
-                self.error = "offline nodes"
-                shuffle(kwargs['nodes'])
-                kwargs['nodes'][0]['status'] = "error"
-                kwargs['nodes'][0]['error_type'] = "deploy"
-                kwargs['error'] = error_msg
-                error = None
-            if all(map(
-                lambda n: n['progress'] == 100 and n['status'] == 'ready',
-                kwargs['nodes']
-            )):
-                kwargs['status'] = 'ready'
-                ready = True
-            if any(map(
-                lambda n: n['status'] == 'error',
-                kwargs['nodes']
-            )):
-                kwargs['status'] = 'error'
-                ready = True
-            # TEST: set task to ready no matter what
-            if task_ready:
-                kwargs['status'] = 'ready'
+        for nodes_status in stages_errors[error]:
+            kwargs['nodes'] = nodes_status
             yield kwargs
             self.sleep(self.tick_interval)
+
+        if not error or task_ready:
+            kwargs['status'] = 'ready'
+        else:
+            kwargs['status'] = 'error'
+
+        if error_msg:
+            kwargs['error'] = error_msg
+
+        yield kwargs
 
 
 class FakeProvisionThread(FakeThread):

@@ -183,57 +183,6 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertEquals(n.status, 'ready')
             self.assertEquals(n.progress, 100)
 
-    @fake_tasks()
-    def test_redeployment_error_nodes(self):
-        self.env.create(
-            cluster_kwargs={"mode": "ha_compact"},
-            nodes_kwargs=[
-                {
-                    "pending_addition": True,
-                    "status": "error",
-                    "error_type": "provision",
-                    "error_msg": "Test Error"
-                },
-                {"pending_addition": True},
-                {"pending_addition": True},
-                {"roles": ["compute"], "pending_addition": True}
-            ]
-        )
-
-        supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask, 4)
-        self.env.refresh_nodes()
-        self.assertEquals(self.env.nodes[0].status, 'error')
-        self.assertEquals(self.env.nodes[0].error_type, 'provision')
-        self.assertEquals(self.env.nodes[0].needs_redeploy, True)
-        self.assertEquals(self.env.nodes[0].needs_reprovision, True)
-
-        for node in self.env.nodes[1:]:
-            self.assertEquals(node.status, 'error')
-            self.assertEquals(node.error_type, 'deploy')
-            self.assertEquals(node.needs_redeploy, True)
-            self.assertEquals(node.needs_reprovision, False)
-
-        notif_node = self.db.query(Notification).filter_by(
-            topic="error",
-            message=u"Failed to deploy node '{0}': {1}".format(
-                self.env.nodes[0].name,
-                self.env.nodes[0].error_msg)).first()
-        self.assertIsNotNone(notif_node)
-
-        notif_deploy = self.db.query(Notification).filter_by(
-            topic="error",
-            message=u"Deployment has failed. "
-            "Check these nodes:\n'{0}'".format(
-                self.env.nodes[0].name)).first()
-        self.assertIsNotNone(notif_deploy)
-
-        all_notif = self.db.query(Notification).all()
-        self.assertEqual(len(all_notif), 2)
-
-        supertask = self.env.launch_deployment()
-        self.env.wait_error(supertask, 4)
-
     def test_deletion_empty_cluster_task_manager(self):
         cluster = self.env.create_cluster(api=True)
         resp = self.app.delete(

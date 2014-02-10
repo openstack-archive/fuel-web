@@ -18,6 +18,7 @@ import argparse
 import curses
 from functools import partial
 from itertools import chain
+from itertools import groupby
 import json
 import math
 from operator import itemgetter
@@ -267,10 +268,14 @@ def json_api_post_request(api, data, root=API_ROOT):
             'Content-Type': 'application/json'
         }
     )
-    return json.loads(
-        urllib2.urlopen(request)
-        .read()
-    )
+    try:
+        response = json.loads(
+            urllib2.urlopen(request)
+            .read()
+        )
+    except ValueError:
+        response = {}
+    return response
 
 
 def has_arguments(params):
@@ -503,56 +508,59 @@ def node(params):
     if params.set:
         check_for_attributes(params, ["node", "role", "env"])
         roles = map(str.lower, params.role)
-        if not params.force:
-            validate_roles(params.env, roles)
-        data = map(
-            lambda _node_id: {
-                "id": _node_id,
-                "cluster_id": params.env,
-                "pending_roles": roles,
-                "pending_addition": True,
-                "pending_deletion": False
-            },
-            node_ids
+        data = dict((_node_id, roles) for _node_id in node_ids)
+        post_response = json_api_post_request(
+            "clusters/{0}/assignment/".format(params.env),
+            data
         )
-        put_response = json_api_put_request("nodes/", data)
         print_to_output(
-            put_response,
+            post_response,
             "Nodes {0} with roles {1} "
             "were added to environment {2}"
             .format(node_ids, roles, params.env)
         )
     elif params.delete:
         check_for_one_attribute(params, ["env", "node"])
-        nodes_clusters = dict((_node["id"], _node["cluster"])
-                              for _node in json_api_get_request("nodes/"))
         if not params.node and params.env:
-            node_ids = [k for k, v in nodes_clusters.iteritems()
-                        if v == int(params.env)]
+            node_ids = [
+                n["id"] for n in
+                json_api_get_request(
+                    "nodes/?cluster_id={0}".format(params.env)
+                )
+            ]
             if not node_ids:
                 print_error(
                     "Environment with id={0} doesn't have nodes to remove."
                     .format(params.env)
                 )
-        data = map(
-            lambda _node_id: {
-                "id": _node_id,
-                "cluster_id": None,
-                "pending_roles": [],
-                "pending_addition": False,
-                "pending_deletion": True
-            },
-            node_ids
-        )
-        put_response = json_api_put_request("nodes/", data)
-        print_to_output(
-            put_response,
-            "Nodes with ids {0} were removed from environment with id {1}."
-            .format(
-                node_ids,
-                nodes_clusters[node_ids[0]]
+            json_api_post_request(
+                "clusters/{0}/unassignment/".format(params.env),
+                [{"id": n} for n in node_ids]
             )
-        )
+            print_to_output({},
+                            "Nodes with ids {0} were removed "
+                            "from environment with id {1}."
+                            .format(node_ids, params.env))
+        else:
+            if params.env:
+                clusters_removable_nodes_map = [(params.env, node_ids)]
+            else:
+                def get_cluster_id_by_node_id(n_id):
+                    return json_api_get_request(
+                        "nodes/{0}/".format(n_id)
+                    )["cluster"]
+                clusters_removable_nodes_map = \
+                    groupby(params.node, get_cluster_id_by_node_id)
+            for cluster_id, nodes in clusters_removable_nodes_map:
+                nodes = list(nodes)
+                json_api_post_request(
+                    "clusters/{0}/unassignment/".format(cluster_id),
+                    [{"id": n} for n in nodes]
+                )
+                print_to_output({},
+                                "Nodes with ids {0} were removed "
+                                "from environment with id {1}."
+                                .format(nodes, cluster_id))
     elif params.network or params.disk:
         check_for_one_attribute(params, ["default", "download", "upload"])
         check_for_attributes(params, ["node"])
@@ -626,31 +634,6 @@ def quote_and_join(words):
         )
     else:
         return '"{0}"'.format(words[0])
-
-
-def validate_roles(cluster_id, roles):
-    roles = set(roles)
-    cluster = json_api_get_request("clusters/{0}/".format(cluster_id))
-    _release = json_api_get_request("releases/{0}/".format(
-        cluster["release_id"]
-    ))
-    roles_metadata = _release["roles_metadata"]
-    not_valid_roles = roles - set(_release["roles"])
-    if not_valid_roles:
-        print_error(
-            "{0} are not valid roles for environment {1}"
-            .format(quote_and_join(not_valid_roles), cluster["name"])
-        )
-    for _role in roles:
-        if "conflicts" in roles_metadata[_role]:
-            conflicting_roles = set(roles_metadata[_role]["conflicts"])
-            other_roles = roles - set(_role)
-            conflicting_roles &= other_roles
-            if conflicting_roles:
-                print_error(
-                    'Role "{0}" in conflict with role {1}'
-                    .format(_role, quote_and_join(conflicting_roles))
-                )
 
 
 def get_node_attribute(params, node_id, upload_attribute, attributes):
@@ -1588,14 +1571,6 @@ actions = {
                 "dest": "disk",
                 "action": "store_true",
                 "help": "Node disk configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-f", "--force"],
-            "params": {
-                "dest": "force",
-                "action": "store_true",
-                "help": "Bypassing parameter validation.",
                 "default": False
             }
         }, {

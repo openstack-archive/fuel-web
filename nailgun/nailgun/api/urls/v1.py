@@ -16,6 +16,8 @@
 
 import web
 
+from nailgun.api.handlers.assignment import NodeAssignmentHandler
+
 from nailgun.api.handlers.capacity import CapacityLogCsvHandler
 from nailgun.api.handlers.capacity import CapacityLogHandler
 
@@ -143,6 +145,8 @@ urls = (
     NodeNICsVerifyHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
+    r'/nodes/assignment/?$',
+    NodeAssignmentHandler,
     r'/tasks/?$',
     TaskCollectionHandler,
     r'/tasks/(?P<task_id>\d+)/?$',

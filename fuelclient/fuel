@@ -503,8 +503,6 @@ def node(params):
     if params.set:
         check_for_attributes(params, ["node", "role", "env"])
         roles = map(str.lower, params.role)
-        if not params.force:
-            validate_roles(params.env, roles)
         data = map(
             lambda _node_id: {
                 "id": _node_id,
@@ -626,31 +624,6 @@ def quote_and_join(words):
         )
     else:
         return '"{0}"'.format(words[0])
-
-
-def validate_roles(cluster_id, roles):
-    roles = set(roles)
-    cluster = json_api_get_request("clusters/{0}/".format(cluster_id))
-    _release = json_api_get_request("releases/{0}/".format(
-        cluster["release_id"]
-    ))
-    roles_metadata = _release["roles_metadata"]
-    not_valid_roles = roles - set(_release["roles"])
-    if not_valid_roles:
-        print_error(
-            "{0} are not valid roles for environment {1}"
-            .format(quote_and_join(not_valid_roles), cluster["name"])
-        )
-    for _role in roles:
-        if "conflicts" in roles_metadata[_role]:
-            conflicting_roles = set(roles_metadata[_role]["conflicts"])
-            other_roles = roles - set(_role)
-            conflicting_roles &= other_roles
-            if conflicting_roles:
-                print_error(
-                    'Role "{0}" in conflict with role {1}'
-                    .format(_role, quote_and_join(conflicting_roles))
-                )
 
 
 def get_node_attribute(params, node_id, upload_attribute, attributes):
@@ -1588,14 +1561,6 @@ actions = {
                 "dest": "disk",
                 "action": "store_true",
                 "help": "Node disk configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-f", "--force"],
-            "params": {
-                "dest": "force",
-                "action": "store_true",
-                "help": "Bypassing parameter validation.",
                 "default": False
             }
         }, {

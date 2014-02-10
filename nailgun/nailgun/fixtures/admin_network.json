@@ -15,8 +15,7 @@
                 "render_addr_mask": null,
                 "map_priority": 0,
                 "unmovable": true,
-                "assign_vip": false,
-                "dedicated_nic": true
+                "assign_vip": false
             }
         }
     },

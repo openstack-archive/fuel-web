@@ -67,7 +67,7 @@ def run_server(func, server_address=('0.0.0.0', 8080)):
         server.stop()
 
 
-def appstart(keepalive=False):
+def appstart():
     logger.info("Fuel version: %s", str(settings.VERSION))
     if not engine.dialect.has_table(engine.connect(), "nodes"):
         logger.error(
@@ -77,33 +77,10 @@ def appstart(keepalive=False):
 
     app = build_app()
 
-    from nailgun.keepalive import keep_alive
-    from nailgun.rpc import threaded
-
-    if keepalive:
-        logger.info("Running KeepAlive watcher...")
-        keep_alive.start()
-
-    if not settings.FAKE_TASKS:
-        if not keep_alive.is_alive() \
-                and not settings.FAKE_TASKS_AMQP:
-            logger.info("Running KeepAlive watcher...")
-            keep_alive.start()
-        rpc_process = threaded.RPCKombuThread()
-        logger.info("Running RPC consumer...")
-        rpc_process.start()
-    logger.info("Running WSGI app...")
-
     wsgifunc = build_middleware(app.wsgifunc)
 
     run_server(wsgifunc,
                (settings.LISTEN_ADDRESS, int(settings.LISTEN_PORT)))
 
     logger.info("Stopping WSGI app...")
-    if keep_alive.is_alive():
-        logger.info("Stopping KeepAlive watcher...")
-        keep_alive.join()
-    if not settings.FAKE_TASKS:
-        logger.info("Stopping RPC consumer...")
-        rpc_process.join()
     logger.info("Done")

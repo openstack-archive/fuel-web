@@ -16,6 +16,9 @@
 
 import web
 
+from nailgun.api.handlers.assignment import NodeAssignmentHandler
+from nailgun.api.handlers.assignment import NodeUnassignmentHandler
+
 from nailgun.api.handlers.capacity import CapacityLogCsvHandler
 from nailgun.api.handlers.capacity import CapacityLogHandler
 
@@ -120,6 +123,11 @@ urls = (
     ProvisionSelectedNodes,
     r'/clusters/(?P<cluster_id>\d+)/deploy/?$',
     DeploySelectedNodes,
+
+    r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
+    NodeAssignmentHandler,
+    r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
+    NodeUnassignmentHandler,
 
     r'/nodes/?$',
     NodeCollectionHandler,

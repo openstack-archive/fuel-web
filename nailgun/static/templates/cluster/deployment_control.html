@@ -1,18 +1,24 @@
-<% var descriptions = {redhat_setup: 'Downloading'} %>
-<% if (task) { %>
-  <li class="pull-right deployment-progress-box progress-bar-container">
-    <div class="deployment-control-item-box"><div class="deploying-progress-text-box percentage">0%</div></div>
-    <div class="deployment-control-item-box"><div class="progress progress-success progress-striped progress-deploy active"><div class="bar"></div></div></div>
-    <div class="deployment-control-item-box"><div class="deploying-progress-text-box"></div></div>
-    <div class="progress-bar-description"><%= descriptions[task.get('name')] || '' %></div>
+<% if (task) {
+  var taskName = task.get('name');
+  var infiniteProgressTasks = ['stop_deployment', 'reset_environment'];
+ %>
+  <li class="pull-right deployment-progress-box <%= taskName %>">
+    <% if (!_.contains(infiniteProgressTasks, taskName)) { %>
+      <div class="deployment-control-item-box">
+        <button class="btn btn-danger stop-deployment-btn" title="<%- $.t('cluster_page.stop_deployment_button') %>"><i class="icon-cancel-circle"></i></button>
+      </div>
+      <div class="deployment-control-item-box"><div class="deploying-progress-text-box percentage"></div></div>
+    <% } %>
+    <div class="deployment-control-item-box"><div class="progress progress-<%= _.contains(infiniteProgressTasks, taskName) ? 'warning' : 'success' %> progress-striped active"><div class="bar"></div></div></div>
+    <div class="progress-bar-description"><%- $.t('cluster_page.' + taskName, {defaultValue: ''}) %></div>
   </li>
 <% } else { %>
   <li class="pull-right deployment-control-box">
     <% var releaseAvailable = cluster.get('release').get('state') == 'available' %>
-    <div class="deployment-control-item-box"><button class="deploy-btn <%= releaseAvailable && (cluster.hasChanges() || cluster.needsRedeployment()) ? '' : 'disabled' %>"><i class="icon-upload-cloud"></i> <%- $.t("cluster_page.deploy_changes") %></button></div>
+    <div class="deployment-control-item-box"><button class="deploy-btn <%= releaseAvailable && (cluster.hasChanges() || cluster.needsRedeployment()) && cluster.get('nodes').reject({status: 'ready'}).length ? '' : 'disabled' %>"><i class="icon-upload-cloud"></i> <%- $.t('cluster_page.deploy_changes') %></button></div>
     <div class="deployment-control-item-box">
       <% if (cluster.get('nodes').hasChanges()) { %>
-        <button class="btn rollback" role="button" title="Discard Changes"><i class="icon-back-in-time"></i></button>
+        <button class="btn rollback" role="button" title="<%- $.t('cluster_page.discard_changes') %>"><i class="icon-back-in-time"></i></button>
       <% } %>
     </div>
   </li>

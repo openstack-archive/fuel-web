@@ -42,6 +42,9 @@ define(['require'], function(require) {
         urlify: function (text) {
             return utils.linebreaks(text).replace(new RegExp(utils.regexes.url.source, 'g'), utils.composeLink);
         },
+        composeList: function(value) {
+            return _.isUndefined(value) ? [] : _.isArray(value) ? value : [value];
+        },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;
             var dialogViews = require('views/dialogs'); // avoid circular dependencies

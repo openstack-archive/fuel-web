@@ -9,6 +9,8 @@
                 "apply_button": "Apply",
                 "rename_button": "Rename",
                 "delete_button": "Delete",
+                "stop_button": "Stop",
+                "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
                 "cancel_button": "Cancel",
                 "apply_changes_button": "Apply Changes",
@@ -22,7 +24,11 @@
                     "tb": "TB"
                 },
                 "node":"__count__ node",
-                "node_plural":"__count__ nodes"
+                "node_plural":"__count__ nodes",
+                "important": "Important",
+                "success": "Success",
+                "error": "Error",
+                "see_logs": "see the logs"
             },
             "node_details": {
                 "cpu": "CPU",
@@ -36,10 +42,11 @@
             "cluster": {
                 "status": {
                     "new": "New",
-                    "deploying": "Deploying",
+                    "deployment": "Deploying",
                     "operational": "Operational",
                     "error": "Error",
-                    "removing": "Removing"
+                    "remove": "Removing",
+                    "stopped": "Stopped"
                 },
                 "mode": {
                     "multinode": "Multi-node",
@@ -197,7 +204,13 @@
                     "title": "Actions",
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
-                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
+                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes.",
+                    "reset_environment": "Reset Environment",
+                    "reset_environment_description": "Enables you to modify the settings for the environment and redeploy.",
+                    "reset_environment_warning": "This action will reset all existing nodes to their pre-deployment state, deleting your existing environment.",
+                    "reset_disabled_for_new_cluster": "Reset Environment is not available for an environment not yet deployed.",
+                    "repeated_reset_disabled": "The current environment is already being reset.",
+                    "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed. Use Stop Deployment to stop the deployment process."
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -299,10 +312,17 @@
                     "actual_duration": "Actual Duration",
                     "status": "Status"
                 },
+                "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
+                "redhat_setup": "Downloading",
+                "reset_environment": "Resetting",
+                "stop_deployment": "Stopping",
+                "stop_deployment_button": "Stop deployment",
                 "deployment_mode": "Environment Deployment Mode:",
                 "openstack_release": "OpenStack Release:",
-                "environment_status": "Environment Status:"
+                "environment_status": "Environment Status:",
+                "cluster_was_modified_from_cli" : "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",
+                "reconfigure_redhat_account": "You can __opt1__ reconfigure your Red Hat account __opt2__ or "
             },
             "capacity_page": {
                 "title": "Capacity Audit",
@@ -437,13 +457,20 @@
                 },
                 "remove_cluster": {
                     "title": "Delete Environment",
-                    "important": "Important",
                     "incomplete_actions_text": "There are incompleted actions. Removing of the environment may fail and lead to inconsistent state.",
                     "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes."
                 },
+                "stop_deployment": {
+                    "title": "Stop Deployment",
+                    "text": "Are you sure you want to stop this deployment? Any progress will be lost and nodes will be reset to their pre-deployment state.",
+                    "provisioning_warning": "Are you sure you want to stop this deployment? Any progress on nodes not yet provisioned will be lost and those nodes will be reset to their pre-deployment state."
+                },
+                "reset_environment": {
+                    "title": "Reset Environment",
+                    "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state."
+                },
                 "error_occured": {
-                    "alert_text": "A server error has occured. Please contact the administrators.",
-                    "see_logs": "See the logs"
+                    "alert_text": "A server error has occured. Please contact the administrators."
                 }
             }
         }
@@ -471,7 +498,8 @@
                     "tb": "TB"
                 },
                 "node":"__count__个节点",
-                "node_plural":"__count__个节点"
+                "node_plural":"__count__个节点",
+                "important": "重要"
             },
             "node_details": {
                 "cpu": "CPU",
@@ -998,7 +1026,6 @@
                 },
                 "remove_cluster": {
                     "title": "删除环境",
-                    "important": "重要",
                     "incomplete_actions_text": "有动作未完成，删除环境可能失败，并导致状态不混乱。",
                     "node_returned_text": "每个节点都将被删除并放回未非配节点池。"
                 }

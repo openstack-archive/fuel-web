@@ -26,9 +26,10 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
     var ActionsTab = commonViews.Tab.extend({
         template: _.template(actionsTabTemplate),
         events: {
-            'click .rename-cluster-form .apply-name-btn': 'applyNewClusterName',
+            'click .apply-name-btn': 'applyNewClusterName',
             'keydown .rename-cluster-form input': 'onClusterNameInputKeydown',
-            'click .delete-cluster-form .delete-cluster-btn': 'deleteCluster'
+            'click .delete-cluster-btn': 'deleteCluster',
+            'click .reset-environment-btn': 'resetEnvironment'
         },
         applyNewClusterName: function() {
             var name = $.trim(this.$('.rename-cluster-form input').val());
@@ -50,23 +51,37 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             }
         },
         showValidationError: function(model, error) {
-            this.$('.alert-error').text(_.values(error).join('; ')).show();
+            this.$('.rename-cluster-form input[type=text]').addClass('error');
+            this.$('.text-error').text(_.values(error).join('; ')).show();
         },
         onClusterNameInputKeydown: function(e) {
-            this.$('.alert-error').hide();
+            this.$('.rename-cluster-form input[type=text]').removeClass('error');
+            this.$('.text-error').hide();
         },
         deleteCluster: function() {
-            var deleteClusterDialogView = new dialogViews.RemoveClusterDialog({model: this.model});
-            this.registerSubView(deleteClusterDialogView);
-            deleteClusterDialogView.render();
+            this.registerSubView(new dialogViews.RemoveClusterDialog({model: this.model})).render();
+        },
+        resetEnvironment: function() {
+            this.registerSubView(new dialogViews.ResetEnvironmentDialog({model: this.model})).render();
+        },
+        bindTaskEvents: function(task) {
+            return task.match({group: 'deployment'}) ? task.on('change:status', this.render, this) : null;
+        },
+        onNewTask: function(task) {
+            return this.bindTaskEvents(task) && this.render();
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.model.on('change:name', this.render, this);
+            this.model.on('change:name change:status', this.render, this);
+            this.model.get('tasks').each(this.bindTaskEvents, this);
+            this.model.get('tasks').on('add', this.onNewTask, this);
             this.model.on('invalid', this.showValidationError, this);
         },
         render: function() {
-            this.$el.html(this.template({cluster: this.model})).i18n();
+            this.$el.html(this.template({
+                cluster: this.model,
+                isResetDisabled: this.model.get('status') == 'new' || this.model.task({group: 'deployment', status: 'running'})
+            })).i18n();
             return this;
         }
     });

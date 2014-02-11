@@ -497,7 +497,7 @@ class TestNeutronManager(BaseIntegrationTest):
         other_nic, empty_nic = None, None
         for nic in other_nics:
             names = [n.name for n in nic.assigned_networks_list]
-            if names == ['public']:
+            if 'public' in names:
                 other_nic = nic
                 other_nets = names
             elif names == []:

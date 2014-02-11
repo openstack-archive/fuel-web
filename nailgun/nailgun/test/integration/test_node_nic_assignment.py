@@ -371,6 +371,57 @@ class TestNodeHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status, 200)
         self.assertItemsEqual(macs, resp_macs)
 
+    def test_try_add_node_with_same_mac(self):
+        cluster = self.env.create_cluster(api=True)
+        macs = ('123', '345')
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': macs[0]},
+             {'name': 'eth1', 'mac': macs[1]}])
+        self.env.create_node(api=True, meta=meta, mac=macs[0],
+                             cluster_id=cluster['id'])
+
+        self.env.create_node(api=True, meta=meta, mac=macs[0],
+                             cluster_id=cluster['id'],
+                             expect_http=409)
+
+        macs = ('123', 'new_mac')
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': macs[0]},
+             {'name': 'eth1', 'mac': macs[1]}])
+        self.env.create_node(api=True, meta=meta, mac=macs[0],
+                             cluster_id=cluster['id'],
+                             expect_http=409)
+
+        macs = ('new_mac', '123')
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': macs[0]},
+             {'name': 'eth1', 'mac': macs[1]}])
+        self.env.create_node(api=True, meta=meta, mac=macs[0],
+                             cluster_id=cluster['id'],
+                             expect_http=409)
+
+        macs = ('345', 'new_mac')
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': macs[0]},
+             {'name': 'eth1', 'mac': macs[1]}])
+        self.env.create_node(api=True, meta=meta, mac=macs[0],
+                             cluster_id=cluster['id'],
+                             expect_http=409)
+
+        macs = ('new_mac', '345')
+        self.env.set_interfaces_in_meta(
+            meta,
+            [{'name': 'eth0', 'mac': macs[0]},
+             {'name': 'eth1', 'mac': macs[1]}])
+        self.env.create_node(api=True, meta=meta, mac=macs[0],
+                             cluster_id=cluster['id'],
+                             expect_http=409)
+
 
 class TestNodeNICAdminAssigning(BaseIntegrationTest):
 

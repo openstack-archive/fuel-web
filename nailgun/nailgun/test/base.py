@@ -191,14 +191,20 @@ class Environment(object):
             exclude=None, expect_http=201,
             expect_message=None,
             **kwargs):
+        #TODO(alekseyk) Simplify 'interfaces' and 'mac' manipulation logic
         metadata = kwargs.get('meta')
         default_metadata = self.default_metadata()
         if metadata:
             default_metadata.update(metadata)
+            meta_ifaces = 'interfaces' in metadata
 
-        mac = self._generate_random_mac()
+        mac = kwargs.get('mac', self._generate_random_mac())
         if default_metadata['interfaces']:
-            default_metadata['interfaces'][0]['mac'] = kwargs.get('mac', mac)
+            default_metadata['interfaces'][0]['mac'] = mac
+            if not metadata or not meta_ifaces:
+                for iface in default_metadata['interfaces'][1:]:
+                    if 'mac' in iface:
+                        iface['mac'] = self._generate_random_mac()
 
         node_data = {
             'mac': mac,

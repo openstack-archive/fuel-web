@@ -49,11 +49,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$('.btn, input, select').attr('disabled', true);
         },
         isLocked: function() {
-            var task = !!this.model.task('deploy', 'running') || !!this.model.task('verify_networks', 'running');
-            return this.model.get('status') != 'new' || task;
-        },
-        isVerificationLocked: function() {
-            return !!this.model.task('deploy', 'running') || !!this.model.task('verify_networks', 'running');
+            return this.model.task({group: ['deployment', 'network'], status: 'running'}) || !this.model.isAvailableForSettingsChanges();
         },
         checkForChanges: function() {
             this.hasChanges = !_.isEqual(this.model.get('networkConfiguration').toJSON(), this.networkConfiguration.toJSON());
@@ -142,10 +138,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             }
         },
         bindTaskEvents: function(task) {
-            if (task.get('name') == 'verify_networks' || task.get('name') == 'deploy' || task.get('name') == 'check_networks') {
-                return task.on('change:status', this.render, this);
-            }
-            return null;
+            return task.match({group: ['deployment', 'network']}) ? task.on('change:status', this.render, this) : null;
         },
         onNewTask: function(task) {
             return this.bindTaskEvents(task) && this.render();
@@ -215,7 +208,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             }
         },
         showVerificationErrors: function() {
-            var task = this.model.task('verify_networks', 'error') || this.model.task('check_networks', 'error');
+            var task = this.model.task({group: 'network', status: 'error'});
             if (task && task.get('result').length) {
                 _.each(task.get('result'), function(verificationError) {
                     _.each(verificationError.ids, function(networkId) {
@@ -272,7 +265,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 net_provider: this.model.get('net_provider'),
                 hasChanges: this.hasChanges,
                 locked: this.isLocked(),
-                verificationLocked: this.isVerificationLocked(),
+                verificationLocked: !!this.model.task({group: ['deployment', 'network'], status: 'running'}),
                 segment_type: this.model.get("net_segment_type")
             })).i18n();
             this.stickit(this.networkConfiguration);

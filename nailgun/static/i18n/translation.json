@@ -9,6 +9,8 @@
                 "apply_button": "Apply",
                 "rename_button": "Rename",
                 "delete_button": "Delete",
+                "stop_button": "Stop",
+                "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
                 "cancel_button": "Cancel",
                 "apply_changes_button": "Apply Changes",
@@ -22,7 +24,8 @@
                     "tb": "TB"
                 },
                 "node":"__count__ node",
-                "node_plural":"__count__ nodes"
+                "node_plural":"__count__ nodes",
+                "important": "Important"
             },
             "node_details": {
                 "cpu": "CPU",
@@ -36,10 +39,11 @@
             "cluster": {
                 "status": {
                     "new": "New",
-                    "deploying": "Deploying",
+                    "deployment": "Deploying",
                     "operational": "Operational",
                     "error": "Error",
-                    "removing": "Removing"
+                    "remove": "Removing",
+                    "stopped": "Stopped"
                 },
                 "mode": {
                     "multinode": "Multi-node",
@@ -197,7 +201,9 @@
                     "title": "Actions",
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
-                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes."
+                    "alert_delete": "Clean up each node and return it to the pool of unallocated nodes.",
+                    "reset_environment": "Reset Environment",
+                    "reset_environment_description": "Reset the environment, unlock settings and allow to re-deploy it from scratch."
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -299,7 +305,12 @@
                     "actual_duration": "Actual Duration",
                     "status": "Status"
                 },
+                "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",
+                "redhat_setup": "Downloading",
+                "reset_environment": "Resetting",
+                "stop_deployment": "Stopping",
+                "stop_deployment_button": "Stop deployment",
                 "deployment_mode": "Environment Deployment Mode:",
                 "openstack_release": "OpenStack Release:",
                 "environment_status": "Environment Status:"
@@ -437,9 +448,17 @@
                 },
                 "remove_cluster": {
                     "title": "Delete Environment",
-                    "important": "Important",
                     "incomplete_actions_text": "There are incompleted actions. Removing of the environment may fail and lead to inconsistent state.",
                     "node_returned_text": "Each node will be cleaned up and returned to the pool of unallocated nodes."
+                },
+                "stop_deployment": {
+                    "title": "Stop Deployment",
+                    "text": "Are you sure you want to stop a deployment? Environment nodes will be reset to their bootstrap OS status.",
+                    "provisioning_warning": "Are you sure you want to stop a deployment? Deployment will stop after all nodes will be provisioned, and nodes will be reset to their bootstrap OS status."
+                },
+                "reset_environment": {
+                    "title": "Reset Environment",
+                    "text": "Are you sure you want to reset the environment? Environment nodes will be rebooted to their bootstrap OS status."
                 },
                 "error_occured": {
                     "alert_text": "A server error has occured. Please contact the administrators.",
@@ -471,7 +490,8 @@
                     "tb": "TB"
                 },
                 "node":"__count__个节点",
-                "node_plural":"__count__个节点"
+                "node_plural":"__count__个节点",
+                "important": "重要"
             },
             "node_details": {
                 "cpu": "CPU",
@@ -998,7 +1018,6 @@
                 },
                 "remove_cluster": {
                     "title": "删除环境",
-                    "important": "重要",
                     "incomplete_actions_text": "有动作未完成，删除环境可能失败，并导致状态不混乱。",
                     "node_returned_text": "每个节点都将被删除并放回未非配节点池。"
                 }

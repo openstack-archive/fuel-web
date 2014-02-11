@@ -130,11 +130,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             task.message
         )
         for n in self.env.nodes:
-            self.assertIn(
-                '"admin (PXE)", "storage" networks '
-                'at node "{0}"'.format(n.name),
-                task.message
-            )
+            self.assertIn('"storage"', task.message)
         self.assertEquals(mocked_rpc.called, False)
 
     @fake_tasks()

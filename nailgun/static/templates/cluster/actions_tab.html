@@ -1,24 +1,34 @@
 <div class="wrapper">
   <h3 class="span12" data-i18n="cluster_page.actions_tab.title"></h3>
   <div class="row-fluid">
-    <div class="span6 action-item-placeholder">
+    <div class="span4 action-item-placeholder">
       <form class="rename-cluster-form" onsubmit="return false">
         <h4 data-i18n="cluster_page.actions_tab.rename_environment"></h4>
         <div class="action-item-controls">
-          <input type="text" class="input-xlarge" maxlength="50" value="<%- cluster.get('name') %>">
-          <button class="btn btn-success apply-name-btn" style="margin-top: -10px;"><span data-i18n="common.rename_button"></span></button>
-        </div>
-        <div class="action-item-description">
-          <div class="alert alert-error hide"></div>
+          <input type="text" maxlength="50" value="<%- cluster.get('name') %>">
+          <div class="text-error hide"></div>
+          <button class="btn btn-success apply-name-btn"><span data-i18n="common.rename_button"></span></button>
         </div>
       </form>
     </div>
-    <div class="span6 action-item-placeholder">
+    <div class="span4 action-item-placeholder">
+      <form class="reset-environment-form" onsubmit="return false">
+        <h4 data-i18n="cluster_page.actions_tab.reset_environment"></h4>
+        <div class="action-item-controls">
+          <% var resetDescription = cluster.task('reset_environment', 'running') ? 'repeated_reset_disabled' : cluster.task({group: 'deployment', status: 'running'}) ? 'reset_disabled_for_deploying_cluster' : cluster.get('status') == 'new' ? 'reset_disabled_for_new_cluster' : 'reset_environment_description' %>
+          <div class="action-item-description <%= isResetDisabled ? 'unavailable' : '' %>" data-i18n="cluster_page.actions_tab.<%- resetDescription %>"></div>
+          <% if (!isResetDisabled) { %>
+            <div class="action-item-description important" data-i18n="cluster_page.actions_tab.reset_environment_warning"></div>
+          <% } %>
+          <button class="btn btn-danger reset-environment-btn" data-i18n="common.reset_button" <%= isResetDisabled ? 'disabled' : '' %>></button>
+        </div>
+      </form>
+    </div>
+    <div class="span4 action-item-placeholder">
       <form class="delete-cluster-form" onsubmit="return false">
         <h4 data-i18n="cluster_page.actions_tab.delete_environment"></h4>
-        <div class="action-item-description important" data-i18n="cluster_page.actions_tab.alert_delete">
-        </div>
         <div class="action-item-controls">
+          <div class="action-item-description important" data-i18n="cluster_page.actions_tab.alert_delete"></div>
           <button class="btn btn-danger delete-cluster-btn" data-i18n="common.delete_button"></button>
         </div>
       </form>

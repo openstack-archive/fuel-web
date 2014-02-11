@@ -44,7 +44,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.$('.btn, input, select').attr('disabled', true);
         },
         isLocked: function() {
-            return this.model.get('status') != 'new' || !!this.model.task('deploy', 'running');
+            return this.model.task({group: 'deployment', status: 'running'}) || !this.model.isAvailableForSettingsChanges();
         },
         checkForChanges: function() {
             this.defaultButtonsState(!this.hasChanges());
@@ -122,7 +122,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             return this;
         },
         bindTaskEvents: function(task) {
-            return task.get('name') == 'deploy' ? task.on('change:status', this.render, this) : null;
+            return task.match({group: 'deployment'}) ? task.on('change:status', this.render, this) : null;
         },
         onNewTask: function(task) {
             return this.bindTaskEvents(task) && this.render();

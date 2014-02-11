@@ -185,7 +185,6 @@ class TestNovaHandlers(TestNetworkChecking):
             'interfaces. Affected:\n',
             task['message'])
         self.assertIn('"management"', task['message'])
-        self.assertIn('"admin (PXE)"', task['message'])
         self.assertIn(' networks at node "Untitled', task['message'])
 
     def test_network_checking_fails_if_networks_cidr_range_intersection(self):

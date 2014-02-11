@@ -58,13 +58,13 @@
 
           <button class="btn hide genereting-logs disabled" data-i18n="support_page.gen_logs_snapshot_text"></button>
 
-          <% if (taskCompleted && task.get('status') == 'ready') { %>
+          <% if (taskCompleted && task.match({status: 'ready'})) { %>
           <span class="donwload-logs-link" style="margin-left: 10px;">
             <a href="<%- task.get('message') %>"><i class="icon-install"></i><span data-i18n="support_page.diagnostic_snapshot"></span></a>
           </span>
           <% } %>
 
-          <% if (taskCompleted && task.get('status') == 'error') { %>
+          <% if (taskCompleted && task.match({status: 'error'})) { %>
           <span class="error download-logs-error"><%- task.get('message') %></span>
           <% } %>
       </p>

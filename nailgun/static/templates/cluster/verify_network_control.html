@@ -2,17 +2,16 @@
   <div class="page-control-box">
     <div class="verification-box">
 
-      <% var task = cluster.task('verify_networks') %>
-      <% if (!task) task = cluster.task('check_networks') %>
-      <% var connectStatus, connectStatusLast %>
-      <% if (!task || (task && task.get('status') == 'ready')) { %>
-        <% connectStatus = 'stop'; connectStatusLast = 'stop'; %>
-      <% } else if (task && task.get('status') == 'running') { %>
-        <% connectStatus = 'success'; connectStatusLast = 'success'; %>
-      <% } else if (task && task.get('status') == 'error') { %>
-        <% if (task.get('name') == 'verify_networks' && !task.get('result').length) connectStatus = 'error'; else connectStatus = 'success'; %>
-        <% connectStatusLast = 'error' %>
-      <% } %>
+      <%
+        var task = cluster.task({group: 'network'});
+        var connectStatus = 'success', connectStatusLast = 'success';
+        if (!task || (task && task.match({status: 'ready'}))) {
+          connectStatus = connectStatusLast = 'stop';
+        } else if (task && task.match({status: 'error'})) {
+          connectStatus = connectStatusLast = 'error';
+          connectStatus = task.match({name: 'verify_networks'}) && !task.get('result').length ? 'error' : 'success';
+        }
+      %>
       <div class="verification-network-placeholder">
         <div class="router-box">
           <div class="verification-router"></div>
@@ -37,14 +36,14 @@
           <li data-i18n="cluster_page.network_tab.verify_networks.step_4"></li>
       </div>
 
-      <% if (cluster.task('verify_networks', 'ready')) { %>
+      <% if (task && task.match({name: 'verify_networks', status: 'ready'})) { %>
         <div class="alert alert-success enable-selection" data-i18n="cluster_page.network_tab.verify_networks.success_alert"></div>
-      <% } else if (task && task.get('status') == 'error') { %>
+      <% } else if (task && task.match({status: 'error'})) { %>
         <div class="alert alert-error enable-selection">
           <span data-i18n="cluster_page.network_tab.verify_networks.fail_alert"></span><br/>
           <%= task.escape('message').replace(/\n/g, '<br/>') %>
         </div>
-        <% if (task.get('name') == 'verify_networks' && task.get('result').length) { %>
+        <% if (task.match({name: 'verify_networks'}) && task.get('result').length) { %>
           <div class="verification-result-table">
             <table class="table table-condensed enable-selection">
               <thead><tr><th data-i18n="cluster_page.network_tab.verify_networks.node_name"></th><th data-i18n="cluster_page.network_tab.verify_networks.node_mac_address"></th><th data-i18n="cluster_page.network_tab.verify_networks.node_interface"></th><th data-i18n="cluster_page.network_tab.verify_networks.expected_vlan"></th></tr></thead>

@@ -39,8 +39,8 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             return this.tests.where({checked: true}).length;
         },
         isLocked: function() {
-            var forbiddenStatuses = ['new', 'error'];
-            return _.contains(forbiddenStatuses, this.model.get('status')) || this.hasRunningTests() || this.model.task('deploy', 'running');
+            var notDeployedNodes = this.model.get('nodes').reject(function(node) {return node.get('status') == 'ready';});
+            return this.model.get('status') == 'error' || this.model.task({group: 'deployment', status: 'running'}) || notDeployedNodes.length;
         },
         disableControls: function(disable) {
             var disabledState = disable || this.isLocked();
@@ -147,7 +147,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             }, this);
         },
         bindTaskEvents: function(task) {
-            return task.get('name') == 'deploy' ? task.on('change:status', this.render, this) : null;
+            return task.match({group: 'deployment'}) ? task.on('change:status', this.render, this) : null;
         },
         onNewTask: function(task) {
             return this.bindTaskEvents(task) && this.render();

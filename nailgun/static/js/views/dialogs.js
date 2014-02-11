@@ -31,12 +31,14 @@ define(
     'text!templates/dialogs/discard_changes.html',
     'text!templates/dialogs/display_changes.html',
     'text!templates/dialogs/remove_cluster.html',
+    'text!templates/dialogs/stop_deployment.html',
+    'text!templates/dialogs/reset_environment.html',
     'text!templates/dialogs/error_message.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
     'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
 
     var views = {};
@@ -627,7 +629,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             task.save({}, {url: _.result(this.model, 'url') + '/changes', type: 'PUT'})
                 .done(_.bind(function() {
                     this.$el.modal('hide');
-                    app.page.deploymentStarted();
+                    app.page.deploymentTaskStarted();
                 }, this))
                 .fail(_.bind(this.displayError, this));
         },
@@ -658,6 +660,50 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             this.constructor.__super__.render.call(this, {cluster: this.model});
             return this;
+        }
+    });
+
+    views.StopDeploymentDialog = views.Dialog.extend({
+        template: _.template(stopDeploymentDialogTemplate),
+        events: {
+            'click .stop-deployment-btn:not(:disabled)': 'stopDeployment'
+        },
+        stopDeployment: function() {
+            this.$('.stop-deployment-btn').attr('disabled', true);
+            var task = new models.Task();
+            task.save({}, {url: _.result(this.model, 'url') + '/stop_deployment', type: 'PUT'})
+                .done(_.bind(function() {
+                    this.$el.modal('hide');
+                    app.page.deploymentTaskStarted();
+                }, this))
+                .fail(_.bind(function(response) {
+                    if (response.status == 400) {
+                        this.displayErrorMessage({message: response.responseText});
+                    } else {
+                        this.displayError();
+                    }
+                }, this));
+        },
+        render: function() {
+            this.constructor.__super__.render.call(this, {cluster: this.model});
+            return this;
+        }
+    });
+
+    views.ResetEnvironmentDialog = views.Dialog.extend({
+        template: _.template(resetEnvironmentDialogTemplate),
+        events: {
+            'click .reset-environment-btn:not(:disabled)': 'resetEnvironment'
+        },
+        resetEnvironment: function() {
+            this.$('.reset-environment-btn').attr('disabled', true);
+            var task = new models.Task();
+            task.save({}, {url: _.result(this.model, 'url') + '/reset', type: 'PUT'})
+                .done(_.bind(function() {
+                    this.$el.modal('hide');
+                    app.page.deploymentTaskStarted();
+                }, this))
+                .fail(_.bind(this.displayError, this));
         }
     });
 

@@ -56,8 +56,13 @@ define(['utils', 'deepModel'], function(utils) {
         groupings: function() {
             return {roles: $.t('cluster_page.nodes_tab.roles'), hardware: $.t('cluster_page.nodes_tab.hardware_info'), both: $.t('cluster_page.nodes_tab.roles_and_hardware_info')};
         },
-        task: function(taskName, status) {
-            return this.get('tasks') && this.get('tasks').findTask({name: taskName, status: status});
+        task: function(filter1, filter2) {
+            var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
+            return this.get('tasks') && this.get('tasks').findTask(filters);
+        },
+        tasks: function(filter1, filter2) {
+            var filters = _.isPlainObject(filter1) ? filter1 : {name: filter1, status: filter2};
+            return this.get('tasks') && this.get('tasks').filterTasks(filters);
         },
         hasChanges: function() {
             return this.get('nodes').hasChanges() || (this.get('changes').length && this.get('nodes').currentNodes().length);
@@ -71,7 +76,7 @@ define(['utils', 'deepModel'], function(utils) {
         },
         canAddNodes: function(role) {
             // forbid adding when tasks are running
-            if (this.task('deploy', 'running') || this.task('verify_networks', 'running')) {
+            if (this.task({group: ['deployment', 'network'], status: 'running'})) {
                 return false;
             }
             // forbid add more than 1 controller in simple mode
@@ -82,7 +87,7 @@ define(['utils', 'deepModel'], function(utils) {
         },
         canDeleteNodes: function(role) {
             // forbid deleting when tasks are running
-            if (this.task('deploy', 'running') || this.task('verify_networks', 'running')) {
+            if (this.task({group: ['deployment', 'network'], status: 'running'})) {
                 return false;
             }
             // forbid deleting when there is nothing to delete
@@ -96,6 +101,9 @@ define(['utils', 'deepModel'], function(utils) {
         },
         fetchRelated: function(related, options) {
             return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));
+        },
+        isAvailableForSettingsChanges: function() {
+            return this.get('status') == 'new' || (this.get('status') == 'stopped' && !this.get('nodes').where({status: 'ready'}).length);
         }
     });
 
@@ -213,6 +221,32 @@ define(['utils', 'deepModel'], function(utils) {
                 id = this.get('result').release_info.release_id;
             } catch (ignore) {}
             return id;
+        },
+        groups: {
+            release_setup: ['redhat_setup'],
+            network: ['verify_networks', 'check_networks'],
+            deployment: ['stop_deployment', 'deploy', 'reset_environment']
+        },
+        extendGroups: function(filters) {
+            return _.union(utils.composeList(filters.name), _.flatten(_.map(utils.composeList(filters.group), _.bind(function(group) {return this.groups[group];}, this))));
+        },
+        match: function(filters) {
+            filters = filters || {};
+            var result = false;
+            if (filters.group || filters.name) {
+                if (_.contains(this.extendGroups(filters), this.get('name'))) {
+                    result = true;
+                    if (filters.status) {
+                        result = _.contains(utils.composeList(filters.status), this.get('status'));
+                    }
+                    if (filters.release) {
+                        result = result && this.releaseId() == filters.release;
+                    }
+                }
+            } else if (filters.status) {
+                result = _.contains(utils.composeList(filters.status), this.get('status'));
+            }
+            return result;
         }
     });
 
@@ -227,23 +261,11 @@ define(['utils', 'deepModel'], function(utils) {
             return task.id;
         },
         filterTasks: function(filters) {
-            return _.filter(this.models, function(task) {
-                var result = false;
-                if (task.get('name') == filters.name) {
-                    result = true;
-                    if (filters.status) {
-                        if (_.isArray(filters.status)) {
-                            result = _.contains(filters.status, task.get('status'));
-                        } else {
-                            result = filters.status == task.get('status');
-                        }
-                    }
-                    if (filters.release) {
-                        result = result && filters.release == task.releaseId();
-                    }
-                }
-                return result;
-            });
+            return _.flatten(_.map(this.model.prototype.extendGroups(filters), function(name) {
+                return this.filter(function(task) {
+                    return task.match(_.extend(_.omit(filters, 'group'), {name: name}));
+                });
+            }, this));
         },
         findTask: function(filters) {
             return this.filterTasks(filters)[0];

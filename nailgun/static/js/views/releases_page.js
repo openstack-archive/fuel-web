@@ -35,7 +35,7 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
         updateInterval: 5000,
         template: _.template(releasesListTemplate),
         scheduleUpdate: function() {
-            if (this.tasks.filterTasks({name: 'redhat_setup', status: 'running'}).length) {
+            if (this.tasks.findTask({group: 'release_setup', status: 'running'})) {
                 if (this.timeout) {
                     this.timeout.clear();
                 }
@@ -67,16 +67,19 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
         'events': {
             'click .btn-rhel-setup': 'showRhelLicenseCredentials'
         },
+        getTask: function(status) {
+            return this.page.tasks.findTask({group: 'release_setup', status: status, release: this.release.id});
+        },
         showRhelLicenseCredentials: function() {
             var dialog = new dialogViews.RhelCredentialsDialog({release: this.release});
             this.registerSubView(dialog);
             dialog.render();
         },
         checkForSetupCompletion: function() {
-            var setupTask = this.page.tasks.findTask({name: 'redhat_setup', status: ['ready', 'error'], release: this.release.id});
-            if (setupTask) {
-                if (setupTask.get('status') == 'ready') {
-                    setupTask.destroy();
+            var task = this.getTask(['ready', 'error']);
+            if (task) {
+                if (task.match({status: 'ready'})) {
+                    task.destroy();
                 } else {
                     this.updateErrorMessage();
                 }
@@ -85,16 +88,16 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
             }
         },
         updateProgress: function() {
-            var task = this.page.tasks.findTask({name: 'redhat_setup', status: 'running', release: this.release.id});
+            var task = this.getTask('running');
             if (task) {
                 this.$('.bar').css('width', task.get('progress') + '%');
                 this.$('.bar-title-progress').text(task.get('progress') + '%');
             }
         },
         updateErrorMessage: function() {
-            var setupTask = this.page.tasks.findTask({name: 'redhat_setup', status: 'error', release: this.release.id});
-            if (setupTask) {
-                this.$('div.error').html(utils.urlify(setupTask.get('message')));
+            var task = this.getTask('error');
+            if (task) {
+                this.$('div.error').html(utils.urlify(task.get('message')));
             }
         },
         initialize: function(options) {
@@ -104,11 +107,9 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
             this.release.on('change', this.render, this);
         },
         bindTaskEvents: function(task) {
-            if (task.get('name') == 'redhat_setup' && task.releaseId() == this.release.id) {
-                if (task.get('status') == 'running') {
-                    task.on('change:status', this.checkForSetupCompletion, this);
-                    task.on('change:progress', this.updateProgress, this);
-                }
+            if (task.match({group: 'release_setup', status: 'running', release: this.release.id})) {
+                task.on('change:status', this.checkForSetupCompletion, this);
+                task.on('change:progress', this.updateProgress, this);
                 return task;
             }
             return null;

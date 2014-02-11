@@ -17,11 +17,11 @@
   <% } %>
 </div>
 <div class="cluster-status">
-  <% if (cluster.task('cluster_deletion', 'running')) { %>
-    <%- $.t('cluster.status.removing') %>
-  <% } else if (cluster.task('deploy', 'running')) { %>
-    <div class="cluster-status-deploy">
-      <div class="bar" style="width:0"></div>
+  <% if (deploymentTask) { %>
+    <div class="cluster-status-progress <%- deploymentTask.get('name') %>">
+      <div class="progress progress-<%= _.contains(['stop_deployment', 'reset_environment'], deploymentTask.get('name')) ? 'warning' : 'success' %> progress-striped active">
+        <div class="bar"></div>
+      </div>
     </div>
   <% } else { %>
     <%- $.t('cluster.status.' + cluster.get('status'), {defaultValue: cluster.get('status')}) %>

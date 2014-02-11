@@ -1,22 +1,23 @@
 <% if (task) { %>
-  <% if (task.get('status') == 'ready') { %>
-    <div class="alert alert-block global-success alert-success task-result">
+  <% if (task.match({status: 'ready'})) { %>
+    <% var warningPanelClass = task.match({name: 'deploy'}) ? 'global-success' : 'globalalert' %>
+    <div class="alert alert-block <%= warningPanelClass %> alert-success task-result">
       <button type="button" class="close">×</button>
-      <h4>Success</h4>
+      <h4 data-i18n="common.success"></h4>
       <p class="enable-selection"><%= urlify(linebreaks(task.escape('message'))) %></p>
     </div>
-  <% } else if (task.get('status') == 'error') { %>
+  <% } else if (task.match({status: 'error'})) { %>
     <div class="alert alert-block global-error alert-error task-result">
-      <% if (task.get('name') != 'redhat_setup') { %>
+      <% if (!task.match({name: 'redhat_setup'})) { %>
         <button type="button" class="close">×</button>
       <% } %>
-      <h4>Error</h4>
+      <h4 data-i18n="common.error"></h4>
       <p class="enable-selection">
         <%= urlify(linebreaks(task.escape('message'))) %>
-        <% if (task.get('name') == 'redhat_setup') { %>
+        <% if (task.match({name: 'redhat_setup'})) { %>
             <% var options = {type: 'local', source: 'naily', level: 'warning'} %>
             <% logsLink = '#cluster/' + cluster.id + '/logs/' + serializeTabOptions(options) %>
-          <br/>You can <a href="#releases">reconfigure your Red Hat account</a> or <a href="<%- logsLink %>">see the logs</a>.
+            <br/><%- $.t('cluster_page.reconfigure_redhat_account', {opt1: '<a href="#releases">', opt2: '</a>'}) %> <a href="<%- logsLink %>" data-i18n="common.see_logs"></a>.
         <% } %>
       </p>
     </div>

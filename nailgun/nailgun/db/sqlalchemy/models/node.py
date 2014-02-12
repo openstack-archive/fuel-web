@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import uuid
+
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import DateTime
@@ -78,6 +80,8 @@ class Node(Base):
         'deletion'
     )
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(36), nullable=False,
+                  default=lambda: str(uuid.uuid4())
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     name = Column(Unicode(100))
     status = Column(

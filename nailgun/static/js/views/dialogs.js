@@ -77,7 +77,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 this.$el.on('shown', _.bind(function() {
                     this.$('[autofocus]:first').focus();
                 }, this));
-                this.$el.modal();
+                this.$el.modal({backdrop: 'static'});
                 this.modalBound = true;
             }
             return this;

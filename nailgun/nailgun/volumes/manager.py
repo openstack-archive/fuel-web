@@ -877,8 +877,8 @@ class VolumeManager(object):
                         generator, generator_args, genval))
                 return genval
             else:
-                return {k: self.expand_generators(v)
-                        for k, v in value.iteritems()}
+                return dict((k, self.expand_generators(v))
+                            for (k, v) in value.iteritems())
         elif isinstance(value, list):
             return [self.expand_generators(i) for i in value]
         return value

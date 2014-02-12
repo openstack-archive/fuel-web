@@ -175,6 +175,16 @@ class TaskHelper(object):
             cls.update_cluster_status(uuid)
 
     @classmethod
+    def get_task_by_uuid(cls, uuid):
+        task = db().query(Task).filter_by(uuid=uuid).first()
+        if not task:
+            raise errors.CannotFindTask(
+                'Cannot find task with uuid {0}'.format(uuid)
+            )
+
+        return task
+
+    @classmethod
     def update_parent_task(cls, uuid):
         task = db().query(Task).filter_by(uuid=uuid).first()
         subtasks = task.subtasks
@@ -244,7 +254,7 @@ class TaskHelper(object):
                 cls.__set_cluster_status(cluster, 'operational')
                 cluster.clear_pending_changes()
             elif task.status == 'error' and \
-                 not cls.__before_deployment_error(task):
+                    not cls.__before_deployment_error(task):
                 # We don't want to set cluster status to
                 # error because we don't want to lock
                 # settings if cluster wasn't delpoyed

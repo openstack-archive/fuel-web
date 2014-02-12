@@ -25,6 +25,7 @@ from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy.orm import relationship, backref
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
@@ -32,57 +33,18 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 
 class Task(Base):
     __tablename__ = 'tasks'
-    TASK_STATUSES = (
-        'ready',
-        'running',
-        'error'
-    )
-    TASK_NAMES = (
-        'super',
-
-        # Cluster changes
-        # For deployment supertask, it contains
-        # two subtasks deployment and provision
-        'deploy',
-        'deployment',
-        'provision',
-        'stop_deployment',
-        'reset_environment',
-
-        'node_deletion',
-        'cluster_deletion',
-        'check_before_deployment',
-
-        # network
-        'check_networks',
-        'verify_networks',
-        'check_dhcp',
-        'verify_network_connectivity',
-
-        # red hat
-        'redhat_setup',
-        'redhat_check_credentials',
-        'redhat_check_licenses',
-        'redhat_download_release',
-        'redhat_update_cobbler_profile',
-
-        # dump
-        'dump',
-
-        'capacity_log'
-    )
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     uuid = Column(String(36), nullable=False,
                   default=lambda: str(uuid.uuid4()))
     name = Column(
-        Enum(*TASK_NAMES, name='task_name'),
+        Enum(*consts.TASK_NAMES, name='task_name'),
         nullable=False,
         default='super'
     )
     message = Column(Text)
     status = Column(
-        Enum(*TASK_STATUSES, name='task_status'),
+        Enum(*consts.TASK_STATUSES, name='task_status'),
         nullable=False,
         default='running'
     )

@@ -23,8 +23,10 @@ import traceback
 import web
 
 from nailgun.api.handlers.base import BaseHandler
+from nailgun.api.handlers.base import DeferredTaskHandler
+
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.tasks import TaskHandler
+
 from nailgun.api.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
 from nailgun.api.serializers.network_configuration \
@@ -38,6 +40,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.objects import Task
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
@@ -265,77 +268,23 @@ class ClusterChangesHandler(BaseHandler):
                         ' deploy task: {0}'.format(str(exc)))
             raise web.badrequest(str(exc))
 
-        return TaskHandler.render(task)
+        return Task.to_json(task)
 
 
-# TODO(enchantner): refactor these (DRY), maybe
-# by inheritance from base DeferredTaskHandler
+class ClusterStopDeploymentHandler(DeferredTaskHandler):
+
+    log_message = u"Trying to stop deployment on environment '{env_id}'"
+    log_error = u"Error during execution of deployment " \
+                u"stopping task on environment '{env_id}': {error}"
+    task_manager = StopDeploymentTaskManager
 
 
-class ClusterStopDeploymentHandler(BaseHandler):
+class ClusterResetHandler(DeferredTaskHandler):
 
-    @content_json
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-        :http: * 202 (deployment stopping initiated)
-               * 400 (can't stop deployment)
-               * 404 (environment not found in db)
-        """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
-
-        try:
-            logger.info(
-                u"Trying to stop deployment "
-                u"on environment '{0}'".format(
-                    cluster_id
-                )
-            )
-            task_manager = StopDeploymentTaskManager(
-                cluster_id=cluster.id
-            )
-            task = task_manager.execute()
-        except Exception as exc:
-            logger.warn(u'Error during execution '
-                        u'deployment stopping task: {0}'.format(str(exc)))
-            raise web.badrequest(str(exc))
-
-        raise web.webapi.HTTPError(
-            status="202 Accepted",
-            data=TaskHandler.render(task)
-        )
-
-
-class ClusterResetHandler(BaseHandler):
-
-    @content_json
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-        :http: * 202 (environment reset initiated)
-               * 400 (can't reset environment)
-               * 404 (environment not found in db)
-        """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
-
-        try:
-            logger.info(
-                u"Trying to reset environment '{0}'".format(
-                    cluster_id
-                )
-            )
-            task_manager = ResetEnvironmentTaskManager(
-                cluster_id=cluster.id
-            )
-            task = task_manager.execute()
-        except Exception as exc:
-            logger.warn(u'Error during execution '
-                        u'environment resetting '
-                        u'task: {0}'.format(str(exc)))
-            raise web.badrequest(str(exc))
-
-        raise web.webapi.HTTPError(
-            status="202 Accepted",
-            data=TaskHandler.render(task)
-        )
+    log_message = u"Trying to reset environment '{env_id}'"
+    log_error = u"Error during execution of resetting task " \
+                u"on environment '{env_id}': {error}"
+    task_manager = ResetEnvironmentTaskManager
 
 
 class ClusterAttributesHandler(BaseHandler):

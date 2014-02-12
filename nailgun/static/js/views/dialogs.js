@@ -77,7 +77,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 this.$el.on('shown', _.bind(function() {
                     this.$('[autofocus]:first').focus();
                 }, this));
-                this.$el.modal();
+                this.$el.modal(_.extend({}, this.modalOptions));
                 this.modalBound = true;
             }
             return this;
@@ -99,6 +99,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         className: 'modal fade create-cluster-modal',
         template: _.template(createClusterWizardTemplate),
         templateHelpers: _.pick(utils, 'floor'),
+        modalOptions: {backdrop: 'static'},
         events: {
             'keydown input': 'onInputKeydown',
             'click .next-pane-btn': 'nextPane',

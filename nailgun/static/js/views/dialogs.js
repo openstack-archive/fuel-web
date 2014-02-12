@@ -77,7 +77,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 this.$el.on('shown', _.bind(function() {
                     this.$('[autofocus]:first').focus();
                 }, this));
-                this.$el.modal();
+                this.$el.modal((!_.isUndefined(options)) ? _.extend({}, options.modalOptions) : {});
                 this.modalBound = true;
             }
             return this;
@@ -213,7 +213,8 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 panes: this.panes,
                 currentStep: currentStep,
                 totalSteps: totalSteps,
-                maxAvailableStep: maxAvailableStep
+                maxAvailableStep: maxAvailableStep,
+                modalOptions: {backdrop: 'static'}
             }, this.templateHelpers));
             this.$('.pane-content').append(pane.el);
             this.$('.prev-pane-btn').prop('disabled', !this.activePaneIndex);

@@ -78,8 +78,7 @@ class NailgunObject(object):
     @classmethod
     def to_json(cls, instance, fields=None):
         return json.dumps(
-            cls.to_dict(instance, fields=fields),
-            indent=4
+            cls.to_dict(instance, fields=fields)
         )
 
 
@@ -91,20 +90,32 @@ class NailgunCollection(object):
     def all(cls, yield_per=100):
         return db().query(
             cls.single.model
-        ).yield_per(yield_per).all()
+        ).yield_per(yield_per)
 
     @classmethod
-    def to_list(cls, fields=None, yield_per=100):
+    def filter_by(cls, yield_per=100, **kwargs):
+        return db().query(
+            cls.single.model
+        ).filter_by(
+            **kwargs
+        ).yield_per(yield_per)
+
+    @classmethod
+    def to_list(cls, fields=None, yield_per=100, query=None):
+        use_query = query or cls.all(yield_per=yield_per)
         return map(
             lambda o: cls.single.to_dict(o, fields=fields),
-            cls.all(yield_per=yield_per)
+            use_query
         )
 
     @classmethod
-    def to_json(cls, fields=None, yield_per=100):
+    def to_json(cls, fields=None, yield_per=100, query=None):
         return json.dumps(
-            cls.to_list(fields=fields, yield_per=yield_per),
-            indent=4
+            cls.to_list(
+                fields=fields,
+                yield_per=yield_per,
+                query=query
+            )
         )
 
     @classmethod

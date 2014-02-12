@@ -244,7 +244,7 @@ class TaskHelper(object):
                 cls.__set_cluster_status(cluster, 'operational')
                 cluster.clear_pending_changes()
             elif task.status == 'error' and \
-                 not cls.__before_deployment_error(task):
+                    not cls.__before_deployment_error(task):
                 # We don't want to set cluster status to
                 # error because we don't want to lock
                 # settings if cluster wasn't delpoyed

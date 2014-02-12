@@ -655,19 +655,10 @@ label.error {
         font-weight: bold;
         content: '·';
       }
-      &:empty {
-        display: none;
-      }
-      &:last-child:after {
-        margin-left: 3px;
-        font-weight: bold;
-        content: '·';
-      }
+      &:last-child:after { content: ''; }
     }
   }
-  > .pending-roles li {
-    color: #468847;
-  }
+  > .pending-roles li { color: #468847; }
 }
 
 .node-button {

@@ -37,7 +37,7 @@ class TestTaskHandlers(BaseUnitTest):
         resp = self.app.delete(
             reverse(
                 'TaskHandler',
-                kwargs={'task_id': task.id}
+                kwargs={'obj_id': task.id}
             ) + "?force=0",
             headers=self.default_headers,
             expect_errors=True
@@ -46,7 +46,7 @@ class TestTaskHandlers(BaseUnitTest):
         resp = self.app.delete(
             reverse(
                 'TaskHandler',
-                kwargs={'task_id': task.id}
+                kwargs={'obj_id': task.id}
             ) + "?force=1",
             headers=self.default_headers
         )

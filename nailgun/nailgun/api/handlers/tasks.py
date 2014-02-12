@@ -20,6 +20,7 @@ from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Task
+from nailgun.logger import logger
 
 """
 Handlers dealing with tasks
@@ -58,7 +59,12 @@ class TaskHandler(BaseHandler):
                * 404 (task not found in db)
         """
         task = self.get_object_or_404(Task, task_id)
-        if task.status not in ("ready", "error"):
+        force = web.input(force=None).force not in (None, u'', u'0')
+        if force:
+            logger.info(
+                u"Task with id={0} is forcefully deleted".format(task.id)
+            )
+        elif task.status not in ("ready", "error"):
             raise web.badrequest("You cannot delete running task manually")
         for subtask in task.subtasks:
             db().delete(subtask)

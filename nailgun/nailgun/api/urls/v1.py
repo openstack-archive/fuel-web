@@ -151,7 +151,7 @@ urls = (
     NodesAllocationStatsHandler,
     r'/tasks/?$',
     TaskCollectionHandler,
-    r'/tasks/(?P<task_id>\d+)/?$',
+    r'/tasks/(?P<obj_id>\d+)/?$',
     TaskHandler,
 
     r'/notifications/?$',

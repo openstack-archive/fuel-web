@@ -25,7 +25,6 @@ import web
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.tasks import TaskHandler
 
 from nailgun.api.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
@@ -38,12 +37,12 @@ from nailgun.api.validators.network \
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import Task
 
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.nova_network import NovaNetworkManager
+from nailgun.objects import Task
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
@@ -126,7 +125,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                 TaskHelper.set_error(task.uuid, exc)
                 logger.error(traceback.format_exc())
 
-        data = build_json_response(TaskHandler.render(task))
+        data = build_json_response(Task.to_json(task))
         if task.status == 'error':
             db().rollback()
         else:
@@ -186,7 +185,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                 TaskHelper.set_error(task.uuid, exc)
                 logger.error(traceback.format_exc())
 
-        data = build_json_response(TaskHandler.render(task))
+        data = build_json_response(Task.to_json(task))
         if task.status == 'error':
             db().rollback()
         else:
@@ -215,13 +214,14 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         try:
             data = self.validator.validate_networks_update(web.data())
         except web.webapi.badrequest as exc:
-            task = Task(name='check_networks', cluster=cluster)
-            db().add(task)
-            db().commit()
+            task = Task.create({
+                "name": "check_networks",
+                "cluster_id": cluster.id
+            })
             TaskHelper.set_error(task.uuid, exc.data)
             logger.error(traceback.format_exc())
 
-            json_task = build_json_response(TaskHandler.render(task))
+            json_task = build_json_response(Task.to_json(task))
             raise web.accepted(data=json_task)
 
         data["networks"] = [
@@ -239,7 +239,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
             task = task_manager.execute(data, vlan_ids)
         except errors.CantRemoveOldVerificationTask:
             raise web.badrequest("You cannot delete running task manually")
-        return TaskHandler.render(task)
+        return Task.to_json(task)
 
 
 class NovaNetworkConfigurationVerifyHandler(NetworkConfigurationVerifyHandler):

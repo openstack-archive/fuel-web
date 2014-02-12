@@ -23,9 +23,15 @@ import web
 from nailgun.api.serializers.base import BasicSerializer
 from nailgun.api.validators.base import BasicValidator
 from nailgun.db import db
+
+# TODO(enchantner): let's switch to Cluster object in the future
+from nailgun.db.sqlalchemy.models import Cluster
+
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import notifier
+
+from nailgun.objects import Task
 
 
 def check_client_content_type(handler):
@@ -228,4 +234,43 @@ class CollectionHandler(BaseHandler):
         new_obj = self.collection.create(data)
         return web.webapi.created(
             self.collection.single.to_json(new_obj)
+        )
+
+
+# TODO(enchantner): rewrite more handlers to inherit from this
+# and move more common code here
+class DeferredTaskHandler(BaseHandler):
+
+    validator = BasicValidator
+    single = Task
+    log_message = u"Starting deferred task on environment '{env_id}'"
+    log_error = u"Error during execution of deferred task " \
+                u"on environment '{env_id}': {error}"
+    task_manager = None
+
+    @content_json
+    def PUT(self, cluster_id):
+        """:returns: JSONized Task object.
+        :http: * 202 (task successfully executed)
+               * 400 (invalid object data specified)
+               * 409 (task with such parameters already exists)
+        """
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+
+        try:
+            logger.info(self.log_message.format(env_id=cluster_id))
+            task_manager = self.task_manager(cluster_id=cluster.id)
+            task = task_manager.execute()
+        except Exception as exc:
+            logger.warn(
+                self.log_error.format(
+                    env_id=cluster_id,
+                    error=str(exc)
+                )
+            )
+            raise web.badrequest(str(exc))
+
+        raise web.webapi.HTTPError(
+            status="202 Accepted",
+            data=self.single.to_json(task)
         )

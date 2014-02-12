@@ -21,14 +21,13 @@ import traceback
 import web
 
 from nailgun.api.handlers.base import BaseHandler
-from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.api.validators.redhat import RedHatAccountValidator
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.logger import logger
+from nailgun.objects import Task
 from nailgun.task.manager import RedHatSetupTaskManager
 
 
@@ -135,5 +134,4 @@ class RedHatSetupHandler(BaseHandler):
             logger.error(traceback.format_exc())
             raise web.badrequest(str(exc))
 
-        data = build_json_response(TaskHandler.render(task))
-        raise web.accepted(data=data)
+        raise web.accepted(data=Task.to_json(task))

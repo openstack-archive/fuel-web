@@ -131,7 +131,10 @@ class NodeAgent
   def put
     headers = {"Content-Type" => "application/json"}
     @logger.debug("Trying to put host info into #{@api_url}")
+    @logger.debug("Headers: #{headers}")
+    @logger.debug("Data: #{[_data].to_json}")
     res = htclient.put("#{@api_url}/nodes/", [_data].to_json, headers)
+    @logger.debug("Response: status: #{res.status} body: #{res.body}")
     if res.status < 200 or res.status >= 300
       @logger.error("HTTP PUT failed: #{res.inspect}")
     end
@@ -141,7 +144,10 @@ class NodeAgent
   def post
     headers = {"Content-Type" => "application/json"}
     @logger.debug("Trying to create host using #{@api_url}")
+    @logger.debug("Headers: #{headers}")
+    @logger.debug("Data: #{_data.to_json}")
     res = htclient.post("#{@api_url}/nodes/", _data.to_json, headers)
+    @logger.debug("Response: status: #{res.status} body: #{res.body}")
     res
   end
 
@@ -241,7 +247,8 @@ class NodeAgent
             :name => dname,
             :model => binfo[:model],
             :size => (binfo[:size].to_i * block_size),
-            :disk => _disk_path_by_name(dname) || dname
+            :disk => _disk_path_by_name(dname) || dname,
+            :extra => _disk_id_by_name(dname) || []
           }
         end
       end
@@ -252,16 +259,15 @@ class NodeAgent
     detailed_meta
   end
 
+  def _disk_id_by_name(name)
+    dn = "/dev/disk/by-id"
+    basepath = Dir["#{dn}/**?"].select{|f| /\/#{name}$/.match(File.readlink(f))}
+    basepath.map{|p| p.split("/")[2..-1].join("/")}
+  end
+
   def _disk_path_by_name(name)
     dn = "/dev/disk/by-path"
     basepath = Dir["#{dn}/**?"].find{|f| /\/#{name}$/.match(File.readlink(f))}
-    # It is to address the issue which appears when centos
-    # udev names smart array devices like this
-    # /dev/disk/by-path/pci-0000:06:00.0-cciss-disk0
-    # and debian-installer udev names them like this
-    # /dev/disk/by-path/pci-0000:06:00.0 and can not
-    # find device.
-    basepath.sub!(/-cciss-.+/, '')
     basepath.split("/")[2..-1].join("/") if basepath
   end
 

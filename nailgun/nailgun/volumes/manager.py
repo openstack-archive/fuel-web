@@ -302,7 +302,8 @@ class DisksFormatConvertor(object):
 class Disk(object):
 
     def __init__(self, volumes, generator_method, disk_id, name,
-                 size, boot_is_raid=True, possible_pvs_count=0):
+                 size, boot_is_raid=True, possible_pvs_count=0,
+                 disk_extra=None):
         """Create disk
 
         :param volumes: volumes which need to allocate on disk
@@ -317,6 +318,7 @@ class Disk(object):
         """
         self.call_generator = generator_method
         self.id = disk_id
+        self.extra = disk_extra or []
         self.name = name
         self.size = size
         self.lvm_meta_size = self.call_generator('calc_lvm_meta_size')
@@ -519,6 +521,7 @@ class Disk(object):
     def render(self):
         return {
             'id': self.id,
+            'extra': self.extra,
             'name': self.name,
             'type': 'disk',
             'size': self.size,
@@ -571,7 +574,8 @@ class VolumeManager(object):
                 byte_to_megabyte(d["size"]),
                 boot_is_raid=boot_is_raid,
                 # Count of possible PVs equal to count of allowed VGs
-                possible_pvs_count=len(only_vg(self.allowed_volumes)))
+                possible_pvs_count=len(only_vg(self.allowed_volumes)),
+                disk_extra=d.get("extra", []))
 
             self.disks.append(disk)
 
@@ -859,36 +863,25 @@ class VolumeManager(object):
             lambda volume: volume['_allocate_size'] == 'full-disk',
             self.allowed_volumes)
 
-    def expand_generators(self, cdict):
-        new_dict = {}
-        if isinstance(cdict, dict):
-            for i, val in cdict.iteritems():
-                if type(val) in (str, unicode, int, float):
-                    new_dict[i] = val
-                elif isinstance(val, dict):
-                    if "generator" in val:
-                        genval = self.call_generator(
-                            val["generator"],
-                            *(val.get("generator_args", []))
-                        )
-                        self.__logger(
-                            'Generator %s with args %s expanded to: %s' %
-                            (val['generator'],
-                             val.get('generator_args', []),
-                             genval))
-
-                        new_dict[i] = genval
-                    else:
-                        new_dict[i] = self.expand_generators(val)
-                elif isinstance(val, list):
-                    new_dict[i] = []
-                    for d in val:
-                        new_dict[i].append(self.expand_generators(d))
-        elif isinstance(cdict, list):
-            new_dict = []
-            for d in cdict:
-                new_dict.append(self.expand_generators(d))
-        return new_dict
+    def expand_generators(self, value):
+        if isinstance(value, (str, unicode, int, float, long)):
+            return value
+        elif isinstance(value, dict):
+            generator = value.get("generator")
+            generator_args = value.get("generator_args", [])
+            if generator is not None:
+                genval = self.call_generator(
+                    generator, *generator_args)
+                self.__logger(
+                    'Generator {0} with args {1} expanded to: {2}'.format(
+                        generator, generator_args, genval))
+                return genval
+            else:
+                return {k: self.expand_generators(v)
+                        for k, v in value.iteritems()}
+        elif isinstance(value, list):
+            return [self.expand_generators(i) for i in value]
+        return value
 
     def check_disk_space_for_deployment(self):
         '''Check disks space for minimal installation.

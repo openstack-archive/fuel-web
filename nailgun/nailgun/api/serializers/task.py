@@ -14,11 +14,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.objects.base import NailgunObject
-from nailgun.objects.base import NailgunCollection
+from nailgun.api.serializers.base import BasicSerializer
 
-from nailgun.objects.release import Release
-from nailgun.objects.release import ReleaseCollection
 
-from nailgun.objects.task import Task
-from nailgun.objects.task import TaskCollection
+class TaskSerializer(BasicSerializer):
+
+    fields = (
+        "id",
+        "cluster",
+        "uuid",
+        "name",
+        "result",
+        "message",
+        "status",
+        "progress"
+    )

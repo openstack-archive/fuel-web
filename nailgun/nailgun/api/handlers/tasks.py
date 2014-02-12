@@ -16,63 +16,31 @@
 
 import web
 
-from nailgun.api.handlers.base import BaseHandler
+from nailgun.api.handlers.base import CollectionHandler
+from nailgun.api.handlers.base import SingleHandler
+
 from nailgun.api.handlers.base import content_json
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Task
+
+from nailgun.objects import Task
+from nailgun.objects import TaskCollection
 
 """
 Handlers dealing with tasks
 """
 
 
-class TaskHandler(BaseHandler):
+class TaskHandler(SingleHandler):
     """Task single handler
     """
 
-    fields = (
-        "id",
-        "cluster",
-        "uuid",
-        "name",
-        "result",
-        "message",
-        "status",
-        "progress"
-    )
-    model = Task
-
-    @content_json
-    def GET(self, task_id):
-        """:returns: JSONized Task object.
-        :http: * 200 (OK)
-               * 404 (task not found in db)
-        """
-        task = self.get_object_or_404(Task, task_id)
-        return self.render(task)
-
-    def DELETE(self, task_id):
-        """:returns: JSONized Cluster object.
-        :http: * 204 (task successfully deleted)
-               * 400 (can't delete running task manually)
-               * 404 (task not found in db)
-        """
-        task = self.get_object_or_404(Task, task_id)
-        if task.status not in ("ready", "error"):
-            raise web.badrequest("You cannot delete running task manually")
-        for subtask in task.subtasks:
-            db().delete(subtask)
-        db().delete(task)
-        db().commit()
-        raise web.webapi.HTTPError(
-            status="204 No Content",
-            data=""
-        )
+    single = Task
 
 
-class TaskCollectionHandler(BaseHandler):
+class TaskCollectionHandler(CollectionHandler):
     """Task collection handler
     """
+
+    collection = TaskCollection
 
     @content_json
     def GET(self):
@@ -84,15 +52,12 @@ class TaskCollectionHandler(BaseHandler):
                * 404 (task not found in db)
         """
         user_data = web.input(cluster_id=None)
-        if user_data.cluster_id == '':
-            tasks = db().query(Task).filter_by(
-                cluster_id=None).all()
-        elif user_data.cluster_id:
-            tasks = db().query(Task).filter_by(
-                cluster_id=user_data.cluster_id).all()
+
+        if user_data.cluster_id is not None:
+            return self.collection.to_json(
+                query=self.collection.get_by_cluster_id(
+                    user_data.cluster_id
+                )
+            )
         else:
-            tasks = db().query(Task).all()
-        return map(
-            TaskHandler.render,
-            tasks
-        )
+            return self.collection.to_json()

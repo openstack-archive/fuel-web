@@ -175,6 +175,16 @@ class TaskHelper(object):
             cls.update_cluster_status(uuid)
 
     @classmethod
+    def get_task_by_uuid(cls, uuid):
+        task = db().query(Task).filter_by(uuid=uuid).first()
+        if not task:
+            raise errors.CannotFindTask(
+                'Cannot find task with uuid {0}'.format(uuid)
+            )
+
+        return task
+
+    @classmethod
     def update_parent_task(cls, uuid):
         task = db().query(Task).filter_by(uuid=uuid).first()
         subtasks = task.subtasks

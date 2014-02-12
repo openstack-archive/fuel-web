@@ -58,7 +58,8 @@ class TaskHandler(BaseHandler):
                * 404 (task not found in db)
         """
         task = self.get_object_or_404(Task, task_id)
-        if task.status not in ("ready", "error"):
+        force = web.input(force=u'0').force != u'0'
+        if (task.status not in ("ready", "error")) and not force:
             raise web.badrequest("You cannot delete running task manually")
         for subtask in task.subtasks:
             db().delete(subtask)

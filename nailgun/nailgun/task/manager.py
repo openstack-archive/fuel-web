@@ -503,6 +503,14 @@ class ResetEnvironmentTaskManager(TaskManager):
 class CheckNetworksTaskManager(TaskManager):
 
     def execute(self, data, check_admin_untagged=False):
+        check_networks = db().query(Task).filter_by(
+            cluster=self.cluster,
+            name="check_networks"
+        ).first()
+        if check_networks:
+            db().delete(check_networks)
+            db().commit()
+
         task = Task(
             name="check_networks",
             cluster=self.cluster
@@ -528,10 +536,18 @@ class CheckNetworksTaskManager(TaskManager):
 class VerifyNetworksTaskManager(TaskManager):
 
     def remove_previous_task(self):
-        verification_tasks = filter(
-            lambda task: task.cluster_id == self.cluster.id
-            and task.name == "verify_networks",
-            self.cluster.tasks)
+        check_networks = db().query(Task).filter_by(
+            cluster=self.cluster,
+            name="check_networks"
+        ).first()
+        if check_networks:
+            db().delete(check_networks)
+            db().commit()
+
+        verification_tasks = db().query(Task).filter_by(
+            cluster=self.cluster,
+            name="verify_networks"
+        ).all()
         if verification_tasks:
             ver_task = verification_tasks[0]
             if ver_task.status == "running":

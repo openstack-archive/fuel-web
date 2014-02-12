@@ -322,12 +322,12 @@ class TestLogs(BaseIntegrationTest):
             "uuid": "00000000-0000-0000-0000-000000000000"
         })
         tm_patcher = patch('nailgun.api.handlers.logs.DumpTaskManager')
-        th_patcher = patch('nailgun.api.handlers.logs.TaskHandler')
+        th_patcher = patch('nailgun.api.handlers.logs.Task')
         tm_mocked = tm_patcher.start()
         th_mocked = th_patcher.start()
         tm_instance = tm_mocked.return_value
         tm_instance.execute.return_value = task
-        th_mocked.render.side_effect = lambda x: x
+        th_mocked.to_json.side_effect = lambda x: x
         resp = self.app.put(
             reverse('LogPackageHandler'), "[]", headers=self.default_headers
         )

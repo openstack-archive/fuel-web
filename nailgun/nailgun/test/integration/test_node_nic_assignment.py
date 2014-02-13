@@ -537,3 +537,74 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
             len(filter(lambda n: n['name'] == 'public',
                        eth1[0]['assigned_networks'])),
             1)
+
+
+class TestNodeNICsHandlersValidation(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestNodeNICsHandlersValidation, self).setUp()
+        self.env.create(
+            cluster_kwargs={
+                "net_provider": "neutron",
+                "net_segment_type": "gre"
+            },
+            nodes_kwargs=[
+                {"api": True, "pending_addition": True}
+            ]
+        )
+        resp = self.app.get(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": self.env.nodes[0]["id"]}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        self.data = json.loads(resp.body)
+        self.nics_w_nets = filter(lambda nic: nic.get("assigned_networks"),
+                                  self.data)
+        self.assertGreater(len(self.nics_w_nets), 0)
+
+    def put_single(self):
+        return self.env.node_nics_put(self.env.nodes[0]["id"], self.data,
+                                      expect_errors=True)
+
+    def put_collection(self):
+        nodes_list = [{"id": self.env.nodes[0]["id"],
+                       "interfaces": self.data}]
+        return self.env.node_collection_nics_put(nodes_list,
+                                                 expect_errors=True)
+
+    def node_nics_put_check_error(self, message):
+        for put_func in (self.put_single, self.put_collection):
+            resp = put_func()
+            self.assertEquals(resp.status, 400)
+            self.assertEquals(resp.body, message)
+
+    def test_nics_bond_create_failed_assigned_network_wo_id(self):
+        self.nics_w_nets[0]["assigned_networks"] = [{}]
+
+        self.node_nics_put_check_error(
+            "Node '{0}', interface '{1}': each assigned network should "
+            "have ID".format(
+                self.env.nodes[0]["id"], self.nics_w_nets[0]['id']))
+
+    def test_nics_bond_create_failed_node_has_unassigned_network(self):
+        unassigned_id = self.nics_w_nets[0]["assigned_networks"][0]["id"]
+        self.nics_w_nets[0]["assigned_networks"] = \
+            self.nics_w_nets[0]["assigned_networks"][1:]
+
+        self.node_nics_put_check_error(
+            "Node '{0}': '{1}' network(s) are left unassigned".format(
+                self.env.nodes[0]["id"], unassigned_id))
+
+    def test_nics_bond_create_failed_node_has_unknown_network(self):
+        self.nics_w_nets[0]["assigned_networks"].append({"id": 1234567})
+
+        self.node_nics_put_check_error(
+            "Network '1234567' doesn't exist for node {0}".format(
+                self.env.nodes[0]["id"]))
+
+    def test_nics_bond_create_failed_node_has_unknown_interface(self):
+        self.nics_w_nets[0]["id"] = 1234567
+
+        self.node_nics_put_check_error(
+            "Node '{0}': there is no interface with ID '1234567'"
+            " in DB".format(self.env.nodes[0]["id"]))

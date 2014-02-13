@@ -709,11 +709,11 @@ class Environment(object):
                              interfaces,
                              expect_errors)
 
-    def node_collection_nics_put(self, node_id, interfaces,
+    def node_collection_nics_put(self, nodes,
                                  expect_errors=False):
         return self._api_put('NodeCollectionNICsHandler',
-                             {'node_id': node_id},
-                             interfaces,
+                             {},
+                             nodes,
                              expect_errors)
 
 

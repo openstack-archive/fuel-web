@@ -467,13 +467,3 @@ class TaskHelper(object):
 
             for node in nodes:
                 netmanager.assign_admin_ips(node.id)
-
-    @classmethod
-    def raise_if_node_offline(cls, nodes):
-        offline_nodes = filter(lambda n: n.offline, nodes)
-
-        if offline_nodes:
-            node_names = ','.join(map(lambda n: n.full_name, offline_nodes))
-            raise errors.NodeOffline(
-                u'Nodes "%s" are offline.'
-                ' Remove them from environment and try again.' % node_names)

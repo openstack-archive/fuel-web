@@ -20,6 +20,7 @@ import subprocess
 import netaddr
 
 from sqlalchemy import func
+from sqlalchemy import not_
 from sqlalchemy.orm import ColumnProperty
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import object_mapper
@@ -104,7 +105,6 @@ class DeploymentTask(object):
     @classmethod
     def message(cls, task, nodes):
         logger.debug("DeploymentTask.message(task=%s)" % task.uuid)
-        TaskHelper.raise_if_node_offline(nodes)
 
         nodes_ids = [n.id for n in nodes]
         for n in db().query(Node).filter_by(
@@ -146,7 +146,7 @@ class ProvisionTask(object):
     @classmethod
     def message(cls, task, nodes_to_provisioning):
         logger.debug("ProvisionTask.message(task=%s)" % task.uuid)
-        TaskHelper.raise_if_node_offline(nodes_to_provisioning)
+
         serialized_cluster = task.cluster.replaced_provisioning_info or \
             provisioning_serializers.serialize(
                 task.cluster, nodes_to_provisioning)
@@ -379,11 +379,27 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def execute(cls, task):
+        cls._check_nodes_are_online(task)
         cls._check_controllers_count(task)
         cls._check_disks(task)
         cls._check_ceph(task)
         cls._check_volumes(task)
         cls._check_network(task)
+
+    @classmethod
+    def _check_nodes_are_online(cls, task):
+        offline_nodes = db().query(Node).\
+            filter(Node.cluster == task.cluster).\
+            filter_by(online=False).\
+            filter_by(pending_deletion=False).\
+            filter(not_(Node.status.in_(['ready'])))
+
+        if offline_nodes.count():
+            node_names = ','.join(map(lambda n: n.full_name, offline_nodes))
+            raise errors.NodeOffline(
+                u'Nodes "{0}" are offline.'
+                ' Remove them from environment '
+                'and try again.'.format(node_names))
 
     @classmethod
     def _check_controllers_count(cls, task):

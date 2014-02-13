@@ -207,9 +207,8 @@ def json_api_delete_request(api):
     request = urllib2.Request(API_ROOT + api)
     request.add_header('Content-Type', ' application/json')
     request.get_method = lambda: 'DELETE'
-    return json.loads(
-        opener.open(request).read()
-    )
+    opener.open(request)
+    return {}
 
 
 def json_api_put_request(api, data):
@@ -817,13 +816,18 @@ def task(params):
         check_for_attributes(params, ["tid"])
         task_ids = list(chain(*params.tid))
         delete_response = map(
-            lambda tid: json_api_delete_request("tasks/{0}/".format(tid)),
+            lambda tid: json_api_delete_request(
+                "tasks/{0}/?force={1}".format(
+                    tid,
+                    int(params.force),
+                )
+            ),
             task_ids
         )
         print_to_output(
             delete_response,
             "Tasks with id's {0} deleted."
-            .format(','.join(map(str, task_ids)))
+            .format(', '.join(map(str, task_ids)))
         )
     else:
         acceptable_keys = ["id", "status", "name",
@@ -1439,6 +1443,17 @@ def get_env_arg(required=False):
     }
 
 
+def get_force_arg():
+    return {
+        "args": ["-f", "--force"],
+        "params": {
+            "dest": "force",
+            "action": "store_true",
+            "help": "Bypassing parameter validation.",
+            "default": False
+        }
+    }
+
 actions = {
     "release": {
         "action": release,
@@ -1565,6 +1580,7 @@ actions = {
             get_upload_arg("Upload configuration to specific node"),
             get_dir_arg("Select directory to which download node attributes"),
             get_node_arg("Node id."),
+            get_force_arg(),
         {
             "args": ["-r", "--role"],
             "params": {
@@ -1588,14 +1604,6 @@ actions = {
                 "dest": "disk",
                 "action": "store_true",
                 "help": "Node disk configuration.",
-                "default": False
-            }
-        }, {
-            "args": ["-f", "--force"],
-            "params": {
-                "dest": "force",
-                "action": "store_true",
-                "help": "Bypassing parameter validation.",
                 "default": False
             }
         }, {
@@ -1639,6 +1647,7 @@ actions = {
     "task": {
         "action": task,
         "args": [
+            get_force_arg(),
             {
                 "args": ["-d", "--delete"],
                 "params": {
@@ -1647,8 +1656,7 @@ actions = {
                     "help": "Delete task with some task-id.",
                     "default": False
                 }
-            },
-            {
+            }, {
                 "args": ["-t", "--task-id"],
                 "params": {
                     "dest": "tid",

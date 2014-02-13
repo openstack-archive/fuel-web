@@ -639,6 +639,12 @@ class Environment(object):
                              {'node_id': node_id},
                              expect_errors)
 
+    def node_nics_put(self, node_id, interfaces, expect_errors=False):
+        return self._api_put('NodeNICsHandler',
+                             {'node_id': node_id},
+                             interfaces,
+                             expect_errors)
+
     def node_collection_nics_put(self, node_id, interfaces,
                                  expect_errors=False):
         return self._api_put('NodeCollectionNICsHandler',

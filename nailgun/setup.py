@@ -20,7 +20,7 @@ from setuptools import setup
 
 major_version = '0.1'
 minor_version = '0'
-name = 'Nailgun'
+name = 'nailgun'
 
 version = "%s.%s" % (major_version, minor_version)
 

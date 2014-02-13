@@ -16,6 +16,7 @@
 from mock import patch
 
 from nailgun.db.sqlalchemy.models import Task
+from nailgun.errors import errors
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test.base import BaseTestCase
@@ -226,3 +227,18 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
             CheckBeforeDeploymentTask._check_volumes(self.task)
 
             self.assertEquals(check_mock.call_count, 1)
+
+    def test_check_nodes_online_raises_exception(self):
+        self.node.online = False
+        self.env.db.commit()
+
+        self.assertRaises(
+            errors.NodeOffline,
+            CheckBeforeDeploymentTask._check_nodes_are_online,
+            self.task)
+
+    def test_check_nodes_online_do_not_raise_exception_node_to_deletion(self):
+        self.node.pending_deletion = True
+        self.env.db.commit()
+
+        CheckBeforeDeploymentTask._check_nodes_are_online(self.task)

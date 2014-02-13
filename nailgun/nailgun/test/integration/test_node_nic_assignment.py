@@ -19,6 +19,8 @@ import json
 from copy import deepcopy
 from netaddr import IPNetwork
 
+from nailgun.consts import NETWORK_INTERFACE_TYPES
+from nailgun.consts import OVS_BOND_MODES
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkNICAssignment
 from nailgun.db.sqlalchemy.models import Node
@@ -538,3 +540,70 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
             len(filter(lambda n: n['name'] == 'public',
                        eth1[0]['assigned_networks'])),
             1)
+
+
+class TestNodeNICsBonding(BaseIntegrationTest):
+    def test_nics_bond_created(self):
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta, [
+            {"name": "eth0", "mac": "00:00:00:00:00:66"},
+            {"name": "eth1", "mac": "00:00:00:00:00:77"},
+            {"name": "eth2", "mac": "00:00:00:00:00:88"}])
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[
+                {'api': True,
+                 'pending_addition': True,
+                 'meta': meta}
+            ]
+        )
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0]['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        data = json.loads(resp.body)
+
+        admin_nic, other_nic, empty_nic = None, None, None
+        for nic in data:
+            net_names = [n['name'] for n in nic['assigned_networks']]
+            if 'fuelweb_admin' in net_names:
+                admin_nic = nic
+            elif net_names:
+                other_nic = nic
+            else:
+                empty_nic = nic
+        self.assertTrue(admin_nic and other_nic and empty_nic)
+        data.append({
+            "name": "ovs-bond0",
+            "type": "bond",
+            "mode": OVS_BOND_MODES.balance_slb,
+            "slaves": [
+                {'id': other_nic['id']},
+                {'id': empty_nic['id']},
+            ],
+            "assigned_networks": other_nic['assigned_networks']
+        })
+        other_nic['assigned_networks'] = []
+
+        resp = self.app.put(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0]['id']}),
+            json.dumps(data),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0]['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        data = json.loads(resp.body)
+        for nic in data:
+            if nic['type'] == NETWORK_INTERFACE_TYPES.bond:
+                self.assertEqual(nic['name'], "ovs-bond0")
+                self.assertTrue('id' in nic)

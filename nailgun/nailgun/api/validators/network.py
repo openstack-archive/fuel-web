@@ -17,9 +17,10 @@ from netaddr import AddrFormatError
 from netaddr import IPNetwork
 
 from nailgun.api.validators.base import BasicValidator
+from nailgun.consts import NETWORK_INTERFACE_TYPES
+from nailgun.consts import OVS_BOND_MODES
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.network.manager import NetworkManager
@@ -119,7 +120,8 @@ class NetAssignmentValidator(BasicValidator):
         if 'interfaces' not in node or \
                 not isinstance(node['interfaces'], list):
             raise errors.InvalidData(
-                "There is no 'interfaces' list in node '%d'" % node['id'],
+                "Node '{0}': there is no 'interfaces' list".format(
+                    node['id']),
                 log_message=True
             )
 
@@ -127,54 +129,94 @@ class NetAssignmentValidator(BasicValidator):
         for iface in node['interfaces']:
             if not isinstance(iface, dict):
                 raise errors.InvalidData(
-                    "Node '%d': each interface should be dict (got '%s')" % (
-                        node['id'],
-                        str(iface)
-                    ),
+                    "Node '{0}': each interface should be a dict "
+                    "(got '{1}')".format(node['id'], iface),
                     log_message=True
                 )
             if 'type' not in iface:
-                # TODO(ADanin) Beautify an error message.
-                # TODO(ADanin) Check a type value (may be 'ether' or 'bond').
                 raise errors.InvalidData(
-                    "Node '%d': each interface must have a type" % node['id'],
+                    "Node '{0}': each interface must have a type".format(
+                        node['id']),
                     log_message=True
                 )
-            if 'id' not in iface and iface.get('type') != 'bond':
+            if iface['type'] not in NETWORK_INTERFACE_TYPES:
                 raise errors.InvalidData(
-                    "Node '%d': each interface should have ID" % node['id'],
+                    "Node '{0}': unknown interface type".format(node['id']),
                     log_message=True
                 )
+            if iface['type'] == NETWORK_INTERFACE_TYPES.ether \
+                    and 'id' not in iface:
+                raise errors.InvalidData(
+                    "Node '{0}': each HW interface must have ID".format(
+                        node['id']),
+                    log_message=True
+                )
+            if iface['type'] == NETWORK_INTERFACE_TYPES.bond:
+                if 'name' not in iface:
+                    raise errors.InvalidData(
+                        "Node '{0}': each bond interface must have "
+                        "name".format(node['id']),
+                        log_message=True
+                    )
+                if 'mode' not in iface:
+                    raise errors.InvalidData(
+                        "Node '{0}': each bond interface must have "
+                        "mode".format(node['id']),
+                        log_message=True
+                    )
+                if iface['mode'] not in OVS_BOND_MODES:
+                    raise errors.InvalidData(
+                        "Node '{0}': bond interface '{1}' has unknown "
+                        "mode '{2}'".format(
+                            node['id'], iface['name'], iface['mode']),
+                        log_message=True
+                    )
+                if 'slaves' not in iface \
+                        or not isinstance(iface['slaves'], list) \
+                        or len(iface['slaves']) < 2:
+                    raise errors.InvalidData(
+                        "Node '{0}': each bond interface must have two or more"
+                        " slaves".format(node['id']),
+                        log_message=True
+                    )
+                for slave in iface['slaves']:
+                    if 'name' not in slave:
+                        raise errors.InvalidData(
+                            "Node '{0}', interface '{1}': each bond slave "
+                            "must have name".format(node['id'], iface['name']),
+                            log_message=True
+                        )
             if 'assigned_networks' not in iface or \
                     not isinstance(iface['assigned_networks'], list):
                 raise errors.InvalidData(
-                    "There is no 'assigned_networks' list"
-                    " in interface '%d' in node '%d'" %
-                    (iface['id'], node['id']),
+                    "Node '{0}', interface '{1}':"
+                    " there is no 'assigned_networks' list".format(
+                        node['id'], iface.get('id') or iface.get('name')),
                     log_message=True
                 )
 
             for net in iface['assigned_networks']:
                 if not isinstance(net, dict):
                     raise errors.InvalidData(
-                        "Node '%d', interface '%d':"
-                        " each assigned network should be dict" %
-                        (iface['id'], node['id']),
+                        "Node '{0}', interface '{1}':"
+                        " each assigned network should be a dict".format(
+                            node['id'], iface.get('id') or iface.get('name')),
                         log_message=True
                     )
                 if 'id' not in net:
                     raise errors.InvalidData(
-                        "Node '%d', interface '%d':"
-                        " each assigned network should have ID" %
-                        (iface['id'], node['id']),
+                        "Node '{0}', interface '{1}':"
+                        " each assigned network should have ID".format(
+                            node['id'], iface.get('id') or iface.get('name')),
                         log_message=True
                     )
                 if net['id'] in net_ids:
                     raise errors.InvalidData(
-                        "Assigned networks for node '%d' have"
-                        " a duplicate network '%d' (second"
-                        " occurrence in interface '%d')" %
-                        (node['id'], net['id'], iface['id']),
+                        "Node '{0}': there is a duplicated network '{1}' in"
+                        " assigned networks (second occurrence is in "
+                        "interface '{2}')".format(
+                            node['id'], net['id'],
+                            iface.get('id') or iface.get('name')),
                         log_message=True
                     )
                 net_ids.add(net['id'])
@@ -186,7 +228,7 @@ class NetAssignmentValidator(BasicValidator):
         return cls.validate(node_data)
 
     @classmethod
-    def validate_collection_structure(cls, webdata):
+    def validate_collection_structure_and_data(cls, webdata):
         data = cls.validate_json(webdata)
         if not isinstance(data, list):
             raise errors.InvalidData(
@@ -195,67 +237,88 @@ class NetAssignmentValidator(BasicValidator):
             )
         for node_data in data:
             cls.validate(node_data)
+            cls.verify_data_correctness(node_data)
         return data
+
+    @classmethod
+    def validate_structure_and_data(cls, webdata, node_id):
+        interfaces_data = cls.validate_json(webdata)
+        node_data = {'id': node_id, 'interfaces': interfaces_data}
+        cls.validate(node_data)
+        cls.verify_data_correctness(node_data)
+        return interfaces_data
 
     @classmethod
     def verify_data_correctness(cls, node):
         db_node = db().query(Node).filter_by(id=node['id']).first()
         if not db_node:
             raise errors.InvalidData(
-                "There is no node with ID '%d' in DB" % node['id'],
+                "There is no node with ID '{0}' in DB".format(node['id']),
                 log_message=True
             )
         interfaces = node['interfaces']
-        db_interfaces = db_node.interfaces
-        if len(interfaces) != len(db_interfaces):
-            raise errors.InvalidData(
-                "Node '%d' has different amount of interfaces" % node['id'],
-                log_message=True
-            )
-        # FIXIT: we should use not all networks but appropriate for this
-        # node only.
-        db_network_groups = db().query(NetworkGroup).filter_by(
-            cluster_id=db_node.cluster_id
-        ).all()
-        if not db_network_groups:
-            raise errors.InvalidData(
-                "There are no networks related to"
-                " node '%d' in DB" % node['id'],
-                log_message=True
-            )
-        network_group_ids = set([ng.id for ng in db_network_groups])
+        db_interfaces = db_node.nic_interfaces
+        network_group_ids = NetworkManager.get_node_networkgroups_ids(db_node)
 
-        admin_ng_id = NetworkManager.get_admin_network_group_id()
-
+        bonded_eth_ids = set()
         for iface in interfaces:
-            db_iface = filter(
-                lambda i: i.id == iface['id'],
-                db_interfaces
-            )
-            if not db_iface:
-                raise errors.InvalidData(
-                    "There is no interface with ID '%d'"
-                    " for node '%d' in DB" %
-                    (iface['id'], node['id']),
-                    log_message=True
+            if iface['type'] == NETWORK_INTERFACE_TYPES.ether:
+                db_iface = filter(
+                    lambda i: i.id == iface['id'],
+                    db_interfaces
                 )
-            db_iface = db_iface[0]
-
-            for net in iface['assigned_networks']:
-                if net['id'] not in network_group_ids and not \
-                        net['id'] == admin_ng_id:
+                if not db_iface:
                     raise errors.InvalidData(
-                        "Node '%d' shouldn't be connected to"
-                        " network with ID '%d'" %
-                        (node['id'], net['id']),
+                        "Node '{0}': there is no interface with ID '{1}'"
+                        " in DB".format(node['id'], iface['id']),
                         log_message=True
                     )
-                elif net['id'] != admin_ng_id:
-                    network_group_ids.remove(net['id'])
+            elif iface['type'] == NETWORK_INTERFACE_TYPES.bond:
+                for slave in iface['slaves']:
+                    iface_id = [i.id for i in db_interfaces
+                                if i.name == slave['name']]
+                    if iface_id:
+                        if iface_id[0] in bonded_eth_ids:
+                            raise errors.InvalidData(
+                                "Node '{0}': interface '{1}' is used in bonds "
+                                "more than once".format(
+                                    node['id'], iface_id[0]),
+                                log_message=True
+                            )
+                        bonded_eth_ids.add(iface_id[0])
+                    else:
+                        raise errors.InvalidData(
+                            "Node '{0}': there is no interface '{1}' found "
+                            "for bond '{2}' in DB".format(
+                                node['id'], slave['name'], iface['name']),
+                            log_message=True
+                        )
 
-        # Check if there are unassigned networks for this node.
+            for net in iface['assigned_networks']:
+                if net['id'] not in network_group_ids:
+                    raise errors.InvalidData(
+                        "Network '{0}' doesn't exist for node {1}".format(
+                            net['id'], node['id']),
+                        log_message=True
+                    )
+                network_group_ids.remove(net['id'])
+
         if network_group_ids:
+            str_ng_ids = ["'" + str(ng_id) + "'"
+                          for ng_id in network_group_ids]
             raise errors.InvalidData(
-                "Too few networks to assign to node '%d'" % node['id'],
+                "Node '{0}': {1} network(s) are left unassigned".format(
+                    node['id'], ",".join(str_ng_ids)),
                 log_message=True
             )
+
+        for iface in interfaces:
+            if iface['type'] == NETWORK_INTERFACE_TYPES.ether \
+                    and iface['id'] in bonded_eth_ids \
+                    and len(iface['assigned_networks']) > 0:
+                raise errors.InvalidData(
+                    "Node '{0}': interface '{1}' cannot have "
+                    "assigned networks as it is used in "
+                    "bond".format(node['id'], iface['id']),
+                    log_message=True
+                )

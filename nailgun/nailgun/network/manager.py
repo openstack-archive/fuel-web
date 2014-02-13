@@ -497,6 +497,13 @@ class NetworkManager(object):
         return node.cluster.network_groups
 
     @classmethod
+    def get_node_networkgroups_ids(cls, node):
+        """Get ids of all networks assigned to node's interfaces
+        """
+        return [ng.id for nic in node.interfaces
+                for ng in nic.assigned_networks_list]
+
+    @classmethod
     def get_node_networks(cls, node_id):
         """Method for receiving network data for a given node.
 
@@ -709,8 +716,8 @@ class NetworkManager(object):
         received_bond_ids = [x['id'] for x in bond_interfaces if 'id' in x]
         unused_bonds = filter(lambda x: x.id not in received_bond_ids,
                               bond_interfaces_db)
-        map(db.delete, unused_bonds)
-        db.commit()
+        map(db().delete, unused_bonds)
+        db().commit()
 
         for bond in bond_interfaces:
             if 'id' in bond:
@@ -727,29 +734,29 @@ class NetworkManager(object):
                 # Create a bond if not exists.
                 bond_db = NodeBondInterface()
                 bond_db.node_id = node_db.id
-                db.add(bond_db)
+                db().add(bond_db)
             bond_db.name = bond['name']
             if 'mode' in bond:
                 bond_db.mode = bond['mode']
             bond_db.mac = bond.get('mac')
             bond_db.flags = bond.get('flags', {})
-            db.commit()
-            db.refresh(bond_db)
+            db().commit()
+            db().refresh(bond_db)
 
             # Add new network assignment.
             map(bond_db.assigned_networks_list.append,
-                [db.query(NetworkGroup).get(ng['id']) for ng
+                [db().query(NetworkGroup).get(ng['id']) for ng
                  in bond['assigned_networks']])
             # Add new slaves.
             for nic in bond['slaves']:
                 bond_db.slaves.append(
-                    db.query(NodeNICInterface).filter_by(
+                    db().query(NodeNICInterface).filter_by(
                         name=nic['name']
                     ).filter_by(
                         node_id=node_db.id
                     ).first()
                 )
-            db.commit()
+            db().commit()
 
         return node_db.id
 

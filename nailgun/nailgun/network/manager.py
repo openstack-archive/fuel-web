@@ -951,10 +951,9 @@ class NetworkManager(object):
         def check_range_in_use_already(cidr_range):
             for n in used_nets:
                 if cls.is_range_intersection(n, cidr_range):
-                    raise errors.InvalidNetworkCIDR(
-                        u"CIDR/range '{0}' of '{1}' network intersects "
-                        u"with IP range '{2}' of other network".format(
-                            str(cidr_range), net['name'], str(n)))
+                    logger.warn("IP range {0} is in use already".format(
+                        cidr_range))
+                    break
             used_nets.append(cidr_range)
 
         for net in networks_list:

@@ -15,6 +15,7 @@
 #    under the License.
 
 import json
+from mock import patch
 
 from sqlalchemy.sql import not_
 
@@ -490,3 +491,50 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
         self.assertEquals(
             resp['public_vip'],
             self.net_manager.assign_vip(self.cluster.id, 'public'))
+
+
+class TestAdminNetworkConfiguration(BaseIntegrationTest):
+
+    @patch('nailgun.db.sqlalchemy.fixman.settings.ADMIN_NETWORK', {
+        "cidr": "192.168.0.0/24",
+        "netmask": "255.255.255.0",
+        "size": "256",
+        "first": "192.168.0.129",
+        "last": "192.168.0.254"
+    })
+    def setUp(self):
+        super(TestAdminNetworkConfiguration, self).setUp()
+        self.cluster = self.env.create(
+            cluster_kwargs={
+                "api": True
+            },
+            nodes_kwargs=[
+                {"pending_addition": True, "api": True}
+            ]
+        )
+
+    def test_netconfig_error_when_admin_cidr_match_other_network_cidr(self):
+        resp = self.env.nova_networks_get(self.cluster['id'])
+        nets = json.loads(resp.body)
+        resp = self.env.nova_networks_put(self.cluster['id'], nets,
+                                          expect_errors=True)
+        self.assertEquals(resp.status, 202)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'check_networks')
+        self.assertIn("Address space intersection between networks:\n"
+                      "admin (PXE), management.",
+                      task['message'])
+
+    def test_deploy_error_when_admin_cidr_match_other_network_cidr(self):
+        resp = self.env.cluster_changes_put(self.cluster['id'],
+                                            expect_errors=True)
+        self.assertEquals(resp.status, 200)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'error')
+        self.assertEquals(task['progress'], 100)
+        self.assertEquals(task['name'], 'deploy')
+        self.assertIn("Address space intersection between networks:\n"
+                      "admin (PXE), management.",
+                      task['message'])

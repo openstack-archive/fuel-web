@@ -18,6 +18,7 @@ from nailgun.api.validators.json_schema.disks \
     import disks_simple_format_schema
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 
 
@@ -109,7 +110,9 @@ class NodeValidator(BasicValidator):
             )
         else:
             q = db().query(Node)
-            if q.filter(Node.mac == d["mac"]).first():
+            if q.filter(Node.mac == d["mac"]).first() or q.join(
+                    NodeNICInterface, Node.interfaces).filter(
+                    NodeNICInterface.mac == d["mac"]).first():
                 raise errors.AlreadyExists(
                     "Node with mac {0} already "
                     "exists - doing nothing".format(d["mac"]),
@@ -125,24 +128,29 @@ class NodeValidator(BasicValidator):
             MetaValidator.validate_create(d['meta'])
         return d
 
-    # TODO(NAME): fix this using DRY
     @classmethod
-    def validate_existent_node_mac_create(cls, data):
+    def _validate_existent_node(cls, data, validate_method):
         if 'meta' in data:
-            data['meta'] = MetaValidator.validate_create(data['meta'])
+            data['meta'] = validate_method(data['meta'])
             if 'interfaces' in data['meta']:
-                existent_node = db().query(Node).filter(Node.mac.in_(
-                    [n['mac'] for n in data['meta']['interfaces']])).first()
+                existent_node = db().query(Node).\
+                    join(NodeNICInterface, Node.interfaces).\
+                    filter(NodeNICInterface.mac.in_(
+                        [n['mac'] for n in data['meta']['interfaces']]
+                    )).first()
                 return existent_node
 
     @classmethod
+    def validate_existent_node_mac_create(cls, data):
+        return cls._validate_existent_node(
+            data,
+            MetaValidator.validate_create)
+
+    @classmethod
     def validate_existent_node_mac_update(cls, data):
-        if 'meta' in data:
-            data['meta'] = MetaValidator.validate_update(data['meta'])
-            if 'interfaces' in data['meta']:
-                existent_node = db().query(Node).filter(Node.mac.in_(
-                    [n['mac'] for n in data['meta']['interfaces']])).first()
-                return existent_node
+        return cls._validate_existent_node(
+            data,
+            MetaValidator.validate_update)
 
     @classmethod
     def validate_roles(cls, data, node):

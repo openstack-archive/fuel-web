@@ -504,7 +504,6 @@ def node(params):
         data = map(
             lambda _node_id: {
                 "id": _node_id,
-                "cluster_id": None,
                 "pending_roles": [],
                 "pending_addition": False,
                 "pending_deletion": True

@@ -464,9 +464,12 @@ class NodeNICsHandler(BaseHandler):
         :http: * 200 (nodes are successfully updated)
                * 400 (invalid nodes data specified)
         """
-        interfaces_data = self.validator.validate_json(web.data())
+        # interfaces_data = self.validator.validate_json(web.data())
+        # node_data = {'id': node_id, 'interfaces': interfaces_data}
+        # self.validator.validate(node_data)
+        interfaces_data = self.checked_data(
+            self.validator.validate_structure_and_data, node_id=node_id)
         node_data = {'id': node_id, 'interfaces': interfaces_data}
-        self.validator.validate(node_data)
 
         NetworkManager._update_attrs(node_data)
         node = self.get_object_or_404(Node, node_id)

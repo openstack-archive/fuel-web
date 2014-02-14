@@ -154,6 +154,10 @@ class TestTaskManagers(BaseIntegrationTest):
             'Nodes "{0}" are offline. Remove them from environment '
             'and try again.'.format(offline_node.full_name)
         )
+        # Do not move cluster to error state
+        # in case if cluster new and before
+        # validation failed
+        self.assertEqual(self.env.clusters[0].status, 'new')
 
     @fake_tasks()
     def test_redeployment_works(self):

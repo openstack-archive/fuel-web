@@ -413,8 +413,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return this.collection.filter(function(role) {return role.get('name') == 'controller' && (role.get('checked') || role.get('indeterminate'));}).length;
         },
         isControllerSelectable: function(role) {
-            var allocatedController = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
-            return role.get('name') != 'controller' || this.cluster.get('mode') != 'multinode' || ((this.isControllerRoleSelected() || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedController.length);
+            var allocatedController = this.cluster.get('nodes').filter(function(node) {
+                return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);
+            }, this);
+            var checkedNodes = this.screen.nodes.where({checked: true});
+            return role.get('name') != 'controller' || (this.cluster.get('mode') != 'ha_compact' && !allocatedController.length && checkedNodes.length <= 1);
         },
         getListOfIncompatibleRoles: function(roles) {
             var forbiddenRoles = [];
@@ -476,7 +479,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 stickitChange: role,
                 onGet: _.bind(function(value, options) {
                     if (value && this.screen.nodes.length) {
-                        return this.isControllerSelectable(options.stickitChange) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
+                        var translationString;
+                        if(this.isControllerSelectable(options.stickitChange)) {
+                            translationString = $.t('cluster_page.nodes_tab.incompatible_roles_warning');
+                        } else {
+                            if (this.cluster.get('mode') == 'ha_compact') {
+                                translationString = $.t('cluster_page.nodes_tab.unavailable_roles_warning');
+                            }
+                            else {
+                                translationString = $.t('cluster_page.nodes_tab.one_controller_restriction');
+                            }
+                        }
+                        return translationString;
                     }
                     return '';
                 }, this)

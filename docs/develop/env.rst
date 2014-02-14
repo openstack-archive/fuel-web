@@ -151,6 +151,7 @@ Astute and Naily
     cd fuel-astute
     bundle exec rspec spec/integration/mcollective_spec.rb
 
+.. _building-fuel-iso:
 Building the Fuel ISO
 ---------------------
 

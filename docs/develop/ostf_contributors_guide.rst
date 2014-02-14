@@ -1,21 +1,29 @@
-FuelHealth Contributor's Guide
-==============================
+Health Check (OSTF) Contributor's Guide
+=======================================
 
-Main goal of FuelHealth
+Health Check or OSTF?
+Main goal of OSTF
 Main rules of code contributions
 How to setup my environment?
 How should my modules look like?
 How to execute my tests?
 Now I'm done, what's next?
-General FuelHealth architecture
-Fuel Health package architecture
-FuelHealth Adapter architecture
+General OSTF architecture
+OSTF packages architecture
+OSTF Adapter architecture
 Appendix 1
 
-Main goal of FuelHealth
-^^^^^^^^^^^^^^^^^^^^^^^
+Health Check or OSTF?
+^^^^^^^^^^^^^^^^^^^^^
+Fuel UI has tab which is called Health Check. In development team though,
+there is an established acronym OSTF, which stands for OpenStack Testing Framework.
+This is all about the same. For simplicity, this document will use widely
+accepted term OSTF.
+
+Main goal of OSTF
+^^^^^^^^^^^^^^^^^
 After OpenStack installation via Fuel, it`s very important to understand whether it was successful and if it`s ready for work.
-FuelHealth provides a set of health checks - sanity, smoke, HA and additional components tests that check the proper operation of all system components in typical conditions;
+OSTF provides a set of health checks - sanity, smoke, HA and additional components tests that check the proper operation of all system components in typical conditions.
 There are tests for OpenStack scenarios validation and other specific tests useful in validating an OpenStack deployment.
 
 Main rules of code contributions
@@ -25,7 +33,7 @@ There are a few rules you need to follow to successfully pass the code review an
 How to setup my environment?
 ----------------------------
 
-FuelHealth repository is located on Stackforge. You also have to install and hook-up gerrit, because otherwise you will not be able to contribute code. To do that you need to follow registration and installation instructions in the document https://wiki.openstack.org/wiki/CLA#Contributors_License_Agreement
+OSTF repository is located on Stackforge: https://github.com/stackforge/fuel-ostf. You also have to install and hook-up gerrit, because otherwise you will not be able to contribute code. To do that you need to follow registration and installation instructions in the document https://wiki.openstack.org/wiki/CLA#Contributors_License_Agreement
 After you've completed the instructions, you're all set to begin editing/creating code.
 
 How should my modules look like?
@@ -43,7 +51,7 @@ Speaking of following Python coding standards, you can find the style guide here
 You should always follow the following implementation rules:
   - name the test module, test class and test method beginning with the word "test"
   - if you have some tests that should be ran in a specific order, add a number to test method name, for example: test_001_create_keypair
-  - use verify(), verify_response_body_content() and other methods from mixins (see Fuel Health package architecture fuel_health/common/test_mixins.py section) with giving them failed step parameter
+  - use verify(), verify_response_body_content() and other methods from mixins (see OSTF package architecture fuel_health/common/test_mixins.py section) with giving them failed step parameter
   - always list all steps you are checking using test_mixins methods in the docstring in Scenario section in correct order
   - always use verify() method when you want to check an operation that can go to an infinite loop
 
@@ -77,16 +85,10 @@ Here's a test example which confirms the above explanations:
 How to execute my tests?
 ------------------------
 
-FuelHealth health check package is part of Fuel, so to run them you need to install Fuel. The most simple way to do that is:
+Simplest way is to install Fuel, and OSTF will be installed as part of it.
   - install virtualbox
-  - get the iso from here http://software.mirantis.com/ (or get a specific version of ISO if you need it)
-  - cd to the directory where you have cloned fuel (or clone it from stackforge)
-  - go to <path to fuel-main dir>/virtualbox/iso and put the ISO here
-  - go to <path to fuel-main dir>/virtualbox/, set cluster_size value to the one you need in config.sh script
-  - make sure don't have libvirt virtual manager running
-  - execute::
-
-      ./launch.sh
+  - build Fuel ISO: :ref:`building_fuel_iso`
+  - use `virtualbox scripts to run an ISO <https://github.com/stackforge/fuel-main/tree/master/virtualbox>`_
   - once the installation is finished, go to Fuel UI (usually it's 10.20.0.2:8000) and create a new cluster with necessary configuration
   - execute::
 
@@ -97,7 +99,7 @@ FuelHealth health check package is part of Fuel, so to run them you need to inst
       ps uax | grep supervisor
       kill <supervisord process number>
       service supervisord start
-      go to Fuel UI and run your new tests
+  - go to Fuel UI and run your new tests
 
 Now I'm done, what's next?
 --------------------------
@@ -105,23 +107,21 @@ Now I'm done, what's next?
   - don't forget to run pep8 on modified part of code
   - commit your changes
   - execute git review
-  - go to https://review.openstack.org/#/
-  - find your pull-request
-  - add reviewers
+  - ask to review in IRC
 
 From this part you'll only need to fix and commit review comments (if there are any) by doing the same steps. If there are no review comments left, the reviewers will accept your code and it will be automatically merged to master.
 
-General FuelHealth architecture
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+General OSTF architecture
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Tests are included to Fuel Web, so they will be accessible as soon as you install Fuel on your lab. FuelHealth architecture is quite simple, it consists of two main packages:
+Tests are included to Fuel, so they will be accessible as soon as you install Fuel on your lab. OSTF architecture is quite simple, it consists of two main packages:
   - fuel_health which contains the test set itself and related modules
-  - fuel_plugin which contains FuelHealth-adapter that forms necessary test list in context of cluster deployment options and transfers them to UI using REST_API
+  - fuel_plugin which contains OSTF-adapter that forms necessary test list in context of cluster deployment options and transfers them to UI using REST_API
 
 On the other hand, there is some information necessary for test execution itself. There are several modules that gather information and parse them into objects which will be used in the tests themselves. All information is gathered from Nailgun component.
 
-Fuel Health package architecture
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSTF package architecture
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The main modules used in fuel_health package are:
 
@@ -142,40 +142,32 @@ initialize NailgunConfig() class.
 
 Nailgun is running on Fuel master node, so you can easily get data for each cluster by invoking curl http:/localhost:8000/api/<uri_here>. Cluster id can be get from OS environment (provided by Fuel)
 
-If you want run FuelHealth for non Fuel installation, change the initialization of NailgunConfig() to FileConfig() and set parameters marked with green color in config - see Appendix 1 (default config file path fuel_health/etc/test.conf)
+If you want run OSTF for non Fuel installation, change the initialization of NailgunConfig() to FileConfig() and set parameters marked with green color in config - see Appendix 1 (default config file path fuel_health/etc/test.conf)
 
-  **cleanup.py**  -  invoked by FuelHealth adapter in case if user stops test execution in Web UI. This module is responsible for deleting all test resources created during test suite run. It simply finds all resources whose name starts with ‘ost1_test-’ and destroys each of them using _delete_it method.
+  **cleanup.py**  -  invoked by OSTF adapter in case if user stops test execution in Web UI. This module is responsible for deleting all test resources created during test suite run. It simply finds all resources whose name starts with ‘ost1_test-’ and destroys each of them using _delete_it method.
 
      *Important: if you decide to add additional cleanup for this resource, you have to keep in mind:
      All resources depend on each other, that's why deleting a resource that is still in use will give you an exception;
      Don't forget that deleting several resources requires an ID for each resource, but not its name. You'll need to specify delete_type optional argument in _delete_it method to ‘id’*
 
-   **nmanager.py** contains base classes for tests. Each base class contains setup, teardown and methods that act as an interlayer between tests and OpenStack python clients (see nmanager architecture diagram).
-
-  **nmanager** architecture is described below:
+  **nmanager.py** contains base classes for tests. Each base class contains setup, teardown and methods that act as an interlayer between tests and OpenStack python clients (see nmanager architecture diagram).
 
    .. image:: _images/nmanager.png
 
   **fuel_health/common/test_mixins.py** - provides mixins to pack response verification into a human-readable message. For assertion failure cases, the method requires a step on which we failed and a descriptive
-   message to be provided. The verify() method also requires a timeout value to be set. This method should be used when checking OpenStack operations (such as instance creation). Sometimes a cluster
-   operation taking too long may be a sign of a problem, so this will secure the tests from such a situation or even from going into infinite loop.
+  message to be provided. The verify() method also requires a timeout value to be set. This method should be used when checking OpenStack operations (such as instance creation). Sometimes a cluster
+  operation taking too long may be a sign of a problem, so this will secure the tests from such a situation or even from going into infinite loop.
 
   **fuel_health/common/ssh.py** - provides an easy way to ssh to nodes or instances. This module uses the paramiko library and contains some useful wrappers that make some routine tasks for you
-   (such as ssh key authentication, starting transport threads, etc). Also, it contains a rather useful method exec_command_on_vm(), which makes an ssh to an instance through a controller and then executes
-   the necessary command on it.
+  (such as ssh key authentication, starting transport threads, etc). Also, it contains a rather useful method exec_command_on_vm(), which makes an ssh to an instance through a controller and then executes
+  the necessary command on it.
 
-FuelHealth Adapter architecture
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSTF Adapter architecture
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: _images/plugin_structure.png
 
-The important thing to remember about FuelHealth Adapter is that just like when writing tests, all code should follow pep8 standard.
-
-
-
-
-
-
+The important thing to remember about OSTF Adapter is that just like when writing tests, all code should follow pep8 standard.
 
 Appendix 1
 ----------

@@ -395,6 +395,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
     AssignRolesPanel = Backbone.View.extend({
         template: _.template(assignRolesPanelTemplate),
         className: 'roles-panel',
+        maxAvailableControllersCountInHA: 3,
         handleChanges: function() {
             this.nodes = new models.Nodes(this.screen.nodes.where({checked: true}));
             this.assignRoles();
@@ -412,9 +413,29 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         isControllerRoleSelected: function() {
             return this.collection.filter(function(role) {return role.get('name') == 'controller' && (role.get('checked') || role.get('indeterminate'));}).length;
         },
+        isMaxControllerNumberReached: function() {
+            var checkedNodes = this.screen.nodes.where({checked: true});
+            return (this.cluster.get('mode') != 'multinode' && (this.cluster.get('nodes').length >= this.maxAvailableControllersCountInHA ||
+                ((this.cluster.get('nodes').length + checkedNodes.length) > this.maxAvailableControllersCountInHA)));
+        },
         isControllerSelectable: function(role) {
-            var allocatedController = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
-            return role.get('name') != 'controller' || this.cluster.get('mode') != 'multinode' || ((this.isControllerRoleSelected() || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedController.length);
+            var allocatedControllers = this.cluster.get('nodes').filter(function(node) {
+                return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);
+            }, this);
+            var checkedNodes = this.screen.nodes.where({checked: true});
+            var deployedHACluster = this.cluster.get('mode') != 'multinode' && this.cluster.get('status') == 'operational';
+            var nodesCountRestrictioninHAMode = this.isMaxControllerNumberReached();
+            var multinodeClusterRestriction = this.cluster.get('mode') == 'multinode' && checkedNodes.length > 1;
+            //hack here to leave the role enabled but disable nodes checking and show useful message for user
+            if ((this.cluster.get('nodes').length == this.maxAvailableControllersCountInHA-1 && checkedNodes.length == 1) ||
+                (checkedNodes.length == this.maxAvailableControllersCountInHA && this.cluster.get('nodes').length == 0)) {
+                $('.role-conflict.controller').text($.t('cluster_page.nodes_tab.max_controllers_in_ha_mode_restriction', {count: this.maxAvailableControllersCountInHA}));
+            }
+            else {
+                 $('.role-conflict.controller').text('');
+            }
+            return role.get('name') != 'controller' || !((allocatedControllers.length && this.cluster.get('mode') == 'multinode') ||
+                multinodeClusterRestriction || deployedHACluster || nodesCountRestrictioninHAMode);
         },
         getListOfIncompatibleRoles: function(roles) {
             var forbiddenRoles = [];
@@ -434,6 +455,16 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 _.each(this.screen.nodes.where({checked: false}), function(node) {
                     node.set('disabled', (this.isControllerRoleSelected() && controllerNode && controllerNode.id != node.id) || !node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked());
                 }, this);
+                this.screen.nodeList.calculateSelectAllDisabledState();
+                _.invoke(this.screen.nodeList.subViews, 'calculateSelectAllDisabledState', this);
+            }
+            else if (this.cluster.get('mode') != 'multinode' && !_.isUndefined(this.screen.nodeList)) {
+                var checkedNodes = this.screen.nodes.where({checked: true});
+                var checkedNodesCountsEqualsAvailable = (this.cluster.get('nodes').length + checkedNodes.length) == this.maxAvailableControllersCountInHA;
+                _.each(this.screen.nodes.where({checked: false}), _.bind(function(node) {
+                    node.set('disabled', (this.isMaxControllerNumberReached() && this.isControllerRoleSelected()) ||
+                        (checkedNodesCountsEqualsAvailable && this.isControllerRoleSelected()));
+                }, this));
                 this.screen.nodeList.calculateSelectAllDisabledState();
                 _.invoke(this.screen.nodeList.subViews, 'calculateSelectAllDisabledState', this);
             }
@@ -476,7 +507,21 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 stickitChange: role,
                 onGet: _.bind(function(value, options) {
                     if (value && this.screen.nodes.length) {
-                        return this.isControllerSelectable(options.stickitChange) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
+                        var translationString;
+                        if(this.isControllerSelectable(options.stickitChange)) {
+                            translationString = $.t('cluster_page.nodes_tab.incompatible_roles_warning');
+                        } else if (this.cluster.get('mode') != 'multinode') {
+                            if (this.cluster.get('status') == 'operational') {
+                                translationString = $.t('cluster_page.nodes_tab.new_controllers_in_ha_mode_restriction');
+                            }
+                            else if (this.isMaxControllerNumberReached()) {
+                                translationString = $.t('cluster_page.nodes_tab.max_controllers_in_ha_mode_restriction', {count: this.maxAvailableControllersCountInHA});
+                            }
+                        }
+                        else {
+                            translationString = $.t('cluster_page.nodes_tab.one_controller_restriction');
+                        }
+                        return translationString;
                     }
                     return '';
                 }, this)

@@ -427,7 +427,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         checkForConflicts: function(e) {
             this.collection.each(function(role) {
                 var selectedRoles = this.collection.filter(function(role) {return role.get('checked') || role.get('indeterminate');});
-                role.set('disabled', !this.screen.nodes.length || !this.isControllerSelectable(role) || _.contains(this.getListOfIncompatibleRoles(selectedRoles), role.get('name')));
+                role.set('disabled', !this.screen.nodes.length || !this.isControllerSelectable(role) || _.contains(this.getListOfIncompatibleRoles(selectedRoles), role.get('name')) ||
+                    (role.get('name') == 'controller' && this.cluster.get('mode') == 'ha_compact'));
             }, this);
             if (this.cluster.get('mode') == 'multinode' && this.screen.nodeList) {
                 var controllerNode = this.nodes.filter(function(node) {return node.hasRole('controller');})[0];
@@ -476,7 +477,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 stickitChange: role,
                 onGet: _.bind(function(value, options) {
                     if (value && this.screen.nodes.length) {
-                        return this.isControllerSelectable(options.stickitChange) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
+                        var translationString;
+                        if(this.isControllerSelectable(options.stickitChange)) {
+                            if (this.cluster.get('mode') == 'ha_compact') {
+                                translationString = $.t('cluster_page.nodes_tab.unavailable_roles_warning');
+                            }
+                            else {
+                                translationString = $.t('cluster_page.nodes_tab.incompatible_roles_warning');
+                            }
+                        } else {
+                            translationString = $.t('cluster_page.nodes_tab.one_controller_restriction');
+                        }
+                        return translationString;
                     }
                     return '';
                 }, this)

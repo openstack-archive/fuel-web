@@ -1118,3 +1118,10 @@ class NetworkManager(object):
                 if ng_db.meta.get("notation"):
                     cls.cleanup_network_group(ng_db)
                 ng_db.cluster.add_pending_changes('networks')
+
+    @classmethod
+    def cluster_has_bonds(cls, cluster_id):
+        return db().query(Node).filter(
+            Node.cluster_id == cluster_id
+        ).filter(
+            Node.bond_interfaces.any()).count() > 0

@@ -17,6 +17,8 @@
 import json
 from mock import patch
 
+from nailgun.consts import NETWORK_INTERFACE_TYPES
+from nailgun.consts import OVS_BOND_MODES
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -229,7 +231,81 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
         task = self.env.launch_verify_networks()
         self.assertEqual(task.status, 'error')
         self.assertEqual(
-            (u'Network verification on Neutron is not implemented yet'),
+            u'Network verification on Neutron is not implemented yet',
+            task.message
+        )
+
+
+class TestNetworkVerificationDisabledWithBonds(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestNetworkVerificationDisabledWithBonds, self).setUp()
+        meta = self.env.default_metadata()
+        self.env.set_interfaces_in_meta(meta, [
+            {"name": "eth0", "mac": "00:00:00:00:00:66"},
+            {"name": "eth1", "mac": "00:00:00:00:00:77"},
+            {"name": "eth2", "mac": "00:00:00:00:00:88"}])
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron',
+                'net_segment_type': 'gre'
+            },
+            nodes_kwargs=[
+                {'api': True,
+                 'pending_addition': True,
+                 'meta': meta}
+            ]
+        )
+
+        resp = self.app.get(
+            reverse('NodeNICsHandler',
+                    kwargs={'node_id': self.env.nodes[0]['id']}),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        self.data = json.loads(resp.body)
+        self.admin_nic, self.other_nic, self.empty_nic = None, None, None
+        for nic in self.data:
+            net_names = [n['name'] for n in nic['assigned_networks']]
+            if 'fuelweb_admin' in net_names:
+                self.admin_nic = nic
+            elif net_names:
+                self.other_nic = nic
+            else:
+                self.empty_nic = nic
+        self.assertTrue(self.admin_nic and self.other_nic and self.empty_nic)
+
+    def nics_bond_create(self):
+        self.data.append({
+            "name": "ovs-bond0",
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": OVS_BOND_MODES.balance_slb,
+            "slaves": [
+                {'id': self.other_nic['id']},
+                {'id': self.empty_nic['id']},
+            ],
+            "assigned_networks": self.other_nic['assigned_networks']
+        })
+        self.other_nic['assigned_networks'] = []
+
+        resp = self.env.node_nics_put(self.env.nodes[0]['id'], self.data)
+        self.assertEquals(resp.status, 200)
+
+        resp = self.env.node_nics_get(self.env.nodes[0]['id'])
+        self.assertEquals(resp.status, 200)
+        data = json.loads(resp.body)
+        for nic in data:
+            if nic['type'] == NETWORK_INTERFACE_TYPES.bond:
+                self.assertEqual(nic['name'], "ovs-bond0")
+                self.assertTrue('id' in nic)
+
+    @fake_tasks(fake_rpc=False)
+    def test_network_verification_neutron_with_bonds(self, mocked_rpc):
+        self.nics_bond_create()
+
+        task = self.env.launch_verify_networks()
+        self.assertEqual(task.status, 'error')
+        self.assertEqual(
+            u'Network verification on Neutron bonds is not implemented yet',
             task.message
         )
 

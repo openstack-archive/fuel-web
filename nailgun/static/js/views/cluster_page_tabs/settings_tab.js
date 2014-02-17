@@ -87,8 +87,29 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         composeBindings: function() {
             this.bindings = {};
             _.each(this.settings.attributes, function(settingsGroup, attr) {
+                if (settingsGroup.metadata && settingsGroup.metadata.toggleable){
+                    this.bindings['input[name="' + attr + '.enabled"' + ']'] = attr + '.metadata.enabled';
+                }
                 _.each(settingsGroup, function(setting, settingTitle) {
                     this.bindings['input[name=' + settingTitle + ']'] = attr + '.' + settingTitle + '.value';
+                    if (settingsGroup.metadata && settingsGroup.metadata.toggleable) {
+                        this.bindings['input[name=' + settingTitle + ']'] = {
+                            observe: [attr + '.metadata.enabled', attr + '.' + settingTitle + '.value'],
+                            onGet: function(values){
+                                if (values[0]){
+                                    return values[1];
+                                }
+                                return false;
+                            },
+                            attributes: [{
+                                name: 'disabled',
+                                observe: attr + '.metadata.enabled',
+                                onGet: function(){
+                                    return !settingsGroup.metadata.enabled;
+                                }
+                            }]
+                        };
+                    }
                 }, this);
             }, this);
         },

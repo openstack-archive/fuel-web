@@ -182,7 +182,9 @@ class TestAttributes(BaseIntegrationTest):
                 elif group == 'additional_components':
                     for c, val in group_attrs.iteritems():
                         self.assertIn(c, attrs)
-                        self.assertEquals(val["value"], attrs[c]["enabled"])
+                        if 'value' in val:
+                            self.assertEquals(val["value"],
+                                              attrs[c]["enabled"])
                     continue
                 else:
                     value = attrs[group][attr]

@@ -270,6 +270,13 @@ class Node(Base):
         data["interfaces"] = result
         self.meta = data
 
+    def reset_name_to_default(self):
+        """Reset name to default
+        TODO(el): move to node REST object which
+        will be introduced in 5.0 release
+        """
+        self.name = u'Untitled ({0})'.format(self.mac[-5:])
+
 
 class NodeAttributes(Base):
     __tablename__ = 'node_attributes'

@@ -94,6 +94,7 @@ class NodeHandler(BaseHandler):
             if data["cluster_id"] is None and node.cluster:
                 node.cluster.clear_pending_changes(node_id=node.id)
                 node.roles = node.pending_roles = []
+                node.reset_name_to_default()
             node.cluster_id = data["cluster_id"]
             if node.cluster_id != old_cluster_id:
                 if old_cluster_id:
@@ -350,6 +351,7 @@ class NodeCollectionHandler(BaseHandler):
                 if nd["cluster_id"] is None and node.cluster:
                     node.cluster.clear_pending_changes(node_id=node.id)
                     node.roles = node.pending_roles = []
+                    node.reset_name_to_default()
                 node.cluster_id = nd["cluster_id"]
 
             regenerate_volumes = any((

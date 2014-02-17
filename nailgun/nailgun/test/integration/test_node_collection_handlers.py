@@ -374,3 +374,27 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status, 403)
+
+    def test_reset_cluster_name_when_unassign_node(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'pending_roles': ['controller'],
+                 'pending_addition': True,
+                 'name': 'new_node'}])
+
+        node = self.env.nodes[0]
+        default_name = 'Untitled ({0})'.format(node.mac[-5:])
+
+        resp = self.app.put(
+            reverse('NodeCollectionHandler'),
+            json.dumps([{'id': node.id,
+                         'cluster_id': None,
+                         'pending_roles': []}]),
+            headers=self.default_headers)
+        self.assertEquals(200, resp.status)
+        response = json.loads(resp.body)
+        self.assertEquals(1, len(response))
+        self.assertEquals(node.id, response[0]['id'])
+        self.assertEquals(node.name, default_name)
+        self.assertEquals(node.cluster, None)
+        self.assertEquals(node.pending_roles, [])

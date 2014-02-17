@@ -31,8 +31,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(200, resp.status)
         response = json.loads(resp.body)
         self.assertEquals(node.id, response['id'])
-#       todo: decide None output format
-#        self.assertEquals(node.name, response['name'])
+        self.assertEquals(node.name, response['name'])
         self.assertEquals(node.mac, response['mac'])
         self.assertEquals(
             node.pending_addition, response['pending_addition'])

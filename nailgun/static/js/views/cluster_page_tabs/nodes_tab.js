@@ -918,7 +918,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         discardAddition: function(e) {
             e.preventDefault();
             this.updateNode({
-                cluster: null,
+                cluster_id: null,
                 pending_addition: false,
                 pending_roles: []
             });

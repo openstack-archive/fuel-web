@@ -670,9 +670,10 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         # Add a dynamic data to a structure.
 
-        use_vlan_splinters = node.cluster.attributes.editable['common'].get(
-            'vlan_splinters', {}
-        ).get('value')
+        use_vlan_splinters = \
+            node.cluster.attributes.editable['vlan_splinters'].get(
+                'vlan_splinters', {}
+            ).get('vswitch')
 
         # Fill up interfaces and add bridges for them.
         for iface in node.interfaces:

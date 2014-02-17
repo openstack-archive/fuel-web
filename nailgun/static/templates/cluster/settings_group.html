@@ -1,10 +1,22 @@
 <% var disabled = locked ? 'disabled' : '' %>
 <% var ns = "cluster_page.settings_tab." + groupName + "." %>
-<legend class="openstack-settings"><%- $.t(ns + 'group_name', {defaultValue: groupName.replace('_', ' ')}) %></legend>
+
+<legend class="openstack-settings">
+<% if (settings.toggleable){ %>
+    <div style="float:left; margin-top: -6px; margin-right: 12px;">
+      <div class="custom-tumbler">
+              <input type="checkbox"  class="disable-section" name="<%- groupName %>.enabled" />
+              <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+      </div>
+    </div>
+  <% } %>
+  <%- $.t(ns + 'group_name', {defaultValue: groupName.replace('_', ' ')}) %>
+</legend>
 <div class="settings-group" data-settings-group="<%- groupName %>">
-  <% var sortedSettings = _.sortBy(_.keys(settings), function(setting) {return settings[setting].weight;}) %>
+  <% var sortedSettings = _.sortBy(_.keys(settings), function(setting) {return settings[setting].weight;}); %>
+  <% var setingEnabled = settings.enabled ? '' : 'disabled' %>
   <% _.each(sortedSettings, function(settingName) { %>
-    <% var setting = settings[settingName] %>
+    <% var setting = settings[settingName]; %>
     <% if (setting.type == 'checkbox') { %>
       <label class="parameter-box clearfix">
         <div class="parameter-control">
@@ -23,7 +35,7 @@
         <label class="parameter-box clearfix">
           <div class="parameter-control">
             <div class="custom-tumbler">
-              <input type="radio" name="<%- settingName %>" value="<%- option['data'] %>" <%= disabled %> />
+              <input type="radio" name="<%- settingName %>" value="<%- option['data'] %>" <%= disabled %> <%= setingEnabled %> />
               <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
           </div>
@@ -35,7 +47,7 @@
       <% }) %>
       </div>
       <div class="parameter-spacer"></div>
-    <% } else if (setting.type != 'hidden') { %>
+    <% } else if (setting.type != 'hidden' && settingName !=='toggleable' && settingName !== 'enabled') { %>
       <label class="parameter-box clearfix">
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
         <div class="parameter-control <%= setting.type == 'password' ? 'input-append' : '' %>">

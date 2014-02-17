@@ -143,6 +143,8 @@
     attributes_metadata:
       editable:
         access:
+          metadata:
+            weight: 10
           user:
             value: "admin"
             label: "username"
@@ -168,6 +170,8 @@
             weight: 20
             type: "password"
         common:
+          metadata:
+            weight: 30
           debug:
             value: false
             label: "OpenStack debug logging"
@@ -223,6 +227,8 @@
             weight: 70
             type: "text"
         syslog:
+          metadata:
+            weight: 50
           syslog_transport:
             value: "tcp"
             values:
@@ -248,6 +254,8 @@
             weight: 20
             type: "text"
         storage:
+          metadata:
+            weight: 60
           volumes_lvm:
             value: true
             label: "Cinder LVM over iSCSI for volumes"
@@ -437,6 +445,8 @@
     attributes_metadata:
       editable:
         additional_components:
+          metadata: 
+            weight: 20
           savanna:
             value: false
             label: "Install Savanna"
@@ -461,22 +471,26 @@
             description: "If selected, Ceilometer component will be installed"
             weight: 40
             type: "checkbox"
-        common:
-          vlan_splinters:
+        vlan_splinters:
+          metadata:
+            toggleable: true
+            enabled: false
+            weight: 40
+          vswitch:
+            description: "Open VSwitch VLAN Splinters feature (Neutron only)"
             value: "disabled"
             label: "Open VSwitch VLAN Splinters feature (Neutron only)"
             weight: 45
             type: "radio"
             values:
-              - data: "disabled"
-                label: "Disabled"
-                description: "OVS VLAN splinters disabled on all interfaces"
               - data: "soft"
                 label: "Enable OVS VLAN splinters soft trunks workaround"
                 description: "Configure OVS to use VLAN splinters workaround with soft trunk detection. This may resolve issues that might be encountered when using VLAN tags with OVS and Neutron on Kernels <3.3 (CentOS)"
+                type: "radio"
               - data: "hard"
                 label: "Enable OVS VLAN splinters hard trunks workaround"
                 description: "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be predefined. This may work better than soft trunks especially if you still see network problems using soft trunks"
+                type: "radio"
         storage:
           volumes_ceph:
             value: false

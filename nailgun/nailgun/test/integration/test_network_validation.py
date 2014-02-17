@@ -503,35 +503,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         ).all()
         self.assertEquals(len(ngs_created), len(self.nets['networks']))
 
-    def test_network_checking_fails_if_network_is_at_admin_iface(self):
-        node_db = self.env.nodes[0]
-        resp = self.env.node_nics_get(node_db.id)
-
-        ifaces = json.loads(resp.body)
-        admin_if = [iface for iface in ifaces
-                    if len(iface["assigned_networks"]) == 1 and
-                    iface["assigned_networks"][0]["name"] == "fuelweb_admin"]
-        self.assertEquals(len(admin_if), 1)
-        other_if = [iface for iface in ifaces
-                    if iface != admin_if[0]]
-        self.assertGreaterEqual(len(other_if), 1)
-        admin_if[0]["assigned_networks"].extend(
-            other_if[0]["assigned_networks"])
-        other_if[0]["assigned_networks"] = []
-
-        self.env.node_collection_nics_put(
-            node_db.id,
-            [{"interfaces": ifaces, "id": node_db.id}])
-
-        task = self.set_cluster_changes_w_error(self.cluster.id)
-        self.assertEquals(
-            task['message'].find(
-                "Some networks are "
-                "assigned to the same physical interface as "
-                "admin (PXE) network. You should move them to "
-                "another physical interfaces:"),
-            0
-        )
+    # TODO(adanin) Provide a positive test that it's allowed to move any
+    #      network to the Admin interface.
 
     def test_network_checking_fails_if_admin_intersection(self):
         admin_ng = self.env.network_manager.get_admin_network_group()

@@ -202,8 +202,8 @@ class TestNodeHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
-        net_name_per_nic = [['fuelweb_admin'],
-                            ['public', 'floating', 'storage', 'fixed'],
+        net_name_per_nic = [['fuelweb_admin', 'storage', 'fixed'],
+                            ['public', 'floating'],
                             ['management']]
         for i, nic in enumerate(sorted(response, key=lambda x: x['name'])):
             net_names = set([net['name'] for net in nic['assigned_networks']])
@@ -239,10 +239,9 @@ class TestNodeHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
-        net_name_per_nic = [['fuelweb_admin'],
-                            ['storage', 'fixed', 'public', 'floating',
-                             'management'],
-                            []]
+        net_name_per_nic = [['fuelweb_admin', 'storage', 'fixed',
+                             'public', 'floating', 'management'],
+                            [], []]
         for i, nic in enumerate(sorted(response, key=lambda x: x['name'])):
             net_names = set([net['name'] for net in nic['assigned_networks']])
             self.assertEqual(set(net_name_per_nic[i]), net_names)
@@ -281,8 +280,8 @@ class TestNodeHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
-        net_name_per_nic = [['fuelweb_admin'],
-                            ['public', 'storage', 'private'],
+        net_name_per_nic = [['fuelweb_admin', 'storage', 'private'],
+                            ['public'],
                             ['management']]
         for i, nic in enumerate(sorted(response, key=lambda x: x['name'])):
             net_names = set([net['name'] for net in nic['assigned_networks']])
@@ -318,9 +317,9 @@ class TestNodeHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
         response = json.loads(resp.body)
-        net_name_per_nic = [['fuelweb_admin'],
-                            ['storage', 'public', 'management', 'private'],
-                            []]
+        net_name_per_nic = [['fuelweb_admin', 'storage', 'public',
+                             'management', 'private'],
+                            [], []]
         for i, nic in enumerate(sorted(response, key=lambda x: x['name'])):
             net_names = set([net['name'] for net in nic['assigned_networks']])
             self.assertEqual(set(net_name_per_nic[i]), net_names)

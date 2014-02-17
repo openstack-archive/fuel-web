@@ -507,14 +507,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         # Remove 'vlan_splinters' attribute and check results.
 
-        editable_attrs['common'].pop('vlan_splinters', None)
+        editable_attrs.pop('vlan_splinters', None)
         db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable.copy()
-        self.assertNotIn('vlan_splinters', editable_attrs['common'])
+        self.assertNotIn('vlan_splinters', editable_attrs)
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
         interfaces = node['network_scheme']['interfaces']
@@ -526,14 +526,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         # Set 'vlan_splinters' to 'some_text' and check results.
 
-        editable_attrs['common']['vlan_splinters'] = {'value': 'some_text'}
+        editable_attrs['vlan_splinters'] = {'value': 'some_text'}
         db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable
-        self.assertEquals(editable_attrs['common']['vlan_splinters']['value'],
+        self.assertEquals(editable_attrs['vlan_splinters']['value'],
                           'some_text')
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
@@ -546,14 +546,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         # Set 'vlan_splinters' to 'disabled' and check results.
 
-        editable_attrs['common']['vlan_splinters'] = {'value': 'disabled'}
+        editable_attrs['vlan_splinters'] = {'value': 'disabled'}
         db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable
-        self.assertEquals(editable_attrs['common']['vlan_splinters']['value'],
+        self.assertEquals(editable_attrs['vlan_splinters']['value'],
                           'disabled')
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
@@ -572,14 +572,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         #value of kernel-ml should end up with vlan_splinters = off
 
-        editable_attrs['common']['vlan_splinters'] = {'value': 'kernel_lt'}
+        editable_attrs['vlan_splinters'] = {'value': 'kernel_lt'}
         db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable
-        self.assertEquals(editable_attrs['common']['vlan_splinters']['value'],
+        self.assertEquals(editable_attrs['vlan_splinters']['value'],
                           'kernel_lt')
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
@@ -596,7 +596,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         editable_attrs = cluster.attributes.editable.copy()
 
         # Set 'vlan_splinters' to 'hard' and check results.
-        editable_attrs['common'].setdefault(
+        editable_attrs.setdefault(
             'vlan_splinters', {'value': 'hard'}
         )['value'] = 'hard'
         db.refresh(cluster.attributes)
@@ -626,7 +626,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         editable_attrs = cluster.attributes.editable.copy()
 
         # Set 'vlan_splinters' to 'hard' and check results.
-        editable_attrs['common'].setdefault(
+        editable_attrs.setdefault(
             'vlan_splinters', {'value': 'hard'}
         )['value'] = 'hard'
         db.refresh(cluster.attributes)
@@ -661,7 +661,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         editable_attrs = cluster.attributes.editable.copy()
 
         # Set 'vlan_splinters' to 'soft' and check results.
-        editable_attrs['common'].setdefault(
+        editable_attrs.setdefault(
             'vlan_splinters', {'value': 'soft'}
         )['value'] = 'soft'
         db.refresh(cluster.attributes)

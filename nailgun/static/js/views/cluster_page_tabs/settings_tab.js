@@ -87,8 +87,25 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         composeBindings: function() {
             this.bindings = {};
             _.each(this.settings.attributes, function(settingsGroup, attr) {
+                if (settingsGroup.metadata.toggleable) {
+                    this.bindings['input[name="' + attr + '.enabled"' + ']'] = attr + '.metadata.enabled';
+                }
                 _.each(settingsGroup, function(setting, settingTitle) {
-                    this.bindings['input[name=' + settingTitle + ']'] = attr + '.' + settingTitle + '.value';
+                    if (settingTitle != 'metadata') {
+                        this.bindings['input[name=' + settingTitle + ']'] = attr + '.' + settingTitle + '.value';
+                        if (settingsGroup.metadata.toggleable) {
+                            this.bindings['input[name=' + settingTitle + ']'] = {
+                                observe: attr + '.' + settingTitle + '.value',
+                                attributes: [{
+                                    name: 'disabled',
+                                    observe: attr + '.metadata.enabled',
+                                    onGet: function(){
+                                        return !settingsGroup.metadata.enabled;
+                                    }
+                                }]
+                            };
+                        }
+                    }
                 }, this);
             }, this);
         },
@@ -97,12 +114,10 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.$el.html(this.template({cluster: this.model, locked: this.isLocked()})).i18n();
             if (this.model.get('settings').deferred.state() != 'pending') {
                 this.$('.settings').html('');
-                var settingGroups = _.keys(this.settings.attributes);
-                var order = this.model.get('settings').preferredOrder;
-                settingGroups.sort(function(a, b) {
-                    return _.indexOf(order, a) - _.indexOf(order, b);
-                });
-                _.each(settingGroups, function(settingGroup) {
+                var sortedSettings = _.sortBy(_.keys(this.settings.attributes), _.bind(function(setting) {
+                    return this.settings.get(setting + '.metadata.weight');
+                }, this));
+                _.each(sortedSettings, function(settingGroup) {
                     var settingGroupView = new SettingGroup({
                         settings: this.settings.get(settingGroup),
                         groupName: settingGroup,

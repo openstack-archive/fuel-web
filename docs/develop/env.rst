@@ -86,7 +86,7 @@ Setup for Web UI Tests
 
 #. Install CasperJS::
 
-    sudo apt-get install phantomjs
+    sudo npm install -g phantomjs
     cd ~
     git clone git://github.com/n1k0/casperjs.git
     cd casperjs

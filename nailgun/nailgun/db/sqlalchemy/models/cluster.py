@@ -305,8 +305,10 @@ class Attributes(Base):
             attrs.update(attrs.pop('common'))
         if 'additional_components' in attrs:
             for comp, enabled in attrs['additional_components'].iteritems():
-                attrs.setdefault(comp, {}).update({
-                    "enabled": enabled
-                })
+                if isinstance(enabled, bool):
+                    attrs.setdefault(comp, {}).update({
+                        "enabled": enabled
+                    })
+
             attrs.pop('additional_components')
         return attrs

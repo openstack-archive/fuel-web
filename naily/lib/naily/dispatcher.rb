@@ -184,8 +184,12 @@ module Naily
       service_data[:main_work_thread].raise("StopDeploy")
       sleep 0.1 while service_data[:main_work_thread].status != 'sleep'
 
-      @orchestrator.stop_puppet_deploy(reporter, task_uuid, nodes)
-      result = @orchestrator.remove_nodes(reporter, task_uuid, data['args']['engine'], nodes)
+      if service_data[:tasks_queue].current_task_method == 'deploy'
+        @orchestrator.stop_puppet_deploy(reporter, task_uuid, nodes)
+        result = @orchestrator.remove_nodes(reporter, task_uuid, data['args']['engine'], nodes)
+      else
+        result = @orchestrator.stop_provision(reporter, task_uuid, data['args']['engine'], nodes)
+      end
 
       service_data[:main_work_thread].run
       return result

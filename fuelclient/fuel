@@ -526,12 +526,18 @@ def node(params):
         nodes_clusters = dict((_node["id"], _node["cluster"])
                               for _node in json_api_get_request("nodes/"))
         if not params.node and params.env:
-            node_ids = [k for k, v in nodes_clusters.iteritems()
-                        if v == int(params.env)]
-            if not node_ids:
+            if params.all:
+                node_ids = [k for k, v in nodes_clusters.iteritems()
+                            if v == int(params.env)]
+                if not node_ids:
+                    print_error(
+                        "Environment with id={0} doesn't have nodes to remove."
+                        .format(params.env)
+                    )
+            else:
                 print_error(
-                    "Environment with id={0} doesn't have nodes to remove."
-                    .format(params.env)
+                    "You have to select which nodes to remove. Try --all for"
+                    " removing all nodes."
                 )
         data = map(
             lambda _node_id: {
@@ -1582,6 +1588,14 @@ actions = {
             get_node_arg("Node id."),
             get_force_arg(),
         {
+            "args": ["--all"],
+            "params": {
+                "dest": "all",
+                "action": "store_true",
+                "help": "Select all nodes.",
+                "default": False
+            }
+        }, {
             "args": ["-r", "--role"],
             "params": {
                 "dest": "role",

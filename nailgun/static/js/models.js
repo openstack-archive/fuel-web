@@ -327,7 +327,7 @@ define(['utils', 'deepModel'], function(utils) {
         model: models.Disk,
         url: '/api/nodes/',
         comparator: function(disk) {
-            return disk.id;
+            return disk.get('name');
         }
     });
 

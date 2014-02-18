@@ -1114,7 +1114,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         renderDisks: function() {
             this.tearDownRegisteredSubViews();
             this.$('.node-disks').html('');
-            this.disks.each(function(disk) {
+            _.each(_.sortBy(this.disks.models, 'name'), function(disk) {
                 var nodeDisk = new NodeDisk({
                     disk: disk,
                     diskMetaData: _.find(this.nodes.at(0).get('meta').disks, {disk: disk.id}),

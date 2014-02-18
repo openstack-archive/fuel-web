@@ -19,11 +19,13 @@ module Naily
     include Enumerable
 
     attr_reader :current_task_id
+    attr_reader :current_task_method
 
     def initialize
       @queue = []
       @semaphore = Mutex.new
       @current_task_id = nil
+      @current_task_method = nil
     end
 
     def add_task(data)
@@ -53,6 +55,7 @@ module Naily
         @semaphore.synchronize do
           next if task.nil?
           @current_task_id = find_task_id(task)
+          @current_task_method = find_task_method(task)
         end
 
         if block_given?
@@ -62,13 +65,20 @@ module Naily
         end
       end
     ensure
-      @semaphore.synchronize { @current_task_id = nil }
+      @semaphore.synchronize do
+        @current_task_id = nil
+        @current_task_method = nil
+      end
     end
 
     private
 
     def find_task_id(data)
       data && data['args'] && data['args']['task_uuid'] ? data['args']['task_uuid'] : nil
+    end
+
+    def find_task_method(data)
+      data && data['method']
     end
 
   end

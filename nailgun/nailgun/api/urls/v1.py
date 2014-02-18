@@ -25,6 +25,8 @@ from nailgun.api.handlers.cluster import ClusterChangesHandler
 from nailgun.api.handlers.cluster import ClusterCollectionHandler
 from nailgun.api.handlers.cluster import ClusterGeneratedData
 from nailgun.api.handlers.cluster import ClusterHandler
+from nailgun.api.handlers.cluster import ClusterResetHandler
+from nailgun.api.handlers.cluster import ClusterStopDeploymentHandler
 
 from nailgun.api.handlers.disks import NodeDefaultsDisksHandler
 from nailgun.api.handlers.disks import NodeDisksHandler
@@ -120,6 +122,10 @@ urls = (
     ProvisionSelectedNodes,
     r'/clusters/(?P<cluster_id>\d+)/deploy/?$',
     DeploySelectedNodes,
+    r'/clusters/(?P<cluster_id>\d+)/stop_deployment/?$',
+    ClusterStopDeploymentHandler,
+    r'/clusters/(?P<cluster_id>\d+)/reset/?$',
+    ClusterResetHandler,
 
     r'/nodes/?$',
     NodeCollectionHandler,

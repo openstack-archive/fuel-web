@@ -30,7 +30,9 @@ from sqlalchemy.orm import relationship, backref
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.node import Node
 from nailgun.db.sqlalchemy.models.release import Release
+from nailgun.db.sqlalchemy.models.task import Task
 from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
@@ -55,7 +57,14 @@ class ClusterChanges(Base):
 class Cluster(Base):
     __tablename__ = 'clusters'
     MODES = ('multinode', 'ha_full', 'ha_compact')
-    STATUSES = ('new', 'deployment', 'operational', 'error', 'remove')
+    STATUSES = (
+        'new',
+        'deployment',
+        'stopped',
+        'operational',
+        'error',
+        'remove'
+    )
     NET_MANAGERS = ('FlatDHCPManager', 'VlanManager')
     GROUPING = ('roles', 'hardware', 'both')
     # Neutron-related
@@ -165,12 +174,19 @@ class Cluster(Base):
 
     @property
     def are_attributes_locked(self):
-        return self.status != "new" or any(
-            map(
-                lambda x: x.name == "deploy" and x.status == "running",
-                self.tasks
-            )
-        )
+        if db().query(Task).filter_by(
+            cluster_id=self.id,
+            name="deploy",
+            status="running"
+        ).count():
+            return True
+        elif self.status in ["new", "stopped"] and not \
+                db().query(Node).filter_by(
+                    cluster_id=self.id,
+                    status="ready"
+                ).count():
+            return False
+        return True
 
     @classmethod
     def validate(cls, data):

@@ -1,5 +1,7 @@
-For Ubuntu server 12.10
-=======================
+Devops Guide
+============
+
+
 Clean installation
 ------------------
 
@@ -11,7 +13,8 @@ This application is used for testing purposes like grouping virtual machines to
 environments, booting KVM VMs locally from the ISO image and over the network
 via PXE, creating, snapshotting and resuming back the whole environment in
 single action, create virtual machines with multiple NICs, multiple hard drives
-and many other customizations with a few lines of code in system tests.
+and many other customizations with a few lines of code in system tests. For
+sources please refer to https://github.com/stackforge/fuel-devops.
 
 Dependencies ::
 
@@ -65,8 +68,9 @@ Should be 'Y'    ::
     sudo service postgresql restart
     django-admin.py syncdb --settings devops.settings
 
-Download Fuel ISO. Accessible here: http://software.mirantis.com/
-(registration required)
+Please refer to
+http://docs.mirantis.com/fuel-dev/develop/env.html#building-the-fuel-iso
+section.
 Next, you need to define several variables for the future environment ::
 
     export ISO_PATH=<path_to_iso>
@@ -79,9 +83,9 @@ Alternatively, you can edit this file ::
 
 Start tests by running this command::
 
-    sh "utils/jenkins/system_tests.sh" -t test -w $(pwd) -j "fuelweb_test" -i
+    "utils/jenkins/system_tests.sh" -t test -w $(pwd) -j "fuelweb_test" -i
     "$ISO_PATH" -V $(pwd)/venv/fuelweb_test -o --group=setup
 
 For more information about how tests work, read the usage information ::
 
-    sh "utils/jenkins/system_tests.sh" -h
+    "utils/jenkins/system_tests.sh" -h

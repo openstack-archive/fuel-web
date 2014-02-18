@@ -183,8 +183,12 @@ module Naily
       Naily.logger.info "Try to kill running task #{target_task_uuid}"
       service_data[:main_work_thread].kill
 
-      @orchestrator.stop_puppet_deploy(reporter, task_uuid, nodes)
-      @orchestrator.remove_nodes(reporter, task_uuid, data['args']['engine'], nodes)
+      result = if service_data[:tasks_queue].current_task_method == 'deploy'
+        @orchestrator.stop_puppet_deploy(reporter, task_uuid, nodes)
+        @orchestrator.remove_nodes(reporter, task_uuid, data['args']['engine'], nodes)
+      else
+        @orchestrator.stop_provision(reporter, task_uuid, data['args']['engine'], nodes)
+      end
     end
 
     def data_for_rm_nodes(data)

@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Approved+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Code-Review+2: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 18 Feb 2014 13:49:58 +0000
+Reviewed-on: https://review.openstack.org/73546
+Project: stackforge/fuel-web
+Branch: refs/heads/master

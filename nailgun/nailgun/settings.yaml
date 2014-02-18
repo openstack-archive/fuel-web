@@ -470,6 +470,12 @@ DUMP:
         path: /etc/resolv.conf
       - type: file
         path: /etc/dnsmasq.conf
+      - type: file
+        path: /root/*.log
+      - type: file
+        path: /etc/cobbler*
+      - type: file
+        path: /var/log/fuelmenu.log
     slave:
       - type: file
         path: /etc/astute.yaml

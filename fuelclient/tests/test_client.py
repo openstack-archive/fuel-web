@@ -59,7 +59,7 @@ class TestHandlers(BaseTestCase):
                     "--list", "-s", "--set", "--delete", "--default", "-d",
                     "--download", "-u", "--upload", "--dir", "--node",
                     "--node-id", "-r", "--role", "--net", "--network",
-                    "--disk", "-f", "--force", "--deploy", "--provision"]
+                    "--disk", "--deploy", "--provision"]
         self.check_all_in_msg("node --help", help_msg)
 
         self.check_for_rows_in_table("node")

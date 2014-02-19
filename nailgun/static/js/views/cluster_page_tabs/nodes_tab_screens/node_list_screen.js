@@ -234,7 +234,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                     this.cluster.fetch();
                     app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
                     app.navbar.refresh();
-                    app.page.removeFinishedTasks();
+                    app.page.removeFinishedNetworkTasks();
                     app.page.deploymentControl.render();
                 }, this))
                 .fail(_.bind(function() {
@@ -858,7 +858,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 .done(_.bind(function() {
                     this.screen.tab.model.fetch();
                     this.screen.tab.model.fetchRelated('nodes');
-                    app.page.removeFinishedTasks();
+                    app.page.removeFinishedNetworkTasks();
                 }, this))
                 .fail(function() {utils.showErrorDialog({title: $.t('dialog.discard_changes.cant_discard')});});
         },

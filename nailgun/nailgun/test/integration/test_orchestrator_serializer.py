@@ -476,11 +476,11 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def _create_cluster_for_vlan_splinters(self, segment_type='gre'):
         meta = {
             'interfaces': [
-                {'name': 'eth0', 'mac': self.env._generate_random_mac()},
-                {'name': 'eth1', 'mac': self.env._generate_random_mac()},
-                {'name': 'eth2', 'mac': self.env._generate_random_mac()},
-                {'name': 'eth3', 'mac': self.env._generate_random_mac()},
-                {'name': 'eth4', 'mac': self.env._generate_random_mac()}
+                {'name': 'eth0', 'mac': self.env.generate_random_mac()},
+                {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+                {'name': 'eth2', 'mac': self.env.generate_random_mac()},
+                {'name': 'eth3', 'mac': self.env.generate_random_mac()},
+                {'name': 'eth4', 'mac': self.env.generate_random_mac()}
             ]
         }
         cluster = self.env.create(

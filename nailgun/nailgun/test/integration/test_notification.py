@@ -91,7 +91,7 @@ class TestNotification(BaseIntegrationTest):
 
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
-            json.dumps({'mac': 'AADFAAAADFAA',
+            json.dumps({'mac': self.env.generate_random_mac(),
                         'meta': self.env.default_metadata(),
                         'status': 'discover'}),
             headers=self.default_headers)

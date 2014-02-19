@@ -131,7 +131,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_creation(self):
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
-            json.dumps({'mac': 'ASDFAAASDFAA',
+            json.dumps({'mac': self.env.generate_random_mac(),
                         'meta': self.env.default_metadata(),
                         'status': 'discover'}),
             headers=self.default_headers)
@@ -309,7 +309,7 @@ class TestHandlers(BaseIntegrationTest):
             api=False
         )
         node2_json = {
-            "mac": self.env._generate_random_mac(),
+            "mac": self.env.generate_random_mac(),
             "meta": self.env.default_metadata()
         }
         node2_json["meta"]["interfaces"][0]["mac"] = node1.mac
@@ -337,7 +337,7 @@ class TestHandlers(BaseIntegrationTest):
             meta={}
         )
         node1_json = {
-            "mac": self.env._generate_random_mac(),
+            "mac": self.env.generate_random_mac(),
             "meta": meta
         }
         # We want to be sure that new mac is not equal to old one
@@ -368,7 +368,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_creation_fail(self):
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
-            json.dumps({'mac': 'ASDFAAASDF22',
+            json.dumps({'mac': self.env.generate_random_mac(),
                         'meta': self.env.default_metadata(),
                         'status': 'error'}),
             headers=self.default_headers,

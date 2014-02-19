@@ -131,7 +131,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_creation(self):
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
-            json.dumps({'mac': 'ASDFAAASDFAA',
+            json.dumps({'mac': self.env.generate_random_mac(),
                         'meta': self.env.default_metadata(),
                         'status': 'discover'}),
             headers=self.default_headers)
@@ -309,7 +309,7 @@ class TestHandlers(BaseIntegrationTest):
             api=False
         )
         node2_json = {
-            "mac": self.env._generate_random_mac(),
+            "mac": self.env.generate_random_mac(),
             "meta": self.env.default_metadata()
         }
         node2_json["meta"]["interfaces"][0]["mac"] = node1.mac
@@ -329,6 +329,34 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(node, None)
 
+    def test_node_create_mac_validation(self):
+        # entry format: (mac_address, http_response_code)
+        maccaddresses = (
+            # invalid macaddresses
+            ('60a44c3528ff', 400),
+            ('60:a4:4c:35:28', 400),
+            ('60:a4:4c:35:28:fg', 400),
+            ('76:DC:7C:CA:G4:75', 400),
+            ('76-DC-7C-CA-G4-75', 400),
+
+            # valid macaddresses
+            ('60:a4:4c:35:28:ff', 201),
+            ('48-2C-6A-1E-59-3D', 201),
+        )
+
+        for mac, http_code in maccaddresses:
+            response = self.app.post(
+                reverse('NodeCollectionHandler'),
+                json.dumps({
+                    'mac': mac,
+                    'status': 'discover',
+                }),
+                headers=self.default_headers,
+                expect_errors=(http_code != 201)
+            )
+
+            self.assertEquals(response.status, http_code)
+
     def test_node_update_ext_mac(self):
         meta = self.env.default_metadata()
         node1 = self.env.create_node(
@@ -337,7 +365,7 @@ class TestHandlers(BaseIntegrationTest):
             meta={}
         )
         node1_json = {
-            "mac": self.env._generate_random_mac(),
+            "mac": self.env.generate_random_mac(),
             "meta": meta
         }
         # We want to be sure that new mac is not equal to old one
@@ -368,7 +396,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_creation_fail(self):
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
-            json.dumps({'mac': 'ASDFAAASDF22',
+            json.dumps({'mac': self.env.generate_random_mac(),
                         'meta': self.env.default_metadata(),
                         'status': 'error'}),
             headers=self.default_headers,

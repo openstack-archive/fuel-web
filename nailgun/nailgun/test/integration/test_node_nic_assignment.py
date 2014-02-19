@@ -29,12 +29,12 @@ from nailgun.test.base import reverse
 class TestClusterHandlers(BaseIntegrationTest):
 
     def test_assigned_networks_when_node_added(self):
-        mac = '123'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': '654'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
 
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         self.env.create_cluster(api=True, nodes=[node['id']])
@@ -56,12 +56,12 @@ class TestClusterHandlers(BaseIntegrationTest):
             self.assertGreater(len(resp_nic['assigned_networks']), 0)
 
     def test_allowed_networks_when_node_added(self):
-        mac = '123'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'abc'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         self.env.create_cluster(api=True, nodes=[node['id']])
 
@@ -75,12 +75,13 @@ class TestClusterHandlers(BaseIntegrationTest):
             )
 
     def test_assignment_is_removed_when_delete_node_from_cluster(self):
-        mac = '123'
+        mac = self.env.generate_random_mac()
+        meta = self.env.default_metadata()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'abc'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         cluster = self.env.create_cluster(api=True, nodes=[node['id']])
         resp = self.app.put(
@@ -99,12 +100,12 @@ class TestClusterHandlers(BaseIntegrationTest):
             self.assertEquals(resp_nic['assigned_networks'], [])
 
     def test_assignment_is_removed_when_delete_cluster(self):
-        mac = '12364759'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'abc'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         cluster = self.env.create_cluster(api=True, nodes=[node['id']])
         cluster_db = self.db.query(Cluster).get(cluster['id'])
@@ -119,12 +120,12 @@ class TestNodeHandlers(BaseIntegrationTest):
 
     def test_network_assignment_when_node_created_and_added(self):
         cluster = self.env.create_cluster(api=True)
-        mac = '123'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': '654'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
         resp = self.app.get(
@@ -142,12 +143,12 @@ class TestNodeHandlers(BaseIntegrationTest):
 
     def test_network_assignment_when_node_added(self):
         cluster = self.env.create_cluster(api=True)
-        mac = '123'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'abc'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -182,13 +183,13 @@ class TestNodeHandlers(BaseIntegrationTest):
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
-        mac = '123'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'abc'},
-             {'name': 'eth2', 'mac': 'bcd'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+             {'name': 'eth2', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -219,13 +220,13 @@ class TestNodeHandlers(BaseIntegrationTest):
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
-        mac = '234'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'cde'},
-             {'name': 'eth2', 'mac': 'def'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+             {'name': 'eth2', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -260,13 +261,13 @@ class TestNodeHandlers(BaseIntegrationTest):
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
-        mac = '123'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'abc'},
-             {'name': 'eth2', 'mac': 'bcd'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+             {'name': 'eth2', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -297,13 +298,13 @@ class TestNodeHandlers(BaseIntegrationTest):
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
-        mac = '234'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'cde'},
-             {'name': 'eth2', 'mac': 'def'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+             {'name': 'eth2', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -326,12 +327,12 @@ class TestNodeHandlers(BaseIntegrationTest):
 
     def test_assignment_is_removed_when_delete_node_from_cluster(self):
         cluster = self.env.create_cluster(api=True)
-        mac = '123'
+        mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': 'abc'}])
+             {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
         resp = self.app.put(
@@ -351,7 +352,8 @@ class TestNodeHandlers(BaseIntegrationTest):
 
     def test_getting_default_nic_information_for_node(self):
         cluster = self.env.create_cluster(api=True)
-        macs = ('123', 'abc')
+        macs = (self.env.generate_random_mac(),
+                self.env.generate_random_mac())
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
@@ -371,8 +373,15 @@ class TestNodeHandlers(BaseIntegrationTest):
         self.assertItemsEqual(macs, resp_macs)
 
     def test_try_add_node_with_same_mac(self):
+        mac_pool = (
+            self.env.generate_random_mac(),
+            self.env.generate_random_mac(),
+            self.env.generate_random_mac(),
+            self.env.generate_random_mac(),
+        )
+
         cluster = self.env.create_cluster(api=True)
-        macs = ('123', '345')
+        macs = mac_pool[0], mac_pool[1]
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
@@ -385,7 +394,7 @@ class TestNodeHandlers(BaseIntegrationTest):
                              cluster_id=cluster['id'],
                              expect_http=409)
 
-        macs = ('123', 'new_mac')
+        macs = (mac_pool[0], mac_pool[2])
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': macs[0]},
@@ -394,7 +403,7 @@ class TestNodeHandlers(BaseIntegrationTest):
                              cluster_id=cluster['id'],
                              expect_http=409)
 
-        macs = ('new_mac', '123')
+        macs = (mac_pool[2], mac_pool[0])
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': macs[0]},
@@ -403,7 +412,7 @@ class TestNodeHandlers(BaseIntegrationTest):
                              cluster_id=cluster['id'],
                              expect_http=409)
 
-        macs = ('345', 'new_mac')
+        macs = (mac_pool[1], mac_pool[2])
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': macs[0]},
@@ -412,7 +421,7 @@ class TestNodeHandlers(BaseIntegrationTest):
                              cluster_id=cluster['id'],
                              expect_http=409)
 
-        macs = ('new_mac', '345')
+        macs = (mac_pool[2], mac_pool[1])
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': macs[0]},
@@ -428,7 +437,8 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=True)
         admin_ip = str(IPNetwork(
             self.env.network_manager.get_admin_network_group().cidr)[0])
-        mac1, mac2 = '123', '321'
+        mac1, mac2 = (self.env.generate_random_mac(),
+                      self.env.generate_random_mac())
         meta = self.env.default_metadata()
         meta['interfaces'] = [{'name': 'eth0', 'mac': mac1},
                               {'name': 'eth1', 'mac': mac2, 'ip': admin_ip}]
@@ -479,10 +489,13 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
         meta = self.env.default_metadata()
         admin_ip = str(IPNetwork(
             self.env.network_manager.get_admin_network_group().cidr)[0])
-        meta['interfaces'] = [{'name': 'eth3', 'mac': '000'},
-                              {'name': 'eth2', 'mac': '111'},
-                              {'name': 'eth0', 'mac': '222', 'ip': admin_ip},
-                              {'name': 'eth1', 'mac': '333'}]
+        meta['interfaces'] = [
+            {'name': 'eth3', 'mac': self.env.generate_random_mac()},
+            {'name': 'eth2', 'mac': self.env.generate_random_mac()},
+            {'name': 'eth0', 'mac': self.env.generate_random_mac(),
+                'ip': admin_ip},
+            {'name': 'eth1', 'mac': self.env.generate_random_mac()}
+        ]
         return self.env.create_node(api=True, meta=meta,
                                     cluster_id=self.env.clusters[0].id)
 

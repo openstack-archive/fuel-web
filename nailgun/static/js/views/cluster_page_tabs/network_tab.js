@@ -103,9 +103,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                             this.page.removeFinishedTasks().always(_.bind(function() {
                                 this.defaultButtonsState(false);
                                 this.model.fetch();
-                                this.model.fetchRelated('tasks').done(_.bind(function() {
-                                    this.page.removeFinishedTasks(null, true);
-                                }, this));
+                                this.model.fetchRelated('tasks');
                             }, this));
                         } else {
                             this.hasChanges = false;
@@ -206,6 +204,12 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             } else {
                 this.setInitialData();
             }
+             $(window).on('beforeunload', _.bind(this.onBeforeunloadEvent, this));
+        },
+        onBeforeunloadEvent: function() {
+            console.log('on before unload');
+//            debugger;
+            this.page.removeFinishedTasks();
         },
         showVerificationErrors: function() {
             var task = this.model.task({group: 'network', status: 'error'});

@@ -31,19 +31,27 @@ setuptools.setup(
         'argparse',
         'cliff-tablib',
         'scapy',
-        'pcap'
+        'pcap',
+        'daemonize',
     ],
     include_package_data=True,
     packages=['net_check', 'dhcp_checker'],
     entry_points={
         'console_scripts': [
-            'net_probe.py = net_check.api:main',
+            'net_probe.py = network_checker.net_check.api:main',
+            'fuel-netcheck = network_checker.api:cli',
+            'fuel-mco = network_checker.api:mcollective',
             'dhcpcheck = dhcp_checker.cli:main'
         ],
         'dhcp.check': [
             'discover = dhcp_checker.commands:ListDhcpServers',
             'request = dhcp_checker.commands:ListDhcpAssignment',
             'vlans = dhcp_checker.commands:DhcpWithVlansCheck'
+
         ],
+        'network_checker': [
+            'multicast = network_checker.multicast.api:MulticastChecker',
+            'simple = network_checker.tests.simple:SimpleChecker'
+        ]
     },
 )

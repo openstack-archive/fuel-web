@@ -58,7 +58,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             if (!this.networkConfiguration.validationError) {
                 this.disableControls();
                 this.removeEmptyRanges();
-                this.page.removeFinishedTasks().always(_.bind(this.startVerification, this));
+                this.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
             }
         },
         removeEmptyRanges: function() {
@@ -86,7 +86,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         revertChanges: function() {
             this.loadInitialConfiguration();
-            this.page.removeFinishedTasks().always(_.bind(this.render, this));
+            this.page.removeFinishedNetworkTasks().always(_.bind(this.render, this));
         },
         beforeTearDown: function() {
             this.loadInitialConfiguration();
@@ -105,11 +105,11 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 deferred = Backbone.sync('update', this.networkConfiguration)
                     .done(_.bind(function(task) {
                         if (task && task.status == 'error') {
-                            this.page.removeFinishedTasks().always(_.bind(function() {
+                            this.page.removeFinishedNetworkTasks().always(_.bind(function() {
                                 this.calculateButtonsState();
                                 this.model.fetch();
                                 this.model.fetchRelated('tasks').done(_.bind(function() {
-                                    this.page.removeFinishedTasks(null, true);
+                                    this.page.removeFinishedNetworkTasks(null, true);
                                 }, this));
                             }, this));
                         } else {
@@ -148,7 +148,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$('input[type=text]').removeClass('error').parents('.network-attribute').find('.help-inline').text('');
             this.networkConfiguration.isValid();
             this.calculateButtonsState();
-            this.page.removeFinishedTasks();
+            this.page.removeFinishedNetworkTasks();
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -218,6 +218,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                         }, this);
                     }, this);
                 }, this);
+                if (task.get('status') == 'error') {
+                    this.page.removeFinishedNetworkTasks([task], true);
+                    this.model.get('tasks').remove(task);
+                }
             }
         },
         renderNetworks: function() {
@@ -244,7 +248,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 locked: this.isLocked(),
                 segment_type: networkingParameters ? networkingParameters.get('segmentation_type') : null
             })).i18n();
-            if (networkingParameters) {
+            if (this.loading.state() != 'pending') {
                 this.stickit(networkingParameters, {'input[name=net-manager]': 'net_manager'});
                 // FIXME: quick hack for vCenter feature support.
                 // Reverse dependensies on OpenStack settings should be implemented.
@@ -261,7 +265,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
     NetworkTabSubview = Backbone.View.extend({
         rangeTemplate: _.template(rangeTemplate),
         events: {
-            'click .ip-ranges-control button:not([disabled])': 'changeIPRanges'
+            'click .ip-ranges-control button:not([disabled])': 'changeIPRanges',
+            'focus input[name=range1]': 'autoCompleteIPRanges'
         },
         changeIPRanges: function(e) {
             var config = this.ipRangesConfig;
@@ -273,6 +278,22 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 ipRanges.splice(rowIndex, 1);
             }
             config.model.set(config.attribute, ipRanges);
+        },
+        autoCompleteIPRanges: function(e) {
+            var config = this.ipRangesConfig;
+            var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index(this.$(e.currentTarget).parents('.range-row'));
+            var ipRanges = _.cloneDeep(config.model.get(config.attribute));
+            var startIP = ipRanges[rowIndex][0];
+            if (!ipRanges[rowIndex][1] && !utils.validateIP(startIP)) {
+                ipRanges[rowIndex][1] = startIP;
+                config.model.set(config.attribute, ipRanges);
+                var input = this.$(e.currentTarget)[0];
+                if (input.setSelectionRange) {
+                    var startPos = _.lastIndexOf(startIP, '.') + 1;
+                    var endPos = startIP.length;
+                    _.defer(function() { input.setSelectionRange(startPos, endPos); });
+                }
+            }
         },
         composeIpRangesBindings: function() {
             var config = this.ipRangesConfig;

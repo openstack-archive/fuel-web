@@ -14,9 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import shlex
-import subprocess
-
 import netaddr
 
 from sqlalchemy import func
@@ -236,47 +233,6 @@ class DeletionTask(object):
                 db().commit()
 
                 nodes_to_delete.remove(node)
-
-        # only real tasks
-        if not USE_FAKE:
-            for node in nodes_to_delete_constant:
-                slave_name = node['slave_name']
-                logger.debug("Pending node to be removed from cobbler %s",
-                             slave_name)
-                try:
-                    node_db = db().query(Node).get(node['id'])
-                    if node_db and node_db.fqdn:
-                        node_hostname = node_db.fqdn
-                    else:
-                        node_hostname = TaskHelper.make_slave_fqdn(node['id'])
-                    logger.info("Removing node cert from puppet: %s",
-                                node_hostname)
-                    cmd = "puppet cert clean {0}".format(node_hostname)
-                    proc = subprocess.Popen(
-                        shlex.split(cmd),
-                        shell=False,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE
-                    )
-                    p_stdout, p_stderr = proc.communicate()
-                    logger.info(
-                        "'{0}' executed, STDOUT: '{1}',"
-                        " STDERR: '{2}'".format(
-                            cmd,
-                            p_stdout,
-                            p_stderr
-                        )
-                    )
-                except OSError:
-                    logger.warning(
-                        "'{0}' returned non-zero exit code".format(
-                            cmd
-                        )
-                    )
-                except Exception as e:
-                    logger.warning("Exception occurred while trying to \
-                            remove the system from Cobbler: '{0}'".format(
-                        e.message))
 
         msg_delete = {
             'method': 'remove_nodes',

@@ -29,13 +29,21 @@ setuptools.setup(
         "Topic :: Software Development :: Testing"
     ],
     install_requires=[
-        'argparse'
+        'argparse',
+        'stevedore',
+        'daemonize'
     ],
     include_package_data=True,
-    packages=['net_check'],
+    packages=setuptools.find_packages(exclude=['tests']),
     entry_points={
         'console_scripts': [
-            'net_probe.py = net_check.api:main'
+            'net_probe.py = network_checker.net_check.api:main',
+            'fuel-netcheck = network_checker.api:cli',
+            'fuel-mco = network_checker.api:mcollective'
         ],
+        'network_checker': [
+            'multicast = network_checker.multicast.api:MulticastChecker',
+            'simple = network_checker.tests.simple:SimpleChecker'
+        ]
     },
 )

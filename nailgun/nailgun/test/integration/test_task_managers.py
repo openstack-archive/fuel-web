@@ -42,7 +42,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestTaskManagers, self).tearDown()
 
-    @fake_tasks()
+    @fake_tasks(godmode=True)
     def test_deployment_task_managers(self):
         self.env.create(
             cluster_kwargs={},
@@ -158,7 +158,7 @@ class TestTaskManagers(BaseIntegrationTest):
         # validation failed
         self.assertEqual(self.env.clusters[0].status, 'new')
 
-    @fake_tasks()
+    @fake_tasks(godmode=True)
     def test_redeployment_works(self):
         self.env.create(
             cluster_kwargs={"mode": "ha_compact"},
@@ -301,7 +301,7 @@ class TestTaskManagers(BaseIntegrationTest):
         cluster_db = self.db.query(Cluster).get(cluster_id)
         self.assertIsNone(cluster_db)
 
-    @fake_tasks()
+    @fake_tasks(godmode=True)
     def test_deletion_cluster_ha_3x3(self):
         self.env.create(
             cluster_kwargs={

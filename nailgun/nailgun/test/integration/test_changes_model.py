@@ -156,7 +156,7 @@ class TestClusterChanges(BaseIntegrationTest):
         ).all()
         self.assertEquals(len(pending_changes), 1)
 
-    @fake_tasks()
+    @fake_tasks(godmode=True)
     def test_successful_deployment_drops_all_changes(self):
         self.env.create(
             nodes_kwargs=[
@@ -191,7 +191,7 @@ class TestClusterChanges(BaseIntegrationTest):
         all_changes = self.db.query(ClusterChanges).all()
         self.assertEquals(len(all_changes), 2)
 
-    @fake_tasks()
+    @fake_tasks(godmode=True)
     def test_role_unassignment_drops_changes(self):
         self.env.create(
             nodes_kwargs=[

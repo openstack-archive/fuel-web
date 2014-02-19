@@ -51,7 +51,7 @@ class TestNetworkModels(BaseIntegrationTest):
         self.assertEquals(nets_db[0].name, kw['name'])
         self.assertEquals(nets_db[0].cidr, kw['cidr'])
 
-    @fake_tasks()
+    @fake_tasks(godmode=True)
     def test_cluster_locking_after_deployment(self):
         self.env.create(
             cluster_kwargs={

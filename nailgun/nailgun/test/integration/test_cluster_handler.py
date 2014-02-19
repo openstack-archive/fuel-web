@@ -183,7 +183,7 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEquals(node.cluster_id, None)
 
     @fake_tasks()
-    def test_cluster_deleteion_with_offline_nodes(self):
+    def test_cluster_deletion_with_offline_nodes(self):
         self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[

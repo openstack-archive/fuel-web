@@ -128,7 +128,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(test_env['cluster'], 'test_name')
         self.assertEquals(test_env['nodes'], 6)
 
-    @fake_tasks()
+    @fake_tasks(godmode=True)
     def test_capacity_csv_log_with_unicode(self):
         self.env.create(
             cluster_kwargs={

@@ -23,7 +23,7 @@ import unittest
 import pcap
 from scapy import all as scapy
 
-from net_check import api
+from network_checker.net_check import api
 
 
 class BaseListenerTestCase(unittest.TestCase):

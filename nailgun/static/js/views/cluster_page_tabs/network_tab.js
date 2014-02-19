@@ -73,7 +73,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     this.$('.verify-networks-btn').prop('disabled', false);
                 }, this))
                 .always(_.bind(function() {
-                    this.model.get('tasks').fetch({data: {cluster_id: this.model.id}}).done(_.bind(this.scheduleUpdate, this));
+                    this.model.fetchRelated('tasks').done(_.bind(function() {
+                        this.scheduleUpdate();
+                        this.page.removeFinishedTasks(null, true);
+                    }, this));
                 }, this));
         },
         verifyNetworks: function() {

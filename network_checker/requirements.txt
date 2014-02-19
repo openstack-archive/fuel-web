@@ -2,3 +2,6 @@ argparse
 cliff-tablib
 scapy==2.2.0-dev
 pypcap==1.1.1
+stevedore
+daemonize
+pyyaml

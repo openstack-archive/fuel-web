@@ -78,7 +78,7 @@ class NodeAction(argparse.Action):
                 try:
                     only_ids.add(int(_id))
                 except ValueError:
-                    print_error("'{}' is not valid node id.".format(_id))
+                    print_error("'{0}' is not valid node id.".format(_id))
             if input_macs:
                 nodes_mac_to_id_map = dict(
                     (n["mac"], n["id"])
@@ -117,9 +117,7 @@ def handle_exceptions(exc):
         error_body = exc.read()
         print_error("{0} {1}".format(
             exc,
-            "({0})".format(
-                "" if error_body is None else error_body
-            )
+            "({0})".format(error_body or "")
         ))
     elif isinstance(exc, urllib2.URLError):
         print_error("Can't connect to Nailgun server!")
@@ -839,6 +837,9 @@ def task(params):
         acceptable_keys = ["id", "status", "name",
                            "cluster", "progress", "uuid"]
         tasks = json_api_get_request("tasks/")
+        if params.tid:
+            task_ids = map(int, chain(*params.tid))
+            tasks = [t for t in tasks if t["id"] in task_ids]
         print_to_output(
             tasks,
             format_table(tasks, acceptable_keys=acceptable_keys)
@@ -850,7 +851,7 @@ def snapshot(params):
     """
     dump_task = json_api_put_request(
         "logs/package",
-        "{}"
+        {}
     )
     task_id = dump_task["id"]
     print("Generating dump...")
@@ -1033,6 +1034,38 @@ def close_curses():
     curses.echo()
     curses.nocbreak()
     curses.endwin()
+
+
+def stop(params):
+    """Stop deployment process for specific environment
+    """
+    intercept_deploy(params, "stop")
+
+
+def reset(params):
+    """Reset deployed process for specific environment
+    """
+    intercept_deploy(params, "reset")
+
+
+def intercept_deploy(params, method):
+    url_template_map = {
+        "stop": 'clusters/{0}/stop_deployment/',
+        "reset": 'clusters/{0}/reset/',
+    }
+    intercept_task = json_api_put_request(
+        url_template_map[method].format(params.env),
+        data={}
+    )
+    print_to_output(
+        intercept_task,
+        "{0}ing of environment with id={1} started. To check task status run"
+        " 'fuel task -t {2}'.".format(
+            method.title(),
+            params.env,
+            intercept_task["id"]
+        )
+    )
 
 
 def provisioning(params):
@@ -1778,10 +1811,15 @@ def prepare_args():
                     )
             break
 
-    for fact_type in [deployment, provisioning]:
+    for fact_type in (deployment, provisioning):
         actions[fact_type.__name__] = {
             "action": fact_type,
             "args": get_args_for_facts(fact_type.__name__)
+        }
+    for func in (stop, reset):
+        actions[func.__name__] = {
+            "action": func,
+            "args": [get_env_arg(required=True)]
         }
 
 

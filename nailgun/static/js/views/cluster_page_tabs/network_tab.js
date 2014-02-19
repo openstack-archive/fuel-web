@@ -73,7 +73,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     this.$('.verify-networks-btn').prop('disabled', false);
                 }, this))
                 .always(_.bind(function() {
-                    this.model.get('tasks').fetch({data: {cluster_id: this.model.id}}).done(_.bind(this.scheduleUpdate, this));
+                    this.model.fetchRelated('tasks').done(_.bind(this.scheduleUpdate, this));
                 }, this));
         },
         verifyNetworks: function() {
@@ -103,9 +103,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                             this.page.removeFinishedTasks().always(_.bind(function() {
                                 this.defaultButtonsState(false);
                                 this.model.fetch();
-                                this.model.fetchRelated('tasks').done(_.bind(function() {
-                                    this.page.removeFinishedTasks(null, true);
-                                }, this));
+                                this.model.fetchRelated('tasks');
                             }, this));
                         } else {
                             this.hasChanges = false;
@@ -191,6 +189,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         },
         initialize: function(options) {
             _.defaults(this, options);
+            this.eventNamespace = 'unsavedchanges' + this.activeTab;
             this.networkConfiguration = new models.NetworkConfiguration();
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
@@ -206,6 +205,13 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             } else {
                 this.setInitialData();
             }
+            $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
+        },
+        onBeforeunloadEvent: function() {
+            this.page.removeFinishedTasks();
+        },
+        beforeTearDown: function() {
+            $(window).off('beforeunload.' + this.eventNamespace);
         },
         showVerificationErrors: function() {
             var task = this.model.task({group: 'network', status: 'error'});

@@ -73,19 +73,23 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     this.$('.verify-networks-btn').prop('disabled', false);
                 }, this))
                 .always(_.bind(function() {
-                    this.model.get('tasks').fetch({data: {cluster_id: this.model.id}}).done(_.bind(this.scheduleUpdate, this));
+                    this.model.fetchRelated('tasks').done(_.bind(this.scheduleUpdate, this));
+                }, this))
+                .done(_.bind(function() {
+                    this.page.removeFinishedNetworkTasks(task, true);
                 }, this));
+
         },
         verifyNetworks: function() {
             if (!this.networkConfiguration.validationError) {
                 this.$('.verify-networks-btn').prop('disabled', true);
                 this.filterEmptyIpRanges();
-                this.page.removeFinishedTasks().always(_.bind(this.startVerification, this));
+                this.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
             }
         },
         revertChanges: function() {
             this.setInitialData();
-            this.page.removeFinishedTasks().always(_.bind(this.render, this));
+            this.page.removeFinishedNetworkTasks().always(_.bind(this.render, this));
         },
         filterEmptyIpRanges: function() {
             this.networkConfiguration.get('networks').each(function(network) {
@@ -100,11 +104,11 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 deferred = Backbone.sync('update', this.networkConfiguration, {url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
                     .done(_.bind(function(task) {
                         if (task && task.status == 'error') {
-                            this.page.removeFinishedTasks().always(_.bind(function() {
+                            this.page.removeFinishedNetworkTasks().always(_.bind(function() {
                                 this.defaultButtonsState(false);
                                 this.model.fetch();
                                 this.model.fetchRelated('tasks').done(_.bind(function() {
-                                    this.page.removeFinishedTasks(null, true);
+                                    this.page.removeFinishedNetworkTasks(null, true);
                                 }, this));
                             }, this));
                         } else {
@@ -187,7 +191,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$('input[type=text]').removeClass('error').parents('.network-attribute').find('.help-inline').text('');
             this.networkConfiguration.isValid();
             this.checkForChanges();
-            this.page.removeFinishedTasks();
+            this.page.removeFinishedNetworkTasks();
         },
         initialize: function(options) {
             _.defaults(this, options);

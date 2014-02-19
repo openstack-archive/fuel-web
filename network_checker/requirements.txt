@@ -2,3 +2,6 @@ argparse
 cliff-tablib
 scapy
 pcap
+stevedore
+daemonize
+pyyaml

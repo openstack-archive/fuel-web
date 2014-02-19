@@ -63,7 +63,7 @@ unit_tests=0
 xunit=0
 clean=0
 ui_test_files=
-default_noseopts="--with-timer"
+default_noseopts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
 noseargs=
 noseopts="$default_noseopts"
 
@@ -216,7 +216,7 @@ function run_nailgun_tests {
   ./manage.py dropdb > /dev/null
   ./manage.py syncdb > /dev/null
   [ -z "$noseargs" ] && test_args=. || test_args="$noseargs"
-  stderr=$(nosetests $noseopts $test_args --verbosity=2 3>&1 1>&2 2>&3 | tee /dev/stderr)
+  stderr=$(nosetests -vv $noseopts $test_args 3>&1 1>&2 2>&3 | tee /dev/stderr)
   )
 # TODO: uncomment after cluster deletion issue fix
 #  if [[ "$stderr" =~ "Exception" ]]; then
@@ -262,7 +262,7 @@ function run_cli_tests {
         echo "Test server started"
         clean
         test_args="../fuelclient/tests"
-        stderr=$(nosetests $noseopts $test_args --verbosity=2 3>&1 1>&2 2>&3 | tee /dev/stderr)
+        stderr=$(nosetests -vv $noseopts $test_args 3>&1 1>&2 2>&3 | tee /dev/stderr)
         result=$(($result + $?))
         kill $server_pid
         wait $server_pid 2> /dev/null
@@ -300,7 +300,7 @@ function run_unit_tests {
   ./manage.py dropdb > /dev/null
   ./manage.py syncdb > /dev/null
   )
-  nosetests $noseopts $test_args --verbosity=2 nailgun/nailgun/test/unit #shotgun
+  nosetests $noseopts $test_args -vv nailgun/nailgun/test/unit #shotgun
 }
 
 if [ $unit_tests -eq 1 ]; then

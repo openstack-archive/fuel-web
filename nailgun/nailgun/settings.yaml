@@ -467,8 +467,6 @@ DUMP:
       - type: dir
         path: /etc/sysconfig/network-scripts
       - type: file
-        path: /etc/resolv.conf
-      - type: file
         path: /etc/dnsmasq.conf
     slave:
       - type: file
@@ -497,6 +495,8 @@ DUMP:
         path: /etc/swift*
       - type: file
         path: /var/log/ceph
+      - type: file
+        path: /etc/resolv.conf
       - type: command
         command: df -h
         to_file: df.txt

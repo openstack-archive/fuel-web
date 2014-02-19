@@ -226,6 +226,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             });
             this.registerSubView(verificationView);
             this.$('.verification-control').html(verificationView.render().el);
+            this.page.removeFinishedTasks(null, true);
             this.showVerificationErrors();
         },
         renderNetworks: function() {

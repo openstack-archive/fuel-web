@@ -196,6 +196,11 @@ Building the Fuel ISO
 #. To build an ISO image from custom branches of fuel, astute, nailgun
    or ostf-tests, edit the "Repos and versions" section of config.mk.
 
+#. To build an ISO image from custom gerrit patches on review, edit the
+   "Gerrit URLs and commits" section of config.mk, e.g. for
+   https://review.openstack.org/#/c/63732/8 (id:63732, patch:8) set
+   FUELLIB_GERRIT_COMMIT?=refs/changes/32/63732/8
+
 Running the FuelWeb Integration Test
 ------------------------------------
 

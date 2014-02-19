@@ -73,7 +73,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     this.$('.verify-networks-btn').prop('disabled', false);
                 }, this))
                 .always(_.bind(function() {
-                    this.model.get('tasks').fetch({data: {cluster_id: this.model.id}}).done(_.bind(this.scheduleUpdate, this));
+                    this.model.fetchRelated('tasks').done(_.bind(function() {
+                        this.scheduleUpdate();
+                        this.page.removeFinishedTasks(null, true);
+                    }, this));
                 }, this));
         },
         verifyNetworks: function() {
@@ -103,9 +106,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                             this.page.removeFinishedTasks().always(_.bind(function() {
                                 this.defaultButtonsState(false);
                                 this.model.fetch();
-                                this.model.fetchRelated('tasks').done(_.bind(function() {
-                                    this.page.removeFinishedTasks(null, true);
-                                }, this));
+                                this.model.fetchRelated('tasks');
                             }, this));
                         } else {
                             this.hasChanges = false;

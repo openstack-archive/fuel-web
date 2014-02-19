@@ -22,7 +22,6 @@ import argparse
 import functools
 import json
 import logging
-import logging.handlers
 import os
 import re
 import signal
@@ -32,6 +31,8 @@ import sys
 import threading
 import time
 import traceback
+
+import logging.handlers
 
 
 from scapy import config as scapy_config

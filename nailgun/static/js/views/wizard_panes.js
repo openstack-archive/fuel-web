@@ -182,16 +182,12 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
     });
 
     views.WizardPane = Backbone.View.extend({
-        configurableOptions: {},
-        attributesToTrack: [],
-        stackedKeys: [],
-        trackedValues: [],
         configKey: null,
-        globalModel: new Backbone.Model(wizardConfig),
-        restrictionsModel: new Backbone.Model(),
-        warningMessages: [],
+        configurableOptions: {},
+        restrictionsModel: new models.WizardPaneRestrictions(),
         initialize: function(options) {
             _.defaults(this, options);
+            this.restrictionsModel.composeModelRestrictions(this.configurableOptions);
         },
         processPaneData: function() {
             return $.Deferred().resolve();
@@ -224,37 +220,27 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
                 return wizardConfig[key].attributes;
             }
         },
-        composeModelAttributeString: function(config) {
-            _.each(_.keys(config), _.bind(function(configKey) {
-                if (_.isPlainObject(config[configKey])) {
-                    this.stackedKeys.push(configKey);
-                    this.composeModelAttributeString(config[configKey]);
-                    this.stackedKeys.pop();
-                }
-                else {
-                    this.attributesToTrack.push((this.stackedKeys.length > 0) ? this.stackedKeys.join('__') + '__' + configKey : configKey);
-                    this.trackedValues.push(config[configKey]);
-                }
-            }, this));
+        getWarnings: function(plugins) {
+            var warnings = [];
+             _.find(plugins, function(plugin) {
+                 _.find(plugin.restrictions.conflicts, function(conflict) {
+                    warnings.push(conflict.warning);
+                });
+                _.find(plugin.restrictions.depends, function(depend) {
+                    warnings.push(depend.warning);
+                });
+            });
+            return warnings;
         },
-        composeModelRestrictions: function() {
-            this.configurableOptions = this.getPaneAttributes(this.configKey);
-            if (!_.isUndefined(this.configurableOptions)) {
-                _.each(this.configurableOptions.plugins, _.bind(function(plugin) {
-                    _.each(plugin.restrictions.conflicts, _.bind(function(conflict, index) {
-                        this.composeModelAttributeString(conflict.conflictingAttribute);
-                        this.getWarningMessage(conflict);
-                    }, this));
-                    _.each(plugin.restrictions.depends, _.bind(function(depend, index) {
-                        this.composeModelAttributeString(depend.dependantAttribute);
-                        this.getWarningMessage(depend);
-                    }, this));
-                    this.restrictionsModel.set(_.zipObject(this.attributesToTrack, this.trackedValues));
+        prepareModels: function(options) {
+            var currentRestrictionsModel = new models.WizardPaneRestrictions();
+            currentRestrictionsModel.composeModelRestrictions(this.configurableOptions);
+            _.each(_.keys(currentRestrictionsModel.toJSON()), _.bind(function(conflictingAttribute) {
+                this.restrictionsModel.on('change:' + conflictingAttribute, _.bind(function(){
+                    this.render();
                 }, this));
-            }
-        },
-        getWarningMessage: function(attributes) {
-            this.warningMessages.push(attributes.warning);
+            }, this));
+            return currentRestrictionsModel;
         }
     });
 
@@ -442,18 +428,14 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
     clusterWizardPanes.ClusterNetworkPane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.network.title',
         configKey: 'network',
-        deps: [clusterWizardPanes.ClusterNameAndReleasePane],
         template: _.template(clusterNetworkPaneTemplate),
         events: {
             'change input[name=manager]': 'onManagerChange'
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.trackedValues = [];
-            this.attributesToTrack = [];
-            this.warningMessages = [];
-            this.restrictionsModel.clear();
-            this.composeModelRestrictions();
+            this.configurableOptions = this.getPaneAttributes(this.configKey);
+            this.currentRestrictions = this.prepareModels(this.configurableOptions);
         },
         onManagerChange: function() {
             this.wizard.updateMaxAvaialblePaneIndex();
@@ -483,29 +465,26 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
             return $.Deferred().resolve();
         },
         render: function() {
+            var currentRestrictionsModel = new models.WizardPaneRestrictions();
+            currentRestrictionsModel.composeModelRestrictions(this.configurableOptions);
             var disabled = false;
-            _.each(this.attributesToTrack, _.bind(function(attribute) {
-                _.each(this.trackedValues, _.bind(function(value) {
-                    if (this.restrictionsModel.get(attribute) == value) {
-                        disabled = true;
-                    }
-                }, this));
+            _.each(this.currentRestrictions.toJSON(), _.bind(function(value, attribute) {
+                if (this.restrictionsModel.get(attribute) == value) {
+                    disabled = true;
+                }
             }, this));
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             var pluginCollection = new Backbone.Collection(this.configurableOptions.plugins);
             var managers = ['nova-network'];
             var descriptionsKeys = ['nova-network'],
-                descriptionsValues = ["dialog.create_cluster_wizard.network.nova_network"];
+                descriptionsValues = ['dialog.create_cluster_wizard.network.nova_network'];
             pluginCollection.each(function(elem) {
                 managers.push(elem.get('key'));
                 descriptionsKeys.push(elem.get('key'));
                 descriptionsValues.push(elem.get('label'));
             });
             var descriptions = _.zipObject(descriptionsKeys, descriptionsValues);
-            this.$el.html(this.template({
-                disabledDueToRelease: disabled,
-                release: release
-            })).i18n();
+            this.$el.html(this.template()).i18n();
             _.each(managers, _.bind(function(manager) {
                 this.$('.control-group').append(this.renderRadioControl(
                     {
@@ -519,10 +498,11 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
                 ));
             }, this));
             if (disabled && release) {
-                _.each(_.filter(_.uniq(this.warningMessages)), _.bind(function(message) {
-                     this.$('.form-horizontal').before(_.template(warningTemplate)( {
-                        warningMessage: $.t(message,  { releaseName: release.get('name')})
-                    }));
+                var currentWarnings = this.getWarnings(this.configurableOptions.plugins);
+                _.each(_.filter(_.uniq(currentWarnings)), _.bind(function(message) {
+                    this.$('.form-horizontal').before(_.template(warningTemplate)( {
+                            warningMessage: $.t(message,  { releaseName: release.get('name')})
+                        }));
                 }, this));
             }
             if (disabled) {
@@ -536,14 +516,11 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
     clusterWizardPanes.ClusterStoragePane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.storage.title',
         configKey: 'storage_backends',
-        deps: [clusterWizardPanes.ClusterNameAndReleasePane],
         template: _.template(clusterStoragePaneTemplate),
         initialize: function(options) {
             _.defaults(this, options);
-            this.trackedValues = [];
-            this.attributesToTrack = [];
-            this.restrictionsModel.clear();
-            this.composeModelRestrictions();
+            this.configurableOptions = this.getPaneAttributes(this.configKey);
+            this.currentRestrictions = this.prepareModels(this.configurableOptions);
         },
         beforeSettingsSaving: function(settings) {
             try {
@@ -565,21 +542,13 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
         },
         render: function() {
             var disabled = false;
-            _.each(this.attributesToTrack, _.bind(function(attribute) {
-                _.each(this.trackedValues, _.bind(function(value) {
-                    if (!_.contains(this.restrictionsModel.get(attribute), value)) {
-                        disabled = true;
-                    }
-                }, this));
+            _.each(this.currentRestrictions.toJSON(), _.bind(function(value, attribute) {
+                if (!_.contains(this.restrictionsModel.get(attribute), value)) {
+                    disabled = true;
+                }
             }, this));
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            this.configurableOptions = this.getPaneAttributes('storage_backends');
-            var pluginCollection = new Backbone.Collection(this.configurableOptions.plugins);
-            this.$el.html(this.template({
-                disabled: disabled,
-                release: release,
-                warningMessage: _.first(pluginCollection.first().get('restrictions').depends).warning
-            })).i18n();
+            this.$el.html(this.template()).i18n();
             _.each(['cinder', 'glance'], _.bind(function(image) {
                 _.each(['ceph', 'default'], _.bind(function(backend) {
                     this.$('h5[data-i18n="dialog.create_cluster_wizard.storage.' + image + '"]').after(this.renderRadioControl(
@@ -595,10 +564,11 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
                 }, this));
             }, this));
             if (disabled && release) {
-                 _.each(_.filter(_.uniq(this.warningMessages)), _.bind(function(message) {
-                     this.$('.form-horizontal').before(_.template(warningTemplate)( {
-                        warningMessage: _.isUndefined(release) ? '' :$.t(message,  { releaseName: release.get('name')})
-                    }));
+                var currentWarnings = this.getWarnings(this.configurableOptions.plugins);
+                _.each(_.filter(_.uniq(currentWarnings)), _.bind(function(message) {
+                    this.$('.form-horizontal').before(_.template(warningTemplate)( {
+                            warningMessage: $.t(message,  { releaseName: release.get('name')})
+                        }));
                 }, this));
             }
             if (disabled) {
@@ -612,15 +582,11 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
     clusterWizardPanes.ClusterAdditionalServicesPane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.additional.title',
         configKey: 'additional_services',
-        deps: [clusterWizardPanes.ClusterNameAndReleasePane, clusterWizardPanes.ClusterNetworkPane],
         template: _.template(clusterAdditionalServicesPaneTemplate),
         initialize: function(options) {
             _.defaults(this, options);
-            this.trackedValues = [];
-            this.attributesToTrack = [];
-            this.warningMessages = [];
-            this.restrictionsModel.clear();
-            this.composeModelRestrictions();
+            this.configurableOptions = this.getPaneAttributes(this.configKey);
+            this.currentRestrictions = this.prepareModels(this.configurableOptions);
         },
         beforeSettingsSaving: function(settings) {
             try {
@@ -637,16 +603,13 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
         },
         render: function() {
             var disabled = {};
-            _.each(this.attributesToTrack, _.bind(function(attribute, attributeIndex) {
-                _.each(this.trackedValues, _.bind(function(value, valueAttribute) {
-                    if (attributeIndex == valueAttribute) {
-                        if (this.restrictionsModel.get(attribute) == value) {
-                           disabled[attribute] = true;
-                        }
-                    }
-                }, this));
+            var currentRestrictionsModel = new models.WizardPaneRestrictions();
+            currentRestrictionsModel.composeModelRestrictions(this.configurableOptions);
+            _.each(this.currentRestrictions.toJSON(), _.bind(function(value, attribute) {
+                if (this.restrictionsModel.get(attribute) == value) {
+                    disabled[attribute] = true;
+                }
             }, this));
-            this.configurableOptions = this.getPaneAttributes('additional_services');
             var pluginCollection = new Backbone.Collection(this.configurableOptions.plugins);
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             var disabledDueToRelease = disabled.release__operating_system;
@@ -666,12 +629,7 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
                     description: $.t('dialog.create_cluster_wizard.additional.install_ceilometer_description')
                   }
             ];
-            this.$el.html(this.template({
-                disabledDueToRelease: disabledDueToRelease,
-                disabledDueToNetworkMode: disabledDueToNetworkMode,
-                release: release,
-                warning: $.t(_.first(pluginCollection.first().get('restrictions').conflicts).warning)
-            })).i18n();
+            this.$el.html(this.template()).i18n();
             _.each(services, _.bind(function(service) {
                  this.$('.control-group').append(this.renderCheckboxControl(
                     {
@@ -681,11 +639,11 @@ function(require, utils, models, dialogs, warningTemplate, radioTemplate, checkB
                     }
                 ));
             }, this));
-
-            var releaseWarning = _.find(_.filter(_.uniq(this.warningMessages)), function(msg) {
+            var currentWarnings = this.getWarnings(this.configurableOptions.plugins);
+            var releaseWarning = _.find(_.filter(_.uniq(currentWarnings)), function(msg) {
                 return msg.indexOf('release') > 0;
             });
-            var networkWarning = _.find(_.filter(_.uniq(this.warningMessages)), function(msg) {
+            var networkWarning = _.find(_.filter(_.uniq(currentWarnings)), function(msg) {
                 return msg.indexOf('network') > 0;
             });
             if (disabledDueToRelease && release) {

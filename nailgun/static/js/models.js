@@ -729,8 +729,39 @@ define(['utils', 'deepModel'], function(utils) {
         urlRoot: '/api/capacity'
     });
 
-    models.WizardPanes = Backbone.Model.extend({
-        constructorName: 'WizardPanes'
+    models.WizardPaneRestrictions = Backbone.Model.extend({
+        constructorName: 'WizardPanes',
+        attributesToTrack: [],
+        stackedKeys: [],
+        trackedValues: [],
+        composeModelAttributeString: function(config) {
+            _.each(_.keys(config), _.bind(function(configKey) {
+                if (_.isPlainObject(config[configKey])) {
+                    this.stackedKeys.push(configKey);
+                    this.composeModelAttributeString(config[configKey]);
+                    this.stackedKeys.pop();
+                }
+                else {
+                    this.attributesToTrack.push((this.stackedKeys.length > 0) ? this.stackedKeys.join('__') + '__' + configKey : configKey);
+                    this.trackedValues.push(config[configKey]);
+                }
+            }, this));
+        },
+        composeModelRestrictions: function(configurableOptions) {
+            this.attributesToTrack = [];
+            this.trackedValues = [];
+            if (!_.isUndefined(configurableOptions)) {
+                _.each(configurableOptions.plugins, _.bind(function(plugin) {
+                    _.each(plugin.restrictions.conflicts, _.bind(function(conflict, index) {
+                        this.composeModelAttributeString(conflict.conflictingAttribute);
+                    }, this));
+                    _.each(plugin.restrictions.depends, _.bind(function(depend, index) {
+                        this.composeModelAttributeString(depend.dependantAttribute);
+                    }, this));
+                    this.set(_.zipObject(this.attributesToTrack, this.trackedValues));
+                }, this));
+            }
+        }
     });
 
     return models;

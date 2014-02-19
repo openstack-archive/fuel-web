@@ -53,8 +53,10 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         getReleaseSetupTask: function(status) {
             return this.tasks.findTask({group: 'release_setup', status: status || 'running', release: this.model.get('release').id});
         },
-        removeFinishedTasks: function(tasks, removeSilently) {
+        removeFinishedNetworkTasks: function(tasks, removeSilently) {
             tasks = tasks || this.model.tasks({group: 'network'});
+            console.log(this.model.get('tasks'));
+            console.log(tasks);
             var requests = [];
             _.each(tasks, function(task) {
                 if (task.get('status') != 'running') {
@@ -62,6 +64,8 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                         this.model.get('tasks').remove(task);
                     }
                     requests.push(task.destroy({silent: true}));
+                    console.log(this.model.get('tasks'));
+                    this.model.tasks({unsaved_data: true});
                 }
             }, this);
             return $.when.apply($, requests);

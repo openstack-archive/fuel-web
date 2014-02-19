@@ -137,9 +137,9 @@ class TestHandlers(BaseIntegrationTest):
     def test_get_handler_with_NICs(self):
         meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(meta, [
-            {'name': 'eth0', 'mac': '123',
+            {'name': 'eth0', 'mac': self.env.generate_random_mac(),
              'current_speed': 1, 'max_speed': 1},
-            {'name': 'eth1', 'mac': '678',
+            {'name': 'eth1', 'mac': self.env.generate_random_mac(),
              'current_speed': 1, 'max_speed': 1}])
 
         self.env.create_node(api=True, meta=meta)

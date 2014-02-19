@@ -14,8 +14,9 @@
 #    under the License.
 
 from nailgun.api.validators.base import BasicValidator
-from nailgun.api.validators.json_schema.disks \
-    import disks_simple_format_schema
+from nailgun.api.validators.json_schema.disks import disks_simple_format_schema
+from nailgun.api.validators.json_schema.node import node_format_schema
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
@@ -97,37 +98,44 @@ class MetaValidator(BasicValidator):
 class NodeValidator(BasicValidator):
     @classmethod
     def validate(cls, data):
-        d = cls.validate_json(data)
-        if not isinstance(d, dict):
-            raise errors.InvalidData(
-                "Node data must be dict",
-                log_message=True
-            )
-        if "mac" not in d:
+        data = cls.validate_json(data)
+        cls.validate_schema(data, node_format_schema)
+
+        if 'mac' not in data:
             raise errors.InvalidData(
                 "No mac address specified",
                 log_message=True
             )
-        else:
-            q = db().query(Node)
 
-            if q.filter(Node.mac == d["mac"]).first() or q.join(
-                    NodeNICInterface, Node.nic_interfaces).filter(
-                    NodeNICInterface.mac == d["mac"]).first():
-                raise errors.AlreadyExists(
-                    "Node with mac {0} already "
-                    "exists - doing nothing".format(d["mac"]),
-                    log_level="info"
-                )
-            if cls.validate_existent_node_mac_create(d):
-                raise errors.AlreadyExists(
-                    "Node with mac {0} already "
-                    "exists - doing nothing".format(d["mac"]),
-                    log_level="info"
-                )
-        if 'meta' in d:
-            MetaValidator.validate_create(d['meta'])
-        return d
+        if cls.does_node_exists_in_db(data):
+            raise errors.AlreadyExists(
+                "Node with mac {0} already "
+                "exists - doing nothing".format(data["mac"]),
+                log_level="info"
+            )
+
+        if cls.validate_existent_node_mac_create(data):
+            raise errors.AlreadyExists(
+                "Node with mac {0} already "
+                "exists - doing nothing".format(data["mac"]),
+                log_level="info"
+            )
+
+        if 'meta' in data:
+            MetaValidator.validate_create(data['meta'])
+
+        return data
+
+    @classmethod
+    def does_node_exists_in_db(cls, data):
+        mac = data['mac']
+        q = db().query(Node)
+
+        if q.filter(Node.mac == mac).first() or \
+            q.join(NodeNICInterface, Node.nic_interfaces).filter(
+                NodeNICInterface.mac == mac).first():
+            return True
+        return False
 
     @classmethod
     def _validate_existent_node(cls, data, validate_method):

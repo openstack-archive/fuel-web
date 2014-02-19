@@ -199,13 +199,13 @@ class Environment(object):
             default_metadata.update(metadata)
             meta_ifaces = 'interfaces' in metadata
 
-        mac = kwargs.get('mac', self._generate_random_mac())
+        mac = kwargs.get('mac', self.generate_random_mac())
         if default_metadata['interfaces']:
             default_metadata['interfaces'][0]['mac'] = mac
             if not metadata or not meta_ifaces:
                 for iface in default_metadata['interfaces'][1:]:
                     if 'mac' in iface:
-                        iface['mac'] = self._generate_random_mac()
+                        iface['mac'] = self.generate_random_mac()
 
         node_data = {
             'mac': mac,
@@ -280,7 +280,7 @@ class Environment(object):
             if_list = [
                 {
                     "name": "eth%d" % i,
-                    "mac": self._generate_random_mac()
+                    "mac": self.generate_random_mac()
                 }
                 for i in range(if_count)]
             self.set_interfaces_in_meta(meta, if_list)
@@ -333,7 +333,7 @@ class Environment(object):
             1, 'nailgun.node')
         return item.get('fields').get('meta')
 
-    def _generate_random_mac(self):
+    def generate_random_mac(self):
         mac = [randint(0x00, 0x7f) for _ in xrange(6)]
         return ':'.join(map(lambda x: "%02x" % x, mac)).lower()
 
@@ -343,7 +343,7 @@ class Environment(object):
             nics.append(
                 {
                     'name': 'eth{0}'.format(i),
-                    'mac': self._generate_random_mac(),
+                    'mac': self.generate_random_mac(),
                     'current_speed': 100,
                     'max_speed': 1000
                 }
@@ -391,7 +391,7 @@ class Environment(object):
             nic_dict = {
                 'node_id': node_id,
                 'name': 'eth{0}'.format(i),
-                'mac': self._generate_random_mac(),
+                'mac': self.generate_random_mac(),
                 'current_speed': 100,
                 'max_speed': 1000,
                 'assigned_networks': allowed_networks

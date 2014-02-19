@@ -90,20 +90,17 @@ class NeutronManager(NetworkManager):
                 "physnet1": {
                     "bridge": "br-ex",
                     "vlan_range": []
-                },
-                "physnet2": {
-                    "bridge": "br-prv",
-                    "vlan_range": []
                 }
             }
         }
         if cluster.net_segment_type == 'gre':
             res["tunnel_id_ranges"] = [2, 65535]
         elif cluster.net_segment_type == 'vlan':
-            res["phys_nets"]["physnet2"]["vlan_range"] = [
-                1000,
-                1030
-            ]
+            res["phys_nets"]["physnet2"] = {
+                "bridge": "br-prv",
+                "vlan_range": [1000,
+                               1030]
+            }
         return res
 
     @classmethod

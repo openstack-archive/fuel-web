@@ -601,6 +601,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 "segment_id": None,
                 "router_ext": False,
                 "physnet": "physnet2"
+                if cluster.net_segment_type == "vlan" else None
             }
         }
 

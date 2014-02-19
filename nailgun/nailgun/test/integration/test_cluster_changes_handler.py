@@ -346,9 +346,6 @@ class TestHandlers(BaseIntegrationTest):
             "phys_nets": {
                 "physnet1": {
                     "bridge": "br-ex",
-                    "vlan_range": None},
-                "physnet2": {
-                    "bridge": "br-prv",
                     "vlan_range": None}
             },
             "tunnel_id_ranges": "2:65535"
@@ -377,7 +374,7 @@ class TestHandlers(BaseIntegrationTest):
                 'L2': {
                     'router_ext': False,
                     'network_type': 'gre',
-                    'physnet': 'physnet2',
+                    'physnet': None,
                     'segment_id': None},
                 'L3': {
                     'subnet': u'192.168.111.0/24',

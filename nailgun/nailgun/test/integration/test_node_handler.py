@@ -50,7 +50,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
             json.dumps({'id': node_id,
-                        'mac': 'ASDFAAASDFAA',
+                        'mac': self.env.generate_random_mac(),
                         'status': 'discover'}),
             headers=self.default_headers,
             expect_errors=True)

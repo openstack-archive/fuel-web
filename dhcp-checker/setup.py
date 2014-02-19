@@ -48,6 +48,6 @@ setuptools.setup(
             'discover = dhcp_checker.commands:ListDhcpServers',
             'request = dhcp_checker.commands:ListDhcpAssignment',
             'vlans = dhcp_checker.commands:DhcpWithVlansCheck'
-        ],
+        ]
     },
 )

@@ -29,7 +29,7 @@ class TestCharsetIssues(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestCharsetIssues, self).tearDown()
 
-    @fake_tasks()
+    @fake_tasks(godmode=True)
     def test_deployment_cyrillic_names(self):
         self.env.create(
             cluster_kwargs={"name": u"Тестовый кластер"},

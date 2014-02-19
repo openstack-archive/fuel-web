@@ -44,7 +44,7 @@ class TestStopDeployment(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestStopDeployment, self).tearDown()
 
-    @fake_tasks()
+    @fake_tasks(recover_nodes=False)
     def test_stop_deployment(self):
         supertask = self.env.launch_deployment()
         deploy_task_uuid = supertask.uuid
@@ -63,15 +63,12 @@ class TestStopDeployment(BaseIntegrationTest):
             self.assertEquals(n.roles, [])
             self.assertNotEquals(n.pending_roles, [])
 
-    @fake_tasks(tick_interval=3)
+    @fake_tasks(recover_nodes=False)
     def test_stop_provisioning(self):
-        provisioning_task = self.env.launch_provisioning_selected(
+        self.env.launch_provisioning_selected(
             self.node_uids
         )
-        stop_task_resp = self.env.stop_deployment(
-            expect_http=400
-        )
-        self.db.refresh(provisioning_task)
+        stop_task_resp = self.env.stop_deployment(expect_http=400)
         self.assertEquals(
             stop_task_resp,
             u"Provisioning interruption for environment "

@@ -68,7 +68,19 @@ class FSMNodeFlow(Fysom):
                         'error'
                     ],
                     'dst': 'error'
-                }
+                },
+                {
+                    'name': 'ready',
+                    'src': [
+                        'discover',
+                        'provisioning',
+                        'provisioned',
+                        'deployment',
+                        'ready',
+                        'error'
+                    ],
+                    'dst': 'ready'
+                },
             ],
             'callbacks': {
                 'onnext': self.on_next,
@@ -81,6 +93,10 @@ class FSMNodeFlow(Fysom):
             self.error()
         else:
             self.next()
+
+    def on_ready(self, e):
+        self.data['status'] = 'ready'
+        self.data['progress'] = 100
 
     def on_error(self, e):
         self.data['status'] = 'error'
@@ -111,11 +127,11 @@ class FakeThread(threading.Thread):
         self.data = data
         self.params = params
         self.join_to = join_to
-        self.tick_count = int(settings.FAKE_TASKS_TICK_COUNT) or 20
+        self.tick_count = int(settings.FAKE_TASKS_TICK_COUNT)
         self.low_tick_count = self.tick_count - 10
         if self.low_tick_count < 0:
             self.low_tick_count = 0
-        self.tick_interval = int(settings.FAKE_TASKS_TICK_INTERVAL) or 3
+        self.tick_interval = int(settings.FAKE_TASKS_TICK_INTERVAL)
 
         self.task_uuid = data['args'].get(
             'task_uuid'
@@ -144,9 +160,14 @@ class FakeThread(threading.Thread):
         super(FakeThread, self).join(timeout)
 
     def sleep(self, timeout):
+        if timeout == 0:
+            return
+
+        step = 0.001
+
         map(
             lambda i: not self.stoprequest.isSet() and time.sleep(i),
-            repeat(1, timeout)
+            repeat(step, int(float(timeout) / step))
         )
 
 
@@ -187,7 +208,8 @@ class FakeAmpqThread(FakeThread):
 class FakeDeploymentThread(FakeAmpqThread):
 
     def run_until_status(self, smart_nodes, status,
-                         role=None, random_error=False):
+                         role=None, random_error=False,
+                         instant=False):
         ready = False
 
         if random_error:
@@ -202,12 +224,15 @@ class FakeDeploymentThread(FakeAmpqThread):
                 if any(continue_cases):
                     continue
 
-                sn.update_progress(
-                    randrange(
-                        self.low_tick_count,
-                        self.tick_count
+                if instant:
+                    sn.ready()
+                else:
+                    sn.update_progress(
+                        randrange(
+                            self.low_tick_count,
+                            self.tick_count
+                        )
                     )
-                )
 
             if role:
                 test_nodes = [
@@ -237,11 +262,22 @@ class FakeDeploymentThread(FakeAmpqThread):
         # True or False
         task_ready = self.params.get("task_ready")
 
+        # instant deployment
+        godmode = self.params.get("godmode", False)
+
         kwargs = {
             'task_uuid': self.task_uuid,
             'nodes': self.data['args']['deployment_info'],
             'status': 'running'
         }
+
+        if godmode:
+            for n in kwargs["nodes"]:
+                n["status"] = "ready"
+                n["progress"] = 100
+            kwargs["status"] = "ready"
+            yield kwargs
+            raise StopIteration
 
         smart_nodes = [FSMNodeFlow(n) for n in kwargs['nodes']]
 
@@ -272,7 +308,9 @@ class FakeDeploymentThread(FakeAmpqThread):
             )
         }
 
-        for nodes_status in stages_errors[error]:
+        mode = stages_errors[error]
+
+        for nodes_status in mode:
             kwargs['nodes'] = nodes_status
             yield kwargs
             self.sleep(self.tick_interval)
@@ -293,7 +331,7 @@ class FakeProvisionThread(FakeThread):
         super(FakeProvisionThread, self).run()
         receiver = NailgunReceiver
 
-        self.sleep(self.tick_interval)
+        self.sleep(self.tick_interval * 2)
 
         # Since we just add systems to cobbler and reboot nodes
         # We think this task is always successful if it is launched.
@@ -319,6 +357,11 @@ class FakeDeletionThread(FakeThread):
         nodes_to_restore = self.data['args'].get('nodes_to_restore', [])
         resp_method = getattr(receiver, self.respond_to)
         resp_method(**kwargs)
+
+        recover_nodes = self.params.get("recover_nodes", True)
+
+        if not recover_nodes:
+            return
 
         for node_data in nodes_to_restore:
             node = Node(**node_data)
@@ -349,6 +392,10 @@ class FakeStopDeploymentThread(FakeThread):
     def run(self):
         super(FakeStopDeploymentThread, self).run()
         receiver = NailgunReceiver
+
+        recover_nodes = self.params.get("recover_nodes", True)
+
+        self.sleep(self.tick_interval)
         kwargs = {
             'task_uuid': self.task_uuid,
             'stop_task_uuid': self.data['args']['stop_task_uuid'],
@@ -359,7 +406,9 @@ class FakeStopDeploymentThread(FakeThread):
         resp_method = getattr(receiver, self.respond_to)
         resp_method(**kwargs)
 
-        self.sleep(3)
+        if not recover_nodes:
+            return
+
         nodes_db = db().query(Node).filter(
             Node.id.in_([
                 n['uid'] for n in self.data['args']['nodes']
@@ -367,7 +416,7 @@ class FakeStopDeploymentThread(FakeThread):
         ).all()
 
         for n in nodes_db:
-            self.sleep(2)
+            self.sleep(self.tick_interval)
             n.online = True
             n.status = "discover"
             db().add(n)
@@ -378,6 +427,10 @@ class FakeResetEnvironmentThread(FakeThread):
     def run(self):
         super(FakeResetEnvironmentThread, self).run()
         receiver = NailgunReceiver
+
+        recover_nodes = self.params.get("recover_nodes", True)
+
+        self.sleep(self.tick_interval)
         kwargs = {
             'task_uuid': self.task_uuid,
             'nodes': self.data['args']['nodes'],
@@ -387,7 +440,9 @@ class FakeResetEnvironmentThread(FakeThread):
         resp_method = getattr(receiver, self.respond_to)
         resp_method(**kwargs)
 
-        self.sleep(5)
+        if not recover_nodes:
+            return
+
         nodes_db = db().query(Node).filter(
             Node.id.in_([
                 n['uid'] for n in self.data['args']['nodes']
@@ -395,7 +450,7 @@ class FakeResetEnvironmentThread(FakeThread):
         ).all()
 
         for n in nodes_db:
-            self.sleep(2)
+            self.sleep(self.tick_interval)
             n.online = True
             n.status = "discover"
             db().add(n)
@@ -411,8 +466,8 @@ class FakeVerificationThread(FakeThread):
             'progress': 0
         }
 
-        tick_count = int(settings.FAKE_TASKS_TICK_COUNT) or 10
-        tick_interval = int(settings.FAKE_TASKS_TICK_INTERVAL) or 3
+        tick_count = int(settings.FAKE_TASKS_TICK_COUNT)
+        tick_interval = int(settings.FAKE_TASKS_TICK_INTERVAL)
         low_tick_count = tick_count - 20
         if low_tick_count < 0:
             low_tick_count = 0

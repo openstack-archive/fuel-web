@@ -186,7 +186,7 @@ class NodeAgent
         # Send info about physical interfaces only
         next if intinfo[:type] != "eth"
         # Exception: eth0.0(example) have "type" => "eth" but it is not physical interface
-        next if int =~ /\d+\.\d+$/
+        next if int =~ /\d+\.\d+$/ or int =~ /vlan\d+$/
         int_meta = {:name => int}
         int_meta[:state] = intinfo[:state]
         (intinfo[:addresses] or {} rescue {}).each do |addr, addrinfo|
@@ -409,34 +409,21 @@ class NodeAgent
     info
   end
 
-  def _master_ip detailed_data
-    detailed_data.each do |k, v|
-      if k.to_s =~ /^interfaces$/
-        detailed_data[k].each do |i|
-          begin
-            net = IPAddr.new "#{i[:ip]}/#{i[:netmask]}"
-            return i[:ip] if net.include? @api_ip
-          rescue
-          end
-        end
-      end
-    end
-    nil
-  end
 
-  def _master_mac detailed_data
-    detailed_data.each do |k, v|
-      if k.to_s =~ /^interfaces$/
-        detailed_data[k].each do |i|
-          begin
-            net = IPAddr.new "#{i[:ip]}/#{i[:netmask]}"
-            return i[:mac] if net.include? @api_ip
-          rescue
+
+  def _master_ip_and_mac
+    @os[:network][:interfaces].each do |_, intinfo|
+      intinfo[:addresses].each do |k, v|
+        if !(IPAddr.new(k) rescue nil).nil?
+          net = IPAddr.new("#{k}/#{v[:netmask]}")
+          if net.include? @api_ip
+            mac = intinfo[:addresses].find { |_, info| info[:family] == 'lladdr' }[0]
+            return {:ip => k, :mac => mac}
           end
         end
       end
     end
-    nil
+    {}
   end
 
   def _data
@@ -447,9 +434,10 @@ class NodeAgent
     }
     begin
       detailed_data = _detailed
+      master_data=_master_ip_and_mac
       res.merge!({
-        :ip  => ((_master_ip detailed_data or @os[:ipaddress]) rescue nil),
-        :mac  => ((_master_mac detailed_data or @os[:macaddress]) rescue nil),
+        :ip  => (( master_data[:ip] or @os[:ipaddress]) rescue nil),
+        :mac  => (( master_data[:mac] or @os[:macaddress]) rescue nil),
         :manufacturer => _manufacturer,
         :platform_name => _product_name,
         :meta => detailed_data

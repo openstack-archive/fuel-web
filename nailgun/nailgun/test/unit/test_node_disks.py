@@ -234,7 +234,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
         return json.loads(resp.body)
 
     def test_node_disk_amount_regenerates_volumes_info_if_new_disk_added(self):
-        cluster = self.env.create_cluster(api=False)
+        cluster = self.env.create_cluster(api=True)
         self.env.create_node(
             api=True,
             roles=['compute'],  # vgs: os, vm

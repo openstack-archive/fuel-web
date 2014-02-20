@@ -84,7 +84,7 @@ class CapacityLogHandler(BaseHandler):
     @content_json
     def GET(self):
         capacity_log = db().query(CapacityLog).\
-            order_by(CapacityLog.datetime.desc()).first()
+            order_by(CapacityLog.id.desc()).first()
         if not capacity_log:
             raise web.notfound()
         return self.render(capacity_log)

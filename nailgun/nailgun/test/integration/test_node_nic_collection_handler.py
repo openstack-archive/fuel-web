@@ -31,6 +31,7 @@ class TestHandlers(BaseIntegrationTest):
             {'name': 'eth1', 'mac': '654'}])
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
+
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
@@ -42,12 +43,14 @@ class TestHandlers(BaseIntegrationTest):
             if resp_nic['mac'] == mac:
                 resp_nic['assigned_networks'] = []
             else:
-                resp_nic['assigned_networks'] = a_nets
-        node_json = response
+                resp_nic['assigned_networks'].extend(a_nets)
+                resp_nic['assigned_networks'].sort()
+        nodes_list = [{'id': node['id'], 'interfaces': response}]
+
         resp = self.app.put(
-            reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
-            json.dumps(node_json),
+            reverse('NodeCollectionNICsHandler'),
+            json.dumps(nodes_list),
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
         new_response = json.loads(resp.body)
-        self.assertEquals(new_response, node_json)
+        self.assertEquals(new_response, nodes_list)

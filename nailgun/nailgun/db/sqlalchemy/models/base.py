@@ -35,4 +35,4 @@ class CapacityLog(Base):
 
     id = Column(Integer, primary_key=True)
     report = Column(JSON)
-    datetime = Column(DateTime, default=datetime.now())
+    datetime = Column(DateTime, default=lambda: datetime.now())

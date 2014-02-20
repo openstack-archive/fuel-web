@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Approved+1: Evgeniy L <eli@mirantis.com>
+Code-Review+2: Evgeniy L <eli@mirantis.com>
+Code-Review+1: Nastya Urlapova <aurlapova@mirantis.com>
+Code-Review+1: Andrey Danin <gcon.monolake@gmail.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 20 Feb 2014 16:25:33 +0000
+Reviewed-on: https://review.openstack.org/55380
+Project: stackforge/fuel-web
+Branch: refs/heads/master

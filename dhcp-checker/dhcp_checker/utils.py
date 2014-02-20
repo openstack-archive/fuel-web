@@ -112,6 +112,19 @@ def _dhcp_options(dhcp_options):
                 yield (header, option[1])
 
 
+def format_answer(ans, iface):
+    columns = ('iface', 'mac', 'server_ip', 'server_id', 'gateway',
+               'dport', 'message', 'yiaddr')
+    dhcp_options = dict(_dhcp_options(ans[scapy.DHCP].options))
+    results = (
+        iface, ans[scapy.Ether].src, ans[scapy.IP].src,
+        dhcp_options['server_id'], ans[scapy.BOOTP].giaddr,
+        ans[scapy.UDP].sport,
+        scapy.DHCPTypes[dhcp_options['message-type']],
+        ans[scapy.BOOTP].yiaddr)
+    return dict(zip(columns, results))
+
+
 def single_format(func):
     """Manage format of dhcp response
     """
@@ -119,21 +132,9 @@ def single_format(func):
     def formatter(*args, **kwargs):
         iface = args[0]
         ans = func(*args, **kwargs)
-        columns = ('iface', 'mac', 'server_ip', 'server_id', 'gateway',
-                   'dport', 'message', 'yiaddr')
-        data = []
         #scapy stores all sequence of requests
         #so ans[0][1] would be response to first request
-        for response in ans:
-            dhcp_options = dict(_dhcp_options(response[1][scapy.DHCP].options))
-            results = (
-                iface, response[1][scapy.Ether].src, response[1][scapy.IP].src,
-                dhcp_options['server_id'], response[1][scapy.BOOTP].giaddr,
-                response[1][scapy.UDP].sport,
-                scapy.DHCPTypes[dhcp_options['message-type']],
-                response[1][scapy.BOOTP].yiaddr)
-            data.append(dict(zip(columns, results)))
-        return data
+        return [format_answer(response[1], iface) for response in ans]
     return formatter
 
 
@@ -168,10 +169,11 @@ class VlansContext(object):
 
     def __enter__(self):
         for iface, vlans in self.config.iteritems():
-            yield str(iface)
+            vifaces = []
             for vlan in vlans:
                 if vlan > 0:
-                    yield '{0}.{1}'.format(iface, vlan)
+                    vifaces.append('{0}.{1}'.format(iface, vlan))
+            yield str(iface), vifaces
 
     def __exit__(self, type, value, trace):
         pass

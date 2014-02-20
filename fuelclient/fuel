@@ -505,7 +505,7 @@ def node(params):
     if params.set:
         check_for_attributes(params, ["node", "role", "env"])
         roles = map(str.lower, params.role)
-        data = dict((_node_id, roles) for _node_id in node_ids)
+        data = [{'id': _node_id, 'roles': roles} for _node_id in node_ids]
         post_response = json_api_post_request(
             "clusters/{0}/assignment/".format(params.env),
             data

@@ -262,7 +262,7 @@ function run_cli_tests {
         echo "Test server started"
         clean
         test_args="../fuelclient/tests"
-        stderr=$(nosetests $noseopts $test_args --verbosity=2 3>&1 1>&2 2>&3 | tee /dev/stderr)
+        nosetests $noseopts $test_args --verbosity=2
         result=$(($result + $?))
         kill $server_pid
         wait $server_pid 2> /dev/null

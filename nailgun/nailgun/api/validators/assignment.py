@@ -94,7 +94,7 @@ class NodeAssignmentValidator(AssignmentValidator):
     def check_roles_for_conflicts(roles, roles_metadata):
         for role in roles:
             if "conflicts" in roles_metadata[role]:
-                other_roles = roles - {role}
+                other_roles = roles - set(role)
                 conflicting_roles = set(roles_metadata[role]["conflicts"])
                 conflicting_roles &= other_roles
                 if conflicting_roles:

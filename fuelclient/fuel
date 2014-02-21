@@ -1527,14 +1527,36 @@ actions = {
                 "help": "activation key",
                 "default": None
             }
-        }]
+        }],
+        "examples":
+"""Examples:
+
+    Print all available releases:
+        fuel release --list
+
+    Print release with specific id=1:
+        fuel release --rel 1
+
+    To configure RedHat release:
+        fuel rel --rel <id of RedHat release> -c -U <username> -P <password>
+
+    To configure RedHat release with satellite server:
+        fuel rel --rel <...> -c -U <...> -P <...> """ +
+"""--satellite-server-hostname <hostname> --activation-key <key>
+"""
     },
     "role": {
         "action": role,
         "args": [
             get_list_arg("List all roles for specific release"),
             get_release_arg("Release id", required=True)
-        ]
+        ],
+        "examples":
+"""Examples:
+
+    Print all available roles and their conflicts for some release with id=1:
+        fuel role --rel 1
+"""
     },
     "environment": {
         "action": environment,
@@ -1589,7 +1611,26 @@ actions = {
                 "help": "Set network segment type",
                 "default": False
             }
-        }]
+        }],
+        "examples":
+"""Examples:
+
+    Print all available environments:
+        fuel env
+
+    To create an environment with name MyEnv and release id=1 run:
+        fuel env create --name MyEnv --rel 1
+
+    By default it creates environment in multinode mode, and nova network mode,
+    to specify other modes you can add optional arguments:
+        fuel env create --name MyEnv --rel 1 --mode ha --network-mode neutron
+
+    For changing environments name, mode or network mode exists set action:
+        fuel --env 1 env set --name NewEmvName --mode ha_compact
+
+    To delete the environment:
+        fuel --env 1 env delete
+"""
     },
     "node": {
         "action": node,
@@ -1653,7 +1694,45 @@ actions = {
                 "help": "Provision specific nodes.",
                 "default": False
             }
-        }]
+        }],
+        "examples":
+"""Examples:
+
+    To list all available nodes:
+        fuel node
+
+    To filter them by environment:
+        fuel --env-id 1 node
+
+    Assign some nodes to environment with with specific roles:
+        fuel --env 1 node set --node 1 --role controller
+        fuel --env 1 node set --node 2,3,4 --role compute,cinder
+
+    Remove some nodes from environment:
+        fuel --env 1 node remove --node 2,3
+
+    Remove nodes no matter to which environment they were assigned:
+        fuel node remove --node 2,3,6,7
+
+    Remove all nodes from some environment:
+        fuel --env 1 node remove --all
+
+    Download current or default disk, network, configuration for some node:
+        fuel node --node-id 2 --disk --default
+        fuel node --node-id 2 --network --download --dir path/to/directory
+
+    Upload disk, network, configuration for some node:
+        fuel node --node-id 2 --network --upload
+        fuel node --node-id 2 --disk --upload --dir path/to/directory
+
+    Deploy/Provision some node:
+        fuel node --node-id 2 --provision
+        fuel node --node-id 2 --deploy
+
+    it's Possible to manipulate nodes with their short mac addresses:
+        fuel node --node-id 80:ac
+        fuel node remove --node-id 80:ac,5d:a2
+"""
     },
     "network": {
         "action": network,
@@ -1663,7 +1742,20 @@ actions = {
             get_dir_arg("Directory with network data."),
             get_verify_arg("Verify current network configuration."),
             get_upload_arg("Upload changed network configuration.")
-        ]
+        ],
+        "examples":
+"""Examples:
+
+    To download network configuration in this directory for some environment:
+        fuel --env 1 network --download
+
+    To upload network configuration from some directory for some environment:
+        fuel --env 1 network --upload --dir path/to/derectory
+
+    To verify network configuration from some directory for some environment:
+        fuel --env 1 network --verify --dir path/to/derectory
+
+"""
     },
     "settings": {
         "action": settings,
@@ -1673,7 +1765,19 @@ actions = {
             get_default_arg("Open default configuration."),
             get_upload_arg("Save current changes in configuration."),
             get_dir_arg("Directory with configuration data.")
-        ]
+        ],
+        "examples":
+"""Examples:
+
+    To download settings for some environment in this directory:
+        fuel --env 1 settings --download
+
+    To download default settings for some environment in some directory:
+        fuel --env 1 settings --default --dir path/to/derectory
+
+    To upload settings for some environment from some directory:
+        fuel --env 1 settings --upload --dir path/to/derectory
+"""
     },
     "task": {
         "action": task,
@@ -1697,19 +1801,49 @@ actions = {
                     "help": "Task id.",
                     "default": None
                 }
-            }]
+            }],
+        "examples":
+"""Examples:
+
+    To display all tasks:
+        fuel task
+
+    To  display tasks with some ids:
+        fuel task -t 1,2,3
+
+    To delete some tasks:
+        fuel task delete -t 1,2,3
+
+    To delete some tasks forcefully (without considering their state):
+        fuel task delete -f -t 1,6
+"""
     },
     "snapshot": {
         "action": snapshot,
         "args": [
             get_dir_arg("Directory to which download snapshot.")
-        ]
+        ],
+        "examples":
+"""Examples:
+
+    To download diagnostic snapshot:
+        fuel snapshot
+
+    To download diagnostic snapshot to specific directory:
+        fuel snapshot --dir path/to/directory
+"""
     },
     "deploy-changes": {
         "action": deploy_changes,
         "args": [
             get_env_arg(required=True),
-        ]
+        ],
+        "examples":
+"""Examples:
+
+    To deploy all applied changes to some environment:
+        fuel --env 1 deploy-changes
+"""
     },
     "health": {
         "action": health_check,
@@ -1726,7 +1860,18 @@ actions = {
                     "default": None
                 }
             }
-        ]
+        ],
+        "examples":
+"""Examples:
+
+    To list all health check test sets:
+        fuel health
+    or:
+        fuel health --list
+
+    To run some health checks:
+        fuel health --check smoke,sanity
+"""
     }
 }
 
@@ -1842,7 +1987,9 @@ if __name__ == '__main__':
         action_parser = subparsers.add_parser(
             action,
             prog="fuel {0}".format(action),
-            help=parameters["action"].__doc__
+            help=parameters["action"].__doc__,
+            formatter_class=argparse.RawTextHelpFormatter,
+            epilog=parameters.get("examples", "")
         )
         for argument in parameters.get("args", []):
             action_parser.add_argument(

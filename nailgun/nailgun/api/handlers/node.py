@@ -47,7 +47,7 @@ class NodeHandler(BaseHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster')
+              'error_type', 'online', 'cluster', 'uuid')
     model = Node
     validator = NodeValidator
 
@@ -157,7 +157,7 @@ class NodeCollectionHandler(BaseHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster')
+              'error_type', 'online', 'cluster', 'uuid')
 
     validator = NodeValidator
 

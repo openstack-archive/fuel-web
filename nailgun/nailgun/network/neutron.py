@@ -16,6 +16,7 @@
 
 from netaddr import IPNetwork
 
+from nailgun.consts import OVS_BOND_MODES
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
@@ -141,7 +142,7 @@ class NeutronManager(NetworkManager):
         props = []
         if 'lacp' in bond.mode:
             props.append('lacp=active')
-            props.append('bond_mode=balance−tcp')
+            props.append('bond_mode=' + OVS_BOND_MODES.balance_tcp)
         else:
             props.append('bond_mode=%s' % bond.mode)
         return props

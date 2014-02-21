@@ -247,6 +247,11 @@ class TestHandlers(BaseIntegrationTest):
                 }
             }
 
+            vlan_splinters = cluster_attrs.get('vlan_splinters', None)
+            if vlan_splinters == 'kernel_ml':
+                pnd['ks_meta']['kernel_ml'] = 1
+
+
             NetworkManager.assign_admin_ips(n.id, 1)
 
             admin_ip = self.env.network_manager.get_admin_ip_for_node(n)
@@ -609,6 +614,10 @@ class TestHandlers(BaseIntegrationTest):
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                 }
             }
+
+            vlan_splinters = cluster_attrs.get('vlan_splinters', None)
+            if vlan_splinters == 'kernel_ml':
+                pnd['ks_meta']['kernel_ml'] = 1
 
             NetworkManager.assign_admin_ips(n.id, 1)
 

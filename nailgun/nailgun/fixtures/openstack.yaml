@@ -467,22 +467,6 @@
             description: "If selected, Ceilometer component will be installed"
             weight: 40
             type: "checkbox"
-        common:
-          vlan_splinters:
-            value: "disabled"
-            label: "Open VSwitch VLAN Splinters feature (Neutron only)"
-            weight: 45
-            type: "radio"
-            values:
-              - data: "disabled"
-                label: "Disabled"
-                description: "OVS VLAN splinters disabled on all interfaces"
-              - data: "soft"
-                label: "Enable OVS VLAN splinters soft trunks workaround"
-                description: "Configure OVS to use VLAN splinters workaround with soft trunk detection. This may resolve issues that might be encountered when using VLAN tags with OVS and Neutron on Kernels <3.3 (CentOS)"
-              - data: "hard"
-                label: "Enable OVS VLAN splinters hard trunks workaround"
-                description: "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be predefined. This may work better than soft trunks especially if you still see network problems using soft trunks"
         storage:
           volumes_ceph:
             value: false
@@ -563,6 +547,26 @@
         cobbler:
           profile:
             generator_arg: "centos-x86_64"
+      editable:
+        common:
+          vlan_splinters:
+            value: "disabled"
+            label: "Open VSwitch VLAN Splinters feature (Neutron only)"
+            weight: 45
+            type: "radio"
+            values:
+              - data: "disabled"
+                label: "Disabled (Default)"
+                description: "OVS VLAN splinters disabled on all interfaces"
+              - data: "soft"
+                label: "Use OVS VLAN splinters soft trunks workaround"
+                description: "Configure OVS to use VLAN splinters workaround with soft trunk detection. This may resolve issues that might be encountered when using VLAN tags with OVS and Neutron on Kernels <3.3 (CentOS)"
+              - data: "hard"
+                label: "Use OVS VLAN splinters hard trunks workaround"
+                description: "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be predefined. This may work better than soft trunks especially if you still see network problems using soft trunks"
+              - data: "kernel_ml"
+                label: "EXPARAMENTAL: Use Fedora mainline Kernel"
+                description: "Install the Fedora 3.11 mainline Kernel instead of the default 2.6.32 Kernel. This should remove any need for VLAN Splinters workarounds as the 3.10 kernel has better support for OVS VLANs, however this kernel may not work with all hardware platforms. Use caution."
 - pk: 2
   extend: *base_release
   fields:

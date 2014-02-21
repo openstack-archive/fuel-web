@@ -381,7 +381,7 @@ class ClusterAttributesHandler(BaseHandler):
 
         data = self.checked_data()
 
-        if cluster.are_attributes_locked:
+        if cluster.is_locked:
             error = web.forbidden()
             error.data = "Environment attributes can't be changed " \
                          "after, or in deploy."

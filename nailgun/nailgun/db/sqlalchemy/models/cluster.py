@@ -32,7 +32,6 @@ from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Node
 from nailgun.db.sqlalchemy.models.release import Release
-from nailgun.db.sqlalchemy.models.task import Task
 from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
@@ -173,14 +172,8 @@ class Cluster(Base):
         return '%s (id=%s, mode=%s)' % (self.name, self.id, self.mode)
 
     @property
-    def are_attributes_locked(self):
-        if db().query(Task).filter_by(
-            cluster_id=self.id,
-            name="deploy",
-            status="running"
-        ).count():
-            return True
-        elif self.status in ["new", "stopped"] and not \
+    def is_locked(self):
+        if self.status in ("new", "stopped") and not \
                 db().query(Node).filter_by(
                     cluster_id=self.id,
                     status="ready"

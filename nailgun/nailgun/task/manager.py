@@ -551,14 +551,11 @@ class VerifyNetworksTaskManager(TaskManager):
         if (
             self.cluster.net_provider == 'neutron'
         ) and (
-            self.cluster.status != 'new' or
-            self.cluster.network_manager.cluster_has_bonds(self.cluster.id)
+            self.cluster.status != 'new'
         ):
             task.status = 'error'
-            task.message = \
-                u'Network verification on Neutron is not implemented yet' \
-                if self.cluster.status != 'new' else \
-                u'Network verification on Neutron bonds is not implemented yet'
+            task.message = (u'Network verification on Neutron '
+                            'is not implemented yet')
             db().add(task)
             db().commit()
             return task

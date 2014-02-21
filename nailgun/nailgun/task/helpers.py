@@ -273,7 +273,7 @@ class TaskHelper(object):
             filter(Task.name.in_(
                 ['check_before_deployment', 'check_networks'])).count()
 
-        return task.cluster.status == 'new' and error_checking_tasks_count
+        return not task.cluster.is_locked and error_checking_tasks_count
 
     @classmethod
     def __update_cluster_to_provisioning_error(cls, cluster):

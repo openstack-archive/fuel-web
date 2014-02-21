@@ -62,7 +62,7 @@ class ProviderHandler(BaseHandler):
             )
 
     def check_if_network_configuration_locked(self, cluster):
-        if cluster.are_attributes_locked:
+        if cluster.is_locked:
             error = web.forbidden()
             error.data = "Network configuration can't be changed " \
                          "after, or in deploy."

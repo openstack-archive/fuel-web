@@ -57,6 +57,7 @@ from nailgun.db.sqlalchemy.models import Task
 # here come objects
 from nailgun.objects import Release
 
+from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.network.manager import NetworkManager
 from nailgun.wsgi import build_app
 
@@ -267,6 +268,24 @@ class Environment(object):
             self.nodes.append(node)
 
         return node
+
+    def create_nodes_w_interfaces_count(self,
+                                        nodes_count, if_count=2, **kwargs):
+        """Create nodes_count nodes with if_count interfaces each.
+        Default random MAC is generated for each interface.
+        """
+        nodes = []
+        for i in range(nodes_count):
+            meta = self.default_metadata()
+            if_list = [
+                {
+                    "name": "eth%d" % i,
+                    "mac": self._generate_random_mac()
+                }
+                for i in range(if_count)]
+            self.set_interfaces_in_meta(meta, if_list)
+            nodes.append(self.create_node(meta=meta, **kwargs))
+        return nodes
 
     def create_rh_account(self, **kwargs):
         username = kwargs.pop("username", "rh_username")
@@ -587,6 +606,39 @@ class Environment(object):
             raise NotImplementedError(
                 "Nothing to verify - try creating cluster"
             )
+
+    def make_bond_via_api(self, bond_name, bond_mode, nic_names, node_id=None):
+        if not node_id:
+            node_id = self.nodes[0]["id"]
+        resp = self.app.get(
+            reverse("NodeNICsHandler",
+                    kwargs={"node_id": node_id}),
+            headers=self.default_headers)
+        self.tester.assertEquals(resp.status, 200)
+        data = json.loads(resp.body)
+
+        nics = self.db.query(NodeNICInterface).filter(
+            NodeNICInterface.name.in_(nic_names)
+        ).filter(
+            NodeNICInterface.node_id == node_id
+        )
+        self.tester.assertEquals(nics.count(), len(nic_names))
+
+        assigned_nets, slaves = [], []
+        for nic in data:
+            if nic['name'] in nic_names:
+                assigned_nets.extend(nic['assigned_networks'])
+                slaves.append({'name': nic['name']})
+                nic['assigned_networks'] = []
+        data.append({
+            "name": bond_name,
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": bond_mode,
+            "slaves": slaves,
+            "assigned_networks": assigned_nets
+        })
+        resp = self.node_nics_put(node_id, data)
+        self.tester.assertEquals(resp.status, 200)
 
     def refresh_nodes(self):
         for n in self.nodes[:]:

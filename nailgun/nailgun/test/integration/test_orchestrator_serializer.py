@@ -18,6 +18,7 @@ import json
 
 from netaddr import IPRange
 
+from nailgun.consts import OVS_BOND_MODES
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import IPAddrRange
@@ -710,3 +711,74 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
             attrs['mp'],
             [{'point': '1', 'weight': '1'},
              {'point': '2', 'weight': '2'}])
+
+
+class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
+
+    def create_env(self, nodes_count=2, nic_count=3, segment_type='vlan'):
+        cluster = self.env.create_cluster(
+            mode='multinode',
+            net_provider='neutron',
+            net_segment_type=segment_type)
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=1,
+            if_count=nic_count,
+            roles=['controller', 'cinder'],
+            pending_addition=True,
+            cluster_id=cluster['id'])
+        self.env.create_nodes_w_interfaces_count(
+            nodes_count=nodes_count - 1,
+            if_count=nic_count,
+            roles=['compute'],
+            pending_addition=True,
+            cluster_id=cluster['id'])
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        return cluster_db
+
+    def serialize(self, cluster):
+        TaskHelper.prepare_for_deployment(cluster.nodes)
+        return DeploymentMultinodeSerializer.serialize(cluster, cluster.nodes)
+
+    def check_add_bond_msg_lacp(self, msg):
+        self.assertEqual(
+            msg,
+            {
+                'action': 'add-bond',
+                'bridge': 'br-ovsbond0',
+                'interfaces': ['eth1', 'eth2'],
+                'name': 'ovsbond0',
+                'properties': ['lacp=active', 'bond_mode=balance-tcp']
+            })
+
+    def check_add_bond_msg_non_lacp(self, msg, mode):
+        self.assertEqual(
+            msg,
+            {
+                'action': 'add-bond',
+                'bridge': 'br-ovsbond0',
+                'interfaces': ['eth1', 'eth2'],
+                'name': 'ovsbond0',
+                'properties': ['bond_mode=%s' % mode]
+            })
+
+    def check_bond_with_mode(self, mode):
+        cluster = self.create_env()
+        for node in cluster.nodes:
+            self.env.make_bond_via_api('ovsbond0',
+                                       mode,
+                                       ['eth1', 'eth2'],
+                                       node.id)
+        facts = self.serialize(cluster)
+        for node in facts:
+            transforms = node['network_scheme']['transformations']
+            bonds = filter(lambda t: t['action'] == 'add-bond',
+                           transforms)
+            self.assertEqual(len(bonds), 1)
+            if mode == OVS_BOND_MODES.lacp_balance_tcp:
+                self.check_add_bond_msg_lacp(bonds[0])
+            else:
+                self.check_add_bond_msg_non_lacp(bonds[0], mode)
+
+    def test_bonds_serialization(self):
+        for mode in OVS_BOND_MODES:
+            self.check_bond_with_mode(mode)

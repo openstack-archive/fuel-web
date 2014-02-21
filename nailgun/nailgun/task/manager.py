@@ -551,9 +551,10 @@ class VerifyNetworksTaskManager(TaskManager):
         if (
             self.cluster.net_provider == 'neutron'
         ) and (
-            self.cluster.status != 'new'
+            self.cluster.is_locked
         ):
             task.status = 'error'
+            task.progress = 100
             task.message = (u'Network verification on Neutron '
                             'is not implemented yet')
             db().add(task)
@@ -562,6 +563,7 @@ class VerifyNetworksTaskManager(TaskManager):
 
         if len(self.cluster.nodes) < 2:
             task.status = 'error'
+            task.progress = 100
             task.message = ('At least two nodes are required to be '
                             'in the environment for network verification.')
             db().add(task)

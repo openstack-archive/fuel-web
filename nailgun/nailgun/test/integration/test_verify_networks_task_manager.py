@@ -363,6 +363,20 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                 }]
         )
 
+    def tearDown(self):
+        self._wait_for_threads()
+        super(TestVerifyNeutronVlan, self).tearDown()
+
+    @fake_tasks()
+    def test_verify_networks_after_stop(self):
+        self.cluster = self.env.clusters[0]
+        self.env.launch_deployment()
+        stop_task = self.env.stop_deployment()
+        self.env.wait_ready(stop_task, 60)
+        self.assertEquals(self.cluster.status, "stopped")
+        verify_task = self.env.launch_verify_networks()
+        self.env.wait_ready(verify_task, 60)
+
     @fake_tasks(fake_rpc=False)
     def test_network_verification_neutron_with_vlan_segmentation(
             self, mocked_rpc):

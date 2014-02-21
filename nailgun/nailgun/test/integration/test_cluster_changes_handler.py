@@ -976,7 +976,7 @@ class TestHandlers(BaseIntegrationTest):
             'Number of OSD nodes (1) cannot be less than '
             'the Ceph object replication factor (3)')
 
-    @fake_tasks()
+    @fake_tasks(godmode=True)
     def test_enough_osds_for_ceph(self):
         cluster = self.env.create(
             cluster_kwargs={
@@ -996,7 +996,6 @@ class TestHandlers(BaseIntegrationTest):
 
         task = self.env.launch_deployment()
         self.assertIn(task.status, ('running', 'ready'))
-        self.env.wait_ready(task)
 
     @fake_tasks()
     def test_admin_untagged_intersection(self):

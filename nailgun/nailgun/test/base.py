@@ -817,8 +817,8 @@ class BaseUnitTest(BaseTestCase):
 
 def fake_tasks(fake_rpc=True,
                mock_rpc=True,
-               tick_count=99,
-               tick_interval=1,
+               tick_count=100,
+               tick_interval=0,
                **kwargs):
     def wrapper(func):
         func = mock.patch(

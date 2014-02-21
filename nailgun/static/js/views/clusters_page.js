@@ -75,7 +75,7 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
         templateHelpers: _.pick(utils, 'showDiskSize', 'showMemorySize'),
         updateInterval: 3000,
         scheduleUpdate: function() {
-            if (this.model.task('cluster_deletion', ['running', 'ready']).length || this.model.tasks({group: 'deployment', status: 'running'}).length) {
+            if (this.model.task('cluster_deletion', ['running', 'ready']) || this.model.tasks({group: 'deployment', status: 'running'}).length) {
                 this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
             }
         },

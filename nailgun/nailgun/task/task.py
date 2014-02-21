@@ -344,17 +344,20 @@ class VerifyNetworksTask(object):
         nodes = []
         for n in task.cluster.nodes:
             node_json = {'uid': n.id, 'networks': []}
-            for nic in n.interfaces:
+
+            for nic in n.nic_interfaces:
+                assigned_networks = nic.assigned_networks_list
+                # in case of using bond interface - use networks assigned
+                # to bond
+                if nic.bond:
+                    assigned_networks = nic.bond.assigned_networks_list
                 vlans = []
-                for ng in nic.assigned_networks_list:
+                for ng in assigned_networks:
                     # Handle FuelWeb admin network first.
                     if not ng.cluster_id:
                         vlans.append(0)
                         continue
-                    data_ng = filter(
-                        lambda i: i['name'] == ng.name,
-                        data
-                    )[0]
+                    data_ng = filter(lambda i: i['name'] == ng.name, data)[0]
                     if data_ng['vlans']:
                         vlans.extend(data_ng['vlans'])
                     else:

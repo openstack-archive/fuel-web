@@ -137,7 +137,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.configureInterfacesButton.set('disabled', !nodes.length || deployedNodes.length > 1);
             this.deleteNodesButton.set('visible', !!nodes.where({pending_deletion: false}).length && !this.isLocked());
             this.addNodesButton.set('visible', !nodes.length);
-            var notDeployedSelectedNodes = nodes.where({online: true, pending_addition: true});
+            var notDeployedSelectedNodes = nodes.where({pending_addition: true});
             this.editRolesButton.set('visible', !!notDeployedSelectedNodes.length && notDeployedSelectedNodes.length == nodes.length);
             // check selected nodes for group configuration availability
             var noDisksConflict = true;
@@ -245,6 +245,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.nodes.fetch = function(options) {
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: clusterId}}, options));
             };
+            this.nodes.on('change:checked', this.updateBatchActionsButtons, this);
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
@@ -261,6 +262,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
 
     AddNodesScreen = NodeListScreen.extend({
         constructorName: 'AddNodesScreen',
+        removeRoles: function(node, checked, options) {
+            if (!checked) {
+                node.set({pending_roles: []}, {assign: true});
+            }
+        },
         initialize: function(options) {
             _.defaults(this, options);
             this.nodes = new models.Nodes();
@@ -268,6 +274,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
             };
             this.constructor.__super__.initialize.apply(this, arguments);
+            this.nodes.on('change:checked', this.removeRoles, this);
             this.nodes.deferred = this.nodes.fetch().done(_.bind(this.render, this));
         }
     });
@@ -856,16 +863,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         formatNodeButtonIcon: function(value, options) {
             return this.hasChanges() && !(this.screen instanceof EditNodesScreen) ? 'icon-back-in-time' : 'icon-logs';
         },
-        onNodeSelection: function(node, checked, options) {
-            if (!checked) {
-                node.set({pending_roles: this.initialRoles}, {assign: true});
-            }
-            if (this.screen instanceof AddNodesScreen || this.screen instanceof EditNodesScreen) {
-                this.screen.roles.handleChanges();
-            } else {
-                this.screen.updateBatchActionsButtons();
-            }
-        },
         calculateNodeDisabledState: function() {
             this.node.set('disabled', !this.node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked());
         },
@@ -954,19 +951,16 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         beforeTearDown: function() {
             $('html').off(this.eventNamespace);
         },
-        uncheckNode: function() {
-            this.node.set('checked', false);
-            this.calculateNodeDisabledState();
-        },
         initialize: function(options) {
             _.defaults(this, options);
             this.screen = this.group.nodeList.screen;
             this.eventNamespace = 'click.editnodename' + this.node.id;
             this.node.set('checked', this.screen instanceof EditNodesScreen);
-            this.node.on('change:checked change:online', this.onNodeSelection, this);
-            this.node.on('change:pending_deletion change:status change:online', this.calculateNodeDisabledState, this);
+            this.node.on('change:change:status', this.calculateNodeDisabledState, this);
             this.node.on('change:disabled', this.group.calculateSelectAllDisabledState, this.group);
-            this.node.on('change:pending_deletion', this.uncheckNode, this);
+            if (!(this.screen instanceof ClusterNodesScreen)) {
+                this.node.on('change:checked', this.screen.roles.handleChanges, this.screen.roles);
+            }
             this.initialRoles = this.node.get('pending_roles');
         },
         render: function() {

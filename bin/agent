@@ -41,6 +41,9 @@ AGENT_CONFIG = "/etc/nailgun-agent/config.yaml"
 # Please also update the device codes here
 # https://github.com/stackforge/fuel-astute/blob/master/mcagents/erase_node.rb#L81
 STORAGE_CODES = [3, 8, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106, 107, 108, 109, 110, 111, 202, 252, 253]
+REMOVABLE_VENDORS = [
+  "Adaptec",
+]
 
 class McollectiveConfig
   def initialize(logger)
@@ -235,9 +238,18 @@ class NodeAgent
     end
 
     begin
+      @logger.debug("Trying to find block devices")
       (@os[:block_device] or {} rescue {}).each do |bname, binfo|
-        if physical_data_storage_devices.include?(bname) && binfo
+        @logger.debug("Found block device: #{bname}")
+        @logger.debug("Block device info: #{binfo.inspect}")
+        if physical_data_storage_devices.map{|d| d[:name]}.include?(bname) && binfo
+          @logger.debug("Block device seems to be physical data storage: #{bname}")
+          block = physical_data_storage_devices.select{|d| d[:name] == bname}[0]
+          if block[:removable] =~ /^1$/ && ! REMOVABLE_VENDORS.include?(binfo[:vendor])
+            next
+          end
           dname = bname.gsub(/!/, '/')
+
           # 512 bytes is the size of one sector by default
           block_size = 512
           fn = "/sys/block/#{bname}/queue/logical_block_size"
@@ -247,11 +259,13 @@ class NodeAgent
             :name => dname,
             :model => binfo[:model],
             :size => (binfo[:size].to_i * block_size),
-            :disk => _disk_path_by_name(dname) || dname,
-            :extra => _disk_id_by_name(dname) || []
+            :disk => block[:disk],
+            :extra => block[:extra],
+            :removable => block[:removable]
           }
         end
       end
+      @logger.debug("Detailed meta disks: #{detailed_meta[:disks].inspect}")
     rescue Exception => e
       @logger.error("Error '#{e.message}' in gathering disks metadata: #{e.backtrace}")
     end
@@ -275,6 +289,7 @@ class NodeAgent
     @blocks ||= []
     return @blocks unless @blocks.empty?
 
+    @logger.debug("Trying to get list of physical devices")
     raise "Path /sys/block does not exist" unless File.exists?("/sys/block")
 
     Dir["/sys/block/*"].each do |block_device_dir|
@@ -285,20 +300,33 @@ class NodeAgent
       # device name.
       devname = basename_dir.gsub(/!/, '/')
 
+      @logger.debug("Getting udev properties for device: #{devname}")
       properties = `udevadm info --query=property --export --name=#{devname}`.inject({}) do |result, raw_propety|
        key, value = raw_propety.split(/\=/)
        result.update(key.strip => value.strip.chomp("'").reverse.chomp("'").reverse)
       end
+      @logger.debug("Device #{devname} udev properties: #{properties.inspect}")
 
+      @logger.debug("Trying to find out if device #{devname} is removable or not")
       if File.exists?("/sys/block/#{basename_dir}/removable")
         removable = File.open("/sys/block/#{basename_dir}/removable"){ |f| f.read_nonblock(1024).strip }
       end
+      @logger.debug("Device #{devname} removable parameter: #{removable.inspect}")
 
-      if STORAGE_CODES.include?(properties['MAJOR'].to_i) && removable =~ /^0$/
+      if STORAGE_CODES.include?(properties['MAJOR'].to_i)
+        @logger.debug("Device #{devname} seems to be appropriate")
         # Exclude LVM volumes (in CentOS - 253, in Ubuntu - 252) using additional check
-        @blocks << basename_dir unless properties['DEVPATH'].include?('virtual')
+        unless properties['DEVPATH'].include?('virtual')
+          @blocks << {
+            :name => basename_dir,
+            :disk => _disk_path_by_name(basename_dir) || basename_dir,
+            :extra => _disk_id_by_name(basename_dir) || [],
+            :removable => removable,
+          }
+        end
       end
     end
+    @logger.debug("Final list of physical devices is: #{@blocks.inspect}")
     @blocks
   end
 

@@ -100,7 +100,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             if (Backbone.history.getHash() != href.substr(1) && _.result(this.tab, 'hasChanges')) {
                 e.preventDefault();
                 this.discardSettingsChanges({
-                    verification: this.model.tasks({group: 'network', status: 'running'}),
+                    verification: this.model.tasks({group: 'network', status: 'running'}).length,
                     cb: _.bind(function() {
                         app.navigate(href, {trigger: true});
                     }, this)
@@ -108,15 +108,11 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             }
         },
         scheduleUpdate: function() {
-            var runningTask = this.model.task({group: ['deployment', 'network'], status: 'running'}) || this.getReleaseSetupTask();
-            if (!this.pollingAborted && runningTask) {
+            if (this.model.task({group: ['deployment', 'network'], status: 'running'}) || this.getReleaseSetupTask()) {
                 this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
             }
         },
         update: function() {
-            if (this.pollingAborted) {
-                return;
-            }
             var complete = _.after(2, _.bind(this.scheduleUpdate, this));
             var task = this.model.task({group: 'deployment', status: 'running'});
             if (task) {
@@ -175,7 +171,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             _([this.deploymentResult, this.deploymentControl]).invoke('onNewTask', this.model.task({group: 'deployment'}));
         },
         beforeTearDown: function() {
-            this.pollingAborted = true;
             $(window).off('beforeunload.' + this.eventNamespace);
             $('body').off('click.' + this.eventNamespace);
         },

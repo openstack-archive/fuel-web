@@ -100,6 +100,20 @@ class TestTaskManagers(BaseIntegrationTest):
         for n in self.env.nodes:
             self.assertEquals(len(self.env.nodes), 0)
 
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_send_to_orchestrator_offline_nodes(self, _):
+        self.env.create(
+            nodes_kwargs=[
+                {'pending_deletion': True,
+                 'status': 'ready',
+                 'online': False}])
+
+        self.env.launch_deployment()
+
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        self.assertEquals(len(args[1]['args']['nodes']), 1)
+
     @fake_tasks()
     def test_do_not_redeploy_nodes_in_ready_status(self):
         self.env.create(nodes_kwargs=[

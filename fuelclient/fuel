@@ -1729,7 +1729,7 @@ actions = {
         fuel node --node-id 2 --provision
         fuel node --node-id 2 --deploy
 
-    it's Possible to manipulate nodes with their short mac addresses:
+    It's Possible to manipulate nodes with their short mac addresses:
         fuel node --node-id 80:ac
         fuel node remove --node-id 80:ac,5d:a2
 """
@@ -1856,7 +1856,7 @@ actions = {
                     "dest": "check",
                     "type": lambda v: v.split(','),
                     "action": SetAction,
-                    "help": "Run check for some id.",
+                    "help": "Run check for some testset.",
                     "default": None
                 }
             }
@@ -1867,10 +1867,10 @@ actions = {
     To list all health check test sets:
         fuel health
     or:
-        fuel health --list
+        fuel --env 1 health --list
 
     To run some health checks:
-        fuel health --check smoke,sanity
+        fuel --env 1 health --check smoke,sanity
 """
     }
 }
@@ -1943,12 +1943,36 @@ def prepare_args():
     for fact_type in (deployment, provisioning):
         actions[fact_type.__name__] = {
             "action": fact_type,
-            "args": get_args_for_facts(fact_type.__name__)
+            "args": get_args_for_facts(fact_type.__name__),
+            "examples":
+"""Examples:
+
+    To download {func} information for some environment:
+        fuel --env 1 {func} --download
+
+    To get default {func} information for some environment:
+        fuel --env 1 {func} --default
+
+    To upload {func} information for some environment:
+        fuel --env 1 {func} --upload
+
+    Any of the above function can be used just for some nodes:
+        fuel --env 1 {func} --upload/--download/--default --node 1,2,3
+
+    Also {func} information can be left or taken from specific directory:
+        fuel --env 1 {func} --upload --dir path/to/some/directory
+""".format(func=fact_type.__name__)
         }
     for func in (stop, reset):
         actions[func.__name__] = {
             "action": func,
-            "args": [get_env_arg(required=True)]
+            "args": [get_env_arg(required=True)],
+            "examples":
+"""Examples:
+
+    To {func} some environment:
+        fuel --env 1 {func}
+""".format(func=func.__name__)
         }
 
 

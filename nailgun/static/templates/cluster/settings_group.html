@@ -1,10 +1,10 @@
-<% var disabled = locked ? 'disabled' : '' %>
 <% var ns = "cluster_page.settings_tab." + groupName + "." %>
 <legend class="openstack-settings"><%- $.t(ns + 'group_name', {defaultValue: groupName.replace('_', ' ')}) %></legend>
 <div class="settings-group" data-settings-group="<%- groupName %>">
   <% var sortedSettings = _.sortBy(_.keys(settings), function(setting) {return settings[setting].weight;}) %>
   <% _.each(sortedSettings, function(settingName) { %>
     <% var setting = settings[settingName] %>
+    <% var disabled = locked || setting.disabled ? 'disabled' : '' %>
     <% if (setting.type == 'checkbox') { %>
       <label class="parameter-box clearfix">
         <div class="parameter-control">

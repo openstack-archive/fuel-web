@@ -149,6 +149,7 @@
             description: "Username for Administrator"
             weight: 10
             type: "text"
+            disabled: true
           email:
             value: "admin@example.org"
             label: "email"
@@ -161,6 +162,7 @@
             description: "Tenant (project) name for Administrator"
             weight: 30
             type: "text"
+            disabled: true
           password:
             value: "admin"
             label: "password"

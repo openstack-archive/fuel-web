@@ -857,12 +857,13 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         this.$el.modal('hide');
                         app.page.tab.model.fetch();
                         app.page.tab.screen.nodes.fetch();
+                        _.invoke(app.page.tab.screen.nodes.where({checked: true}), 'set', {checked: false});
                         app.page.tab.screen.updateBatchActionsButtons();
                         app.navbar.refresh();
                         app.page.removeFinishedTasks();
                     }, this))
                     .fail(_.bind(this.displayError, this));
-                }
+            }
         },
         render: function() {
             this.constructor.__super__.render.call(this, {nodes: this.nodes});

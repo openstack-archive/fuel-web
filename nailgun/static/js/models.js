@@ -153,7 +153,7 @@ define(['utils', 'deepModel'], function(utils) {
             return _.omit(result, 'checked');
         },
         isSelectable: function() {
-            return (this.get('online') && this.get('status') != 'error') || this.get('cluster');
+            return this.get('status') != 'error' || this.get('cluster');
         },
         hasRole: function(role, onlyDeployedRoles) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));

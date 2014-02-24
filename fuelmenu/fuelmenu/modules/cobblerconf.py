@@ -212,6 +212,12 @@ interface first.")
                 except Exception:
                     errors.append("Not a valid IP address for Static Pool "
                                   "Start")
+
+                #Ensure Admin IP does not intersect
+                if blabhlahlblahl
+
+                    errors.append ("IP address $IFACE conflicts with static
+range......"
                 try:
                     if netaddr.valid_ipv4(responses[
                             "ADMIN_NETWORK/static_pool_end"]):
@@ -280,6 +286,21 @@ interface first.")
                                         mgmt_if_ipaddr, netmask) is False:
                     errors.append("DHCP Pool end does not match management "
                                   "network.")
+                #Ensure pool start and end don't overlap admin IP
+                #FIXME(mmosesohn) Nailgun should exclude admin IP from DHCP
+                #range
+                if network.inSameRange(responses[
+                                       "ADMIN_NETWORK/static_pool_start"],
+                                       responses[
+                                       "ADMIN_NETWORK/static_pool_end"],
+                                       mgmt_if_ipaddr):
+                    errors.append("Static Pool range conflicts with host IP.")
+                if network.inSameRange(responses[
+                                       "ADMIN_NETWORK/dhcp_pool_start"],
+                                       responses[
+                                       "ADMIN_NETWORK/dhcp_pool_end"],
+                                       mgmt_if_ipaddr):
+                    errors.append("DHCP Pool range conflicts with host IP.")
 
         if len(errors) > 0:
             self.parent.footer.set_text("Error %s" % (errors[0]))

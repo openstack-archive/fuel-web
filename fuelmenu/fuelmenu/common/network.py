@@ -59,3 +59,12 @@ def getNetwork(ip, netmask, additionalip=None):
         return ipn_list
     except netaddr.AddrFormatError:
         return False
+
+
+def inSameRange(range_start, range_end, ip):
+    '''Return if ip is between range_start and range_end.'''
+    try:
+        iprange = list(netaddr.iter_iprange(range_start, range_end))
+        return netaddr.IPAddress(ip) in iprange
+    except netaddr.AddrFormatError:
+        return False

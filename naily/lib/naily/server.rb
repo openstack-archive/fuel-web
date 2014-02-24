@@ -62,13 +62,15 @@ module Naily
 
     def perform_main_job(metadata, payload)
       @main_work_thread = Thread.new do
-        data = parse_data(payload)
-        @tasks_queue = TaskQueue.new
+        begin
+          data = parse_data(payload)
+          @tasks_queue = TaskQueue.new
 
-        @tasks_queue.add_task(data)
-        dispatch(@tasks_queue)
-
-        metadata.ack
+          @tasks_queue.add_task(data)
+          dispatch(@tasks_queue)
+        ensure
+          metadata.ack
+        end
       end
     end
 
@@ -87,20 +89,23 @@ module Naily
           Naily.logger.debug "Dispatching aborted by #{message['method']}"
           abort_messages messages[(i + 1)..-1]
           break
-        rescue => ex
+        rescue Interrupt => ex
           # Because we could not stop thread from another thread, we use ability to raise
           # custom exception with special message and stop thread.
           if ex.message =~ /StopDeploy/
             Naily.logger.debug "Stop main work thread!"
             Thread.stop
             Naily.logger.debug "Run main work thread!"
+            break
           else
-            Naily.logger.error "Error running RPC method #{message['method']}: #{ex.message}, trace: #{ex.backtrace.inspect}"
-            return_results message, {
-              'status' => 'error',
-              'error'  => "Error occurred while running method '#{message['method']}'. Inspect Orchestrator logs for the details."
-            }
+            raise ex
           end
+        rescue => ex
+          Naily.logger.error "Error running RPC method #{message['method']}: #{ex.message}, trace: #{ex.backtrace.inspect}"
+          return_results message, {
+            'status' => 'error',
+            'error'  => "Error occurred while running method '#{message['method']}'. Inspect Orchestrator logs for the details."
+          }
           break
         end
       end

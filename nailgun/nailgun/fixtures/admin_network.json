@@ -27,5 +27,13 @@
             "first": "{{settings.ADMIN_NETWORK['first']}}",
             "last": "{{settings.ADMIN_NETWORK['last']}}"
         }
+    },
+    {
+        "pk": 1,
+        "model": "nailgun.i_p_addr",
+        "fields": {
+            "network_data": 1,
+            "ip_addr": "{{settings.MASTER_IP}}"
+        }
     }
 ]

@@ -195,6 +195,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 }, this)
                 ).fail(_.bind(function() {
                     this.$('.testsets > .row').hide();
+                    this.$('.testsets > .progress-bar').hide();
                     this.$('.testsets > .error-message').show();
                 }, this));
             } else {

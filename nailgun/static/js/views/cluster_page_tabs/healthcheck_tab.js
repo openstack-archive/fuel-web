@@ -39,8 +39,8 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             return this.tests.where({checked: true}).length;
         },
         isLocked: function() {
-            var notDeployedNodes = this.model.get('nodes').reject(function(node) {return node.get('status') == 'ready';});
-            return this.model.get('status') == 'error' || this.model.task({group: 'deployment', status: 'running'}) || notDeployedNodes.length;
+            var areNodesReady = this.model.get('nodes').length && !this.model.get('nodes').reject(function(node) {return node.get('status') == 'ready';}).length;
+            return !areNodesReady || this.model.get('status') == 'error' || this.model.task({group: 'deployment', status: 'running'});
         },
         disableControls: function(disable) {
             var disabledState = disable || this.isLocked();
@@ -154,7 +154,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         },
         initialize: function(options) {
             _.defaults(this, options);
-             this.runTestsButton = new Backbone.Model({
+            this.runTestsButton = new Backbone.Model({
                 visible: true,
                 disabled: true
             });
@@ -164,7 +164,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             });
             this.selectAllCheckbox = new Backbone.Model({
                 checked: false,
-                disabled: false
+                disabled: true
             });
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
@@ -194,8 +194,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                     this.scheduleUpdate();
                 }, this)
                 ).fail(_.bind(function() {
-                    this.$('.testsets > .row').hide();
-                    this.$('.testsets > .progress-bar').hide();
+                    this.$('.testsets > .row, .testsets > .progress-bar, .locked-alert').hide();
                     this.$('.testsets > .error-message').show();
                 }, this));
             } else {
@@ -242,7 +241,10 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({cluster: this.model})).i18n();
+            this.$el.html(this.template({
+                cluster: this.model,
+                locked: this.isLocked()
+            })).i18n();
             if (this.testsets.deferred.state() != 'pending') {
                 this.$('.testsets').html('');
                 this.testsets.each(function(testset) {

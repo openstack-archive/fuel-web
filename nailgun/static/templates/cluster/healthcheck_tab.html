@@ -11,14 +11,14 @@
       <button class="btn btn-danger pull-right action-btn stop-tests-btn hide" data-i18n="cluster_page.healthcheck_tab.stop_tests_button"></button>
     </div>
   </div>
-  <% if (cluster.get('status') == 'new') { %>
-    <div class="row-fluid">
+  <% if (locked) { %>
+    <div class="row-fluid locked-alert">
       <div class="span12">
-        <div class="alert" data-i18n="cluster_page.healthcheck_tab.deploy_alert"></div>
+        <% var alert = cluster.task({group: 'deployment', status: 'running'}) ? 'running_task_alert' : 'not_deployed_cluster_alert' %>
+        <div class="alert" data-i18n="cluster_page.healthcheck_tab.<%= alert %>"></div>
       </div>
     </div>
   <% } %>
-
   <div class="testsets">
     <div class="progress-bar">
       <div class="progress progress-striped progress-success active"><div class="bar"></div></div>

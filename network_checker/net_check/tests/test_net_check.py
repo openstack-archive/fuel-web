@@ -26,38 +26,23 @@ from scapy import all as scapy
 from net_check import api
 
 
-class TestNetCheckListener(unittest.TestCase):
+class BaseListenerTestCase(unittest.TestCase):
 
-    def setUp(self):
-        directory_path = os.path.dirname(__file__)
-        self.scapy_data = scapy.rdpcap(os.path.join(directory_path,
-                                                    'vlan.pcap'))
-        self.config = {
-            "src": "1.0.0.0", "ready_port": 31338,
+    def setUp(self, config=None):
+        default_config = {
+            "src": "1.0.0.0", "ready_port": None,
             "ready_address": "localhost", "dst": "1.0.0.0",
             "interfaces": {"eth0": "0,100,100,101,102,103,104,105,106,107"},
             "action": "listen",
             "cookie": "Nailgun:", "dport": 31337, "sport": 31337,
             "src_mac": None, "dump_file": "/var/tmp/net-probe-dump"
         }
+        self.config = config or default_config
         self.start_socket()
         listener = api.Listener(self.config)
         self.listener = multiprocessing.Process(target=listener.run)
         self.listener.start()
 
-    def start_socket(self):
-        self.ready_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.ready_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.ready_socket.bind((self.config['ready_address'], 0))
-        self.config['ready_port'] = self.ready_socket.getsockname()[1]
-        self.ready_socket.listen(1)
-        self.ready_socket.settimeout(5)
-
-    def send_packets(self):
-        for p in self.scapy_data:
-            scapy.sendp(p, iface='eth0')
-
-    def test_listener(self):
         connection, address = self.ready_socket.accept()
         request = connection.recv(1024)
         self.assertEqual('READY', request.decode())
@@ -68,6 +53,35 @@ class TestNetCheckListener(unittest.TestCase):
         self.send_packets()
         os.kill(self.listener.pid, signal.SIGINT)
         self.listener.join()
+
+    def start_socket(self):
+        self.ready_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.ready_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.ready_socket.bind((self.config['ready_address'], 0))
+        self.config['ready_port'] = self.ready_socket.getsockname()[1]
+        self.ready_socket.listen(1)
+        self.ready_socket.settimeout(5)
+
+    def send_packets(self):
+        pass
+
+    def tearDown(self):
+        self.ready_socket.close()
+        self.listener.terminate()
+        if os.path.exists(self.config['dump_file']):
+            os.unlink(self.config['dump_file'])
+
+
+class TestCaseListenerPcapFile(BaseListenerTestCase):
+
+    def send_packets(self):
+        directory_path = os.path.dirname(__file__)
+        scapy_data = scapy.rdpcap(os.path.join(directory_path, 'vlan.pcap'))
+        for p in scapy_data:
+            scapy.sendp(p, iface='eth0')
+
+    def test_listener_pcap_file(self):
+
         with open(self.config['dump_file'], 'r') as f:
             data = json.loads(f.read())
 
@@ -81,11 +95,28 @@ class TestNetCheckListener(unittest.TestCase):
             u'104': {u'1': [u'eth0'], u'2': [u'eth0']},
             u'105': {u'1': [u'eth0'], u'2': [u'eth0']}}})
 
-    def tearDown(self):
-        self.ready_socket.close()
-        self.listener.terminate()
-        if os.path.exists(self.config['dump_file']):
-            os.unlink(self.config['dump_file'])
+
+class TestCaseListenerCorruptedData(BaseListenerTestCase):
+
+    def send_packets(self):
+        normal_data = 'Nailgun:eth0 2'
+        corrupted_data = normal_data + '7h 7\00\00\00'
+        message_len = len(normal_data) + 8
+        p = scapy.Ether(src=self.config['src_mac'],
+                        dst="ff:ff:ff:ff:ff:ff")
+        p = p / scapy.IP(src=self.config['src'], dst=self.config['dst'])
+        p = p / scapy.UDP(sport=self.config['sport'],
+                          dport=self.config['dport'],
+                          len=message_len) / corrupted_data
+        for i in xrange(5):
+            scapy.sendp(p, iface='eth0')
+
+    def test_listener_corrupted_data(self):
+
+        with open(self.config['dump_file'], 'r') as f:
+            data = json.loads(f.read())
+
+        self.assertEqual(data, {u'eth0': {u'0': {u'2': [u'eth0']}}})
 
 
 class TestNetCheckSender(unittest.TestCase):

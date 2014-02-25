@@ -315,7 +315,7 @@
                     "title": "OpenStack Health Check",
                     "run_tests_button": "Run Tests",
                     "stop_tests_button": "Stop Tests",
-                    "deploy_alert": "You must deploy your new OpenStack environment before running tests against it.",
+                    "deploy_alert": "You must deploy your OpenStack environment before running tests against it.",
                     "not_available_alert": "OSTF server is not available.",
                     "expected_duration": "Expected Duration",
                     "actual_duration": "Actual Duration",

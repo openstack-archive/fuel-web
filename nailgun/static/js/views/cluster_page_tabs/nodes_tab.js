@@ -705,12 +705,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     }));
                 }
             },
-            '.node': {
+            '.node-container': {
                 attributes: [{
                     name: 'class',
                     observe: 'checked',
                     onGet: function(value, options) {
-                        return value ? 'node checked' : 'node';
+                        return value ? 'checked' : '';
                     }
                 }]
             },

@@ -586,24 +586,15 @@ h6.page-title {
 // Node Block
 // -------------------------
 
-.node {
-  display: block;
-  width: auto;
-  padding: 2px;
-  .box-sizing-mixin;
-  margin-bottom: 6px;
-  overflow: hidden;
-  &.checked {
-    background-color: #dedede;
-  }
-}
-
 .node-container {
   display: block;
   .width-height-size(100%, 52px);
   border: 1px solid @color-nodes-border;
   .box-sizing-mixin;
   .css-linear-gradient-filter(#edeeef, #dfe2e4);
+  &.checked {
+    background-color: #dedede;
+  }
   &:hover {
     box-shadow: 0 0 6px rgba(0,0,0,.2);
     .css-linear-gradient-filter(#e5e6e8, #d1d5d8);

@@ -15,9 +15,13 @@
       <p class="enable-selection">
         <%= urlify(linebreaks(task.escape('message'))) %>
         <% if (task.match({name: 'redhat_setup'})) { %>
-            <% var options = {type: 'local', source: 'naily', level: 'warning'} %>
-            <% logsLink = '#cluster/' + cluster.id + '/logs/' + serializeTabOptions(options) %>
-            <br/><%- $.t('cluster_page.reconfigure_redhat_account', {opt1: '<a href="#releases">', opt2: '</a>'}) %> <a href="<%- logsLink %>" data-i18n="common.see_logs"></a>.
+          <br/>
+          <%- $.t('cluster_page.reconfigure_redhat_account_prefix') %>
+          <a href="#releases" data-i18n="cluster_page.reconfigure_redhat_account"></a>
+          <%- $.t('common.see_logs_prefix') %>
+          <% var options = {type: 'local', source: 'naily', level: 'warning'} %>
+          <% logsLink = '#cluster/' + cluster.id + '/logs/' + serializeTabOptions(options) %>
+          <a href="<%- logsLink %>" data-i18n="common.see_logs"></a>.
         <% } %>
       </p>
     </div>

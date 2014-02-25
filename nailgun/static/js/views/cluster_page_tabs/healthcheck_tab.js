@@ -39,8 +39,9 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             return this.tests.where({checked: true}).length;
         },
         isLocked: function() {
-            var notDeployedNodes = this.model.get('nodes').reject(function(node) {return node.get('status') == 'ready';});
-            return this.model.get('status') == 'error' || this.model.task({group: 'deployment', status: 'running'}) || notDeployedNodes.length;
+            var nodes = this.model.get('nodes');
+            var readyCluster = nodes.length && !nodes.reject(function(node) {return node.get('status') == 'ready';}).length;
+            return this.model.get('status') == 'error' || this.model.task({group: 'deployment', status: 'running'}) || !readyCluster;
         },
         disableControls: function(disable) {
             var disabledState = disable || this.isLocked();

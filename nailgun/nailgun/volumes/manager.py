@@ -220,7 +220,9 @@ class DisksFormatConvertor(object):
                 'id': disk['id'],
                 'name': disk['name'],
                 'size': size,
-                'volumes': cls.serialize_volumes(disk['volumes'])}
+                'volumes': cls.serialize_volumes(disk['volumes']),
+                'extra': disk['extra'],
+            }
 
             disks_in_simple_format.append(disk_simple)
 

@@ -248,8 +248,8 @@ class TestHandlers(BaseIntegrationTest):
             }
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
-            if vlan_splinters == 'kernel_ml':
-                pnd['ks_meta']['kernel_ml'] = 1
+            if vlan_splinters == 'kernel_lt':
+                pnd['ks_meta']['kernel_lt'] = 1
 
             NetworkManager.assign_admin_ips(n.id, 1)
 
@@ -612,8 +612,8 @@ class TestHandlers(BaseIntegrationTest):
             }
 
             vlan_splinters = cluster_attrs.get('vlan_splinters', None)
-            if vlan_splinters == 'kernel_ml':
-                pnd['ks_meta']['kernel_ml'] = 1
+            if vlan_splinters == 'kernel_lt':
+                pnd['ks_meta']['kernel_lt'] = 1
 
             NetworkManager.assign_admin_ips(n.id, 1)
 

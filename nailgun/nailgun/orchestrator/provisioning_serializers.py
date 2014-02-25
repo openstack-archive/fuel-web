@@ -88,8 +88,8 @@ class ProvisioningSerializer(object):
                 'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')}}
 
         vlan_splinters = cluster_attrs.get('vlan_splinters', None)
-        if vlan_splinters == 'kernel_ml':
-            serialized_node['ks_meta']['kernel_ml'] = 1
+        if vlan_splinters == 'kernel_lt':
+            serialized_node['ks_meta']['kernel_lt'] = 1
 
         serialized_node.update(cls.serialize_interfaces(node))
 

@@ -788,7 +788,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     def _get_vlan_splinters_desc(cls, use_vlan_splinters, iface,
                                  cluster):
         iface_attrs = {}
-        if use_vlan_splinters in ('disabled', 'kernel_ml'):
+        if use_vlan_splinters in ('disabled', 'kernel_lt'):
             iface_attrs['vlan_splinters'] = 'off'
             return iface_attrs
         iface_attrs['vlan_splinters'] = 'auto'

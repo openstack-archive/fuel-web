@@ -565,14 +565,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertEquals(L2_attrs['vlan_splinters'], 'off')
             self.assertNotIn('trunks', L2_attrs)
 
-    def test_kernel_ml_vlan_splinters(self):
+    def test_kernel_lt_vlan_splinters(self):
         cluster = self._create_cluster_for_vlan_splinters()
         cluster_id = cluster.id
         editable_attrs = cluster.attributes.editable.copy()
 
         #value of kernel-ml should end up with vlan_splinters = off
 
-        editable_attrs['common']['vlan_splinters'] = {'value': 'kernel_ml'}
+        editable_attrs['common']['vlan_splinters'] = {'value': 'kernel_lt'}
         db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
@@ -580,7 +580,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable
         self.assertEquals(editable_attrs['common']['vlan_splinters']['value'],
-                          'kernel_ml')
+                          'kernel_lt')
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
         interfaces = node['network_scheme']['interfaces']

@@ -564,9 +564,9 @@
               - data: "hard"
                 label: "Use OVS VLAN splinters hard trunks workaround"
                 description: "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be predefined. This may work better than soft trunks especially if you still see network problems using soft trunks"
-              - data: "kernel_ml"
-                label: "EXPERIMENTAL: Use Fedora mainline kernel"
-                description: "Install the Fedora 3.11 mainline kernel instead of the default 2.6.32 kernel. This should remove any need for VLAN Splinters workarounds as the 3.11 kernel has better support for OVS VLANs. This kernel may not work with all hardware platforms, use caution."
+              - data: "kernel_lt"
+                label: "EXPERIMENTAL: Use Fedora longterm kernel"
+                description: "Install the Fedora 3.10 longterm kernel instead of the default 2.6.32 kernel. This should remove any need for VLAN Splinters workarounds as the 3.10 kernel has better support for OVS VLANs. This kernel may not work with all hardware platforms, use caution."
 - pk: 3
   extend: *full_release
   fields:

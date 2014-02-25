@@ -442,7 +442,10 @@ class NodeAgent
   def _master_ip_and_mac
     @os[:network][:interfaces].each do |_, intinfo|
       intinfo[:addresses].each do |k, v|
-        if !(IPAddr.new(k) rescue nil).nil?
+        # Here we need to check family because IPAddr.new with bad
+        # data works very slow on some environments
+        # https://bugs.launchpad.net/fuel/+bug/1284571
+        if v[:family] == 'inet' && !(IPAddr.new(k) rescue nil).nil?
           net = IPAddr.new("#{k}/#{v[:netmask]}")
           if net.include? @api_ip
             mac = intinfo[:addresses].find { |_, info| info[:family] == 'lladdr' }[0]

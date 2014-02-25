@@ -42,6 +42,7 @@ else:
     defaults.update(os.environ)
 ROOT = "http://{LISTEN_ADDRESS}:{LISTEN_PORT}".format(**defaults)
 
+FUELCLIENT_VERSION = "0.1"
 OSTF_ROOT = ROOT + "/ostf/"
 API_ROOT = ROOT + "/api/v1/"
 DEBUG = False
@@ -1907,6 +1908,26 @@ substitutions = {
 }
 
 
+def get_version():
+    version_path = "/etc/nailgun/version.yaml"
+    version_data = {
+        "client_version": FUELCLIENT_VERSION,
+        "release": "Unknown",
+        "build_id": "Unknown"
+    }
+    if os.path.exists(version_path):
+        with open(version_path, "r") as fh:
+            version_from_file = yaml.load(fh)
+            version_data.update(version_from_file["VERSION"])
+    else:
+        try:
+            version_data.update(json_api_get_request("version"))
+        except urllib2.URLError:
+            pass
+    return ("client-version: {client_version}. Fuel server release: "
+            "{release} (buld_id: {build_id})").format(**version_data)
+
+
 def prepare_args():
     # replace some args from dict substitutions
     sys.argv = map(
@@ -1981,6 +2002,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         usage="fuel [optional args] <namespace> [action] [flags]",
+        version=get_version()
     )
     parser.add_argument("--json",
                         dest="json",

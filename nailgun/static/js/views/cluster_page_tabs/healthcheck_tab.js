@@ -38,9 +38,11 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         getNumberOfCheckedTests: function() {
             return this.tests.where({checked: true}).length;
         },
+        areNodesReady: function() {
+            return this.model.get('nodes').length && !this.model.get('nodes').reject(function(node) {return node.get('status') == 'ready';}).length;
+        },
         isLocked: function() {
-            var notDeployedNodes = this.model.get('nodes').reject(function(node) {return node.get('status') == 'ready';});
-            return this.model.get('status') == 'error' || this.model.task({group: 'deployment', status: 'running'}) || notDeployedNodes.length;
+            return !this.areNodesReady() || this.model.get('status') == 'error' || this.model.task({group: 'deployment', status: 'running'});
         },
         disableControls: function(disable) {
             var disabledState = disable || this.isLocked();
@@ -242,7 +244,10 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({cluster: this.model})).i18n();
+            this.$el.html(this.template({
+                cluster: this.model,
+                areNodesReady: this.areNodesReady()
+            })).i18n();
             if (this.testsets.deferred.state() != 'pending') {
                 this.$('.testsets').html('');
                 this.testsets.each(function(testset) {

@@ -38,12 +38,10 @@ NETWORK_INTERFACE_TYPES = Enum(
 OVS_BOND_MODES = Enum(
     'active-backup',
     'balance-slb',
-    'balance-tcp',
     'lacp-balance-tcp',
     names=(
         'active_backup',
         'balance_slb',
-        'balance_tcp',
         'lacp_balance_tcp',
     )
 )

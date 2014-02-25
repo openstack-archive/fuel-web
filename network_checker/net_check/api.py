@@ -492,8 +492,13 @@ class Listener(Actor):
 
         self.logger.debug("Catched packet: vlan=%s len=%s payload=%s",
                           str(vlan), p[scapy.UDP].len, p[scapy.UDP].payload)
-
-        received_msg = str(p[scapy.UDP].payload)[:p[scapy.UDP].len]
+        # check scapy.layers.inet.py#L519
+        # scapy udp packets consumes first 8 bytes for headers
+        # so UDP package length - UDP_HEADERS_LEN will be size of legitimate
+        # message
+        UDP_HEADERS_LEN = 8
+        message_len = p[scapy.UDP].len-UDP_HEADERS_LEN
+        received_msg = p[scapy.UDP].load[:message_len]
         decoded_msg = received_msg.decode()
         riface, uid = decoded_msg[len(self.config["cookie"]):].split(' ', 1)
         uid = uid.strip('\x00\n')

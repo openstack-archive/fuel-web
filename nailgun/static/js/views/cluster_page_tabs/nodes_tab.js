@@ -1099,13 +1099,34 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             this.initButtons();
         },
+        getDiskMetaData: function(disk) {
+            var result;
+            var disksMetaData = this.nodes.at(0).get('meta').disks;
+            // try to find disk metadata by matching "extra" field
+            // if at least one entry presents both in disk and metadata entry,
+            // this metadata entry is for our disk
+            var extra = disk.get('extra') || [];
+            result = _.find(disksMetaData, function(diskMetaData) {
+                if (_.isArray(diskMetaData.extra)) {
+                    return _.intersection(diskMetaData.extra, extra).length;
+                }
+                return false;
+            }, this);
+
+            // if matching "extra" fields doesn't work, try to search by disk id
+            if (!result) {
+                result = _.find(disksMetaData, {disk: disk.id});
+            }
+
+            return result;
+        },
         renderDisks: function() {
             this.tearDownRegisteredSubViews();
             this.$('.node-disks').html('');
             this.disks.each(function(disk) {
                 var nodeDisk = new NodeDisk({
                     disk: disk,
-                    diskMetaData: _.find(this.nodes.at(0).get('meta').disks, {disk: disk.id}),
+                    diskMetaData: this.getDiskMetaData(disk),
                     screen: this
                 });
                 this.registerSubView(nodeDisk);
@@ -1131,11 +1152,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         volumeStylesTemplate: _.template(volumeStylesTemplate),
         templateHelpers: {
             sortEntryProperties: function(entry) {
+                var preferredOrder = ['name', 'model', 'size'];
                 var properties = _.keys(entry);
-                if (_.has(entry, 'name')) {
-                    properties = ['name'].concat(_.keys(_.omit(entry, ['name'])));
-                }
-                return properties;
+                return _.sortBy(properties, function(property) {
+                    var index = _.indexOf(preferredOrder, property);
+                    return index == -1 ? properties.length : index;
+                });
             },
             showDiskSize: utils.showDiskSize
         },

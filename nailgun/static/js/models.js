@@ -359,7 +359,7 @@ define(['utils', 'deepModel'], function(utils) {
 
     models.Interface = Backbone.Model.extend({
         constructorName: 'Interface',
-        bondingModes: ['active-backup', 'balance-slb', 'balance-tcp', 'lacp-balance-tcp'],
+        bondingModes: ['active-backup', 'balance-slb', 'lacp-balance-tcp'],
         parse: function(response) {
             response.assigned_networks = new models.InterfaceNetworks(response.assigned_networks);
             response.assigned_networks.interface = this;

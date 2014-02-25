@@ -130,7 +130,6 @@ def upgrade():
             sa.Enum(
                 'active-backup',
                 'balance-slb',
-                'balance-tcp',
                 'lacp-balance-tcp',
                 name='bond_mode'
             ),

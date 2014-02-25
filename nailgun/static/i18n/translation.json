@@ -151,7 +151,6 @@
                         "bonding_modes": {
                             "active-backup": "Active Backup",
                             "balance-slb": "Balance SLB",
-                            "balance-tcp": "Balance TCP",
                             "lacp-balance-tcp": "LACP Balance TCP"
                         },
                         "drag_and_drop_description": "You can drag and drop logical networks between interfaces",

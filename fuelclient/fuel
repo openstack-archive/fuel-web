@@ -42,6 +42,7 @@ else:
     defaults.update(os.environ)
 ROOT = "http://{LISTEN_ADDRESS}:{LISTEN_PORT}".format(**defaults)
 
+FUELCLIENT_VERSION = "0.1"
 OSTF_ROOT = ROOT + "/ostf/"
 API_ROOT = ROOT + "/api/v1/"
 DEBUG = False
@@ -63,6 +64,17 @@ PASSIVE_ARGUMENTS = ["rel", "env", "action", "debug", "json", "net", "yaml"]
 
 class DeployProgressError(Exception):
     pass
+
+
+class FuelVersionAction(argparse._VersionAction):
+    """Custom argparse._VersionAction subclass to compute fuel server version
+
+    :returns: prints fuel server version
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        formatter = parser._get_formatter()
+        formatter.add_text(get_fuel_version())
+        parser.exit(message=formatter.format_help())
 
 
 class NodeAction(argparse.Action):
@@ -1907,6 +1919,20 @@ substitutions = {
 }
 
 
+def get_fuel_version():
+    version_data = {
+        "client_version": FUELCLIENT_VERSION,
+        "release": "Unknown",
+        "build_id": "Unknown"
+    }
+    try:
+        version_data.update(json_api_get_request("version"))
+    except urllib2.URLError:
+        pass
+    return ("client-version: {client_version}. Fuel server release: "
+            "{release} (buld_id: {build_id})").format(**version_data)
+
+
 def prepare_args():
     # replace some args from dict substitutions
     sys.argv = map(
@@ -1980,26 +2006,27 @@ if __name__ == '__main__':
     prepare_args()
 
     parser = argparse.ArgumentParser(
-        usage="fuel [optional args] <namespace> [action] [flags]",
+        usage="fuel [optional args] <namespace> [action] [flags]"
     )
+    parser.add_argument("-v", "--version",
+                        action="version",
+                        version=FUELCLIENT_VERSION)
+    parser.add_argument("--fuel-version", action=FuelVersionAction)
     parser.add_argument("--json",
                         dest="json",
                         action="store_true",
                         help="prints to only json to stdout",
-                        default=False
-                        )
+                        default=False)
     parser.add_argument("--yaml",
                         dest="yaml",
                         action="store_true",
                         help="prints to only yaml to stdout",
-                        default=False
-                        )
+                        default=False)
     parser.add_argument("--debug",
                         dest="debug",
                         action="store_true",
                         help="prints details of all HTTP request",
-                        default=False
-                        )
+                        default=False)
     subparsers = parser.add_subparsers(
         title="Namespaces",
         metavar="",
@@ -2027,6 +2054,9 @@ if __name__ == '__main__':
     YAML = parsed_params.yaml
     if parsed_params.action not in actions:
         parser.print_help()
+        sys.exit(0)
+    elif parsed_params.fuel_version:
+        get_fuel_version()
         sys.exit(0)
     try:
         actions[parsed_params.action]["action"](parsed_params)

@@ -13,8 +13,10 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+from fuelmenu.common import dialog
 from fuelmenu.common.modulehelper import ModuleHelper
 from fuelmenu.common import nailyfactersettings
+import fuelmenu.common.urwidwrapper as widget
 from fuelmenu.settings import Settings
 import logging
 import re
@@ -85,6 +87,7 @@ class ntpsetup(urwid.WidgetWrap):
 
         ###Validate each field
         errors = []
+        warnings = []
         if responses['ntpenabled'] == "No":
             #Disabled NTP means passing no NTP servers to save method
             responses = {
@@ -122,18 +125,26 @@ class ntpsetup(urwid.WidgetWrap):
                 try:
                     #Try to test NTP via ntpdate
                     if not self.checkNTP(ntpvalue):
-                        errors.append("%s unable to perform NTP."
-                                      % self.defaults[ntpfield]['label'])
-                except Exception as e:
-                    errors.append(e)
-                    errors.append("%s unable to perform NTP: %s"
-                                  % self.defaults[ntpfield]['label'])
+                        warnings.append("%s unable to perform NTP."
+                                        % self.defaults[ntpfield]['label'])
+                except Exception:
+                    warnings.append("%s unable to sync time with server.: %s"
+                                    % self.defaults[ntpfield]['label'])
         if len(errors) > 0:
             self.parent.footer.set_text(
                 "Errors: %s First error: %s" % (len(errors), errors[0]))
-            log.warning("Errors: %s %s" % (len(errors), errors))
+            log.error("Errors: %s %s" % (len(errors), errors))
             return False
         else:
+            if len(warnings) > 0:
+                msg = ["NTP configuration has the following warnings:"]
+                msg.extend(warnings)
+                msg.append("You may see errors during provisioning and "
+                           "in system logs. NTP errors are not fatal.")
+                warning_msg = '\n'.join(str(line) for line in msg)
+                dialog.display_dialog(self, widget.TextLabel(warning_msg),
+                                      "NTP Warnings")
+                log.warning(warning_msg)
             self.parent.footer.set_text("No errors found.")
             log.info("No errors found")
             return responses

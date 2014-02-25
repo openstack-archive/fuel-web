@@ -17,12 +17,14 @@ from __future__ import print_function
 import argparse
 import curses
 from functools import partial
+from functools import wraps
 from itertools import chain
 from itertools import groupby
 import json
 import math
 from operator import itemgetter
 import os
+import pkg_resources
 import shutil
 import sys
 from time import sleep
@@ -41,6 +43,11 @@ if os.path.exists(path_to_config):
 else:
     defaults.update(os.environ)
 ROOT = "http://{LISTEN_ADDRESS}:{LISTEN_PORT}".format(**defaults)
+
+try:
+    __version__ = pkg_resources.get_distribution("python-fuelclient").version
+except pkg_resources.DistributionNotFound:
+    __version__ = ""
 
 OSTF_ROOT = ROOT + "/ostf/"
 API_ROOT = ROOT + "/api/v1/"
@@ -63,6 +70,15 @@ PASSIVE_ARGUMENTS = ["rel", "env", "action", "debug", "json", "net", "yaml"]
 
 class DeployProgressError(Exception):
     pass
+
+
+class FuelVersionAction(argparse._VersionAction):
+    """Custom argparse._VersionAction subclass to compute fuel server version
+
+    :returns: prints fuel server version
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        parser.exit(message=get_fuel_version())
 
 
 class NodeAction(argparse.Action):
@@ -124,6 +140,16 @@ def handle_exceptions(exc):
         print_error("Can't connect to Nailgun server!")
     else:
         raise exc
+
+
+def exceptions_decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            handle_exceptions(exc)
+    return wrapper
 
 
 def recur_get(multi_level_dict, key_chain):
@@ -1907,6 +1933,14 @@ substitutions = {
 }
 
 
+@exceptions_decorator
+def get_fuel_version():
+    return yaml.safe_dump(
+        json_api_get_request("version"),
+        default_flow_style=False
+    )
+
+
 def prepare_args():
     # replace some args from dict substitutions
     sys.argv = map(
@@ -1980,26 +2014,27 @@ if __name__ == '__main__':
     prepare_args()
 
     parser = argparse.ArgumentParser(
-        usage="fuel [optional args] <namespace> [action] [flags]",
+        usage="fuel [optional args] <namespace> [action] [flags]"
     )
+    parser.add_argument("-v", "--version",
+                        action="version",
+                        version=__version__)
+    parser.add_argument("--fuel-version", action=FuelVersionAction)
     parser.add_argument("--json",
                         dest="json",
                         action="store_true",
                         help="prints to only json to stdout",
-                        default=False
-                        )
+                        default=False)
     parser.add_argument("--yaml",
                         dest="yaml",
                         action="store_true",
                         help="prints to only yaml to stdout",
-                        default=False
-                        )
+                        default=False)
     parser.add_argument("--debug",
                         dest="debug",
                         action="store_true",
                         help="prints details of all HTTP request",
-                        default=False
-                        )
+                        default=False)
     subparsers = parser.add_subparsers(
         title="Namespaces",
         metavar="",
@@ -2028,7 +2063,6 @@ if __name__ == '__main__':
     if parsed_params.action not in actions:
         parser.print_help()
         sys.exit(0)
-    try:
-        actions[parsed_params.action]["action"](parsed_params)
-    except Exception as e:
-        handle_exceptions(e)
+    exceptions_decorator(
+        actions[parsed_params.action]["action"]
+    )(parsed_params)

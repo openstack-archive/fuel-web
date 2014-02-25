@@ -135,3 +135,24 @@ class BaseTestCase(TestCase):
     def check_number_of_rows_in_table(self, command, number_of_rows):
         output = self.run_cli_command(command)
         self.assertEqual(len(output.stdout.split("\n")), number_of_rows + 3)
+
+    def check_if_file_created(self, command, path):
+        self.run_cli_command(command)
+        self.assertTrue(os.path.exists(path))
+        self.remove_file_or_dir_after_check(
+            (path,)
+        )
+
+    def check_if_files_created(self, command, paths):
+        self.run_cli_command(command)
+        for path in paths:
+            self.assertTrue(os.path.exists(path))
+        self.remove_file_or_dir_after_check(paths)
+
+    def remove_file_or_dir_after_check(self, paths):
+        paths = set(paths)
+        files = set(path for path in paths if os.path.isfile(path))
+        for _file in files:
+            os.remove(_file)
+        for _dir in (paths - files):
+            os.rmdir(_dir)

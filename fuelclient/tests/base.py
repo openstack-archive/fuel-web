@@ -25,6 +25,9 @@ import os
 import subprocess
 import sys
 
+from shutil import rmtree
+from tempfile import mkdtemp
+
 logging.basicConfig(stream=sys.stderr)
 logging.getLogger("CliTest.ExecutionLog").setLevel(logging.DEBUG)
 
@@ -60,9 +63,16 @@ class BaseTestCase(TestCase):
         "fuelclient/fuel"
     )
 
+    temp_directory = None
+
     @classmethod
     def setUp(cls):
         cls.reload_nailgun_server()
+        cls.temp_directory = mkdtemp()
+
+    @classmethod
+    def tearDown(cls):
+        rmtree(cls.temp_directory)
 
     @classmethod
     def reload_nailgun_server(cls):
@@ -135,3 +145,11 @@ class BaseTestCase(TestCase):
     def check_number_of_rows_in_table(self, command, number_of_rows):
         output = self.run_cli_command(command)
         self.assertEqual(len(output.stdout.split("\n")), number_of_rows + 3)
+
+    def check_if_files_created(self, command, paths):
+        command_in_dir = "{0} --dir={1}".format(command, self.temp_directory)
+        self.run_cli_command(command_in_dir)
+        for path in paths:
+            self.assertTrue(os.path.exists(
+                os.path.join(self.temp_directory, path)
+            ))

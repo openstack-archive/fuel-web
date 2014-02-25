@@ -60,9 +60,8 @@ class BaseTestCase(TestCase):
         "fuelclient/fuel"
     )
 
-    @classmethod
-    def setUp(cls):
-        cls.reload_nailgun_server()
+    def setUp(self):
+        self.reload_nailgun_server()
 
     @classmethod
     def reload_nailgun_server(cls):

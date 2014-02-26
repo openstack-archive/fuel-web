@@ -138,7 +138,9 @@ class TestNetCheckSender(unittest.TestCase):
 
     def start_pcap_listener(self):
         self.pcap_listener = pcap.pcap('eth0')
+        self.vlan_pcap_listener = pcap.pcap('eth0')
         filter_string = 'udp and dst port {0}'.format(self.config['dport'])
+        self.vlan_pcap_listener.setfilter('vlan and {0}'.format(filter_string))
         self.pcap_listener.setfilter(filter_string)
 
     def start_sender(self):
@@ -147,9 +149,16 @@ class TestNetCheckSender(unittest.TestCase):
         self.sender.start()
 
     @property
+    def pcap_packets(self):
+        for pkt in self.pcap_listener.readpkts():
+            yield pkt
+        for pkt in self.vlan_pcap_listener.readpkts():
+            yield pkt
+
+    @property
     def received_vlans(self):
         results = set()
-        for pkt in self.pcap_listener.readpkts():
+        for pkt in self.pcap_packets:
             ether = scapy.Ether(pkt[1])
             if scapy.Dot1Q in ether:
                 vlan = str(ether[scapy.Dot1Q].vlan)

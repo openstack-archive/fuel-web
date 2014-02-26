@@ -346,6 +346,11 @@ class Sender(Actor):
             self.logger.error("An internal error occured: %s\n%s", str(e),
                               traceback.format_exc())
 
+    def _get_iface_mac(self, iface):
+        path = '/sys/class/net/{iface}/address'.format(iface=iface)
+        with open(path, 'r') as address:
+            return address.read().strip('\n')
+
     def _run(self):
         for iface, vlan in self._iface_vlan_iterator():
             self._ensure_iface_up(iface)
@@ -354,15 +359,10 @@ class Sender(Actor):
             self.logger.debug("Sending packets: iface=%s vlan=%s",
                               iface, str(vlan))
 
-            if vlan > 0:
-                self.logger.debug("Ensure up: %s, %s", iface, str(vlan))
-                self._ensure_viface_create_and_up(iface, vlan)
-                viface = self._viface_by_iface_vid(iface, vlan)
-            else:
-                viface = iface
-
-            p = scapy.Ether(src=self.config['src_mac'],
+            p = scapy.Ether(src=self._get_iface_mac(iface),
                             dst="ff:ff:ff:ff:ff:ff")
+            if vlan > 0:
+                p = p / scapy.Dot1Q(vlan=vlan)
             p = p / scapy.IP(src=self.config['src'], dst=self.config['dst'])
             p = p / scapy.UDP(sport=self.config['sport'],
                               dport=self.config['dport']) / data
@@ -370,14 +370,10 @@ class Sender(Actor):
             try:
                 for i in xrange(5):
                     self.logger.debug("Sending packet: iface=%s data=%s",
-                                      viface, data)
-                    scapy.sendp(p, iface=viface)
+                                      iface, data)
+                    scapy.sendp(p, iface=iface)
             except socket.error as e:
-                self.logger.error("Socket error: %s, %s", e, viface)
-
-            if vlan > 0:
-                self.logger.debug("Ensure down: %s, %s", iface, str(vlan))
-                self._ensure_viface_down_and_remove(iface, vlan)
+                self.logger.error("Socket error: %s, %s", e, iface)
 
         self._log_ifaces("Interfaces just after sending probing packages")
         for iface in self._iface_iterator():
@@ -429,10 +425,6 @@ class Listener(Actor):
 
         for iface, vlan in self._iface_vlan_iterator():
             self._ensure_iface_up(iface)
-            if vlan > 0:
-                self.logger.debug("Ensure up: %s, %s", iface, str(vlan))
-                self._ensure_viface_create_and_up(iface, vlan)
-                self._viface_by_iface_vid(iface, vlan)
             if iface not in sniffers:
                 run_listener_thread(iface)
                 run_listener_thread(iface, vlan=True)
@@ -469,11 +461,6 @@ class Listener(Actor):
             self.logger.debug("TERM signal catched")
 
         self._log_ifaces("Interfaces just before ensuring interfaces down")
-
-        for iface, vlan in self._iface_vlan_iterator():
-            if vlan > 0:
-                self.logger.debug("Ensure down: %s, %s", iface, str(vlan))
-                self._ensure_viface_down_and_remove(iface, vlan)
 
         for iface in self._iface_iterator():
             self._ensure_iface_down(iface)

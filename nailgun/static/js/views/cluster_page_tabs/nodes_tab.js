@@ -458,7 +458,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         checkForConflicts: function(e) {
             this.collection.each(function(role) {
                 var selectedRoles = this.collection.filter(function(role) {return role.get('checked') || role.get('indeterminate');});
-                role.set('disabled', !this.screen.nodes.length || !this.isControllerSelectable(role) || _.contains(this.getListOfIncompatibleRoles(selectedRoles), role.get('name')));
+                var roleConflict = _.contains(this.getListOfIncompatibleRoles(selectedRoles), role.get('name'));
+                var isDisabled = !this.screen.nodes.length || !this.isControllerSelectable(role) || roleConflict || !role.get('dependentSettingState');
+                role.set('disabled', isDisabled);
             }, this);
             if (this.cluster.get('mode') == 'multinode' && this.screen.nodeList) {
                 var controllerNode = this.nodes.filter(function(node) {return node.hasRole('controller');})[0];
@@ -474,22 +476,40 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 _.invoke(this.screen.nodeList.subViews, 'calculateSelectAllDisabledState', this);
             }
         },
-        initialize: function(options) {
-            _.defaults(this, options);
-            this.cluster = this.screen.tab.model;
+        initNodesCollection: function() {
             this.collection = new Backbone.Collection(_.map(this.cluster.get('release').get('roles'), function(role) {
                 var roleData = this.cluster.get('release').get('roles_metadata')[role];
                 var nodesWithRole = this.nodes.filter(function(node) {return node.hasRole(role);});
+                var dependentSettingState = true;
+                var dependentWarning;
+                try {
+                    _.each(roleData.depends.condition, function(value, condition) {
+                        dependentSettingState = utils.parseModelPath(condition, {settings: this.settings, cluster: this.cluster, default: this.settings}).get() == value;
+                    }, this);
+
+                    dependentWarning = roleData.depends.warning;
+                } catch (ignore) {}
                 return {
                     name: role,
                     label: roleData.name,
                     description: roleData.description,
                     disabled: false,
+                    dependentSettingState: dependentSettingState,
+                    dependentWarning: dependentWarning,
                     checked: !!nodesWithRole.length && nodesWithRole.length == this.nodes.length,
                     indeterminate: !!nodesWithRole.length && nodesWithRole.length != this.nodes.length
                 };
             }, this));
             this.collection.on('change:checked', this.handleChanges, this);
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+            this.cluster = this.screen.tab.model;
+            this.settings = this.cluster.get('settings');
+            (this.loading = this.settings.fetch({cache: true})).done(_.bind(this.initNodesCollection, this));
+            if (this.loading.state() == 'pending') {
+                this.loading.done(_.bind(this.render, this));
+            }
         },
         stickitRole: function (role) {
             var bindings = {};
@@ -512,7 +532,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 stickitChange: role,
                 onGet: _.bind(function(value, options) {
                     if (value && this.screen.nodes.length) {
-                        return this.isControllerSelectable(options.stickitChange) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
+                        // display warning message for inactive role
+                        var inactiveRole = options.stickitChange;
+                        if (!inactiveRole.get('dependentSettingState')){
+                            return inactiveRole.get('dependentWarning');
+                        }
+                        return this.isControllerSelectable(inactiveRole) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
                     }
                     return '';
                 }, this)
@@ -520,9 +545,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return this.stickit(role, bindings);
         },
         render: function() {
-            this.$el.html(this.template({roles: this.collection})).i18n();
-            this.collection.each(this.stickitRole, this);
-            this.checkForConflicts();
+            if (this.loading.state() != 'pending') {
+                this.$el.html(this.template({roles: this.collection})).i18n();
+                this.collection.each(this.stickitRole, this);
+                this.checkForConflicts();
+            }
             return this;
         }
     });

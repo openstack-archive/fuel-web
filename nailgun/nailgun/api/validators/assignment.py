@@ -68,30 +68,34 @@ class NodeAssignmentValidator(AssignmentValidator):
         nodes = db.query(Node).filter(Node.id.in_(received_node_ids))
         cls.check_all_nodes(nodes, received_node_ids)
         cls.check_if_already_done(nodes)
-        release = db.query(Cluster).get(cluster_id).release
+        cluster = db.query(Cluster).get(cluster_id)
         for node_id in received_node_ids:
             cls.validate_roles(
-                release,
+                cluster,
                 dict_data[node_id]
             )
         return dict_data
 
     @classmethod
-    def validate_roles(cls, release, roles):
+    def validate_roles(cls, cluster, roles):
+        release = cluster.release
         roles = set(roles)
         not_valid_roles = roles - set(release.roles)
         if not_valid_roles:
             raise errors.InvalidData(
                 u"{0} are not valid roles for node in {1} release"
-                .format(", ".join(not_valid_roles), release.name),
+                .format(u", ".join(not_valid_roles), release.name),
                 log_message=True
             )
         roles_metadata = release.roles_metadata
         if roles_metadata:
             cls.check_roles_for_conflicts(roles, roles_metadata)
+            cls.check_roles_requirement(roles,
+                                        roles_metadata,
+                                        cluster.attributes.editable)
 
-    @staticmethod
-    def check_roles_for_conflicts(roles, roles_metadata):
+    @classmethod
+    def check_roles_for_conflicts(cls, roles, roles_metadata):
         for role in roles:
             if "conflicts" in roles_metadata[role]:
                 other_roles = roles - set([role])
@@ -103,6 +107,26 @@ class NodeAssignmentValidator(AssignmentValidator):
                         .format(role, ", ".join(conflicting_roles)),
                         log_message=True
                     )
+
+    @classmethod
+    def check_roles_requirement(cls, roles, roles_metadata, settings):
+        for role in roles:
+            if "requires" in roles_metadata[role]:
+                requires = roles_metadata[role]["requires"]
+                setting = cls._search_in_settings(settings,
+                                                  requires["settings"])
+                if not setting:
+                    raise errors.InvalidData(requires["description"])
+
+    @classmethod
+    def _search_in_settings(cls, settings, pattern):
+        setting = pattern.split('.')
+        if len(setting):
+            if len(setting) == 1:
+                return settings[setting[0]]
+            if setting[0] in settings:
+                return cls._search_in_settings(settings[setting[0]],
+                                               '.'.join(setting[1:]))
 
 
 class NodeUnassignmentValidator(AssignmentValidator):

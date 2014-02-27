@@ -57,13 +57,16 @@ def forbid_client_caching(handler):
 
 @decorator
 def content_json(func, *args, **kwargs):
-    web.header('Content-Type', 'application/json')
     try:
         data = func(*args, **kwargs)
+    except web.notmodified:
+        raise
     except web.HTTPError as http_error:
+        web.header('Content-Type', 'application/json')
         if isinstance(http_error.data, (dict, list)):
             http_error.data = build_json_response(http_error.data)
         raise
+    web.header('Content-Type', 'application/json')
     return build_json_response(data)
 
 

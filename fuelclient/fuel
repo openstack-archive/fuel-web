@@ -1114,6 +1114,13 @@ def health_check(params):
     if params.list:
         print_to_output(test_sets, format_table(test_sets))
     else:
+        cluster = json_api_get_request("clusters/{0}/".format(params.env))
+        if cluster["is_customized"] and not params.force:
+            print_error(
+                "Environment deployment facts were updated. "
+                "Health check is likely to fail because of "
+                "that. Use --force flag to proceed anyway."
+            )
         params.check = params.check or set(ts["id"] for ts in test_sets)
         tests_data = map(
             lambda testset: {
@@ -1850,6 +1857,7 @@ actions = {
         "args": [
             get_env_arg(required=True),
             get_list_arg("List all available checks"),
+            get_force_arg(),
             {
                 "args": ["--check"],
                 "params": {

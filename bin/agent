@@ -26,6 +26,7 @@ require 'optparse'
 require 'yaml'
 require 'ipaddr'
 require 'rethtool'
+require 'digest'
 
 unless Process.euid == 0
   puts "You must be root"
@@ -44,6 +45,20 @@ STORAGE_CODES = [3, 8, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106, 107, 108, 109,
 REMOVABLE_VENDORS = [
   "Adaptec",
 ]
+
+def digest(body)
+  if body.is_a? Hash
+    digest body.map { |k,v| [digest(k),digest(v)].join("=>") }.sort
+  elsif body.is_a? Array
+    body.map{ |v| digest v }.join('|')
+  else
+    [body.class.to_s, body.to_s].join(":")
+  end
+end
+
+def createsig(body)
+  Digest::SHA1.hexdigest( digest body )
+end
 
 class McollectiveConfig
   def initialize(logger)
@@ -136,7 +151,7 @@ class NodeAgent
     @logger.debug("Trying to put host info into #{@api_url}")
     @logger.debug("Headers: #{headers}")
     @logger.debug("Data: #{[_data].to_json}")
-    res = htclient.put("#{@api_url}/nodes/", [_data].to_json, headers)
+    res = htclient.put("#{@api_url}/nodes/agent/", _data.to_json, headers)
     @logger.debug("Response: status: #{res.status} body: #{res.body}")
     if res.status < 200 or res.status >= 300
       @logger.error("HTTP PUT failed: #{res.inspect}")
@@ -461,7 +476,7 @@ class NodeAgent
     res = {
       :mac => (@os[:macaddress] rescue nil),
       :ip  => (@os[:ipaddress] rescue nil),
-      :os_platform => (@os[:platform] rescue nil)
+      :os_platform => (@os[:platform] rescue nil),
     }
     begin
       detailed_data = _detailed
@@ -479,6 +494,7 @@ class NodeAgent
 
     res[:status] = @node_state if @node_state
     res[:is_agent] = true
+    res[:agent_checksum] = createsig(res)
     res
   end
 
@@ -540,14 +556,22 @@ agent = NodeAgent.new(logger, url)
 agent.update_state
 
 begin
-  post_res = agent.post
-  if post_res.status == 409
-    put_res = agent.put
-    new_id = JSON.parse(put_res.body)[0]['id']
-  elsif post_res.status == 201
-    new_id = JSON.parse(post_res.body)['id']
+  put_res = agent.put
+  # nailgun returns 'Invalid MAC specified' for unregistered nodes
+  if [404, 400].include? put_res.status
+    post_res = agent.post
+    if post_res.status == 201
+      new_id = JSON.parse(post_res.body)['id']
+    else
+      logger.error post_res.body
+      exit 1
+    end
+  elsif put_res.status == 304
+    exit 1
+  elsif put_res.status == 200
+    new_id = JSON.parse(post_res.body)[0]['id']
   else
-    logger.error post_res.body
+    logger.error put_res.body
     exit 1
   end
   mc_config = McollectiveConfig.new(logger)

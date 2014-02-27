@@ -252,11 +252,11 @@ class TestHandlers(BaseIntegrationTest):
         )
         node_db = self.env.nodes[0]
         resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([
-                {'mac': node_db.mac, 'is_agent': True,
+            reverse('NodeAgentHandler'),
+            json.dumps(
+                {'mac': node_db.mac,
                  'status': 'discover', 'manufacturer': 'new'}
-            ]),
+            ),
             headers=self.default_headers
         )
         self.assertEquals(resp.status, 200)
@@ -283,16 +283,37 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(node.timestamp, timestamp)
 
         resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([
+            reverse('NodeAgentHandler'),
+            json.dumps(
                 {'mac': node.mac, 'status': 'discover',
-                 'manufacturer': 'new', 'is_agent': True}
-            ]),
+                 'manufacturer': 'new'}
+            ),
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
         node = self.db.query(Node).get(node.id)
         self.assertNotEquals(node.timestamp, timestamp)
         self.assertEquals('new', node.manufacturer)
+
+    def test_agent_caching(self):
+        node = self.env.create_node(api=False)
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            json.dumps({
+                'mac': node.mac,
+                'manufacturer': 'new',
+                'agent_checksum': 'test'
+            }),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 200)
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            json.dumps({
+                'mac': node.mac,
+                'manufacturer': 'new',
+                'agent_checksum': 'test'
+            }),
+            headers=self.default_headers)
+        self.assertEquals(resp.status, 304)
 
     def test_node_create_ip_not_in_admin_range(self):
         node = self.env.create_node(api=False)

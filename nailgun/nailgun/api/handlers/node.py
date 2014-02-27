@@ -19,6 +19,7 @@ Handlers dealing with nodes
 """
 
 from datetime import datetime
+import hashlib
 import json
 import traceback
 
@@ -41,6 +42,7 @@ from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.network.topology import TopoChecker
 from nailgun import notifier
+from nailgun.utils import make_hash
 
 
 class NodeHandler(BaseHandler):
@@ -332,17 +334,6 @@ class NodeCollectionHandler(BaseHandler):
             else:
                 node = q.get(nd["id"])
 
-            is_agent = nd.pop("is_agent") if "is_agent" in nd else False
-            if is_agent:
-                node.timestamp = datetime.now()
-                if not node.online:
-                    node.online = True
-                    msg = u"Node '{0}' is back online".format(
-                        node.human_readable_name)
-                    logger.info(msg)
-                    notifier.notify("discover", msg, node_id=node.id)
-                db().commit()
-
             old_cluster_id = node.cluster_id
 
             if nd.get("pending_roles") == [] and node.cluster:
@@ -364,13 +355,6 @@ class NodeCollectionHandler(BaseHandler):
             ))
 
             for key, value in nd.iteritems():
-                if is_agent and (key, value) == ("status", "discover") \
-                        and node.status in ('provisioning', 'error'):
-                    # We don't update provisioning and error back to discover
-                    logger.debug(
-                        "Node has provisioning or error status - "
-                        "status not updated by agent")
-                    continue
                 if key == "meta":
                     node.update_meta(value)
                 # don't update node ID
@@ -419,11 +403,6 @@ class NodeCollectionHandler(BaseHandler):
 
             network_manager = NetworkManager
 
-            if is_agent:
-                # Update node's NICs.
-                network_manager.update_interfaces_info(node)
-                db().commit()
-
             nodes_updated.append(node.id)
             if 'cluster_id' in nd and nd['cluster_id'] != old_cluster_id:
                 if old_cluster_id:
@@ -441,6 +420,109 @@ class NodeCollectionHandler(BaseHandler):
             joinedload('bond_interfaces.assigned_networks_list')).\
             filter(Node.id.in_(nodes_updated)).all()
         return self.render(nodes)
+
+
+class NodeAgentHandler(BaseHandler):
+
+    validator = NodeValidator
+
+    @content_json
+    def PUT(self):
+        """:returns: node id.
+        :http: * 200 (node are successfully updated)
+               * 304 (node data not changed since last request)
+               * 400 (invalid nodes data specified)
+               * 404 (node not found)
+        """
+        nd = self.checked_data(
+            self.validator.validate_collection_update,
+            data='[{0}]'.format(web.data())
+        )[0]
+
+        q = db().query(Node)
+        node = None
+        if nd.get("mac"):
+            node = (
+                q.filter_by(mac=nd["mac"]).first()
+                or self.validator.validate_existent_node_mac_update(nd)
+            )
+        else:
+            node = q.get(nd["id"])
+
+        if not node:
+            raise web.notfound()
+
+        node.timestamp = datetime.now()
+        if not node.online:
+            node.online = True
+            msg = u"Node '{0}' is back online".format(node.human_readable_name)
+            logger.info(msg)
+            notifier.notify("discover", msg, node_id=node.id)
+        db().commit()
+
+        # caching raw data to avoid useless db updates
+        agent_checksum = hashlib.sha1(str(make_hash(web.data()))).hexdigest()
+        if node.agent_checksum == agent_checksum:
+            raise web.notmodified()
+        node.agent_checksum = agent_checksum
+        db().commit()
+
+        for key, value in nd.iteritems():
+            if (
+                (key, value) == ("status", "discover")
+                and node.status in ('provisioning', 'error')
+            ):
+                # We don't update provisioning and error back to discover
+                logger.debug(
+                    "Node has provisioning or error status - "
+                    "status not updated by agent")
+                continue
+            if key == "meta":
+                node.update_meta(value)
+            # don't update node ID
+            elif key != "id":
+                setattr(node, key, value)
+        db().commit()
+        if not node.attributes:
+            node.attributes = NodeAttributes()
+            db().commit()
+        if not node.attributes.volumes:
+            node.attributes.volumes = node.volume_manager.gen_volumes_info()
+            db().commit()
+        if not node.status in ('provisioning', 'deploying'):
+            variants = (
+                "disks" in node.meta and len(node.meta["disks"]) != len(
+                    filter(
+                        lambda d: d["type"] == "disk",
+                        node.attributes.volumes
+                    )
+                ),
+            )
+            if any(variants):
+                try:
+                    node.attributes.volumes = (
+                        node.volume_manager.gen_volumes_info()
+                    )
+                    if node.cluster:
+                        node.cluster.add_pending_changes(
+                            "disks", node_id=node.id
+                        )
+                except Exception as exc:
+                    msg = (
+                        "Failed to generate volumes info for node '{0}': '{1}'"
+                    ).format(
+                        node.human_readable_name,
+                        str(exc) or "see logs for details"
+                    )
+                    logger.warning(traceback.format_exc())
+                    notifier.notify("error", msg, node_id=node.id)
+
+            db().commit()
+
+        NetworkManager.update_interfaces_info(node)
+        db().commit()
+
+        return {"id": node.id}
 
 
 class NodeNICsHandler(BaseHandler):

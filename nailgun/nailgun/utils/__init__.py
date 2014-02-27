@@ -29,3 +29,24 @@ def dict_merge(a, b):
         else:
             result[k] = deepcopy(v)
     return result
+
+
+def make_hash(o):
+
+    """
+    Makes a hash from a dictionary, list, tuple or set to any level,
+    that contains only other hashable types
+    (including any lists, tuples, sets, and dictionaries).
+    Hash is independent from key and values order.
+    """
+
+    if isinstance(o, (set, tuple, list)):
+        return tuple([make_hash(e) for e in sorted(o)])
+    elif not isinstance(o, dict):
+        return hash(o)
+
+    new_o = deepcopy(o)
+    for k, v in new_o.items():
+        new_o[k] = make_hash(v)
+
+    return tuple(frozenset(sorted(new_o.items())))

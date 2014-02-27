@@ -110,6 +110,7 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                 tasks.fetch = function(options) {
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
                 };
+
                 $.when(cluster.fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'), tasks.fetch())
                     .then(_.bind(function(){
                         cluster.set('release', new models.Release({id: cluster.get('release_id')}));

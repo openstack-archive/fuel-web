@@ -604,7 +604,7 @@ def node(params):
             .format(mode, ", ".join(node_ids))
         )
     else:
-        acceptable_keys = ["id", "status", "name", "cluster",
+        acceptable_keys = ["id", "status", "name", "cluster", "ip",
                            "mac", "roles", "pending_roles", "online"]
         data = json_api_get_request("nodes/")
         if params.env:

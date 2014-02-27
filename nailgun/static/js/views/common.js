@@ -279,7 +279,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
                 isMirantis: this.isMirantis,
                 locales: this.locales,
                 currentLocale: this.getCurrentLocale()
-            }));
+            })).i18n();
             return this;
         }
     });

@@ -112,6 +112,11 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                         cluster.set('release', new models.Release({id: cluster.get('release_id')}));
                         return cluster.fetchRelated('release');
                     }, this))
+                    .then(_.bind(function(){
+                        cluster.set({'settings': new models.Settings()}, {silent: true});
+                        cluster.get('settings').deferred = cluster.get('settings').fetch({url: _.result(cluster, 'url') + '/attributes'});
+                            return cluster.get('settings').deferred;
+                    }, this))
                     .done(_.bind(render, this))
                     .fail(_.bind(this.listClusters, this));
             }

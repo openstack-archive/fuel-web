@@ -446,7 +446,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         checkForConflicts: function(e) {
             this.collection.each(function(role) {
                 var selectedRoles = this.collection.filter(function(role) {return role.get('checked') || role.get('indeterminate');});
-                role.set('disabled', !this.screen.nodes.length || !this.isControllerSelectable(role) || _.contains(this.getListOfIncompatibleRoles(selectedRoles), role.get('name')));
+                var roleConflict = _.contains(this.getListOfIncompatibleRoles(selectedRoles), role.get('name'));
+                var isDisabled = !this.screen.nodes.length || !this.isControllerSelectable(role) || roleConflict || !role.get('dependedSettingState');
+                role.set('disabled', isDisabled);
             }, this);
             if (this.cluster.get('mode') == 'multinode' && this.screen.nodeList) {
                 var controllerNode = this.nodes.filter(function(node) {return node.hasRole('controller');})[0];
@@ -465,14 +467,23 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             _.defaults(this, options);
             this.cluster = this.screen.tab.model;
+            this.clusterSettings = this.cluster.get('settings');
             this.collection = new Backbone.Collection(_.map(this.cluster.get('release').get('roles'), function(role) {
                 var roleData = this.cluster.get('release').get('roles_metadata')[role];
                 var nodesWithRole = this.nodes.filter(function(node) {return node.hasRole(role);});
+                var dependedSettingState = true;
+                var dependedWarning;
+                try {
+                    dependedSettingState = this.clusterSettings.get('editable.'+roleData.depends.condition);
+                    dependedWarning = roleData.depends.warning;
+                } catch (ignore) {}
                 return {
                     name: role,
                     label: roleData.name,
                     description: roleData.description,
                     disabled: false,
+                    dependedSettingState: dependedSettingState,
+                    dependedWarning: dependedWarning,
                     checked: !!nodesWithRole.length && nodesWithRole.length == this.nodes.length,
                     indeterminate: !!nodesWithRole.length && nodesWithRole.length != this.nodes.length
                 };
@@ -499,8 +510,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 observe: 'disabled',
                 stickitChange: role,
                 onGet: _.bind(function(value, options) {
+                    // display warning message for inactive role
+                    var inactiveRole = options.stickitChange;
                     if (value && this.screen.nodes.length) {
-                        return this.isControllerSelectable(options.stickitChange) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
+                        if (!inactiveRole.get('dependedSettingState')){
+                            return inactiveRole.get('dependedWarning');
+                        }
+                        return this.isControllerSelectable(inactiveRole) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
                     }
                     return '';
                 }, this)

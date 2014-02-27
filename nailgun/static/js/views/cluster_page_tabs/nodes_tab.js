@@ -414,14 +414,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return this.collection.filter(function(role) {return role.get('name') == 'controller' && (role.get('checked') || role.get('indeterminate'));}).length;
         },
         isControllerSelectable: function(role) {
-            var allocatedControllers = this.cluster.get('nodes').filter(function(node) {
-                return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);
-            }, this);
-            var checkedNodes = this.screen.nodes.where({checked: true});
-            var deployedHACluster = this.cluster.get('mode') != 'multinode' && this.cluster.get('status') == 'operational';
-            var multinodeClusterRestriction = this.cluster.get('mode') == 'multinode' && checkedNodes.length > 1;
-            return role.get('name') != 'controller' || !((allocatedControllers.length && this.cluster.get('mode') == 'multinode') ||
-                multinodeClusterRestriction || deployedHACluster);
+            var allocatedController = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
+            return role.get('name') != 'controller' || this.cluster.get('mode') != 'multinode' || ((this.isControllerRoleSelected() || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedController.length);
         },
         getListOfIncompatibleRoles: function(roles) {
             var forbiddenRoles = [];
@@ -483,18 +477,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 stickitChange: role,
                 onGet: _.bind(function(value, options) {
                     if (value && this.screen.nodes.length) {
-                        var translationString;
-                        if(this.isControllerSelectable(options.stickitChange)) {
-                            translationString = $.t('cluster_page.nodes_tab.incompatible_roles_warning');
-                        } else if (this.cluster.get('mode') != 'multinode') {
-                            if (this.cluster.get('status') == 'operational') {
-                                translationString = $.t('cluster_page.nodes_tab.new_controllers_in_ha_mode_restriction');
-                            }
-                        }
-                        else {
-                            translationString = $.t('cluster_page.nodes_tab.one_controller_restriction');
-                        }
-                        return translationString;
+                        return this.isControllerSelectable(options.stickitChange) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
                     }
                     return '';
                 }, this)

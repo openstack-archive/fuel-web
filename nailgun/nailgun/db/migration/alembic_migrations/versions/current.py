@@ -178,6 +178,10 @@ def upgrade():
         new_task_names_options       # new options
     )
 
+    op.add_column('nodes', sa.Column(
+        'agent_checksum', sa.String(40), nullable=True
+    ))
+
     ### end Alembic commands ###
 
 
@@ -308,4 +312,5 @@ def downgrade():
     )
     op.drop_table('net_bond_assignments')
     op.drop_table('node_bond_interfaces')
+    op.drop_column('nodes', 'agent_checksum')
     ### end Alembic commands ###

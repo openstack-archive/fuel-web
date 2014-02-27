@@ -251,11 +251,10 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
             'disk': 'disk/id/b00b135'})
 
         self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{
+            reverse('NodeAgentHandler'),
+            json.dumps({
                 "mac": node_db.mac,
-                "meta": new_meta,
-                "is_agent": True}]),
+                "meta": new_meta}),
             headers=self.default_headers)
 
         self.env.refresh_nodes()
@@ -579,11 +578,10 @@ class TestVolumeManager(BaseIntegrationTest):
             'disk': 'disk/id/a00b135'}]
 
         self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{
+            reverse('NodeAgentHandler'),
+            json.dumps({
                 'mac': node.mac,
-                'meta': new_meta,
-                'is_agent': True}]),
+                'meta': new_meta}),
             headers=self.default_headers)
 
     def add_disk_to_node(self, node, size):
@@ -599,11 +597,10 @@ class TestVolumeManager(BaseIntegrationTest):
             'disk': 'disk/id/%s00b135' % string.letters[new_disk]})
 
         self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{
+            reverse('NodeAgentHandler'),
+            json.dumps({
                 'mac': node.mac,
-                'meta': new_meta,
-                'is_agent': True}]),
+                'meta': new_meta}),
             headers=self.default_headers)
 
     def test_check_disk_space_for_deployment(self):

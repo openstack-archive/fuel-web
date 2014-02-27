@@ -122,6 +122,8 @@ class Node(Base):
     bond_interfaces = relationship("NodeBondInterface", backref="node",
                                    cascade="delete",
                                    order_by="NodeBondInterface.name")
+    # hash function from raw node agent request data - for caching purposes
+    agent_checksum = Column(String(40), nullable=True)
 
     @property
     def interfaces(self):

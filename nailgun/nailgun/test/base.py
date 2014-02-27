@@ -869,7 +869,7 @@ class BaseIntegrationTest(BaseTestCase):
                         )
 
 
-class BaseUnitTest(BaseTestCase):
+class BaseUnitTest(TestCase):
     pass
 
 

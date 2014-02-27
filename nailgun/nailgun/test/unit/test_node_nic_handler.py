@@ -40,11 +40,10 @@ class TestHandlers(BaseIntegrationTest):
         for nic_meta in meta_list:
             meta = self.env.default_metadata()
             meta.update(nic_meta)
-            node_data = {'mac': node['mac'], 'is_agent': True,
-                         'meta': meta}
+            node_data = {'mac': node['mac'], 'meta': meta}
             resp = self.app.put(
-                reverse('NodeCollectionHandler'),
-                json.dumps([node_data]),
+                reverse('NodeAgentHandler'),
+                json.dumps(node_data),
                 expect_errors=True,
                 headers=self.default_headers
             )
@@ -71,16 +70,19 @@ class TestHandlers(BaseIntegrationTest):
         for nic_meta in meta_clean_list:
             meta = self.env.default_metadata()
             meta.update(nic_meta)
-            node_data = {'mac': node['mac'], 'is_agent': True,
-                         'meta': meta}
+            node_data = {'mac': node['mac'], 'meta': meta}
             resp = self.app.put(
-                reverse('NodeCollectionHandler'),
-                json.dumps([node_data]),
+                reverse('NodeAgentHandler'),
+                json.dumps(node_data),
                 expect_errors=True,
                 headers=self.default_headers
             )
             self.assertEquals(resp.status, 200)
-            ifaces = json.loads(resp.body)[0]["meta"]["interfaces"]
+            resp = self.app.get(
+                reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
+                headers=self.default_headers
+            )
+            ifaces = json.loads(resp.body)
             self.assertEquals(ifaces, [])
 
     def test_get_handler_with_invalid_speed_data(self):
@@ -105,16 +107,19 @@ class TestHandlers(BaseIntegrationTest):
         for nic_meta in meta_clean_list:
             meta = self.env.default_metadata()
             meta.update(nic_meta)
-            node_data = {'mac': node['mac'], 'is_agent': True,
-                         'meta': meta}
+            node_data = {'mac': node['mac'], 'meta': meta}
             resp = self.app.put(
-                reverse('NodeCollectionHandler'),
-                json.dumps([node_data]),
+                reverse('NodeAgentHandler'),
+                json.dumps(node_data),
                 expect_errors=True,
                 headers=self.default_headers
             )
             self.assertEquals(resp.status, 200)
-            ifaces = json.loads(resp.body)[0]["meta"]["interfaces"]
+            resp = self.app.get(
+                reverse('NodeHandler', kwargs={'node_id': node['id']}),
+                headers=self.default_headers
+            )
+            ifaces = json.loads(resp.body)['meta']['interfaces']
             self.assertEquals(
                 ifaces,
                 [
@@ -175,11 +180,10 @@ class TestHandlers(BaseIntegrationTest):
         self.env.set_interfaces_in_meta(new_meta, [
             {'name': 'new_nic', 'mac': '12345', 'current_speed': 10,
              'max_speed': 10, 'state': 'down'}])
-        node_data = {'mac': node['mac'], 'is_agent': True,
-                     'meta': new_meta}
+        node_data = {'mac': node['mac'], 'meta': new_meta}
         resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([node_data]),
+            reverse('NodeAgentHandler'),
+            json.dumps(node_data),
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
 
@@ -206,11 +210,10 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta)
 
         meta['interfaces'].append({'name': 'new_nic', 'mac': '643'})
-        node_data = {'mac': node['mac'], 'is_agent': True,
-                     'meta': meta}
+        node_data = {'mac': node['mac'], 'meta': meta}
         resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([node_data]),
+            reverse('NodeAgentHandler'),
+            json.dumps(node_data),
             headers=self.default_headers)
         self.assertEquals(resp.status, 200)
 

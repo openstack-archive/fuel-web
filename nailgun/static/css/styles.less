@@ -225,6 +225,17 @@
   outline: 0;
 }
 
+.btn-state-disabled-mixin() {
+  cursor: default;
+  color: @fuel-dark;
+  background-color: #dddddd;
+  text-shadow: 0 1px 0px rgba(255, 255, 255, 0.65);
+  border-color: #aaaaaa;
+  background-image: none;
+  .box-shadow-mixin(inset 0 1px 0px rgba(255, 255, 255, 0.45));
+  filter: alpha(opacity=65);
+}
+
 // Verification block mixins
 // -------------------------
 
@@ -1891,17 +1902,8 @@ input.vlan-tagging {
     .btn-active-state-mixin;
     .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
-  &.disabled,
-  &[disabled],
-  &[disabled]:hover {
-    cursor: default;
-    color: @fuel-dark;
-    background-color: #dddddd;
-    text-shadow: 0 1px 0px rgba(255, 255, 255, 0.65);
-    border-color: #aaaaaa;
-    background-image: none;
-    .box-shadow-mixin(inset 0 1px 0px rgba(255, 255, 255, 0.45));
-    filter: alpha(opacity=65);
+  &.disabled, &[disabled], &[disabled]:hover {
+    .btn-state-disabled-mixin;
   }
 }
 
@@ -1919,6 +1921,9 @@ input.vlan-tagging {
     .btn-active-state-mixin(#52a652, #d9d9d9);
     .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
+  &.disabled, &[disabled], &[disabled]:hover {
+    .btn-state-disabled-mixin;
+  }
 }
 
 .btn-danger {
@@ -1931,6 +1936,9 @@ input.vlan-tagging {
   &:active {
     .btn-active-state-mixin(#ad342e, #d9d9d9);
     .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+  }
+  &.disabled, &[disabled], &[disabled]:hover {
+    .btn-state-disabled-mixin;
   }
 }
 
@@ -1945,6 +1953,9 @@ input.vlan-tagging {
     .btn-active-state-mixin(#da860e, #d9d9d9);
     .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
+  &.disabled, &[disabled], &[disabled]:hover {
+    .btn-state-disabled-mixin;
+  }
 }
 
 .btn-primary {
@@ -1957,6 +1968,9 @@ input.vlan-tagging {
   &:active {
     .btn-active-state-mixin(#0044b7, #d9d9d9);
     .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+  }
+  &.disabled, &[disabled], &[disabled]:hover {
+    .btn-state-disabled-mixin;
   }
 }
 
@@ -1971,6 +1985,9 @@ input.vlan-tagging {
     .btn-active-state-mixin(#161616, #d9d9d9);
     .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
   }
+  &.disabled, &[disabled], &[disabled]:hover {
+    .btn-state-disabled-mixin;
+  }
 }
 
 .btn-info {
@@ -1983,6 +2000,9 @@ input.vlan-tagging {
   &:active {
     .btn-active-state-mixin(#007cba, #d9d9d9);
     .box-shadow-mixin-two(inset 0 2px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05));
+  }
+  &.disabled, &[disabled], &[disabled]:hover {
+    .btn-state-disabled-mixin;
   }
 }
 
@@ -2128,7 +2148,8 @@ input.vlan-tagging {
     border: solid 1px #393e45;
     .css-linear-gradient(#5e6671, #555c66);
   }
-  &:active {
+  &:active,
+  &:focus {
     width: 38px;
     border: transparent;
     background-image: none;

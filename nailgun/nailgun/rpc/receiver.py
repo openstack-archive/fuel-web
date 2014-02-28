@@ -548,7 +548,7 @@ class NailgunReceiver(object):
 
             message = (
                 u"Environment '{0}' "
-                u"was successfully resetted".format(
+                u"was successfully reset".format(
                     task.cluster.name or task.cluster_id
                 )
             )

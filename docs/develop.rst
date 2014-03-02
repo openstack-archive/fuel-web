@@ -8,6 +8,7 @@ Development Documentation
    :numbered:
 
    develop/logical_arch
+   develop/architecture
    develop/sequence
    develop/env
    develop/nailgun

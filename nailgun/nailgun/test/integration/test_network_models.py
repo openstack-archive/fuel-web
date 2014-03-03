@@ -93,10 +93,10 @@ class TestNetworkModels(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp_nova_net.status, 403)
+        self.assertEquals(resp_nova_net.status_code, 403)
         # it's 400 because we used Nova network
-        self.assertEquals(resp_neutron_net.status, 400)
-        self.assertEquals(resp_cluster.status, 403)
+        self.assertEquals(resp_neutron_net.status_code, 400)
+        self.assertEquals(resp_cluster.status_code, 403)
 
     def test_network_group_creates_several_networks(self):
         cluster = self.env.create_cluster(api=False)

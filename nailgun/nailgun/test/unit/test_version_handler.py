@@ -35,7 +35,7 @@ class TestVersionHandler(BaseIntegrationTest):
             reverse('VersionHandler'),
             headers=self.default_headers
         )
-        self.assertEqual(200, resp.status)
+        self.assertEqual(200, resp.status_code)
         self.assertEqual(
             json.loads(resp.body),
             {

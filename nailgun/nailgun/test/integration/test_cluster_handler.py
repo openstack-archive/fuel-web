@@ -41,7 +41,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(cluster.id, response['id'])
         self.assertEquals(cluster.name, response['name'])
@@ -58,7 +58,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(201, resp.status)
+        self.assertEquals(201, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(yet_another_cluster_name, response['name'])
         self.assertEquals(release.id, response['release_id'])
@@ -75,7 +75,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.db.refresh(cluster)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         clusters = self.db.query(Cluster).filter(
             Cluster.name == updated_name
         ).all()
@@ -93,7 +93,7 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps({'net_manager': 'VlanManager'}),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         self.db.refresh(cluster)
         self.assertEquals(cluster.net_manager, "VlanManager")
 
@@ -106,7 +106,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.status_code, 400)
         self.assertEquals(resp.body, "Change of 'net_provider' is prohibited")
 
     def test_cluster_update_fails_on_net_segment_type_change(self):
@@ -122,7 +122,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.status_code, 400)
         self.assertEquals(resp.body,
                           "Change of 'net_segment_type' is prohibited")
 
@@ -135,7 +135,7 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps({'nodes': [node1.id]}),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
 
         nodes = self.db.query(Node).filter(Node.cluster == cluster).all()
         self.assertEquals(1, len(nodes))
@@ -146,7 +146,7 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps({'nodes': [node2.id]}),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
 
         nodes = self.db.query(Node).filter(Node.cluster == cluster)
         self.assertEquals(1, nodes.count())
@@ -155,7 +155,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=True)
         resp = self.delete(cluster['id'])
 
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         self.assertEquals(self.db.query(Node).count(), 0)
         self.assertEquals(self.db.query(Cluster).count(), 0)
 
@@ -168,7 +168,7 @@ class TestHandlers(BaseIntegrationTest):
                 {"status": "ready"}])
 
         resp = self.delete(self.env.clusters[0].id)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
 
         def cluster_is_empty():
             return self.db.query(Cluster).count() == 0
@@ -191,7 +191,7 @@ class TestHandlers(BaseIntegrationTest):
                 {'online': False, 'status': 'ready'}])
 
         resp = self.delete(self.env.clusters[0].id)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
 
         def cluster_is_empty_and_in_db_one_node():
             return self.db.query(Cluster).count() == 0 and \
@@ -254,5 +254,5 @@ class TestHandlers(BaseIntegrationTest):
                     kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers
         )
-        self.assertEquals(get_resp.status, 200)
+        self.assertEquals(get_resp.status_code, 200)
         self.datadiff(json.loads(get_resp.body), cluster.attributes.generated)

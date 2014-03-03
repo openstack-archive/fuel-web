@@ -43,7 +43,7 @@ class TestFuelKeyHandler(BaseTestCase):
         signature = base64.b64encode(json.dumps(key_data))
         key_data["signature"] = signature
 
-        self.assertEqual(200, resp.status)
+        self.assertEqual(200, resp.status_code)
 
         response = json.loads(resp.body)
         self.assertEqual(

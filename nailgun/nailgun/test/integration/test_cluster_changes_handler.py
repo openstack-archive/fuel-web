@@ -741,7 +741,7 @@ class TestHandlers(BaseIntegrationTest):
                                   ['172.16.0.20', '172.16.0.22']]})
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
@@ -781,7 +781,7 @@ class TestHandlers(BaseIntegrationTest):
                                   ['172.16.0.20', '172.16.0.22']]})
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
@@ -821,7 +821,7 @@ class TestHandlers(BaseIntegrationTest):
                                                     '172.16.10.254']
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
@@ -856,7 +856,7 @@ class TestHandlers(BaseIntegrationTest):
         pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.11']]})
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 

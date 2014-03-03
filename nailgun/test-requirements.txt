@@ -11,3 +11,4 @@ sphinxcontrib-blockdiag==1.3.0
 sphinxcontrib-actdiag==0.6.0
 sphinxcontrib-seqdiag==0.6.0
 sphinxcontrib-nwdiag==0.7.0
+webtest==2.0.14

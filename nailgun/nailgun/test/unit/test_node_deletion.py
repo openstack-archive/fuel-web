@@ -51,7 +51,7 @@ class TestNodeDeletion(BaseIntegrationTest):
                 kwargs={'node_id': node.id}),
             headers=self.default_headers
         )
-        self.assertEquals(204, resp.status)
+        self.assertEquals(204, resp.status_code)
 
         node_try = self.db.query(Node).filter_by(
             cluster_id=cluster.id

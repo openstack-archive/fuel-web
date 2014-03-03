@@ -77,7 +77,7 @@ class TestLogs(BaseIntegrationTest):
             reverse('LogSourceCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(response, settings.LOGS)
 
@@ -90,7 +90,7 @@ class TestLogs(BaseIntegrationTest):
                     kwargs={'node_id': node.id}),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(response, [])
 
@@ -101,7 +101,7 @@ class TestLogs(BaseIntegrationTest):
                     kwargs={'node_id': node.id}),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(response, [settings.LOGS[1]])
 
@@ -129,7 +129,7 @@ class TestLogs(BaseIntegrationTest):
             params={'source': settings.LOGS[0]['id']},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         response['entries'].reverse()
         self.assertEquals(response['entries'], log_entries)
@@ -139,7 +139,7 @@ class TestLogs(BaseIntegrationTest):
             params={'node': node.id, 'source': settings.LOGS[1]['id']},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         response['entries'].reverse()
         self.assertEquals(response['entries'], log_entries)
@@ -171,7 +171,7 @@ class TestLogs(BaseIntegrationTest):
             params={'source': settings.LOGS[0]['id']},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         response['entries'].reverse()
         self.assertEquals(response['entries'], log_entries)
@@ -334,7 +334,7 @@ class TestLogs(BaseIntegrationTest):
         tm_patcher.stop()
         th_patcher.stop()
         self.assertEquals(task, resp.body)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
 
     def test_log_package_handler_failed(self):
         tm_patcher = patch('nailgun.api.handlers.logs.DumpTaskManager')
@@ -351,7 +351,7 @@ class TestLogs(BaseIntegrationTest):
             expect_errors=True
         )
         tm_patcher.stop()
-        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.status_code, 400)
 
     def test_log_entry_collection_handler_sensitive(self):
         account = RedHatAccount()
@@ -381,7 +381,7 @@ class TestLogs(BaseIntegrationTest):
             params={'source': settings.LOGS[0]['id']},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         response['entries'].reverse()
         self.assertEquals(response['entries'], response_log_entries)
@@ -403,4 +403,4 @@ class TestLogs(BaseIntegrationTest):
             reverse('LogPackageHandler'), "[]",
             headers=self.default_headers, expect_errors=True
         )
-        self.assertEqual(resp.status, 400)
+        self.assertEqual(resp.status_code, 400)

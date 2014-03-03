@@ -31,7 +31,7 @@ class TestHandlers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertIsNone(response.get('cluster'))
         self.assertEquals(notification.status, 'unread')
@@ -65,7 +65,7 @@ class TestHandlers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(response.get('cluster'), cluster.id)
         self.assertEquals(notification.status, 'unread')
@@ -103,4 +103,4 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(404, resp.status)
+        self.assertEquals(404, resp.status_code)

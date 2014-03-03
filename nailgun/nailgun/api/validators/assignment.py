@@ -37,7 +37,7 @@ class AssignmentValidator(BasicValidator):
             raise errors.InvalidData(
                 u"Nodes with ids {0} were not found."
                 .format(
-                    ",".join(not_found_node_ids)
+                    ",".join(map(str, not_found_node_ids))
                 ), log_message=True
             )
 
@@ -47,7 +47,7 @@ class AssignmentValidator(BasicValidator):
         if any(already_done_nodes):
             raise errors.InvalidData(
                 cls.done_error_msg_template
-                .format(",".join(already_done_nodes)),
+                .format(",".join(map(str, already_done_nodes))),
                 log_message=True
             )
 
@@ -115,11 +115,30 @@ class NodeUnassignmentValidator(AssignmentValidator):
         return not node.cluster or node.pending_deletion
 
     @classmethod
-    def validate_collection_update(cls, data):
+    def validate_collection_update(cls, data, cluster_id=None):
         list_data = cls.validate_json(data)
         cls.validate_schema(list_data, unassignment_format_schema)
-        node_ids = [n['id'] for n in list_data]
-        nodes = db.query(Node).filter(Node.id.in_(node_ids))
-        cls.check_all_nodes(nodes, node_ids)
+        node_ids_set = set(n['id'] for n in list_data)
+        nodes = db.query(Node).filter(Node.id.in_(node_ids_set))
+        cluster = db.query(Cluster).get(cluster_id)
+        if cluster is None:
+            raise errors.InvalidData(
+                u"Environment with id {0} doesn't exist"
+                .format(cluster_id),
+                log_message=True
+            )
+        node_ids_of_cluster = set(
+            n.id for n in cluster.nodes)
+        node_ids_not_in_cluster = node_ids_set - node_ids_of_cluster
+        if node_ids_not_in_cluster:
+            raise errors.InvalidData(
+                u"Because nodes {0} are not assigned to environment "
+                u"with id {1}, they can't be unassigned from it"
+                .format(
+                    u", ".join(map(str, node_ids_not_in_cluster)),
+                    cluster_id
+                ), log_message=True
+            )
+        cls.check_all_nodes(nodes, node_ids_set)
         cls.check_if_already_done(nodes)
         return nodes

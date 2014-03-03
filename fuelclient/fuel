@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -65,7 +65,6 @@ SERIALIZERS = {
         "r": lambda d: yaml.load(d)
     }
 }
-PASSIVE_ARGUMENTS = ["rel", "env", "action", "debug", "json", "net", "yaml"]
 
 
 class DeployProgressError(Exception):
@@ -299,14 +298,6 @@ def json_api_post_request(api, data, root=API_ROOT):
     except ValueError:
         response = {}
     return response
-
-
-def has_arguments(params):
-    """Checks whether params has some initialized attributes
-    """
-    current_arguments = [v for k, v in params.__dict__.iteritems()
-                         if k not in PASSIVE_ARGUMENTS]
-    return any(current_arguments)
 
 
 def print_error(message):

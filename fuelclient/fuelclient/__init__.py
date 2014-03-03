@@ -11,3 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+try:
+    import pkg_resources
+    try:
+        __version__ = pkg_resources.get_distribution("python-fuelclient").version
+    except pkg_resources.DistributionNotFound:
+        __version__ = ""
+except ImportError:
+    __version__ = ""

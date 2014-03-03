@@ -770,10 +770,6 @@
                             "label": "主机启动时运行客户机",
                             "description": "在主机重启时是否需要重启客户机。 如果启用，此选项会导致nova-compute启动时无条件的重启客户机。如果客户机为停止状态，则启动它。如果是运行状态，则重启"
                         },
-                        "vlan_splinters": {
-                            "label": "打开'OVS VLAN splinters'特性（仅Neutron）",
-                            "description": "将VLAN splinters Open vSwitch方法使用到需要的网卡上。"
-                        },
                         "use_cow_images": {
                             "label": "为映像使用qcow格式",
                             "description": "大多数情况下您需要qcow格式。如果设置为false，将使用原始映像格式运行虚机。基于原始格式的OpenStack当前不支持快照"
@@ -802,6 +798,12 @@
                         "auth_key": {
                             "label": "公开密钥",
                             "description": "部署节点时包含在authorized_keys中的公钥"
+                        }
+                    },
+                    "vlan_splinters": {
+                        "vswitch":{
+                            "label": "打开'OVS VLAN splinters'特性（仅Neutron）",
+                            "description": "将VLAN splinters Open vSwitch方法使用到需要的网卡上。"
                         }
                     }
                 },

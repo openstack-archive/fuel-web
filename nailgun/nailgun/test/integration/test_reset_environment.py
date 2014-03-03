@@ -24,7 +24,11 @@ class TestResetEnvironment(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestResetEnvironment, self).tearDown()
 
-    @fake_tasks(godmode=True, recover_nodes=False)
+    @fake_tasks(
+        godmode=True,
+        recover_nodes=False,
+        ia_nodes_count=1
+    )
     def test_reset_environment(self):
         self.env.create(
             cluster_kwargs={},

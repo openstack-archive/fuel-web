@@ -434,6 +434,7 @@ class NailgunReceiver(object):
         )
         task_uuid = kwargs.get('task_uuid')
         nodes = kwargs.get('nodes', [])
+        ia_nodes = kwargs.get('inaccessible_nodes', [])
         message = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
@@ -459,7 +460,10 @@ class NailgunReceiver(object):
 
             update_nodes = db().query(Node).filter(
                 Node.id.in_([
-                    n["uid"] for n in nodes
+                    n["uid"] for n in itertools.chain(
+                        nodes,
+                        ia_nodes
+                    )
                 ]),
                 Node.cluster_id == task.cluster_id
             ).yield_per(100)
@@ -505,7 +509,8 @@ class NailgunReceiver(object):
             json.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
-        nodes = kwargs.get('nodes')
+        nodes = kwargs.get('nodes', [])
+        ia_nodes = kwargs.get('inaccessible_nodes', [])
         message = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
@@ -527,7 +532,10 @@ class NailgunReceiver(object):
 
             update_nodes = db().query(Node).filter(
                 Node.id.in_([
-                    n["uid"] for n in nodes
+                    n["uid"] for n in itertools.chain(
+                        nodes,
+                        ia_nodes
+                    )
                 ]),
                 Node.cluster_id == task.cluster_id
             ).yield_per(100)

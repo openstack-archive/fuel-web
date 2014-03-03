@@ -37,7 +37,7 @@ class AssignmentValidator(BasicValidator):
             raise errors.InvalidData(
                 u"Nodes with ids {0} were not found."
                 .format(
-                    ",".join(not_found_node_ids)
+                    ",".join(map(str, not_found_node_ids))
                 ), log_message=True
             )
 
@@ -47,7 +47,7 @@ class AssignmentValidator(BasicValidator):
         if any(already_done_nodes):
             raise errors.InvalidData(
                 cls.done_error_msg_template
-                .format(",".join(already_done_nodes)),
+                .format(",".join(map(str, already_done_nodes))),
                 log_message=True
             )
 
@@ -115,11 +115,27 @@ class NodeUnassignmentValidator(AssignmentValidator):
         return not node.cluster or node.pending_deletion
 
     @classmethod
-    def validate_collection_update(cls, data):
+    def validate_collection_update(cls, data, cluster_id=None):
         list_data = cls.validate_json(data)
         cls.validate_schema(list_data, unassignment_format_schema)
-        node_ids = [n['id'] for n in list_data]
-        nodes = db.query(Node).filter(Node.id.in_(node_ids))
-        cls.check_all_nodes(nodes, node_ids)
+        node_ids_set = set(n['id'] for n in list_data)
+        nodes = db.query(Node).filter(Node.id.in_(node_ids_set))
+        node_id_cluster_map = dict(
+            (n.id, n.cluster_id) for n in
+            db.query(Node.id, Node.cluster_id).filter(
+                Node.id.in_(node_ids_set)))
+        other_cluster_ids_set = set(node_id_cluster_map.values()) - \
+            set((int(cluster_id),))
+        if other_cluster_ids_set:
+            raise errors.InvalidData(
+                u"Nodes [{0}] are not members of environment {1}."
+                .format(
+                    u", ".join(
+                        str(n_id) for n_id, c_id in
+                        node_id_cluster_map.iteritems()
+                        if c_id in other_cluster_ids_set
+                    ), cluster_id), log_message=True
+            )
+        cls.check_all_nodes(nodes, node_ids_set)
         cls.check_if_already_done(nodes)
         return nodes

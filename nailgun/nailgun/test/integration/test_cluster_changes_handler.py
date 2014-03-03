@@ -966,7 +966,8 @@ class TestHandlers(BaseIntegrationTest):
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd'],
                  'pending_addition': True}])
-        self.app.put(
+
+        self.app.patch(
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
@@ -992,7 +993,7 @@ class TestHandlers(BaseIntegrationTest):
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd'],
                  'pending_addition': True}])
-        self.app.put(
+        self.app.patch(
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),

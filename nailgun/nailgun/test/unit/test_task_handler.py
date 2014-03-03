@@ -42,7 +42,7 @@ class TestTaskHandlers(BaseUnitTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEqual(resp.status, 400)
+        self.assertEqual(resp.status_code, 400)
         resp = self.app.delete(
             reverse(
                 'TaskHandler',
@@ -50,4 +50,4 @@ class TestTaskHandlers(BaseUnitTest):
             ) + "?force=1",
             headers=self.default_headers
         )
-        self.assertEquals(resp.status, 204)
+        self.assertEquals(resp.status_code, 204)

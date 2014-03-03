@@ -32,7 +32,7 @@ from itertools import izip
 from netaddr import IPNetwork
 from random import randint
 
-from paste.fixture import TestApp
+from webtest import app
 
 import nailgun
 from nailgun.api.urls.v1 import urls
@@ -121,7 +121,7 @@ class Environment(object):
                 params=json.dumps(release_data),
                 headers=self.default_headers
             )
-            self.tester.assertEquals(resp.status, 201)
+            self.tester.assertEquals(resp.status_code, 201)
             release = json.loads(resp.body)
             self.releases.append(
                 self.db.query(Release).get(release['id'])
@@ -145,7 +145,7 @@ class Environment(object):
             params=json.dumps(release_data),
             headers=self.default_headers
         )
-        self.tester.assertEquals(resp.status, 200)
+        self.tester.assertEquals(resp.status_code, 200)
         download_task = json.loads(resp.body)
         return self.db.query(Task).get(download_task['id'])
 
@@ -173,7 +173,7 @@ class Environment(object):
                 json.dumps(cluster_data),
                 headers=self.default_headers
             )
-            self.tester.assertEquals(resp.status, 201)
+            self.tester.assertEquals(resp.status_code, 201)
             cluster = json.loads(resp.body)
             self.clusters.append(
                 self.db.query(Cluster).get(cluster['id'])
@@ -231,12 +231,12 @@ class Environment(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEquals(resp.status, expect_http)
+            self.tester.assertEquals(resp.status_code, expect_http)
             if expect_message:
                 self.tester.assertEquals(resp.body, expect_message)
             if str(expect_http)[0] != "2":
                 return None
-            self.tester.assertEquals(resp.status, expect_http)
+            self.tester.assertEquals(resp.status_code, expect_http)
             node = json.loads(resp.body)
             node_db = self.db.query(Node).get(node['id'])
             if 'interfaces' not in node_data['meta'] \
@@ -498,7 +498,7 @@ class Environment(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEquals(200, resp.status)
+            self.tester.assertEquals(200, resp.status_code)
             response = json.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
@@ -515,7 +515,7 @@ class Environment(object):
                     'ClusterChangesHandler',
                     kwargs={'cluster_id': self.clusters[0].id}),
                 headers=self.default_headers)
-            self.tester.assertEquals(200, resp.status)
+            self.tester.assertEquals(200, resp.status_code)
             response = json.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
@@ -533,7 +533,7 @@ class Environment(object):
                     kwargs={'cluster_id': self.clusters[0].id}),
                 expect_errors=True,
                 headers=self.default_headers)
-            self.tester.assertEquals(expect_http, resp.status)
+            self.tester.assertEquals(expect_http, resp.status_code)
             if not str(expect_http).startswith("2"):
                 return resp.body
             response = json.loads(resp.body)
@@ -553,7 +553,7 @@ class Environment(object):
                     kwargs={'cluster_id': self.clusters[0].id}),
                 expect_errors=True,
                 headers=self.default_headers)
-            self.tester.assertEquals(resp.status, expect_http)
+            self.tester.assertEquals(resp.status_code, expect_http)
             if not str(expect_http).startswith("2"):
                 return resp.body
             response = json.loads(resp.body)
@@ -588,7 +588,7 @@ class Environment(object):
                     ),
                     headers=self.default_headers
                 )
-                self.tester.assertEquals(200, resp.status)
+                self.tester.assertEquals(200, resp.status_code)
                 nets = resp.body
 
             resp = self.app.put(
@@ -598,7 +598,7 @@ class Environment(object):
                 nets,
                 headers=self.default_headers
             )
-            self.tester.assertEquals(200, resp.status)
+            self.tester.assertEquals(200, resp.status_code)
             response = json.loads(resp.body)
             task_uuid = response['uuid']
             return self.db.query(Task).filter_by(uuid=task_uuid).first()
@@ -614,7 +614,7 @@ class Environment(object):
             reverse("NodeNICsHandler",
                     kwargs={"node_id": node_id}),
             headers=self.default_headers)
-        self.tester.assertEquals(resp.status, 200)
+        self.tester.assertEquals(resp.status_code, 200)
         data = json.loads(resp.body)
 
         nics = self.db.query(NodeNICInterface).filter(
@@ -638,7 +638,7 @@ class Environment(object):
             "assigned_networks": assigned_nets
         })
         resp = self.node_nics_put(node_id, data)
-        self.tester.assertEquals(resp.status, 200)
+        self.tester.assertEquals(resp.status_code, 200)
 
     def refresh_nodes(self):
         for n in self.nodes[:]:
@@ -782,7 +782,7 @@ class BaseTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.db = db()
-        cls.app = TestApp(build_app().wsgifunc())
+        cls.app = app.TestApp(build_app().wsgifunc())
         syncdb()
 
     @classmethod

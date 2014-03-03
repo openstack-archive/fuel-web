@@ -32,7 +32,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         release_from_db = self.db.query(Release).one()
         self.db.refresh(release_from_db)
@@ -47,7 +47,7 @@ class TestHandlers(BaseIntegrationTest):
             "",
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.status_code, 400)
 
     def test_release_delete_returns_400_if_clusters(self):
         cluster = self.env.create_cluster(api=False)
@@ -57,7 +57,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.status_code, 400)
         self.assertEquals(
             resp.body,
             "Can't delete release with "

@@ -45,6 +45,7 @@ from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
+from nailgun import utils
 
 
 class ClusterHandler(BaseHandler):
@@ -324,7 +325,33 @@ class ClusterAttributesHandler(BaseHandler):
         if not cluster.attributes:
             raise web.internalerror("No attributes found!")
 
+        if cluster.is_locked:
+            error = web.forbidden()
+            error.data = "Environment attributes can't be changed " \
+                         "after, or in deploy."
+            raise error
+
         data = self.checked_data()
+
+        for key, value in data.iteritems():
+            setattr(cluster.attributes, key, value)
+
+        cluster.add_pending_changes("attributes")
+        db().commit()
+        return {"editable": cluster.attributes.editable}
+
+    @content_json
+    def PATCH(self, cluster_id):
+        """:returns: JSONized Cluster attributes.
+        :http: * 200 (OK)
+               * 400 (wrong attributes data specified)
+               * 404 (cluster not found in db)
+               * 500 (cluster has no attributes)
+        """
+        cluster = self.get_object_or_404(Cluster, cluster_id)
+
+        if not cluster.attributes:
+            raise web.internalerror("No attributes found!")
 
         if cluster.is_locked:
             error = web.forbidden()
@@ -332,10 +359,12 @@ class ClusterAttributesHandler(BaseHandler):
                          "after, or in deploy."
             raise error
 
-        for key, value in data.iteritems():
-            setattr(cluster.attributes, key, value)
-        cluster.add_pending_changes("attributes")
+        data = self.checked_data()
 
+        cluster.attributes.editable = utils.dict_merge(
+            cluster.attributes.editable, data['editable'])
+
+        cluster.add_pending_changes("attributes")
         db().commit()
         return {"editable": cluster.attributes.editable}
 

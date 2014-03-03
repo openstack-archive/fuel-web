@@ -174,7 +174,7 @@ class TestRoles(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEqual(resp.status, 400)
+        self.assertEqual(resp.status_code, 400)
         self.assertEqual(
             resp.body,
             "Cannot delete roles already assigned to nodes: controller"

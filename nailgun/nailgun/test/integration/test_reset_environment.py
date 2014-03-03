@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.db.sqlalchemy.models import Notification
+
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -24,7 +26,11 @@ class TestResetEnvironment(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestResetEnvironment, self).tearDown()
 
-    @fake_tasks(godmode=True, recover_nodes=False)
+    @fake_tasks(
+        godmode=True,
+        recover_nodes=False,
+        ia_nodes_count=1
+    )
     def test_reset_environment(self):
         self.env.create(
             cluster_kwargs={},
@@ -55,3 +61,19 @@ class TestResetEnvironment(BaseIntegrationTest):
             self.assertEquals(n.pending_addition, True)
             self.assertEquals(n.roles, [])
             self.assertNotEquals(n.pending_roles, [])
+
+        msg = (
+            u"Fuel couldn't reach these nodes during "
+            u"environment resetting: '{0}'. Manual "
+            u"check may be needed."
+        )
+
+        # one() raises an error in case of multiple objects
+        self.db.query(Notification)\
+            .filter(Notification.topic == "warning")\
+            .filter(
+                Notification.message.in_([
+                    msg.format("First"),
+                    msg.format("Second")
+                ])
+            ).one()

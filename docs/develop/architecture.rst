@@ -43,12 +43,13 @@ running deployments.
 
 Managed nodes are discovered over PXE using a special bootstrap image
 and the PXE boot server located on the master node. The bootstrap image
-runs the Nailgun agent. It's a special script that collects the server's
-hardware information and submits it to Nailgun through the REST API.
+runs the special script called Nailgun agent. The agent **nailgun-agent.rb**
+collects the server's hardware information and submits it to Nailgun
+through the REST API.
 
 The deployment process is started by the user after he has configured
-a new environment. The Nailgun service creates a JSON file with the
-environment settings, its nodes and their roles and puts this
+a new environment. The Nailgun service creates a JSON data structure
+with the environment settings, its nodes and their roles and puts this
 file into the *RabbitMQ* queue. This message should be received by one
 of the worker processes who will actually deploy the environment. These
 processes are called *Naily*.
@@ -84,8 +85,8 @@ node and start the OS installer with the user-configured settings.
 
 Astute puts a special message into the RabbitMQ queue that contains
 the action that should be executed on the managed node. MCollective
-servers are started on all bootstraped nodes and they constantly listen
-for these messages, when they recieve a message they run the required
+servers are started on all bootstrapped nodes and they constantly listen
+for these messages, when they receive a message they run the required
 agent action with the given parameters. MCollective agents are just Ruby
 scripts with a set of procedures. These procedures are actions that the
 MCollective server can run when asked to.
@@ -141,7 +142,12 @@ of Puppet modules and manifests.
 
 When the modules are synchronized, Astute can run the actual deployment
 by applying the main Puppet manifest **site.pp**. MCollective agent runs
-the Puppet process in the background using the **daemonize** tool and
+the Puppet process in the background using the **daemonize** tool.
+The command looks like this:
+::
+
+  daemonize puppet apply /etc/puppet/manifests/site.pp"
+
 Astute periodically polls the agent to check if the deployment has
 finished and reports the progress to Nailgun through its RabbitMQ queue.
 
@@ -154,10 +160,15 @@ Astute gets the summary file from the node and reports the results to
 Nailgun. The user can always monitor both the progress and the
 results using Fuel Web interface or the CLI tool.
 
+Puppet installs **puppet-run** script. Developers can use it if they
+need to manually synchronize manifests from the Master node and
+run Puppet process on node again.
+
 Astute also does some additional actions, depending on environment
 configuration, either before the deployment of after successful one.
 
 * Generates and uploads SSH keys that will be needed during deployment.
+* During network verification phase **net_verify.py** script.
 * Uploads CirrOS guest image into Glance after the deployment.
 * Updates **/etc/hosts** file on all nodes when new nodes are deployed.
 * Updates RadosGW map when Ceph nodes are deployed.

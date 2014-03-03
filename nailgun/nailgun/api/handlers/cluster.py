@@ -42,6 +42,7 @@ from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
+from nailgun import utils
 
 
 class ClusterHandler(BaseHandler):
@@ -386,9 +387,9 @@ class ClusterAttributesHandler(BaseHandler):
             error.data = "Environment attributes can't be changed " \
                          "after, or in deploy."
             raise error
-
-        for key, value in data.iteritems():
-            setattr(cluster.attributes, key, value)
+        editable = cluster.attributes.editable
+        cluster.attributes.editable = utils.dict_merge(editable,
+                                                       data['editable'])
         cluster.add_pending_changes("attributes")
 
         db().commit()

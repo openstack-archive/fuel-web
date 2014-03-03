@@ -90,6 +90,8 @@ class TestAttributes(BaseIntegrationTest):
             Attributes.cluster_id == cluster_id
         ).first()
         self.assertEquals("bar", attrs.editable["foo"])
+        attrs.editable.pop('foo')
+        self.assertNotEqual(attrs.editable, {})
         # 400 on generated update
         resp = self.app.put(
             reverse(

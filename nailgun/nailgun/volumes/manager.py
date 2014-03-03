@@ -80,6 +80,28 @@ def get_allocate_size(node, vol):
         return vol['allocate_size']
 
 
+def exclude_glance_partition(node, volume):
+    """In case images_ceph used as glance image storage
+    no need to create partition /var/lib/glance
+    """
+    if node.cluster.attributes.editable['storage'].get('images_ceph'):
+        images_ceph = (node.cluster.attributes['editable']['storage']
+                       ['images_ceph']['value'])
+        return volume['id'] == 'image' and images_ceph
+    return False
+
+
+def filter_node_volumes(node, volume):
+    """Use this function to configure
+    """
+    filters = [exclude_glance_partition]
+
+    for f in filters:
+        if f(node, volume):
+            return False
+    return True
+
+
 def get_node_spaces(node):
     """Helper for retrieving node volumes.
     If spaces don't defained for role, will be used
@@ -96,8 +118,10 @@ def get_node_spaces(node):
     for role in node.all_roles:
         if not role_mapping.get(role):
             continue
+        volumes = [v for v in role_mapping[role]
+                   if filter_node_volumes(node, v)]
 
-        for volume in role_mapping[role]:
+        for volume in volumes:
             space = find_space_by_id(all_spaces, volume['id'])
             if space not in node_spaces:
                 space['_allocate_size'] = get_allocate_size(node, volume)

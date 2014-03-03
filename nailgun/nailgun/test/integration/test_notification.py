@@ -95,7 +95,7 @@ class TestNotification(BaseIntegrationTest):
                         'meta': self.env.default_metadata(),
                         'status': 'discover'}),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 201)
+        self.assertEquals(resp.status_code, 201)
 
         notifications = self.db.query(Notification).all()
         self.assertEqual(len(notifications), 1)

@@ -36,7 +36,7 @@ class TestAttributes(BaseIntegrationTest):
         release = self.db.query(Release).get(
             cluster['release_id']
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         self.assertEquals(
             json.loads(resp.body)['editable'],
             release.attributes_metadata['editable']
@@ -63,9 +63,9 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(500, resp.status)
+        self.assertEquals(500, resp.status_code)
 
-    def test_attributes_update(self):
+    def test_attributes_update_put(self):
         cluster_id = self.env.create_cluster(api=True)['id']
         resp = self.app.get(
             reverse(
@@ -73,7 +73,7 @@ class TestAttributes(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster_id}),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         resp = self.app.put(
             reverse(
                 'ClusterAttributesHandler',
@@ -85,11 +85,13 @@ class TestAttributes(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         attrs = self.db.query(Attributes).filter(
             Attributes.cluster_id == cluster_id
         ).first()
         self.assertEquals("bar", attrs.editable["foo"])
+        attrs.editable.pop('foo')
+        self.assertEqual(attrs.editable, {})
         # 400 on generated update
         resp = self.app.put(
             reverse(
@@ -103,7 +105,7 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(400, resp.status)
+        self.assertEquals(400, resp.status_code)
         # 400 if editable is not dict
         resp = self.app.put(
             reverse(
@@ -115,7 +117,35 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(400, resp.status)
+        self.assertEquals(400, resp.status_code)
+
+    def test_attributes_update_patch(self):
+        cluster_id = self.env.create_cluster(api=True)['id']
+        resp = self.app.get(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster_id}),
+            headers=self.default_headers
+        )
+        self.assertEquals(200, resp.status_code)
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster_id}),
+            params=json.dumps({
+                'editable': {
+                    "foo": "bar"
+                },
+            }),
+            headers=self.default_headers
+        )
+        self.assertEquals(200, resp.status_code)
+        attrs = self.db.query(Attributes).filter(
+            Attributes.cluster_id == cluster_id
+        ).first()
+        self.assertEquals("bar", attrs.editable["foo"])
+        attrs.editable.pop('foo')
+        self.assertNotEqual(attrs.editable, {})
 
     def test_get_default_attributes(self):
         cluster = self.env.create_cluster(api=True)
@@ -128,7 +158,7 @@ class TestAttributes(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         self.assertEquals(
             json.loads(resp.body)['editable'],
             release.attributes_metadata['editable']
@@ -149,7 +179,7 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         attrs = self.db.query(Attributes).filter(
             Attributes.cluster_id == cluster['id']
         ).first()
@@ -161,7 +191,7 @@ class TestAttributes(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         release = self.db.query(Release).get(
             cluster['release_id']
         )

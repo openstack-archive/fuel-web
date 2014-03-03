@@ -27,7 +27,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeNICsHandler', kwargs={'node_id': 1}),
             expect_errors=True,
             headers=self.default_headers)
-        self.assertEquals(resp.status, 404)
+        self.assertEquals(resp.status_code, 404)
 
     def test_get_handler_with_invalid_data(self):
         meta = self.env.default_metadata()
@@ -48,12 +48,12 @@ class TestHandlers(BaseIntegrationTest):
                 expect_errors=True,
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status, 400)
+            self.assertEquals(resp.status_code, 400)
             resp = self.app.get(
                 reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status, 200)
+            self.assertEquals(resp.status_code, 200)
             response = json.loads(resp.body)
             self.assertEquals(response, [])
 
@@ -79,7 +79,7 @@ class TestHandlers(BaseIntegrationTest):
                 expect_errors=True,
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status, 200)
+            self.assertEquals(resp.status_code, 200)
             ifaces = json.loads(resp.body)[0]["meta"]["interfaces"]
             self.assertEquals(ifaces, [])
 
@@ -113,7 +113,7 @@ class TestHandlers(BaseIntegrationTest):
                 expect_errors=True,
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status, 200)
+            self.assertEquals(resp.status_code, 200)
             ifaces = json.loads(resp.body)[0]["meta"]["interfaces"]
             self.assertEquals(
                 ifaces,
@@ -130,7 +130,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
         self.assertEquals(response, [])
 
@@ -147,7 +147,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node_db.id}),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
         self.assertItemsEqual(
             map(lambda i: i['id'], response),
@@ -181,12 +181,12 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeCollectionHandler'),
             json.dumps([node_data]),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
         self.assertEquals(len(response), 1)
         resp_nic = response[0]
@@ -212,12 +212,12 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeCollectionHandler'),
             json.dumps([node_data]),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
         self.assertEquals(len(response), len(meta['interfaces']))
         for nic in meta['interfaces']:
@@ -243,7 +243,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
         self.assertNotEquals(response[0]['id'], fake_id)
 
@@ -256,6 +256,6 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
         self.assertNotEquals(response[0]['mac'], new_mac.lower())

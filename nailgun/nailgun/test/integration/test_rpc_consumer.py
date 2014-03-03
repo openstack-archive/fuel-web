@@ -149,7 +149,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
             reverse('TaskHandler', kwargs={'task_id': task.id}),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         task = json.loads(resp.body)
         self.assertEqual(task['status'], "error")
         error_nodes = [{'uid': node1.id, 'interface': 'eth0',

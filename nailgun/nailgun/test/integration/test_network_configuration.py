@@ -57,7 +57,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def test_not_found_cluster(self):
         resp = self.env.nova_networks_get(self.cluster.id + 999,
                                           expect_errors=True)
-        self.assertEquals(404, resp.status)
+        self.assertEquals(404, resp.status_code)
 
     def test_change_net_manager(self):
         new_net_manager = {'net_manager': 'VlanManager'}
@@ -96,7 +96,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt['network_size'] = 128
 
         resp = self.env.nova_networks_put(self.cluster.id, data)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
@@ -115,7 +115,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.status_code, 400)
         self.assertEquals(
             resp.body,
             u"Wrong net provider - environment uses 'nova_network'"
@@ -142,7 +142,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                   'vlan_start': new_vlan_id}]}
 
         resp = self.env.nova_networks_put(self.cluster.id, new_nets)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         self.db.refresh(network)
         self.assertEquals(network.amount, 1)
         self.assertEquals(network.vlan_start, 500)
@@ -169,7 +169,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(self.cluster.id, new_nets,
                                           expect_errors=True)
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(
@@ -188,7 +188,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_mgmt_storage_networks_have_no_gateway(self):
         resp = self.env.nova_networks_get(self.cluster.id)
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         data = json.loads(resp.body)
         for net in data['networks']:
             if net['name'] in ['management', 'storage']:
@@ -287,7 +287,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def test_not_found_cluster(self):
         resp = self.env.neutron_networks_get(self.cluster.id + 999,
                                              expect_errors=True)
-        self.assertEquals(404, resp.status)
+        self.assertEquals(404, resp.status_code)
 
     def test_refresh_mask_on_cidr_change(self):
         response = self.env.neutron_networks_get(self.cluster.id)
@@ -300,7 +300,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt['network_size'] = 128
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
@@ -317,7 +317,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(
@@ -334,7 +334,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data['networks'][0]['vlan_start'] = 500  # non-used vlan id
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
 
         self.db.refresh(network)
         self.assertEquals(network.amount, 1)
@@ -351,7 +351,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(
@@ -366,7 +366,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(
@@ -387,7 +387,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                                     '199.61.0.122']
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
@@ -404,7 +404,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         publ['netmask'] = '255.255.252.0'
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
@@ -422,7 +422,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         # it is OK as public CIDR is ignored and nothing else is changed
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
@@ -442,7 +442,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_mgmt_storage_networks_have_no_gateway(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         data = json.loads(resp.body)
         for net in data['networks']:
             if net['name'] in ['management', 'storage']:
@@ -518,7 +518,7 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
         nets = json.loads(resp.body)
         resp = self.env.nova_networks_put(self.cluster['id'], nets,
                                           expect_errors=True)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
@@ -530,7 +530,7 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
     def test_deploy_error_when_admin_cidr_match_other_network_cidr(self):
         resp = self.env.cluster_changes_put(self.cluster['id'],
                                             expect_errors=True)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)

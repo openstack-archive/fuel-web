@@ -14,9 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+
 from mock import patch
 
 from nailgun.test import base
+from nailgun.test.base import reverse
 from nailgun.volumes import manager
 
 
@@ -54,3 +57,41 @@ class TestVolumeManagerHelpers(base.BaseIntegrationTest):
             get_size.return_value = volumes_size
             result = manager.calc_glance_cache_size(self.volumes)
         self.assertEqual(result, str(default))
+
+
+class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
+
+    def test_no_glance_partition_when_ceph_used_for_images(self):
+        """Verifies that no partition with id image is not present when
+        images_ceph used
+        """
+        cluster = self.env.create(
+            cluster_kwargs={
+                'mode': 'multinode'},
+            nodes_kwargs=[
+                {'roles': ['controller', 'ceph-osd']}])
+        self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            params=json.dumps({
+                'editable': {'storage': {'images_ceph': {'value': True}}}}),
+            headers=self.default_headers)
+        volumes = self.env.nodes[0].volume_manager.gen_volumes_info()
+
+        image_volume = next((v for v in volumes if v['id'] == 'image'), None)
+        self.assertIsNone(image_volume)
+
+    def test_glance_partition_without_ceph_osd(self):
+        self.env.create(
+            cluster_kwargs={
+                'mode': 'multinode'},
+            nodes_kwargs=[
+                {'roles': ['controller']}])
+        volumes = self.env.nodes[0].volume_manager.gen_volumes_info()
+
+        image_volume = next((v for v in volumes if v['id'] == 'image'), None)
+        self.assertIsNotNone(image_volume)
+        self.assertEqual(len(image_volume['volumes']), 1)
+        self.assertEqual(image_volume['volumes'][0]['mount'],
+                         '/var/lib/glance')

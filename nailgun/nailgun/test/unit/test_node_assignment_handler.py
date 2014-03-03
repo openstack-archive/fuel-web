@@ -68,6 +68,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             nodes_kwargs=[{}]
         )
         node = self.env.nodes[0]
+        # correct unassignment
         resp = self.app.post(
             reverse(
                 'NodeUnassignmentHandler',
@@ -80,7 +81,8 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         self.assertEqual(node.cluster, None)
         self.assertEqual(node.pending_roles, [])
 
-        for node_id in ("", str(node.id + 50)):
+        #Test with invalid node ids
+        for node_id in (0, node.id + 50):
             resp = self.app.post(
                 reverse(
                     'NodeUnassignmentHandler',
@@ -91,6 +93,34 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 expect_errors=True
             )
             self.assertEquals(400, resp.status)
+        #Test with invalid cluster id
+        resp = self.app.post(
+            reverse(
+                'NodeUnassignmentHandler',
+                kwargs={'cluster_id': cluster['id'] + 5}
+            ),
+            json.dumps([{'id': node.id}]),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status, 400)
+
+        # Test with wrong cluster id
+        self.env.create(
+            cluster_kwargs={"api": True},
+            nodes_kwargs=[{}]
+        )
+
+        resp = self.app.post(
+            reverse(
+                'NodeUnassignmentHandler',
+                kwargs={'cluster_id': cluster['id']}
+            ),
+            json.dumps([{'id': self.env.clusters[1].nodes[0].id}]),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status, 400)
 
     def test_unassignment_after_deploy(self):
         cluster = self.env.create(

@@ -88,7 +88,10 @@ class NodeUnassignmentHandler(BaseHandler):
         :http: * 204 (node successfully unassigned)
                * 404 (node not found in db)
         """
-        nodes = self.checked_data(self.validator.validate_collection_update)
+        nodes = self.checked_data(
+            self.validator.validate_collection_update,
+            cluster_id=cluster_id
+        )
         for node in nodes:
             if node.status == "discover":
                 node.cluster.clear_pending_changes(node_id=node.id)

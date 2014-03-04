@@ -494,11 +494,9 @@ class Listener(Actor):
 
         self.logger.debug("Catched packet: vlan=%s len=%s payload=%s",
                           str(vlan), p[scapy.UDP].len, p[scapy.UDP].payload)
-
-        received_msg = str(p[scapy.UDP].payload)[:p[scapy.UDP].len]
+        received_msg, _ = p[scapy.UDP].extract_padding(p[scapy.UDP].load)
         decoded_msg = received_msg.decode()
         riface, uid = decoded_msg[len(self.config["cookie"]):].split(' ', 1)
-        uid = uid.strip('\x00\n')
 
         self.neighbours[iface].setdefault(vlan, {})
 

@@ -19,3 +19,4 @@ Development Documentation
    develop/pxe_deployment
    develop/i18n
    develop/ostf_contributors_guide
+   develop/bonding_in_ui

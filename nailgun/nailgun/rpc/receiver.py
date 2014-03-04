@@ -423,6 +423,7 @@ class NailgunReceiver(object):
         )
         task_uuid = kwargs.get('task_uuid')
         nodes = kwargs.get('nodes', [])
+        ia_nodes = kwargs.get('inaccessible_nodes', [])
         message = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
@@ -448,7 +449,10 @@ class NailgunReceiver(object):
 
             update_nodes = db().query(Node).filter(
                 Node.id.in_([
-                    n["uid"] for n in nodes
+                    n["uid"] for n in itertools.chain(
+                        nodes,
+                        ia_nodes
+                    )
                 ]),
                 Node.cluster_id == task.cluster_id
             ).yield_per(100)
@@ -466,6 +470,13 @@ class NailgunReceiver(object):
                 n.roles, n.pending_roles = n.pending_roles, n.roles
 
             db().commit()
+
+            if ia_nodes:
+                cls._notify_inaccessible(
+                    task.cluster_id,
+                    [n["uid"] for n in ia_nodes],
+                    u"deployment stopping"
+                )
 
             message = (
                 u"Deployment of environment '{0}' "
@@ -494,7 +505,8 @@ class NailgunReceiver(object):
             json.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
-        nodes = kwargs.get('nodes')
+        nodes = kwargs.get('nodes', [])
+        ia_nodes = kwargs.get('inaccessible_nodes', [])
         message = kwargs.get('error')
         status = kwargs.get('status')
         progress = kwargs.get('progress')
@@ -516,7 +528,10 @@ class NailgunReceiver(object):
 
             update_nodes = db().query(Node).filter(
                 Node.id.in_([
-                    n["uid"] for n in nodes
+                    n["uid"] for n in itertools.chain(
+                        nodes,
+                        ia_nodes
+                    )
                 ]),
                 Node.cluster_id == task.cluster_id
             ).yield_per(100)
@@ -534,6 +549,13 @@ class NailgunReceiver(object):
                 n.roles, n.pending_roles = n.pending_roles, n.roles
 
             db().commit()
+
+            if ia_nodes:
+                cls._notify_inaccessible(
+                    task.cluster_id,
+                    [n["uid"] for n in ia_nodes],
+                    u"environment resetting"
+                )
 
             message = (
                 u"Environment '{0}' "
@@ -553,6 +575,28 @@ class NailgunReceiver(object):
             status,
             progress,
             message
+        )
+
+    @classmethod
+    def _notify_inaccessible(cls, cluster_id, nodes_uids, action):
+        ia_nodes_db = db().query(Node.name).filter(
+            Node.id.in_(nodes_uids),
+            Node.cluster_id == cluster_id
+        ).order_by(Node.id).yield_per(100)
+        ia_message = (
+            u"Fuel couldn't reach these nodes during "
+            u"{0}: {1}. Manual check may be needed.".format(
+                action,
+                u", ".join([
+                    u"'{0}'".format(n.name)
+                    for n in ia_nodes_db
+                ])
+            )
+        )
+        notifier.notify(
+            "warning",
+            ia_message,
+            cluster_id
         )
 
     @classmethod

@@ -395,12 +395,20 @@ class FakeStopDeploymentThread(FakeThread):
         receiver = NailgunReceiver
 
         recover_nodes = self.params.get("recover_nodes", True)
+        ia_nodes_count = self.params.get("ia_nodes_count", 0)
+
+        nodes = self.data['args']['nodes']
+        ia_nodes = []
+        if ia_nodes_count:
+            ia_nodes = nodes[0:ia_nodes_count]
+            nodes = nodes[ia_nodes_count:]
 
         self.sleep(self.tick_interval)
         kwargs = {
             'task_uuid': self.task_uuid,
             'stop_task_uuid': self.data['args']['stop_task_uuid'],
-            'nodes': self.data['args']['nodes'],
+            'nodes': nodes,
+            'inaccessible_nodes': ia_nodes,
             'status': 'ready',
             'progress': 100
         }
@@ -430,11 +438,19 @@ class FakeResetEnvironmentThread(FakeThread):
         receiver = NailgunReceiver
 
         recover_nodes = self.params.get("recover_nodes", True)
+        ia_nodes_count = self.params.get("ia_nodes_count", 0)
+
+        nodes = self.data['args']['nodes']
+        ia_nodes = []
+        if ia_nodes_count:
+            ia_nodes = nodes[0:ia_nodes_count]
+            nodes = nodes[ia_nodes_count:]
 
         self.sleep(self.tick_interval)
         kwargs = {
             'task_uuid': self.task_uuid,
-            'nodes': self.data['args']['nodes'],
+            'nodes': nodes,
+            'inaccessible_nodes': ia_nodes,
             'status': 'ready',
             'progress': 100
         }

@@ -129,6 +129,51 @@ Running Nailgun in Fake Mode
 
     grunt build --static-dir=static_compressed
 
+Nailgun database migrations
+---------------------------
+
+Nailgun uses Alembic (http://alembic.readthedocs.org/en/latest/) for database
+migrations, so all common Alembic commands are now accessible through "python
+manage.py migrate" subcommand.
+
+This command mentioned above creates DB tables for Nailgun service::
+
+    python manage.py syncdb
+
+This is done by applying one by one a number of database migration files,
+which are located in nailgun/nailgun/db/migration/alembic_migrations/versions.
+After that even if you're making some changes in SQLAlchemy models or creating
+the new ones, this command won't create corresponding DB tables unless you
+created another migration file or updated an existing one.
+New migration file may be created by running::
+
+    python manage.py migrate revision -m "Revision message" --autogenerate
+
+There are two important points here:
+
+    1) This command always created a "diff" between current database state
+       and the one described by your SQLAlchemy models. So if you're running
+       it with an empty database - it will create migration including creation
+       of all tables from the scratch. Thus, it should always be preceded by
+       "python manage.py syncdb"
+    2) There are some changes, for example, adding new value to ENUM field,
+       which may not be detected by "--autogenerate" option, so you will need
+       to add them to migration file manually.
+
+After creating migration file, you can upgrade database to a new state by
+using this command::
+
+    python manage.py migrate upgrade +1
+
+To merge your migration into an existing one, you can just move lines of code
+from it's "upgrade()" and "downgrade()" methods to the bottom of corresponding
+ones in previous migration file. In current release this migration file is
+called "current.py".
+
+For all additional features and needs you may refer to Alembic documentation:
+http://alembic.readthedocs.org/en/latest/tutorial.html
+
+
 Astute and Naily
 ----------------
 

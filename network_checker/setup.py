@@ -17,25 +17,33 @@ import setuptools
 
 setuptools.setup(
     name="nailgun-net-check",
-    version='0.1',
+    version='0.2',
     author="Mirantis Inc",
     classifiers=[
         "License :: OSI Approved :: Apache 2.0",
         "Development Status :: 5 - Production/Stable",
         "Environment :: Console",
-        "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX",
         "Programming Language :: Python",
         "Topic :: Software Development :: Testing"
     ],
     install_requires=[
-        'argparse'
+        'argparse',
+        'cliff-tablib',
+        'scapy',
+        'pcap'
     ],
     include_package_data=True,
-    packages=['net_check'],
+    packages=['net_check', 'dhcp_checker'],
     entry_points={
         'console_scripts': [
-            'net_probe.py = net_check.api:main'
+            'net_probe.py = net_check.api:main',
+            'dhcpcheck = dhcp_checker.cli:main'
+        ],
+        'dhcp.check': [
+            'discover = dhcp_checker.commands:ListDhcpServers',
+            'request = dhcp_checker.commands:ListDhcpAssignment',
+            'vlans = dhcp_checker.commands:DhcpWithVlansCheck'
         ],
     },
 )

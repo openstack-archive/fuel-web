@@ -23,14 +23,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.network :private_network, ip: "10.10.0.8"
     config.vm.provision :shell, :inline => "sudo yum -y install dhcp"
     config.vm.provision :shell, :inline => "sudo route add -host 255.255.255.255 dev eth1"
-    config.vm.provision :shell, :inline => "sudo cp /vagrant/test_env/dhcpd.conf.sample2 /etc/dhcp/dhcpd.conf"
+    config.vm.provision :shell, :inline => "sudo cp /vagrant/test_utils/dhcpd.conf.sample2 /etc/dhcp/dhcpd.conf"
     config.vm.provision :shell, :inline => "sudo /usr/sbin/dhcpd eth1"
    end
 
    config.vm.define :dhcp_relay do |config|
     config.vm.network :private_network, ip: "10.10.0.10"
     config.vm.provision :shell, :inline => "sudo yum -y install dhcp"
-    config.vm.provision :shell, :inline => "cp /vagrant/test_env/dhcp_relay.conf /etc/sysconfig/dhcrelay"
+    config.vm.provision :shell, :inline => "cp /vagrant/test_utils/dhcp_relay.conf /etc/sysconfig/dhcrelay"
     config.vm.provision :shell, :inline => "service dhcrelay start"
    end
 
@@ -38,7 +38,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.network :private_network, ip: "192.168.0.5"
     config.vm.provision :shell, :inline => "sudo yum -y install dhcp"
     config.vm.provision :shell, :inline => "sudo route add -host 255.255.255.255 dev eth1"
-    config.vm.provision :shell, :inline => "sudo cp /vagrant/test_env/dhcpd.conf.sample /etc/dhcp/dhcpd.conf"
+    config.vm.provision :shell, :inline => "sudo cp /vagrant/test_utils/dhcpd.conf.sample /etc/dhcp/dhcpd.conf"
     config.vm.provision :shell, :inline => "sudo /usr/sbin/dhcpd eth1"
    end
 end

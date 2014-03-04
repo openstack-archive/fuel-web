@@ -29,10 +29,10 @@ import web
 
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import RedHatAccount
+from nailgun.objects import Task
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 
@@ -304,7 +304,7 @@ class LogPackageHandler(BaseHandler):
             logger.warn(u'DumpTask: error while execution '
                         'dump environment task: {0}'.format(str(exc)))
             raise web.badrequest(str(exc))
-        return TaskHandler.render(task)
+        return Task.to_json(task)
 
 
 class LogSourceCollectionHandler(BaseHandler):

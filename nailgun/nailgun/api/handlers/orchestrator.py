@@ -20,13 +20,13 @@ import web
 
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.api.validators.node import NodesFilterValidator
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.logger import logger
+from nailgun.objects import Task
 from nailgun.orchestrator import deployment_serializers
 from nailgun.orchestrator import provisioning_serializers
 from nailgun.task.helpers import TaskHelper
@@ -186,7 +186,7 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
                 task_manager.__class__.__name__, traceback.format_exc()))
             raise web.badrequest(str(exc))
 
-        return TaskHandler.render(task)
+        return Task.to_json(task)
 
 
 class ProvisionSelectedNodes(SelectedNodesBase):

@@ -146,7 +146,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.db.commit()
         self.receiver.verify_networks_resp(**kwargs)
         resp = self.app.get(
-            reverse('TaskHandler', kwargs={'task_id': task.id}),
+            reverse('TaskHandler', kwargs={'obj_id': task.id}),
             headers=self.default_headers
         )
         self.assertEquals(resp.status, 200)

@@ -25,9 +25,9 @@ import web
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
-from nailgun.api.handlers.tasks import TaskHandler
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
+from nailgun.objects import Task
 from nailgun.task.manager import GenerateCapacityLogTaskManager
 
 """
@@ -98,7 +98,7 @@ class CapacityLogHandler(BaseHandler):
         manager = GenerateCapacityLogTaskManager()
         task = manager.execute()
 
-        data = build_json_response(TaskHandler.render(task))
+        data = build_json_response(Task.to_json(task))
         raise web.accepted(data=data)
 
 

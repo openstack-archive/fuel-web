@@ -45,3 +45,45 @@ OVS_BOND_MODES = Enum(
         'lacp_balance_tcp',
     )
 )
+
+TASK_STATUSES = Enum(
+    'ready',
+    'running',
+    'error'
+)
+
+
+TASK_NAMES = Enum(
+    'super',
+
+    # Cluster changes
+    # For deployment supertask, it contains
+    # two subtasks deployment and provision
+    'deploy',
+    'deployment',
+    'provision',
+    'stop_deployment',
+    'reset_environment',
+
+    'node_deletion',
+    'cluster_deletion',
+    'check_before_deployment',
+
+    # network
+    'check_networks',
+    'verify_networks',
+    'check_dhcp',
+    'verify_network_connectivity',
+
+    # red hat
+    'redhat_setup',
+    'redhat_check_credentials',
+    'redhat_check_licenses',
+    'redhat_download_release',
+    'redhat_update_cobbler_profile',
+
+    # dump
+    'dump',
+
+    'capacity_log'
+)

@@ -508,12 +508,13 @@ class Environment(object):
                 "Nothing to provision - try creating cluster"
             )
 
-    def launch_deployment(self):
+    def launch_deployment(self, cluster_id=None):
         if self.clusters:
+            cluster_id = cluster_id or self.clusters[0].id
             resp = self.app.put(
                 reverse(
                     'ClusterChangesHandler',
-                    kwargs={'cluster_id': self.clusters[0].id}),
+                    kwargs={'cluster_id': cluster_id}),
                 headers=self.default_headers)
             self.tester.assertEquals(200, resp.status)
             response = json.loads(resp.body)

@@ -385,6 +385,45 @@ class TestNetworkManager(BaseIntegrationTest):
             itertools.product((0, 1), ('eth0',))
         )
 
+    @fake_tasks()
+    @patch('nailgun.rpc.cast')
+    def test_ip_assignment_with_equal_ranges(self, mocked_rpc=None):
+        clusters_amount = 2
+
+        # create "clusters_amount" clusters with equal ip ranges in public
+        # network:  172.16.0.2 - 172.16.0.6
+        for i in range(clusters_amount):
+            self.env.create(
+                cluster_kwargs={
+                    'net_provider': 'neutron',
+                },
+                nodes_kwargs=[
+                    {"pending_addition": True},
+                    {"pending_addition": True},
+                    {"pending_addition": True},
+                    {"pending_addition": True},
+                ]
+            )
+
+            net_data = self.env.neutron_networks_get(self.env.clusters[i].id)
+            net_data = json.loads(net_data.body)
+
+            pub = filter(
+                lambda ng: ng['name'] == 'public',
+                net_data['networks']
+            )[0]
+
+            pub.update({
+                'ip_ranges': [['172.16.0.2', '172.16.0.6']],
+            })
+
+            self.env.neutron_networks_put(self.env.clusters[i].id, net_data)
+
+        # lunch deployments and test for no errors
+        for i in range(clusters_amount):
+            task = self.env.launch_deployment(self.env.clusters[i].id)
+            self.env.wait_ready(task)
+
 
 class TestNovaNetworkManager(BaseIntegrationTest):
 

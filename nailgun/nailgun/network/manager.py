@@ -319,7 +319,8 @@ class NetworkManager(object):
         """
         for ip_addr in ifilter(
             lambda ip: db().query(IPAddr).filter_by(
-                ip_addr=str(ip)
+                ip_addr=str(ip),
+                network=network_group.id
             ).first() is None and not str(ip) == network_group.gateway,
             chain(*[
                 IPRange(ir.first, ir.last)

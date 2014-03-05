@@ -564,18 +564,6 @@ class VerifyNetworksTaskManager(TaskManager):
             name="check_networks",
             cluster=self.cluster
         )
-        if (
-            self.cluster.net_provider == 'neutron'
-        ) and (
-            self.cluster.is_locked
-        ):
-            task.status = 'error'
-            task.progress = 100
-            task.message = (u'Network verification on Neutron '
-                            'is not implemented yet')
-            db().add(task)
-            db().commit()
-            return task
 
         if len(self.cluster.nodes) < 2:
             task.status = 'error'

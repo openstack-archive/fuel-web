@@ -304,6 +304,22 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         ]
         self.assertEquals(expected_priorities, nodes)
 
+    def test_set_primary_controller_priority_not_depend_on_nodes_order(self):
+        controllers = filter(lambda n: 'controller' in n.roles, self.env.nodes)
+        expected_primary_controller = sorted(
+            controllers, key=lambda c: c.id)[0]
+        reverse_sorted_controllers = sorted(
+            controllers, key=lambda c: c.id, reverse=True)
+
+        result_nodes = self.serializer.serialize(
+            self.cluster, reverse_sorted_controllers)
+
+        high_priority = sorted(result_nodes, key=lambda n: n['priority'])[0]
+        self.assertEquals(high_priority['role'], 'primary-controller')
+        self.assertEquals(
+            int(high_priority['uid']),
+            expected_primary_controller.id)
+
     def test_node_list(self):
         serialized_nodes = self.serializer.node_list(self.cluster.nodes)
 

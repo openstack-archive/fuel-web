@@ -183,11 +183,11 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
     """Serializer for ha mode."""
 
     @classmethod
-    def serialize(cls, cluster, nodes):
+    def serialize_nodes(cls, nodes):
+        """Serialize nodes and set primary-controller
+        """
         serialized_nodes = super(
-            DeploymentHASerializer,
-            cls
-        ).serialize(cluster, nodes)
+            DeploymentHASerializer, cls).serialize_nodes(nodes)
         cls.set_primary_controller(serialized_nodes)
 
         return serialized_nodes

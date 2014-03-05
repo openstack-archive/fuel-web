@@ -14,8 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
+from operator import attrgetter
+from operator import itemgetter
 
+import json
 from netaddr import IPRange
 
 from nailgun.consts import OVS_BOND_MODES
@@ -303,6 +305,22 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'role': 'other', 'priority': 700}
         ]
         self.assertEquals(expected_priorities, nodes)
+
+    def test_set_primary_controller_priority_not_depend_on_nodes_order(self):
+        controllers = filter(lambda n: 'controller' in n.roles, self.env.nodes)
+        expected_primary_controller = sorted(
+            controllers, key=attrgetter('id'))[0]
+        reverse_sorted_controllers = sorted(
+            controllers, key=attrgetter('id'), reverse=True)
+
+        result_nodes = self.serializer.serialize(
+            self.cluster, reverse_sorted_controllers)
+
+        high_priority = sorted(result_nodes, key=itemgetter('priority'))[0]
+        self.assertEquals(high_priority['role'], 'primary-controller')
+        self.assertEquals(
+            int(high_priority['uid']),
+            expected_primary_controller.id)
 
     def test_node_list(self):
         serialized_nodes = self.serializer.node_list(self.cluster.nodes)

@@ -7,8 +7,8 @@ VIEW='0'
 HTML='docs/_build/html/index.html'
 SINGLEHTML='docs/_build/singlehtml/index.html'
 EPUB='docs/_build/epub/Fuel.epub'
-LATEXPDF='docs/_build/latex/scaffold.pdf'
-PDF='docs/_build/Fuel.pdf'
+LATEXPDF='docs/_build/latex/fuel.pdf'
+PDF='docs/_build/pdf/Fuel.pdf'
 
 # functions
 
@@ -63,7 +63,7 @@ debian_prepare_packages() {
 
 prepare_packages() {
   if check_if_debian; then
-    debian_prepare_pakages
+    debian_prepare_packages
   elif check_if_redhat; then
     redhat_prepare_packages
   else
@@ -133,6 +133,10 @@ build_pdf() {
   fi
 }
 
+clear_build() {
+  make -C docs clean
+}
+
 show_help() {
 cat <<EOF
 Documentation build helper
@@ -143,13 +147,17 @@ EOF
 
 # MAIN
 
-while getopts ":ohf:" opt; do
+while getopts ":ohcf:" opt; do
   case $opt in
     o)
       VIEW='1'
       ;;
     h)
       show_help
+      exit 0
+      ;;
+    c)
+      clear_build
       exit 0
       ;;
     f)
@@ -164,7 +172,8 @@ while getopts ":ohf:" opt; do
   esac
 done
 
-if !check_java_present; then
+check_java_present
+if [ $? -gt 0 ]; then
   echo 'There is no Java installed!'
   exit 1
 fi

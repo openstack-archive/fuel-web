@@ -295,7 +295,7 @@ package in Ubuntu is outdated)::
 Building Documentation
 ----------------------
 
-#. Before you can build this documentation you should prepare your
+Before you can build this documentation you should prepare your
 building environment first. The first thing you need to do is to
 install Java. There are a lot of ways to do it depending on your
 operating system.
@@ -305,28 +305,28 @@ from the source. You can also use `PlantUML Server
 <http://www.plantuml.com/plantuml/>`_ for a quick preview of your
 diagrams and language documentation.
 
-#. You will need to follow steps from :ref:`nailgun_dependencies`
+You will need to follow steps from :ref:`nailgun_dependencies`
 section to build documentation. All these dependencies are needed
 for automatic API documentation generation. If you are not going to
 run unit tests there is no need to actually setup PostgreSQL server.
 Only dev packages are needed to install all required Python dependencies.
 
-#. Look at the list of available formats and generate the one you need::
+Look at the list of available formats and generate the one you need::
 
     cd docs
     make help
     make html
 
-#. There is also a special script **build-docs.sh**. It will perform
-all required steps automatically except Java installation. The script
-will build documentation in required format.
+There is a helper script **build-docs.sh**. It can perform
+all the required steps automatically. The script can build documentation
+in required format. It will not install Java. You have to do it manually.
 ::
 
   Documentation build helper
   -o - Open generated documentation after build
-  -f - Documentation format [html,signlehtml,pdf,ebub]
+  -f - Documentation format [html,signlehtml,latexpdf,pdf,ebub]
 
-#. If you don't want to install all the dependencies and you are not
+If you don't want to install all the dependencies and you are not
 interested in building automatic API documentation there is an easy
 way to do it.
 

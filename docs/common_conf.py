@@ -41,7 +41,7 @@ pdf_stylesheets = ['sphinx', 'kerning', 'a4', 'en']
 pdf_language = "en"
 # Mode for literal blocks wider than the frame. Can be
 # overflow, shrink or truncate
-#pdf_fit_mode = "shrink"
+pdf_fit_mode = "shrink"
 
 # Section level that forces a break page.
 # For example: 1 means top-level sections start in a new page
@@ -54,7 +54,7 @@ pdf_breakside = 'any'
 
 # Insert footnotes where they are defined instead of
 # at the end.
-pdf_inline_footnotes = True
+pdf_inline_footnotes = False
 
 # verbosity level. 0 1 or 2
 pdf_verbosity = 0
@@ -92,7 +92,7 @@ pdf_use_coverpage = True
 pdf_use_toc = True
 
 # How many levels deep should the table of contents be?
-pdf_toc_depth = 2
+pdf_toc_depth = 3
 
 # Add section number to section references
 pdf_use_numbered_links = False

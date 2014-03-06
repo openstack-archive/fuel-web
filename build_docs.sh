@@ -7,7 +7,8 @@ VIEW='0'
 HTML='docs/_build/html/index.html'
 SINGLEHTML='docs/_build/singlehtml/index.html'
 EPUB='docs/_build/epub/Fuel.epub'
-PDF='docs/_build/latex/scaffold.pdf'
+LATEXPDF='docs/_build/latex/scaffold.pdf'
+PDF='docs/_build/Fuel.pdf'
 
 # functions
 
@@ -107,14 +108,14 @@ build_singlehtml() {
   fi
 }
 
-build_pdf() {
+build_latexpdf() {
   if !check_latex_present; then
     echo 'You need to install LaTeX if you want to build PDF!'
     exit 1
   fi
   make -C docs latexpdf
   if [ "${VIEW}" = '1' ]; then
-    view_file "${PDF}"
+    view_file "${LATEXPDF}"
   fi
 }
 
@@ -125,11 +126,18 @@ build_epub() {
   fi
 }
 
+build_pdf() {
+  make -C docs pdf
+  if [ "${VIEW}" = '1' ]; then
+    view_file "${PDF}"
+  fi
+}
+
 show_help() {
 cat <<EOF
 Documentation build helper
 -o - Open generated documentation after build
--f - Documentation format [html,signlehtml,pdf,epub]
+-f - Documentation format [html,signlehtml,pdf,latexpdf,epub]
 EOF
 }
 
@@ -179,6 +187,9 @@ singlehtml)
   ;;
 pdf)
   build_pdf
+  ;;
+latexpdf)
+  build_latexpdf
   ;;
 epub)
   build_epub

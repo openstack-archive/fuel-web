@@ -1,7 +1,7 @@
 <% var disabled = locked ? 'disabled' : '' %>
 <% var ns = "cluster_page.settings_tab." + groupName + "." %>
 
-<% if (settings.metadata.toggleable){ %>
+<% if (settings.metadata && settings.metadata.toggleable) { %>
   <legend class="openstack-settings">
     <label class="toggleable">
       <div class="tumbler">
@@ -28,7 +28,7 @@
       <label class="parameter-box clearfix">
         <div class="parameter-control">
           <div class="custom-tumbler">
-            <input type="checkbox" name="<%- settingName %>" <%= disabled %> />
+            <input type="checkbox" name="<%- groupName + '.' + settingName %>" <%= disabled %> />
             <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
           </div>
         </div>
@@ -42,7 +42,7 @@
         <label class="parameter-box clearfix">
           <div class="parameter-control">
             <div class="custom-tumbler">
-              <input type="radio" name="<%- settingName %>" value="<%- option['data'] %>" <%= disabled %> />
+              <input type="radio" name="<%- groupName + '.' + settingName %>" value="<%- option.data %>" <%= disabled %> />
               <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
           </div>
@@ -58,7 +58,7 @@
       <label class="parameter-box clearfix">
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
         <div class="parameter-control <%= setting.type == 'password' ? 'input-append' : '' %>">
-          <input type="<%= setting.type %>" class="<%= setting.type == 'password' ? 'input-append' : '' %>" name="<%- settingName %>" value="" <%= disabled %> />
+          <input type="<%= setting.type %>" class="<%= setting.type == 'password' ? 'input-append' : '' %>" name="<%- groupName + '.' + settingName %>" value="" <%= disabled %> />
           <% if (setting.type == 'password') { %>
             <span class="add-on"><i class="icon-eye"></i><i class="icon-eye-off hide"></i></span>
           <% } %>

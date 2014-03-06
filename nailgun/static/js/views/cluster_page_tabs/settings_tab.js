@@ -86,25 +86,23 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         composeBindings: function() {
             this.bindings = {};
-            _.each(this.settings.attributes, function(settingsGroup, attr) {
-                if (settingsGroup.metadata.toggleable) {
-                    this.bindings['input[name="' + attr + '.enabled"' + ']'] = attr + '.metadata.enabled';
+            _.each(this.settings.attributes, function(group, groupName) {
+                if (this.settings.get(groupName + '.metadata.toggleable')) {
+                    this.bindings['input[name="' + groupName + '.enabled' + '"]'] = groupName + '.metadata.enabled';
                 }
-                _.each(settingsGroup, function(setting, settingTitle) {
-                    if (settingTitle != 'metadata') {
-                        this.bindings['input[name=' + settingTitle + ']'] = attr + '.' + settingTitle + '.value';
-                        if (settingsGroup.metadata.toggleable) {
-                            this.bindings['input[name=' + settingTitle + ']'] = {
-                                observe: attr + '.' + settingTitle + '.value',
-                                attributes: [{
-                                    name: 'disabled',
-                                    observe: attr + '.metadata.enabled',
-                                    onGet: function(){
-                                        return !settingsGroup.metadata.enabled;
-                                    }
-                                }]
-                            };
-                        }
+                _.each(group, function(setting, settingName) {
+                    if (settingName == 'metadata') {return;}
+                    var settingBindings = this.bindings['input[name="' + groupName + '.' + settingName + '"]'] = {
+                        observe: groupName + '.' + settingName + '.value'
+                    };
+                    if (this.settings.get(groupName + '.metadata.toggleable')) {
+                        settingBindings.attributes = [{
+                            name: 'disabled',
+                            observe: groupName + '.metadata.enabled',
+                            onGet: function(value) {
+                                return !value;
+                            }
+                        }];
                     }
                 }, this);
             }, this);

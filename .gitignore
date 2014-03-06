@@ -30,3 +30,5 @@ nailgun/static/css/styles.css
 .DS_Store
 
 *.egg-info
+
+fuel-web-venv

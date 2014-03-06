@@ -295,7 +295,21 @@ package in Ubuntu is outdated)::
 Building Documentation
 ----------------------
 
-#. You will need to follow steps from :ref:`nailgun_dependencies` section to build documentation.
+#. Before you can build this documentation you should prepare your
+building environment first. The first thing you need to do is to
+install Java. There are a lot of ways to do it depending on your
+operating system.
+
+Java is needed to use PlantUML to automatically generate UML diagrams
+from the source. You can also use `PlantUML Server
+<http://www.plantuml.com/plantuml/>`_ for a quick preview of your
+diagrams and language documentation.
+
+#. You will need to follow steps from :ref:`nailgun_dependencies`
+section to build documentation. All these dependencies are needed
+for automatic API documentation generation. If you are not going to
+run unit tests there is no need to actually setup PostgreSQL server.
+Only dev packages are needed to install all required Python dependencies.
 
 #. Look at the list of available formats and generate the one you need::
 
@@ -303,7 +317,43 @@ Building Documentation
     make help
     make html
 
-You will also need to install Java and PlantUML to automatically
-generate UML diagrams from the source. You can also use `PlantUML Server
-<http://www.plantuml.com/plantuml/>`_ for a quick preview of your
-diagrams.
+#. There is also a special script **build-docs.sh**. It will perform
+all required steps automatically except Java installation. The script
+will build documentation in required format.
+::
+
+  Documentation build helper
+  -o - Open generated documentation after build
+  -f - Documentation format [html,signlehtml,pdf,ebub]
+
+#. If you don't want to install all the dependencies and you are not
+interested in building automatic API documentation there is an easy
+way to do it.
+
+First remove autodoc modules from extensions section of **conf.py**
+file in the **docs** directory. This section should be like this:
+::
+
+  extensions = [
+      'rst2pdf.pdfbuilder',
+      'sphinxcontrib.plantuml',
+  ]
+
+Then remove **develop/api_doc.rst** file and reference to it from
+**develop.rst** index.
+
+Now you can build documentation as usual using make command.
+This method can be useful if you want to make some corrections to
+text and see the results without building the entire environment.
+The only Python packages you need are Sphinx packages:
+::
+
+  Sphinx
+  sphinxcontrib-actdiag
+  sphinxcontrib-blockdiag
+  sphinxcontrib-nwdiag
+  sphinxcontrib-plantuml
+  sphinxcontrib-seqdiag
+
+Just don't forget to rollback all these changes before you commit your
+corrections.

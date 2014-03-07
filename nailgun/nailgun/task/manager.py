@@ -69,6 +69,11 @@ class TaskManager(object):
                 db().delete(task)
                 db().commit()
 
+    def serialize_network_cfg(self, cluster):
+        serializer = {'nova_network': NovaNetworkConfigurationSerializer,
+                      'neutron': NeutronNetworkConfigurationSerializer}
+        return serializer[cluster.net_provider].serialize_for_cluster(cluster)
+
 
 class ApplyChangesTaskManager(TaskManager):
 
@@ -79,12 +84,7 @@ class ApplyChangesTaskManager(TaskManager):
             )
         )
 
-        if self.cluster.net_provider == 'nova_network':
-            net_serializer = NovaNetworkConfigurationSerializer
-        elif self.cluster.net_provider == 'neutron':
-            net_serializer = NeutronNetworkConfigurationSerializer
-
-        network_info = net_serializer.serialize_for_cluster(self.cluster)
+        network_info = self.serialize_network_cfg(self.cluster)
         logger.info(
             u"Network info:\n{0}".format(
                 json.dumps(network_info, indent=4)
@@ -296,12 +296,7 @@ class ApplyChangesTaskManager(TaskManager):
 
     def check_before_deployment(self, supertask):
         # checking admin intersection with untagged
-        if self.cluster.net_provider == 'nova_network':
-            net_serializer = NovaNetworkConfigurationSerializer
-        elif self.cluster.net_provider == 'neutron':
-            net_serializer = NeutronNetworkConfigurationSerializer
-
-        network_info = net_serializer.serialize_for_cluster(self.cluster)
+        network_info = self.serialize_network_cfg(self.cluster)
         network_info["networks"] = [
             n for n in network_info["networks"] if n["name"] != "fuelweb_admin"
         ]

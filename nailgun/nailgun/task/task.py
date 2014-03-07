@@ -397,7 +397,10 @@ class CheckNetworksTask(object):
         checker = NetworkCheck(task, data)
         checker.check_configuration()
         if check_admin_untagged:
-            checker.check_interface_mapping()
+            warn_msgs = checker.check_interface_mapping()
+            if warn_msgs:
+                task.result = {"warning": warn_msgs}
+                db().commit()
 
 
 class CheckBeforeDeploymentTask(object):

@@ -1388,6 +1388,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 ifc.set({checked: false});
             });
             this.interfaces.add(bond);
+            this.showBondingWarning(interfaces);
+        },
+        showBondingWarning: function(interfaces) {
+            var interfacesSpeed = _.invoke(interfaces, 'get', 'current_speed');
+            if (_.uniq(interfacesSpeed).length > 1 || !_.compact(interfacesSpeed).length) {
+                this.$('.bond-speed-warning').toggleClass('hide', false);
+            }
         },
         unbondInterfaces: function() {
             _.each(this.interfaces.where({checked: true}), function(bond) {
@@ -1398,6 +1405,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 bond.set({checked: false});
                 this.interfaces.remove(bond);
             }, this);
+            this.interfaces.invoke('set', {speed_warning: false});
         },
         loadDefaults: function() {
             this.disableControls(true);
@@ -1532,6 +1540,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             },
             'select[name=mode]': {
                 observe: 'mode',
+                onSet: function(value, options) {
+                    options.view.bondTypeChange(value);
+                    return value;
+                },
                 selectOptions: {
                     collection: function() {
                         return _.map(models.Interface.prototype.bondingModes, function(mode) {
@@ -1539,6 +1551,14 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                         });
                     }
                 }
+            }
+        },
+        bondTypeChange: function(value) {
+            if (_.contains(value.toLowerCase(), 'lacp') && ($('.bond-speed-warning').is(':visible'))) {
+                this.handleValidationErrors($.t('cluster_page.nodes_tab.configure_interfaces.bond_speed_lacp_error'));
+            }
+            else {
+                this.handleValidationErrorsRendering('&nbsp;', false);
             }
         },
         removeInterface: function(e) {
@@ -1577,6 +1597,35 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.model.get('assigned_networks').on('add remove', this.checkIfEmpty, this);
             this.model.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
         },
+        handleValidationErrors: function(errorMessage) {
+            var validationResult = this.model.validate();
+            if (errorMessage) {
+                validationResult.push(errorMessage);
+            }
+            if (validationResult.length > 0) {
+                if (!errorMessage) {
+                    this.screen.applyChangesButton.set('disabled', true);
+                }
+                _.each(validationResult, _.bind(function (error) {
+                    this.handleValidationErrorsRendering(error, true);
+                    // please, uncomment the lines below and check if you like that
+//                    if (errorMessage) {
+//                        $('.bond-speed-warning').toggleClass('hide', true);
+//                    }
+                }, this));
+            }
+        },
+        handleValidationErrorsRendering: function(text, shouldBeShown) {
+            var selectedElement = this.$('.physical-network-box[data-name=' + this.model.get('name') + ']');
+            if (shouldBeShown) {
+                selectedElement.addClass('nodrag');
+                selectedElement.next('.network-box-error-message').text(text);
+            }
+            else {
+                selectedElement.removeClass('nodrag');
+                selectedElement.next('.network-box-error-message').html(text);
+            }
+        },
         render: function() {
             this.$el.html(this.template(_.extend({
                 ifc: this.model,
@@ -1590,15 +1639,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 containment: this.screen.$('.node-networks'),
                 disabled: this.screen.isLocked()
             }).disableSelection();
-            var validationResult = this.model.validate();
-            if (validationResult.length > 0) {
-                this.screen.applyChangesButton.set('disabled', true);
-                _.each(validationResult, _.bind(function (error) {
-                    this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
-                        .addClass('nodrag')
-                        .next('.network-box-error-message').text(error);
-                }, this));
-            }
+            this.handleValidationErrors();
             this.stickit(this.model);
             return this;
         }

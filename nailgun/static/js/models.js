@@ -418,6 +418,20 @@ define(['utils', 'deepModel'], function(utils) {
         isBond: function() {
             return this.get('type') == 'bond';
         },
+        getSlaveInterfaces: function() {
+            if (!this.isBond()) {return [];}
+            var slaveInterfaceNames = _.pluck(this.get('slaves'), 'name');
+            return this.collection.filter(function(slaveInterface) {
+                return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
+            });
+        },
+        validateSlaveInterfacesSpeeds: function() {
+            if (!this.isBond()) {return false;}
+            var speeds = _.invoke(this.getSlaveInterfaces(), 'get', 'current_speed');
+            console.log(speeds);
+            // warn if not all speeds are the same or all of them are unknown
+            return _.uniq(speeds).length > 1 || !_.compact(speeds).length;
+        },
         validate: function() {
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork'));

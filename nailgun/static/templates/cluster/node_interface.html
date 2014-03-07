@@ -4,8 +4,7 @@
 <div class="physical-network-box" data-name="<%- ifc.get('name') %>">
   <div class="network-box-item">
     <% if (ifc.isBond()) { %>
-      <% var slaveInterfaceNames = _.pluck(ifc.get('slaves'), 'name') %>
-      <% slaveInterfaces = ifc.collection.filter(function(slaveInterface) {return _.contains(slaveInterfaceNames, slaveInterface.get('name'))}) %>
+      <% slaveInterfaces = ifc.getSlaveInterfaces() %>
       <div class="network-box-name">
         <% if (bondingAvailable) { %>
           <label>

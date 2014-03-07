@@ -1388,6 +1388,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.loadDefaultsButton.set('disabled', this.isLocked());
             this.updateBondingControlsState();
         },
+        checkBondsSpeeds: function() {
+            this.$('.bond-speed-warning').toggle(_.any(this.interfaces.invoke('validateSlaveInterfacesSpeeds')));
+        },
         bondingAvailable: function() {
             return !this.isLocked() && this.model.get('net_provider') == 'neutron';
         },
@@ -1542,6 +1545,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             if (this.loading && this.loading.state() != 'pending') {
                 this.renderInterfaces();
                 this.checkForChanges();
+                this.checkBondsSpeeds();
             }
             this.setupButtonsBindings();
             return this;
@@ -1612,6 +1616,17 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.model.get('assigned_networks').on('add remove', this.checkIfEmpty, this);
             this.model.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
         },
+        handleValidationErrors: function() {
+            var validationResult = this.model.validate();
+            if (validationResult.length) {
+                this.screen.applyChangesButton.set('disabled', true);
+                _.each(validationResult, _.bind(function(error) {
+                    this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
+                        .addClass('nodrag')
+                        .next('.network-box-error-message').text(error);
+                }, this));
+            }
+        },
         render: function() {
             this.$el.html(this.template(_.extend({
                 ifc: this.model,
@@ -1625,15 +1640,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 containment: this.screen.$('.node-networks'),
                 disabled: this.screen.isLocked()
             }).disableSelection();
-            var validationResult = this.model.validate();
-            if (validationResult.length > 0) {
-                this.screen.applyChangesButton.set('disabled', true);
-                _.each(validationResult, _.bind(function (error) {
-                    this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
-                        .addClass('nodrag')
-                        .next('.network-box-error-message').text(error);
-                }, this));
-            }
+            this.handleValidationErrors();
             this.stickit(this.model);
             return this;
         }

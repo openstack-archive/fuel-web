@@ -274,6 +274,7 @@ class NetAssignmentValidator(BasicValidator):
                         log_message=True
                     )
             elif iface['type'] == NETWORK_INTERFACE_TYPES.bond:
+                slaves_speed = None
                 for slave in iface['slaves']:
                     iface_id = [i.id for i in db_interfaces
                                 if i.name == slave['name']]
@@ -286,6 +287,17 @@ class NetAssignmentValidator(BasicValidator):
                                 log_message=True
                             )
                         bonded_eth_ids.add(iface_id[0])
+                        speed = [i.current_speed for i in db_interfaces
+                                 if i.id == iface_id[0]][0]
+                        if not slaves_speed:
+                            slaves_speed = speed
+                        elif slaves_speed != speed:
+                            raise errors.InvalidData(
+                                "Node '{0}': interface '{1}' slave NICs must "
+                                "have the same speed".format(
+                                    node['id'], iface['name']),
+                                log_message=True
+                            )
                     else:
                         raise errors.InvalidData(
                             "Node '{0}': there is no interface '{1}' found "

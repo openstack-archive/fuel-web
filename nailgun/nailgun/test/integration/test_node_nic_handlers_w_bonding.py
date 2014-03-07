@@ -18,6 +18,7 @@ import json
 
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
+from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -309,3 +310,24 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.node_nics_put_check_error(
             "Node '{0}', interface 'ovs-bond0': each bond slave "
             "must have name".format(self.env.nodes[0]["id"]))
+
+    def test_nics_bond_create_failed_slaves_have_different_speed(self):
+        oth_nic_db = self.db.query(NodeNICInterface).get(self.other_nic["id"])
+        emp_nic_db = self.db.query(NodeNICInterface).get(self.empty_nic["id"])
+        oth_nic_db.current_speed = 1000
+        emp_nic_db.current_speed = 100
+        self.db.commit()
+        self.data.append({
+            "name": 'ovs-bond0',
+            "type": NETWORK_INTERFACE_TYPES.bond,
+            "mode": OVS_BOND_MODES.balance_slb,
+            "slaves": [
+                {"name": self.other_nic["name"]},
+                {"name": self.empty_nic["name"]}],
+            "assigned_networks": []
+        })
+        self.other_nic["assigned_networks"] = []
+
+        self.node_nics_put_check_error(
+            "Node '{0}': interface 'ovs-bond0' slave NICs must "
+            "have the same speed".format(self.env.nodes[0]["id"]))

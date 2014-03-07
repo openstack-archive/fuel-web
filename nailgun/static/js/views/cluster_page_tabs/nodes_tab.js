@@ -1397,6 +1397,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 bond.set({checked: false});
                 this.interfaces.remove(bond);
             }, this);
+            this.interfaces.invoke('set', {speed_warning: false});
         },
         loadDefaults: function() {
             this.disableControls(true);
@@ -1527,10 +1528,25 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         bindings: {
             'input[type=checkbox]': {
-                observe: 'checked'
+                observe: 'checked',
+                onSet: _.bind(function(value, options) {
+                    options.view.checkForBondCompatibility(value);
+                    return value;
+                }, this),
+                attributes: [{
+                    name: 'data-speed_warning',
+                    observe: 'speed_warning',
+                    onGet: function(value, options) {
+                        $('.bond-speed-warning').toggleClass('hide', !value);
+                        return value;
+                    }
+                }]
             },
             'select[name=mode]': {
                 observe: 'mode',
+                onSet: function(value, options) {
+                    options.view.bondTypeChange(value);
+                },
                 selectOptions: {
                     collection: function() {
                         return _.map(models.Interface.prototype.bondingModes, function(mode) {
@@ -1538,6 +1554,26 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                         });
                     }
                 }
+            }
+        },
+        bondTypeChange: function(value) {
+            if (_.contains(value.toLowerCase(), 'lacp') && !(_.filter(this.screen.interfaces.invoke('get', 'speed_warning', 'true')).length <= 1)) {
+                this.handleValidationErrors($.t('cluster_page.nodes_tab.configure_interfaces.bond_speed_lacp_error'));
+            }
+            else {
+                this.clearValidationError();
+            }
+        },
+        checkForBondCompatibility: function(isChecked) {
+            if (isChecked) {
+                    this.screen.interfaces.each(_.bind(function(ifc) {
+                    if (this.model.get('current_speed') != ifc.get('current_speed')) {
+                        ifc.set({speed_warning: true});
+                    }
+                }, this));
+            }
+            else if (_.filter(this.screen.interfaces.invoke('get', 'checked')).length == 1) {
+                 this.screen.interfaces.invoke('set', {speed_warning: false});
             }
         },
         removeInterface: function(e) {
@@ -1576,6 +1612,25 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.model.get('assigned_networks').on('add remove', this.checkIfEmpty, this);
             this.model.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
         },
+        clearValidationError: function() {
+            this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
+                .removeClass('nodrag')
+                .next('.network-box-error-message').html('&nbsp;');
+        },
+        handleValidationErrors: function(error) {
+            var validationResult = this.model.validate();
+            if (error) {
+                validationResult.push(error);
+            }
+            if (validationResult.length > 0) {
+                this.screen.applyChangesButton.set('disabled', true);
+                _.each(validationResult, _.bind(function (error) {
+                    this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
+                        .addClass('nodrag')
+                        .next('.network-box-error-message').text(error);
+                }, this));
+            }
+        },
         render: function() {
             this.$el.html(this.template(_.extend({
                 ifc: this.model,
@@ -1588,15 +1643,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 containment: this.screen.$('.node-networks'),
                 disabled: this.screen.isLocked()
             }).disableSelection();
-            var validationResult = this.model.validate();
-            if (validationResult.length > 0) {
-                this.screen.applyChangesButton.set('disabled', true);
-                _.each(validationResult, _.bind(function (error) {
-                    this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
-                        .addClass('nodrag')
-                        .next('.network-box-error-message').text(error);
-                }, this));
-            }
+            this.handleValidationErrors();
             this.stickit(this.model);
             return this;
         }

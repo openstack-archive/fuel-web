@@ -418,6 +418,13 @@ define(['utils', 'deepModel'], function(utils) {
         isBond: function() {
             return this.get('type') == 'bond';
         },
+        getSlaveInterfaces: function() {
+            if (!this.isBond()) {return [this];}
+            var slaveInterfaceNames = _.pluck(this.get('slaves'), 'name');
+            return this.collection.filter(function(slaveInterface) {
+                return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
+            });
+        },
         validate: function() {
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork'));

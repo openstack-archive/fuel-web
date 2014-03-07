@@ -23,6 +23,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
+from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 
 
@@ -274,6 +275,7 @@ class NetAssignmentValidator(BasicValidator):
                         log_message=True
                     )
             elif iface['type'] == NETWORK_INTERFACE_TYPES.bond:
+                slaves_speed = set()
                 for slave in iface['slaves']:
                     iface_id = [i.id for i in db_interfaces
                                 if i.name == slave['name']]
@@ -286,6 +288,9 @@ class NetAssignmentValidator(BasicValidator):
                                 log_message=True
                             )
                         bonded_eth_ids.add(iface_id[0])
+                        speed = [i.current_speed for i in db_interfaces
+                                 if i.id == iface_id[0]]
+                        slaves_speed.add(speed[0])
                     else:
                         raise errors.InvalidData(
                             "Node '{0}': there is no interface '{1}' found "
@@ -293,6 +298,12 @@ class NetAssignmentValidator(BasicValidator):
                                 node['id'], slave['name'], iface['name']),
                             log_message=True
                         )
+                if len(slaves_speed) != 1 or not slaves_speed.pop():
+                    logger.warn(
+                        "Node '{0}': interface '{1}' slave NICs "
+                        "have different or unrecognized speeds".format(
+                            node['id'], iface['name'])
+                    )
 
             for net in iface['assigned_networks']:
                 if net['id'] not in network_group_ids:

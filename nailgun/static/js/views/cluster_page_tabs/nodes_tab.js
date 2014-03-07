@@ -1388,6 +1388,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.loadDefaultsButton.set('disabled', this.isLocked());
             this.updateBondingControlsState();
         },
+        validateInterfacesSpeedsForBonding: function(interfaces) {
+            var slaveInterfaces = _.flatten(_.invoke(interfaces, 'getSlaveInterfaces'), true);
+            var speeds = _.invoke(slaveInterfaces, 'get', 'current_speed');
+            // warn if not all speeds are the same or there are interfaces with unknown speed
+            return _.uniq(speeds).length > 1 || !_.compact(speeds).length;
+        },
         bondingAvailable: function() {
             return !this.isLocked() && this.model.get('net_provider') == 'neutron';
         },
@@ -1395,9 +1401,15 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var checkedInterfaces = this.interfaces.filter(function(ifc) {return ifc.get('checked') && !ifc.isBond();});
             var checkedBonds = this.interfaces.filter(function(ifc) {return ifc.get('checked') && ifc.isBond();});
             var creatingNewBond = checkedInterfaces.length >= 2 && !checkedBonds.length;
-            var addingInterfacesToExistingBond = checkedInterfaces.length && checkedBonds.length == 1;
-            this.bondInterfacesButton.set('disabled', !creatingNewBond && !addingInterfacesToExistingBond);
+            var addingInterfacesToExistingBond = !!checkedInterfaces.length && checkedBonds.length == 1;
+            var bondingPossible = creatingNewBond || addingInterfacesToExistingBond;
+            var newBondWillHaveInvalidSpeeds = bondingPossible && this.validateInterfacesSpeedsForBonding(checkedBonds.concat(checkedInterfaces));
+            var existingBondHasInvalidSpeeds = !!this.interfaces.find(function(ifc) {
+                return ifc.isBond() && this.validateInterfacesSpeedsForBonding(ifc.getSlaveInterfaces());
+            }, this);
+            this.bondInterfacesButton.set('disabled', !bondingPossible);
             this.unbondInterfacesButton.set('disabled', checkedInterfaces.length || !checkedBonds.length);
+            this.$('.bond-speed-warning').toggle(newBondWillHaveInvalidSpeeds || existingBondHasInvalidSpeeds);
         },
         bondInterfaces: function() {
             var interfaces = this.interfaces.filter(function(ifc) {return ifc.get('checked') && !ifc.isBond();});
@@ -1612,6 +1624,17 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.model.get('assigned_networks').on('add remove', this.checkIfEmpty, this);
             this.model.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
         },
+        handleValidationErrors: function() {
+            var validationResult = this.model.validate();
+            if (validationResult.length) {
+                this.screen.applyChangesButton.set('disabled', true);
+                _.each(validationResult, _.bind(function(error) {
+                    this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
+                        .addClass('nodrag')
+                        .next('.network-box-error-message').text(error);
+                }, this));
+            }
+        },
         render: function() {
             this.$el.html(this.template(_.extend({
                 ifc: this.model,
@@ -1625,15 +1648,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 containment: this.screen.$('.node-networks'),
                 disabled: this.screen.isLocked()
             }).disableSelection();
-            var validationResult = this.model.validate();
-            if (validationResult.length > 0) {
-                this.screen.applyChangesButton.set('disabled', true);
-                _.each(validationResult, _.bind(function (error) {
-                    this.$('.physical-network-box[data-name=' + this.model.get('name') + ']')
-                        .addClass('nodrag')
-                        .next('.network-box-error-message').text(error);
-                }, this));
-            }
+            this.handleValidationErrors();
             this.stickit(this.model);
             return this;
         }

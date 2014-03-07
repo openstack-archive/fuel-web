@@ -147,6 +147,8 @@
                         "title_plural": "Configure interfaces on __count__ nodes",
                         "bond_button": "Bond Interfaces",
                         "unbond_button": "Unbond Interfaces",
+                        "bond_speed_restriction": "It's not recommended to bond interfaces with different or undefined speed",
+                        "bond_speed_lacp_error": "It's prohibited to group interfaces with different speed in LACP bond",
                         "speed": "Speed",
                         "bonding_mode": "Mode",
                         "bonding_modes": {

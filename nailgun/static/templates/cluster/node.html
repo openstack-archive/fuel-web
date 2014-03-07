@@ -1,35 +1,37 @@
-<label class="node-container node-box">
-    <div class="custom-tumbler node-checkbox">
-        <input type="checkbox" />
-        <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
-    </div>
-    <div class="node-content">
-        <div class="node-logo <%- node.get('manufacturer') ? 'manufacturer-' + node.get('manufacturer').toLowerCase() : '' %>"></div>
-        <div class="node-name-roles">
-            <div class="name enable-selection">
-                <% if (renaming) { %>
-                    <input type="text"  value="<%- node.get('name') || '' %>" />
-                <% } else { %>
-                    <p class="<%= renameable ? 'node-renameable' : '' %>" title="<%- renameable ? $.t('cluster_page.nodes_tab.node.edit_name') : '' %>"><%- node.get('name') || node.get('mac') %></p>
-                <% } %>
+<div class="node">
+    <label class="node-container node-box">
+        <div class="custom-tumbler node-checkbox">
+            <input type="checkbox" />
+            <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+        </div>
+        <div class="node-content">
+            <div class="node-logo <%- node.get('manufacturer') ? 'manufacturer-' + node.get('manufacturer').toLowerCase() : '' %>"></div>
+            <div class="node-name-roles">
+                <div class="name enable-selection">
+                    <% if (renaming) { %>
+                        <input type="text"  value="<%- node.get('name') || '' %>" />
+                    <% } else { %>
+                        <p class="<%= renameable ? 'node-renameable' : '' %>" title="<%- renameable ? $.t('cluster_page.nodes_tab.node.edit_name') : '' %>"><%- node.get('name') || node.get('mac') %></p>
+                    <% } %>
+                </div>
+                <div class="role-list"></div>
             </div>
-            <div class="role-list"></div>
-        </div>
-        <div class="node-button">
-            <button class="" title=""><i class=""></i></button>
-        </div>
-        <div class="node-status">
-            <div class="node-status-container">
-                <div class="progress"><div class="bar"></div></div>
-                <i></i>
-                <span class="node-status-label"></span>
+            <div class="node-button">
+                <button class="" title=""><i class=""></i></button>
+            </div>
+            <div class="node-status">
+                <div class="node-status-container">
+                    <div class="progress"><div class="bar"></div></div>
+                    <i></i>
+                    <span class="node-status-label"></span>
+                </div>
+            </div>
+            <div class="node-details"></div>
+            <div class="node-hardware">
+                <span><%- $.t('node_details.cpu') %>: <%= node.resource('cores') || '?' %></span>
+                <span><%- $.t('node_details.hdd') %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb') %></span>
+                <span><%- $.t('node_details.ram') %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb') %></span>
             </div>
         </div>
-        <div class="node-details"></div>
-        <div class="node-hardware">
-            <span><%- $.t('node_details.cpu') %>: <%= node.resource('cores') || '?' %></span>
-            <span><%- $.t('node_details.hdd') %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb') %></span>
-            <span><%- $.t('node_details.ram') %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb') %></span>
-        </div>
-    </div>
-</label>
+    </label>
+</div>

@@ -1,11 +1,9 @@
 <div class="clearfix"></div>
 
-<% var slaveInterfaces = [] %>
+<% var slaveInterfaces = ifc.getSlaveInterfaces() %>
 <div class="physical-network-box" data-name="<%- ifc.get('name') %>">
   <div class="network-box-item">
     <% if (ifc.isBond()) { %>
-      <% var slaveInterfaceNames = _.pluck(ifc.get('slaves'), 'name') %>
-      <% slaveInterfaces = ifc.collection.filter(function(slaveInterface) {return _.contains(slaveInterfaceNames, slaveInterface.get('name'))}) %>
       <div class="network-box-name">
         <% if (bondingAvailable) { %>
           <label>
@@ -31,7 +29,6 @@
 
       <div class="physical-network-checkbox"></div>
     <% } else { %>
-      <% slaveInterfaces = [ifc] %>
       <div class="physical-network-checkbox">
         <% var bondable = bondingAvailable && !ifc.get('assigned_networks').find(function(interfaceNetwork) {return interfaceNetwork.getFullNetwork().get('meta').unmovable}) %>
         <% if (bondable) { %>

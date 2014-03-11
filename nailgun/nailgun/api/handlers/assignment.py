@@ -20,8 +20,6 @@ Handlers dealing with nodes assignment
 
 import traceback
 
-import web
-
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.assignment import NodeAssignmentValidator
@@ -74,7 +72,6 @@ class NodeAssignmentHandler(BaseHandler):
                     node_id=node.id
                 )
             db().commit()
-        raise web.ok
 
 
 class NodeUnassignmentHandler(BaseHandler):
@@ -103,4 +100,3 @@ class NodeUnassignmentHandler(BaseHandler):
             else:
                 node.pending_deletion = True
             db().commit()
-        raise web.ok

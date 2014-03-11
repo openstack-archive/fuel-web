@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import logging
 
 from mock import patch
@@ -49,6 +50,7 @@ class TestNodeDeletion(BaseIntegrationTest):
             reverse(
                 'NodeHandler',
                 kwargs={'node_id': node.id}),
+            json.dumps({}),
             headers=self.default_headers
         )
         self.assertEquals(204, resp.status)

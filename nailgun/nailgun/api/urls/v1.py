@@ -78,6 +78,7 @@ from nailgun.api.handlers.release import ReleaseHandler
 from nailgun.api.handlers.tasks import TaskCollectionHandler
 from nailgun.api.handlers.tasks import TaskHandler
 
+from nailgun.api.handlers.verifications import VerificationHandler
 from nailgun.api.handlers.version import VersionHandler
 
 
@@ -134,6 +135,9 @@ urls = (
     NodeAssignmentHandler,
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
     NodeUnassignmentHandler,
+
+    r'/clusters/(?P<cluster_id>\d+)/verification/?$',
+    VerificationHandler,
 
     r'/nodes/?$',
     NodeCollectionHandler,

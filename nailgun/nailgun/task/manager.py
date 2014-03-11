@@ -20,6 +20,7 @@ from nailgun.api.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
 from nailgun.api.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import RedHatAccount
@@ -502,6 +503,8 @@ class ResetEnvironmentTaskManager(TaskManager):
 
 class CheckNetworksTaskManager(TaskManager):
 
+    task_name = consts.TASK_NAMES.check_networks
+
     def execute(self, data, check_admin_untagged=False):
         check_networks = db().query(Task).filter_by(
             cluster=self.cluster,
@@ -534,6 +537,8 @@ class CheckNetworksTaskManager(TaskManager):
 
 
 class VerifyNetworksTaskManager(TaskManager):
+
+    task_name = consts.TASK_NAMES.verify_networks
 
     def remove_previous_task(self):
         check_networks = db().query(Task).filter_by(
@@ -691,6 +696,7 @@ class DownloadReleaseTaskManager(TaskManager):
 
 
 class RedHatSetupTaskManager(TaskManager):
+
     def __init__(self, data):
         self.data = data
 
@@ -770,6 +776,7 @@ class RedHatSetupTaskManager(TaskManager):
 
 
 class DumpTaskManager(TaskManager):
+
     def execute(self):
         logger.info("Trying to start dump_environment task")
         self.check_running_task('dump')
@@ -785,6 +792,7 @@ class DumpTaskManager(TaskManager):
 
 
 class GenerateCapacityLogTaskManager(TaskManager):
+
     def execute(self):
         logger.info("Trying to start capacity_log task")
         self.check_running_task('capacity_log')

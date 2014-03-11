@@ -259,7 +259,6 @@ class DeferredTaskHandler(BaseHandler):
                * 409 (task with such parameters already exists)
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
-
         logger.info(self.log_message.format(env_id=cluster_id))
 
         try:

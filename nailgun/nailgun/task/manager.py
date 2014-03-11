@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 import traceback
 
 from nailgun.api.serializers.network_configuration \
@@ -74,7 +75,21 @@ class ApplyChangesTaskManager(TaskManager):
     def execute(self):
         logger.info(
             u"Trying to start deployment at cluster '{0}'".format(
-                self.cluster.name or self.cluster.id))
+                self.cluster.name or self.cluster.id
+            )
+        )
+
+        if self.cluster.net_provider == 'nova_network':
+            net_serializer = NovaNetworkConfigurationSerializer
+        elif self.cluster.net_provider == 'neutron':
+            net_serializer = NeutronNetworkConfigurationSerializer
+
+        network_info = net_serializer.serialize_for_cluster(self.cluster)
+        logger.info(
+            u"Network info:\n{0}".format(
+                json.dumps(network_info, indent=4)
+            )
+        )
 
         current_tasks = db().query(Task).filter_by(
             cluster_id=self.cluster.id,

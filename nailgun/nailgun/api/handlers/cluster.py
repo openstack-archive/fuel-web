@@ -27,10 +27,6 @@ from nailgun.api.handlers.base import DeferredTaskHandler
 
 from nailgun.api.handlers.base import content_json
 
-from nailgun.api.serializers.network_configuration \
-    import NeutronNetworkConfigurationSerializer
-from nailgun.api.serializers.network_configuration \
-    import NovaNetworkConfigurationSerializer
 from nailgun.api.validators.cluster import AttributesValidator
 from nailgun.api.validators.cluster import ClusterValidator
 from nailgun.db import db
@@ -40,7 +36,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects import Task
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
@@ -221,54 +216,12 @@ class ClusterCollectionHandler(BaseHandler):
             raise web.badrequest(e.message)
 
 
-class ClusterChangesHandler(BaseHandler):
-    """Cluster changes handler
-    """
+class ClusterChangesHandler(DeferredTaskHandler):
 
-    fields = (
-        "id",
-        "name",
-    )
-
-    @content_json
-    def PUT(self, cluster_id):
-        """:returns: JSONized Task object.
-        :http: * 200 (task successfully executed)
-               * 404 (cluster not found in db)
-               * 400 (failed to execute task)
-        """
-        cluster = self.get_object_or_404(
-            Cluster,
-            cluster_id,
-            log_404=(
-                "warning",
-                "Error: there is no cluster "
-                "with id '{0}' in DB.".format(cluster_id)
-            )
-        )
-
-        if cluster.net_provider == 'nova_network':
-            net_serializer = NovaNetworkConfigurationSerializer
-        elif cluster.net_provider == 'neutron':
-            net_serializer = NeutronNetworkConfigurationSerializer
-
-        try:
-            network_info = net_serializer.serialize_for_cluster(cluster)
-            logger.info(
-                u"Network info:\n{0}".format(
-                    json.dumps(network_info, indent=4)
-                )
-            )
-            task_manager = ApplyChangesTaskManager(
-                cluster_id=cluster.id
-            )
-            task = task_manager.execute()
-        except Exception as exc:
-            logger.warn(u'ClusterChangesHandler: error while execution'
-                        ' deploy task: {0}'.format(str(exc)))
-            raise web.badrequest(str(exc))
-
-        return Task.to_json(task)
+    log_message = u"Trying to start deployment at environment '{env_id}'"
+    log_error = u"Error during execution of deployment " \
+                u"task on environment '{env_id}': {error}"
+    task_manager = ApplyChangesTaskManager
 
 
 class ClusterStopDeploymentHandler(DeferredTaskHandler):

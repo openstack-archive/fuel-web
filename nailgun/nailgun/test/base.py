@@ -515,7 +515,7 @@ class Environment(object):
                     'ClusterChangesHandler',
                     kwargs={'cluster_id': self.clusters[0].id}),
                 headers=self.default_headers)
-            self.tester.assertEquals(200, resp.status)
+            self.tester.assertEquals(202, resp.status)
             response = json.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']

@@ -258,7 +258,15 @@ class DeferredTaskHandler(BaseHandler):
                * 404 (environment is not found)
                * 409 (task with such parameters already exists)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(
+            Cluster,
+            cluster_id,
+            log_404=(
+                u"warning",
+                u"Error: there is no cluster "
+                u"with id '{0}' in DB.".format(cluster_id)
+            )
+        )
 
         logger.info(self.log_message.format(env_id=cluster_id))
 

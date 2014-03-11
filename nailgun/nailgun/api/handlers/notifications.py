@@ -18,14 +18,14 @@
 Handlers dealing with notifications
 """
 
-import web
-
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.notification import NotificationValidator
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.settings import settings
+
+from nailgun.adapters.pecan import request
 
 
 class NotificationHandler(BaseHandler):
@@ -76,7 +76,7 @@ class NotificationHandler(BaseHandler):
                * 404 (notification not found in db)
         """
         notification = self.get_object_or_404(Notification, notification_id)
-        data = self.validator.validate_update(web.data())
+        data = self.validator.validate_update(request.body)
         for key, value in data.iteritems():
             setattr(notification, key, value)
         db().add(notification)
@@ -93,8 +93,7 @@ class NotificationCollectionHandler(BaseHandler):
         """:returns: Collection of JSONized Notification objects.
         :http: * 200 (OK)
         """
-        user_data = web.input(limit=settings.MAX_ITEMS_PER_PAGE)
-        limit = user_data.limit
+        limit = request.GET.get('limit', settings.MAX_ITEMS_PER_PAGE)
         query = db().query(Notification).limit(limit)
         notifications = query.all()
         return map(
@@ -108,7 +107,7 @@ class NotificationCollectionHandler(BaseHandler):
         :http: * 200 (OK)
                * 400 (invalid data specified for collection update)
         """
-        data = self.validator.validate_collection_update(web.data())
+        data = self.validator.validate_collection_update(request.body)
         q = db().query(Notification)
         notifications_updated = []
         for nd in data:

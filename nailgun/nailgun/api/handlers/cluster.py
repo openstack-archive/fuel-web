@@ -20,7 +20,6 @@ Handlers dealing with clusters
 
 import json
 import traceback
-import web
 
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import DeferredTaskHandler
@@ -41,6 +40,9 @@ from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
 from nailgun import utils
+
+from nailgun.adapters.pecan import abort
+from nailgun.adapters.pecan import response
 
 
 class ClusterHandler(BaseHandler):
@@ -96,8 +98,7 @@ class ClusterHandler(BaseHandler):
                                 if n not in cluster.nodes]
                 for node in nodes_to_add:
                     if not node.online:
-                        raise web.badrequest(
-                            "Can not add offline node to cluster")
+                        abort(400, "Can not add offline node to cluster")
                 map(cluster.nodes.remove, nodes_to_remove)
                 map(cluster.nodes.append, nodes_to_add)
                 for node in nodes_to_remove:
@@ -125,11 +126,10 @@ class ClusterHandler(BaseHandler):
             logger.warn('Error while execution '
                         'cluster deletion task: %s' % str(e))
             logger.warn(traceback.format_exc())
-            raise web.badrequest(str(e))
-        raise web.webapi.HTTPError(
-            status="202 Accepted",
-            data="{}"
-        )
+            abort(400, message=str(e))
+
+        response.status = 202
+        return "{}"
 
 
 class ClusterCollectionHandler(BaseHandler):
@@ -198,10 +198,9 @@ class ClusterCollectionHandler(BaseHandler):
                 for node in nodes:
                     netmanager.assign_networks_by_default(node)
 
-            raise web.webapi.created(json.dumps(
-                ClusterHandler.render(cluster),
-                indent=4
-            ))
+            response.status = 201
+            return json.dumps(ClusterHandler.render(cluster), indent=4)
+
         except (
             errors.OutOfVLANs,
             errors.OutOfIPs,
@@ -214,7 +213,7 @@ class ClusterCollectionHandler(BaseHandler):
             # TODO(NAME): investigate transactions
             db().delete(cluster)
 
-            raise web.badrequest(e.message)
+            abort(400, message=e.message)
 
 
 class ClusterChangesHandler(DeferredTaskHandler):
@@ -260,7 +259,7 @@ class ClusterAttributesHandler(BaseHandler):
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
         if not cluster.attributes:
-            raise web.internalerror("No attributes found!")
+            abort(500, "No attributes found!")
 
         return {
             "editable": cluster.attributes.editable
@@ -276,13 +275,11 @@ class ClusterAttributesHandler(BaseHandler):
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
         if not cluster.attributes:
-            raise web.internalerror("No attributes found!")
+            abort(500, "No attributes found!")
 
         if cluster.is_locked:
-            error = web.forbidden()
-            error.data = "Environment attributes can't be changed " \
-                         "after, or in deploy."
-            raise error
+            abort(403, "Environment attributes can't be changed "
+                       "after, or in deploy.")
 
         data = self.checked_data()
 
@@ -304,13 +301,11 @@ class ClusterAttributesHandler(BaseHandler):
         cluster = self.get_object_or_404(Cluster, cluster_id)
 
         if not cluster.attributes:
-            raise web.internalerror("No attributes found!")
+            abort(500, "No attributes found!")
 
         if cluster.is_locked:
-            error = web.forbidden()
-            error.data = "Environment attributes can't be changed " \
-                         "after, or in deploy."
-            raise error
+            abort(403, "Environment attributes can't be changed "
+                       "after, or in deploy.")
 
         data = self.checked_data()
 
@@ -340,7 +335,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
         cluster = self.get_object_or_404(Cluster, cluster_id)
         attrs = cluster.release.attributes_metadata.get("editable")
         if not attrs:
-            raise web.internalerror("No attributes found!")
+            abort(500, "No attributes found!")
         return {"editable": attrs}
 
     @content_json
@@ -364,7 +359,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
         if not cluster.attributes:
             logger.error('ClusterAttributesDefaultsHandler: no attributes'
                          ' found for cluster_id %s' % cluster_id)
-            raise web.internalerror("No attributes found!")
+            abort(500, "No attributes found!")
 
         cluster.attributes.editable = cluster.release.attributes_metadata.get(
             "editable"

@@ -36,8 +36,9 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             'click .btn-revert-changes:not([disabled])': 'revertChanges',
             'click .btn-load-defaults:not([disabled])': 'loadDefaults'
         },
-        defaultButtonsState: function(buttonState) {
-            this.$('.btn:not(.btn-load-defaults)').attr('disabled', buttonState);
+        calculateButtonsState: function() {
+            this.$('.btn-revert-changes').attr('disabled', !this.hasChanges());
+            this.$('.btn-apply-changes').attr('disabled', !this.hasChanges() || this.settings.validationError);
             this.$('.btn-load-defaults').attr('disabled', false);
         },
         disableControls: function() {
@@ -45,9 +46,6 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         isLocked: function() {
             return this.model.task({group: 'deployment', status: 'running'}) || !this.model.isAvailableForSettingsChanges();
-        },
-        checkForChanges: function() {
-            this.defaultButtonsState(!this.hasChanges());
         },
         applyChanges: function() {
             this.disableControls();
@@ -70,19 +68,29 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.disableControls();
             this.settings.fetch({url: _.result(this.model, 'url') + '/attributes/defaults'}).always(_.bind(function() {
                 this.render();
-                this.checkForChanges();
+                this.calculateButtonsState();
             }, this));
+        },
+        onSettingChange: function() {
+            this.$('input.error').removeClass('error');
+            this.$('.description').show();
+            this.$('.validation-error').hide();
+            this.settings.isValid();
+            this.handleSettingRestrictions();
+            this.calculateButtonsState();
         },
         setInitialData: function() {
             this.previousSettings = _.cloneDeep(this.model.get('settings').get('editable'));
             this.settings = new models.Settings(this.previousSettings);
             this.settings.parse = function(response) {return response.editable;};
-            // some hacks until settings dependecies are implemented
-            this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
-            this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
-            this.settings.on('change:storage.volumes_lvm.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_ceph.value': !value});}}, this));
-            this.settings.on('change:storage.volumes_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_lvm.value': !value});}}, this));
-            this.settings.on('change', _.bind(this.checkForChanges, this));
+            this.settings.on('change', this.onSettingChange, this);
+            this.settings.on('invalid', function(model, errors) {
+                _.each(errors, function(error) {
+                    var input = this.$('input[name="' + error.field + '"]');
+                    input.addClass('error').parent().siblings('.validation-error').text(error.message);
+                    input.parent().siblings('.parameter-description').toggle();
+                }, this);
+            }, this);
         },
         composeBindings: function() {
             this.bindings = {};
@@ -92,18 +100,47 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 }
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
-                    var settingBindings = this.bindings['input[name="' + groupName + '.' + settingName + '"]'] = {
+                    this.bindings['input[name="' + groupName + '.' + settingName + '"]'] = {
                         observe: groupName + '.' + settingName + '.value'
                     };
-                    if (this.settings.get(groupName + '.metadata.toggleable')) {
-                        settingBindings.attributes = [{
-                            name: 'disabled',
-                            observe: groupName + '.metadata.enabled',
-                            onGet: function(value) {
-                                return !value;
-                            }
-                        }];
+                }, this);
+            }, this);
+        },
+        checkDependentSettings: function(settingPath) {
+            var hasActiveDependentSetting = false;
+            _.each(this.settings.attributes, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    if (setting.depends && _.where(setting.depends, {option: 'settings:' + settingPath}).length) {
+                        hasActiveDependentSetting = hasActiveDependentSetting || setting.value;
                     }
+                }, this);
+            }, this);
+            return hasActiveDependentSetting;
+        },
+        handleSettingRestrictions: function() {
+            _.each(this.settings.attributes, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    var disable = false;
+                    _.each(setting.depends, function(dependency) {
+                        var option = dependency.option.split(':');
+                        var values = _.isUndefined(dependency.values) ?  [true] : utils.composeList(dependency.values);
+                        if (option[0] == 'cluster') {
+                            disable = disable || !_.contains(values, this.model.get(option[1]));
+                        } else if (option[0] == 'settings') {
+                            disable = disable || !_.contains(values, this.settings.get(option[1]).value);
+                        }
+                    }, this);
+                    disable = disable || this.checkDependentSettings(groupName + '.' + settingName);
+                    _.each(setting.conflicts, function(conflict) {
+                        if (_.first(conflict.split(':')) == 'settings') {
+                            var values = _.isUndefined(conflict.values) ?  [true] : utils.composeList(conflict.values);
+                            disable = disable || _.contains(values, this.settings.get(_.last(conflict.split(':'))).value);
+                        }
+                    }, this);
+                    if (this.settings.get(groupName + '.metadata.toggleable')) {
+                        disable = disable || !this.settings.get(groupName + '.metadata.enabled');
+                    }
+                    this.$('input[name="' + groupName + '.' + settingName + '"]').attr('disabled', disable);
                 }, this);
             }, this);
         },
@@ -124,13 +161,11 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     this.registerSubView(settingGroupView);
                     this.$('.settings').append(settingGroupView.render().el);
                 }, this);
-                if (this.model.get('net_provider') == 'nova_network') {
-                    this.$('input[name=murano]').attr('disabled', true);
-                }
             }
             if (this.settings) {
                 this.composeBindings();
                 this.stickit(this.settings);
+                this.handleSettingRestrictions();
             }
             return this;
         },
@@ -145,7 +180,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
             if (!this.model.get('settings')) {
-                this.model.set({'settings': new models.Settings()}, {silent: true});
+                this.model.set({settings: new models.Settings()}, {silent: true});
                 this.model.get('settings').deferred = this.model.get('settings').fetch({url: _.result(this.model, 'url') + '/attributes'});
                 this.model.get('settings').deferred
                     .done(_.bind(function() {

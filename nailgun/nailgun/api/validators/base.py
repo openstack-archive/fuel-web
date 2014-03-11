@@ -19,7 +19,14 @@ import jsonschema
 from nailgun.errors import errors
 
 
-class BasicValidator(object):
+class NoopValidator(object):
+
+    @classmethod
+    def validate(cls, data):
+        return data
+
+
+class BasicValidator(NoopValidator):
 
     @classmethod
     def validate_json(cls, data):

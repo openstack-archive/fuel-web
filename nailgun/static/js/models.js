@@ -312,7 +312,30 @@ define(['utils', 'deepModel'], function(utils) {
             return response.editable;
         },
         toJSON: function(options) {
-            return {editable: this.constructor.__super__.toJSON.call(this, options)};
+            var result = this.constructor.__super__.toJSON.call(this, options);
+            _.each(result, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    group[settingName] = _.omit(setting, 'disabled');
+                }, this);
+            }, this);
+            return {editable: result};
+        },
+        validate: function(attrs) {
+            var errors = [];
+            _.each(attrs, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    if (setting.regex && setting.regex.source) {
+                        var regExp = new RegExp(setting.regex.source);
+                        if (!setting.value.match(regExp)) {
+                            errors.push({
+                                field: groupName + '.' + settingName,
+                                message: setting.regex.error
+                            });
+                        }
+                    }
+                });
+            });
+            return errors.length ? errors : null;
         }
     });
     _.extend(models.Settings.prototype, cacheMixin);

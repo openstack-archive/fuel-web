@@ -29,15 +29,16 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
     SettingsTab = commonViews.Tab.extend({
         template: _.template(settingsTabTemplate),
         hasChanges: function() {
-            return !_.isEqual(this.settings.attributes, this.initialSettings);
+            return !_.isEqual(this.settings.toJSON().editable, this.initialSettings);
         },
         events: {
             'click .btn-apply-changes:not([disabled])': 'applyChanges',
             'click .btn-revert-changes:not([disabled])': 'revertChanges',
             'click .btn-load-defaults:not([disabled])': 'loadDefaults'
         },
-        defaultButtonsState: function(buttonState) {
-            this.$('.btn:not(.btn-load-defaults)').attr('disabled', buttonState);
+        calculateButtonsState: function() {
+            this.$('.btn-revert-changes').attr('disabled', !this.hasChanges());
+            this.$('.btn-apply-changes').attr('disabled', !this.hasChanges() || this.settings.validationError);
             this.$('.btn-load-defaults').attr('disabled', false);
         },
         disableControls: function() {
@@ -45,9 +46,6 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         isLocked: function() {
             return this.model.task({group: 'deployment', status: 'running'}) || !this.model.isAvailableForSettingsChanges();
-        },
-        checkForChanges: function() {
-            this.defaultButtonsState(!this.hasChanges());
         },
         applyChanges: function() {
             this.disableControls();
@@ -59,7 +57,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 }, this))
                 .fail(_.bind(function() {
                     this.defaultButtonsState(false);
-                    utils.showErrorDialog({title: 'OpenStack Settings'});
+                    utils.showErrorDialog({title: $.t('cluster_page.settings_tab.title')});
                 }, this));
         },
         revertChanges: function() {
@@ -72,7 +70,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.disableControls();
             this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'}).always(_.bind(function() {
                 this.render();
-                this.checkForChanges();
+                this.calculateButtonsState();
             }, this));
         },
         updateInitialSettings: function() {
@@ -81,28 +79,75 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         loadInitialSettings: function() {
             this.settings.set(this.initialSettings);
         },
+        onSettingChange: function() {
+            this.$('input.error').removeClass('error');
+            this.$('.description').show();
+            this.$('.validation-error').hide();
+            this.settings.isValid();
+            this.calculateButtonsState();
+        },
         composeBindings: function() {
-            this.bindings = {};
+            var bindings = {};
             _.each(this.settings.attributes, function(group, groupName) {
                 if (this.settings.get(groupName + '.metadata.toggleable')) {
-                    this.bindings['input[name="' + groupName + '.enabled' + '"]'] = groupName + '.metadata.enabled';
+                    bindings['input[name="' + groupName + '.enabled' + '"]'] = groupName + '.metadata.enabled';
                 }
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
-                    var settingBindings = this.bindings['input[name="' + groupName + '.' + settingName + '"]'] = {
-                        observe: groupName + '.' + settingName + '.value'
+                    bindings['input[name="' + groupName + '.' + settingName + '"]'] = {
+                        observe: groupName + '.' + settingName + '.value',
+                        attributes: [{name: 'disabled', observe: groupName + '.' + settingName + '.disabled'}]
                     };
-                    if (this.settings.get(groupName + '.metadata.toggleable')) {
-                        settingBindings.attributes = [{
-                            name: 'disabled',
-                            observe: groupName + '.metadata.enabled',
-                            onGet: function(value) {
-                                return !value;
-                            }
-                        }];
+                }, this);
+            }, this);
+            this.stickit(this.settings, bindings);
+        },
+        checkDependentSettings: function(settingPath, composeListeners, callback) {
+            var hasActiveDependentSetting = false;
+            _.each(this.settings.attributes, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    var isDependent = _.filter(setting.depends, function(dependency) {return !_.isUndefined(dependency['settings:' + settingPath]); }).length;
+                    if (isDependent) {
+                        hasActiveDependentSetting = hasActiveDependentSetting || setting.value;
+                        if (composeListeners) {
+                            utils.parseModelPath(groupName + '.' + settingName + '.value', this.models).change(callback);
+                        }
                     }
                 }, this);
             }, this);
+            return hasActiveDependentSetting;
+        },
+        calculateSettingDisabledState: function(groupName, settingName, composeListeners) {
+            var settingPath = groupName + '.' + settingName;
+            this.models = {
+                settings: this.settings,
+                cluster: this.model,
+                default: this.settings
+            };
+            var disable = false;
+            var callback = _.bind(function() { this.calculateSettingDisabledState(groupName, settingName); }, this);
+            _.each(utils.parseModelPath(settingPath + '.depends', this.models).get(), function(dependency) {
+                var path = _.keys(dependency)[0] + '.value';
+                disable = disable || utils.parseModelPath(path, this.models).get() != _.values(dependency)[0];
+                if (composeListeners) {
+                    utils.parseModelPath(path, this.models).change(callback);
+                }
+            }, this);
+            disable = disable || this.checkDependentSettings(settingPath, composeListeners, callback);
+            _.each(utils.parseModelPath(settingPath + '.conflicts', this.models).get(), function(conflict) {
+                var path = _.keys(conflict)[0] + '.value';
+                disable = disable || utils.parseModelPath(path, this.models).get() == _.values(conflict)[0];
+                if (composeListeners) {
+                    utils.parseModelPath(path, this.models).change(callback);
+                }
+            }, this);
+            if (utils.parseModelPath(groupName + '.metadata.toggleable', this.models).get()) {
+                disable = disable || !utils.parseModelPath(groupName + '.metadata.enabled', this.models).get();
+                if (composeListeners) {
+                    utils.parseModelPath(groupName + '.metadata.enabled', this.models).change(callback);
+                }
+            }
+            utils.parseModelPath(settingPath + '.disabled', this.models).set(disable);
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -124,11 +169,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     this.registerSubView(settingGroupView);
                     this.$('.settings').append(settingGroupView.render().el);
                 }, this);
-                if (this.model.get('net_provider') == 'nova_network') {
-                    this.$('input[name=murano]').attr('disabled', true);
-                }
                 this.composeBindings();
-                this.stickit(this.settings);
             }
             return this;
         },
@@ -143,16 +184,25 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
             this.settings = this.model.get('settings');
+            this.settings.on('change', this.onSettingChange, this);
+            this.settings.on('invalid', function(model, errors) {
+                _.each(errors, function(error) {
+                    var input = this.$('input[name="' + error.field + '"]');
+                    input.addClass('error').parent().siblings('.validation-error').text(error.message);
+                    input.parent().siblings('.parameter-description').toggle();
+                }, this);
+            }, this);
             (this.loading = this.settings.fetch({cache: true})).done(_.bind(this.updateInitialSettings, this));
             if (this.loading.state() == 'pending') {
-                this.loading.done(_.bind(this.render, this));
+                this.loading.done(_.bind(function() {
+                    _.each(this.settings.attributes, function(group, groupName) {
+                        _.each(group, function(setting, settingName) {
+                            this.calculateSettingDisabledState(groupName, settingName, true);
+                        }, this);
+                    }, this);
+                    this.render();
+                }, this));
             }
-            // some hacks until settings dependecies are implemented
-            this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
-            this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
-            this.settings.on('change:storage.volumes_lvm.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_ceph.value': !value});}}, this));
-            this.settings.on('change:storage.volumes_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_lvm.value': !value});}}, this));
-            this.settings.on('change', this.checkForChanges, this);
         }
     });
 

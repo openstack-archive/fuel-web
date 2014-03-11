@@ -45,14 +45,14 @@ class TestHandlers(BaseTestCase):
         expected_stdout = \
             [(
                 "env create --name=TestEnv --release=1",
-                "Environment 'TestEnv' with id=1, mode=multinode and "
+                "Environment 'TestEnv' with id=1, mode=ha_compact and "
                 "network-mode=nova_network was created!\n"
             ), (
                 "--env-id=1 env set --name=NewEnv",
                 "Environment with id=1 was renamed to 'NewEnv'.\n"
             ), (
-                "--env-id=1 env set --mode=ha",
-                "Mode of environment with id=1 was set to 'ha'.\n"
+                "--env-id=1 env set --mode=multinode",
+                "Mode of environment with id=1 was set to 'multinode'.\n"
             )]
 
         for cmd, msg in expected_stdout:
@@ -128,7 +128,7 @@ class TestFiles(BaseTestCase):
         deployment_provision_files = {
             "--env 1 deployment --default": (
                 "deployment_1",
-                "deployment_1/controller_1.yaml",
+                "deployment_1/primary-controller_1.yaml",
                 "deployment_1/compute_2.yaml",
                 "deployment_1/compute_3.yaml"
             ),

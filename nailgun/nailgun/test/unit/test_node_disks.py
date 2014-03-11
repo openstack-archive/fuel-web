@@ -36,7 +36,6 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         if pending_roles is None:
             pending_roles = []
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[{
                 'roles': roles,
                 'pending_roles': pending_roles,
@@ -333,7 +332,6 @@ class TestVolumeManager(BaseIntegrationTest):
 
     def create_node(self, *roles):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[{
                 'roles': [],
                 'pending_roles': roles,

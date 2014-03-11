@@ -146,7 +146,6 @@ class TestRoles(BaseIntegrationTest):
 
     def test_roles_failed_to_delete_assigned(self):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"status": "ready", "roles": ["controller"]}
             ]

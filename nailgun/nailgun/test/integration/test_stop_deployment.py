@@ -26,7 +26,6 @@ class TestStopDeployment(BaseIntegrationTest):
     def setUp(self):
         super(TestStopDeployment, self).setUp()
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"name": "First",
                  "pending_addition": True},

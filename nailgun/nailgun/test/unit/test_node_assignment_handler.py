@@ -124,7 +124,6 @@ class TestAssignmentHandlers(BaseIntegrationTest):
 
     def test_unassignment_after_deploy(self):
         cluster = self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[{}]
         )
         node = self.env.nodes[0]

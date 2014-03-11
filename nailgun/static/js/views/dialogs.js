@@ -636,7 +636,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             this.constructor.__super__.render.call(this, {
                 cluster: this.model,
-                size: this.model.get('mode') == 'ha_compact' ? 3 : 1
+                size: 1
             });
             return this;
         }

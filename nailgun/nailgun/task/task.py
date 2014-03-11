@@ -438,10 +438,10 @@ class CheckBeforeDeploymentTask(object):
             raise errors.NotEnoughControllers(
                 "Not enough controllers, %s mode requires at least 1 "
                 "controller" % (cluster_mode))
-        elif cluster_mode == 'ha_compact' and controllers_count < 3:
+        elif cluster_mode == 'ha_compact' and controllers_count < 1:
             raise errors.NotEnoughControllers(
-                "Not enough controllers, %s mode requires at least 3 "
-                "controllers" % (cluster_mode))
+                "Not enough controllers, %s mode requires at least 1 "
+                "controller" % (cluster_mode))
 
     @classmethod
     def _check_disks(cls, task):

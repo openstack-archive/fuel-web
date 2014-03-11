@@ -45,7 +45,6 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks(godmode=True)
     def test_deployment_task_managers(self):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"pending_deletion": True, 'status': 'provisioned'},
@@ -87,7 +86,6 @@ class TestTaskManagers(BaseIntegrationTest):
             self, _):
 
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {'pending_deletion': True, 'status': 'discover'}])
 
@@ -175,7 +173,6 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks(godmode=True)
     def test_redeployment_works(self):
         self.env.create(
-            cluster_kwargs={"mode": "ha_compact"},
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"pending_addition": True},
@@ -234,7 +231,6 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_deletion_cluster_task_manager(self):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"status": "ready", "progress": 100},
                 {"roles": ["compute"], "status": "ready", "progress": 100},
@@ -275,7 +271,6 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_deletion_during_deployment(self):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"status": "ready", "pending_addition": True},
             ]
@@ -320,7 +315,6 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.create(
             cluster_kwargs={
                 "api": True,
-                "mode": "ha_compact"
             },
             nodes_kwargs=[
                 {"roles": ["controller"], "pending_addition": True},
@@ -364,7 +358,6 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_node_fqdn_is_assigned(self):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"pending_addition": True}
@@ -392,7 +385,6 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_no_changes_no_cry(self):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"status": "ready"}
             ]
@@ -405,7 +397,6 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_deletion_offline_node(self):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"online": False, "pending_deletion": True},
                 {"status": "ready"}
@@ -419,7 +410,6 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_deletion_three_offline_nodes_and_one_online(self):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"online": False, "pending_deletion": True},
                 {"online": False, "pending_deletion": True},

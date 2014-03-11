@@ -74,7 +74,7 @@ class Cluster(Base):
     mode = Column(
         Enum(*MODES, name='cluster_mode'),
         nullable=False,
-        default='multinode'
+        default='ha_compact'
     )
     status = Column(
         Enum(*STATUSES, name='cluster_status'),

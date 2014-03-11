@@ -37,9 +37,6 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
         self.env.create(
-            cluster_kwargs={
-                'mode': 'ha_compact'
-            },
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['controller'], 'pending_addition': True},
@@ -305,7 +302,6 @@ class TestHandlers(BaseIntegrationTest):
     def test_neutron_deploy_cast_with_right_args(self, mocked_rpc):
         self.env.create(
             cluster_kwargs={
-                'mode': 'ha_compact',
                 'net_provider': 'neutron',
                 'net_segment_type': 'gre'
             },
@@ -928,11 +924,12 @@ class TestHandlers(BaseIntegrationTest):
             task.message,
             "Node '%s' has insufficient disk space" %
             node_db.human_readable_name)
-
+    #TODO: Purge multinode
     def test_occurs_error_not_enough_controllers_for_multinode(self):
         self.env.create(
             cluster_kwargs={
-                'mode': 'multinode'},
+                'mode':'multinode'
+            },
             nodes_kwargs=[
                 {'roles': ['compute'], 'pending_addition': True}])
 
@@ -946,8 +943,6 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_occurs_error_not_enough_controllers_for_ha(self):
         self.env.create(
-            cluster_kwargs={
-                'mode': 'ha_compact'},
             nodes_kwargs=[
                 {'roles': ['compute'], 'pending_addition': True}])
 
@@ -957,12 +952,10 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(
             task.message,
             'Not enough controllers, ha_compact '
-            'mode requires at least 3 controllers')
+            'mode requires at least 1 controller')
 
     def test_occurs_error_not_enough_osds_for_ceph(self):
         cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'multinode'},
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd'],
                  'pending_addition': True}])
@@ -987,8 +980,6 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks(godmode=True)
     def test_enough_osds_for_ceph(self):
         cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'multinode'},
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd'],
                  'pending_addition': True}])

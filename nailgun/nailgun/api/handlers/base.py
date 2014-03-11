@@ -31,33 +31,35 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import notifier
 
+from nailgun.adapters.pecan import abort
+from nailgun.adapters.pecan import request
+from nailgun.adapters.pecan import response
+
 from nailgun.objects import Task
 
 
 def check_client_content_type(handler):
-    content_type = web.ctx.env.get("CONTENT_TYPE", "application/json")
-    if web.ctx.path.startswith("/api")\
+    content_type = request.content_type
+    if request.path.startswith("/api")\
             and not content_type.startswith("application/json"):
-        raise web.unsupportedmediatype
+        abort(415)
     return handler()
 
 
 def forbid_client_caching(handler):
-    if web.ctx.path.startswith("/api"):
-        web.header('Cache-Control',
-                   'store, no-cache, must-revalidate,'
-                   ' post-check=0, pre-check=0')
-        web.header('Pragma', 'no-cache')
-        dt = datetime.fromtimestamp(0).strftime(
-            '%a, %d %b %Y %H:%M:%S GMT'
-        )
-        web.header('Expires', dt)
+    if request.path.startswith("/api"):
+        dt = datetime.fromtimestamp(0).strftime('%a, %d %b %Y %H:%M:%S GMT')
+
+        response.headers['Cache-Control'] = \
+            'store, no-cache, must-revalidate, post-check=0, pre-check=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = dt
     return handler()
 
 
 @decorator
 def content_json(func, *args, **kwargs):
-    web.header('Content-Type', 'application/json')
+    response.headers['Content-Type'] = 'application/json'
     try:
         data = func(*args, **kwargs)
     except web.HTTPError as http_error:
@@ -68,7 +70,7 @@ def content_json(func, *args, **kwargs):
 
 
 def build_json_response(data):
-    web.header('Content-Type', 'application/json')
+    response.headers['Content-Type'] = 'application/json'
     if type(data) in (dict, list):
         return json.dumps(data)
     return data
@@ -89,7 +91,7 @@ class BaseHandler(object):
 
     def checked_data(self, validate_method=None, **kwargs):
         try:
-            data = kwargs.pop('data', web.data())
+            data = kwargs.pop('data', request.body)
             method = validate_method or self.validator.validate
 
             valid_data = method(data, **kwargs)
@@ -98,18 +100,16 @@ class BaseHandler(object):
             errors.InvalidMetadata
         ) as exc:
             notifier.notify("error", str(exc))
-            raise web.badrequest(message=str(exc))
+            abort(400, message=str(exc))
         except (
             errors.AlreadyExists
         ) as exc:
-            err = web.conflict()
-            err.message = exc.message
-            raise err
+            abort(409, exc.message)
         except (
             errors.InvalidData,
             Exception
         ) as exc:
-            raise web.badrequest(message=str(exc))
+            abort(400, message=str(exc))
         return valid_data
 
     def get_object_or_404(self, model, *args, **kwargs):
@@ -126,7 +126,7 @@ class BaseHandler(object):
         if not obj:
             if log_404:
                 getattr(logger, log_404[0])(log_404[1])
-            raise web.notfound('{0} not found'.format(model.__name__))
+            abort(404, '{0} not found'.format(model.__name__))
         else:
             if log_get:
                 getattr(logger, log_get[0])(log_get[1])
@@ -138,14 +138,14 @@ class BaseHandler(object):
         :param model: model object
         :param ids: list of ids
 
-        :raises: web.notfound
+        :http: 404 when not found
         :returns: query object
         """
         node_query = db.query(model).filter(model.id.in_(ids))
         objects_count = node_query.count()
 
         if len(set(ids)) != objects_count:
-            raise web.notfound('{0} not found'.format(model.__name__))
+            abort(404, '{0} not found'.format(model.__name__))
 
         return node_query
 
@@ -184,7 +184,7 @@ class SingleHandler(BaseHandler):
                 instance=obj
             )
         except (errors.AlreadyExists, errors.InvalidData) as exc:
-            raise web.badrequest(str(exc))
+            abort(400, message=str(exc))
 
         self.single.update(obj, data)
         return self.single.to_json(obj)
@@ -202,13 +202,10 @@ class SingleHandler(BaseHandler):
         try:
             self.validator.validate_delete(obj)
         except errors.CannotDelete as exc:
-            raise web.badrequest(str(exc))
+            abort(400, message=str(exc))
 
         self.single.delete(obj)
-        raise web.webapi.HTTPError(
-            status="204 No Content",
-            data=""
-        )
+        abort(204)
 
 
 class CollectionHandler(BaseHandler):
@@ -232,9 +229,9 @@ class CollectionHandler(BaseHandler):
         """
         data = self.checked_data()
         new_obj = self.collection.create(data)
-        return web.webapi.created(
-            self.collection.single.to_json(new_obj)
-        )
+
+        response.status = 201
+        return self.collection.single.to_json(new_obj)
 
 
 # TODO(enchantner): rewrite more handlers to inherit from this
@@ -277,13 +274,11 @@ class DeferredTaskHandler(BaseHandler):
             errors.AlreadyExists,
             errors.StopAlreadyRunning
         ) as exc:
-            err = web.conflict()
-            err.message = exc.message
-            raise err
+            abort(409, exc.message)
         except (
             errors.DeploymentNotRunning
         ) as exc:
-            raise web.badrequest(message=exc.message)
+            abort(400, message=exc.message)
         except Exception as exc:
             logger.error(
                 self.log_error.format(
@@ -293,8 +288,4 @@ class DeferredTaskHandler(BaseHandler):
             )
             # let it be 500
             raise
-
-        raise web.webapi.HTTPError(
-            status="202 Accepted",
-            data=self.single.to_json(task)
-        )
+        abort(202, message=self.single.to_json(task))

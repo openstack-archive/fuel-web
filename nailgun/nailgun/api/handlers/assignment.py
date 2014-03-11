@@ -20,8 +20,6 @@ Handlers dealing with nodes assignment
 
 import traceback
 
-import web
-
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.assignment import NodeAssignmentValidator
@@ -32,6 +30,8 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun import notifier
+
+from nailgun.adapters.pecan import abort
 
 
 class NodeAssignmentHandler(BaseHandler):
@@ -74,7 +74,7 @@ class NodeAssignmentHandler(BaseHandler):
                     node_id=node.id
                 )
             db().commit()
-        raise web.ok
+        abort(200)
 
 
 class NodeUnassignmentHandler(BaseHandler):
@@ -103,4 +103,4 @@ class NodeUnassignmentHandler(BaseHandler):
             else:
                 node.pending_deletion = True
             db().commit()
-        raise web.ok
+        abort(200)

@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import web
-
 from nailgun.api.handlers.base import CollectionHandler
 from nailgun.api.handlers.base import SingleHandler
 
@@ -26,6 +24,9 @@ from nailgun.errors import errors
 
 from nailgun.objects import Task
 from nailgun.objects import TaskCollection
+
+from nailgun.adapters.pecan import abort
+from nailgun.adapters.pecan import request
 
 """
 Handlers dealing with tasks
@@ -49,18 +50,15 @@ class TaskHandler(SingleHandler):
             obj_id
         )
 
-        force = web.input(force=None).force not in (None, u'', u'0')
+        force = request.params.get('force') not in (None, u'', u'0')
 
         try:
             self.validator.validate_delete(obj, force)
         except errors.CannotDelete as exc:
-            raise web.badrequest(str(exc))
+            abort(400, message=str(exc))
 
         self.single.delete(obj)
-        raise web.webapi.HTTPError(
-            status="204 No Content",
-            data=""
-        )
+        abort(204, 'No Content')
 
 
 class TaskCollectionHandler(CollectionHandler):
@@ -79,13 +77,11 @@ class TaskCollectionHandler(CollectionHandler):
         :http: * 200 (OK)
                * 404 (task not found in db)
         """
-        user_data = web.input(cluster_id=None)
+        cluster_id = request.GET.get('cluster_id')
 
-        if user_data.cluster_id is not None:
+        if cluster_id is not None:
             return self.collection.to_json(
-                query=self.collection.get_by_cluster_id(
-                    user_data.cluster_id
-                )
+                query=self.collection.get_by_cluster_id(cluster_id)
             )
         else:
             return self.collection.to_json()

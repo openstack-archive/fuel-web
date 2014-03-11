@@ -16,8 +16,6 @@
 
 import traceback
 
-import web
-
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.node import NodesFilterValidator
@@ -32,6 +30,9 @@ from nailgun.orchestrator import provisioning_serializers
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import DeploymentTaskManager
 from nailgun.task.manager import ProvisioningTaskManager
+
+from nailgun.adapters.pecan import abort
+from nailgun.adapters.pecan import request
 
 
 class NodesFilterMixin(object):
@@ -48,7 +49,7 @@ class NodesFilterMixin(object):
         then returns them, else returns
         default nodes.
         """
-        nodes = web.input(nodes=None).nodes
+        nodes = request.params.get('nodes')
 
         if nodes:
             node_ids = self.checked_data(data=nodes)
@@ -124,7 +125,7 @@ class OrchestratorInfo(BaseHandler):
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
         self.update_orchestrator_info(cluster, {})
-        raise web.accepted(data="{}")
+        abort(202, message="{}")
 
 
 class DefaultProvisioningInfo(DefaultOrchestratorInfo):
@@ -184,7 +185,7 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
         except Exception as exc:
             logger.warn(u'Cannot execute {0} task nodes: {1}'.format(
                 task_manager.__class__.__name__, traceback.format_exc()))
-            raise web.badrequest(str(exc))
+            abort(400, message=str(exc))
 
         return Task.to_json(task)
 

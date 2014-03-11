@@ -20,8 +20,6 @@ import csv
 from hashlib import md5
 import tempfile
 
-import web
-
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
@@ -29,6 +27,9 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.objects import Task
 from nailgun.task.manager import GenerateCapacityLogTaskManager
+
+from nailgun.adapters.pecan import abort
+from nailgun.adapters.pecan import response
 
 """
 Capacity audit handlers
@@ -86,7 +87,7 @@ class CapacityLogHandler(BaseHandler):
         capacity_log = db().query(CapacityLog).\
             order_by(CapacityLog.datetime.desc()).first()
         if not capacity_log:
-            raise web.notfound()
+            abort(404)
         return self.render(capacity_log)
 
     def PUT(self):
@@ -99,7 +100,7 @@ class CapacityLogHandler(BaseHandler):
         task = manager.execute()
 
         data = build_json_response(Task.to_json(task))
-        raise web.accepted(data=data)
+        abort(202, message=data)
 
 
 class CapacityLogCsvHandler(BaseHandler):
@@ -108,7 +109,7 @@ class CapacityLogCsvHandler(BaseHandler):
         capacity_log = db().query(CapacityLog).\
             order_by(CapacityLog.datetime.desc()).first()
         if not capacity_log:
-            raise web.notfound()
+            abort(404)
 
         report = capacity_log.report
         f = tempfile.TemporaryFile(mode='r+b')
@@ -139,9 +140,10 @@ class CapacityLogCsvHandler(BaseHandler):
         csv_file.writerow(['Checksum', checksum])
 
         filename = 'fuel-capacity-audit.csv'
-        web.header('Content-Type', 'application/octet-stream')
-        web.header('Content-Disposition', 'attachment; filename="%s"' % (
-            filename))
-        web.header('Content-Length', f.tell())
+
+        response.headers['Content-Type'] = 'application/octet-stream'
+        response.headers['Content-Disposition'] = \
+            'attachment; filename="%s"' % (filename)
+        response.headers['Content-Length'] = f.tell()
         f.seek(0)
         return f

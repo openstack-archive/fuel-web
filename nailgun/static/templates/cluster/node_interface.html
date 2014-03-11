@@ -75,7 +75,7 @@
           <% var networkName = interfaceNetwork.get('name') %>
           <% var network = interfaceNetwork.getFullNetwork() %>
           <% if (networkName != 'floating') { %>
-            </div><div class="logical-network-group <%= network.get('meta').unmovable ? 'disabled' : '' %>">
+            </div><div class="logical-network-group <%= locked || network.get('meta').unmovable ? 'disabled' : '' %>">
           <% } %>
           <div class="logical-network-item" data-name="<%- networkName %>">
             <div class="name"><%- $.t('network.' + networkName, {defaultValue: networkName}) %></div>

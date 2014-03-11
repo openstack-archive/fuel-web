@@ -36,8 +36,9 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             'click .btn-revert-changes:not([disabled])': 'revertChanges',
             'click .btn-load-defaults:not([disabled])': 'loadDefaults'
         },
-        defaultButtonsState: function(buttonState) {
-            this.$('.btn:not(.btn-load-defaults)').attr('disabled', buttonState);
+        calculateButtonsState: function() {
+            this.$('.btn-revert-changes').attr('disabled', !this.hasChanges());
+            this.$('.btn-apply-changes').attr('disabled', !this.hasChanges() || this.settings.validationError);
             this.$('.btn-load-defaults').attr('disabled', false);
         },
         disableControls: function() {
@@ -45,9 +46,6 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         isLocked: function() {
             return this.model.task({group: 'deployment', status: 'running'}) || !this.model.isAvailableForSettingsChanges();
-        },
-        checkForChanges: function() {
-            this.defaultButtonsState(!this.hasChanges());
         },
         applyChanges: function() {
             this.disableControls();
@@ -70,19 +68,29 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.disableControls();
             this.settings.fetch({url: _.result(this.model, 'url') + '/attributes/defaults'}).always(_.bind(function() {
                 this.render();
-                this.checkForChanges();
+                this.calculateButtonsState();
             }, this));
+        },
+        onSettingChange: function() {
+            this.$('input.error').removeClass('error');
+            this.$('.description').show();
+            this.$('.validation-error').hide();
+            this.settings.isValid();
+            //this.checkDependencies();
+            this.calculateButtonsState();
         },
         setInitialData: function() {
             this.previousSettings = _.cloneDeep(this.model.get('settings').get('editable'));
             this.settings = new models.Settings(this.previousSettings);
             this.settings.parse = function(response) {return response.editable;};
-            // some hacks until settings dependecies are implemented
-            this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
-            this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
-            this.settings.on('change:storage.volumes_lvm.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_ceph.value': !value});}}, this));
-            this.settings.on('change:storage.volumes_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_lvm.value': !value});}}, this));
-            this.settings.on('change', _.bind(this.checkForChanges, this));
+            this.settings.on('change', this.onSettingChange, this);
+            this.settings.on('invalid', function(model, errors) {
+                _.each(errors, function(error) {
+                    var input = this.$('input[name="' + error.field + '"]');
+                    input.addClass('error').parent().siblings('.validation-error').text(error.message);
+                    input.parent().siblings('.parameter-description').toggle();
+                }, this);
+            }, this);
         },
         composeBindings: function() {
             this.bindings = {};
@@ -104,6 +112,35 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                             }
                         }];
                     }
+                    /*settingBindings.onSet = _.bind(function(value) {
+                        _.each(setting.conflicts, function(conflict) {
+                            var option = conflict.option.split(':');
+                            this.$('input[name="' + option[1] + '"]').attr('disabled', value);
+                        }, this);
+                        _.each(this.settings, function(group, groupName) {
+                            _.each(group, function(setting, settingName) {
+                                // collect al settings, which dependes on it.
+                            });
+                        });
+                    }, this);*/
+                }, this);
+            }, this);
+            this.stickit(this.settings);
+        },
+        checkDependencies: function() {
+            _.each(this.settings.attributes, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    _.each(setting.deps, function(dependency) {
+                        var option = dependency.option.split(':');
+                        var values = _.isUndefined(dependency.values) ? utils.composeList(dependency.values) : [true];
+                        var disable;
+                        if (option[0] == 'cluster') {
+                            disable = !_.contains(values, this.model.get(option[1]));
+                        } else if (option[0] == 'settings') {
+                            disable = !_.contains(dependency.values, this.settings.get(option[1]).value);
+                        }
+                        this.$('input[name="' + groupName + '.' + settingName + '"]').attr('disabled', disable);
+                    }, this);
                 }, this);
             }, this);
         },
@@ -124,13 +161,10 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     this.registerSubView(settingGroupView);
                     this.$('.settings').append(settingGroupView.render().el);
                 }, this);
-                if (this.model.get('net_provider') == 'nova_network') {
-                    this.$('input[name=murano]').attr('disabled', true);
-                }
             }
             if (this.settings) {
                 this.composeBindings();
-                this.stickit(this.settings);
+                //this.checkDependencies();
             }
             return this;
         },

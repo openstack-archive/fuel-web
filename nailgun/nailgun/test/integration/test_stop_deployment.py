@@ -65,14 +65,16 @@ class TestStopDeployment(BaseIntegrationTest):
 
     @fake_tasks(recover_nodes=False, tick_interval=1)
     def test_stop_provisioning(self):
-        self.env.launch_provisioning_selected(
+        provision_task = self.env.launch_provisioning_selected(
             self.node_uids
         )
-        stop_task_resp = self.env.stop_deployment(expect_http=400)
-        self.assertEquals(
-            stop_task_resp,
-            u"Provisioning interruption for environment "
-            u"'{0}' is not implemented right now".format(
-                self.cluster.id
-            )
+        provision_task_uuid = provision_task.uuid
+        stop_task = self.env.stop_deployment()
+        self.env.wait_ready(stop_task, 60)
+        self.assertIsNone(
+            db().query(Task).filter_by(
+                uuid=provision_task_uuid
+            ).first()
         )
+        self.assertEquals(self.cluster.status, "stopped")
+        self.assertEquals(stop_task.progress, 100)

@@ -82,8 +82,6 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         super(TestDefaultOrchestratorInfoHandlers, self).setUp()
 
         cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'multinode'},
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True},
@@ -166,8 +164,6 @@ class TestSelectedNodesAction(BaseIntegrationTest):
     def setUp(self):
         super(TestSelectedNodesAction, self).setUp()
         self.env.create(
-            cluster_kwargs={
-                'mode': 'ha_compact'},
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['controller'], 'pending_addition': True},

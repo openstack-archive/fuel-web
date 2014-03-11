@@ -29,7 +29,6 @@ class TestProvisioningSerializer(BaseIntegrationTest):
 
         self.env.create(
             cluster_kwargs={
-                'mode': 'multinode',
                 'release_id': release.id},
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},

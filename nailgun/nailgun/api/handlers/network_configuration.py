@@ -20,10 +20,8 @@ Handlers dealing with network configurations
 
 import json
 import traceback
-import web
 
 from nailgun.api.handlers.base import BaseHandler
-from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
 
 from nailgun.api.serializers.network_configuration \
@@ -47,6 +45,10 @@ from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
+from nailgun.adapters.pecan import abort
+from nailgun.adapters.pecan import request
+from nailgun.adapters.pecan import response
+
 
 class ProviderHandler(BaseHandler):
     """Base class for network configuration handlers
@@ -54,18 +56,15 @@ class ProviderHandler(BaseHandler):
 
     def check_net_provider(self, cluster):
         if cluster.net_provider != self.provider:
-            raise web.badrequest(
-                u"Wrong net provider - environment uses '{0}'".format(
-                    cluster.net_provider
-                )
+            message = u"Wrong net provider - environment uses '{0}'".format(
+                cluster.net_provider
             )
+            abort(400, message=message)
 
     def check_if_network_configuration_locked(self, cluster):
         if cluster.is_locked:
-            error = web.forbidden()
-            error.data = "Network configuration can't be changed " \
-                         "after, or in deploy."
-            raise error
+            abort(403, message="Network configuration can't be changed "
+                               "after, or in deploy.")
 
 
 class NovaNetworkConfigurationHandler(ProviderHandler):
@@ -86,12 +85,13 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
         self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
+    @content_json
     def PUT(self, cluster_id):
         """:returns: JSONized Task object.
         :http: * 202 (network checking task created)
                * 404 (cluster not found in db)
         """
-        data = json.loads(web.data())
+        data = json.loads(request.body)
         if data.get("networks"):
             data["networks"] = [
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
@@ -118,19 +118,17 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                     )
 
                 NovaNetworkManager.update(cluster, data)
-            except web.webapi.badrequest as exc:
-                TaskHelper.set_error(task.uuid, exc.data)
-                logger.error(traceback.format_exc())
             except Exception as exc:
                 TaskHelper.set_error(task.uuid, exc)
                 logger.error(traceback.format_exc())
 
-        data = build_json_response(Task.to_json(task))
         if task.status == 'error':
             db().rollback()
         else:
             db().commit()
-        raise web.accepted(data=data)
+
+        response.status = 202
+        return Task.to_json(task)
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
@@ -153,7 +151,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 
     @content_json
     def PUT(self, cluster_id):
-        data = json.loads(web.data())
+        data = json.loads(request.body)
         if data.get("networks"):
             data["networks"] = [
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
@@ -185,12 +183,13 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                 TaskHelper.set_error(task.uuid, exc)
                 logger.error(traceback.format_exc())
 
-        data = build_json_response(Task.to_json(task))
         if task.status == 'error':
             db().rollback()
         else:
             db().commit()
-        raise web.accepted(data=data)
+
+        response.status = 202
+        return Task.to_json(task)
 
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):
@@ -211,18 +210,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         return self.launch_verify(cluster)
 
     def launch_verify(self, cluster):
-        try:
-            data = self.validator.validate_networks_update(web.data())
-        except web.webapi.badrequest as exc:
-            task = Task.create({
-                "name": "check_networks",
-                "cluster_id": cluster.id
-            })
-            TaskHelper.set_error(task.uuid, exc.data)
-            logger.error(traceback.format_exc())
-
-            json_task = build_json_response(Task.to_json(task))
-            raise web.accepted(data=json_task)
+        data = self.validator.validate_networks_update(request.body)
 
         data["networks"] = [
             n for n in data["networks"] if n.get("name") != "fuelweb_admin"
@@ -238,7 +226,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         try:
             task = task_manager.execute(data, vlan_ids)
         except errors.CantRemoveOldVerificationTask:
-            raise web.badrequest("You cannot delete running task manually")
+            abort(400, "You cannot delete running task manually")
         return Task.to_json(task)
 
 

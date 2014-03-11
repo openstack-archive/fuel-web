@@ -61,6 +61,8 @@ from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.network.manager import NetworkManager
 from nailgun.wsgi import build_app
 
+from nailgun.adapters.pecan import response
+
 
 class TimeoutError(Exception):
     pass
@@ -70,7 +72,7 @@ def test_db_driver(handler):
     try:
         return handler()
     except web.HTTPError:
-        if str(web.ctx.status).startswith(("4", "5")):
+        if str(response.status).startswith(("4", "5")):
             db.rollback()
         raise
     except Exception:

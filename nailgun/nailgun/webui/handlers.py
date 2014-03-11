@@ -17,7 +17,9 @@
 import jinja2
 import mimetypes
 import os.path
-import web
+
+from nailgun.adapters.pecan import abort
+from nailgun.adapters.pecan import response
 
 from nailgun.settings import settings
 
@@ -37,9 +39,9 @@ class StaticHandler(object):
         fl_path = os.path.join(settings.STATIC_DIR, fl)
         mimetype = mimetypes.guess_type(fl_path)[0]
         if mimetype:
-            web.header("Content-Type", mimetype)
+            response.headers['Content-Type'] = mimetype
         if os.path.exists(fl_path):
             with open(fl_path, 'r') as f:
                 return f.read()
         else:
-            raise web.notfound()
+            abort(404)

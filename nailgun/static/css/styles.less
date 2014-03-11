@@ -2676,12 +2676,11 @@ input.error:focus {
 }
 
 .parameter-description {
-  display: block;
   float: left;
   color: @font-color-light;
   .box-sizing-mixin;
-  width: 560px;
   margin-top: 4px;
+  &.validation-error { color: @fuel-deep-red; }
 }
 
 .parameter-spacer {

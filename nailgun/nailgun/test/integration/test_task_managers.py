@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import json
 import nailgun
 import nailgun.rpc as rpc
 import time
@@ -281,14 +279,9 @@ class TestTaskManagers(BaseIntegrationTest):
             ]
         )
         cluster_id = self.env.clusters[0].id
-        resp = self.app.put(
-            reverse(
-                'ClusterChangesHandler',
-                kwargs={'cluster_id': cluster_id}),
-            headers=self.default_headers
-        )
-        deploy_uuid = json.loads(resp.body)['uuid']
-        resp = self.app.delete(
+        task = self.env.launch_deployment()
+        deploy_uuid = task.uuid
+        self.app.delete(
             reverse(
                 'ClusterHandler',
                 kwargs={'cluster_id': cluster_id}),

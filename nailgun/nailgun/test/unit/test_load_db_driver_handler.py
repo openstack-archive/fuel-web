@@ -82,7 +82,7 @@ class TestLoadDBDriverHandler(unittest.TestCase):
     def test_load_db_driver_with_web_error(self):
 
         def handler_sample():
-            raise web.HTTPError(400)
+            raise web.HTTPError('400 Bad Request')
 
         self.assertRaises(web.HTTPError,
                           load_db_driver, handler_sample)

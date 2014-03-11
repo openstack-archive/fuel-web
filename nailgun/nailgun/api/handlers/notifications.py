@@ -17,7 +17,6 @@
 """
 Handlers dealing with notifications
 """
-
 import web
 
 from nailgun.api.handlers.base import BaseHandler
@@ -93,8 +92,7 @@ class NotificationCollectionHandler(BaseHandler):
         """:returns: Collection of JSONized Notification objects.
         :http: * 200 (OK)
         """
-        user_data = web.input(limit=settings.MAX_ITEMS_PER_PAGE)
-        limit = user_data.limit
+        limit = web.input(limit=settings.MAX_ITEMS_PER_PAGE).limit
         query = db().query(Notification).limit(limit)
         notifications = query.all()
         return map(

@@ -18,8 +18,6 @@
 Handlers dealing with disks
 """
 
-import web
-
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.node import NodeDisksValidator
@@ -84,7 +82,7 @@ class NodeDefaultsDisksHandler(BaseHandler):
         """
         node = self.get_object_or_404(Node, node_id)
         if not node.attributes:
-            return web.notfound()
+            raise self.http(404)
 
         volumes = DisksFormatConvertor.format_disks_to_simple(
             node.volume_manager.gen_volumes_info())
@@ -104,8 +102,7 @@ class NodeVolumesInformationHandler(BaseHandler):
         """
         node = self.get_object_or_404(Node, node_id)
         if node.cluster is None:
-            raise web.notfound(
-                message='Cannot calculate volumes info. '
-                'Please, add node to an environment.')
+            raise self.http(404, 'Cannot calculate volumes info. '
+                                 'Please, add node to an environment.')
         volumes_info = DisksFormatConvertor.get_volumes_info(node)
         return volumes_info

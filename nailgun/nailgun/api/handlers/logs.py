@@ -36,6 +36,7 @@ from nailgun.objects import Task
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -111,7 +112,7 @@ class LogEntryCollectionHandler(BaseHandler):
                                             settings.UI_LOG_DATE_FORMAT)
             except ValueError:
                 logger.debug("Invalid 'date_before' value: %s", date_before)
-                raise web.badrequest("Invalid 'date_before' value")
+                raise self.http(400, "Invalid 'date_before' value")
         date_after = user_data.get('date_after')
         if date_after:
             try:
@@ -119,21 +120,21 @@ class LogEntryCollectionHandler(BaseHandler):
                                            settings.UI_LOG_DATE_FORMAT)
             except ValueError:
                 logger.debug("Invalid 'date_after' value: %s", date_after)
-                raise web.badrequest("Invalid 'date_after' value")
+                raise self.http(400, "Invalid 'date_after' value")
         truncate_log = bool(user_data.get('truncate_log'))
 
         if not user_data.get('source'):
             logger.debug("'source' must be specified")
-            raise web.badrequest("'source' must be specified")
+            raise self.http(400, "'source' must be specified")
 
-        log_config = filter(lambda lc: lc['id'] == user_data.source,
+        log_config = filter(lambda lc: lc['id'] == user_data.get('source'),
                             settings.LOGS)
         # If log source not found or it is fake source but we are run without
         # fake tasks.
         if not log_config or (log_config[0].get('fake') and
                               not settings.FAKE_TASKS):
-            logger.debug("Log source %r not found", user_data.source)
-            return web.notfound("Log source not found")
+            logger.debug("Log source %r not found", user_data.get('source'))
+            raise self.http(404, "Log source not found")
         log_config = log_config[0]
 
         # If it is 'remote' and not 'fake' log source then calculate log file
@@ -142,13 +143,13 @@ class LogEntryCollectionHandler(BaseHandler):
         node = None
         if log_config['remote'] and not log_config.get('fake'):
             if not user_data.get('node'):
-                raise web.badrequest("'node' must be specified")
-            node = db().query(Node).get(user_data.node)
+                raise self.http(400, "'node' must be specified")
+            node = db().query(Node).get(user_data.get('node'))
             if not node:
-                return web.notfound("Node not found")
+                raise self.http(404, "Node not found")
             if not node.ip:
                 logger.error('Node %r has no assigned ip', node.id)
-                raise web.internalerror("Node has no assigned ip")
+                raise self.http(500, "Node has no assigned ip")
 
             if node.status == "discover":
                 ndir = node.ip
@@ -159,7 +160,7 @@ class LogEntryCollectionHandler(BaseHandler):
             if not os.path.exists(remote_log_dir):
                 logger.debug("Log files dir %r for node %s not found",
                              remote_log_dir, node.id)
-                return web.notfound("Log files dir for node not found")
+                raise self.http(404, "Log files dir for node not found")
 
             log_file = os.path.join(remote_log_dir, log_config['path'])
         else:
@@ -171,13 +172,13 @@ class LogEntryCollectionHandler(BaseHandler):
                              log_file, node.id)
             else:
                 logger.debug("Log file %r not found", log_file)
-            return web.notfound("Log file not found")
+            raise self.http(404, "Log file not found")
 
         level = user_data.get('level')
         allowed_levels = log_config['levels']
         if level is not None:
             if not (level in log_config['levels']):
-                raise web.badrequest("Invalid level")
+                raise self.http(400, "Invalid level")
             allowed_levels = [l for l in dropwhile(lambda l: l != level,
                                                    log_config['levels'])]
         try:
@@ -185,7 +186,7 @@ class LogEntryCollectionHandler(BaseHandler):
         except re.error as e:
             logger.error('Invalid regular expression for file %r: %s',
                          log_config['id'], e)
-            raise web.internalerror("Invalid regular expression in config")
+            raise self.http(500, "Invalid regular expression in config")
 
         entries = []
         to_byte = None
@@ -193,7 +194,7 @@ class LogEntryCollectionHandler(BaseHandler):
             to_byte = int(user_data.get('to', 0))
         except ValueError:
             logger.debug("Invalid 'to' value: %d", to_byte)
-            raise web.badrequest("Invalid 'to' value")
+            raise self.http(400, "Invalid 'to' value")
 
         log_file_size = os.stat(log_file).st_size
         if to_byte >= log_file_size:
@@ -208,7 +209,7 @@ class LogEntryCollectionHandler(BaseHandler):
                                             settings.TRUNCATE_LOG_ENTRIES))
         except ValueError:
             logger.debug("Invalid 'max_entries' value: %d", max_entries)
-            raise web.badrequest("Invalid 'max_entries' value")
+            raise self.http(400, "Invalid 'max_entries' value")
 
         accs = db().query(RedHatAccount).all()
         regs = []
@@ -303,7 +304,7 @@ class LogPackageHandler(BaseHandler):
         except Exception as exc:
             logger.warn(u'DumpTask: error while execution '
                         'dump environment task: {0}'.format(str(exc)))
-            raise web.badrequest(str(exc))
+            raise self.http(400, str(exc))
         return Task.to_json(task)
 
 

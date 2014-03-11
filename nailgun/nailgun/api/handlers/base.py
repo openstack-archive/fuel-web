@@ -267,12 +267,13 @@ class DeferredTaskHandler(BaseHandler):
                 u"with id '{0}' in DB.".format(cluster_id)
             )
         )
-
         logger.info(self.log_message.format(env_id=cluster_id))
-
+        data = self.checked_data()
+        args = data.get('args', ())
+        kwargs = data.get('kwargs', {})
         try:
             task_manager = self.task_manager(cluster_id=cluster.id)
-            task = task_manager.execute()
+            task = task_manager.execute(*args, **kwargs)
         except (
             errors.AlreadyExists,
             errors.StopAlreadyRunning

@@ -1579,6 +1579,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         render: function() {
             this.$el.html(this.template(_.extend({
                 ifc: this.model,
+                locked: this.screen.isLocked(),
                 bondingAvailable: this.screen.bondingAvailable()
             }, this.templateHelpers))).i18n();
             this.checkIfEmpty();
@@ -1601,6 +1602,5 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return this;
         }
     });
-
     return NodesTab;
 });

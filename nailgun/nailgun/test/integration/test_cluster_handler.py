@@ -250,7 +250,6 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_cluster_generated_data_handler(self):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {'pending_addition': True},
                 {'online': False, 'status': 'ready'}])

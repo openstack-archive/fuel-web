@@ -34,7 +34,6 @@ class TestNodeDeletion(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_node_deletion_and_attributes_clearing(self, mocked_rpc):
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[
                 {"pending_addition": True},
             ]

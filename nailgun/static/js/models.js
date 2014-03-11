@@ -291,6 +291,23 @@ define(['utils', 'deepModel'], function(utils) {
         urlRoot: '/api/clusters/',
         isNew: function() {
             return false;
+        },
+        validate: function(attrs) {
+            var errors = [];
+            _.each(attrs, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    if (setting.regex && setting.regex.source) {
+                        var regExp = new RegExp(setting.regex.source);
+                        if (!setting.value.match(regExp)) {
+                            errors.push({
+                                field: groupName + '.' + settingName,
+                                message: setting.regex.error
+                            });
+                        }
+                    }
+                });
+            });
+            return errors.length ? errors : null;
         }
     });
 

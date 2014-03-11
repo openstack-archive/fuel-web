@@ -28,8 +28,6 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
     def setUp(self):
         super(TestHelperUpdateClusterStatus, self).setUp()
         self.env.create(
-            cluster_kwargs={
-                'mode': 'ha_compact'},
             nodes_kwargs=[
                 {'roles': ['controller']},
                 {'roles': ['compute']},
@@ -155,7 +153,6 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
     def setUp(self):
         super(TestCheckBeforeDeploymentTask, self).setUp()
         self.env.create(
-            cluster_kwargs={},
             nodes_kwargs=[{'roles': ['controller']}])
 
         self.env.create_node()

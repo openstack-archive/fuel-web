@@ -102,9 +102,11 @@ class BaseHandler(object):
         except (
             errors.AlreadyExists
         ) as exc:
-            err = web.conflict()
-            err.message = exc.message
-            raise err
+            # unfortunately, current stable web.py version doesn't support
+            # message argument in `web.conflict` class. so we have to hack
+            # the message this way. :(
+            web.conflict.message = exc.message
+            raise web.conflict()
         except (
             errors.InvalidData,
             Exception

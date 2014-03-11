@@ -12,7 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
 
+from nailgun.db.sqlalchemy.models.task import Task
 from nailgun.task import manager
 from nailgun.test import base
 
@@ -54,3 +56,14 @@ class TestMulticastNetworkManager(base.BaseIntegrationTest):
         not_received = [node['not_received'] for node in task.result]
         self.assertTrue(any(node_ids == node for node in not_received))
         self.assertFalse(all(node_ids == node for node in not_received))
+
+    @base.fake_tasks()
+    def test_multicast_handler_success(self):
+        resp = self.app.put(
+            base.reverse('MulticastVerificationHandler',
+                         kwargs={'cluster_id': self.cluster['id']}),
+            json.dumps({'kwargs': {'group': '230.00.230.10', 'port': 8890}}),
+            headers=self.default_headers,
+        )
+        task = self.db.query(Task).filter_by(id=resp.json['id']).first()
+        self.env.wait_ready(task, timeout=10)

@@ -694,6 +694,7 @@ class DownloadReleaseTaskManager(TaskManager):
 
 
 class RedHatSetupTaskManager(TaskManager):
+
     def __init__(self, data):
         self.data = data
 
@@ -773,6 +774,7 @@ class RedHatSetupTaskManager(TaskManager):
 
 
 class DumpTaskManager(TaskManager):
+
     def execute(self):
         logger.info("Trying to start dump_environment task")
         self.check_running_task('dump')
@@ -788,6 +790,7 @@ class DumpTaskManager(TaskManager):
 
 
 class GenerateCapacityLogTaskManager(TaskManager):
+
     def execute(self):
         logger.info("Trying to start capacity_log task")
         self.check_running_task('capacity_log')

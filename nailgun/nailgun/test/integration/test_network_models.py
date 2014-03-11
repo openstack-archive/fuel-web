@@ -30,9 +30,6 @@ class TestNetworkModels(BaseIntegrationTest):
     @fake_tasks(godmode=True)
     def test_cluster_locking_after_deployment(self):
         self.env.create(
-            cluster_kwargs={
-                "mode": "ha_compact"
-            },
             nodes_kwargs=[
                 {"pending_addition": True},
                 {"pending_addition": True},

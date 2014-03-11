@@ -39,9 +39,6 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_nova_deploy_cast_with_right_args(self, mocked_rpc):
         self.env.create(
-            cluster_kwargs={
-                'mode': 'ha_compact'
-            },
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['controller'], 'pending_addition': True},
@@ -309,7 +306,6 @@ class TestHandlers(BaseIntegrationTest):
     def test_neutron_deploy_cast_with_right_args(self, mocked_rpc):
         self.env.create(
             cluster_kwargs={
-                'mode': 'ha_compact',
                 'net_provider': 'neutron',
                 'net_segment_type': 'gre'
             },
@@ -743,7 +739,7 @@ class TestHandlers(BaseIntegrationTest):
             self.env.neutron_networks_get(self.env.clusters[0].id).body)
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
-        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.12'],
+        pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.13'],
                                   ['172.16.0.20', '172.16.0.22']]})
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
@@ -759,7 +755,7 @@ class TestHandlers(BaseIntegrationTest):
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
         self.assertEquals(len(n_rpc_deploy), 5)
-        pub_ips = ['172.16.0.10', '172.16.0.11', '172.16.0.12',
+        pub_ips = ['172.16.0.11', '172.16.0.12', '172.16.0.13',
                    '172.16.0.20', '172.16.0.21']
         for n in n_rpc_deploy:
             for i, n_common_args in enumerate(n['nodes']):
@@ -839,7 +835,7 @@ class TestHandlers(BaseIntegrationTest):
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
         self.assertEquals(len(n_rpc_deploy), 2)
-        pub_ips = ['172.16.10.10', '172.16.10.11']
+        pub_ips = ['172.16.10.11', '172.16.10.12']
         for n in n_rpc_deploy:
             for i, n_common_args in enumerate(n['nodes']):
                 self.assertEquals(n_common_args['public_address'], pub_ips[i])
@@ -934,11 +930,12 @@ class TestHandlers(BaseIntegrationTest):
             task.message,
             "Node '%s' has insufficient disk space" %
             node_db.human_readable_name)
-
+    #TODO: Purge multinode
     def test_occurs_error_not_enough_controllers_for_multinode(self):
         self.env.create(
             cluster_kwargs={
-                'mode': 'multinode'},
+                'mode':'multinode'
+            },
             nodes_kwargs=[
                 {'roles': ['compute'], 'pending_addition': True}])
 
@@ -952,8 +949,6 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_occurs_error_not_enough_controllers_for_ha(self):
         self.env.create(
-            cluster_kwargs={
-                'mode': 'ha_compact'},
             nodes_kwargs=[
                 {'roles': ['compute'], 'pending_addition': True}])
 
@@ -963,12 +958,10 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(
             task.message,
             'Not enough controllers, ha_compact '
-            'mode requires at least 3 controllers')
+            'mode requires at least 1 controller')
 
     def test_occurs_error_not_enough_osds_for_ceph(self):
         cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'multinode'},
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd'],
                  'pending_addition': True}])
@@ -996,8 +989,6 @@ class TestHandlers(BaseIntegrationTest):
     @fake_tasks(godmode=True)
     def test_enough_osds_for_ceph(self):
         cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'multinode'},
             nodes_kwargs=[
                 {'roles': ['controller', 'ceph-osd'],
                  'pending_addition': True}])

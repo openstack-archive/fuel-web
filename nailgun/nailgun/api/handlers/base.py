@@ -38,7 +38,7 @@ def check_client_content_type(handler):
     content_type = web.ctx.env.get("CONTENT_TYPE", "application/json")
     if web.ctx.path.startswith("/api")\
             and not content_type.startswith("application/json"):
-        raise web.unsupportedmediatype
+        raise handler.http(415)
     return handler()
 
 
@@ -105,6 +105,54 @@ class BaseHandler(object):
             fields=fields or cls.fields
         )
 
+    @classmethod
+    def http(cls, status_code, message='', headers=None):
+        """Raise an HTTP status code, as specified. Useful for returning status
+        codes like 401 Unauthorized or 403 Forbidden.
+
+        :param status_code: the HTTP status code as an integer
+        :param message: the message to send along, as a string
+        :param headers: the headeers to send along, as a dictionary
+        """
+        class _nocontent(web.HTTPError):
+            message = 'No Content'
+
+            def __init__(self, message=''):
+                super(_nocontent, self).__init__(
+                    status='204 No Content',
+                    data=message or self.message
+                )
+
+        exc_status_map = {
+            200: web.ok,
+            201: web.created,
+            202: web.accepted,
+            204: _nocontent,
+
+            301: web.redirect,
+            302: web.found,
+
+            400: web.badrequest,
+            401: web.unauthorized,
+            403: web.forbidden,
+            404: web.notfound,
+            405: web.nomethod,
+            406: web.notacceptable,
+            409: web.conflict,
+            415: web.unsupportedmediatype,
+
+            500: web.internalerror,
+        }
+
+        exc = exc_status_map[status_code]()
+        exc.data = message
+
+        headers = headers or {}
+        for key, value in headers.items():
+            web.header(key, value)
+
+        return exc
+
     def checked_data(self, validate_method=None, **kwargs):
         try:
             data = kwargs.pop('data', web.data())
@@ -115,19 +163,17 @@ class BaseHandler(object):
             errors.InvalidInterfacesInfo,
             errors.InvalidMetadata
         ) as exc:
-            notifier.notify("error", str(exc))
-            raise web.badrequest(message=str(exc))
+            notifier.notify("error", exc.message)
+            raise self.http(400, exc.message)
         except (
             errors.AlreadyExists
         ) as exc:
-            err = web.conflict
-            err.message = exc.message
-            raise err()
+            raise self.http(409, exc.message)
         except (
             errors.InvalidData,
             Exception
         ) as exc:
-            raise web.badrequest(message=str(exc))
+            raise self.http(400, str(exc))
         return valid_data
 
     def get_object_or_404(self, model, *args, **kwargs):
@@ -144,7 +190,7 @@ class BaseHandler(object):
         if not obj:
             if log_404:
                 getattr(logger, log_404[0])(log_404[1])
-            raise web.notfound('{0} not found'.format(model.__name__))
+            raise self.http(404, '{0} not found'.format(model.__name__))
         else:
             if log_get:
                 getattr(logger, log_get[0])(log_get[1])
@@ -156,14 +202,14 @@ class BaseHandler(object):
         :param model: model object
         :param ids: list of ids
 
-        :raises: web.notfound
+        :http: 404 when not found
         :returns: query object
         """
         node_query = db.query(model).filter(model.id.in_(ids))
         objects_count = node_query.count()
 
         if len(set(ids)) != objects_count:
-            raise web.notfound('{0} not found'.format(model.__name__))
+            raise self.http(404, '{0} not found'.format(model.__name__))
 
         return node_query
 
@@ -205,13 +251,11 @@ class SingleHandler(BaseHandler):
             errors.InvalidData,
             errors.NodeOffline
         ) as exc:
-            raise web.badrequest(exc.message)
+            raise self.http(400, exc.message)
         except (
             errors.AlreadyExists,
         ) as exc:
-            err = web.conflict
-            err.message = exc.message
-            raise err()
+            raise self.http(409, exc.message)
 
         self.single.update(obj, data)
         return self.single.to_json(obj)
@@ -229,13 +273,10 @@ class SingleHandler(BaseHandler):
         try:
             self.validator.validate_delete(obj)
         except errors.CannotDelete as exc:
-            raise web.badrequest(str(exc))
+            raise self.http(400, exc.message)
 
         self.single.delete(obj)
-        raise web.webapi.HTTPError(
-            status="204 No Content",
-            data=""
-        )
+        raise self.http(204)
 
 
 class CollectionHandler(BaseHandler):
@@ -262,11 +303,9 @@ class CollectionHandler(BaseHandler):
         try:
             new_obj = self.collection.create(data)
         except errors.CannotCreate as exc:
-            raise web.badrequest(exc.message)
+            raise self.http(400, exc.message)
 
-        raise web.created(
-            data=self.collection.single.to_json(new_obj)
-        )
+        raise self.http(201, self.collection.single.to_json(new_obj))
 
 
 # TODO(enchantner): rewrite more handlers to inherit from this
@@ -309,13 +348,11 @@ class DeferredTaskHandler(BaseHandler):
             errors.AlreadyExists,
             errors.StopAlreadyRunning
         ) as exc:
-            err = web.conflict
-            err.message = exc.message
-            raise err()
+            raise self.http(409, exc.message)
         except (
             errors.DeploymentNotRunning
         ) as exc:
-            raise web.badrequest(message=exc.message)
+            raise self.http(400, exc.message)
         except Exception as exc:
             logger.error(
                 self.log_error.format(
@@ -326,7 +363,4 @@ class DeferredTaskHandler(BaseHandler):
             # let it be 500
             raise
 
-        raise web.webapi.HTTPError(
-            status="202 Accepted",
-            data=self.single.to_json(task)
-        )
+        raise self.http(202, self.single.to_json(task))

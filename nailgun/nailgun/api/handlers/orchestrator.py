@@ -124,7 +124,8 @@ class OrchestratorInfo(BaseHandler):
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
         self.update_orchestrator_info(cluster, {})
-        raise web.accepted(data="{}")
+
+        raise self.http(202, '{}')
 
 
 class DefaultProvisioningInfo(DefaultOrchestratorInfo):
@@ -184,7 +185,7 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
         except Exception as exc:
             logger.warn(u'Cannot execute {0} task nodes: {1}'.format(
                 task_manager.__class__.__name__, traceback.format_exc()))
-            raise web.badrequest(str(exc))
+            raise self.http(400, message=str(exc))
 
         return Task.to_json(task)
 

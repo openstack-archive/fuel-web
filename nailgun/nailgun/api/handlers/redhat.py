@@ -18,8 +18,6 @@ Handlers dealing with exclusive Red Hat tasks
 
 import traceback
 
-import web
-
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.redhat import RedHatAccountValidator
@@ -52,7 +50,7 @@ class RedHatAccountHandler(BaseHandler):
         """
         account = db().query(RedHatAccount).first()
         if not account:
-            raise web.notfound()
+            raise self.http(404)
         return self.render(account)
 
     @content_json
@@ -72,8 +70,8 @@ class RedHatAccountHandler(BaseHandler):
         release_id = data.pop('release_id')
         release_db = db().query(Release).get(release_id)
         if not release_db:
-            raise web.notfound(
-                "No release with ID={0} found".format(release_id)
+            raise self.http(
+                404, "No release with ID={0} found".format(release_id)
             )
         account = db().query(RedHatAccount).first()
         if account:
@@ -111,8 +109,8 @@ class RedHatSetupHandler(BaseHandler):
         release_id = data.pop('release_id')
         release_db = db().query(Release).get(release_id)
         if not release_db:
-            raise web.notfound(
-                "No release with ID={0} found".format(release_id)
+            raise self.http(
+                404, "No release with ID={0} found".format(release_id)
             )
         release_data['redhat'] = data
         release_data['release_name'] = release_db.name
@@ -132,6 +130,6 @@ class RedHatSetupHandler(BaseHandler):
             logger.error(u'RedHatAccountHandler: error while execution'
                          ' Red Hat validation task: {0}'.format(str(exc)))
             logger.error(traceback.format_exc())
-            raise web.badrequest(str(exc))
+            raise self.http(400, message=str(exc))
 
-        raise web.accepted(data=Task.to_json(task))
+        raise self.http(202, Task.to_json(task))

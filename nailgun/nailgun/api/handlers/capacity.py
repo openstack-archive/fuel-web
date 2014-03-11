@@ -23,12 +23,12 @@ import tempfile
 import web
 
 from nailgun.api.handlers.base import BaseHandler
-from nailgun.api.handlers.base import build_json_response
 from nailgun.api.handlers.base import content_json
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.objects import Task
 from nailgun.task.manager import GenerateCapacityLogTaskManager
+
 
 """
 Capacity audit handlers
@@ -86,9 +86,10 @@ class CapacityLogHandler(BaseHandler):
         capacity_log = db().query(CapacityLog).\
             order_by(CapacityLog.datetime.desc()).first()
         if not capacity_log:
-            raise web.notfound()
+            raise self.http(404)
         return self.render(capacity_log)
 
+    @content_json
     def PUT(self):
         """Starts capacity data generation.
 
@@ -98,8 +99,7 @@ class CapacityLogHandler(BaseHandler):
         manager = GenerateCapacityLogTaskManager()
         task = manager.execute()
 
-        data = build_json_response(Task.to_json(task))
-        raise web.accepted(data=data)
+        raise self.http(202, Task.to_json(task))
 
 
 class CapacityLogCsvHandler(BaseHandler):
@@ -108,7 +108,7 @@ class CapacityLogCsvHandler(BaseHandler):
         capacity_log = db().query(CapacityLog).\
             order_by(CapacityLog.datetime.desc()).first()
         if not capacity_log:
-            raise web.notfound()
+            raise self.http(404)
 
         report = capacity_log.report
         f = tempfile.TemporaryFile(mode='r+b')

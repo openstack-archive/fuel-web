@@ -17,8 +17,6 @@
 from random import choice
 import string
 
-import web
-
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Enum
@@ -31,7 +29,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Node
-from nailgun.db.sqlalchemy.models.release import Release
 from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
@@ -180,22 +177,6 @@ class Cluster(Base):
                 ).count():
             return False
         return True
-
-    @classmethod
-    def validate(cls, data):
-        d = cls.validate_json(data)
-        if d.get("name"):
-            if db().query(Cluster).filter_by(
-                name=d["name"]
-            ).first():
-                c = web.webapi.conflict
-                c.message = "Environment with this name already exists"
-                raise c()
-        if d.get("release"):
-            release = db().query(Release).get(d.get("release"))
-            if not release:
-                raise web.webapi.badrequest(message="Invalid release id")
-        return d
 
     def add_pending_changes(self, changes_type, node_id=None):
         ex_chs = db().query(ClusterChanges).filter_by(

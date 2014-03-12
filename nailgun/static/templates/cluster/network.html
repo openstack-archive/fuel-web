@@ -16,7 +16,7 @@
 
   <div data-network-id="<%- network.id %>" class="<%- network.get('name') %>">
     <% _.each(shownAttributes, function(attribute) { %>
-      <div class="network-attribute <%= attribute %> <%= _.contains(shownAttributes, attribute) ? '' : 'hide' %>">
+      <div class="network-attribute <%= attribute %>">
         <% if (attribute == 'ip_ranges') { %>
           <div class="range-row-header">
             <div data-i18n="cluster_page.network_tab.range_start"></div>

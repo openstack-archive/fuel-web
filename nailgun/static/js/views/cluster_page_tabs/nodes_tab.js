@@ -197,6 +197,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }
             }
         },
+        actualizeFilteredNode: function(node) {
+            var filteredNode = this.nodeList.filteredNodes.get(node.id);
+            if (filteredNode) {
+                filteredNode.set(node.attributes);
+            }
+        },
         initialize: function() {
             this.nodes.on('resize', function() {
                 this.render();
@@ -205,6 +211,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             if (this instanceof AddNodesScreen || this instanceof EditNodesScreen) {
                 this.nodes.on('change:pending_roles', this.actualizePendingRoles, this);
                 this.model.on('change:status', _.bind(function() {app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});}, this));
+            } else {
+                this.nodes.on('change', this.actualizeFilteredNode, this);
             }
             this.scheduleUpdate();
             var defaultButtonModelsData = {

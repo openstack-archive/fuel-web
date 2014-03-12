@@ -799,6 +799,24 @@
                         "mac": "08:00:27:22:ab:aa",
                         "max_speed": 100,
                         "current_speed": 100
+                    },
+                    {
+                        "name": "eth1",
+                        "mac": "08:00:27:22:ab:ab",
+                        "max_speed": 1000,
+                        "current_speed": 100
+                    },
+                    {
+                        "name": "eth2",
+                        "mac": "08:00:27:22:ab:ac",
+                        "max_speed": 100,
+                        "current_speed": null
+                    },
+                    {
+                        "name": "eth3",
+                        "mac": "08:00:27:22:ab:ad",
+                        "max_speed": 100,
+                        "current_speed": null
                     }
                 ],
                 "disks": [
@@ -862,6 +880,36 @@
                         "ip": "10.20.0.226",
                         "netmask": "255.255.255.0",
                         "mac": "52:54:00:0e:b8:f5",
+                        "max_speed": 100,
+                        "current_speed": 100
+                    },
+                    {
+                        "name": "eth1",
+                        "mac": "52:54:00:0e:b8:f6",
+                        "max_speed": 1000,
+                        "current_speed": 1000
+                    },
+                    {
+                        "name": "eth2",
+                        "mac": "52:54:00:0e:b8:f7",
+                        "max_speed": 100,
+                        "current_speed": null
+                    },
+                    {
+                        "name": "eth3",
+                        "mac": "52:54:00:0e:b8:f8",
+                        "max_speed": 1000,
+                        "current_speed": 100
+                    },
+                    {
+                        "name": "eth4",
+                        "mac": "52:54:00:0e:b8:f9",
+                        "max_speed": 100,
+                        "current_speed": 100
+                    },
+                    {
+                        "name": "eth5",
+                        "mac": "52:54:00:0e:b8:fa",
                         "max_speed": 100,
                         "current_speed": 100
                     }

@@ -14,7 +14,7 @@
 #    under the License.
 
 import json
-from jsonschema import validate
+import jsonschema
 
 from nailgun.errors import errors
 
@@ -44,7 +44,18 @@ class BasicValidator(object):
 
     @classmethod
     def validate_schema(cls, data, schema):
+        """Validate a given data with a given schema.
+
+        :param data:   a data to validate represented as a dict
+        :param schema: a schema to validate represented as a dict;
+                       must be in JSON Schema Draft 4 format.
+        """
         try:
-            validate(data, schema)
+            checker = jsonschema.FormatChecker()
+            jsonschema.validate(data, schema, format_checker=checker)
         except Exception as exc:
-            raise errors.InvalidData(exc.message)
+            # We need to cast a given exception to the string since it's the
+            # only way to print readable validation error. Unfortunately,
+            # jsonschema has no base class for exceptions, so we don't know
+            # about internal attributes with error description.
+            raise errors.InvalidData(str(exc))

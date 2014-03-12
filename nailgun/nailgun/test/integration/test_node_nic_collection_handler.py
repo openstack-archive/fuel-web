@@ -24,11 +24,11 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_put_handler_with_one_node(self):
         cluster = self.env.create_cluster(api=True)
-        mac = '123'
+        mac = self.env.generate_random_mac()
         meta = {}
         self.env.set_interfaces_in_meta(meta, [
             {'name': 'eth0', 'mac': mac},
-            {'name': 'eth1', 'mac': '654'}])
+            {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
 

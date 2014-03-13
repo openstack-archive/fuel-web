@@ -66,8 +66,8 @@ class Actor(object):
     def __init__(self, config=None):
         self.config = {
             'src_mac': None,
-            'src': '1.0.0.0',
-            'dst': '1.0.0.0',
+            'src': '192.0.2.1',
+            'dst': '192.0.2.2',
             'sport': 31337,
             'dport': 31337,
             'cookie': "Nailgun:",

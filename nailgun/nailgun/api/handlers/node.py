@@ -245,7 +245,8 @@ class NodeCollectionHandler(BaseHandler):
                 setattr(node, key, value)
 
         db().add(node)
-        db().commit()
+        db().flush()
+
         node.attributes = NodeAttributes()
 
         try:

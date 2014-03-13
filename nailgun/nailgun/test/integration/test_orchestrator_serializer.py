@@ -21,7 +21,6 @@ import json
 from netaddr import IPRange
 
 from nailgun.consts import OVS_BOND_MODES
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import IPAddrRange
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -50,7 +49,7 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         self.assertEquals(len(self.filter_by_role(nodes, role)), count)
 
     def get_controllers(self, cluster_id):
-        return db().query(Node).\
+        return self.db.query(Node).\
             filter_by(cluster_id=cluster_id,
                       pending_deletion=False).\
             filter(Node.role_list.any(name='controller')).\
@@ -526,7 +525,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         # Remove 'vlan_splinters' attribute and check results.
 
         editable_attrs.pop('vlan_splinters', None)
-        db.refresh(cluster.attributes)
+        self.db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
@@ -545,7 +544,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         # Set 'vlan_splinters' to 'some_text' and check results.
 
         editable_attrs['vlan_splinters'] = {'value': 'some_text'}
-        db.refresh(cluster.attributes)
+        self.db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
@@ -565,7 +564,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         # Set 'vlan_splinters' to 'disabled' and check results.
 
         editable_attrs['vlan_splinters'] = {'value': 'disabled'}
-        db.refresh(cluster.attributes)
+        self.db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
@@ -591,7 +590,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         #value of kernel-ml should end up with vlan_splinters = off
 
         editable_attrs['vlan_splinters'] = {'value': 'kernel_lt'}
-        db.refresh(cluster.attributes)
+        self.db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
@@ -617,7 +616,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         editable_attrs.setdefault(
             'vlan_splinters', {'value': 'hard'}
         )['value'] = 'hard'
-        db.refresh(cluster.attributes)
+        self.db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
@@ -647,7 +646,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         editable_attrs.setdefault(
             'vlan_splinters', {'value': 'hard'}
         )['value'] = 'hard'
-        db.refresh(cluster.attributes)
+        self.db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
@@ -682,7 +681,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         editable_attrs.setdefault(
             'vlan_splinters', {'value': 'soft'}
         )['value'] = 'soft'
-        db.refresh(cluster.attributes)
+        self.db.refresh(cluster.attributes)
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 

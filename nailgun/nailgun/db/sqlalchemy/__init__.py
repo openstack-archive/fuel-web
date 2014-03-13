@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-
 import contextlib
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import create_engine
@@ -50,17 +48,6 @@ db = scoped_session(
         query_cls=NoCacheQuery
     )
 )
-
-
-def load_db_driver(handler):
-    try:
-        return handler()
-    except Exception:
-        db().rollback()
-        raise
-    finally:
-        db().commit()
-        db().expire_all()
 
 
 def syncdb():

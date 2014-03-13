@@ -61,7 +61,7 @@ class NetworkManager(object):
         network_group.netmask = str(new_cidr.netmask)
 
         db().add(ip_range)
-        db().commit()
+        db().flush()
 
     @classmethod
     def get_admin_network_group_id(cls):
@@ -103,7 +103,7 @@ class NetworkManager(object):
             IPAddr.network == nw_group.id
         ).all()
         map(db().delete, ips)
-        db().commit()
+        db().flush()
 
     @classmethod
     def assign_admin_ips(cls, node_id, num=1):
@@ -140,7 +140,7 @@ class NetworkManager(object):
                     network=admin_net_id
                 )
                 db().add(ip_db)
-            db().commit()
+            db().flush()
 
     @classmethod
     def assign_ips(cls, nodes_ids, network_name):
@@ -221,7 +221,7 @@ class NetworkManager(object):
                 ip_addr=free_ip
             )
             db().add(ip_db)
-            db().commit()
+            db().flush()
 
     @classmethod
     def assign_vip(cls, cluster_id, network_name):
@@ -275,7 +275,7 @@ class NetworkManager(object):
             vip = cls.get_free_ips(network.id)[0]
             ne_db = IPAddr(network=network.id, ip_addr=vip)
             db().add(ne_db)
-            db().commit()
+            db().flush()
 
         return vip
 
@@ -377,7 +377,7 @@ class NetworkManager(object):
         for nic in node.interfaces:
             while nic.assigned_networks_list:
                 nic.assigned_networks_list.pop()
-        db().commit()
+        db().flush()
 
     @classmethod
     def get_default_networks_assignment(cls, node):
@@ -394,7 +394,10 @@ class NetworkManager(object):
                  for ng in ngs],
                 key=lambda x: x[1]))[0]
         )
-        for i, nic in enumerate(node.nic_interfaces):
+        node_ifaces = db().query(NodeNICInterface).filter_by(
+            node_id=node.id
+        ).order_by(NodeNICInterface.name)
+        for i, nic in enumerate(node_ifaces):
             nic_dict = {
                 "id": nic.id,
                 "name": nic.name,
@@ -455,12 +458,15 @@ class NetworkManager(object):
             # Assign remaining networks to NIC #0
             # as all the networks must be assigned.
             # But network check will not pass if we get here.
-            logger.warn("Cannot assign all networks appropriately for"
-                        " node %r. Set all unassigned networks to the"
-                        " interface %r", node.name, nics[0]['name'])
+            logger.warn(
+                u"Cannot assign all networks appropriately for "
+                u"node %r. Set all unassigned networks to the "
+                u"interface %r", node.name, nics[0]['name']
+            )
             for id in to_assign_ids:
                 nics[0].setdefault('assigned_networks', []).append(
-                    {'id': ngs_by_id[id].id, 'name': ngs_by_id[id].name})
+                    {'id': ngs_by_id[id].id, 'name': ngs_by_id[id].name}
+                )
         return nics
 
     @classmethod
@@ -469,13 +475,15 @@ class NetworkManager(object):
 
         nics = dict((nic.id, nic) for nic in node.interfaces)
         def_set = cls.get_default_networks_assignment(node)
-        for nic in def_set:
-            if 'assigned_networks' in nic:
-                ng_ids = [ng['id'] for ng in nic['assigned_networks']]
-                nics[nic['id']].assigned_networks_list = list(
-                    db().query(NetworkGroup).filter(
-                        NetworkGroup.id.in_(ng_ids)))
-        db().commit()
+        with db().begin(subtransactions=True):
+            for nic in def_set:
+                if 'assigned_networks' in nic:
+                    ng_ids = [
+                        ng['id'] for ng in nic['assigned_networks']
+                    ]
+                    nics[nic['id']].assigned_networks_list = list(
+                        db().query(NetworkGroup).filter(
+                            NetworkGroup.id.in_(ng_ids)))
 
     @classmethod
     def get_allowed_nic_networkgroups(cls, node, nic):
@@ -711,13 +719,13 @@ class NetworkManager(object):
                 net_assignment.network_id = net['id']
                 net_assignment.interface_id = current_iface.id
                 db().add(net_assignment)
-        db().commit()
+        db().flush()
         # Remove bonds from DB if they are not in a received data.
         received_bond_ids = [x['id'] for x in bond_interfaces if 'id' in x]
         unused_bonds = filter(lambda x: x.id not in received_bond_ids,
                               bond_interfaces_db)
         map(db().delete, unused_bonds)
-        db().commit()
+        db().flush()
 
         for bond in bond_interfaces:
             if 'id' in bond:
@@ -740,7 +748,7 @@ class NetworkManager(object):
                 bond_db.mode = bond['mode']
             bond_db.mac = bond.get('mac')
             bond_db.flags = bond.get('flags', {})
-            db().commit()
+            db().flush()
             db().refresh(bond_db)
 
             # Add new network assignment.
@@ -756,7 +764,7 @@ class NetworkManager(object):
                         node_id=node_db.id
                     ).first()
                 )
-            db().commit()
+            db().flush()
 
         return node_db.id
 
@@ -771,15 +779,16 @@ class NetworkManager(object):
             logger.warn("Cannot update interfaces: %s" % str(e))
             return
 
-        for interface in node.meta["interfaces"]:
-            interface_db = db().query(NodeNICInterface).filter_by(
-                mac=interface['mac']).first()
-            if interface_db:
-                cls.__update_existing_interface(interface_db.id, interface)
-            else:
-                cls.__add_new_interface(node, interface)
+        with db().begin(subtransactions=True):
+            for interface in node.meta["interfaces"]:
+                interface_db = db().query(NodeNICInterface).filter_by(
+                    mac=interface['mac']).first()
+                if interface_db:
+                    cls.__update_existing_interface(interface_db.id, interface)
+                else:
+                    cls.__add_new_interface(node, interface)
 
-        cls.__delete_not_found_interfaces(node, node.meta["interfaces"])
+            cls.__delete_not_found_interfaces(node, node.meta["interfaces"])
 
     @classmethod
     def __check_interfaces_correctness(cls, node):
@@ -824,17 +833,15 @@ class NetworkManager(object):
     @classmethod
     def __add_new_interface(cls, node, interface_attrs):
         interface = NodeNICInterface()
-        interface.node_id = node.id
         cls.__set_interface_attributes(interface, interface_attrs)
         db().add(interface)
-        db().commit()
         node.nic_interfaces.append(interface)
 
     @classmethod
     def __update_existing_interface(cls, interface_id, interface_attrs):
         interface = db().query(NodeNICInterface).get(interface_id)
         cls.__set_interface_attributes(interface, interface_attrs)
-        db().commit()
+        db().flush()
 
     @classmethod
     def __set_interface_attributes(cls, interface, interface_attrs):
@@ -1007,7 +1014,7 @@ class NetworkManager(object):
                 last=r[1],
                 network_group_id=network_group_id)
             db().add(new_ip_range)
-        db().commit()
+        db().flush()
 
     @staticmethod
     def calc_cidr_from_gw_mask(net_group):
@@ -1047,84 +1054,89 @@ class NetworkManager(object):
                     break
             used_nets.append(cidr_range)
 
-        for net in networks_list:
-            if "seg_type" in net and \
-                    cluster_db.net_segment_type != net['seg_type']:
-                continue
-            vlan_start = net.get("vlan_start")
-            net_size = net.get('network_size')
-            cidr, gw, cidr_gw, netmask = None, None, None, None
-            if net.get("notation"):
-                if net.get("cidr"):
-                    cidr = IPNetwork(net["cidr"]).cidr
-                    cidr_gw = str(cidr[1])
-                    netmask = str(cidr.netmask)
-                    net_size = net_size or cidr.size
-                if net["notation"] == 'cidr' and cidr:
-                    new_ip_range = IPAddrRange(
-                        first=str(cidr[2]),
-                        last=str(cidr[-2])
-                    )
-                    if net.get('use_gateway'):
-                        gw = cidr_gw
-                    else:
-                        new_ip_range.first = cidr_gw
-                    check_range_in_use_already(cidr)
-                elif net["notation"] == 'ip_ranges' and net.get("ip_range"):
-                    new_ip_range = IPAddrRange(
-                        first=net["ip_range"][0],
-                        last=net["ip_range"][1]
-                    )
-                    gw = net.get('gateway') or cidr_gw \
-                        if net.get('use_gateway') else None
-                    netmask = net.get('netmask') or netmask
-                    check_range_in_use_already(IPRange(new_ip_range.first,
-                                                       new_ip_range.last))
+        with db().begin(subtransactions=True):
+            for net in networks_list:
+                if "seg_type" in net and \
+                        cluster_db.net_segment_type != net['seg_type']:
+                    continue
+                vlan_start = net.get("vlan_start")
+                net_size = net.get('network_size')
+                cidr, gw, cidr_gw, netmask = None, None, None, None
+                if net.get("notation"):
+                    if net.get("cidr"):
+                        cidr = IPNetwork(net["cidr"]).cidr
+                        cidr_gw = str(cidr[1])
+                        netmask = str(cidr.netmask)
+                        net_size = net_size or cidr.size
+                    if net["notation"] == 'cidr' and cidr:
+                        new_ip_range = IPAddrRange(
+                            first=str(cidr[2]),
+                            last=str(cidr[-2])
+                        )
+                        if net.get('use_gateway'):
+                            gw = cidr_gw
+                        else:
+                            new_ip_range.first = cidr_gw
+                        check_range_in_use_already(cidr)
+                    elif (
+                        net["notation"] == 'ip_ranges' and
+                        net.get("ip_range")
+                    ):
+                        new_ip_range = IPAddrRange(
+                            first=net["ip_range"][0],
+                            last=net["ip_range"][1]
+                        )
+                        gw = net.get('gateway') or cidr_gw \
+                            if net.get('use_gateway') else None
+                        netmask = net.get('netmask') or netmask
+                        check_range_in_use_already(IPRange(new_ip_range.first,
+                                                           new_ip_range.last))
 
-            nw_group = NetworkGroup(
-                release=cluster_db.release.id,
-                name=net['name'],
-                cidr=str(cidr) if cidr else None,
-                netmask=netmask,
-                gateway=gw,
-                cluster_id=cluster_id,
-                vlan_start=vlan_start,
-                amount=1,
-                network_size=net_size or 1,
-                meta=net
-            )
-            db().add(nw_group)
-            db().commit()
-            if net.get("notation"):
-                nw_group.ip_ranges.append(new_ip_range)
-                db().commit()
-                cls.cleanup_network_group(nw_group)
+                nw_group = NetworkGroup(
+                    release=cluster_db.release.id,
+                    name=net['name'],
+                    cidr=str(cidr) if cidr else None,
+                    netmask=netmask,
+                    gateway=gw,
+                    cluster_id=cluster_id,
+                    vlan_start=vlan_start,
+                    amount=1,
+                    network_size=net_size or 1,
+                    meta=net
+                )
+                db().add(nw_group)
+                db().flush()
+                if net.get("notation"):
+                    nw_group.ip_ranges.append(new_ip_range)
+                    db().flush()
+                    cls.cleanup_network_group(nw_group)
 
     @classmethod
     def update_networks(cls, cluster, network_configuration):
         if 'networks' in network_configuration:
-            for ng in network_configuration['networks']:
-                if ng['id'] == cls.get_admin_network_group_id():
-                    continue
+            with db().begin(subtransactions=True):
+                for ng in network_configuration['networks']:
+                    if ng['id'] == cls.get_admin_network_group_id():
+                        continue
 
-                ng_db = db().query(NetworkGroup).get(ng['id'])
+                    ng_db = db().query(NetworkGroup).get(ng['id'])
 
-                for key, value in ng.iteritems():
-                    if key == "ip_ranges":
-                        cls._set_ip_ranges(ng['id'], value)
-                    else:
-                        if key == 'cidr' and \
-                                ng_db.meta.get("notation") == "cidr":
-                            cls.update_range_mask_from_cidr(ng_db, value)
+                    for key, value in ng.iteritems():
+                        if key == "ip_ranges":
+                            cls._set_ip_ranges(ng['id'], value)
+                        else:
+                            if key == 'cidr' and \
+                                    ng_db.meta.get("notation") == "cidr":
+                                cls.update_range_mask_from_cidr(ng_db, value)
 
-                        if key != 'meta':
-                            setattr(ng_db, key, value)
+                            if key != 'meta':
+                                setattr(ng_db, key, value)
 
-                if ng_db.meta.get("calculate_cidr"):
-                    cls.update_cidr_from_gw_mask(ng_db, ng)
-                if ng_db.meta.get("notation"):
-                    cls.cleanup_network_group(ng_db)
-                ng_db.cluster.add_pending_changes('networks')
+                    if ng_db.meta.get("calculate_cidr"):
+                        cls.update_cidr_from_gw_mask(ng_db, ng)
+                    if ng_db.meta.get("notation"):
+                        cls.cleanup_network_group(ng_db)
+                    ng_db.cluster.add_pending_changes('networks')
 
     @classmethod
     def cluster_has_bonds(cls, cluster_id):

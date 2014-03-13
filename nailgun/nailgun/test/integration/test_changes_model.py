@@ -57,7 +57,7 @@ class TestClusterChanges(BaseIntegrationTest):
         resp = self.app.get(
             reverse(
                 'ClusterHandler',
-                kwargs={'cluster_id': cluster['id']}),
+                kwargs={'obj_id': cluster['id']}),
             headers=self.default_headers
         )
         response = json.loads(resp.body)

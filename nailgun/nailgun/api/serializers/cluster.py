@@ -14,14 +14,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.objects.base import NailgunObject
-from nailgun.objects.base import NailgunCollection
+from nailgun.api.serializers.base import BasicSerializer
 
-from nailgun.objects.release import Release
-from nailgun.objects.release import ReleaseCollection
 
-from nailgun.objects.cluster import Cluster
-from nailgun.objects.cluster import ClusterCollection
+class ClusterSerializer(BasicSerializer):
 
-from nailgun.objects.task import Task
-from nailgun.objects.task import TaskCollection
+    fields = (
+        "id",
+        "name",
+        "mode",
+        "changes",
+        "status",
+        "grouping",
+        "is_customized",
+        "net_provider",
+        "net_segment_type",
+        "release_id"
+    )

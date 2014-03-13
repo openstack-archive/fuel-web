@@ -26,17 +26,18 @@ class NeutronManager(NetworkManager):
 
     @classmethod
     def create_neutron_config(cls, cluster):
-        meta = cluster.release.networks_metadata["neutron"]["config"]
-        neutron_config = NeutronConfig(
-            cluster_id=cluster.id,
-            parameters=meta["parameters"],
-            predefined_networks=cls._generate_predefined_networks(cluster),
-            L2=cls._generate_l2(cluster),
-            L3=cls._generate_l3(cluster),
-            segmentation_type=cluster.net_segment_type,
-        )
-        db().add(neutron_config)
-        db().flush()
+        with db().begin(subtransactions=True):
+            meta = cluster.release.networks_metadata["neutron"]["config"]
+            neutron_config = NeutronConfig(
+                cluster_id=cluster.id,
+                parameters=meta["parameters"],
+                predefined_networks=cls._generate_predefined_networks(cluster),
+                L2=cls._generate_l2(cluster),
+                L3=cls._generate_l3(cluster),
+                segmentation_type=cluster.net_segment_type,
+            )
+            db().add(neutron_config)
+            db().flush()
 
     @classmethod
     def _generate_external_network(cls, cluster):
@@ -108,22 +109,22 @@ class NeutronManager(NetworkManager):
         return {}
 
     @classmethod
-    def update(cls, cluster, network_configuration):
-        cls.update_networks(cluster, network_configuration)
+    def update(cls, cluster, net_config):
+        cls.update_networks(cluster, net_config)
 
-        if 'neutron_parameters' in network_configuration:
-            if 'networks' in network_configuration:
+        if 'neutron_parameters' in net_config:
+            if 'networks' in net_config:
                 #TODO(NAME) get rid of unmanaged parameters in request
-                for ng in network_configuration['networks']:
+                for ng in net_config['networks']:
                     if ng['name'] == 'public':
-                        pre_nets = network_configuration[
+                        pre_nets = net_config[
                             'neutron_parameters']['predefined_networks']
                         pre_nets['net04_ext']['L3']['gateway'] = ng['gateway']
-            for key, value in network_configuration['neutron_parameters'] \
-                    .items():
-                setattr(cluster.neutron_config, key, value)
-            db().add(cluster.neutron_config)
-            db().commit()
+
+            with db().begin(subtransactions=True):
+                for key, value in net_config['neutron_parameters'].items():
+                    setattr(cluster.neutron_config, key, value)
+                db().add(cluster.neutron_config)
 
     @classmethod
     def generate_vlan_ids_list(cls, data, cluster, ng):

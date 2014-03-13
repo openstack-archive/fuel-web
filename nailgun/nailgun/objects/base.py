@@ -52,18 +52,18 @@ class NailgunObject(object):
 
     @classmethod
     def create(cls, data):
-        new_obj = cls.model()
-        for key, value in data.iteritems():
-            setattr(new_obj, key, value)
-        db().add(new_obj)
-        db().flush()
+        with db().begin(subtransactions=True):
+            new_obj = cls.model()
+            for key, value in data.iteritems():
+                setattr(new_obj, key, value)
+            db().add(new_obj)
         return new_obj
 
     @classmethod
     def update(cls, instance, data):
-        instance.update(data)
-        db().add(instance)
-        db().flush()
+        with db().begin(subtransactions=True):
+            instance.update(data)
+            db().add(instance)
         return instance
 
     @classmethod

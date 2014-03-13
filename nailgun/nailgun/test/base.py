@@ -32,6 +32,7 @@ from itertools import izip
 from netaddr import IPNetwork
 from random import randint
 
+import web
 from webtest import app
 
 import nailgun
@@ -64,6 +65,21 @@ from nailgun.wsgi import build_app
 
 class TimeoutError(Exception):
     pass
+
+
+def test_db_driver(handler):
+    try:
+        return handler()
+    except web.HTTPError:
+        if str(web.ctx.status).startswith(("4", "5")):
+            db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.commit()
+        # we do not remove session in tests
 
 
 class Environment(object):
@@ -357,27 +373,27 @@ class Environment(object):
 
     def _create_interfaces_from_meta(self, node):
         # Create interfaces from meta
-        for interface in node.meta['interfaces']:
-            interface = NodeNICInterface(
-                mac=interface.get('mac'),
-                name=interface.get('name'),
-                ip_addr=interface.get('ip'),
-                netmask=interface.get('netmask'))
+        with self.db.begin(subtransactions=True):
+            for interface in node.meta['interfaces']:
+                interface = NodeNICInterface(
+                    mac=interface.get('mac'),
+                    name=interface.get('name'),
+                    ip_addr=interface.get('ip'),
+                    netmask=interface.get('netmask')
+                )
+                self.db.add(interface)
+                node.nic_interfaces.append(interface)
 
-            self.db.add(interface)
-            node.nic_interfaces.append(interface)
+            self.db.flush()
+            # If node in a cluster then assign networks for all interfaces
+            if node.cluster_id:
+                self.network_manager.assign_networks_by_default(node)
+            # At least one interface should have
+            # same ip as mac in meta
+            if node.nic_interfaces and not \
+               filter(lambda i: node.mac == i.mac, node.nic_interfaces):
 
-        self.db.commit()
-        # If node in a cluster then assign networks for all interfaces
-        if node.cluster_id:
-            self.network_manager.assign_networks_by_default(node)
-        # At least one interface should have
-        # same ip as mac in meta
-        if node.nic_interfaces and not \
-           filter(lambda i: node.mac == i.mac, node.nic_interfaces):
-
-            node.nic_interfaces[0].mac = node.mac
-            self.db.commit()
+                node.nic_interfaces[0].mac = node.mac
 
     def _add_interfaces_to_node(self, node_id, count=1):
         interfaces = []
@@ -782,21 +798,19 @@ class BaseTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db = db()
-        cls.app = app.TestApp(build_app().wsgifunc())
+        cls.app = app.TestApp(
+            build_app(db_driver=test_db_driver).wsgifunc()
+        )
         syncdb()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.db.commit()
-
     def setUp(self):
+        self.db = db
         flush()
         self.env = Environment(app=self.app)
         self.env.upload_fixtures(self.fixtures)
 
     def tearDown(self):
-        self.db.expunge_all()
+        self.db.remove()
 
     def assertNotRaises(self, exception, method, *args, **kwargs):
         try:

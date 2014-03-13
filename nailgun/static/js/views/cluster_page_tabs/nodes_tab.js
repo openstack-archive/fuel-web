@@ -1177,14 +1177,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         template: _.template(nodeDisksTemplate),
         volumeStylesTemplate: _.template(volumeStylesTemplate),
         templateHelpers: {
-            sortEntryProperties: function(entry) {
-                var preferredOrder = ['name', 'model', 'size'];
-                var properties = _.keys(entry);
-                return _.sortBy(properties, function(property) {
-                    var index = _.indexOf(preferredOrder, property);
-                    return index == -1 ? properties.length : index;
-                });
-            },
+            sortEntryProperties: utils.sortEntryProperties,
             showDiskSize: utils.showDiskSize
         },
         events: {

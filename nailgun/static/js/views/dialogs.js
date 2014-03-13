@@ -756,13 +756,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 } catch (ignore) {}
                 return summary;
             },
-            sortEntryProperties: function(entry) {
-                var properties = _.keys(entry);
-                if (_.has(entry, 'name')) {
-                    properties = ['name'].concat(_.keys(_.omit(entry, 'name')));
-                }
-                return properties;
-            }
+            sortEntryProperties: utils.sortEntryProperties
         },
         events: {
             'click .accordion-heading': 'toggle',

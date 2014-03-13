@@ -27,7 +27,8 @@
     <div class="disk-info-box">
       <% if (diskMetaData) { %>
         <div class="disk-box-title" data-i18n="cluster_page.nodes_tab.configure_disks.disk_information"></div>
-        <% _.each(sortEntryProperties(diskMetaData), function(propertyName) { %>
+        <% var sortOrder = ['name', 'model', 'size'] %>
+        <% _.each(sortEntryProperties(diskMetaData, sortOrder), function(propertyName) { %>
           <div class="disk-map-details-item enable-selection">
             <div class="disk-map-details-name"><%- propertyName.replace(/_/g, ' ') %></div>
             <div class="disk-map-details-parameter"><%- propertyName == 'size' ? showDiskSize(diskMetaData[propertyName]) : diskMetaData[propertyName] %></div>

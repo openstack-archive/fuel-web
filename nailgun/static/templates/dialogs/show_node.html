@@ -32,7 +32,11 @@
                 <% if (group == 'interfaces' || group == 'disks') groupEntries = _.sortBy(groupEntries, 'name') %>
                 <% _.each(groupEntries, function(entry) { %>
                   <div class="nested-object">
-                    <% _.each(sortEntryProperties(entry), function(propertyName) { %>
+                    <% var sortOrder = {
+                      disks: ['name', 'model', 'size'],
+                      interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed']
+                    } %>
+                    <% _.each(sortEntryProperties(entry, sortOrder[group]), function(propertyName) { %>
                       <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, entry[propertyName]) %></div>
                     <% }) %>
                   </div>

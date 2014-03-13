@@ -56,7 +56,7 @@ class NetworkGroup(Base):
         'public',
 
         # VM networks
-        'floating',
+        #'floating',
         # private in terms of fuel
         'fixed',
         'private'
@@ -68,8 +68,6 @@ class NetworkGroup(Base):
     release = Column(Integer, ForeignKey('releases.id'))
     # can be nullable only for fuelweb admin net
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
-    network_size = Column(Integer, default=256)
-    amount = Column(Integer, default=1)
     vlan_start = Column(Integer)
     cidr = Column(String(25))
     gateway = Column(String(25))

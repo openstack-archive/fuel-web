@@ -376,8 +376,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
     def test_network_verification_neutron_with_vlan_segmentation(
             self, mocked_rpc):
         # get Neutron L2 VLAN ID range
-        l2params = self.env.clusters[0].neutron_config.L2
-        vlan_rng_be = l2params["phys_nets"]["physnet2"]["vlan_range"]
+        vlan_rng_be = self.env.clusters[0].network_config.vlan_range
         vlan_rng = set(range(vlan_rng_be[0], vlan_rng_be[1] + 1))
 
         # get nodes NICs for private network

@@ -15,32 +15,36 @@
 #    under the License.
 
 from nailgun.db import db
+from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.network.manager import NetworkManager
 
 
 class NovaNetworkManager(NetworkManager):
 
     @classmethod
+    def create_nova_network_config(cls, cluster):
+        nova_net_config = NovaNetworkConfig(
+            cluster_id=cluster.id,
+        )
+        db().add(nova_net_config)
+        meta = cluster.release.networks_metadata["nova_network"]["config"]
+        for key, value in meta.iteritems():
+            if hasattr(nova_net_config, key):
+                setattr(nova_net_config, key, value)
+        db().flush()
+
+    @classmethod
     def update(cls, cluster, network_configuration):
         cls.update_networks(cluster, network_configuration)
 
-        if 'net_manager' in network_configuration:
-            setattr(
-                cluster,
-                'net_manager',
-                network_configuration['net_manager']
-            )
-        if 'dns_nameservers' in network_configuration:
-            setattr(
-                cluster,
-                'dns_nameservers',
-                network_configuration['dns_nameservers']['nameservers']
-            )
-        db().commit()
+        if 'networking_parameters' in network_configuration:
+            for key, value in network_configuration['networking_parameters']\
+                    .items():
+                setattr(cluster.network_config, key, value)
+            db().commit()
 
     @classmethod
     def generate_vlan_ids_list(cls, data, cluster, ng):
         if ng.get("vlan_start") is None:
             return []
-        return range(int(ng.get("vlan_start")),
-                     int(ng.get("vlan_start")) + int(ng.get("amount")))
+        return [int(ng.get("vlan_start"))]

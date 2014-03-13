@@ -22,13 +22,14 @@ from nailgun.test.base import reverse
 class TestHandlers(BaseIntegrationTest):
     def test_all_api_urls_404_or_405(self):
         urls = {
-            'ClusterHandler': {'cluster_id': 1},
+            'ClusterHandler': {'obj_id': 1},
             'NodeHandler': {'node_id': 1},
             'ReleaseHandler': {'obj_id': 1},
         }
         for handler in urls:
             test_url = reverse(handler, urls[handler])
             resp = self.app.get(test_url, expect_errors=True)
+            print resp.body
             self.assertTrue(resp.status_code in [404, 405])
             resp = self.app.delete(test_url, expect_errors=True)
             self.assertTrue(resp.status_code in [404, 405])

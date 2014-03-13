@@ -55,7 +55,7 @@ class ClusterHandler(BaseHandler):
         "grouping",
         "is_customized",
         "net_provider",
-        "net_segment_type",
+        #"net_segment_type",
         "release_id"
     )
 
@@ -163,7 +163,7 @@ class ClusterCollectionHandler(BaseHandler):
             "name",
             "mode",
             "net_provider",
-            "net_segment_type",
+            #"net_segment_type",
             "status"
         ):
             if data.get(field):
@@ -180,9 +180,13 @@ class ClusterCollectionHandler(BaseHandler):
         netmanager = cluster.network_manager
 
         try:
-            netmanager.create_network_groups(cluster.id)
+            netmanager.create_network_groups(cluster.id,
+                                             data.get('net_segment_type'))
             if cluster.net_provider == 'neutron':
-                netmanager.create_neutron_config(cluster)
+                netmanager.create_neutron_config(cluster,
+                                                 data.get('net_segment_type'))
+            elif cluster.net_provider == 'nova_network':
+                netmanager.create_nova_network_config(cluster)
 
             cluster.add_pending_changes("attributes")
             cluster.add_pending_changes("networks")

@@ -169,7 +169,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                         json.dumps(data)
                     )
 
-                if 'neutron_parameters' in data:
+                if 'networking_parameters' in data:
                     self.validator.validate_neutron_params(
                         json.dumps(data),
                         cluster_id=cluster_id

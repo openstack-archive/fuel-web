@@ -156,6 +156,19 @@ define(['require'], function(require) {
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;
+        },
+        sortEntryProperties: function(entry, sortOrder) {
+            var properties = _.keys(entry);
+            if (sortOrder) {
+                return _.sortBy(properties, function(property) {
+                    var index = _.indexOf(sortOrder, property);
+                    return index == -1 ? properties.length : index;
+                });
+            }
+            if (_.has(entry, 'name')) {
+                return ['name'].concat(_.without(properties, 'name'));
+            }
+            return properties;
         }
     };
 

@@ -58,22 +58,8 @@ class TestHandlers(BaseIntegrationTest):
                     "nova_network": {
                         "networks": [
                             {
-                                "name": "floating",
-                                "cidr": "172.16.0.0/24",
-                                "netmask": "255.255.255.0",
-                                "gateway": "172.16.0.1",
-                                "ip_range": [
-                                    "172.16.0.128",
-                                    "172.16.0.254"
-                                ],
-                                "vlan_start": 100,
-                                "network_size": 256,
-                                "assign_vip": False
-                            },
-                            {
                                 "name": "storage",
                                 "cidr": "192.168.1.0/24",
-                                "netmask": "255.255.255.0",
                                 "gateway": "192.168.1.1",
                                 "ip_range": [
                                     "192.168.1.1",
@@ -83,9 +69,8 @@ class TestHandlers(BaseIntegrationTest):
                                 "assign_vip": False
                             },
                             {
-                                "name": "fixed",
+                                "name": "management",
                                 "cidr": "10.0.0.0/16",
-                                "netmask": "255.255.0.0",
                                 "gateway": "10.0.0.1",
                                 "ip_range": [
                                     "10.0.0.2",
@@ -113,9 +98,8 @@ class TestHandlers(BaseIntegrationTest):
                     "nova_network": {
                         "networks": [
                             {
-                                "name": "fixed",
+                                "name": "management",
                                 "cidr": "10.0.0.0/16",
-                                "netmask": "255.255.0.0",
                                 "gateway": "10.0.0.1",
                                 "ip_range": [
                                     "10.0.0.2",
@@ -155,22 +139,8 @@ class TestHandlers(BaseIntegrationTest):
                     "nova_network": {
                         "networks": [
                             {
-                                "name": "floating",
-                                "cidr": "172.16.0.0/24",
-                                "netmask": "255.255.255.0",
-                                "gateway": "172.16.0.1",
-                                "ip_range": [
-                                    "172.16.0.128",
-                                    "172.16.0.254"
-                                ],
-                                "vlan_start": 100,
-                                "network_size": 256,
-                                "assign_vip": False
-                            },
-                            {
                                 "name": "storage",
                                 "cidr": "192.168.1.0/24",
-                                "netmask": "255.255.255.0",
                                 "gateway": "192.168.1.1",
                                 "ip_range": [
                                     "192.168.1.1",
@@ -180,9 +150,8 @@ class TestHandlers(BaseIntegrationTest):
                                 "assign_vip": False
                             },
                             {
-                                "name": "fixed",
+                                "name": "management",
                                 "cidr": "10.0.0.0/16",
-                                "netmask": "255.255.0.0",
                                 "gateway": "10.0.0.1",
                                 "ip_range": [
                                     "10.0.0.2",
@@ -210,9 +179,8 @@ class TestHandlers(BaseIntegrationTest):
                     "nova_network": {
                         "networks": [
                             {
-                                "name": "fixed",
+                                "name": "management",
                                 "cidr": "10.0.0.0/16",
-                                "netmask": "255.255.0.0",
                                 "gateway": "10.0.0.1",
                                 "ip_range": [
                                     "10.0.0.2",

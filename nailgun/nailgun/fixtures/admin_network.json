@@ -5,8 +5,6 @@
         "fields": {
             "name": "fuelweb_admin",
             "cidr": "{{settings.ADMIN_NETWORK['cidr']}}",
-            "netmask": "{{settings.ADMIN_NETWORK['netmask']}}",
-            "network_size": "{{settings.ADMIN_NETWORK['size']}}",
             "vlan_start": null,
             "meta": {
                 "use_gateway": false,
@@ -15,6 +13,7 @@
                 "render_addr_mask": null,
                 "map_priority": 0,
                 "unmovable": true,
+                "configurable": false,
                 "assign_vip": false
             }
         }

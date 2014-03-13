@@ -79,12 +79,10 @@ class TestHandlers(BaseIntegrationTest):
                 {
                     "networks": [
                         {
-                            "network_size": 65536,
                             "name": "management",
                             "ip_ranges": [
                                 ["192.168.0.2", "192.168.255.254"]
                             ],
-                            "amount": 1,
                             "id": management_net.id,
                             "netmask": "255.255.255.0",
                             "cluster_id": clstr.id,

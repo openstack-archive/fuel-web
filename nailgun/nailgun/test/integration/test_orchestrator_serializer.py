@@ -654,8 +654,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         vlan_set = set(
             [ng.vlan_start for ng in cluster.network_groups if ng.vlan_start]
         )
-        private_vlan_range = cluster.neutron_config.L2["phys_nets"][
-            "physnet2"]["vlan_range"]
+        private_vlan_range = cluster.network_config["vlan_range"]
         vlan_set.update(xrange(*private_vlan_range))
         vlan_set.add(private_vlan_range[1])
 

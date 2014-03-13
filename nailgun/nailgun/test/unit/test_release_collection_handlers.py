@@ -58,19 +58,6 @@ class TestHandlers(BaseIntegrationTest):
                     "nova_network": {
                         "networks": [
                             {
-                                "name": "floating",
-                                "cidr": "172.16.0.0/24",
-                                "netmask": "255.255.255.0",
-                                "gateway": "172.16.0.1",
-                                "ip_range": [
-                                    "172.16.0.128",
-                                    "172.16.0.254"
-                                ],
-                                "vlan_start": 100,
-                                "network_size": 256,
-                                "assign_vip": False
-                            },
-                            {
                                 "name": "storage",
                                 "cidr": "192.168.1.0/24",
                                 "netmask": "255.255.255.0",
@@ -154,19 +141,6 @@ class TestHandlers(BaseIntegrationTest):
                 'networks_metadata': {
                     "nova_network": {
                         "networks": [
-                            {
-                                "name": "floating",
-                                "cidr": "172.16.0.0/24",
-                                "netmask": "255.255.255.0",
-                                "gateway": "172.16.0.1",
-                                "ip_range": [
-                                    "172.16.0.128",
-                                    "172.16.0.254"
-                                ],
-                                "vlan_start": 100,
-                                "network_size": 256,
-                                "assign_vip": False
-                            },
                             {
                                 "name": "storage",
                                 "cidr": "192.168.1.0/24",

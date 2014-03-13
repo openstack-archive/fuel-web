@@ -56,6 +56,24 @@ new_task_names_options = sorted(
     )
 )
 
+old_network_group_name = (
+    'fuelweb_admin',
+    'storage',
+    'management',
+    'public',
+    'floating',
+    'fixed',
+    'private'
+)
+new_network_group_name = (
+    'fuelweb_admin',
+    'storage',
+    'management',
+    'public',
+    'fixed',
+    'private'
+)
+
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
     old_type = sa.Enum(*old_options, name=enum_name)
@@ -160,6 +178,59 @@ def upgrade():
         sa.PrimaryKeyConstraint('id')
     )
 
+    op.create_table(
+        'networking_configs',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('discriminator', sa.String(length=50), nullable=True),
+        sa.Column('cluster_id', sa.Integer(), nullable=True),
+        sa.Column('dns_nameservers', JSON(), nullable=True),
+        sa.ForeignKeyConstraint(['cluster_id'],
+                                ['clusters.id'],
+                                ondelete='CASCADE'),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table(
+        'nova_network_config',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('fixed_networks_cidr', sa.String(length=25), nullable=True),
+        sa.Column('fixed_networks_vlan_start', sa.Integer(), nullable=True),
+        sa.Column('fixed_network_size', sa.Integer(), nullable=False),
+        sa.Column('fixed_networks_amount', sa.Integer(), nullable=False),
+        sa.Column('floating_ranges', JSON(), nullable=True),
+        sa.Column('net_manager',
+                  sa.Enum('FlatDHCPManager',
+                          'VlanManager',
+                          name='net_manager'),
+                  nullable=False),
+        sa.ForeignKeyConstraint(['id'], ['networking_configs.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table(
+        'neutron_config',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('external_floating_ranges', JSON(), nullable=True),
+        sa.Column('vlan_range', JSON(), nullable=True),
+        sa.Column('gre_id_range', JSON(), nullable=True),
+        sa.Column('base_mac', LowercaseString(length=17), nullable=False),
+        sa.Column('internal_cidr', sa.String(length=25), nullable=True),
+        sa.Column('internal_gateway', sa.String(length=25), nullable=True),
+        sa.Column('segmentation_type',
+                  sa.Enum('vlan',
+                          'gre',
+                          name='segmentation_type'),
+                  nullable=False),
+        sa.Column('net_l23_provider',
+                  sa.Enum('ovs',
+                          name='net_l23_provider'),
+                  nullable=False),
+        sa.ForeignKeyConstraint(['id'], ['networking_configs.id'], ),
+        sa.PrimaryKeyConstraint('id')
+    )
+
+    op.add_column('nodes', sa.Column(
+        'agent_checksum', sa.String(40), nullable=True
+    ))
+
     # CLUSTER STATUS ENUM UPGRADE
     upgrade_enum(
         "clusters",                  # table
@@ -178,10 +249,23 @@ def upgrade():
         new_task_names_options       # new options
     )
 
-    op.add_column('nodes', sa.Column(
-        'agent_checksum', sa.String(40), nullable=True
-    ))
+    # NETWORK NAME ENUM UPGRADE
+    upgrade_enum(
+        "network_groups",            # table
+        "name",                      # column
+        "network_group_name",        # ENUM name
+        old_network_group_name,      # old options
+        new_network_group_name       # new options
+    )
 
+    op.drop_column(u'clusters', u'net_manager')
+    op.drop_column(u'clusters', u'dns_nameservers')
+    op.drop_column(u'clusters', u'net_segment_type')
+    op.drop_column(u'clusters', u'net_l23_provider')
+    op.drop_column(u'network_groups', u'network_size')
+    op.drop_column(u'network_groups', u'amount')
+
+    op.drop_table(u'neutron_configs')
     ### end Alembic commands ###
 
 
@@ -284,6 +368,75 @@ def downgrade():
         ),
         sa.PrimaryKeyConstraint('id', name=u'plugins_pkey')
     )
+
+    op.add_column(u'network_groups',
+                  sa.Column(u'amount',
+                            sa.INTEGER(),
+                            nullable=True))
+    op.add_column(u'network_groups',
+                  sa.Column(u'network_size',
+                            sa.INTEGER(),
+                            nullable=True))
+    op.add_column(u'clusters',
+                  sa.Column(u'net_l23_provider',
+                            postgresql.ENUM(u'ovs'),
+                            nullable=False))
+    op.add_column(u'clusters',
+                  sa.Column(u'net_segment_type',
+                            postgresql.ENUM(u'none',
+                                            u'vlan',
+                                            u'gre',
+                                            name='net_segment_type'),
+                            nullable=False))
+    op.add_column(u'clusters',
+                  sa.Column(u'dns_nameservers',
+                            sa.TEXT(),
+                            nullable=True))
+    op.add_column(u'clusters',
+                  sa.Column(u'net_manager',
+                            postgresql.ENUM(u'FlatDHCPManager',
+                                            u'VlanManager',
+                                            name='net_manager'),
+                            nullable=False))
+    op.create_table(
+        u'neutron_configs',
+        sa.Column(u'id',
+                  sa.INTEGER(),
+                  server_default="nextval('neutron_configs_id_seq'::regclass)",
+                  nullable=False),
+        sa.Column(u'cluster_id',
+                  sa.INTEGER(),
+                  autoincrement=False,
+                  nullable=True),
+        sa.Column(u'parameters',
+                  sa.TEXT(),
+                  autoincrement=False,
+                  nullable=True),
+        sa.Column(u'L2',
+                  sa.TEXT(),
+                  autoincrement=False,
+                  nullable=True),
+        sa.Column(u'L3',
+                  sa.TEXT(),
+                  autoincrement=False,
+                  nullable=True),
+        sa.Column(u'predefined_networks',
+                  sa.TEXT(),
+                  autoincrement=False,
+                  nullable=True),
+        sa.Column(u'segmentation_type',
+                  postgresql.ENUM(u'vlan',
+                                  u'gre',
+                                  name='segmentation_type'),
+                  autoincrement=False,
+                  nullable=False),
+        sa.ForeignKeyConstraint(['cluster_id'],
+                                [u'clusters.id'],
+                                name=u'neutron_configs_cluster_id_fkey'),
+        sa.PrimaryKeyConstraint(u'id',
+                                name=u'neutron_configs_pkey')
+    )
+
     # CLUSTER STATUS ENUM DOWNGRADE
     upgrade_enum(
         "clusters",                  # table
@@ -302,15 +455,30 @@ def downgrade():
         old_task_names_options       # new options
     )
 
+    # NETWORK NAME ENUM DOWNGRADE
+    upgrade_enum(
+        "network_groups",            # table
+        "name",                      # column
+        "network_group_name",        # ENUM name
+        new_network_group_name,      # old options
+        old_network_group_name       # new options
+    )
+
     op.drop_column(
         u'node_nic_interfaces',
         'parent_id'
     )
+    op.drop_column(
+        'nodes',
+        'agent_checksum')
     op.rename_table(
         'net_nic_assignments',
         'net_assignments'
     )
+
     op.drop_table('net_bond_assignments')
     op.drop_table('node_bond_interfaces')
-    op.drop_column('nodes', 'agent_checksum')
+    op.drop_table('neutron_config')
+    op.drop_table('nova_network_config')
+    op.drop_table('networking_configs')
     ### end Alembic commands ###

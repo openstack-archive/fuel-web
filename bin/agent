@@ -319,8 +319,8 @@ class NodeAgent
         unless properties['DEVPATH'].include?('virtual')
           @blocks << {
             :name => basename_dir,
-            :disk => _disk_path_by_name(basename_dir) || basename_dir,
-            :extra => _disk_id_by_name(basename_dir) || [],
+            :disk => _disk_path_by_name(devname) || devname,
+            :extra => _disk_id_by_name(devname) || [],
             :removable => removable,
           }
         end

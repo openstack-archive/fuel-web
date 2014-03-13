@@ -57,7 +57,7 @@ class ClusterValidator(BasicValidator):
     @classmethod
     def validate_update(cls, data, instance):
         d = cls._validate_common(data)
-        for k in ("net_provider", "net_segment_type"):
+        for k in ("net_provider",):
             if k in d and getattr(instance, k) != d[k]:
                 raise errors.InvalidData(
                     u"Changing '{0}' for environment is prohibited".format(k),

@@ -21,8 +21,8 @@ from nailgun.api.serializers.base import BasicSerializer
 
 class NetworkConfigurationSerializer(BasicSerializer):
 
-    fields = ('id', 'cluster_id', 'name', 'cidr', 'netmask',
-              'gateway', 'vlan_start', 'network_size', 'amount', 'meta')
+    fields = ('id', 'cluster_id', 'name', 'cidr',
+              'gateway', 'vlan_start', 'meta')
 
     @classmethod
     def serialize_network_group(cls, instance, fields=None):
@@ -33,7 +33,6 @@ class NetworkConfigurationSerializer(BasicSerializer):
         data_dict["ip_ranges"] = [
             [ir.first, ir.last] for ir in instance.ip_ranges
         ]
-        data_dict.setdefault("netmask", "")
         data_dict.setdefault("gateway", "")
         return data_dict
 
@@ -57,37 +56,37 @@ class NetworkConfigurationSerializer(BasicSerializer):
                         net_manager.assign_vip(cluster.id, ng.name)
         return result
 
+    @classmethod
+    def serialize_network_params(cls, cluster):
+        return BasicSerializer.serialize(
+            cluster.network_config,
+            cls.network_cfg_fields)
+
 
 class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
+
+    network_cfg_fields = (
+        'dns_nameservers', 'net_manager', 'fixed_networks_cidr',
+        'fixed_networks_vlan_start', 'fixed_network_size',
+        'fixed_networks_amount', 'floating_ranges')
 
     @classmethod
     def serialize_for_cluster(cls, cluster):
         result = cls.serialize_net_groups_and_vips(cluster)
-
-        result['net_manager'] = cluster.net_manager
-
-        if cluster.dns_nameservers:
-            result['dns_nameservers'] = {
-                "nameservers": cluster.dns_nameservers
-            }
-
+        result['networking_parameters'] = cls.serialize_network_params(
+            cluster)
         return result
 
 
 class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
 
+    network_cfg_fields = (
+        'dns_nameservers', 'segmentation_type', 'net_l23_provider',
+        'floating_ranges', 'vlan_range', 'gre_id_range',
+        'base_mac', 'internal_cidr', 'internal_gateway')
+
     @classmethod
     def serialize_for_cluster(cls, cluster):
         result = cls.serialize_net_groups_and_vips(cluster)
-
-        result['net_provider'] = cluster.net_provider
-        result['net_l23_provider'] = cluster.net_l23_provider
-        result['net_segment_type'] = cluster.net_segment_type
-
-        result['neutron_parameters'] = {
-            'predefined_networks': cluster.neutron_config.predefined_networks,
-            'L2': cluster.neutron_config.L2,
-            'segmentation_type': cluster.neutron_config.segmentation_type
-        }
-
+        result['networking_parameters'] = cls.serialize_network_params(cluster)
         return result

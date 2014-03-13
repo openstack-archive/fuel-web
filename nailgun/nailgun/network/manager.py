@@ -418,7 +418,8 @@ class NetworkManager(object):
                     ng = ngs_by_id[ng_id]
                     dedicated = ng.meta.get('dedicated_nic')
                     untagged = (ng.vlan_start is None) \
-                        and not ng.meta.get('neutron_vlan_range')
+                        and not ng.meta.get('neutron_vlan_range') \
+                        and not ng.meta.get('ext_vlan_tag')
                     same_nic = ng.meta.get('use_same_vlan_nic')
                     if dedicated:
                         if not assigned_ids:
@@ -519,7 +520,7 @@ class NetworkManager(object):
 
             network_data.append({
                 'name': net.name,
-                'vlan': net.vlan_start,
+                'vlan': cls.get_network_vlan(net, cluster_db),
                 'ip': ip.ip_addr + '/' + prefix,
                 'netmask': netmask,
                 'brd': str(IPNetwork(net.cidr).broadcast),
@@ -577,6 +578,11 @@ class NetworkManager(object):
             lambda net: net.cluster_id)
 
     @classmethod
+    def get_network_vlan(cls, net_db, cl_db):
+        return net_db.vlan_start if not net_db.meta.get('ext_vlan_tag') \
+            else getattr(cl_db.network_config, net_db.meta['ext_vlan_tag'])
+
+    @classmethod
     def get_node_networks_optimized(cls, node_db, ips_db, networks):
         """Method for receiving data for a given node with db data provided
         as input
@@ -611,7 +617,7 @@ class NetworkManager(object):
 
             network_data.append({
                 'name': net.name,
-                'vlan': net.vlan_start,
+                'vlan': cls.get_network_vlan(net, cluster_db),
                 'ip': ip.ip_addr + '/' + prefix,
                 'netmask': netmask,
                 'brd': str(IPNetwork(net.cidr).broadcast),
@@ -627,11 +633,12 @@ class NetworkManager(object):
                 net.name
             )
 
-            if net.name == 'fixed' and cluster_db.net_manager == 'VlanManager':
+            if net.name == 'fixed' \
+                    and cluster_db.network_config.net_manager == 'VlanManager':
                 continue
             network_data.append({
                 'name': net.name,
-                'vlan': net.vlan_start,
+                'vlan': cls.get_network_vlan(net, cluster_db),
                 'dev': interface.name})
 
         network_data.append(cls._get_admin_network(node_db))
@@ -657,11 +664,12 @@ class NetworkManager(object):
                 net.name
             )
 
-            if net.name == 'fixed' and cluster_db.net_manager == 'VlanManager':
+            if net.name == 'fixed' \
+                    and cluster_db.network_config.net_manager == 'VlanManager':
                 continue
             add_net_data.append({
                 'name': net.name,
-                'vlan': net.vlan_start,
+                'vlan': cls.get_network_vlan(net, cluster_db),
                 'dev': interface.name})
 
         add_net_data.append(cls._get_admin_network(node_db))
@@ -977,10 +985,9 @@ class NetworkManager(object):
             cidr = cls.calc_cidr_from_gw_mask(ng)
             if cidr:
                 ng_db.cidr = str(cidr)
-                ng_db.network_size = cidr.size
 
     @classmethod
-    def create_network_groups(cls, cluster_id):
+    def create_network_groups(cls, cluster_id, neutron_segment_type):
         """Method for creation of network groups for cluster.
 
         :param cluster_id: Cluster database ID.
@@ -1001,18 +1008,16 @@ class NetworkManager(object):
             used_nets.append(cidr_range)
 
         for net in networks_list:
-            if "seg_type" in net and \
-                    cluster_db.net_segment_type != net['seg_type']:
+            if "seg_type" in net \
+                    and neutron_segment_type != net['seg_type']:
                 continue
             vlan_start = net.get("vlan_start")
-            net_size = net.get('network_size')
             cidr, gw, cidr_gw, netmask = None, None, None, None
             if net.get("notation"):
                 if net.get("cidr"):
                     cidr = IPNetwork(net["cidr"]).cidr
                     cidr_gw = str(cidr[1])
                     netmask = str(cidr.netmask)
-                    net_size = net_size or cidr.size
                 if net["notation"] == 'cidr' and cidr:
                     new_ip_range = IPAddrRange(
                         first=str(cidr[2]),
@@ -1042,8 +1047,6 @@ class NetworkManager(object):
                 gateway=gw,
                 cluster_id=cluster_id,
                 vlan_start=vlan_start,
-                amount=1,
-                network_size=net_size or 1,
                 meta=net
             )
             db().add(nw_group)
@@ -1078,6 +1081,16 @@ class NetworkManager(object):
                 if ng_db.meta.get("notation"):
                     cls.cleanup_network_group(ng_db)
                 ng_db.cluster.add_pending_changes('networks')
+
+    @classmethod
+    def update(cls, cluster, network_configuration):
+        cls.update_networks(cluster, network_configuration)
+
+        if 'networking_parameters' in network_configuration:
+            for key, value in network_configuration['networking_parameters'] \
+                    .items():
+                setattr(cluster.network_config, key, value)
+            db().commit()
 
     @classmethod
     def cluster_has_bonds(cls, cluster_id):

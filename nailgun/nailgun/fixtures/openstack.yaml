@@ -29,17 +29,6 @@
     networks_metadata:
       nova_network:
         networks:
-          - name: "floating"
-            cidr: "172.16.0.0/24"
-            ip_range: ["172.16.0.128", "172.16.0.254"]
-            vlan_start: null
-            use_gateway: false
-            notation: "ip_ranges"
-            render_type: "ip_ranges"
-            render_addr_mask: null
-            use_same_vlan_nic: 1
-            map_priority: 1
-            assign_vip: false
           - name: "public"
             cidr: "172.16.0.0/24"
             netmask: "255.255.255.0"
@@ -51,7 +40,7 @@
             calculate_cidr: true
             render_type: null
             render_addr_mask: "public"
-            use_same_vlan_nic: 1
+            floating_range_var: "floating_ranges"
             map_priority: 1
             assign_vip: true
           - name: "management"
@@ -73,15 +62,21 @@
             map_priority: 2
             assign_vip: false
           - name: "fixed"
-            cidr: "10.0.0.0/16"
-            network_size: 256
-            vlan_start: 103
-            use_gateway: true
-            notation: "cidr"
-            render_type: "cidr"
+            vlan_start: null
+            use_gateway: false
+            notation: null
+            render_type: null
             render_addr_mask: null
             map_priority: 2
+            ext_vlan_tag: "fixed_networks_vlan_start"
             assign_vip: false
+        config:
+          net_manager: "FlatDHCPManager"
+          fixed_networks_cidr: "10.0.0.0/16"
+          fixed_networks_vlan_start: 103
+          fixed_network_size: 256
+          fixed_networks_amount: 1
+          floating_ranges: [["172.16.0.128", "172.16.0.254"]]
     volumes_metadata:
       volumes_roles_mapping:
         controller:
@@ -334,6 +329,7 @@
             render_type: null
             render_addr_mask: "public"
             map_priority: 1
+            floating_range_var: "external_floating_ranges"
             assign_vip: true
           - name: "management"
             cidr: "192.168.0.0/24"
@@ -364,6 +360,12 @@
             neutron_vlan_range: true
             assign_vip: false
         config:
+          vlan_range: [1000, 1030]
+          gre_id_range: [2, 65535]
+          base_mac: "fa:16:3e:00:00:00"
+          internal_cidr: "192.168.111.0/24"
+          internal_gateway: "192.168.111.1"
+          external_floating_ranges: [["172.16.0.130", "172.16.0.254"]]
           parameters:
             amqp:
               provider: "rabbitmq"

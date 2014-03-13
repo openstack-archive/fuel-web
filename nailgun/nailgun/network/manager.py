@@ -377,7 +377,7 @@ class NetworkManager(object):
         for nic in node.interfaces:
             while nic.assigned_networks_list:
                 nic.assigned_networks_list.pop()
-        db().commit()
+        db().flush()
 
     @classmethod
     def get_default_networks_assignment(cls, node):
@@ -475,7 +475,7 @@ class NetworkManager(object):
                 nics[nic['id']].assigned_networks_list = list(
                     db().query(NetworkGroup).filter(
                         NetworkGroup.id.in_(ng_ids)))
-        db().commit()
+        db().flush()
 
     @classmethod
     def get_allowed_nic_networkgroups(cls, node, nic):

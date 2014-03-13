@@ -89,7 +89,7 @@ urls = (
 
     r'/clusters/?$',
     ClusterCollectionHandler,
-    r'/clusters/(?P<cluster_id>\d+)/?$',
+    r'/clusters/(?P<obj_id>\d+)/?$',
     ClusterHandler,
     r'/clusters/(?P<cluster_id>\d+)/changes/?$',
     ClusterChangesHandler,

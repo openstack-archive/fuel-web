@@ -756,9 +756,13 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 } catch (ignore) {}
                 return summary;
             },
-            sortEntryProperties: function(entry) {
+            sortEntryProperties: function(entry, sortOrder) {
                 var properties = _.keys(entry);
-                if (_.has(entry, 'name')) {
+                if (sortOrder) {
+                    properties.sort(function(a, b) {
+                        return _.indexOf(sortOrder, a) - _.indexOf(sortOrder, b);
+                    });
+                } else if (_.has(entry, 'name')) {
                     properties = ['name'].concat(_.keys(_.omit(entry, 'name')));
                 }
                 return properties;

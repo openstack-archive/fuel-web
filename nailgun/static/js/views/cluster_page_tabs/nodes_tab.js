@@ -591,6 +591,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.screen.initialNodes = new models.Nodes(this.nodes.invoke('clone'));
             this.filteredNodes = new models.Nodes(this.nodes.invoke('clone'));
             this.filteredNodes.cluster = this.screen.nodes.cluster;
+            this.filteredNodes.deferred = this.screen.nodes.deferred;
             this.filteredNodes.on('change:checked', this.calculateSelectAllCheckedState, this);
             this.filteredNodes.on('reset', this.render, this);
             this.eventNamespace = 'click.click-summary-panel';

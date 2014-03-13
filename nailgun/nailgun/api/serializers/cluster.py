@@ -28,7 +28,6 @@ class ClusterSerializer(BasicSerializer):
         "grouping",
         "is_customized",
         "net_provider",
-        "net_segment_type",
         "release_id"
     )
 

@@ -35,7 +35,9 @@ from nailgun.db.sqlalchemy.models.network import IPAddrRange
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 
-from nailgun.db.sqlalchemy.models.neutron import NeutronConfig
+from nailgun.db.sqlalchemy.models.network_config import NetworkingConfig
+from nailgun.db.sqlalchemy.models.network_config import NeutronConfig
+from nailgun.db.sqlalchemy.models.network_config import NovaNetworkConfig
 
 from nailgun.db.sqlalchemy.models.notification import Notification
 

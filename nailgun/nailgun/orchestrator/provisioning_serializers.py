@@ -17,6 +17,7 @@
 """Provisioning serializers for orchestrator"""
 
 from nailgun import objects
+import netaddr
 
 from nailgun.logger import logger
 from nailgun.settings import settings
@@ -104,7 +105,9 @@ class ProvisioningSerializer(object):
         interfaces_extra = {}
         net_manager = objects.Node.get_network_manager(node)
         admin_ip = net_manager.get_admin_ip_for_node(node)
-        admin_netmask = net_manager.get_admin_network_group().netmask
+        admin_netmask = str(netaddr.IPNetwork(
+            net_manager.get_admin_network_group().cidr
+        ).netmask)
 
         for interface in node.nic_interfaces:
             name = interface.name

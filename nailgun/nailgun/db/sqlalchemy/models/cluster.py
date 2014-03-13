@@ -64,12 +64,8 @@ class Cluster(Base):
         'error',
         'remove'
     )
-    NET_MANAGERS = ('FlatDHCPManager', 'VlanManager')
     GROUPING = ('roles', 'hardware', 'both')
-    # Neutron-related
     NET_PROVIDERS = ('nova_network', 'neutron')
-    NET_L23_PROVIDERS = ('ovs',)
-    NET_SEGMENT_TYPES = ('none', 'vlan', 'gre')
     id = Column(Integer, primary_key=True)
     mode = Column(
         Enum(*MODES, name='cluster_mode'),
@@ -86,22 +82,10 @@ class Cluster(Base):
         nullable=False,
         default='nova_network'
     )
-    net_l23_provider = Column(
-        Enum(*NET_L23_PROVIDERS, name='net_l23_provider'),
-        nullable=False,
-        default='ovs'
-    )
-    net_segment_type = Column(
-        Enum(*NET_SEGMENT_TYPES,
-             name='net_segment_type'),
-        nullable=False,
-        default='vlan'
-    )
-    net_manager = Column(
-        Enum(*NET_MANAGERS, name='cluster_net_manager'),
-        nullable=False,
-        default='FlatDHCPManager'
-    )
+    network_config = relationship("NetworkingConfig",
+                                  backref=backref("cluster"),
+                                  cascade="all,delete",
+                                  uselist=False)
     grouping = Column(
         Enum(*GROUPING, name='cluster_grouping'),
         nullable=False,
@@ -129,18 +113,9 @@ class Cluster(Base):
         cascade="delete",
         order_by="NetworkGroup.id"
     )
-    dns_nameservers = Column(JSON, default=[
-        "8.8.8.8",
-        "8.8.4.4"
-    ])
     replaced_deployment_info = Column(JSON, default={})
     replaced_provisioning_info = Column(JSON, default={})
     is_customized = Column(Boolean, default=False)
-
-    neutron_config = relationship("NeutronConfig",
-                                  backref=backref("cluster"),
-                                  cascade="all,delete",
-                                  uselist=False)
 
     def replace_provisioning_info(self, data):
         self.replaced_provisioning_info = data

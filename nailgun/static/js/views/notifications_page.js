@@ -34,7 +34,7 @@ function(utils, models, commonViews, dialogViews, notificationsListTemplate) {
         templateHelpers: _.pick(utils, 'urlify'),
         events: {
             'click .new' : 'markAsRead',
-            'click .discover' : 'showNodeInfo'
+            'click .discover[data-node]' : 'showNodeInfo'
         },
         markAsRead: function(e) {
             var notification = this.notifications.get($(e.currentTarget).data('id'));
@@ -47,14 +47,11 @@ function(utils, models, commonViews, dialogViews, notificationsListTemplate) {
                 }, this));
         },
         showNodeInfo: function(e) {
-            var nodeId = $(e.currentTarget).data('node');
-            if (nodeId) {
-                var node = new models.Node({id: nodeId});
-                node.deferred = node.fetch();
-                var dialog = new dialogViews.ShowNodeInfoDialog({node: node});
-                this.registerSubView(dialog);
-                dialog.render();
-            }
+            var node = new models.Node({id: this.$(e.currentTarget).data('node')});
+            node.deferred = node.fetch();
+            var dialog = new dialogViews.ShowNodeInfoDialog({node: node});
+            this.registerSubView(dialog);
+            dialog.render();
         },
         initialize: function(options) {
             _.defaults(this, options);

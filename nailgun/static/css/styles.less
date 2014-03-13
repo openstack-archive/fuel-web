@@ -1607,7 +1607,7 @@ input.vlan-tagging {
     overflow: hidden;
     cursor: default;
   }
-  > .discover {
+  > .discover[data-node] {
     cursor: pointer;
     text-decoration: underline;
     &:hover {
@@ -1690,14 +1690,13 @@ input.vlan-tagging {
 
 .message-list {
   > .new { cursor: default; }
-  > .discover > .message {
-    text-decoration: underline;
+  > .discover[data-node] {
     cursor: pointer;
-  }
-  > .discover:hover > .message {
-    text-decoration: none;
-    color: @fuel-dark-blue;
-    cursor: pointer;
+    > .message { text-decoration: underline; }
+    &:hover > .message {
+      text-decoration: none;
+      color: @fuel-dark-blue;
+    }
   }
   > .new > .message, > .new > .icon, > .new > .datetime {
     color: @font-color-dark;

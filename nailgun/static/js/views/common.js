@@ -158,18 +158,15 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         templateHelpers: _.pick(utils, 'urlify'),
         visible: false,
         events: {
-            'click .discover' : 'showNodeInfo'
+            'click .discover[data-node]' : 'showNodeInfo'
         },
         showNodeInfo: function(e) {
-            var nodeId = $(e.currentTarget).data('node');
-            if (nodeId) {
-                this.toggle();
-                var node = new models.Node({id: nodeId});
-                node.deferred = node.fetch();
-                var dialog = new dialogViews.ShowNodeInfoDialog({node: node});
-                this.registerSubView(dialog);
-                dialog.render();
-            }
+            this.toggle();
+            var node = new models.Node({id: $(e.currentTarget).data('node')});
+            node.deferred = node.fetch();
+            var dialog = new dialogViews.ShowNodeInfoDialog({node: node});
+            this.registerSubView(dialog);
+            dialog.render();
         },
         toggle: function() {
             this.visible = !this.visible;

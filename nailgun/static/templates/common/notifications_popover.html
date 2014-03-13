@@ -3,7 +3,8 @@
     <% if (notifications.length) { %>
       <% _.each(notifications.last(displayCount).reverse(), function(notification, index, collection) { %>
         <% var topic = notification.get('topic'), icons = {'error': 'icon-attention', 'warning': 'icon-attention', 'discover': 'icon-bell'} %>
-        <li class="enable-selection <%= notification.get('status') == 'unread' ? 'new' : '' %> <%= topic %>" data-node="<%- notification.get('node_id') %>">
+        <% var nodeId = notification.get('node_id') %>
+        <li class="enable-selection <%= notification.get('status') == 'unread' ? 'new' : '' %> <%= topic %>" <%- nodeId ? 'data-node=' + nodeId : '' %>>
           <i class="<%= icons[topic] || 'icon-info-circled' %>"></i>
           <%= urlify(notification.escape('message')) %>
         </li>

@@ -20,8 +20,9 @@ import unittest
 from sqlalchemy import exc
 import web
 
+from nailgun.api.handlers import load_db_driver
+
 from nailgun.db import db
-from nailgun.db import load_db_driver
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.errors import NailgunException
@@ -81,7 +82,6 @@ class TestLoadDBDriverHandler(unittest.TestCase):
     def test_load_db_driver_with_web_error(self):
 
         def handler_sample():
-            db().add(models.Role())
             raise web.HTTPError(400)
 
         self.assertRaises(web.HTTPError,

@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models.task import Task
 
 from nailgun.test.base import BaseIntegrationTest
@@ -51,7 +50,7 @@ class TestStopDeployment(BaseIntegrationTest):
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
         self.assertIsNone(
-            db().query(Task).filter_by(
+            self.db.query(Task).filter_by(
                 uuid=deploy_task_uuid
             ).first()
         )

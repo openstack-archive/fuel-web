@@ -28,7 +28,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeHandler', kwargs={'node_id': node.id}),
             headers=self.default_headers)
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(node.id, response['id'])
         self.assertEquals(node.name, response['name'])
@@ -55,7 +55,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         # we now just ignore 'id' if present
-        self.assertEquals(201, resp.status)
+        self.assertEquals(201, resp.status_code)
 
     def test_node_deletion(self):
         node = self.env.create_node(api=False)
@@ -65,7 +65,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status, 204)
+        self.assertEquals(resp.status_code, 204)
 
     def test_node_valid_metadata_gets_updated(self):
         new_metadata = self.env.default_metadata()
@@ -74,7 +74,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeHandler', kwargs={'node_id': node.id}),
             json.dumps({'meta': new_metadata}),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         self.db.refresh(node)
 
         nodes = self.db.query(Node).filter(
@@ -90,7 +90,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeHandler', kwargs={'node_id': node.id}),
             json.dumps(params),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
 
     def test_node_action_flags_are_set(self):
         flags = ['pending_addition', 'pending_deletion']
@@ -101,7 +101,7 @@ class TestHandlers(BaseIntegrationTest):
                 json.dumps({flag: True}),
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status, 200)
+            self.assertEquals(resp.status_code, 200)
             self.db.refresh(node)
 
         node_from_db = self.db.query(Node).filter(
@@ -117,7 +117,7 @@ class TestHandlers(BaseIntegrationTest):
             "",
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.status_code, 400)
 
     def test_put_returns_400_if_wrong_status(self):
         node = self.env.create_node(api=False)
@@ -127,4 +127,4 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps(params),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status, 400)
+        self.assertEquals(resp.status_code, 400)

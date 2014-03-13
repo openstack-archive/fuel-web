@@ -50,7 +50,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             reverse('NodeDisksHandler', kwargs={'node_id': node_id}),
             headers=self.default_headers)
 
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         return json.loads(resp.body)
 
     def put(self, node_id, data, expect_errors=False):
@@ -61,7 +61,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             expect_errors=expect_errors)
 
         if not expect_errors:
-            self.assertEquals(200, resp.status)
+            self.assertEquals(200, resp.status_code)
             return json.loads(resp.body)
         else:
             return resp
@@ -92,7 +92,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                 reverse('NodeCollectionHandler'),
                 json.dumps([{'id': node_db.id, 'pending_roles': roles}]),
                 headers=self.default_headers)
-            self.assertEquals(200, resp.status)
+            self.assertEquals(200, resp.status_code)
 
         # adding role
         update_node_roles(['compute', 'cinder'])
@@ -191,7 +191,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
     def test_validator_at_least_one_disk_exists(self):
         node = self.create_node()
         response = self.put(node.id, [], True)
-        self.assertEquals(response.status, 400)
+        self.assertEquals(response.status_code, 400)
         self.assertRegexpMatches(response.body,
                                  '^Node seems not to have disks')
 
@@ -205,7 +205,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                     volume['size'] = disk['size'] + 1
 
         response = self.put(node.id, disks, True)
-        self.assertEquals(response.status, 400)
+        self.assertEquals(response.status_code, 400)
         self.assertRegexpMatches(
             response.body, '^Not enough free space on disk: .+')
 
@@ -218,7 +218,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                 del volume['size']
 
         response = self.put(node.id, disks, True)
-        self.assertEquals(response.status, 400)
+        self.assertEquals(response.status_code, 400)
         self.assertRegexpMatches(
             response.body, "'size' is a required property")
 
@@ -230,7 +230,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
             reverse('NodeDefaultsDisksHandler', kwargs={'node_id': node_id}),
             headers=self.default_headers)
 
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         return json.loads(resp.body)
 
     def test_node_disk_amount_regenerates_volumes_info_if_new_disk_added(self):
@@ -287,7 +287,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
                     kwargs={'node_id': node_id}),
             headers=self.default_headers)
 
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         return json.loads(resp.body)
 
     def create_node(self, role):
@@ -467,7 +467,7 @@ class TestVolumeManager(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(404, resp.status)
+        self.assertEquals(404, resp.status_code)
 
     def test_allocates_all_free_space_for_os_for_controller_role(self):
         node = self.create_node('controller')

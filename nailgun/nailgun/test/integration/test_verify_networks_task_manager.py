@@ -68,7 +68,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         nets = json.loads(resp.body)
 
         nets['networks'][-1]["vlan_start"] = 500
@@ -87,7 +87,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         nets = json.loads(resp.body)
 
         admin_ng = self.env.network_manager.get_admin_network_group()
@@ -116,7 +116,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         nets = json.loads(resp.body)
 
         for net in nets['networks']:
@@ -186,7 +186,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(400, resp.status)
+        self.assertEquals(400, resp.status_code)
 
 
 class TestVerifyNetworksDisabled(BaseIntegrationTest):
@@ -275,7 +275,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             reverse('NodeNICsHandler',
                     kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
         data = json.loads(resp.body)
         admin_nic, other_nic, empty_nic = None, None, None
         for nic in data:
@@ -291,7 +291,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
 
     def verify_bonds(self, node):
         resp = self.env.node_nics_get(node["id"])
-        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.body)
         bond = filter(lambda nic: nic["type"] == NETWORK_INTERFACE_TYPES.bond,
                       data)
@@ -311,7 +311,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         })
         other_nic["assigned_networks"] = []
         resp = self.env.node_nics_put(node['id'], data)
-        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.status_code, 200)
 
     @property
     def expected_args(self):
@@ -388,7 +388,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         # get nodes NICs for private network
         resp = self.app.get(reverse('NodeCollectionHandler'),
                             headers=self.default_headers)
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         priv_nics = {}
         for node in json.loads(resp.body):
             for net in node['network_data']:

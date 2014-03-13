@@ -208,7 +208,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 kwargs={'cluster_id': self.env.clusters[0].id}),
             headers=self.default_headers
         )
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
 
         timer = time.time()
         timeout = 15
@@ -249,7 +249,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster_id}),
             headers=self.default_headers
         )
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
 
         timer = time.time()
         timeout = 15
@@ -338,7 +338,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster_id}),
             headers=self.default_headers
         )
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
 
         timer = time.time()
         timeout = 15

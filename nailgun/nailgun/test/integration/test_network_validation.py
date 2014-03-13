@@ -47,7 +47,7 @@ class TestNetworkChecking(BaseIntegrationTest):
     def set_cluster_changes_w_error(self, cluster_id):
         resp = self.env.cluster_changes_put(cluster_id,
                                             expect_errors=True)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
@@ -58,7 +58,7 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_nova_networks_w_error(self, cluster_id, nets):
         resp = self.env.nova_networks_put(cluster_id, nets,
                                           expect_errors=True)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
@@ -68,7 +68,7 @@ class TestNetworkChecking(BaseIntegrationTest):
 
     def update_nova_networks_success(self, cluster_id, nets):
         resp = self.env.nova_networks_put(cluster_id, nets)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
         self.assertEquals(task['progress'], 100)
@@ -78,7 +78,7 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_neutron_networks_w_error(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets,
                                              expect_errors=True)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
@@ -88,7 +88,7 @@ class TestNetworkChecking(BaseIntegrationTest):
 
     def update_neutron_networks_success(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
         self.assertEquals(task['progress'], 100)
@@ -360,7 +360,7 @@ class TestNovaHandlers(TestNetworkChecking):
                                     kwargs={'node_id': node_db.id}),
                             json.dumps(nics),
                             headers=self.default_headers)
-        self.assertEquals(resp.status, 200)
+        self.assertEquals(resp.status_code, 200)
 
         task = self.set_cluster_changes_w_error(self.cluster.id)
         self.assertIn(

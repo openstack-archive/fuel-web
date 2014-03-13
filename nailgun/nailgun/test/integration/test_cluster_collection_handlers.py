@@ -42,7 +42,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ClusterCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals([], response)
 
@@ -56,7 +56,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(201, resp.status)
+        self.assertEquals(201, resp.status_code)
 
     def test_cluster_create_no_ip_addresses(self):
         """In this test we check that no error is occured
@@ -151,7 +151,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(201, resp.status)
+        self.assertEquals(201, resp.status_code)
         nets = self.db.query(NetworkGroup).filter(
             not_(NetworkGroup.name == "fuelweb_admin")
         ).all()
@@ -209,6 +209,6 @@ class TestHandlers(BaseIntegrationTest):
         nets = json.loads(self.env.nova_networks_get(cluster['id']).body)
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
-        self.assertEquals(202, resp.status)
+        self.assertEquals(202, resp.status_code)
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')

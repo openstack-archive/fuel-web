@@ -28,7 +28,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals([], response)
 
@@ -40,7 +40,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(len(response), 2)
         if response[0]['id'] == n0.id:
@@ -61,7 +61,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         notifications_count = self.db.query(Notification).count()
         self.assertEquals(notifications_count, 3)
@@ -71,7 +71,7 @@ class TestHandlers(BaseIntegrationTest):
             params={'limit': 2},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(len(response), 2)
 
@@ -94,7 +94,7 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps(notification_update),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
         self.assertEquals(len(response), 2)
         if response[0]['id'] == n0.id:

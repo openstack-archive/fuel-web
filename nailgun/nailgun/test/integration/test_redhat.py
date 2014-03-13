@@ -35,7 +35,7 @@ class TestHandlers(BaseIntegrationTest):
                         'release_id': self.release.id}),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
 
         supertask = self.db.query(Task).filter_by(
             name="redhat_check_credentials"

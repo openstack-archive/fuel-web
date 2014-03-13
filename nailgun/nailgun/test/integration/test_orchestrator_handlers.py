@@ -44,7 +44,7 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
             json.dumps(orchestrator_data),
             headers=self.default_headers)
 
-        self.assertEquals(put_resp.status, 200)
+        self.assertEquals(put_resp.status_code, 200)
         self.assertEquals(get_info(), orchestrator_data)
 
         # getting provisioning info
@@ -53,7 +53,7 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
                     kwargs={'cluster_id': self.cluster.id}),
             headers=self.default_headers)
 
-        self.assertEquals(get_resp.status, 200)
+        self.assertEquals(get_resp.status_code, 200)
         self.datadiff(orchestrator_data, json.loads(get_resp.body))
 
         # deleting provisioning info
@@ -62,7 +62,7 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
                     kwargs={'cluster_id': self.cluster.id}),
             headers=self.default_headers)
 
-        self.assertEquals(delete_resp.status, 202)
+        self.assertEquals(delete_resp.status_code, 202)
         self.assertEqual(get_info(), {})
 
     def test_cluster_provisioning_info(self):
@@ -98,7 +98,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
                     kwargs={'cluster_id': self.cluster.id}),
             json.dumps(facts),
             headers=self.default_headers)
-        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.status_code, 200)
         self.assertTrue(self.cluster.is_customized)
         self.datadiff(get_info(), facts)
 
@@ -108,7 +108,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
                     kwargs={'cluster_id': self.cluster.id}),
             headers=self.default_headers)
 
-        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.status_code, 200)
         self.assertEqual(3, len(json.loads(resp.body)))
 
     def test_default_provisioning_handler(self):
@@ -117,7 +117,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
                     kwargs={'cluster_id': self.cluster.id}),
             headers=self.default_headers)
 
-        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.status_code, 200)
         self.assertEqual(3, len(json.loads(resp.body)['nodes']))
 
     def test_default_provisioning_handler_for_selected_nodes(self):
@@ -128,7 +128,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
             nodes_filter_param(node_ids)
         resp = self.app.get(url, headers=self.default_headers)
 
-        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.body)['nodes']
         self.assertEqual(2, len(data))
         actual_uids = [node['uid'] for node in data]
@@ -142,7 +142,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
             nodes_filter_param(node_ids)
         resp = self.app.get(url, headers=self.default_headers)
 
-        self.assertEqual(resp.status, 200)
+        self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.body)
         self.assertEqual(2, len(data))
         actual_uids = [node['uid'] for node in data]

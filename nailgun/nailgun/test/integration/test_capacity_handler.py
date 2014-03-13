@@ -31,7 +31,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse('CapacityLogHandler'),
             headers=self.default_headers)
-        self.assertEquals(resp.status, 202)
+        self.assertEquals(resp.status_code, 202)
 
         capacity_task = self.db.query(Task).filter_by(
             name="capacity_log"
@@ -70,7 +70,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_capacity_csv_checksum(self):
         self._create_capacity_log()
         resp = self.app.get(reverse('CapacityLogCsvHandler'))
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)
 
         response_stream = StringIO(resp.body)
         checksum = md5(''.join(response_stream.readlines()[:-2])).hexdigest()
@@ -143,4 +143,4 @@ class TestHandlers(BaseIntegrationTest):
 
         self._create_capacity_log()
         resp = self.app.get(reverse('CapacityLogCsvHandler'))
-        self.assertEquals(200, resp.status)
+        self.assertEquals(200, resp.status_code)

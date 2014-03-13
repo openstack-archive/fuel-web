@@ -416,7 +416,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     @classmethod
     def network_provider_cluster_attrs(cls, cluster):
         return {'novanetwork_parameters': cls.novanetwork_attrs(cluster),
-                'dns_nameservers': cluster.dns_nameservers}
+                'dns_nameservers': cluster.network_config.dns_nameservers}
 
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
@@ -428,7 +428,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         attrs = {'network_data': interfaces}
         attrs.update(cls.interfaces_list(network_data))
 
-        if cluster.net_manager == 'VlanManager':
+        if cluster.network_config.net_manager == 'VlanManager':
             attrs.update(cls.add_vlan_interfaces(node))
 
         return attrs
@@ -437,17 +437,16 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     def novanetwork_attrs(cls, cluster):
         """Network configuration
         """
-        attrs = {'network_manager': cluster.net_manager}
-
-        fixed_net = db().query(NetworkGroup).filter_by(
-            cluster_id=cluster.id).filter_by(name='fixed').first()
+        attrs = {'network_manager': cluster.network_config.net_manager}
 
         # network_size is required for all managers, otherwise
         # puppet will use default (255)
-        attrs['network_size'] = fixed_net.network_size
+        attrs['network_size'] = cluster.network_config.fixed_network_size
         if attrs['network_manager'] == 'VlanManager':
-            attrs['num_networks'] = fixed_net.amount
-            attrs['vlan_start'] = fixed_net.vlan_start
+            attrs['num_networks'] = \
+                cluster.network_config.fixed_networks_amount
+            attrs['vlan_start'] = \
+                cluster.network_config.fixed_networks_vlan_start
 
         return attrs
 
@@ -472,11 +471,6 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         for network in network_data:
             network_name = network['name']
-
-            # floating and public are on the same interface
-            # so, just skip floating
-            if network_name == 'floating':
-                continue
 
             name = cls.__make_interface_name(network.get('dev'),
                                              network.get('vlan'))
@@ -574,77 +568,14 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
     def neutron_attrs(cls, cluster):
         """Network configuration for Neutron
         """
+        nm = NeutronManager
         attrs = {}
-        neutron_config = cluster.neutron_config
-        attrs['L3'] = neutron_config.L3 or {
-            'use_namespaces': True
-        }
-        attrs['L2'] = neutron_config.L2
-        attrs['L2']['segmentation_type'] = neutron_config.segmentation_type
-
-        join_range = lambda r: (":".join(map(str, r)) if r else None)
-
-        for net, net_conf in attrs['L2']['phys_nets'].iteritems():
-            net_conf['vlan_range'] = join_range(
-                net_conf['vlan_range']
-            )
-            attrs['L2']['phys_nets'][net] = net_conf
-        if attrs['L2'].get('tunnel_id_ranges'):
-            attrs['L2']['tunnel_id_ranges'] = join_range(
-                attrs['L2']['tunnel_id_ranges']
-            )
-
-        attrs['predefined_networks'] = neutron_config.predefined_networks
-
-        nets_l2_configs = {
-            "net04_ext": {
-                "network_type": "flat",
-                "segment_id": None,
-                "router_ext": True,
-                "physnet": "physnet1"
-            },
-            "net04": {
-                "network_type": cluster.net_segment_type,
-                "segment_id": None,
-                "router_ext": False,
-                "physnet": "physnet2"
-                if cluster.net_segment_type == "vlan" else None
-            }
-        }
-
-        pub = filter(lambda ng: ng.name == 'public', cluster.network_groups)[0]
-
-        for net, net_conf in attrs['predefined_networks'].iteritems():
-            cidr = net_conf["L3"].pop("cidr")
-            if net == "net04_ext":
-                net_conf["L3"]["subnet"] = pub.cidr
-                if pub.gateway:
-                    net_conf["L3"]["gateway"] = pub.gateway
-                else:
-                    net_conf["L3"]["gateway"] = str(IPNetwork(pub.cidr)[1])
-            else:
-                net_conf["L3"]["subnet"] = cidr
-                if not net_conf["L3"]["gateway"]:
-                    net_conf["L3"]["gateway"] = str(IPNetwork(cidr)[1])
-            net_conf["L3"]["floating"] = join_range(
-                net_conf["L3"]["floating"]
-            )
-            enable_dhcp = False if net == "net04_ext" else True
-            net_conf['L3']['enable_dhcp'] = enable_dhcp
-
-            net_conf["L2"] = nets_l2_configs[net]
-            net_conf['tenant'] = 'admin'
-            net_conf["shared"] = False
-
-            attrs['predefined_networks'][net] = net_conf
+        attrs['L3'] = nm.generate_l3(cluster)
+        attrs['L2'] = nm.generate_l2(cluster)
+        attrs['predefined_networks'] = nm.generate_predefined_networks(cluster)
 
         if cluster.release.operating_system == 'RHEL':
-            if 'amqp' not in attrs:
-                attrs['amqp'] = {}
-            elif not isinstance(attrs.get('amqp'), dict):
-                # FIXME Raise some meaningful exception.
-                pass
-            attrs['amqp']['provider'] = 'qpid-rh'
+            attrs['amqp'] = {'provider': 'qpid-rh'}
 
         return attrs
 
@@ -762,7 +693,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 logger.error('Invalid vlan for network: %s' % str(netgroup))
 
         # Dance around Neutron segmentation type.
-        if node.cluster.net_segment_type == 'vlan':
+        if node.cluster.network_config.segmentation_type == 'vlan':
             attrs['endpoints']['br-prv'] = {'IP': 'none'}
             attrs['roles']['private'] = 'br-prv'
 
@@ -781,13 +712,13 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                     'br-prv'
                 ]
             })
-        elif node.cluster.net_segment_type == 'gre':
+        elif node.cluster.network_config.segmentation_type == 'gre':
             attrs['roles']['mesh'] = 'br-mgmt'
         else:
             # FIXME! Should raise some exception I think.
             logger.error(
                 'Invalid Neutron segmentation type: %s' %
-                node.cluster.net_segment_type
+                node.cluster.network_config.segmentation_type
             )
 
         return attrs
@@ -805,9 +736,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if use_vlan_splinters == 'hard':
             for ng in iface.assigned_networks_list:
                 if ng.name == 'private':
-                    vlan_range = cluster.neutron_config.L2.get(
-                        "phys_nets", {}
-                    ).get("physnet2", {}).get("vlan_range", ())
+                    vlan_range = cluster.network_config.vlan_range
                     trunks.extend(xrange(*vlan_range))
                     trunks.append(vlan_range[1])
                 else:

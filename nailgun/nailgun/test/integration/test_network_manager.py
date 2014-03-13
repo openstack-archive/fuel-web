@@ -150,18 +150,16 @@ class TestNetworkManager(BaseIntegrationTest):
                 {"pending_addition": True},
             ]
         )
-        networks_data = {'net_manager': 'VlanManager'}
-        self.app.put(
-            reverse('NovaNetworkConfigurationHandler',
-                    kwargs={"cluster_id": cluster['id']}),
-            json.dumps(networks_data),
-            headers=self.default_headers
-        )
+        networks_data = \
+            {'nova_network_parameters': {'net_manager': 'VlanManager'}}
+        resp = self.env.nova_networks_put(cluster['id'], networks_data)
+        task = json.loads(resp.body)
+        self.assertEquals(task['status'], 'ready')
         network_data = self.env.network_manager.get_node_networks(
             self.env.nodes[0].id
         )
 
-        self.assertEquals(len(network_data), 5)
+        self.assertEquals(len(network_data), 4)
         fixed_nets = filter(lambda net: net['name'] == 'fixed', network_data)
         self.assertEquals(fixed_nets, [])
 
@@ -220,12 +218,12 @@ class TestNetworkManager(BaseIntegrationTest):
         networks = self.env.network_manager.get_networks_grouped_by_cluster()
         self.assertTrue(isinstance(networks, dict))
         self.assertIn(cluster['id'], networks)
-        self.assertEqual(len(networks[cluster['id']]), 5)
+        self.assertEqual(len(networks[cluster['id']]), 4)
         networks_keys = (n.name for n in networks[cluster['id']])
         # NetworkGroup.names[1:6] - all except fuel_admin and private
         # private is not used with NovaNetwork
         self.assertEqual(sorted(networks_keys),
-                         sorted(NetworkGroup.NAMES[1:6]))
+                         sorted(NetworkGroup.NAMES[1:5]))
 
     def test_group_by_key_and_history_util(self):
         """Verifies that grouping util will return defaultdict(list) with

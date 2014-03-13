@@ -647,7 +647,8 @@ class NetworkManager(object):
                 net.name
             )
 
-            if net.name == 'fixed' and cluster_db.net_manager == 'VlanManager':
+            if net.name == 'fixed' \
+                    and cluster_db.network_config.net_manager == 'VlanManager':
                 continue
             network_data.append({
                 'name': net.name,
@@ -677,7 +678,8 @@ class NetworkManager(object):
                 net.name
             )
 
-            if net.name == 'fixed' and cluster_db.net_manager == 'VlanManager':
+            if net.name == 'fixed' \
+                    and cluster_db.network_config.net_manager == 'VlanManager':
                 continue
             add_net_data.append({
                 'name': net.name,
@@ -1023,10 +1025,9 @@ class NetworkManager(object):
             cidr = cls.calc_cidr_from_gw_mask(ng)
             if cidr:
                 ng_db.cidr = str(cidr)
-                ng_db.network_size = cidr.size
 
     @classmethod
-    def create_network_groups(cls, cluster_id):
+    def create_network_groups(cls, cluster_id, neutron_segment_type):
         """Method for creation of network groups for cluster.
 
         :param cluster_id: Cluster database ID.
@@ -1048,18 +1049,16 @@ class NetworkManager(object):
             used_nets.append(cidr_range)
 
         for net in networks_list:
-            if "seg_type" in net and \
-                    cluster_db.net_segment_type != net['seg_type']:
+            if "seg_type" in net \
+                    and neutron_segment_type != net['seg_type']:
                 continue
             vlan_start = net.get("vlan_start")
-            net_size = net.get('network_size')
             cidr, gw, cidr_gw, netmask = None, None, None, None
             if net.get("notation"):
                 if net.get("cidr"):
                     cidr = IPNetwork(net["cidr"]).cidr
                     cidr_gw = str(cidr[1])
                     netmask = str(cidr.netmask)
-                    net_size = net_size or cidr.size
                 if net["notation"] == 'cidr' and cidr:
                     new_ip_range = IPAddrRange(
                         first=str(cidr[2]),
@@ -1089,8 +1088,6 @@ class NetworkManager(object):
                 gateway=gw,
                 cluster_id=cluster_id,
                 vlan_start=vlan_start,
-                amount=1,
-                network_size=net_size or 1,
                 meta=net
             )
             db().add(nw_group)

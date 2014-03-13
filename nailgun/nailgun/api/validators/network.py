@@ -13,9 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from netaddr import AddrFormatError
-from netaddr import IPNetwork
-
 from nailgun.api.validators.base import BasicValidator
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
@@ -49,15 +46,6 @@ class NetworkConfigurationValidator(BasicValidator):
                     "No 'id' param presents for '{0}' network".format(i),
                     log_message=True
                 )
-
-            if i.get('name') == 'public':
-                try:
-                    IPNetwork('0.0.0.0/' + i['netmask'])
-                except (AddrFormatError, KeyError):
-                    raise errors.InvalidData(
-                        "Invalid netmask for public network",
-                        log_message=True
-                    )
         return d
 
 
@@ -89,12 +77,12 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
     @classmethod
     def validate_neutron_params(cls, data, **kwargs):
         d = cls.validate_json(data)
-        np = d.get('neutron_parameters')
+        np = d.get('networking_parameters')
         cluster_id = kwargs.get("cluster_id")
         if cluster_id:
             cluster = db().query(Cluster).get(cluster_id)
-            if cluster and cluster.neutron_config:
-                cfg = cluster.neutron_config
+            if cluster and cluster.network_config:
+                cfg = cluster.network_config
                 for k in ("segmentation_type",):
                     if k in np and getattr(cfg, k) != np[k]:
                         raise errors.InvalidData(

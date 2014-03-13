@@ -29,7 +29,6 @@ DATABASE:
 # changes should be made in database if required
 ADMIN_NETWORK:
   cidr: "10.20.0.0/24"
-  netmask: "255.255.255.0"
   size: "256"
   first: "10.20.0.129"
   last: "10.20.0.254"

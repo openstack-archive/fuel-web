@@ -18,9 +18,11 @@ import json
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
+from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
+from nailgun.db.sqlalchemy.models import NeutronConfig
+from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.test.base import BaseIntegrationTest
-from nailgun.test.base import reverse
 
 
 class TestNetworkChecking(BaseIntegrationTest):
@@ -30,12 +32,16 @@ class TestNetworkChecking(BaseIntegrationTest):
             if net['name'] == name:
                 return net
 
-    def check_result_format(self, task):
+    def check_result_format(self, task, cluster_id):
         if task.get('result'):
             result = task['result']
             self.assertIsInstance(result, list)
             ng_fields = \
                 NetworkGroup.__mapper__.columns.keys() + ["ip_ranges"]
+            cluster_db = self.db.query(Cluster).get(cluster_id)
+            ng_fields += NeutronConfig.__mapper__.columns.keys() \
+                if cluster_db.net_provider == 'neutron' else \
+                NovaNetworkConfig.__mapper__.columns.keys()
             for res in result:
                 if 'ids' in res:
                     self.assertIsInstance(res['ids'], list)
@@ -52,7 +58,7 @@ class TestNetworkChecking(BaseIntegrationTest):
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'deploy')
-        self.check_result_format(task)
+        self.check_result_format(task, cluster_id)
         return task
 
     def update_nova_networks_w_error(self, cluster_id, nets):
@@ -63,7 +69,7 @@ class TestNetworkChecking(BaseIntegrationTest):
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
-        self.check_result_format(task)
+        self.check_result_format(task, cluster_id)
         return task
 
     def update_nova_networks_success(self, cluster_id, nets):
@@ -83,7 +89,7 @@ class TestNetworkChecking(BaseIntegrationTest):
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
-        self.check_result_format(task)
+        self.check_result_format(task, cluster_id)
         return task
 
     def update_neutron_networks_success(self, cluster_id, nets):
@@ -126,7 +132,8 @@ class TestNovaHandlers(TestNetworkChecking):
 
     def test_network_checking_fails_if_admin_intersection(self):
         admin_ng = self.env.network_manager.get_admin_network_group()
-        self.find_net_by_name('fixed')["cidr"] = admin_ng.cidr
+        self.nets['networking_parameters']["fixed_networks_cidr"] = \
+            admin_ng.cidr
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
@@ -138,30 +145,16 @@ class TestNovaHandlers(TestNetworkChecking):
     def test_network_checking_fails_if_admin_intersection_ip_range(self):
         admin_ng = self.env.network_manager.get_admin_network_group()
         cidr = IPNetwork(admin_ng.cidr)
-        self.find_net_by_name('floating')['ip_ranges'] = [
-            [str(IPAddress(cidr.first + 2)), str(IPAddress(cidr.last))]
-        ]
+        flt_r0 = str(IPAddress(cidr.first + 2))
+        flt_r1 = str(IPAddress(cidr.last))
+        self.nets['networking_parameters']['floating_ranges'] = \
+            [[flt_r0, flt_r1]]
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertIn(
-            "Address space intersection between networks:\n",
+        self.assertEquals(
+            "Address space intersection between floating range '{0}-{1}' and "
+            "'admin (PXE)' network.".format(flt_r0, flt_r1),
             task['message'])
-        self.assertIn("admin (PXE)", task['message'])
-        self.assertIn("floating", task['message'])
-
-    def test_fails_if_netmask_for_public_network_not_set_or_not_valid(self):
-        net_without_netmask = self.find_net_by_name('public')
-        net_with_invalid_netmask = self.find_net_by_name('public')
-
-        net_without_netmask['netmask'] = None
-        net_with_invalid_netmask['netmask'] = '255.255.255.2'
-
-        for net in [net_without_netmask, net_with_invalid_netmask]:
-            task = self.update_nova_networks_w_error(self.cluster.id,
-                                                     {'networks': [net]})
-            self.assertEquals(
-                task['message'],
-                'Invalid gateway or netmask for public network')
 
     def test_network_checking_fails_if_networks_cidr_intersection(self):
         self.find_net_by_name('management')["cidr"] = \
@@ -191,7 +184,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["ip_ranges"] = \
             [['192.18.17.65', '192.18.17.143']]
         self.find_net_by_name('public')["gateway"] = '192.18.17.1'
-        self.find_net_by_name('public')["netmask"] = '255.255.255.0'
+        self.find_net_by_name('public')["cidr"] = '192.18.17.0/24'
         self.find_net_by_name('management')["cidr"] = '192.18.17.0/25'
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
@@ -205,19 +198,20 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["ip_ranges"] = \
             [['192.18.17.5', '192.18.17.43'],
              ['192.18.17.59', '192.18.17.90']]
-        self.find_net_by_name('floating')["ip_ranges"] = \
+        self.nets['networking_parameters']["floating_ranges"] = \
             [['192.18.17.125', '192.18.17.143'],
              ['192.18.17.159', '192.18.17.190']]
         self.find_net_by_name('public')["gateway"] = '192.18.17.1'
-        self.find_net_by_name('public')["netmask"] = '255.255.255.0'
+        self.find_net_by_name('public')["cidr"] = '192.18.17.0/24'
 
         self.update_nova_networks_success(self.cluster.id, self.nets)
 
     def test_network_checking_fails_if_public_ranges_intersection(self):
         self.find_net_by_name('public')["ip_ranges"] = \
-            [['192.18.17.65', '192.18.17.143'],
-             ['192.18.17.129', '192.18.17.190']]
+            [['192.18.17.65', '192.18.17.123'],
+             ['192.18.17.99', '192.18.17.129']]
         self.find_net_by_name('public')["gateway"] = '192.18.17.1'
+        self.find_net_by_name('public')["cidr"] = '192.18.17.0/24'
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
@@ -230,7 +224,7 @@ class TestNovaHandlers(TestNetworkChecking):
             [['192.18.17.5', '192.18.17.43'],
              ['192.18.17.59', '192.18.17.90']]
         self.find_net_by_name('public')["gateway"] = '192.18.18.1'
-        self.find_net_by_name('public')["netmask"] = '255.255.255.0'
+        self.find_net_by_name('public')["cidr"] = '192.18.18.0/24'
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
@@ -243,7 +237,7 @@ class TestNovaHandlers(TestNetworkChecking):
             [['192.18.17.5', '192.18.17.43'],
              ['192.18.17.59', '192.18.17.90']]
         self.find_net_by_name('public')["gateway"] = '192.18.17.77'
-        self.find_net_by_name('public')["netmask"] = '255.255.255.0'
+        self.find_net_by_name('public')["cidr"] = '192.18.17.0/24'
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
@@ -264,9 +258,9 @@ class TestNovaHandlers(TestNetworkChecking):
         )
 
     def test_network_checking_fails_if_floating_ranges_intersection(self):
-        self.find_net_by_name('floating')["ip_ranges"] = \
-            [['192.18.17.65', '192.18.17.143'],
-             ['192.18.17.129', '192.18.17.190']]
+        self.nets['networking_parameters']["floating_ranges"] = \
+            [['192.18.17.129', '192.18.17.143'],
+             ['192.18.17.133', '192.18.17.190']]
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
@@ -275,9 +269,9 @@ class TestNovaHandlers(TestNetworkChecking):
         )
 
     def test_network_checking_fails_if_amount_flatdhcp(self):
-        net = self.find_net_by_name('fixed')
-        net["amount"] = 2
-        net["cidr"] = "10.10.0.0/23"
+        self.nets['networking_parameters']['fixed_networks_amount'] = 2
+        self.nets['networking_parameters']['fixed_networks_cidr'] = \
+            "10.10.0.0/23"
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
@@ -299,10 +293,11 @@ class TestNovaHandlers(TestNetworkChecking):
         self.assertIn("public", task['message'])
 
     def test_network_checking_fails_if_vlan_id_in_fixed_vlan_range(self):
-        self.nets['net_manager'] = 'VLANManager'
+        self.nets['networking_parameters']['net_manager'] = 'VLANManager'
         self.find_net_by_name('public')["vlan_start"] = 1111
-        self.find_net_by_name('fixed')["vlan_start"] = 1100
-        self.find_net_by_name('fixed')["amount"] = 20
+        self.nets['networking_parameters']['fixed_networks_vlan_start'] = \
+            1100
+        self.nets['networking_parameters']['fixed_networks_amount'] = 20
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(
@@ -321,77 +316,16 @@ class TestNovaHandlers(TestNetworkChecking):
             "VLAN ID(s) is out of range for public network."
         )
 
-    def test_network_checking_fails_if_public_floating_vlan_not_equal(self):
-        self.find_net_by_name('public')["vlan_start"] = 111
-        self.find_net_by_name('floating')["vlan_start"] = 112
-
-        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertIn(
-            " networks don't use the same VLAN ID(s). "
-            "These networks must use the same VLAN ID(s).",
-            task['message']
-        )
-        self.assertIn("floating", task['message'])
-        self.assertIn("public", task['message'])
-
-    def test_network_checking_fails_if_public_floating_not_on_one_nic(self):
-        self.find_net_by_name('public')["vlan_start"] = 111
-        self.find_net_by_name('floating')["vlan_start"] = 111
-        self.update_nova_networks_success(self.cluster.id, self.nets)
-
-        mac = self.env.generate_random_mac()
-        meta = self.env.default_metadata()
-        self.env.set_interfaces_in_meta(
-            meta,
-            [{'name': 'eth0', 'mac': mac},
-             {'name': 'eth1', 'mac': self.env.generate_random_mac()},
-             {'name': 'eth2', 'mac': self.env.generate_random_mac()}]
-        )
-        node = self.env.create_node(api=True, meta=meta, mac=mac)
-        resp = self.app.put(
-            reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': self.cluster.id}]),
-            headers=self.default_headers
-        )
-        self.assertEquals(resp.status_code, 200)
-
-        resp = self.app.get(reverse('NodeNICsHandler',
-                                    kwargs={'node_id': node['id']}),
-                            headers=self.default_headers)
-        nics = json.loads(resp.body)
-
-        for nic in nics:
-            if not nic.get('assigned_networks'):
-                other_nic = nic
-            for net in nic['assigned_networks']:
-                if net['name'] == 'public':
-                    public_nic = nic
-                    public = net
-        public_nic['assigned_networks'].remove(public)
-        other_nic.setdefault('assigned_networks', []).append(public)
-
-        resp = self.app.put(reverse('NodeNICsHandler',
-                                    kwargs={'node_id': node['id']}),
-                            json.dumps(nics),
-                            headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
-
-        task = self.set_cluster_changes_w_error(self.cluster.id)
-        self.assertIn(
-            "Public and floating networks are not assigned to the "
-            "same physical interface. These networks must be assigned "
-            "to the same physical interface. Affected nodes:\nUntitled",
-            task['message']
-        )
-
     def test_network_size_and_amount_not_fit_cidr(self):
-        net = self.find_net_by_name('fixed')
-        net["amount"] = 1
-        net["cidr"] = "10.10.0.0/24"
-        net["network_size"] = "128"
+        self.nets['networking_parameters']['fixed_networks_amount'] = 1
+        self.nets['networking_parameters']['fixed_networks_cidr'] = \
+            "10.10.0.0/24"
+        self.nets['networking_parameters']['fixed_network_size'] = \
+            "128"
         self.update_nova_networks_success(self.cluster.id, self.nets)
 
-        net["network_size"] = "512"
+        self.nets['networking_parameters']['fixed_network_size'] = \
+            "512"
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
@@ -399,12 +333,13 @@ class TestNovaHandlers(TestNetworkChecking):
             "fixed CIDR (10.10.0.0/24) and size of one fixed network (512)."
         )
 
-        self.nets['net_manager'] = 'VlanManager'
-        net["amount"] = 8
-        net["network_size"] = "32"
+        self.nets['networking_parameters']['net_manager'] = 'VlanManager'
+        self.nets['networking_parameters']['fixed_networks_amount'] = 8
+        self.nets['networking_parameters']['fixed_network_size'] = \
+            "32"
         self.update_nova_networks_success(self.cluster.id, self.nets)
 
-        net["amount"] = 32
+        self.nets['networking_parameters']['fixed_networks_amount'] = 32
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
@@ -469,21 +404,7 @@ class TestNovaHandlers(TestNetworkChecking):
 
         self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.2',
                                                          '172.16.0.122']]
-        self.find_net_by_name('fixed')['gateway'] = '10.0.0.0'
-        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
-            task['message'],
-            "fixed network gateway address is equal to either subnet address "
-            "or broadcast address of the network."
-        )
-
-        self.find_net_by_name('fixed')['gateway'] = '10.0.255.255'
-        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
-            task['message'],
-            "fixed network gateway address is equal to either subnet address "
-            "or broadcast address of the network."
-        )
+        self.update_nova_networks_success(self.cluster.id, self.nets)
 
 
 class TestNeutronHandlersGre(TestNetworkChecking):
@@ -535,23 +456,25 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         for n in self.nets['networks']:
             n['vlan_start'] = None
 
-        self.env.neutron_networks_put(self.cluster.id, self.nets)
+        self.update_neutron_networks_success(self.cluster.id, self.nets)
 
         task = self.set_cluster_changes_w_error(self.cluster.id)
-        self.assertEquals(
-            task['message'].find(
-                "Some untagged networks are "
-                "assigned to the same physical interface. "
-                "You should assign them to "
-                "different physical interfaces:"),
-            0
+        self.assertIn(
+            "Some untagged networks are "
+            "assigned to the same physical interface. "
+            "You should assign them to "
+            "different physical interfaces. Affected:\n",
+            task['message']
         )
+        self.assertIn("admin (PXE)", task['message'])
+        self.assertIn("storage", task['message'])
+        self.assertIn("management", task['message'])
 
     def test_network_checking_fails_if_public_gateway_not_in_cidr(self):
+        self.find_net_by_name('public')['cidr'] = '172.16.10.0/24'
         self.find_net_by_name('public')['gateway'] = '172.16.10.1'
-        virt_nets = self.nets['neutron_parameters']['predefined_networks']
-        virt_nets['net04_ext']['L3']['floating'] = ['172.16.10.130',
-                                                    '172.16.10.254']
+        self.nets['networking_parameters']['external_floating_ranges'] = \
+            [['172.16.10.130', '172.16.10.254']]
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
@@ -564,7 +487,6 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             [['172.16.0.5', '172.16.0.43'],
              ['172.16.0.59', '172.16.0.90']]
         self.find_net_by_name('public')["gateway"] = '172.16.0.77'
-        self.find_net_by_name('public')["netmask"] = '255.255.255.0'
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
@@ -640,33 +562,19 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             "of public and external network."
         )
 
-    def test_network_checking_fails_if_network_cidr_too_small(self):
-        self.find_net_by_name('management')['cidr'] = '192.168.0.0/25'
-
-        task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
-            task['message'],
-            "CIDR size for network 'management' "
-            "is less than required"
-        )
-
     def test_network_checking_public_network_cidr_became_smaller(self):
-        self.assertEquals(self.find_net_by_name('public')['network_size'], 256)
-
-        self.find_net_by_name('public')['netmask'] = '255.255.255.128'
+        self.find_net_by_name('public')['cidr'] = '172.16.0.0/25'
         self.find_net_by_name('public')['gateway'] = '172.16.0.1'
         self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.2',
                                                          '172.16.0.77']]
-        virt_nets = self.nets['neutron_parameters']['predefined_networks']
-        virt_nets['net04_ext']['L3']['floating'] = ['172.16.0.99',
-                                                    '172.16.0.111']
+        self.nets['networking_parameters']['external_floating_ranges'] = \
+            [['172.16.0.99', '172.16.0.111']]
 
         self.update_neutron_networks_success(self.cluster.id, self.nets)
         resp = self.env.neutron_networks_get(self.cluster.id)
         self.nets = json.loads(resp.body)
         self.assertEquals(self.find_net_by_name('public')['cidr'],
                           '172.16.0.0/25')
-        self.assertEquals(self.find_net_by_name('public')['network_size'], 128)
 
     def test_network_checking_fails_on_network_vlan_match(self):
         self.find_net_by_name('management')['vlan_start'] = '111'
@@ -682,8 +590,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.assertIn("storage", task['message'])
 
     def test_network_checking_fails_if_internal_gateway_not_in_cidr(self):
-        int = self.nets['neutron_parameters']['predefined_networks']['net04']
-        int['L3']['gateway'] = '172.16.10.1'
+        self.nets['networking_parameters']['internal_gateway'] = '172.16.10.1'
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
@@ -693,9 +600,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         )
 
     def test_network_checking_fails_if_internal_w_floating_intersection(self):
-        int = self.nets['neutron_parameters']['predefined_networks']['net04']
-        int['L3']['cidr'] = '172.16.0.128/26'
-        int['L3']['gateway'] = '172.16.0.129'
+        self.nets['networking_parameters']['internal_cidr'] = '172.16.0.128/26'
+        self.nets['networking_parameters']['internal_gateway'] = '172.16.0.129'
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
@@ -760,9 +666,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
         self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.55',
                                                          '172.16.0.99']]
-        virt_nets = self.nets['neutron_parameters']['predefined_networks']
-        virt_nets['net04_ext']['L3']['floating'] = ['172.16.0.0',
-                                                    '172.16.0.33']
+        self.nets['networking_parameters']['external_floating_ranges'] = \
+            [['172.16.0.0', '172.16.0.33']]
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
@@ -771,8 +676,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             "of public network."
         )
 
-        virt_nets['net04_ext']['L3']['floating'] = ['172.16.0.155',
-                                                    '172.16.0.255']
+        self.nets['networking_parameters']['external_floating_ranges'] = \
+            [['172.16.0.155', '172.16.0.255']]
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
@@ -781,10 +686,12 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             "of public network."
         )
 
-        virt_nets['net04_ext']['L3']['floating'] = ['172.16.0.155',
-                                                    '172.16.0.199']
-        virt_nets['net04']['L3']['cidr'] = '192.168.111.0/24'
-        virt_nets['net04']['L3']['gateway'] = '192.168.111.0'
+        self.nets['networking_parameters']['external_floating_ranges'] = \
+            [['172.16.0.155', '172.16.0.199']]
+        self.nets['networking_parameters']['internal_cidr'] = \
+            '192.168.111.0/24'
+        self.nets['networking_parameters']['internal_gateway'] = \
+            '192.168.111.0'
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],
@@ -792,7 +699,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             "either subnet address or broadcast address of the network."
         )
 
-        virt_nets['net04']['L3']['gateway'] = '192.168.111.255'
+        self.nets['networking_parameters']['internal_gateway'] = \
+            '192.168.111.255'
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
         self.assertEquals(
             task['message'],

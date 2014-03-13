@@ -45,7 +45,7 @@ CLUSTER_STATUSES = Enum(
     'remove'
 )
 
-CLUSTER_NET_MANAGERS = Enum(
+NOVA_NET_MANAGERS = Enum(
     'FlatDHCPManager',
     'VlanManager'
 )
@@ -61,12 +61,11 @@ CLUSTER_NET_PROVIDERS = Enum(
     'neutron'
 )
 
-CLUSTER_NET_L23_PROVIDERS = Enum(
+NEUTRON_L23_PROVIDERS = Enum(
     'ovs'
 )
 
-CLUSTER_NET_SEGMENT_TYPES = Enum(
-    'none',
+NEUTRON_SEGMENT_TYPES = Enum(
     'vlan',
     'gre'
 )

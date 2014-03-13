@@ -826,3 +826,34 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
     def test_bonds_serialization(self):
         for mode in OVS_BOND_MODES:
             self.check_bond_with_mode(mode)
+
+
+class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
+
+    def setUp(self):
+        super(TestCephOsdImageOrchestratorSerialize, self).setUp()
+        cluster = self.env.create(
+            cluster_kwargs={
+                'mode': 'multinode'},
+            nodes_kwargs=[
+                {'roles': ['controller', 'ceph-osd']}])
+        self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            params=json.dumps({
+                'editable': {'storage': {'images_ceph': {'value': True}}}}),
+            headers=self.default_headers)
+        self.cluster = self.db.query(Cluster).get(cluster['id'])
+
+    def serialize(self, cluster):
+        TaskHelper.prepare_for_deployment(cluster.nodes)
+        return DeploymentMultinodeSerializer.serialize(cluster, cluster.nodes)
+
+    def test_glance_image_cache_max_size(self):
+        data = self.serialize(self.cluster)
+        self.assertEqual(len(data), 2)
+        # one node - 2 roles
+        self.assertEqual(data[0]['uid'], data[1]['uid'])
+        self.assertEqual(data[0]['glance']['image_cache_max_size'], '0')
+        self.assertEqual(data[1]['glance']['image_cache_max_size'], '0')

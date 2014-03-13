@@ -32,7 +32,7 @@ from nailgun.network.neutron import NeutronManager
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from nailgun.utils import dict_merge
-from nailgun.volumes import manager as VolumeManager
+from nailgun.volumes import manager as volume_manager
 
 
 class Priority(object):
@@ -157,10 +157,6 @@ class DeploymentMultinodeSerializer(object):
             'fqdn': node.fqdn,
             'status': node.status,
             'role': role,
-            'glance': {
-                'image_cache_max_size': VolumeManager.calc_glance_cache_size(
-                    node.attributes.volumes)
-            },
             # TODO (eli): need to remove, requried
             # for fucking fake thread only
             'online': node.online
@@ -168,8 +164,19 @@ class DeploymentMultinodeSerializer(object):
 
         node_attrs.update(
             cls.get_net_provider_serializer(node.cluster).get_node_attrs(node))
-
+        node_attrs.update(cls.get_image_cache_max_size(node))
         return node_attrs
+
+    @classmethod
+    def get_image_cache_max_size(self, node):
+        images_ceph = (node.cluster.attributes['editable']['storage']
+                       ['images_ceph']['value'])
+        if images_ceph:
+            image_cache_max_size = '0'
+        else:
+            image_cache_max_size = volume_manager.calc_glance_cache_size(
+                node.attributes.volumes)
+        return {'glance': {'image_cache_max_size': image_cache_max_size}}
 
     @classmethod
     def get_net_provider_serializer(cls, cluster):

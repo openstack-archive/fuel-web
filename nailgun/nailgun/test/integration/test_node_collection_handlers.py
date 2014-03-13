@@ -48,7 +48,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_node_get_with_cluster(self):
         self.env.create(
-            cluster_kwargs={"api": False},
+            cluster_kwargs={"api": True},
             nodes_kwargs=[
                 {"cluster_id": None},
                 {},
@@ -71,7 +71,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_node_get_with_cluster_None(self):
         self.env.create(
-            cluster_kwargs={"api": False},
+            cluster_kwargs={"api": True},
             nodes_kwargs=[
                 {"cluster_id": None},
                 {},
@@ -90,7 +90,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_node_get_without_cluster_specification(self):
         self.env.create(
-            cluster_kwargs={"api": False},
+            cluster_kwargs={"api": True},
             nodes_kwargs=[
                 {"cluster_id": None},
                 {},

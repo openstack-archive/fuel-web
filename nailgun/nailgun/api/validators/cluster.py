@@ -43,7 +43,7 @@ class ClusterValidator(BasicValidator):
         if cluster_id:
             cluster = db().query(Cluster).get(cluster_id)
             if cluster:
-                for k in ("net_provider", "net_segment_type"):
+                for k in ("net_provider",):
                     if k in d and getattr(cluster, k) != d[k]:
                         raise errors.InvalidData(
                             "Change of '%s' is prohibited" % k,

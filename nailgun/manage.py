@@ -169,11 +169,13 @@ def action_loaddefault(params):
 
 
 def action_syncdb(params):
+    from nailgun.db import syncdb
     from nailgun.db.migration import do_upgrade_head
     from nailgun.logger import logger
 
     logger.info("Syncing database...")
-    do_upgrade_head()
+    syncdb()
+    #do_upgrade_head()
     logger.info("Done")
 
 

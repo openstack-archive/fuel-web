@@ -70,8 +70,8 @@ class TestHandlers(BaseIntegrationTest):
                 'network_size': 256
             },
             'dns_nameservers': [
-                "8.8.8.8",
-                "8.8.4.4"
+                "8.8.4.4",
+                "8.8.8.8"
             ],
 
             'management_interface': 'eth0.101',
@@ -816,9 +816,8 @@ class TestHandlers(BaseIntegrationTest):
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.10.10', '172.16.10.122']],
                     'gateway': '172.16.10.1'})
-        virt_nets = net_data['neutron_parameters']['predefined_networks']
-        virt_nets['net04_ext']['L3']['floating'] = ['172.16.10.130',
-                                                    '172.16.10.254']
+        net_data['networking_parameters']['external_floating_ranges'] = \
+            [['172.16.10.130', '172.16.10.254']]
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEquals(resp.status_code, 202)

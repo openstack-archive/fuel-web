@@ -79,12 +79,10 @@ class TestHandlers(BaseIntegrationTest):
                 {
                     "networks": [
                         {
-                            "network_size": 65536,
                             "name": "management",
                             "ip_ranges": [
                                 ["192.168.0.2", "192.168.255.254"]
                             ],
-                            "amount": 1,
                             "id": management_net.id,
                             "netmask": "255.255.255.0",
                             "cluster_id": clstr.id,
@@ -167,13 +165,6 @@ class TestHandlers(BaseIntegrationTest):
         expected = [
             {
                 'release': release.id,
-                'name': u'floating',
-                'vlan_id': None,
-                'cidr': '172.16.0.0/24',
-                'gateway': None
-            },
-            {
-                'release': release.id,
                 'name': u'public',
                 'vlan_id': None,
                 'cidr': '172.16.0.0/24',
@@ -182,9 +173,9 @@ class TestHandlers(BaseIntegrationTest):
             {
                 'release': release.id,
                 'name': u'fixed',
-                'vlan_id': 103,
-                'cidr': '10.0.0.0/16',
-                'gateway': '10.0.0.1'
+                'vlan_id': None,
+                'cidr': None,
+                'gateway': None
             },
             {
                 'release': release.id,

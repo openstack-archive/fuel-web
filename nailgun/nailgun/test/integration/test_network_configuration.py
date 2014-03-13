@@ -37,15 +37,14 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data = json.loads(response.body)
         cluster = self.db.query(Cluster).get(self.cluster.id)
 
-        self.assertEquals(data['net_manager'], self.cluster.net_manager)
+        self.assertEquals(data['networking_parameters']['net_manager'],
+                          self.cluster.network_config.net_manager)
         for network_group in cluster.network_groups:
             network = [i for i in data['networks']
                        if i['id'] == network_group.id][0]
 
             keys = [
-                'network_size',
                 'name',
-                'amount',
                 'cluster_id',
                 'vlan_start',
                 'cidr',
@@ -60,18 +59,23 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEquals(404, resp.status_code)
 
     def test_change_net_manager(self):
-        new_net_manager = {'net_manager': 'VlanManager'}
+        self.assertEquals(self.cluster.network_config.net_manager,
+                          'FlatDHCPManager')
+
+        new_net_manager = {
+            'networking_parameters': {'net_manager': 'VlanManager'}
+        }
         self.env.nova_networks_put(self.cluster.id, new_net_manager)
 
         self.db.refresh(self.cluster)
         self.assertEquals(
-            self.cluster.net_manager,
-            new_net_manager['net_manager'])
+            self.cluster.network_config.net_manager,
+            new_net_manager['networking_parameters']['net_manager'])
 
     def test_change_dns_nameservers(self):
         new_dns_nameservers = {
-            'dns_nameservers': {
-                "nameservers": [
+            'networking_parameters': {
+                'dns_nameservers': [
                     "208.67.222.222",
                     "208.67.220.220"
                 ]
@@ -81,8 +85,8 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         self.db.refresh(self.cluster)
         self.assertEquals(
-            self.cluster.dns_nameservers,
-            new_dns_nameservers['dns_nameservers']['nameservers']
+            self.cluster.network_config.dns_nameservers,
+            new_dns_nameservers['networking_parameters']['dns_nameservers']
         )
 
     def test_refresh_mask_on_cidr_change(self):
@@ -93,7 +97,6 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                 if n['name'] == 'management'][0]
         cidr = mgmt['cidr'].partition('/')[0] + '/25'
         mgmt['cidr'] = cidr
-        mgmt['network_size'] = 128
 
         resp = self.env.nova_networks_put(self.cluster.id, data)
         self.assertEquals(resp.status_code, 202)
@@ -104,7 +107,6 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt_ng = [ng for ng in self.cluster.network_groups
                    if ng.name == 'management'][0]
         self.assertEquals(mgmt_ng.cidr, cidr)
-        self.assertEquals(mgmt_ng.netmask, '255.255.255.128')
 
     def test_wrong_net_provider(self):
         resp = self.app.put(
@@ -122,15 +124,17 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         )
 
     def test_do_not_update_net_manager_if_validation_is_failed(self):
-        new_net_manager = {'net_manager': 'VlanManager',
-                           'networks': [{'id': 500, 'vlan_start': 500}]}
+        new_net_manager = {
+            'networking_parameters': {'net_manager': 'VlanManager'},
+            'networks': [{'id': 500, 'vlan_start': 500}]
+        }
         self.env.nova_networks_put(self.cluster.id, new_net_manager,
                                    expect_errors=True)
 
         self.db.refresh(self.cluster)
         self.assertNotEquals(
-            self.cluster.net_manager,
-            new_net_manager['net_manager'])
+            self.cluster.network_config.net_manager,
+            new_net_manager['networking_parameters']['net_manager'])
 
     def test_network_group_update_changes_network(self):
         network = self.db.query(NetworkGroup).filter(
@@ -144,7 +148,6 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.nova_networks_put(self.cluster.id, new_nets)
         self.assertEquals(resp.status_code, 202)
         self.db.refresh(network)
-        self.assertEquals(network.amount, 1)
         self.assertEquals(network.vlan_start, 500)
 
     def test_update_networks_and_net_manager(self):
@@ -152,15 +155,15 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             not_(NetworkGroup.name == "fuelweb_admin")
         ).first()
         new_vlan_id = 500  # non-used vlan id
-        new_net = {'net_manager': 'VlanManager',
+        new_net = {'networking_parameters': {'net_manager': 'VlanManager'},
                    'networks': [{'id': network.id, 'vlan_start': new_vlan_id}]}
         self.env.nova_networks_put(self.cluster.id, new_net)
 
         self.db.refresh(self.cluster)
         self.db.refresh(network)
         self.assertEquals(
-            self.cluster.net_manager,
-            new_net['net_manager'])
+            self.cluster.network_config.net_manager,
+            new_net['networking_parameters']['net_manager'])
         self.assertEquals(network.vlan_start, new_vlan_id)
 
     def test_networks_update_fails_with_wrong_net_id(self):
@@ -181,7 +184,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.nova_networks_get(self.cluster.id)
         data = json.loads(resp.body)
         for net in data['networks']:
-            if net['name'] in ('fuelweb_admin', 'public', 'floating'):
+            if net['name'] in ('fuelweb_admin', 'public', 'fixed'):
                 self.assertIsNone(net['vlan_start'])
             else:
                 self.assertIsNotNone(net['vlan_start'])
@@ -257,18 +260,14 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data = json.loads(response.body)
         cluster = self.db.query(Cluster).get(self.cluster.id)
 
-        self.assertEquals(data['net_provider'],
-                          self.cluster.net_provider)
-        self.assertEquals(data['net_segment_type'],
-                          self.cluster.net_segment_type)
+        self.assertEquals(data['networking_parameters']['segmentation_type'],
+                          self.cluster.network_config.segmentation_type)
         for network_group in cluster.network_groups:
             network = [i for i in data['networks']
                        if i['id'] == network_group.id][0]
 
             keys = [
-                'network_size',
                 'name',
-                'amount',
                 'cluster_id',
                 'vlan_start',
                 'cidr',
@@ -297,7 +296,6 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                 if n['name'] == 'management'][0]
         cidr = mgmt['cidr'].partition('/')[0] + '/25'
         mgmt['cidr'] = cidr
-        mgmt['network_size'] = 128
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEquals(202, resp.status_code)
@@ -308,12 +306,11 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt_ng = [ng for ng in self.cluster.network_groups
                    if ng.name == 'management'][0]
         self.assertEquals(mgmt_ng.cidr, cidr)
-        self.assertEquals(mgmt_ng.netmask, '255.255.255.128')
 
     def test_do_not_update_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         data = json.loads(resp.body)
-        data['neutron_parameters']['segmentation_type'] = 'vlan'
+        data['networking_parameters']['segmentation_type'] = 'vlan'
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
@@ -337,7 +334,6 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 202)
 
         self.db.refresh(network)
-        self.assertEquals(network.amount, 1)
         self.assertEquals(network.vlan_start, 500)
 
     def test_update_networks_fails_if_change_net_segmentation_type(self):
@@ -347,7 +343,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.assertIsNotNone(network)
 
         data['networks'][0]['vlan_start'] = 500  # non-used vlan id
-        data['neutron_parameters']['segmentation_type'] = 'vlan'
+        data['networking_parameters']['segmentation_type'] = 'vlan'
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
@@ -374,17 +370,17 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             'Invalid network ID: 500'
         )
 
-    def test_refresh_public_cidr_on_range_gw_change(self):
+    def test_refresh_public_cidr_on_its_change(self):
         data = json.loads(self.env.neutron_networks_get(self.cluster.id).body)
         publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
         self.assertEquals(publ['cidr'], '172.16.0.0/24')
 
+        publ['cidr'] = '199.61.0.0/24'
         publ['gateway'] = '199.61.0.1'
         publ['ip_ranges'] = [['199.61.0.11', '199.61.0.33'],
                              ['199.61.0.55', '199.61.0.99']]
-        virt_nets = data['neutron_parameters']['predefined_networks']
-        virt_nets['net04_ext']['L3']['floating'] = ['199.61.0.111',
-                                                    '199.61.0.122']
+        data['networking_parameters']['floating_ranges'] = \
+            [['199.61.0.111', '199.61.0.122']]
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEquals(202, resp.status_code)
@@ -395,41 +391,6 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         publ_ng = filter(lambda ng: ng.name == 'public',
                          self.cluster.network_groups)[0]
         self.assertEquals(publ_ng.cidr, '199.61.0.0/24')
-
-    def test_refresh_public_cidr_on_netmask_change(self):
-        data = json.loads(self.env.neutron_networks_get(self.cluster.id).body)
-        publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
-        self.assertEquals(publ['cidr'], '172.16.0.0/24')
-
-        publ['netmask'] = '255.255.252.0'
-
-        resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(202, resp.status_code)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
-
-        self.db.refresh(self.cluster)
-        publ_ng = filter(lambda ng: ng.name == 'public',
-                         self.cluster.network_groups)[0]
-        self.assertEquals(publ_ng.cidr, '172.16.0.0/22')
-
-    def test_do_not_refresh_public_cidr_on_its_change(self):
-        data = json.loads(self.env.neutron_networks_get(self.cluster.id).body)
-        publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
-        self.assertEquals(publ['cidr'], '172.16.0.0/24')
-
-        publ['cidr'] = '199.61.39.160/28'
-
-        # it is OK as public CIDR is ignored and nothing else is changed
-        resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(202, resp.status_code)
-        task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
-
-        self.db.refresh(self.cluster)
-        publ_ng = filter(lambda ng: ng.name == 'public',
-                         self.cluster.network_groups)[0]
-        self.assertEquals(publ_ng.cidr, '172.16.0.0/24')
 
     def test_admin_public_untagged_others_tagged(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
@@ -497,7 +458,6 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
 
     @patch('nailgun.db.sqlalchemy.fixman.settings.ADMIN_NETWORK', {
         "cidr": "192.168.0.0/24",
-        "netmask": "255.255.255.0",
         "size": "256",
         "first": "192.168.0.129",
         "last": "192.168.0.254"

@@ -16,6 +16,12 @@
 
 import json
 
+from nailgun.api.serializers.network_configuration \
+    import NeutronNetworkConfigurationSerializer
+from nailgun.api.serializers.network_configuration \
+    import NovaNetworkConfigurationSerializer
+from nailgun.db.sqlalchemy.models import NeutronConfig
+from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -73,3 +79,52 @@ class TestNetworkModels(BaseIntegrationTest):
         # it's 400 because we used Nova network
         self.assertEquals(resp_neutron_net.status_code, 400)
         self.assertEquals(resp_cluster.status_code, 403)
+
+    def test_nova_net_networking_parameters(self):
+        cluster = self.env.create_cluster(api=False)
+        self.db.delete(cluster.network_config)
+        kw = {
+            "net_manager": "VlanManager",
+            "fixed_networks_cidr": "10.0.0.0/16",
+            "fixed_networks_vlan_start": 103,
+            "fixed_network_size": 256,
+            "fixed_networks_amount": 16,
+            "floating_ranges": [["172.16.0.128", "172.16.0.254"]],
+            "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
+            "cluster_id": cluster.id
+        }
+        nc = NovaNetworkConfig(**kw)
+        self.db.add(nc)
+        self.db.commit()
+
+        nw_params = NovaNetworkConfigurationSerializer.\
+            serialize_network_params(cluster)
+
+        kw.pop("cluster_id")
+        self.assertEquals(nw_params, kw)
+
+    def test_neutron_networking_parameters(self):
+        cluster = self.env.create_cluster(api=False,
+                                          net_provider='neutron')
+        self.db.delete(cluster.network_config)
+        kw = {
+            "net_l23_provider": "ovs",
+            "segmentation_type": "gre",
+            "vlan_range": [1000, 1030],
+            "gre_id_range": [2, 65534],
+            "base_mac": "fa:16:3e:00:00:00",
+            "internal_cidr": "192.168.111.0/24",
+            "internal_gateway": "192.168.111.1",
+            "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
+            "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
+            "cluster_id": cluster.id
+        }
+        nc = NeutronConfig(**kw)
+        self.db.add(nc)
+        self.db.commit()
+
+        nw_params = NeutronNetworkConfigurationSerializer. \
+            serialize_network_params(cluster)
+
+        kw.pop("cluster_id")
+        self.assertEquals(nw_params, kw)

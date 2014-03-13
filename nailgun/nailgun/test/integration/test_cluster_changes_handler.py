@@ -18,6 +18,7 @@ from copy import deepcopy
 from itertools import izip
 import json
 from mock import patch
+import netaddr
 
 import nailgun
 
@@ -72,8 +73,8 @@ class TestHandlers(BaseIntegrationTest):
                 'network_size': 256
             },
             'dns_nameservers': [
-                "8.8.8.8",
-                "8.8.4.4"
+                "8.8.4.4",
+                "8.8.8.8"
             ],
 
             'management_interface': 'eth0.101',
@@ -277,7 +278,8 @@ class TestHandlers(BaseIntegrationTest):
                     pnd['interfaces'][i.name]['dns_name'] = n.fqdn
                     pnd['interfaces_extra'][i.name]['onboot'] = 'yes'
                     pnd['interfaces'][i.name]['ip_address'] = admin_ip
-                    pnd['interfaces'][i.name]['netmask'] = admin_net.netmask
+                    pnd['interfaces'][i.name]['netmask'] = str(
+                        netaddr.IPNetwork(admin_net.cidr).netmask)
 
             provision_nodes.append(pnd)
 
@@ -643,7 +645,8 @@ class TestHandlers(BaseIntegrationTest):
                     pnd['interfaces'][i['name']]['dns_name'] = n.fqdn
                     pnd['interfaces_extra'][i['name']]['onboot'] = 'yes'
                     pnd['interfaces'][i['name']]['ip_address'] = admin_ip
-                    pnd['interfaces'][i['name']]['netmask'] = admin_net.netmask
+                    pnd['interfaces'][i['name']]['netmask'] = str(
+                        netaddr.IPNetwork(admin_net.cidr).netmask)
 
             provision_nodes.append(pnd)
 
@@ -821,10 +824,10 @@ class TestHandlers(BaseIntegrationTest):
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
         pub.update({'ip_ranges': [['172.16.10.10', '172.16.10.122']],
+                    'cidr': '172.16.10.0/24',
                     'gateway': '172.16.10.1'})
-        virt_nets = net_data['neutron_parameters']['predefined_networks']
-        virt_nets['net04_ext']['L3']['floating'] = ['172.16.10.130',
-                                                    '172.16.10.254']
+        net_data['networking_parameters']['floating_ranges'] = \
+            [['172.16.10.130', '172.16.10.254']]
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEquals(resp.status_code, 202)
@@ -890,6 +893,7 @@ class TestHandlers(BaseIntegrationTest):
         net_data = {
             "networks": [{
                 'id': public_network.id,
+                'cidr': '220.0.1.0/24',
                 'gateway': '220.0.1.1',
                 'ip_ranges': [[
                     '220.0.1.2',

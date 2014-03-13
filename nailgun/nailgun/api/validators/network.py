@@ -89,12 +89,12 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
     @classmethod
     def validate_neutron_params(cls, data, **kwargs):
         d = cls.validate_json(data)
-        np = d.get('neutron_parameters')
+        np = d.get('networking_parameters')
         cluster_id = kwargs.get("cluster_id")
         if cluster_id:
             cluster = db().query(Cluster).get(cluster_id)
-            if cluster and cluster.neutron_config:
-                cfg = cluster.neutron_config
+            if cluster and cluster.network_config:
+                cfg = cluster.network_config
                 for k in ("segmentation_type",):
                     if k in np and getattr(cfg, k) != np[k]:
                         raise errors.InvalidData(

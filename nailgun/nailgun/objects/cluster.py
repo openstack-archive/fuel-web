@@ -97,24 +97,11 @@ class Cluster(NailgunObject):
                 "type": "string",
                 "enum": list(consts.CLUSTER_NET_PROVIDERS)
             },
-            "net_l23_provider": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_NET_L23_PROVIDERS)
-            },
-            "net_segment_type": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_NET_SEGMENT_TYPES)
-            },
-            "net_manager": {
-                "type": "string",
-                "enum": list(consts.CLUSTER_NET_MANAGERS)
-            },
             "grouping": {
                 "type": "string",
                 "enum": list(consts.CLUSTER_GROUPING)
             },
             "release_id": {"type": "number"},
-            "dns_nameservers": {"type": "array"},
             "replaced_deployment_info": {"type": "object"},
             "replaced_provisioning_info": {"type": "object"},
             "is_customized": {"type": "boolean"}
@@ -134,12 +121,9 @@ class Cluster(NailgunObject):
 
         cls.create_attributes(new_cluster)
 
-        netmanager = cls.get_network_manager(new_cluster)
-
         try:
-            netmanager.create_network_groups(new_cluster.id)
-            if new_cluster.net_provider == 'neutron':
-                netmanager.create_neutron_config(new_cluster)
+            cls.get_network_manager(new_cluster).\
+                create_network_groups_and_config(new_cluster, data)
 
             cls.add_pending_changes(new_cluster, "attributes")
             cls.add_pending_changes(new_cluster, "networks")

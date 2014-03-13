@@ -23,20 +23,20 @@ curdir = os.path.dirname(__file__)
 sys.path.insert(0, curdir)
 
 from nailgun.api.handlers import forbid_client_caching
+from nailgun.api.handlers import load_db_driver
 from nailgun.db import engine
-from nailgun.db import load_db_driver
 from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger
 from nailgun.settings import settings
 from nailgun.urls import urls
 
 
-def build_app():
+def build_app(db_driver=None):
     """Build app and disable debug mode in case of production
     """
     web.config.debug = bool(int(settings.DEVELOPMENT))
     app = web.application(urls(), locals())
-    app.add_processor(load_db_driver)
+    app.add_processor(db_driver or load_db_driver)
     app.add_processor(forbid_client_caching)
     return app
 

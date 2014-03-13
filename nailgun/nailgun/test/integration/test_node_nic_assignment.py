@@ -85,7 +85,7 @@ class TestClusterHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         cluster = self.env.create_cluster(api=True, nodes=[node['id']])
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'cluster_id': cluster['id']}),
+            reverse('ClusterHandler', kwargs={'obj_id': cluster['id']}),
             json.dumps({'nodes': []}),
             headers=self.default_headers
         )

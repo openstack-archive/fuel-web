@@ -55,6 +55,21 @@ def forbid_client_caching(handler):
     return handler()
 
 
+def load_db_driver(handler):
+    try:
+        return handler()
+    except web.HTTPError:
+        if str(web.ctx.status).startswith(("4", "5")):
+            db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.commit()
+        db.remove()
+
+
 @decorator
 def content_json(func, *args, **kwargs):
     web.header('Content-Type', 'application/json')
@@ -102,9 +117,9 @@ class BaseHandler(object):
         except (
             errors.AlreadyExists
         ) as exc:
-            err = web.conflict()
+            err = web.conflict
             err.message = exc.message
-            raise err
+            raise err()
         except (
             errors.InvalidData,
             Exception
@@ -183,8 +198,17 @@ class SingleHandler(BaseHandler):
                 self.validator.validate_update,
                 instance=obj
             )
-        except (errors.AlreadyExists, errors.InvalidData) as exc:
-            raise web.badrequest(str(exc))
+        except (
+            errors.InvalidData,
+            errors.NodeOffline
+        ) as exc:
+            raise web.badrequest(exc.message)
+        except (
+            errors.AlreadyExists,
+        ) as exc:
+            err = web.conflict
+            err.message = exc.message
+            raise err()
 
         self.single.update(obj, data)
         return self.single.to_json(obj)
@@ -231,9 +255,14 @@ class CollectionHandler(BaseHandler):
                * 409 (object with such parameters already exists)
         """
         data = self.checked_data()
-        new_obj = self.collection.create(data)
-        return web.webapi.created(
-            self.collection.single.to_json(new_obj)
+
+        try:
+            new_obj = self.collection.create(data)
+        except errors.CannotCreate as exc:
+            raise web.badrequest(exc.message)
+
+        raise web.created(
+            data=self.collection.single.to_json(new_obj)
         )
 
 
@@ -277,9 +306,9 @@ class DeferredTaskHandler(BaseHandler):
             errors.AlreadyExists,
             errors.StopAlreadyRunning
         ) as exc:
-            err = web.conflict()
+            err = web.conflict
             err.message = exc.message
-            raise err
+            raise err()
         except (
             errors.DeploymentNotRunning
         ) as exc:

@@ -83,3 +83,7 @@ class Task(Base):
         self.subtasks.append(task)
         db().commit()
         return task
+
+    @property
+    def respond_to(self):
+        return '{0}_resp'.format(self.name)

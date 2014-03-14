@@ -816,5 +816,18 @@ class GenerateCapacityLogTaskManager(TaskManager):
         return task
 
 
+class MulticastTaskManager(TaskManager):
+
+    def execute(self, group='225.0.0.250', port=8890):
+        config = {'group': group, 'port': port}
+        task = Task(name='multicast',
+                    cluster=self.cluster)
+        db().add(task)
+        db().commit()
+        self._call_silently(task, tasks.MulticastTask, config)
+        return task
+
+
 verify_actions = {'l2': VerifyNetworksTaskManager,
-                  'validate_networks': CheckNetworksTaskManager}
+                  'validate_networks': CheckNetworksTaskManager,
+                  'multicast': MulticastTaskManager}

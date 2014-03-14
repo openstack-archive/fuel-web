@@ -28,6 +28,8 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeBondInterface
+from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
@@ -387,6 +389,48 @@ class VerifyNetworksTask(object):
         db().add(task)
         db().commit()
         rpc.cast('naily', message)
+
+
+class BaseNetworkVerificationsTask(object):
+
+    dispatcher_method = 'network_verifications'
+
+    @classmethod
+    def execute(cls, task, config):
+        task.cache = cls.prepare_message(task, config)
+        db().commit()
+        logger.debug('Task: {0} is called with {1}'.format(
+                     task.name, task.cache))
+        rpc.cast('naily', task.cache)
+
+
+class MulticastTask(BaseNetworkVerificationsTask):
+
+    @classmethod
+    def prepare_message(cls, task, config):
+
+        # multicast verification should be done only for network which
+        # corosync uses for communication - management in our case
+        nics_db = db().query(
+            NodeNICInterface.node_id, NodeNICInterface.name).filter(
+                NodeNICInterface.node.has(cluster_id=task.cluster_id),
+                NodeNICInterface.assigned_networks_list.any(name='management')
+            )
+        bonds_db = db().query(
+            NodeBondInterface.node_id, NodeBondInterface.name).filter(
+                NodeBondInterface.node.has(cluster_id=task.cluster_id),
+                NodeBondInterface.assigned_networks_list.any(name='management')
+            )
+        all_nics = nics_db.union(bonds_db).yield_per(100)
+        nodes = [dict(config, iface=nic[1], uid=str(nic[0]))
+                 for nic in all_nics]
+        return {
+            'method': cls.dispatcher_method,
+            'respond_to': task.respond_to,
+            'task_name': task.name,
+            'args': {'task_uuid': task.uuid,
+                     'nodes': nodes}
+        }
 
 
 class CheckNetworksTask(object):

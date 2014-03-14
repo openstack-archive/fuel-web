@@ -14,6 +14,7 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from nailgun.db.migration import utils
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
 
@@ -55,35 +56,6 @@ new_task_names_options = sorted(
         'reset_environment'
     )
 )
-
-
-def upgrade_enum(table, column_name, enum_name, old_options, new_options):
-    old_type = sa.Enum(*old_options, name=enum_name)
-    new_type = sa.Enum(*new_options, name=enum_name)
-    tmp_type = sa.Enum(*new_options, name="_" + enum_name)
-    # Create a tempoary type, convert and drop the "old" type
-    tmp_type.create(op.get_bind(), checkfirst=False)
-    op.execute(
-        u'ALTER TABLE {0} ALTER COLUMN {1} TYPE _{2}'
-        u' USING {1}::text::_{2}'.format(
-            table,
-            column_name,
-            enum_name
-        )
-    )
-    old_type.drop(op.get_bind(), checkfirst=False)
-    # Create and convert to the "new" type
-    new_type.create(op.get_bind(), checkfirst=False)
-    op.execute(
-        u'ALTER TABLE {0} ALTER COLUMN {1} TYPE {2}'
-        u' USING {1}::text::{2}'.format(
-            table,
-            column_name,
-            enum_name
-        )
-    )
-    tmp_type.drop(op.get_bind(), checkfirst=False)
-    ### end Alembic commands ###
 
 
 def upgrade():
@@ -161,7 +133,7 @@ def upgrade():
     )
 
     # CLUSTER STATUS ENUM UPGRADE
-    upgrade_enum(
+    utils.upgrade_enum(
         "clusters",                  # table
         "status",                    # column
         "cluster_status",            # ENUM name
@@ -170,7 +142,7 @@ def upgrade():
     )
 
     # TASK NAME ENUM UPGRADE
-    upgrade_enum(
+    utils.upgrade_enum(
         "tasks",                     # table
         "name",                      # column
         "task_name",                 # ENUM name
@@ -281,7 +253,7 @@ def downgrade():
         sa.PrimaryKeyConstraint('id', name=u'plugins_pkey')
     )
     # CLUSTER STATUS ENUM DOWNGRADE
-    upgrade_enum(
+    utils.upgrade_enum(
         "clusters",                  # table
         "status",                    # column
         "cluster_status",            # ENUM name
@@ -290,7 +262,7 @@ def downgrade():
     )
 
     # TASK NAME ENUM DOWNGRADE
-    upgrade_enum(
+    utils.upgrade_enum(
         "tasks",                     # table
         "name",                      # column
         "task_name",                 # ENUM name

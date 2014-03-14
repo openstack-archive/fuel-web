@@ -389,6 +389,25 @@ class VerifyNetworksTask(object):
         rpc.cast('naily', message)
 
 
+class MulticastTask(object):
+
+    @classmethod
+    def prepare_message(cls, task, config):
+        nodes = []
+
+        nodes_db = db().query(Node).filter(
+            Node.cluster_id == task.cluster.id
+        ).yield_per(100)
+
+
+    @classmethod
+    def execute(cls, task, config):
+        task.cache = cls.prepare_message(task, config)
+        logger.debug('Task: {0} is called with {1}'.format(
+                     task.name, task.cache))
+        rpc.cast('naily', task.cache)
+
+
 class CheckNetworksTask(object):
 
     @classmethod

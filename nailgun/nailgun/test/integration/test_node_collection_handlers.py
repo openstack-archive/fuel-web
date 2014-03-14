@@ -329,6 +329,17 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(node, None)
 
+    def test_node_create_with_invalid_disk_model(self):
+        meta = self.env.default_metadata()
+        meta['disks'][0]['model'] = None
+
+        node = self.env.create_node(
+            api=True,
+            expect_http=201,
+            meta=meta
+        )
+        self.assertIsNotNone(node)
+
     def test_node_create_mac_validation(self):
         # entry format: (mac_address, http_response_code)
         maccaddresses = (

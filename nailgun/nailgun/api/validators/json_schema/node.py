@@ -78,7 +78,7 @@ node_format_schema = {
                     'items': {
                         'type': 'object',
                         'properties': {
-                            'model': {'type': 'string'},
+                            'model': {'type': ['string', 'null']},
                             'disk': {'type': 'string'},
                             'size': {'type': 'number'},
                             'name': {'type': 'string'},

@@ -248,6 +248,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 'input[name=filter]': {
                     observe: 'value',
                     getVal: function($el) { return $.trim($el.val()).toLowerCase(); }
+                },
+                '.btn-clear-filter': {
+                    observe: 'value',
+                    visible: function(value, options) {
+                        return !!value;
+                    }
                 }
             };
             this.stickit(this.nodeFilter, bindings);
@@ -326,7 +332,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-group-congiration.conflict' : 'showUnavailableGroupConfigurationDialog',
             'click .btn-add-nodes': 'goToAddNodesScreen',
             'click .btn-edit-nodes': 'goToEditNodesRolesScreen',
-            'click .btn-cancel': 'goToNodesList'
+            'click .btn-cancel': 'goToNodesList',
+            'click .btn-clear-filter' : 'clearFilter'
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -390,6 +397,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 node.set({pending_roles: this.screen.initialNodes.get(node.id).get('pending_roles')}, {silent: true});
             }, this));
             app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
+        },
+        clearFilter: function() {
+            this.screen.nodeFilter.set('value', '');
         },
         showUnavailableGroupConfigurationDialog: function (e) {
             var action = this.$(e.currentTarget).data('action');

@@ -732,6 +732,7 @@ label.error {
 
 .nodes-management-panel {
   .nodes-filter {
+    position:relative;
     width: auto;
     margin-top: -30px;
     label {
@@ -739,6 +740,8 @@ label.error {
     }
     input[type=text] {
       width: 145px;
+      padding-right: 20px;
+      &::-ms-clear { .width-height-size(0, 0); }
     }
     select {
       margin: 0;
@@ -753,6 +756,24 @@ label.error {
   .assign-roles-panel {
     clear: both;
     float: none;
+  }
+}
+
+.btn-clear-filter {
+  display: none;
+  cursor: pointer;
+  .width-height-size(15px, 15px);
+  position: absolute;
+  right: 5px;
+  bottom: 20px;
+  &::after {
+    content: "X";
+    z-index:1;
+    display: block;
+    .width-height-size(15px, 15px);
+    text-align: center;
+    color: @fuel-grey-lighter;
+    font-size: 13px;
   }
 }
 

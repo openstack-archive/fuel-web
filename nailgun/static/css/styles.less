@@ -735,6 +735,7 @@ label.error {
 
 .nodes-management-panel {
   .nodes-filter {
+    position:relative;
     width: auto;
     margin-top: -30px;
     label {
@@ -742,6 +743,8 @@ label.error {
     }
     input[type=text] {
       width: 145px;
+      padding-right: 20px;
+      &::-ms-clear { .width-height-size(0, 0); }
     }
     select {
       margin: 0;
@@ -757,6 +760,14 @@ label.error {
     clear: both;
     float: none;
   }
+}
+
+.btn-clear-filter {
+  display: none;
+  .width-height-size(15px, 20px);
+  position: absolute;
+  right: 5px;
+  bottom: 18px;
 }
 
 #tab-nodes .cluster-name {

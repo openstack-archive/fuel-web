@@ -16,6 +16,7 @@
     <div class="cluster-toolbar-item  nodes-filter">
       <label data-i18n="cluster_page.nodes_tab.node_management_panel.filter_by"></label>
       <input name="filter" type="text" placeholder="<%- $.t('cluster_page.nodes_tab.node_management_panel.filter_placeholder') %>" <%= nodes.length ? '' : 'disabled' %>  />
+      <button class="close btn-clear-filter" >×</button>
     </div>
     <% if (clusterNodesScreen) { %>
       <div class="cluster-toolbar-item pull-right">

@@ -62,12 +62,7 @@ class TestCharsetIssues(BaseIntegrationTest):
             ]
         )
         cluster_id = self.env.clusters[0].id
-        self.app.put(
-            reverse(
-                'ClusterChangesHandler',
-                kwargs={'cluster_id': cluster_id}),
-            headers=self.default_headers
-        )
+        self.env.launch_deployment()
         self.app.delete(
             reverse(
                 'ClusterHandler',

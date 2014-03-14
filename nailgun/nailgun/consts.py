@@ -115,6 +115,7 @@ TASK_NAMES = Enum(
     'verify_networks',
     'check_dhcp',
     'verify_network_connectivity',
+    'multicast',
 
     # red hat
     'redhat_setup',

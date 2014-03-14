@@ -78,6 +78,7 @@ from nailgun.api.handlers.release import ReleaseHandler
 from nailgun.api.handlers.tasks import TaskCollectionHandler
 from nailgun.api.handlers.tasks import TaskHandler
 
+from nailgun.api.handlers.verifications import MulticastVerificationHandler
 from nailgun.api.handlers.version import VersionHandler
 
 
@@ -109,6 +110,8 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
     'neutron/verify/?$',
     NeutronNetworkConfigurationVerifyHandler,
+    r'/clusters/(?P<cluster_id>\d+)/network_configuration/verify_multicast/?$',
+    MulticastVerificationHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/orchestrator/deployment/?$',
     DeploymentInfo,

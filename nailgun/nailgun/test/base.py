@@ -521,6 +521,7 @@ class Environment(object):
                 reverse(
                     'ClusterChangesHandler',
                     kwargs={'cluster_id': self.clusters[0].id}),
+                json.dumps({}),
                 headers=self.default_headers)
 
             self.tester.assertEquals(202, resp.status_code)
@@ -539,6 +540,7 @@ class Environment(object):
                 reverse(
                     'ClusterStopDeploymentHandler',
                     kwargs={'cluster_id': self.clusters[0].id}),
+                json.dumps({}),
                 expect_errors=True,
                 headers=self.default_headers)
             self.tester.assertEquals(expect_http, resp.status_code)
@@ -559,6 +561,7 @@ class Environment(object):
                 reverse(
                     'ClusterResetHandler',
                     kwargs={'cluster_id': self.clusters[0].id}),
+                json.dumps({}),
                 expect_errors=True,
                 headers=self.default_headers)
             self.tester.assertEquals(resp.status_code, expect_http)

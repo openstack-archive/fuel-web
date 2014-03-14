@@ -518,6 +518,67 @@ class FakeVerificationThread(FakeThread):
             self.sleep(tick_interval)
 
 
+class FakeNetworkVerifications(FakeAmpqThread):
+    """network verifications will be as single dispatcher method in naily
+    """
+
+    def ready_multicast(self):
+        response = {
+            'task_uuid': self.task_uuid,
+            'progress': 0
+        }
+        response['progress'] = 30
+        yield response
+
+        nodes = self.data['args']['nodes']
+        nodes_uid = [node['uid'] for node in nodes]
+
+        response['status'] = 'ready'
+        response['progress'] = 100
+        response['data'] = {node_uid: nodes_uid for node_uid in nodes_uid}
+        yield response
+
+    def error1_multicast(self):
+        response = {
+            'task_uuid': self.task_uuid,
+            'progress': 0
+        }
+        response['progress'] = 30
+        yield response
+
+        nodes = self.data['args']['nodes']
+        # no messages from last node
+        nodes_uid = [node['uid'] for node in nodes][:len(nodes)-1]
+
+        response['status'] = 'ready'
+        response['progress'] = 100
+        response['data'] = {node_uid: nodes_uid for node_uid in nodes_uid}
+        yield response
+
+    def error2_multicast(self):
+        response = {
+            'task_uuid': self.task_uuid,
+            'progress': 0
+        }
+        response['progress'] = 30
+        yield response
+
+        nodes = self.data['args']['nodes']
+        nodes_uid = [node['uid'] for node in nodes]
+
+        response['status'] = 'ready'
+        response['progress'] = 100
+        response['data'] = {node_uid: nodes_uid for node_uid in nodes_uid}
+        # last node did not received any messages
+        response['data'][nodes_uid[-1]] = []
+        yield response
+
+    def message_gen(self):
+        task_name = '{0}_{1}'.format(self.params.get('prefix', 'ready'),
+                                     self.data['task_name'])
+        return getattr(self, task_name)()
+
+
 class FakeCheckingDhcpThread(FakeAmpqThread):
     """Thread to be used with test_task_managers.py
     """
@@ -688,5 +749,6 @@ FAKE_THREADS = {
     'check_redhat_licenses': FakeRedHatLicenses,
     'redhat_update_cobbler_profile': FakeRedHatUpdateCobbler,
     'dump_environment': FakeDumpEnvironment,
-    'generate_capacity_log': FakeCapacityLog
+    'generate_capacity_log': FakeCapacityLog,
+    'network_verifications': FakeNetworkVerifications
 }

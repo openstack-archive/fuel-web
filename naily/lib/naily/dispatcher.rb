@@ -113,6 +113,12 @@ module Naily
       report_result(result, reporter)
     end
 
+    def network_verifications(data)
+      reporter = Naily::Reporter.new(@producer, data['respond_to'], data['args']['task_uuid'])
+      response = @orchestrator.network_verifications(reporter, data['args']['task_uuid'], data['args']['nodes'], data['task_name'])
+      report_result(result, reporter)
+    end
+
     def dump_environment(data)
       task_id = data['args']['task_uuid']
       reporter = Naily::Reporter.new(@producer, data['respond_to'], task_id)

@@ -495,7 +495,9 @@ class CheckBeforeDeploymentTask(object):
         if osd_count < osd_pool_size:
             raise errors.NotEnoughOsdNodes(
                 'Number of OSD nodes (%s) cannot be less than '
-                'the Ceph object replication factor (%s)' %
+                'the Ceph object replication factor (%s). '
+                'Please either assign ceph-osd role to more nodes, '
+                'or reduce Ceph replication factor in the Settings tab.' %
                 (osd_count, osd_pool_size))
 
     @classmethod

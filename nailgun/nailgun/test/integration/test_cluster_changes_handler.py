@@ -983,7 +983,9 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(
             task.message,
             'Number of OSD nodes (1) cannot be less than '
-            'the Ceph object replication factor (3)')
+            'the Ceph object replication factor (3)'
+            'Please either assign ceph-osd role to more nodes, '
+            'or reduce Ceph replication factor in the Settings tab.')
 
     @fake_tasks(godmode=True)
     def test_enough_osds_for_ceph(self):

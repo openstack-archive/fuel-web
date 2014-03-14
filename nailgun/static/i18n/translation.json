@@ -1,3 +1,4 @@
+
 {
     "en-US": {
         "translation": {
@@ -29,7 +30,7 @@
                 "success": "Success",
                 "error": "Error",
                 "see_logs": "see the logs",
-                "copyright": "Copyright © 2014 Mirantis. All rights reserved."
+                "copyright": "Copyright © 2013-2014 Mirantis. All rights reserved."
             },
             "node_details": {
                 "cpu": "CPU",

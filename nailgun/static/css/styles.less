@@ -993,7 +993,7 @@ label.error {
 .manufacturer-cisco:before {content: '\e809';}
 .manufacturer-qemu:before {content: '\e810';}
 .manufacturer-supermicro:before { content: '\e80b'; font-size: 34px !important;}
-.manufacturer-kvm:before {content: '\e80f'; font-size: 33px !important;}
+.manufacturer-kvm:before, .manufacturer-bochs:before {content: '\e80f'; font-size: 33px !important;}
 
 // Breadcrumb
 // -------------------------
@@ -1590,6 +1590,7 @@ input.vlan-tagging {
     text-shadow: @text-shadow-black;
     font-size: 13px;
     cursor: default;
+    word-wrap: break-word;
     > i {
       display: block;
       float: left;

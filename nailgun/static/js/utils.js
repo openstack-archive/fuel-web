@@ -151,30 +151,20 @@ define(['require'], function(require) {
         validateIPrange: function(startIP, endIP) {
             return utils.ipIntRepresentation(startIP) - utils.ipIntRepresentation(endIP) <= 0;
         },
-        validateNetmask: function(netmask) {
-            return utils.validateIP(netmask) || !utils.ipIntRepresentation(netmask).toString(2).match(/^1+00+$/);
-        },
         ipIntRepresentation: function(ip) {
             return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
-            /*jslint bitwise: true*/
-            var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
-            var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
-            var ipToInt = utils.ipIntRepresentation(ip);
-            var result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
-            /*jslint bitwise: false*/
+            var result = true;
+            if (cidr) {
+                /*jslint bitwise: true*/
+                var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
+                var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
+                var ipToInt = utils.ipIntRepresentation(ip);
+                result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
+                /*jslint bitwise: false*/
+            }
             return result;
-        },
-        composeCidr: function(ip, netmask) {
-            var netmaskInt = utils.ipIntRepresentation(netmask);
-            var ipInt = utils.ipIntRepresentation(ip);
-            var networkSize = netmaskInt.toString(2).match(/1/g).length;
-            /*jslint bitwise: true*/
-            var networkAddressInt = netmaskInt & ipInt;
-            var networkAddress = [networkAddressInt >>> 24, networkAddressInt >>> 16 & 0xFF, networkAddressInt >>> 8 & 0xFF, networkAddressInt & 0xFF].join('.');
-            /*jslint bitwise: false*/
-            return networkAddress + '/' + networkSize;
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;

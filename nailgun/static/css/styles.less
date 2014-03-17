@@ -207,6 +207,9 @@
 @deploy-btn-shadow-hover: 0 1px 2px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.17), inset 0 0 2px rgba(255,255,255,.13);
 @deploy-btn-shadow-active: 0 1px 2px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.17), inset 0 0 2px rgba(255,255,255,.13);
 
+// Verification Block variables
+@node-details-label-margin: 160px;
+
 // Btn mixins
 // -------------------------
 
@@ -2512,9 +2515,9 @@ input.error:focus {
       display: inline-block;
       float: left;
       width: 150px;
+      margin-left: -@node-details-label-margin;
       font-size: 12px;
       line-height: 12px;
-      padding-right: 10px;
       word-break: break-all;
     }
   }
@@ -2524,6 +2527,7 @@ input.error:focus {
     margin-top: 3px;
     div {
       padding: 0;
+      padding-left: @node-details-label-margin;
       font-weight: normal;
       word-break: break-all;
       label {
@@ -3048,6 +3052,8 @@ hr.slim {
   margin-top: 10px;
 }
 
+.edit-node-disks .disk-box { margin-left: 0px; }
+
 .disk-box-name {
   font-size: 18px;
   color: @font-color-dark;
@@ -3176,6 +3182,7 @@ hr.slim {
   color: @font-color-dark;
   float: left;
   word-break: break-all;
+  max-width: 300px;
 }
 
 .disk-box .use-all-allowed {
@@ -3253,7 +3260,7 @@ hr.slim {
   height: 48px;
   border: 1px solid #d0d0d0;
   background-color: #e5e5e5;
-  margin-bottom: 5px;
+  margin-bottom: 10px;
   overflow: hidden;
   .box-sizing-mixin;
   &:hover {

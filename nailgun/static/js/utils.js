@@ -123,27 +123,36 @@ define(['require'], function(require) {
         isNaturalNumber: function(n) {
             return _.isNumber(n) && n > 0 && n % 1 === 0;
         },
+        validateVlan: function(vlan, forbiddenVlans, field) {
+            var error = {};
+            if (!_.isNull(vlan)) {
+                if (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094) {
+                    error[field] = $.t('cluster_page.network_tab.validation.invalid_vlan');
+                } else if (_.contains(forbiddenVlans, vlan)) {
+                    error[field] = $.t('cluster_page.network_tab.validation.forbidden_vlan');
+                }
+            }
+            return error[field] ? error : {};
+        },
         validateCidr: function(cidr, field) {
             field = field || 'cidr';
-            var errors = {};
-            var match;
+            var error = {}, match;
             if (_.isString(cidr)) {
                 match = cidr.match(utils.regexes.cidr);
                 if (match) {
                     var prefix = parseInt(match[1], 10);
                     if (prefix < 2) {
-                        errors[field] = 'Network is too large';
-                    }
-                    if (prefix > 30) {
-                        errors[field] = 'Network is too small';
+                        error[field] = $.t('cluster_page.network_tab.validation.large_network');
+                    } else if (prefix > 30) {
+                        error[field] = $.t('cluster_page.network_tab.validation.small_network');
                     }
                 } else {
-                    errors[field] = 'Invalid CIDR';
+                    error[field] = $.t('cluster_page.network_tab.validation.invalid_cidr');
                 }
             } else {
-                errors[field] = 'Invalid CIDR';
+                error[field] = $.t('cluster_page.network_tab.validation.invalid_cidr');
             }
-            return errors;
+            return error[field] ? error : {};
         },
         validateIP: function(ip) {
             return !_.isString(ip) || !ip.match(utils.regexes.ip);
@@ -151,30 +160,43 @@ define(['require'], function(require) {
         validateIPrange: function(startIP, endIP) {
             return utils.ipIntRepresentation(startIP) - utils.ipIntRepresentation(endIP) <= 0;
         },
-        validateNetmask: function(netmask) {
-            return utils.validateIP(netmask) || !utils.ipIntRepresentation(netmask).toString(2).match(/^1+00+$/);
+        validateIpRanges: function(ranges, cidr) {
+            var ipRangesErrors = [];
+            if (_.filter(ranges, function(range) {return _.compact(range).length;}).length) {
+                _.each(ranges, function(range, i) {
+                    if (range[0] || range[1]) {
+                        var error = {index: i};
+                        if (utils.validateIP(range[0]) || !utils.validateIpCorrespondsToCIDR(cidr, range[0])) {
+                            error.start = $.t('cluster_page.network_tab.validation.invalid_ip_start');
+                        } else if (utils.validateIP(range[1]) || !utils.validateIpCorrespondsToCIDR(cidr, range[1])) {
+                            error.end = $.t('cluster_page.network_tab.validation.invalid_ip_end');
+                        } else if (!utils.validateIPrange(range[0], range[1])) {
+                            error.start = $.t('cluster_page.network_tab.validation.invalid_ip_range');
+                        }
+                        if (error.start || error.end) {
+                            ipRangesErrors.push(error);
+                        }
+                    }
+                });
+            } else {
+                ipRangesErrors.push({index: 0, start: $.t('cluster_page.network_tab.validation.empty_ip_range')});
+            }
+            return ipRangesErrors;
         },
         ipIntRepresentation: function(ip) {
             return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
-            /*jslint bitwise: true*/
-            var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
-            var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
-            var ipToInt = utils.ipIntRepresentation(ip);
-            var result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
-            /*jslint bitwise: false*/
+            var result = true;
+            if (cidr) {
+                /*jslint bitwise: true*/
+                var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
+                var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
+                var ipToInt = utils.ipIntRepresentation(ip);
+                result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
+                /*jslint bitwise: false*/
+            }
             return result;
-        },
-        composeCidr: function(ip, netmask) {
-            var netmaskInt = utils.ipIntRepresentation(netmask);
-            var ipInt = utils.ipIntRepresentation(ip);
-            var networkSize = netmaskInt.toString(2).match(/1/g).length;
-            /*jslint bitwise: true*/
-            var networkAddressInt = netmaskInt & ipInt;
-            var networkAddress = [networkAddressInt >>> 24, networkAddressInt >>> 16 & 0xFF, networkAddressInt >>> 8 & 0xFF, networkAddressInt & 0xFF].join('.');
-            /*jslint bitwise: false*/
-            return networkAddress + '/' + networkSize;
         },
         validateVlanRange: function(vlanStart, vlanEnd, vlan) {
             return vlan >= vlanStart && vlan <= vlanEnd;

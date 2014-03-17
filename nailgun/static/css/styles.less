@@ -1465,17 +1465,14 @@ label.error {
   }
 }
 
-.network-tab-content .btn-group {
-  margin: 7px 0 5px 0;
-}
-
-.networks-table, .neutron-parameters, .nova-nameservers  {
+.networks-table, .networking-parameters  {
   width: 100%;
   margin-bottom: 10px;
   > div {padding-left: 3px;}
   .range-row-header {
     height: 23px;
     font-weight: bold;
+    &.mini > div { width: 133px; }
     > div {
       float: left;
       margin-left: 10px;
@@ -1485,45 +1482,39 @@ label.error {
       &:first-child {margin-left: 202px;}
     }
   }
-  .range-row label {
-    display: inline-block;
-    margin-bottom: 0;
-    float: left;
-  }
-  div.validation-error { float: left; }
-  .error .help-inline {
-    display: block;
-    padding-top: 5px;
-    max-width: 540px;
-    color: @fuel-deep-red;
-  }
-}
-
-.networks-table, .neutron-parameters {
-  .range-row-header.mini > div { width: 133px; }
-  label.hide { display: none; }
-  input.mini { width: 91px; }
   .range-row { margin-left: 199px; }
-  .ip-ranges, .nameservers-row button {padding: 0;}
+  .range-row, .vlan-tagging {
+    label {
+      display: inline-block;
+      margin-bottom: 0;
+      float: left;
+    }
+  }
+  .vlan-tagging {
+    height: 40px;
+    input[type=text] { width: 172px; }
+  }
+  div.validation-error {
+    float: left;
+    .help-inline {
+      display: block;
+      padding-top: 5px;
+      max-width: 540px;
+      color: @fuel-deep-red;
+    }
+  }
+  .network-attribute {
+    min-height: 47px;
+    .parameter-name { width: 185px; }
+  }
+  input.mini { width: 91px; }
   .ip-ranges-control, .ranges-control {
     width: 20px;
     margin-top: 3px;
     float: left;
     margin-left: 0 !important;
-    .btn-link {padding: 0;}
+    .btn-link { padding: 0; }
   }
-}
-
-.parameter-control.vlan-tagging {
-  width: 20px;
-}
-
-input.vlan-tagging {
-  width: 172px;
-}
-
-#networkManager {
-  margin-bottom: 30px;
 }
 
 .nodes-summary-container {
@@ -2648,7 +2639,6 @@ input.error:focus {
   display: block;
   float: left;
   min-width: 120px;
-  max-height: 30px;
   .box-sizing-mixin;
   font-weight: bold;
   margin: 7px 14px 0 0;
@@ -2699,25 +2689,33 @@ input.error:focus {
 }
 
 legend {
-  &.openstack-settings, &.networks {
-    display: block;
-    margin-bottom: 15px;
-    font-size: 18px;
-    line-height: 18px;
-    color: @font-color-dark;
-    background-color: #ececec;
-    border: 1px solid #e5e5e5;
-    border-radius: 4px;
-    padding: 10px 12px 12px 12px;
-    .box-sizing-mixin;
-    height: 42px;
-    margin-top: 20px;
-    text-transform: capitalize;
-  }
+  display: block;
+  margin-bottom: 15px;
+  font-size: 18px;
+  line-height: 18px;
+  color: @font-color-dark;
+  background-color: #ececec;
+  border: 1px solid #e5e5e5;
+  border-radius: 4px;
+  padding: 10px 12px 12px 12px;
+  .box-sizing-mixin;
+  height: 42px;
+  margin-top: 20px;
+  text-transform: capitalize;
+}
+
+.openstack-settings legend {
   &.openstack-sub-title {
     font-size: 17px;
     margin: 25px 0px 6px 14px;
     line-height: 30px;
+    padding: 0px;
+    text-transform: inherit;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #e5e5e5;
+    border-radius: 0;
+    height: auto;
   }
   .toggleable {
     font-size: 18px;
@@ -2729,10 +2727,6 @@ legend {
     margin-top: -6px;
     margin-right: 0px;
   }
-}
-
-.networks-sub-title {
-  width: 185px;
 }
 
 hr.slim {

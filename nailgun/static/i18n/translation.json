@@ -233,6 +233,7 @@
                     "flatdhcp_manager": "FlatDHCP Manager",
                     "vlan_manager": "VLAN Manager",
                     "verify_networks_button": "Verify Networks",
+                    "network_verification": "Network verification",
                     "neutron_segmentation": "Neutron with __segment_type__ segmentation",
                     "untagged": "untagged",
                     "range_start": "Start",
@@ -252,8 +253,6 @@
                     },
                     "network_parameters": {
                         "ip_range": "IP Range",
-                        "netmask": "Netmask",
-                        "vlan_id": "VLAN ID",
                         "gateway": "Gateway",
                         "cidr": "CIDR",
                         "nubmer_of_networks": "Number of Networks",
@@ -261,23 +260,16 @@
                         "vlan_id_range": "VLAN ID range",
                         "use_vlan_tagging": "Use VLAN Tagging"
                     },
-                    "nova": {
+                    "networking_parameters": {
                         "dns_servers": "DNS Servers",
-                        "name_servers": "Name servers"
-                    },
-                    "neutron": {
+                        "name_servers": "Name servers",
                         "l2_configuration": "Neutron L2 Configuration",
                         "l3_configuration": "Neutron L3 Configuration",
-                        "id_range": "ID range",
                         "gre_id_range": "Tunnel ID range",
-                        "vlan_id_range": "VLAN ID range",
+                        "vlan_range": "VLAN ID range",
                         "base_mac": "Base MAC address",
-                        "external_network": "External network",
-                        "cidr": "CIDR",
-                        "floaing_ip": "Floating IP range",
-                        "internal_network": "Internal network",
-                        "gateway": "Gateway",
-                        "name_servers": "Name servers"
+                        "internal_cidr": "Internal network CIDR",
+                        "internal_gateway": "Internal network gateway"
                     },
                     "validation": {
                         "invalid_ip_start": "Invalid IP range start",
@@ -286,11 +278,10 @@
                         "empty_ip_range": "Please specify at least one IP range",
                         "invalid_vlan": "Invalid VLAN ID",
                         "forbidden_vlan": "This VLAN ID is used by other networks. Please choose another ID",
-                        "vlan_is_used_for_fixed_networks": "This VLAN ID reserved for VM networks (fixed). Please choose another ID",
                         "invalid_netmask": "Invalid netmask",
                         "invalid_gateway": "Invalid gateway",
                         "invalid_amount": "Invalid amount of networks",
-                        "gateway_is_out_of_ip_range": "This Gateway address is outside of the Public IP range",
+                        "gateway_is_out_of_ip_range": "This Gateway address is outside of IP range",
                         "gateway_is_out_of_internal_ip_range": "This Gateway address is out of the internal network IP range",
                         "need_more_vlan": "The number of networks defined needs more VLAN IDs than available. Check VLAN ID Range field.",
                         "invalid_nameserver": "Invalid nameserver",
@@ -300,7 +291,7 @@
                         "id_intersection": "There is an intersection with the VLAN ID of other networks. Please set another ID range",
                         "invalid_mac": "Invalid MAC address",
                         "ip_start_is_out_of_ip_range": "The IP start is outside of the IP range",
-                        "ip_end_is_out_of_ip_range": "The IP end is outside  of the IP range"
+                        "ip_end_is_out_of_ip_range": "The IP end is outside of the IP range"
                     }
                 },
                 "logs_tab": {
@@ -844,8 +835,6 @@
                     },
                     "network_parameters": {
                         "ip_range": "IP范围",
-                        "netmask": "网络掩码",
-                        "vlan_id": "VLAN ID",
                         "gateway": "网关",
                         "cidr": "CIDR",
                         "nubmer_of_networks": "网络数量",
@@ -853,17 +842,11 @@
                         "vlan_id_range": "VLAN ID范围",
                         "use_vlan_tagging": "使用VLAN标记"
                     },
-                    "neutron": {
+                    "networking_parameters": {
                         "l2_configuration": "Neutron L2配置",
                         "l3_configuration": "Neutron L3配置",
-                        "id_range": "ID范围",
                         "base_mac": "基础MAC地址",
-                        "external_network": "外部网络",
-                        "cidr": "CIDR",
-                        "floaing_ip": "浮动IP范围",
-                        "internal_network": "内部网络",
-                        "gateway": "网关",
-                        "name_servers": "Name servers"
+                        "floaing_ip": "浮动IP范围"
                     }
                 },
                 "logs_tab": {

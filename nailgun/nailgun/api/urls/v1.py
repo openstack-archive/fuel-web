@@ -57,7 +57,6 @@ from nailgun.api.handlers.node import NodeCollectionNICsDefaultHandler
 from nailgun.api.handlers.node import NodeCollectionNICsHandler
 from nailgun.api.handlers.node import NodeNICsDefaultHandler
 from nailgun.api.handlers.node import NodeNICsHandler
-from nailgun.api.handlers.node import NodeNICsVerifyHandler
 
 from nailgun.api.handlers.notifications import NotificationCollectionHandler
 from nailgun.api.handlers.notifications import NotificationHandler
@@ -153,8 +152,6 @@ urls = (
     NodeNICsHandler,
     r'/nodes/(?P<node_id>\d+)/interfaces/default_assignment/?$',
     NodeNICsDefaultHandler,
-    r'/nodes/interfaces_verify/?$',
-    NodeNICsVerifyHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
     r'/tasks/?$',

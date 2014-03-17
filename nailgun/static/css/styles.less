@@ -1469,7 +1469,7 @@ label.error {
   margin: 7px 0 5px 0;
 }
 
-.networks-table, .neutron-parameters, .nova-nameservers  {
+.networks-table, .networking-parameters  {
   width: 100%;
   margin-bottom: 10px;
   > div {padding-left: 3px;}
@@ -1485,10 +1485,12 @@ label.error {
       &:first-child {margin-left: 202px;}
     }
   }
-  .range-row label {
-    display: inline-block;
-    margin-bottom: 0;
-    float: left;
+  .range-row, .vlan-tagging {
+    label {
+      display: inline-block;
+      margin-bottom: 0;
+      float: left;
+    }
   }
   div.validation-error { float: left; }
   .error .help-inline {
@@ -1497,9 +1499,10 @@ label.error {
     max-width: 540px;
     color: @fuel-deep-red;
   }
+  .network-attribute .parameter-name { width: 185px; }
 }
 
-.networks-table, .neutron-parameters {
+.networks-table, .networking-parameters {
   .range-row-header.mini > div { width: 133px; }
   label.hide { display: none; }
   input.mini { width: 91px; }
@@ -1512,18 +1515,10 @@ label.error {
     margin-left: 0 !important;
     .btn-link {padding: 0;}
   }
-}
-
-.parameter-control.vlan-tagging {
-  width: 20px;
-}
-
-input.vlan-tagging {
-  width: 172px;
-}
-
-#networkManager {
-  margin-bottom: 30px;
+  .vlan-tagging {
+    height: 40px;
+    input[type=text] { width: 172px; }
+  }
 }
 
 .nodes-summary-container {
@@ -2730,10 +2725,6 @@ legend {
     margin-top: -6px;
     margin-right: 0px;
   }
-}
-
-.networks-sub-title {
-  width: 185px;
 }
 
 hr.slim {

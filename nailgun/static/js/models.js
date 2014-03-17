@@ -478,63 +478,29 @@ define(['utils', 'deepModel'], function(utils) {
     });
 
     models.Network = Backbone.Model.extend({
-        constructorName: 'Network',
-        getAttributes: function(provider) {
-            var attributes;
-            if (provider == 'nova_network') {
-                attributes = {
-                    'floating': ['ip_ranges', 'vlan_start'],
-                    'public': ['ip_ranges', 'vlan_start', 'netmask', 'gateway'],
-                    'management': ['cidr', 'vlan_start'],
-                    'storage': ['cidr', 'vlan_start'],
-                    'fixed': ['cidr', 'amount', 'network_size', 'vlan_start'],
-                    'fuelweb_admin': []
-                };
-            }
-            if (provider == 'neutron') {
-                attributes = {
-                    'public': ['ip_ranges', 'vlan_start', 'netmask', 'gateway'],
-                    'management': ['cidr', 'vlan_start'],
-                    'storage': ['cidr', 'vlan_start'],
-                    'private': [],
-                    'fuelweb_admin': []
-                };
-            }
-            return attributes[this.get('name')] || ['vlan_start'];
-        }
+        constructorName: 'Network'
     });
 
     models.Networks = Backbone.Collection.extend({
         constructorName: 'Networks',
-        model: models.Network,
-        preferredOrder: ['public', 'floating', 'management', 'storage', 'fixed'],
-        comparator: function(network) {
-            return _.indexOf(this.preferredOrder, network.get('name'));
-        }
+        model: models.Network
     });
 
-    models.NeutronConfiguration = Backbone.DeepModel.extend({
-        constructorName: 'NeutronConfiguration'
-    });
-
-    models.NovaNetworkConfiguration = Backbone.Model.extend({
-        constructorName: 'NovaNetworkConfiguration'
+    models.NetworkingParameters = Backbone.Model.extend({
+        constructorName: 'NetworkingParameters'
     });
 
     models.NetworkConfiguration = Backbone.Model.extend({
         constructorName: 'NetworkConfiguration',
         parse: function(response) {
             response.networks = new models.Networks(response.networks);
-            response.neutron_parameters = new models.NeutronConfiguration(response.neutron_parameters);
-            response.dns_nameservers = new models.NovaNetworkConfiguration(response.dns_nameservers);
+            response.networking_parameters = new models.NetworkingParameters(response.networking_parameters);
             return response;
         },
         toJSON: function() {
             return {
-                net_manager: this.get('net_manager'),
                 networks: this.get('networks').toJSON(),
-                neutron_parameters: this.get('neutron_parameters').toJSON(),
-                dns_nameservers: this.get('dns_nameservers').toJSON()
+                networking_parameters: this.get('networking_parameters').toJSON()
             };
         },
         isNew: function() {
@@ -542,147 +508,116 @@ define(['utils', 'deepModel'], function(utils) {
         },
         validate: function(attrs) {
             var errors = {};
-            var fixedNetwork = attrs.networks.findWhere({name: 'fixed'});
-            var publicNetwork = attrs.networks.findWhere({name: 'public'});
-            var publicIp = _.compact(_.flatten(publicNetwork.get('ip_ranges')))[0];
-            var publicCidr = !utils.validateIP(publicIp) && !utils.validateNetmask(publicNetwork.get('netmask')) ? utils.composeCidr(publicIp, publicNetwork.get('netmask')) : null;
+            var networksErrors = {};
+            var networkingParametersErrors = {};
 
             // validate networks
-            var networksErrors = {};
-            var netProvider = attrs.net_manager ? 'nova_network' : 'neutron';
             attrs.networks.each(function(network) {
-                var networkErrors = {};
-                _.each(network.getAttributes(netProvider), function(attr) {
-                    if (attr == 'ip_ranges') {
-                        var ipRangesErrors = [];
-                        if (_.filter(network.get('ip_ranges'), function(range) {return _.compact(range).length;}).length) {
-                            _.each(network.get('ip_ranges'), function(range, i) {
-                                if (range[0] || range[1]) {
-                                    var error = {index: i};
-                                    if (utils.validateIP(range[0]) || (network.get('name') == 'public' && publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, range[0]))) {
-                                        error.start = $.t('cluster_page.network_tab.validation.invalid_ip_start');
-                                    } else if (utils.validateIP(range[1]) || (network.get('name') == 'public' && publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, range[1]))) {
-                                        error.end = $.t('cluster_page.network_tab.validation.invalid_ip_end');
-                                    } else if (!utils.validateIPrange(range[0], range[1])) {
-                                        error.start = $.t('cluster_page.network_tab.validation.invalid_ip_range');
-                                    }
-                                    if (error.start || error.end) {
-                                        ipRangesErrors.push(error);
-                                    }
-                                }
-                            });
-                        } else {
-                            ipRangesErrors.push({index: 0, start: $.t('cluster_page.network_tab.validation.empty_ip_range')});
-                        }
+                if (network.get('meta').configurable) {
+                    var networkErrors = {};
+                    if (network.get('meta').notation == 'ip_ranges') {
+                        var ipRangesErrors = utils.validateIpRanges(network.get('ip_ranges'), network.get('cidr'));
                         if (ipRangesErrors.length) {
                             networkErrors.ip_ranges = ipRangesErrors;
                         }
-                    } else if (attr == 'cidr') {
-                        networkErrors = _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
-                    } else if (attr == 'vlan_start' && network.get('name') != 'floating' && (!_.isNull(network.get('vlan_start')) || (network.get('name') == 'fixed' && attrs.net_manager == 'VlanManager'))) {
-                        var vlan = network.get('vlan_start');
-                        var forbiddenVlans = _.compact(attrs.networks.map(function(net) {return net.id != network.id && net.get('name') != 'floating' ? net.get('vlan_start') : null;}));
-                        if (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094) {
-                            networkErrors.vlan_start = $.t('cluster_page.network_tab.validation.invalid_vlan');
-                        } else if (_.contains(forbiddenVlans, vlan)) {
-                            networkErrors.vlan_start = $.t('cluster_page.network_tab.validation.forbidden_vlan');
-                        } else if (netProvider == 'nova_network' && network.get('name') != 'fixed' && utils.validateVlanRange(fixedNetwork.get('vlan_start'), fixedNetwork.get('vlan_start') + fixedNetwork.get('amount') - 1, vlan)) {
-                            networkErrors.vlan_start = $.t('cluster_page.network_tab.validation.vlan_is_used_for_fixed_networks');
-                        }
-                    } else if (attr == 'netmask' && utils.validateNetmask(network.get('netmask'))) {
-                        networkErrors.netmask = $.t('cluster_page.network_tab.validation.invalid_netmask');
-                    } else if (attr == 'gateway') {
+                    }
+                    _.extend(networkErrors, utils.validateCidr(network.get('cidr')));
+                    if (network.get('meta').use_gateway) {
                         if (utils.validateIP(network.get('gateway'))) {
                             networkErrors.gateway = $.t('cluster_page.network_tab.validation.invalid_gateway');
-                        } else if (network.get('name') == 'public' && publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, network.get('gateway'))) {
+                        } else if (!utils.validateIpCorrespondsToCIDR(network.get('cidr'), network.get('gateway'))) {
                             networkErrors.gateway = $.t('cluster_page.network_tab.validation.gateway_is_out_of_ip_range');
                         }
-                    } else if (attr == 'amount') {
-                        if (!utils.isNaturalNumber(network.get('amount'))) {
-                            networkErrors.amount = $.t('cluster_page.network_tab.validation.invalid_amount');
-                        } else if (network.get('amount') > 4095 - network.get('vlan_start')) {
-                            networkErrors.amount = $.t('cluster_page.network_tab.validation.need_more_vlan');
-                        }
                     }
-                });
-                if (!_.isEmpty(networkErrors)) {
-                    networksErrors[network.get('name')] = networkErrors;
+                    var forbiddenVlans = _.compact(attrs.networks.map(function(net) {return net.id != network.id ? net.get('vlan_start') : null;}));
+                    _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
+                    if (!_.isEmpty(networkErrors)) {
+                        networksErrors[network.id] = networkErrors;
+                    }
                 }
-            });
+            }, this);
             if (!_.isEmpty(networksErrors)) {
                 errors.networks = networksErrors;
             }
 
-            // validate Nova Network configuration
-            var novaNetworkErrors = {};
-            if (netProvider == 'nova_network') {
-                _.each(attrs.dns_nameservers.get('nameservers'), function(nameserver, i) {
-                    if (utils.validateIP(nameserver)) {
-                        novaNetworkErrors['nameservers-' + i] =  $.t('cluster_page.network_tab.validation.invalid_nameserver');
+            // validate networking parameters
+            if (attrs.networking_parameters.get('net_manager')) {
+                networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(attrs.networking_parameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
+                var fixedAmount = attrs.networking_parameters.get('fixed_networks_amount');
+                var fixedVlan = attrs.networking_parameters.get('fixed_networks_vlan_start');
+                if (!utils.isNaturalNumber(fixedAmount)) {
+                    networkingParametersErrors.fixed_networks_amount = $.t('cluster_page.network_tab.validation.invalid_amount');
+                }
+                if (!_.isNull(fixedVlan)) {
+                    var vlanErrors = utils.validateVlan(fixedVlan, attrs.networks.pluck('vlan_start'), 'fixed_networks_vlan_start');
+                    _.extend(networkingParametersErrors, vlanErrors);
+                    if (_.isEmpty(vlanErrors)) {
+                        if (!networkingParametersErrors.fixed_networks_amount && fixedAmount > 4095 - fixedVlan) {
+                            networkingParametersErrors.fixed_networks_amount = $.t('cluster_page.network_tab.validation.need_more_vlan');
+                        }
+                        var vlanIntersection = false;
+                        _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
+                            if (utils.validateVlanRange(fixedVlan, fixedVlan + fixedAmount - 1, vlan)) {
+                                vlanIntersection = true;
+                            }
+                        });
+                        if (vlanIntersection) {
+                            networkingParametersErrors.fixed_networks_vlan_start = $.t('cluster_page.network_tab.validation.vlan_intersection');
+                        }
                     }
-                });
-            }
-            if (!_.isEmpty(novaNetworkErrors)) {
-                errors.dns_nameservers = novaNetworkErrors;
-            }
-
-            // validate Neutron configuration
-            var neutronErrors = {};
-            if (netProvider == 'neutron') {
-                var segmentation = attrs.neutron_parameters.get('segmentation_type');
-
-                var config = attrs.neutron_parameters.get('L2');
-                var idRange = segmentation == 'gre' ? config.tunnel_id_ranges : config.phys_nets.physnet2.vlan_range;
+                }
+            } else {
+                var idRangeErrors = ['', ''];
+                var segmentation = attrs.networking_parameters.get('segmentation_type');
+                var idRangeAttr = segmentation == 'gre' ? 'gre_id_range' : 'vlan_range';
                 var maxId = segmentation == 'gre' ? 65535 : 4094;
-                if (!utils.isNaturalNumber(idRange[0]) || idRange[0] < 2 || idRange[0] > maxId) {
-                    neutronErrors.id0 = $.t('cluster_page.network_tab.validation.invalid_id_start');
-                } else if (!utils.isNaturalNumber(idRange[1]) || idRange[1] < 2 || idRange[1] > maxId) {
-                    neutronErrors.id1 = $.t('cluster_page.network_tab.validation.invalid_id_end');
-                } else if (idRange[0] > idRange[1]) {
-                    neutronErrors.id0 = $.t('cluster_page.network_tab.validation.invalid_id_range');
+                var idRange = attrs.networking_parameters.get(idRangeAttr);
+                var idStart = Number(idRange[0]), idEnd = Number(idRange[1]);
+                if (!utils.isNaturalNumber(idStart) || idStart < 2 || idStart > maxId) {
+                    idRangeErrors[0] = $.t('cluster_page.network_tab.validation.invalid_id_start');
+                } else if (!utils.isNaturalNumber(idEnd) || idEnd < 2 || idEnd > maxId) {
+                    idRangeErrors[1 ] = $.t('cluster_page.network_tab.validation.invalid_id_end');
+                } else if (idStart > idEnd) {
+                    idRangeErrors[0] = idRangeErrors[1] = $.t('cluster_page.network_tab.validation.invalid_id_range');
                 } else if (segmentation == 'vlan') {
                     _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
-                        if (utils.validateVlanRange(idRange[0], idRange[1], vlan)) {
-                            neutronErrors.id0 = $.t('cluster_page.network_tab.validation.id_intersection');
+                        if (utils.validateVlanRange(idStart, idEnd, vlan)) {
+                            idRangeErrors[0] = $.t('cluster_page.network_tab.validation.vlan_intersection');
                         }
-                        return neutronErrors.id0;
+                        return idRangeErrors[0];
                     });
                 }
-                if (config.base_mac == '' || !(_.isString(config.base_mac) && config.base_mac.match(utils.regexes.mac))) {
-                    neutronErrors.base_mac = $.t('cluster_page.network_tab.validation.invalid_mac');
+                if (_.compact(idRangeErrors).length) {
+                    networkingParametersErrors[idRangeAttr] = idRangeErrors;
                 }
-
-                config = attrs.neutron_parameters.get('predefined_networks');
-                var cidr = config.net04.L3.cidr;
-                var gateway = config.net04.L3.gateway;
-                neutronErrors = _.extend(neutronErrors, utils.validateCidr(cidr, 'cidr-int'));
+                if (!attrs.networking_parameters.get('base_mac').match(utils.regexes.mac)) {
+                    networkingParametersErrors.base_mac = $.t('cluster_page.network_tab.validation.invalid_mac');
+                }
+                var cidr = attrs.networking_parameters.get('internal_cidr');
+                networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(cidr, 'internal_cidr'));
+                var gateway = attrs.networking_parameters.get('internal_gateway');
                 if (utils.validateIP(gateway)) {
-                    neutronErrors.gateway = $.t('cluster_page.network_tab.validation.invalid_gateway');
+                    networkingParametersErrors.internal_gateway = $.t('cluster_page.network_tab.validation.invalid_gateway');
                 } else if (!utils.validateIpCorrespondsToCIDR(cidr, gateway)) {
-                    neutronErrors.gateway = $.t('cluster_page.network_tab.validation.gateway_is_out_of_internal_ip_range');
+                    networkingParametersErrors.internal_gateway = $.t('cluster_page.network_tab.validation.gateway_is_out_of_internal_ip_range');
                 }
-                var floatingIpRange = config.net04_ext.L3.floating;
-                if (utils.validateIP(floatingIpRange[0])) {
-                    neutronErrors['floating-0'] = $.t('cluster_page.network_tab.validation.invalid_ip_start');
-                } else if (publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, floatingIpRange[0])) {
-                    neutronErrors['floating-0'] = $.t('cluster_page.network_tab.validation.ip_start_is_out_of_ip_range');
-                } else if (utils.validateIP(floatingIpRange[1])) {
-                    neutronErrors['floating-1'] = $.t('cluster_page.network_tab.validation.invalid_ip_end');
-                } else if (publicCidr && !utils.validateIpCorrespondsToCIDR(publicCidr, floatingIpRange[1])) {
-                    neutronErrors['floating-1'] = $.t('cluster_page.network_tab.validation.ip_end_is_out_of_ip_range');
-                } else if (!utils.validateIPrange(floatingIpRange[0], floatingIpRange[1])) {
-                    neutronErrors['floating-0'] = $.t('cluster_page.network_tab.validation.invalid_ip_range');
-                }
-                _.each(config.net04.L3.nameservers, function(nameserver, i) {
-                    if (utils.validateIP(nameserver)) {
-                        neutronErrors['nameservers-' + i] = $.t('cluster_page.network_tab.validation.invalid_nameserver');
-                    }
-                });
             }
-            if (!_.isEmpty(neutronErrors)) {
-                errors.neutron_parameters = neutronErrors;
+            var networkWithFloatingRange = attrs.networks.filter(function(network){ return network.get('meta').floating_range_var; })[0];
+            var floatingRangesErrors = utils.validateIpRanges(attrs.networking_parameters.get('floating_ranges'), networkWithFloatingRange ? networkWithFloatingRange.get('cidr') : null);
+            if (floatingRangesErrors.length) {
+                networkingParametersErrors.floating_ranges = floatingRangesErrors;
             }
-
+            var nameserverErrors = [];
+            _.each(attrs.networking_parameters.get('dns_nameservers'), function(nameserver, i) {
+                nameserverErrors.push(utils.validateIP(nameserver) ? $.t('cluster_page.network_tab.validation.invalid_nameserver') : null);
+            });
+            if (_.compact(nameserverErrors).length) {
+                networkingParametersErrors.dns_nameservers = nameserverErrors;
+            }
+            
+            if (!_.isEmpty(networkingParametersErrors)) {
+                errors.networking_parameters = networkingParametersErrors;
+            }
             return _.isEmpty(errors) ? null : errors;
         }
     });

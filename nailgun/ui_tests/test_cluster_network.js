@@ -19,9 +19,9 @@ casper.loadPage('#cluster/1/network').waitForSelector('#tab-network > *');
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: layout rendered');
-    this.test.assertEvalEquals(function() {return $('.net-manager input[type=radio]').length}, 2, 'Network manager options are presented');
-    this.test.assertExists('.net-manager input[value=FlatDHCPManager]:checked', 'Flat DHCP manager is chosen');
-    this.test.assertEvalEquals(function() {return $('legend.networks:not(.dns-servers)').length}, 5, 'All networks are presented');
+    this.test.assertEvalEquals(function() {return $('input[name=net-manager]').length}, 2, 'Network manager options are presented');
+    this.test.assertExists('input[value=FlatDHCPManager]:checked', 'Flat DHCP manager is chosen');
+    this.test.assertEvalEquals(function() {return $('.networks-table legend').length}, 3, 'All networks are presented');
     this.test.assertDoesntExist('.verify-networks-btn:disabled', 'Verify networks button is enabled');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled');
 });
@@ -45,13 +45,13 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: change network manager');
-    this.click('.net-manager input[type=radio]:not(:checked)');
-    this.test.assertDoesntExist('.fixed .amount .hide', 'Amount field for a fixed network is presented in VLAN mode');
-    this.test.assertDoesntExist('.fixed .network_size .hide', 'Size field for a fixed network is presented in VLAN mode');
+    this.click('input[name=net-manager]:not(:checked)');
+    this.test.assertExists('input[name=fixed_networks_amount]', 'Amount field for a fixed network is presented in VLAN mode');
+    this.test.assertExists('select[name=fixed_network_size]', 'Size field for a fixed network is presented in VLAN mode');
     this.test.assertExists('.apply-btn:not(:disabled)', 'Save networks button is enabled after manager was changed');
-    this.click('.net-manager input[type=radio]:not(:checked)');
-    this.test.assertDoesntExist('.fixed-row .amount:visible', 'Amount field was hidden after revert to FlatDHCP');
-    this.test.assertDoesntExist('.fixed-row .network_size:visible', 'Size field was hidden after revert to FlatDHCP');
+    this.click('input[name=net-manager]:not(:checked)');
+    this.test.assertDoesntExist('input[name=fixed_networks_amount]', 'Amount field was hidden after revert to FlatDHCP');
+    this.test.assertDoesntExist('select[name=fixed_network_size]', 'Size field was hidden after revert to FlatDHCP');
     this.test.assertExists('.apply-btn:disabled', 'Save networks button is disabled again after revert to FlatDHCP');
 });
 
@@ -75,13 +75,13 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Check Amount field validation');
-    this.click('.net-manager input[type=radio]:not(:checked)');
-    this.test.assertExists('.net-manager input[value=VlanManager]:checked', 'VLAN manager is chosen');
+    this.click('input[name=net-manager]:not(:checked)');
+    this.test.assertExists('input[value=VlanManager]:checked', 'VLAN manager is chosen');
     var initialAmountValue = this.evaluate(function() {
-        return $('.fixed input[name=amount]').val();
+        return $('input[name=fixed_networks_amount]').val();
     });
     var initialVlanIDValue = this.evaluate(function() {
-        return $('.fixed input[name=vlan_start]').val();
+        return $('input[name=fixed_networks_vlan_start]').val();
     });
 
     var fixtures = [
@@ -126,42 +126,42 @@ casper.then(function() {
 
     this.each(fixtures, function(self, fixture) {
         self.then(function() {
-            this.fill('.fixed', {'amount': fixture.amount});
+            this.fill('.networking-parameters', {'fixed_networks_amount': fixture.amount});
             if (fixture.vlanStart != '') {
-                this.fill('.fixed', {'vlan_start': fixture.vlanStart});
+                this.fill('.networking-parameters', {'fixed_networks_vlan_start': fixture.vlanStart});
             }
             this.evaluate(function() {
-                $('.fixed input[name=amount]').keyup();
+                $('input[name=fixed_networks_amount]').keyup();
             });
             if (fixture.vlanEnd == '') {
-                this.test.assertExists('.fixed input[name=amount].error', 'Field validation has worked ' + fixture.validationMessage);
+                this.test.assertExists('input[name=fixed_networks_amount].error', 'Field validation has worked ' + fixture.validationMessage);
                 this.test.assertExists('.apply-btn:disabled', 'Apply button is disabled if there is validation error');
             } else {
-                this.test.assertEvalEquals(function() {return $('.fixed input[name=vlan_end]').val()}, fixture.vlanEnd, 'End value is correct');
-                this.test.assertDoesntExist('.fixed input[name=amount].error', 'Field validation works properly with correct value');}
+                this.test.assertEvalEquals(function() {return $('input[name=vlan_end]').val()}, fixture.vlanEnd, 'End value is correct');
+                this.test.assertDoesntExist('input[name=fixed_networks_amount].error', 'Field validation works properly with correct value');}
         });
     });
 
     casper.then(function() {
-	this.fill('.fixed', {
-            'amount': '1',
-            'vlan_start': '4094'
+	this.fill('.networking-parameters', {
+            'fixed_networks_amount': '1',
+            'fixed_networks_vlan_start': '4094'
         });
         this.evaluate(function() {
-            $('.fixed input[name=amount]').keyup();
+            $('input[name=fixed_networks_amount]').keyup();
         });
-        this.test.assertDoesntExist('.fixed input[name=amount].error', 'Field validation works properly');
+        this.test.assertDoesntExist('input[name=fixed_networks_amount].error', 'Field validation works properly');
     });
 
     casper.then(function() {
-        this.fill('.fixed', {
-            'amount': initialAmountValue,
-            'vlan_start': initialVlanIDValue
+        this.fill('.networking-parameters', {
+            'fixed_networks_amount': initialAmountValue,
+            'fixed_networks_vlan_start': initialVlanIDValue
         });
 	this.evaluate(function() {
-            $('.fixed input[name=amount]').keyup();
+            $('input[name=fixed_networks_amount]').keyup();
         });
-        this.click('.net-manager input[type=radio]:not(:checked)');
+        this.click('input[name=net-manager]:not(:checked)');
     });
 
 });
@@ -260,7 +260,7 @@ casper.then(function() {
             self.then(function() {
                 this.fill('.management', {'cidr': '240.0.1.0/' + fixture});
                 this.evaluate(function() {
-                    $('.management input[name=cidr]').keyup();
+                    $('.managementinput[name=cidr]').keyup();
                 });
                 if (negativeTests) {
                     this.test.assertExists('.management input[name=cidr].error', 'Field validation has worked properly in case of prefix ' + fixture);
@@ -345,13 +345,13 @@ casper.then(function() {
 
 casper.then(function() {
     this.test.comment('Testing cluster networks: VLAN range fields');
-    this.click('.net-manager input[type=radio]:not(:checked)');
-    this.fill('.fixed', {'amount': '10'});
+    this.click('input[name=net-manager]:not(:checked)');
+    this.fill('.networking-parameters', {'fixed_networks_amount': '10'});
     this.evaluate(function() {
-        $('.fixed input[name=amount]').keyup();
+        $('input[name=fixed_networks_amount]').keyup();
     });
     this.then(function() {
-        this.test.assertDoesntExist('.vlan_start .hide', 'VLAN range is displayed');
+        this.test.assertExists('input[name=vlan_end]', 'VLAN range is displayed');
     });
 });
 

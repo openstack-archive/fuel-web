@@ -1,24 +1,20 @@
-<% var index = index || 0 %>
-<% var rangeControls = rangeControls || false %>
 <% var disabled = locked ? 'disabled' : '' %>
 <div class="range-row clearfix">
-  <label class="parameter-box clearfix setting">
+  <label class="parameter-box clearfix">
     <div class="parameter-control">
-      <input data-range="<%= index %>" class="range" type="text" name="range0" placeholder="127.0.0.1" value="" <%= disabled %> />
+      <input data-range="<%= index %>" class="range" type="text" name="range0" placeholder="127.0.0.1" <%= disabled %> />
     </div>
   </label>
-  <label class="parameter-box clearfix setting">
+  <label class="parameter-box clearfix">
     <div class="parameter-control">
-      <input data-range="<%= index %>" class="range" type="text" name="range1" placeholder="127.0.0.1" value="" <%= disabled %> />
+      <input data-range="<%= index %>" class="range" type="text" name="range1" placeholder="127.0.0.1" <%= disabled %> />
     </div>
   </label>
-  <% if (rangeControls) { %>
-    <div class="ip-ranges-control">
-      <button class="btn btn-link ip-ranges-add" <%= disabled %>><i class="icon-plus-circle"></i></button>
-    </div>
-    <div class="ip-ranges-control <%= removalPossible ? '' : 'hide' %>">
-      <button class="btn btn-link ip-ranges-delete" <%= disabled %>><i class="icon-minus-circle"></i></button>
-    </div>
-  <% } %>
+  <div class="ip-ranges-control">
+    <button class="btn btn-link ip-ranges-add" <%= disabled %>><i class="icon-plus-circle"></i></button>
+  </div>
+  <div class="ip-ranges-control <%= removalPossible ? '' : 'hide' %>">
+    <button class="btn btn-link ip-ranges-delete" <%= disabled %>><i class="icon-minus-circle"></i></button>
+  </div>
   <div class="error validation-error"><span class="help-inline"></span></div>
 </div>

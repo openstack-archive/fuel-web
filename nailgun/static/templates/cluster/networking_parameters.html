@@ -1,0 +1,120 @@
+<% var disabled = locked ? 'disabled' : '' %>
+
+<div>
+  <legend class="networks" data-i18n=""></legend>
+    <div class="network-attribute">
+      <div class="range-row-header">
+        <div data-i18n="cluster_page.network_tab.range_start"></div>
+        <div data-i18n="cluster_page.network_tab.range_end"></div>
+      </div>
+      <div class="parameter-name" data-i18n="cluster_page.networking_parameters.floating_ranges"></div>
+      <div class="floating_ranges-row"></div>
+    </div>
+  </div>
+</div>
+  
+<% if (provider == 'nova_network') { %>
+
+  <div>
+    <legend class="networks" data-i18n="cluster_page.network_tab.networking_parameters.fixed_networks"></legend>
+      <div class="network-attribute">
+        <label class="parameter-box clearfix">
+          <div class="parameter-name" data-i18n="cluster_page.network_tab.network_parameters.cidr"></div>
+          <div class="parameter-control"><input type="text" name="fixed_networks_cidr" <%= disabled %> /></div>
+          <div class="error validation-error"><span class="help-inline"></span></div>
+        </label>
+      </div>
+      <div class="network-attribute">
+        <label class="parameter-box clearfix">
+          <div class="parameter-name" data-i18n="cluster_page.network_tab.network_parameters.size_of_networks"></div>
+          <div class="parameter-control"><select name="fixed_network_size" <%= disabled %> /></select></div>
+          <div class="error validation-error"><span class="help-inline"></span></div>
+        </label>
+      </div>
+      <div class="network-attribute">
+        <label class="parameter-box clearfix">
+          <div class="parameter-name" data-i18n="cluster_page.network_tab.network_parameters.nubmer_of_networks"></div>
+          <div class="parameter-control"><input type="text" name="fixed_networks_amount" <%= locked || netManager == 'FlatDHCPManager' ? 'disabled' : '' %> /></div>
+          <div class="error validation-error"><span class="help-inline"></span></div>
+        </label>
+      </div>
+      <div class="network-attribute">
+        <div class="range-row-header mini">
+          <div data-i18n="cluster_page.network_tab.range_start"></div>
+          <div data-i18n="cluster_page.network_tab.range_end"></div>
+        </div>
+        <label class="parameter-box clearfix">
+          <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.network_parameters.vlan_id_range"></div>
+          <div class="range-row">
+            <div class="parameter-control">
+              <input type="text" class="vlan mini range" name="vlan_start" value="" <%= disabled %> />
+            </div>
+            <div class="parameter-control">
+              <input type="text" class="mini" name="vlan_end" value="" disabled />
+            </div>
+            <div class="error validation-error"><span class="help-inline"></span></div>
+        </label>
+    </div>
+  </div>
+
+<% } else { %>
+
+  <div>
+    <legend class="networks" data-i18n="cluster_page.network_tab.networking_parameters.l2_configuration"></legend>
+    <div>
+      <div class="network-attribute">
+        <div class="range-row-header mini">
+          <div data-i18n="cluster_page.network_tab.range_start"></div>
+          <div data-i18n="cluster_page.network_tab.range_end"></div>
+        </div>
+        <div class="parameter-name"><span data-i18n="cluster_page.network_tab.networking_parameters.<%- segmentation %>"</span></div>
+        <div class="range-row clearfix">
+          <label class="parameter-box clearfix">
+            <div class="parameter-control"><input type="text" value="" class="mini neutronId" name="id0" <%= disabled %> /></div>
+          </label>
+          <label class="parameter-box clearfix">
+            <div class="parameter-control"><input type="text" value="" class="mini neutronId" name="id1" <%= disabled %> /></div>
+          </label>
+          <div class="error validation-error"><span class="help-inline"></span></div>
+        </div>
+      </div>
+      <div class="network-attribute">
+        <label class="parameter-box clearfix">
+          <div class="parameter-name" data-i18n="cluster_page.network_tab.networking_parameters.base_mac"></div>
+          <div class="parameter-control"><input type="text" name="base_mac" <%= disabled %> /></div>
+          <div class="error validation-error"><span class="help-inline"></span></div>
+        </label>
+      </div>
+    </div>
+  </div>
+  <div>
+    <legend class="networks" data-i18n="cluster_page.network_tab.networking_parameters.l3_configuration"></legend>
+    <div>
+      <div class="range-row-header" data-i18n="cluster_page.network_tab.networking_parameters.internal_network"></div>
+      <div class="network-attribute">
+        <label class="parameter-box clearfix">
+          <div class="parameter-name" data-i18n="cluster_page.network_tab.network_parameters.cidr"></div>
+          <div class="parameter-control"><input type="text" name="internal_cidr" <%= disabled %> /></div>
+          <div class="error validation-error"><span class="help-inline"></span></div>
+        </label>
+      </div>
+      <div class="network-attribute">
+        <label class="parameter-box clearfix">
+          <div class="parameter-name" data-i18n="cluster_page.network_tab.network_parameters.gateway"></div>
+          <div class="parameter-control"><input type="text" name="internal_gateway" <%= disabled %> /></div>
+          <div class="error validation-error"><span class="help-inline"></span></div>
+        </label>
+      </div>
+    </div>
+  </div>
+  
+<% } %>
+
+<div>
+  <legend class="networks" data-i18n="cluster_page.networking_parameters.dns_servers"></legend>
+    <div class="network-attribute">
+      <div class="parameter-name" data-i18n="cluster_page.networking_parameters.name_servers"></div>
+      <div class="dns_nameservers-row"></div>
+    </div>
+  </div>
+</div>

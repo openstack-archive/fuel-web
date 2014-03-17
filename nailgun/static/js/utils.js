@@ -129,13 +129,13 @@ define(['require'], function(require) {
         validateIPrange: function(startIP, endIP) {
             return this.ipIntRepresentation(startIP) - this.ipIntRepresentation(endIP) <= 0;
         },
-        validateNetmask: function(netmask) {
-            return utils.validateIP(netmask) || !this.ipIntRepresentation(netmask).toString(2).match(/^1+00+$/);
-        },
         ipIntRepresentation: function(ip) {
             return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
         },
         validateIpCorrespondsToCIDR: function(cidr, ip) {
+            if (!_.isEmpty(utils.validateCidr(cidr))) {
+                return true;
+            }
             /*jslint bitwise: true*/
             var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
             var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
@@ -145,6 +145,9 @@ define(['require'], function(require) {
             return result;
         },
         composeCidr: function(ip, netmask) {
+            if (utils.validateIP(ip)) {
+                return null;
+            }
             var netmaskInt = this.ipIntRepresentation(netmask);
             var ipInt = this.ipIntRepresentation(ip);
             var networkSize = netmaskInt.toString(2).match(/1/g).length;

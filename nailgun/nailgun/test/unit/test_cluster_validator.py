@@ -23,6 +23,7 @@ from nailgun.test.base import BaseTestCase
 
 class TestClusterValidator(BaseTestCase):
     def setUp(self):
+        super(TestClusterValidator, self).setUp()
         self.cluster_data = '{"name": "test"}'
         self.release_data = '{"release": 1}'
 

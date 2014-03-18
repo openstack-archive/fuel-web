@@ -84,3 +84,6 @@ def appstart():
 
     logger.info("Stopping WSGI app...")
     logger.info("Done")
+
+
+application = build_middleware(build_app().wsgifunc)

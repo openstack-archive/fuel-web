@@ -223,7 +223,9 @@ class NodeCollectionHandler(BaseHandler):
             )
 
         node = Node(
-            name="Untitled (%s)" % data['mac'][-5:],
+            #always produce unified (i.e. with lowercased letters)
+            #default name for nodes
+            name="Untitled ({0})".format(data['mac'][-5:].lower()),
             timestamp=datetime.now()
         )
         if "cluster_id" in data:

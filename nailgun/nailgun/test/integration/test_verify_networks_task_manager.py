@@ -223,17 +223,12 @@ class TestVerifyNetworksDisabled(BaseIntegrationTest):
             ]
         )
         self.cluster = self.env.clusters[0]
-        self.db.commit()
 
-    @fake_tasks(fake_rpc=False)
-    def test_network_verification_neutron_with_vlan_segmentation(
-            self, mocked_rpc):
+    @fake_tasks()
+    def test_network_verification_neutron_with_vlan_segmentation(self):
         task = self.env.launch_verify_networks()
-        self.assertEqual(task.status, 'error')
-        self.assertEqual(
-            u'Network verification on Neutron is not implemented yet',
-            task.message
-        )
+        self.assertEqual(task.status, 'running')
+        self.env.wait_ready(task, 30)
 
 
 class TestNetworkVerificationWithBonds(BaseIntegrationTest):

@@ -232,7 +232,7 @@ def action_run(params):
             settings.update({attr: param})
     if params.config_file:
         settings.update_from_file(params.config_file)
-    from nailgun.wsgi import appstart
+    from nailgun.app import appstart
     appstart()
 
 

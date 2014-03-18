@@ -412,7 +412,7 @@ function run_server {
 #   $1 -- path to settings to be saved
 #   $2 -- path to compressed static dir
 function create_settings_yaml {
-  echo -e "DEVELOPMENT: 0\nSTATIC_DIR: '$2'\nTEMPLATE_DIR: '$2'" > "$1"
+  echo -e "DEVELOPMENT: 1\nSTATIC_DIR: '$2'\nTEMPLATE_DIR: '$2'" > "$1"
 }
 
 

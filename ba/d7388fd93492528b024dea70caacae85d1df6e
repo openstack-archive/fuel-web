@@ -1,0 +1,13 @@
+Verified+2: Jenkins
+Approved+1: Evgeniy L <eli@mirantis.com>
+Code-Review+2: Evgeniy L <eli@mirantis.com>
+Approved+1: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Code-Review+2: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Code-Review+1: Andrew Woodward <xarses@gmail.com>
+Code-Review+1: Ryan Moe <rmoe@mirantis.com>
+Code-Review+1: Miroslav Anashkin <manashkin@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 18 Mar 2014 15:47:36 +0000
+Reviewed-on: https://review.openstack.org/80344
+Project: stackforge/fuel-web
+Branch: refs/heads/master

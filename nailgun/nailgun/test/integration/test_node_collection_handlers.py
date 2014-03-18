@@ -462,3 +462,18 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(node.name, default_name)
         self.assertEquals(node.cluster, None)
         self.assertEquals(node.pending_roles, [])
+
+    def test_discovered_node_unified_name(self):
+        name_source = '2a:2c'
+        original_mac = self.env.generate_random_mac()[:-5] + name_source
+        node_kwargs = {'mac': original_mac}
+
+        self.env.create_node(
+            api=True,
+            **node_kwargs
+        )
+
+        resp = self.app.get(reverse('NodeCollectionHandler'))
+
+        name_to_compare = 'Untitled ({0})'.format(name_source.upper())
+        self.assertEqual(json.loads(resp.body)[0]['name'], name_to_compare)

@@ -28,6 +28,7 @@ from nailgun.db import engine
 from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger
 from nailgun.settings import settings
+from nailgun.static import StaticMiddleware
 from nailgun.urls import urls
 
 
@@ -42,8 +43,10 @@ def build_app(db_driver=None):
 
 
 def build_middleware(app):
+
     middleware_list = [
-        HTTPLoggerMiddleware
+        HTTPLoggerMiddleware,
+        StaticMiddleware
     ]
 
     logger.debug('Initialize middleware: %s' %
@@ -67,6 +70,9 @@ def run_server(func, server_address=('0.0.0.0', 8080)):
         server.stop()
 
 
+application = build_middleware(build_app().wsgifunc)
+
+
 def appstart():
     logger.info("Fuel version: %s", str(settings.VERSION))
     if not engine.dialect.has_table(engine.connect(), "nodes"):
@@ -75,11 +81,7 @@ def appstart():
         )
         sys.exit(1)
 
-    app = build_app()
-
-    wsgifunc = build_middleware(app.wsgifunc)
-
-    run_server(wsgifunc,
+    run_server(application,
                (settings.LISTEN_ADDRESS, int(settings.LISTEN_PORT)))
 
     logger.info("Stopping WSGI app...")

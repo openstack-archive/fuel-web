@@ -13,12 +13,42 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.test.base import BaseUnitTest
+from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
 class TestTaskHandlers(BaseUnitTest):
+
+    @fake_tasks(godmode=True)
+    def test_task_deletion(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"roles": ["controller"]}
+            ]
+        )
+        verify_task = self.env.launch_verify_networks()
+        task_id = verify_task.id
+        self.env.wait_error(verify_task, 60)
+        resp = self.app.delete(
+            reverse(
+                'TaskHandler',
+                kwargs={'obj_id': task_id}
+            ),
+            headers=self.default_headers
+        )
+        self.assertEqual(resp.status_code, 204)
+        resp = self.app.get(
+            reverse(
+                'TaskHandler',
+                kwargs={'obj_id': task_id}
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 404)
 
     def test_forced_task_deletion(self):
         self.env.create(

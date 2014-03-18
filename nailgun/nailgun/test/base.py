@@ -32,6 +32,7 @@ from itertools import izip
 from netaddr import IPNetwork
 from random import randint
 
+import web
 from webtest import app
 
 import nailgun
@@ -66,10 +67,25 @@ class TimeoutError(Exception):
     pass
 
 
+def test_db_driver(handler):
+    try:
+        return handler()
+    except web.HTTPError:
+        if str(web.ctx.status).startswith(("4", "5")):
+            db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.commit()
+        # we do not remove session in tests
+
+
 class Environment(object):
 
-    def __init__(self, app):
-        self.db = db()
+    def __init__(self, app, session=None):
+        self.db = session or db()
         self.app = app
         self.tester = TestCase
         self.tester.runTest = lambda a: None
@@ -362,12 +378,12 @@ class Environment(object):
                 mac=interface.get('mac'),
                 name=interface.get('name'),
                 ip_addr=interface.get('ip'),
-                netmask=interface.get('netmask'))
-
+                netmask=interface.get('netmask')
+            )
             self.db.add(interface)
             node.nic_interfaces.append(interface)
 
-        self.db.commit()
+        self.db.flush()
         # If node in a cluster then assign networks for all interfaces
         if node.cluster_id:
             self.network_manager.assign_networks_by_default(node)
@@ -377,7 +393,7 @@ class Environment(object):
            filter(lambda i: node.mac == i.mac, node.nic_interfaces):
 
             node.nic_interfaces[0].mac = node.mac
-            self.db.commit()
+        self.db.commit()
 
     def _add_interfaces_to_node(self, node_id, count=1):
         interfaces = []
@@ -782,21 +798,19 @@ class BaseTestCase(TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.db = db()
-        cls.app = app.TestApp(build_app().wsgifunc())
+        cls.app = app.TestApp(
+            build_app(db_driver=test_db_driver).wsgifunc()
+        )
         syncdb()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.db.commit()
-
     def setUp(self):
+        self.db = db
         flush()
-        self.env = Environment(app=self.app)
+        self.env = Environment(app=self.app, session=self.db)
         self.env.upload_fixtures(self.fixtures)
 
     def tearDown(self):
-        self.db.expunge_all()
+        self.db.remove()
 
     def assertNotRaises(self, exception, method, *args, **kwargs):
         try:

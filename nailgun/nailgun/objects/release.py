@@ -69,14 +69,13 @@ class Release(NailgunObject):
         new_obj = super(Release, cls).create(data)
         if roles:
             cls.update_roles(new_obj, roles)
-        db().flush()
         return new_obj
 
     @classmethod
     def update(cls, instance, data):
         roles = data.pop("roles", None)
         super(Release, cls).update(instance, data)
-        if roles:
+        if roles is not None:
             cls.update_roles(instance, roles)
         return instance
 

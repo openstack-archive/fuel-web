@@ -1,333 +1,438 @@
 #!/bin/bash
 
-function drop_db {
-  nailgun/manage.py dropdb >> /dev/null
-  exit 1
-}
+#    Copyright 2013 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
 
-trap drop_db INT
+set -eu
 
 function usage {
   echo "Usage: $0 [OPTION]..."
-  echo "Run tests"
+  echo "Run Fuel-Web test suite(s)"
   echo ""
-  echo "  -p, --flake8             Just run flake8 and HACKING compliance check"
-  echo "  -f, --fail-first         Nosetests will stop on first error"
-  echo "  -j, --jslint             Just run JSLint"
-  echo "  -u, --ui-tests           Just run UI tests"
-  echo "  -i, --integration        Just run integration tests"
-  echo "  -C, --cli                Just run fuel-cli tests"
-  echo "  -u, --unit               Just run unit tests"
-  echo "  -x, --xunit              Generate reports (useful in Jenkins environment)"
-  echo "  -P, --no-flake8          Don't run static code checks"
-  echo "  -J, --no-jslint          Don't run JSLint"
-  echo "  -U, --no-ui-tests        Don't run UI tests"
-  echo "  -c, --clean              Only clean *.log, *.json, *.pyc, *.pid files, doesn't run tests"
-  echo "  -h, --help               Print this usage message"
+  echo "  -n, --nailgun               Run NAILGUN both unit and integration tests"
+  echo "  -N, --no-nailgun            Don't run NAILGUN tests"
+  echo "  -w, --webui                 Run WEB-UI tests"
+  echo "  -W, --no-webui              Don't run WEB-UI tests"
+  echo "  -c, --cli                   Run FUELCLIENT tests"
+  echo "  -C, --no-cli                Don't run FUELCLIENT tests"
+  echo "  -p, --flake8                Run FLAKE8 and HACKING compliance check"
+  echo "  -P, --no-flake8             Don't run static code checks"
+  echo "  -j, --jslint                Run JSLINT compliance checks"
+  echo "  -J, --no-jslint             Don't run JSLINT checks"
+  echo "  -t, --tests                 Run a given test files"
+  echo "  -h, --help                  Print this usage message"
   echo ""
-  echo "By default it runs tests and flake8 check."
+  echo "Note: with no options specified, the script will try to run all available"
+  echo "      tests with all available checks."
   exit
 }
 
-function process_option {
-  case "$1" in
-    -h|--help) usage;;
-    -p|--flake8) just_flake8=1;;
-    -f|--fail-first) fail_first=1;;
-    -j|--jslint) just_jslint=1;;
-    -u|--ui-tests) just_ui_tests=1;;
-    -P|--no-flake8) no_flake8=1;;
-    -J|--no-jslint) no_jslint=1;;
-    -U|--no-ui-tests) no_ui_tests=1;;
-    -I|--integration) integration_tests=1;;
-    -n|--unit) unit_tests=1;;
-    -C|--cli) cli_tests=1;;
-    -x|--xunit) xunit=1;;
-    -c|--clean) clean=1;;
-    ui_tests*) ui_test_files="$ui_test_files $1";;
-    -*) noseopts="$noseopts $1";;
-    *) noseargs="$noseargs $1"
-  esac
+
+function process_options {
+  for arg in $@; do
+    case "$arg" in
+      -h|--help) usage;;
+      -n|--nailgun) nailgun_tests=1;;
+      -N|--no-nailgun) no_nailgun_tests=1;;
+      -w|--webui) webui_tests=1;;
+      -W|--no-webui) no_webui_tests=1;;
+      -c|--cli) cli_tests=1;;
+      -C|--no-cli) no_cli_tests=1;;
+      -p|--flake8) flake8_checks=1;;
+      -P|--no-flake8) no_flake8_checks=1;;
+      -j|--jslint) jslint_checks=1;;
+      -J|--no-jslint) no_jslint_checks=1;;
+      -t|--tests) certain_tests=1;;
+      -*) testropts="$testropts $arg";;
+      *) testrargs="$testrargs $arg"
+    esac
+  done
 }
 
-just_flake8=0
-no_flake8=0
-fail_first=0
-just_jslint=0
-no_jslint=0
-just_ui_tests=0
-no_ui_tests=0
-integration_tests=0
+# settings
+ROOT=$(dirname `readlink -f $0`)
+TESTRTESTS="nosetests"
+FLAKE8="flake8"
+PEP8="pep8"
+CASPERJS="casperjs"
+JSLINT="grunt jslint"
+
+# test options
+testrargs=
+testropts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
+
+
+# disabled/enabled flags that are setted from the cli.
+# used for manipulating run logic.
+nailgun_tests=0
+no_nailgun_tests=0
+webui_tests=0
+no_webui_tests=0
 cli_tests=0
-unit_tests=0
-xunit=0
-clean=0
-ui_test_files=
-default_noseopts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
-noseargs=
-noseopts="$default_noseopts"
+no_cli_tests=0
+flake8_checks=0
+no_flake8_checks=0
+jslint_checks=0
+no_jslint_checks=0
+certain_tests=0
 
-for arg in "$@"; do
-  process_option $arg
-done
 
-if [ -n "$ui_test_files" ]; then
-    just_ui_tests=1
-fi
+function run_tests {
+  run_cleanup
 
-function clean {
-  echo "cleaning *.pyc, *.log, *.pid files"
+  # This variable collects all failed tests. It'll be printed in
+  # the end of this function as a small statistic for user.
+  local errors=""
+
+  # If tests was specified in command line then run only these tests
+  if [ $certain_tests -eq 1 ]; then
+    for testfile in $testrargs; do
+      local testfile=`readlink -f $testfile`
+      guess_test_run $testfile
+    done
+    exit
+  fi
+
+  # Enable all tests if none was specified skipping all explicitly disabled tests.
+  if [[ $nailgun_tests -eq 0 && $webui_tests -eq 0 && $cli_tests -eq 0 \
+        && $flake8_checks -eq 0 && $jslint_checks -eq 0 ]]; then
+
+    if [ $no_nailgun_tests -ne 1 ]; then nailgun_tests=1; fi
+    if [ $no_webui_tests -ne 1 ];   then webui_tests=1;   fi
+    if [ $no_cli_tests -ne 1 ];     then cli_tests=1;     fi
+    if [ $no_flake8_checks -ne 1 ]; then flake8_checks=1; fi
+    if [ $no_jslint_checks -ne 1 ]; then jslint_checks=1; fi
+  fi
+
+  # Run all enabled tests
+  if [ $nailgun_tests -eq 1 ]; then
+    echo "Starting Nailgun tests..."
+    run_nailgun_tests || errors+=" nailgun_tests"
+  fi
+
+  if [ $webui_tests -eq 1 ]; then
+    echo "Starting WebUI tests..."
+    run_webui_tests || errors+=" webui_tests"
+  fi
+
+  if [ $cli_tests -eq 1 ]; then
+    echo "Starting Fuel client tests..."
+    run_cli_tests || errors+=" cli_tests"
+  fi
+
+  if [ $flake8_checks -eq 1 ]; then
+    echo "Starting Flake8 tests..."
+    run_flake8 || errors+=" flake8_checks"
+  fi
+
+  if [ $jslint_checks -eq 1 ]; then
+    echo "Starting JSLint tests..."
+    run_jslint || errors+=" jslint_checks"
+  fi
+
+  # print failed tests
+  if [ -n "$errors" ]; then
+    echo Failed tests: $errors
+    exit 1
+  fi
+
+  exit
+}
+
+
+# Run both integration and unit Nailgun's tests.
+#
+# Arguments:
+#
+#   $@ -- tests to be run; with no arguments all tests will be run
+function run_nailgun_tests {
+  local TESTS="$ROOT/nailgun/nailgun/test"
+
+  if [ $# -ne 0 ]; then
+    TESTS="$@"
+  fi
+
+  # prepare database
+  dropdb
+  syncdb
+
+  # make tests
+  local output=$($TESTRTESTS -vv $testropts $TESTS 3>&1 1>&2 2>&3 | tee /dev/stderr)
+  local result=$?
+
+  return $result
+}
+
+
+# Run webui tests.
+#
+# Arguments:
+#
+#   $@ -- tests to be run; with no arguments all tests will be run
+function run_webui_tests {
+  local COMPRESSED_STATIC_DIR=/tmp/static_compressed
+  local SERVER_PORT=5544
+  local TESTS_DIR=$ROOT/nailgun/ui_tests
+  local TESTS=$TESTS_DIR/test_*.js
+
+  if [ $# -ne 0 ]; then
+    TESTS=$@
+  fi
+
+  pushd $ROOT/nailgun >> /dev/null
+
+  # test compression
+  echo -n "Compressing UI... "
+  local output=$(grunt build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
+  if [ $? -ne 0 ]; then
+    echo "$output"
+    popd >> /dev/null
+    exit 1
+  fi
+  echo "done"
+
+  # run js testcases
+  create_settings_yaml $COMPRESSED_STATIC_DIR/settings.yaml $COMPRESSED_STATIC_DIR
+  local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
+  local result=0
+
+  run_server $SERVER_PORT $server_log $COMPRESSED_STATIC_DIR/settings.yaml
+  local pid=$!
+
+  if [ $pid -ne 0 ]; then
+    # run test files
+    for testcase in $TESTS; do
+      dropdb
+      syncdb true
+
+      ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
+      if [ $? -ne 0 ]; then
+        result=1
+        break
+      fi
+    done
+
+    kill $pid
+    wait $pid 2> /dev/null
+  else
+    cat $server_log
+    result=1
+  fi
+
+  rm $server_log
+  popd >> /dev/null
+
+  return $result
+}
+
+
+# Run fuelclient tests.
+#
+# Arguments:
+#
+#   $@ -- tests to be run; with no arguments all tests will be run
+function run_cli_tests {
+  local SERVER_PORT=8003
+  local TESTS=$ROOT/fuelclient/tests
+
+  if [ $# -ne 0 ]; then
+    TESTS=$@
+  fi
+
+  pushd $ROOT/nailgun >> /dev/null
+
+  local server_log=`mktemp /tmp/test_nailgun_cli_server.XXXX`
+  local result=0
+
+  run_server $SERVER_PORT $server_log ""
+  local pid=$!
+
+  if [ $pid -ne 0 ]; then
+    dropdb
+    syncdb true
+
+    ${TESTRTESTS} -vv $testropts $TESTS
+    result=$?
+
+    kill $pid
+    wait $pid 2> /dev/null
+  else
+    cat $server_log
+    result=1
+  fi
+
+  rm $server_log
+  popd >> /dev/null
+
+  return $result
+}
+
+
+# Check python code with flake8 and pep8.
+#
+# Some settings description:
+#
+# * __init__.py --- excluded because it doesn't comply with pep8 standard
+# * H302 --- "import only modules. does not import a module" requires to import
+#            only modules and not functions
+# * H802 --- first line of git commit commentary should be less than 50 characters
+function run_flake8 {
+  pushd $ROOT >> /dev/null
+
+  local result=0
+  ${FLAKE8} \
+    --exclude=__init__.py,docs \
+    --ignore=H302,H802 \
+    --show-source \
+    --show-pep8 \
+    --count . \
+  || result=1
+
+  ${PEP8} \
+    --exclude=welcome.py docs \
+  || result=1
+
+  popd >> /dev/null
+  return $result
+}
+
+
+# Check javascript files with `jslint`. It's necessary to run it inside
+# `nailgun` folder, so we temporary change current dir.
+function run_jslint {
+  pushd $ROOT/nailgun >> /dev/null
+
+  ${JSLINT}
+  local result=$?
+
+  popd >> /dev/null
+  return $result
+}
+
+
+# Remove temporary files. No need to run manually, since it's
+# called automatically in `run_tests` function.
+function run_cleanup {
   find . -type f -name "*.pyc" -delete
   rm -f *.log
   rm -f *.pid
 }
 
-if [ $clean -eq 1 ]; then
-  clean
-  exit 0
-fi
 
-# If enabled, tell nose to create xunit report
-if [ $xunit -eq 1 ]; then
-    noseopts=${noseopts}" --with-xunit"
-fi
+# Arguments:
+#
+#   $1 -- insert default data into database if true
+function syncdb {
+  pushd $ROOT/nailgun >> /dev/null
 
-if [ $fail_first -eq 1 ]; then
-    noseopts=${noseopts}" --stop"
-fi
+  python manage.py syncdb > /dev/null
 
-function run_flake8 {
-  # H302 - "import only modules. does not import a module" requires to import only modules and not functions
-  # H802 - first line of git commit commentary should be less than 50 characters
-  # __init__.py - excluded because it doesn't comply with pep8 standard
-  flake_status=0
-  flake8 --exclude=__init__.py,docs --ignore=H302,H802 --show-source --show-pep8 --count . || flake_status=1
-  pep8 --exclude=welcome.py docs || flake_status=1
-  [[ $flake_status = 0 ]] || return 1
-  echo "Flake8 check passed successfully."
+  if [[ $# -ne 0 && $1 = true ]]; then
+    python manage.py loaddefault > /dev/null
+  fi
+
+  popd >> /dev/null
 }
 
-if [ $just_flake8 -eq 1 ]; then
-    run_flake8 || exit 1
-    exit
-fi
 
-function run_jslint {
-    (
-    cd nailgun
-    grunt jslint
-    )
+function dropdb {
+  pushd $ROOT/nailgun >> /dev/null
+
+  python manage.py dropdb > /dev/null
+
+  popd >> /dev/null
 }
 
-if [ $just_jslint -eq 1 ]; then
-    run_jslint || exit 1
-    exit
-fi
 
-function run_ui_tests {
-    which casperjs > /dev/null
-    if [ $? -ne 0 ]; then
-        echo "CasperJS is not installed; install by running:"
-        echo "sudo apt-get install phantomjs"
-        echo "cd ~"
-        echo "git clone git://github.com/n1k0/casperjs.git"
-        echo "cd casperjs"
-        echo "git checkout tags/1.0.0-RC4"
-        echo "sudo ln -sf \`pwd\`/bin/casperjs /usr/local/bin/casperjs"
-        return 1
-    fi
-    (
-    cd nailgun
-    ui_tests_dir=ui_tests
-    if [ -z "$ui_test_files" ]; then
-        ui_test_files=$ui_tests_dir/test_*.js
-    fi
-    result=0
+# Arguments:
+#
+#   $1 -- server port
+#   $2 -- path to log file
+#   $3 -- path to the server config
+#
+# Returns: a server pid, that you have to close manually
+function run_server {
+  local SERVER_PORT=$1
+  local SERVER_LOG=$2
+  local SERVER_SETTINGS=$3
 
-    echo -n "Compressing UI... "
-    compressed_static_dir=/tmp/static_compressed
-    rm -rf $compressed_static_dir && mkdir -p $compressed_static_dir
-    grunt_output=$(grunt build --static-dir=$compressed_static_dir 2>&1)
-    if [ $? -ne 0 ]; then
-        echo "Failed!"
-        echo "$grunt_output"
-        exit 1
-    fi
-    echo "Done"
-    test_server_config=$compressed_static_dir/settings.yaml
-    echo -e "DEVELOPMENT: 0\nSTATIC_DIR: '$compressed_static_dir'\nTEMPLATE_DIR: '$compressed_static_dir'" > $compressed_static_dir/settings.yaml
-    test_server_port=5544
-    test_server_cmd="./manage.py run --port=$test_server_port --config=$test_server_config --fake-tasks --fake-tasks-tick-count=80 --fake-tasks-tick-interval=1"
-    old_server_pid=`ps aux | grep "$test_server_cmd" | grep -v grep | awk '{ print $2 }'`
-    if [ -n "$old_server_pid" ]; then
-        kill $old_server_pid
-        echo -n "Killing old test server... "
-        sleep 5
-    fi
-    test_server_log_file=`mktemp /tmp/test_nailgun_ui_server.XXXX`
-    for test_file in $ui_test_files; do
-        echo -n "Starting test server for $test_file ... "
-        ./manage.py dropdb > /dev/null
-        ./manage.py syncdb > /dev/null
-        ./manage.py loaddefault > /dev/null
-        $test_server_cmd >> $test_server_log_file 2>&1 &
-        server_pid=$!
-        which nc > /dev/null
-        if [ $? -eq 0 ]; then
-            # nc is available, use it to check test server readiness
-            for i in {1..50}; do
-                nc -vz localhost $test_server_port 2> /dev/null
-                if [ $? -eq 0 ]; then break; fi
-                sleep 0.1
-            done
-        else
-            # nc is not available, use sleep
-            sleep 5
-        fi
-        kill -0 $server_pid 2> /dev/null
-        if [ $? -eq 0 ]; then
-            echo "Test server started"
-            casperjs test --includes=$ui_tests_dir/helpers.js --fail-fast $test_file
-            result=$(($result + $?))
-            kill $server_pid
-            wait $server_pid 2> /dev/null
-        else
-            echo "Test server failed to start!"
-            cat $test_server_log_file
-            result=1
-            break
-        fi
+  local RUN_SERVER="\
+    python manage.py run \
+      --port=$SERVER_PORT \
+      --config=$SERVER_SETTINGS \
+      --fake-tasks \
+      --fake-tasks-tick-count=80 \
+      --fake-tasks-tick-interval=1"
+
+  pushd $ROOT/nailgun >> /dev/null
+
+  # kill old server instance if exists
+  local filter="manage.py.*run.*--port=$SERVER_PORT"
+  local pid=`ps aux | grep "$filter" | grep -v grep | awk '{ print $2 }'`
+  if [ -n "$pid" ]; then
+    kill $pid
+    sleep 5
+  fi
+
+  # run new server instance
+  $RUN_SERVER >> $SERVER_LOG 2>&1 &
+  local pid=$!
+
+  # wait for server availability
+  which nc > /dev/null
+  if [ $? -eq 0 ]; then
+    for i in {1..50}; do
+      nc -vz localhost $SERVER_PORT 2> /dev/null
+      if [ $? -eq 0 ]; then break; fi
+      sleep 0.1
     done
-    ./manage.py dropdb >> /dev/null
-    rm $test_server_log_file
-    return $result
-    )
+  else
+    sleep 5
+  fi
+
+  popd >> /dev/null
+
+  return $pid
 }
 
-if [ $just_ui_tests -eq 1 ]; then
-    run_ui_tests || exit 1
-    exit
-fi
 
-function run_nailgun_tests {
-  clean
-  (
-  cd nailgun
-  ./manage.py dropdb > /dev/null
-  ./manage.py syncdb > /dev/null
-  [ -z "$noseargs" ] && test_args=. || test_args="$noseargs"
-  stderr=$(nosetests -vv $noseopts $test_args 3>&1 1>&2 2>&3 | tee /dev/stderr)
-  )
-# TODO: uncomment after cluster deletion issue fix
-#  if [[ "$stderr" =~ "Exception" ]]; then
-#    echo "Tests executed with errors!"
-#    exit 1
-#  fi
+# Arguments:
+#
+#   $1 -- path to settings to be saved
+#   $2 -- path to compressed static dir
+function create_settings_yaml {
+  echo -e "DEVELOPMENT: 0\nSTATIC_DIR: '$2'\nTEMPLATE_DIR: '$2'" > "$1"
 }
 
-function run_cli_tests {
-    (
-    cd nailgun
-    result=0
-    test_server_port=8003
-    test_server_cmd="./manage.py run --port=$test_server_port --fake-tasks"
-    old_server_pid=`ps aux | grep "$test_server_cmd" | grep -v grep | awk '{ print $2 }'`
-    if [ -n "$old_server_pid" ]; then
-        kill $old_server_pid
-        echo -n "Killing old test server... "
-        sleep 5
-    fi
-    test_server_log_file=`mktemp /tmp/test_nailgun_cli_server.XXXX`
-    # for test_file in $ui_test_files; do
-    echo -n "Starting test server ... "
-    ./manage.py dropdb > /dev/null
-    ./manage.py syncdb > /dev/null
-    ./manage.py loaddefault > /dev/null
-    $test_server_cmd >> $test_server_log_file 2>&1 &
-    server_pid=$!
-    which nc > /dev/null
-    if [ $? -eq 0 ]; then
-        # nc is available, use it to check test server readiness
-        for i in {1..50}; do
-            nc -vz localhost $test_server_port 2> /dev/null
-            if [ $? -eq 0 ]; then break; fi
-            sleep 0.1
-        done
-    else
-        # nc is not available, use sleep
-        sleep 5
-    fi
-    kill -0 $server_pid 2> /dev/null
-    if [ $? -eq 0 ]; then
-        echo "Test server started"
-        clean
-        test_args="../fuelclient/tests"
-        nosetests -vv $noseopts $test_args
-        result=$(($result + $?))
-        kill $server_pid
-        wait $server_pid 2> /dev/null
-    else
-        echo "Test server failed to start!"
-        cat $test_server_log_file
-        result=1
-        break
-    fi
 
-    ./manage.py dropdb >> /dev/null
-    rm $test_server_log_file
-    return $result
-    )
+# Detect test runner for a given testfile and then run the test with
+# this runner.
+#
+# Arguments:
+#
+#   $1 -- path to the test file
+function guess_test_run {
+  if [[ $1 == *ui_tests* && $1 == *.js ]]; then
+    run_webui_tests $1 || echo "ERROR: $1"
+  elif [[ $1 == *fuelclient* ]]; then
+    run_cli_tests $1 || echo "ERROR: $1"
+  else
+    run_nailgun_tests $1 || echo "ERROR: $1"
+  fi
 }
 
-if [ $cli_tests -eq 1 ]; then
-    run_cli_tests || exit 1
-    exit
-fi
 
-function run_integration_tests {
-    [ -z "$noseargs" ] && noseargs="nailgun/test/integration"
-    run_nailgun_tests
-}
-
-if [ $integration_tests -eq 1 ]; then
-    run_integration_tests || exit 1
-    exit
-fi
-
-function run_unit_tests {
-  (
-  cd nailgun
-  ./manage.py dropdb > /dev/null
-  ./manage.py syncdb > /dev/null
-  )
-  nosetests $noseopts $test_args -vv nailgun/nailgun/test/unit #shotgun
-}
-
-if [ $unit_tests -eq 1 ]; then
-    run_unit_tests || exit 1
-    exit
-fi
-
-# Run all tests if no one was selected explicitly.
-errors=''
-
-run_unit_tests || errors+=' unittests'
-
-run_cli_tests || errors+=' clitests'
-
-run_integration_tests || errors+=' integration'
-
-if [ $no_flake8 -eq 0 ]; then
-  run_flake8 || errors+=' flake8'
-fi
-if [ $no_jslint -eq 0 ]; then
-  run_jslint || errors+=' jslint'
-fi
-if [ $no_ui_tests -eq 0 ]; then
-  run_ui_tests || errors+=' ui-tests'
-fi
-
-if [ -n "$errors" ]; then
-  echo Failed tests: $errors
-  exit 1
-fi
+# parse command line arguments and run the tests
+process_options $@
+run_tests

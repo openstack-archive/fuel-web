@@ -43,7 +43,7 @@ AGENT_CONFIG = "/etc/nailgun-agent/config.yaml"
 # https://github.com/stackforge/fuel-astute/blob/master/mcagents/erase_node.rb#L81
 STORAGE_CODES = [3, 8, 65, 66, 67, 68, 69, 70, 71, 104, 105, 106, 107, 108, 109, 110, 111, 202, 252, 253]
 REMOVABLE_VENDORS = [
-  "Adaptec",
+  "Adaptec", "IBM",
 ]
 
 def digest(body)

@@ -18,23 +18,23 @@
 Handlers dealing with clusters
 """
 
-import json
 import traceback
 import web
 
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import DeferredTaskHandler
 
+from nailgun.api.handlers.base import CollectionHandler
+from nailgun.api.handlers.base import SingleHandler
+
+from nailgun import objects
+
 from nailgun.api.handlers.base import content_json
 
 from nailgun.api.validators.cluster import AttributesValidator
 from nailgun.api.validators.cluster import ClusterValidator
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Attributes
 from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import Release
-from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
@@ -43,80 +43,21 @@ from nailgun.task.manager import StopDeploymentTaskManager
 from nailgun import utils
 
 
-class ClusterHandler(BaseHandler):
+class ClusterHandler(SingleHandler):
     """Cluster single handler
     """
 
-    fields = (
-        "id",
-        "name",
-        "mode",
-        "changes",
-        "status",
-        "grouping",
-        "is_customized",
-        "net_provider",
-        "net_segment_type",
-        "release_id"
-    )
-
-    model = Cluster
+    single = objects.Cluster
     validator = ClusterValidator
 
     @content_json
-    def GET(self, cluster_id):
-        """:returns: JSONized Cluster object.
-        :http: * 200 (OK)
-               * 404 (cluster not found in db)
-        """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
-        return self.render(cluster)
-
-    @content_json
-    def PUT(self, cluster_id):
-        """:returns: JSONized Cluster object.
-        :http: * 200 (OK)
-               * 400 (invalid cluster data specified)
-               * 404 (cluster not found in db)
-        """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
-        data = self.checked_data(cluster_id=cluster_id)
-        network_manager = cluster.network_manager
-
-        for key, value in data.iteritems():
-            if key == "nodes":
-                # TODO(NAME): sepatate nodes
-                #for deletion and addition by set().
-                new_nodes = db().query(Node).filter(
-                    Node.id.in_(value)
-                )
-                nodes_to_remove = [n for n in cluster.nodes
-                                   if n not in new_nodes]
-                nodes_to_add = [n for n in new_nodes
-                                if n not in cluster.nodes]
-                for node in nodes_to_add:
-                    if not node.online:
-                        raise web.badrequest(
-                            "Can not add offline node to cluster")
-                map(cluster.nodes.remove, nodes_to_remove)
-                map(cluster.nodes.append, nodes_to_add)
-                for node in nodes_to_remove:
-                    network_manager.clear_assigned_networks(node)
-                for node in nodes_to_add:
-                    network_manager.assign_networks_by_default(node)
-            else:
-                setattr(cluster, key, value)
-        db().commit()
-        return self.render(cluster)
-
-    @content_json
-    def DELETE(self, cluster_id):
+    def DELETE(self, obj_id):
         """:returns: {}
         :http: * 202 (cluster deletion process launched)
                * 400 (failed to execute cluster deletion process)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(self.single.model, obj_id)
         task_manager = ClusterDeletionManager(cluster_id=cluster.id)
         try:
             logger.debug('Trying to execute cluster deletion task')
@@ -132,89 +73,12 @@ class ClusterHandler(BaseHandler):
         )
 
 
-class ClusterCollectionHandler(BaseHandler):
+class ClusterCollectionHandler(CollectionHandler):
     """Cluster collection handler
     """
 
+    collection = objects.ClusterCollection
     validator = ClusterValidator
-
-    @content_json
-    def GET(self):
-        """:returns: Collection of JSONized Cluster objects.
-        :http: * 200 (OK)
-        """
-        return map(
-            ClusterHandler.render,
-            db().query(Cluster).all()
-        )
-
-    @content_json
-    def POST(self):
-        """:returns: JSONized Cluster object.
-        :http: * 201 (cluster successfully created)
-               * 400 (invalid cluster data specified)
-               * 409 (cluster with such parameters already exists)
-        """
-        # It's used for cluster creating only.
-        data = self.checked_data()
-
-        cluster = Cluster()
-        cluster.release = db().query(Release).get(data["release"])
-        # TODO(NAME): use fields
-        for field in (
-            "name",
-            "mode",
-            "net_provider",
-            "net_segment_type",
-            "status"
-        ):
-            if data.get(field):
-                setattr(cluster, field, data.get(field))
-        db().add(cluster)
-        db().commit()
-        attributes = Attributes(
-            editable=cluster.release.attributes_metadata.get("editable"),
-            generated=cluster.release.attributes_metadata.get("generated"),
-            cluster=cluster
-        )
-        attributes.generate_fields()
-
-        netmanager = cluster.network_manager
-
-        try:
-            netmanager.create_network_groups(cluster.id)
-            if cluster.net_provider == 'neutron':
-                netmanager.create_neutron_config(cluster)
-
-            cluster.add_pending_changes("attributes")
-            cluster.add_pending_changes("networks")
-
-            if 'nodes' in data and data['nodes']:
-                nodes = db().query(Node).filter(
-                    Node.id.in_(data['nodes'])
-                ).all()
-                map(cluster.nodes.append, nodes)
-                db().commit()
-                for node in nodes:
-                    netmanager.assign_networks_by_default(node)
-
-            raise web.webapi.created(json.dumps(
-                ClusterHandler.render(cluster),
-                indent=4
-            ))
-        except (
-            errors.OutOfVLANs,
-            errors.OutOfIPs,
-            errors.NoSuitableCIDR,
-            errors.InvalidNetworkPool
-        ) as e:
-            # Cluster was created in this request,
-            # so we no need to use ClusterDeletionManager.
-            # All relations wiil be cascade deleted automaticly.
-            # TODO(NAME): investigate transactions
-            db().delete(cluster)
-
-            raise web.badrequest(e.message)
 
 
 class ClusterChangesHandler(DeferredTaskHandler):

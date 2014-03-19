@@ -205,7 +205,7 @@ class TestTaskManagers(BaseIntegrationTest):
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'cluster_id': self.env.clusters[0].id}),
+                kwargs={'obj_id': self.env.clusters[0].id}),
             headers=self.default_headers
         )
         self.assertEquals(202, resp.status_code)
@@ -246,7 +246,7 @@ class TestTaskManagers(BaseIntegrationTest):
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'cluster_id': cluster_id}),
+                kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
         self.assertEquals(202, resp.status_code)
@@ -291,7 +291,7 @@ class TestTaskManagers(BaseIntegrationTest):
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'cluster_id': cluster_id}),
+                kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
         timeout = 120
@@ -335,7 +335,7 @@ class TestTaskManagers(BaseIntegrationTest):
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'cluster_id': cluster_id}),
+                kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
         self.assertEquals(202, resp.status_code)

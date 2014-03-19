@@ -30,7 +30,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def delete(self, cluster_id):
         return self.app.delete(
-            reverse('ClusterHandler', kwargs={'cluster_id': cluster_id}),
+            reverse('ClusterHandler', kwargs={'obj_id': cluster_id}),
             '',
             headers=self.default_headers
         )
@@ -38,7 +38,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_cluster_get(self):
         cluster = self.env.create_cluster(api=False)
         resp = self.app.get(
-            reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
+            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
@@ -70,7 +70,7 @@ class TestHandlers(BaseIntegrationTest):
         clusters_before = len(self.db.query(Cluster).all())
 
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
+            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'name': updated_name}),
             headers=self.default_headers
         )
@@ -89,7 +89,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=False)
         self.assertEquals(cluster.net_manager, "FlatDHCPManager")
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
+            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'net_manager': 'VlanManager'}),
             headers=self.default_headers
         )
@@ -101,13 +101,16 @@ class TestHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=False)
         self.assertEquals(cluster.net_provider, "nova_network")
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
+            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'net_provider': 'neutron'}),
             headers=self.default_headers,
             expect_errors=True
         )
         self.assertEquals(resp.status_code, 400)
-        self.assertEquals(resp.body, "Change of 'net_provider' is prohibited")
+        self.assertEquals(
+            resp.body,
+            "Changing 'net_provider' for environment is prohibited"
+        )
 
     def test_cluster_update_fails_on_net_segment_type_change(self):
         cluster = self.env.create_cluster(
@@ -117,23 +120,26 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(cluster.net_provider, "neutron")
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
+            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'net_segment_type': 'vlan'}),
             headers=self.default_headers,
             expect_errors=True
         )
         self.assertEquals(resp.status_code, 400)
-        self.assertEquals(resp.body,
-                          "Change of 'net_segment_type' is prohibited")
+        self.assertEquals(
+            resp.body,
+            "Changing 'net_segment_type' for environment is prohibited"
+        )
 
     def test_cluster_node_list_update(self):
         node1 = self.env.create_node(api=False)
         node2 = self.env.create_node(api=False)
         cluster = self.env.create_cluster(api=False)
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
+            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'nodes': [node1.id]}),
-            headers=self.default_headers
+            headers=self.default_headers,
+            expect_errors=True
         )
         self.assertEquals(resp.status_code, 200)
 
@@ -142,7 +148,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(nodes[0].id, node1.id)
 
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'cluster_id': cluster.id}),
+            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'nodes': [node2.id]}),
             headers=self.default_headers
         )

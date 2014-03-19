@@ -25,7 +25,6 @@ from mock import patch
 
 import nailgun
 from nailgun.api.handlers.logs import read_backwards
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Role
 from nailgun.errors import errors
@@ -394,7 +393,7 @@ class TestLogs(BaseIntegrationTest):
         """
 
         def dump_task_with_bad_model(*args, **kwargs):
-            db().add(Role())
+            self.db.add(Role())
             raise errors.DumpRunning()
 
         dump_manager().execute.side_effect = dump_task_with_bad_model

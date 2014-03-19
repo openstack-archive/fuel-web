@@ -123,7 +123,7 @@ class NeutronManager(NetworkManager):
                     .items():
                 setattr(cluster.neutron_config, key, value)
             db().add(cluster.neutron_config)
-            db().commit()
+            db().flush()
 
     @classmethod
     def generate_vlan_ids_list(cls, data, cluster, ng):

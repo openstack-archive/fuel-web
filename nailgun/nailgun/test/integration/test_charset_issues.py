@@ -71,7 +71,7 @@ class TestCharsetIssues(BaseIntegrationTest):
         self.app.delete(
             reverse(
                 'ClusterHandler',
-                kwargs={'cluster_id': cluster_id}),
+                kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
         timeout = 10

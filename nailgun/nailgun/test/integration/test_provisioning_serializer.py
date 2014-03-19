@@ -15,7 +15,6 @@
 #    under the License.
 
 
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.orchestrator.provisioning_serializers import serialize
@@ -40,7 +39,9 @@ class TestProvisioningSerializer(BaseIntegrationTest):
         serialized_cluster = serialize(cluster_db, cluster_db.nodes)
 
         for node in serialized_cluster['nodes']:
-            node_db = db().query(Node).filter_by(fqdn=node['hostname']).first()
+            node_db = self.db.query(Node).filter_by(
+                fqdn=node['hostname']
+            ).first()
             self.assertEquals(
                 node['kernel_options']['netcfg/choose_interface'],
                 node_db.admin_interface.mac)

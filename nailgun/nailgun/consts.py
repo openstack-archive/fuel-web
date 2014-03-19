@@ -30,6 +30,47 @@ RELEASE_STATES = Enum(
     'available'
 )
 
+CLUSTER_MODES = Enum(
+    'multinode',
+    'ha_full',
+    'ha_compact'
+)
+
+CLUSTER_STATUSES = Enum(
+    'new',
+    'deployment',
+    'stopped',
+    'operational',
+    'error',
+    'remove'
+)
+
+CLUSTER_NET_MANAGERS = Enum(
+    'FlatDHCPManager',
+    'VlanManager'
+)
+
+CLUSTER_GROUPING = Enum(
+    'roles',
+    'hardware',
+    'both'
+)
+
+CLUSTER_NET_PROVIDERS = Enum(
+    'nova_network',
+    'neutron'
+)
+
+CLUSTER_NET_L23_PROVIDERS = Enum(
+    'ovs'
+)
+
+CLUSTER_NET_SEGMENT_TYPES = Enum(
+    'none',
+    'vlan',
+    'gre'
+)
+
 NETWORK_INTERFACE_TYPES = Enum(
     'ether',
     'bond'

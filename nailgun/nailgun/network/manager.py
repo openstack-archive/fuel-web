@@ -103,7 +103,7 @@ class NetworkManager(object):
             IPAddr.network == nw_group.id
         ).all()
         map(db().delete, ips)
-        db().commit()
+        db().flush()
 
     @classmethod
     def assign_admin_ips(cls, node_id, num=1):
@@ -377,7 +377,6 @@ class NetworkManager(object):
         for nic in node.interfaces:
             while nic.assigned_networks_list:
                 nic.assigned_networks_list.pop()
-        db().commit()
 
     @classmethod
     def get_default_networks_assignment(cls, node):
@@ -464,7 +463,7 @@ class NetworkManager(object):
                 nics[nic['id']].assigned_networks_list = list(
                     db().query(NetworkGroup).filter(
                         NetworkGroup.id.in_(ng_ids)))
-        db().commit()
+        db().flush()
 
     @classmethod
     def get_cluster_networkgroups_by_node(cls, node):
@@ -1047,10 +1046,10 @@ class NetworkManager(object):
                 meta=net
             )
             db().add(nw_group)
-            db().commit()
+            db().flush()
             if net.get("notation"):
                 nw_group.ip_ranges.append(new_ip_range)
-                db().commit()
+                db().flush()
                 cls.cleanup_network_group(nw_group)
 
     @classmethod

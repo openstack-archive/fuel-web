@@ -27,6 +27,8 @@ from sqlalchemy import Integer
 from sqlalchemy import Unicode
 from sqlalchemy.orm import relationship, backref
 
+from nailgun import consts
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
@@ -55,57 +57,42 @@ class ClusterChanges(Base):
 
 class Cluster(Base):
     __tablename__ = 'clusters'
-    MODES = ('multinode', 'ha_full', 'ha_compact')
-    STATUSES = (
-        'new',
-        'deployment',
-        'stopped',
-        'operational',
-        'error',
-        'remove'
-    )
-    NET_MANAGERS = ('FlatDHCPManager', 'VlanManager')
-    GROUPING = ('roles', 'hardware', 'both')
-    # Neutron-related
-    NET_PROVIDERS = ('nova_network', 'neutron')
-    NET_L23_PROVIDERS = ('ovs',)
-    NET_SEGMENT_TYPES = ('none', 'vlan', 'gre')
     id = Column(Integer, primary_key=True)
     mode = Column(
-        Enum(*MODES, name='cluster_mode'),
+        Enum(*consts.CLUSTER_MODES, name='cluster_mode'),
         nullable=False,
-        default='multinode'
+        default=consts.CLUSTER_MODES.multinode
     )
     status = Column(
-        Enum(*STATUSES, name='cluster_status'),
+        Enum(*consts.CLUSTER_STATUSES, name='cluster_status'),
         nullable=False,
-        default='new'
+        default=consts.CLUSTER_STATUSES.new
     )
     net_provider = Column(
-        Enum(*NET_PROVIDERS, name='net_provider'),
+        Enum(*consts.CLUSTER_NET_PROVIDERS, name='net_provider'),
         nullable=False,
-        default='nova_network'
+        default=consts.CLUSTER_NET_PROVIDERS.nova_network
     )
     net_l23_provider = Column(
-        Enum(*NET_L23_PROVIDERS, name='net_l23_provider'),
+        Enum(*consts.CLUSTER_NET_L23_PROVIDERS, name='net_l23_provider'),
         nullable=False,
-        default='ovs'
+        default=consts.CLUSTER_NET_L23_PROVIDERS.ovs
     )
     net_segment_type = Column(
-        Enum(*NET_SEGMENT_TYPES,
+        Enum(*consts.CLUSTER_NET_SEGMENT_TYPES,
              name='net_segment_type'),
         nullable=False,
-        default='vlan'
+        default=consts.CLUSTER_NET_SEGMENT_TYPES.vlan
     )
     net_manager = Column(
-        Enum(*NET_MANAGERS, name='cluster_net_manager'),
+        Enum(*consts.CLUSTER_NET_MANAGERS, name='cluster_net_manager'),
         nullable=False,
-        default='FlatDHCPManager'
+        default=consts.CLUSTER_NET_MANAGERS.FlatDHCPManager
     )
     grouping = Column(
-        Enum(*GROUPING, name='cluster_grouping'),
+        Enum(*consts.CLUSTER_GROUPING, name='cluster_grouping'),
         nullable=False,
-        default='roles'
+        default=consts.CLUSTER_GROUPING.roles
     )
     name = Column(Unicode(50), unique=True, nullable=False)
     release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
@@ -216,7 +203,7 @@ class Cluster(Base):
         if node_id:
             ch.node_id = node_id
         db().add(ch)
-        db().commit()
+        db().flush()
 
     def clear_pending_changes(self, node_id=None):
         chs = db().query(ClusterChanges).filter_by(
@@ -225,7 +212,7 @@ class Cluster(Base):
         if node_id:
             chs = chs.filter_by(node_id=node_id)
         map(db().delete, chs.all())
-        db().commit()
+        db().flush()
 
     @property
     def network_manager(self):
@@ -268,7 +255,7 @@ class Attributes(Base):
     def generate_fields(self):
         self.generated = self.traverse(self.generated)
         db().add(self)
-        db().commit()
+        db().flush()
 
     @classmethod
     def traverse(cls, cdict):

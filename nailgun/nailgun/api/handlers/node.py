@@ -403,11 +403,13 @@ class NodeCollectionHandler(BaseHandler):
 
             nodes_updated.append(node.id)
             if 'cluster_id' in nd and nd['cluster_id'] != old_cluster_id:
-                if old_cluster_id:
-                    network_manager.clear_assigned_networks(node)
-                if node.cluster:
-                    network_manager = node.cluster.network_manager
-                    network_manager.assign_networks_by_default(node)
+                # this should be moved to Node object
+                with db().begin(subtransactions=True):
+                    if old_cluster_id:
+                        network_manager.clear_assigned_networks(node)
+                    if node.cluster:
+                        network_manager = node.cluster.network_manager
+                        network_manager.assign_networks_by_default(node)
 
         # we need eagerload everything that is used in render
         nodes = db().query(Node).options(

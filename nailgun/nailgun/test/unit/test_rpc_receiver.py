@@ -16,7 +16,6 @@
 from nailgun.errors import errors
 from nailgun.test.base import BaseTestCase
 
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.task.helpers import TaskHelper
 
@@ -25,8 +24,8 @@ class TestUtils(BaseTestCase):
 
     def test_get_task_by_uuid_returns_task(self):
         task = Task(name='deploy')
-        db().add(task)
-        db().commit()
+        self.db.add(task)
+        self.db.commit()
         task_by_uuid = TaskHelper.get_task_by_uuid(task.uuid)
         self.assertEquals(task.uuid, task_by_uuid.uuid)
 

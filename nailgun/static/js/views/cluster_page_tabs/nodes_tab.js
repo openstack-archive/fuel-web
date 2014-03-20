@@ -190,11 +190,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         actualizePendingRoles: function(node, roles, options) {
             if (!options.assign) {
                 node.set({pending_roles: node.previous('pending_roles')}, {assign: true});
-            } else {
-                var filteredNode = this.nodeList.filteredNodes.get(node.id);
-                if (filteredNode) {
-                    filteredNode.set({pending_roles: roles}, {assign: true});
-                }
+            }
+        },
+        actualizeFilteredNode: function(node, options) {
+            var filteredNode = this.nodeList.filteredNodes.get(node.id);
+            if (filteredNode) {
+                filteredNode.set(node.attributes);
             }
         },
         initialize: function() {
@@ -206,6 +207,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.nodes.on('change:pending_roles', this.actualizePendingRoles, this);
                 this.model.on('change:status', _.bind(function() {app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});}, this));
             }
+            this.nodes.on('change', this.actualizeFilteredNode, this);
             this.scheduleUpdate();
             var defaultButtonModelsData = {
                 visible: false,

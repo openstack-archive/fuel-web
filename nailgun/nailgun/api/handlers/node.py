@@ -39,6 +39,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import notifier
 
@@ -231,9 +232,7 @@ class NodeAgentHandler(BaseHandler):
 
             db().flush()
 
-        objects.Node.get_network_manager(
-            node
-        ).update_interfaces_info(node)
+        objects.Node.update_interfaces(node)
 
         return {"id": node.id}
 

@@ -231,9 +231,7 @@ class NodeAgentHandler(BaseHandler):
 
             db().flush()
 
-        objects.Node.get_network_manager(
-            node
-        ).update_interfaces_info(node)
+        objects.Node.update_interfaces(node)
 
         return {"id": node.id}
 

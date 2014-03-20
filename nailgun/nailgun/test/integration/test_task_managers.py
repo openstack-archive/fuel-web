@@ -22,6 +22,7 @@ import time
 
 from mock import patch
 
+from nailgun import objects
 from nailgun.settings import settings
 
 from nailgun.db.sqlalchemy.models import Cluster
@@ -128,7 +129,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.nodes[0].pending_addition = False
         self.db.commit()
 
-        cluster_db.clear_pending_changes()
+        objects.Cluster.clear_pending_changes(cluster_db)
 
         supertask = self.env.launch_deployment()
         self.assertEquals(supertask.name, 'deploy')
@@ -398,7 +399,7 @@ class TestTaskManagers(BaseIntegrationTest):
             ]
         )
         cluster_db = self.env.clusters[0]
-        cluster_db.clear_pending_changes()
+        objects.Cluster.clear_pending_changes(cluster_db)
         manager = ApplyChangesTaskManager(cluster_db.id)
         self.assertRaises(errors.WrongNodeStatus, manager.execute)
 
@@ -439,7 +440,7 @@ class TestTaskManagers(BaseIntegrationTest):
     @fake_tasks()
     def test_deletion_offline_node_when_cluster_has_only_one_node(self):
         cluster = self.env.create_cluster()
-        self.env.clusters[0].clear_pending_changes()
+        objects.Cluster.clear_pending_changes(self.env.clusters[0])
         self.env.create_node(
             cluster_id=cluster['id'],
             online=False,

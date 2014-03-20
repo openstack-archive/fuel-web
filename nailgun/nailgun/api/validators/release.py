@@ -59,6 +59,11 @@ class ReleaseValidator(BasicValidator):
                 "No release version specified",
                 log_message=True
             )
+        if "operating_system" not in d:
+            raise errors.InvalidData(
+                "No release operating system specified",
+                log_message=True
+            )
         if db().query(Release).filter_by(
             name=d["name"],
             version=d["version"]

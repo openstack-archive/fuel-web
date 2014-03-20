@@ -16,6 +16,8 @@
 
 """Provisioning serializers for orchestrator"""
 
+from nailgun import objects
+
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
@@ -29,7 +31,9 @@ class ProvisioningSerializer(object):
     def serialize(cls, cluster, nodes):
         """Serialize cluster for provisioning."""
 
-        cluster_attrs = cluster.attributes.merged_attrs_values()
+        cluster_attrs = objects.Attributes.merged_attrs_values(
+            cluster.attributes
+        )
         serialized_nodes = cls.serialize_nodes(cluster_attrs, nodes)
 
         return {

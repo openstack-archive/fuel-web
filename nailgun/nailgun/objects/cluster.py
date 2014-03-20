@@ -27,6 +27,50 @@ from nailgun.errors import errors
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
+from nailgun.utils import AttributesGenerator
+from nailgun.utils import dict_merge
+from nailgun.utils import traverse
+
+
+class Attributes(NailgunObject):
+
+    model = models.Attributes
+
+    @classmethod
+    def generate_fields(cls, instance):
+        instance.generated = traverse(
+            instance.generated,
+            AttributesGenerator
+        )
+        db().add(instance)
+        db().flush()
+
+    @classmethod
+    def merged_attrs(cls, instance):
+        return dict_merge(
+            instance.generated,
+            instance.editable
+        )
+
+    @classmethod
+    def merged_attrs_values(cls, instance):
+        attrs = cls.merged_attrs(instance)
+        for group_attrs in attrs.itervalues():
+            for attr, value in group_attrs.iteritems():
+                if isinstance(value, dict) and 'value' in value:
+                    group_attrs[attr] = value['value']
+        if 'common' in attrs:
+            attrs.update(attrs.pop('common'))
+        if 'additional_components' in attrs:
+            for comp, enabled in attrs['additional_components'].iteritems():
+                if isinstance(enabled, bool):
+                    attrs.setdefault(comp, {}).update({
+                        "enabled": enabled
+                    })
+
+            attrs.pop('additional_components')
+        return attrs
+
 
 class Cluster(NailgunObject):
 
@@ -86,43 +130,88 @@ class Cluster(NailgunObject):
 
         assign_nodes = data.pop("nodes", [])
 
-        with db().begin(subtransactions=True):
-            new_cluster = super(Cluster, cls).create(data)
+        new_cluster = super(Cluster, cls).create(data)
 
-            attributes = models.Attributes(
-                editable=new_cluster.release.attributes_metadata.get(
-                    "editable"
-                ),
-                generated=new_cluster.release.attributes_metadata.get(
-                    "generated"
-                ),
-                cluster=new_cluster
-            )
-            attributes.generate_fields()
+        cls.create_attributes(new_cluster)
 
-            netmanager = new_cluster.network_manager
+        netmanager = new_cluster.network_manager
 
-            try:
-                netmanager.create_network_groups(new_cluster.id)
-                if new_cluster.net_provider == 'neutron':
-                    netmanager.create_neutron_config(new_cluster)
+        try:
+            netmanager.create_network_groups(new_cluster.id)
+            if new_cluster.net_provider == 'neutron':
+                netmanager.create_neutron_config(new_cluster)
 
-                new_cluster.add_pending_changes("attributes")
-                new_cluster.add_pending_changes("networks")
+            cls.add_pending_changes(new_cluster, "attributes")
+            cls.add_pending_changes(new_cluster, "networks")
 
-                if assign_nodes:
-                    cls.update_nodes(new_cluster, assign_nodes)
+            if assign_nodes:
+                cls.update_nodes(new_cluster, assign_nodes)
 
-            except (
-                errors.OutOfVLANs,
-                errors.OutOfIPs,
-                errors.NoSuitableCIDR,
-                errors.InvalidNetworkPool
-            ) as exc:
-                db().delete(new_cluster)
-                raise errors.CannotCreate(exc.message)
+        except (
+            errors.OutOfVLANs,
+            errors.OutOfIPs,
+            errors.NoSuitableCIDR,
+            errors.InvalidNetworkPool
+        ) as exc:
+            db().delete(new_cluster)
+            raise errors.CannotCreate(exc.message)
+
+        db().flush()
 
         return new_cluster
+
+    @classmethod
+    def create_attributes(cls, instance):
+        attributes = Attributes.create(
+            {
+                "editable": instance.release.attributes_metadata.get(
+                    "editable"
+                ),
+                "generated": instance.release.attributes_metadata.get(
+                    "generated"
+                ),
+                "cluster_id": instance.id
+            }
+        )
+        Attributes.generate_fields(attributes)
+
+    @classmethod
+    def get_attributes(cls, instance):
+        return db().query(models.Attributes).filter(
+            models.Attributes.cluster_id == instance.id
+        ).first()
+
+    @classmethod
+    def add_pending_changes(cls, instance, changes_type, node_id=None):
+        ex_chs = db().query(models.ClusterChanges).filter_by(
+            cluster=instance,
+            name=changes_type
+        )
+        if not node_id:
+            ex_chs = ex_chs.first()
+        else:
+            ex_chs = ex_chs.filter_by(node_id=node_id).first()
+        # do nothing if changes with the same name already pending
+        if ex_chs:
+            return
+        ch = models.ClusterChanges(
+            cluster_id=instance.id,
+            name=changes_type
+        )
+        if node_id:
+            ch.node_id = node_id
+        db().add(ch)
+        db().flush()
+
+    @classmethod
+    def clear_pending_changes(cls, instance, node_id=None):
+        chs = db().query(models.ClusterChanges).filter_by(
+            cluster_id=instance.id
+        )
+        if node_id:
+            chs = chs.filter_by(node_id=node_id)
+        map(db().delete, chs.all())
+        db().flush()
 
     @classmethod
     def update(cls, instance, data):
@@ -134,37 +223,37 @@ class Cluster(NailgunObject):
 
     @classmethod
     def update_nodes(cls, instance, nodes_ids):
-        with db().begin(subtransactions=True):
-            # TODO(NAME): sepatate nodes
-            #for deletion and addition by set().
-            new_nodes = []
-            if nodes_ids:
-                new_nodes = db().query(models.Node).filter(
-                    models.Node.id.in_(nodes_ids)
+        # TODO(NAME): sepatate nodes
+        #for deletion and addition by set().
+        new_nodes = []
+        if nodes_ids:
+            new_nodes = db().query(models.Node).filter(
+                models.Node.id.in_(nodes_ids)
+            )
+
+        nodes_to_remove = [n for n in instance.nodes
+                           if n not in new_nodes]
+        nodes_to_add = [n for n in new_nodes
+                        if n not in instance.nodes]
+
+        for node in nodes_to_add:
+            if not node.online:
+                raise errors.NodeOffline(
+                    u"Cannot add offline node "
+                    u"'{0}' to environment".format(node.id)
                 )
 
-            nodes_to_remove = [n for n in instance.nodes
-                               if n not in new_nodes]
-            nodes_to_add = [n for n in new_nodes
-                            if n not in instance.nodes]
-
-            for node in nodes_to_add:
-                if not node.online:
-                    raise errors.NodeOffline(
-                        u"Cannot add offline node "
-                        u"'{0}' to environment".format(node.id)
-                    )
-
-            map(instance.nodes.remove, nodes_to_remove)
-            map(instance.nodes.append, nodes_to_add)
-            map(
-                instance.network_manager.clear_assigned_networks,
-                nodes_to_remove
-            )
-            map(
-                instance.network_manager.assign_networks_by_default,
-                nodes_to_add
-            )
+        map(instance.nodes.remove, nodes_to_remove)
+        map(instance.nodes.append, nodes_to_add)
+        map(
+            instance.network_manager.clear_assigned_networks,
+            nodes_to_remove
+        )
+        map(
+            instance.network_manager.assign_networks_by_default,
+            nodes_to_add
+        )
+        db().flush()
 
 
 class ClusterCollection(NailgunCollection):

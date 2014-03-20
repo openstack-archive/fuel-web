@@ -148,8 +148,7 @@ class ClusterAttributesHandler(BaseHandler):
         for key, value in data.iteritems():
             setattr(cluster.attributes, key, value)
 
-        cluster.add_pending_changes("attributes")
-        db().commit()
+        objects.Cluster.add_pending_changes(cluster, "attributes")
         return {"editable": cluster.attributes.editable}
 
     @content_json
@@ -174,8 +173,7 @@ class ClusterAttributesHandler(BaseHandler):
         cluster.attributes.editable = utils.dict_merge(
             cluster.attributes.editable, data['editable'])
 
-        cluster.add_pending_changes("attributes")
-        db().commit()
+        objects.Cluster.add_pending_changes(cluster, "attributes")
         return {"editable": cluster.attributes.editable}
 
 
@@ -227,7 +225,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
             "editable"
         )
         db().commit()
-        cluster.add_pending_changes("attributes")
+        objects.Cluster.add_pending_changes(cluster, "attributes")
 
         logger.debug('ClusterAttributesDefaultsHandler:'
                      ' editable attributes for cluster_id %s were reset'

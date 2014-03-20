@@ -16,8 +16,8 @@
 
 import json
 
-from nailgun.db.sqlalchemy.models import Attributes
-from nailgun.db.sqlalchemy.models import Cluster
+from nailgun import objects
+
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -27,23 +27,20 @@ class TestAttributes(BaseIntegrationTest):
 
     def test_attributes_creation(self):
         cluster = self.env.create_cluster(api=True)
+        cluster_db = self.env.clusters[0]
         resp = self.app.get(
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers
         )
-        release = self.db.query(Release).get(
-            cluster['release_id']
-        )
+        release = objects.Release.get_by_uid(cluster['release_id'])
         self.assertEquals(200, resp.status_code)
         self.assertEquals(
             json.loads(resp.body)['editable'],
             release.attributes_metadata['editable']
         )
-        attrs = self.db.query(Attributes).filter(
-            Attributes.cluster_id == cluster['id']
-        ).first()
+        attrs = objects.Cluster.get_attributes(cluster_db)
         self._compare(
             release.attributes_metadata['generated'],
             attrs.generated
@@ -51,6 +48,8 @@ class TestAttributes(BaseIntegrationTest):
 
     def test_500_if_no_attributes(self):
         cluster = self.env.create_cluster(api=False)
+        self.db.delete(cluster.attributes)
+        self.db.commit()
         resp = self.app.put(
             reverse(
                 'ClusterAttributesHandler',
@@ -67,6 +66,7 @@ class TestAttributes(BaseIntegrationTest):
 
     def test_attributes_update_put(self):
         cluster_id = self.env.create_cluster(api=True)['id']
+        cluster_db = self.env.clusters[0]
         resp = self.app.get(
             reverse(
                 'ClusterAttributesHandler',
@@ -86,9 +86,7 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        attrs = self.db.query(Attributes).filter(
-            Attributes.cluster_id == cluster_id
-        ).first()
+        attrs = objects.Cluster.get_attributes(cluster_db)
         self.assertEquals("bar", attrs.editable["foo"])
         attrs.editable.pop('foo')
         self.assertEqual(attrs.editable, {})
@@ -121,6 +119,7 @@ class TestAttributes(BaseIntegrationTest):
 
     def test_attributes_update_patch(self):
         cluster_id = self.env.create_cluster(api=True)['id']
+        cluster_db = self.env.clusters[0]
         resp = self.app.get(
             reverse(
                 'ClusterAttributesHandler',
@@ -140,9 +139,7 @@ class TestAttributes(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        attrs = self.db.query(Attributes).filter(
-            Attributes.cluster_id == cluster_id
-        ).first()
+        attrs = objects.Cluster.get_attributes(cluster_db)
         self.assertEquals("bar", attrs.editable["foo"])
         attrs.editable.pop('foo')
         self.assertNotEqual(attrs.editable, {})
@@ -166,6 +163,7 @@ class TestAttributes(BaseIntegrationTest):
 
     def test_attributes_set_defaults(self):
         cluster = self.env.create_cluster(api=True)
+        cluster_db = self.env.clusters[0]
         # Change editable attributes.
         resp = self.app.put(
             reverse(
@@ -180,9 +178,7 @@ class TestAttributes(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEquals(200, resp.status_code)
-        attrs = self.db.query(Attributes).filter(
-            Attributes.cluster_id == cluster['id']
-        ).first()
+        attrs = objects.Cluster.get_attributes(cluster_db)
         self.assertEquals("bar", attrs.editable["foo"])
         # Set attributes to defaults.
         resp = self.app.put(
@@ -202,9 +198,10 @@ class TestAttributes(BaseIntegrationTest):
 
     def test_attributes_merged_values(self):
         cluster = self.env.create_cluster(api=True)
-        cluster_db = self.db.query(Cluster).get(cluster['id'])
-        orig_attrs = cluster_db.attributes.merged_attrs()
-        attrs = cluster_db.attributes.merged_attrs_values()
+        cluster_db = objects.Cluster.get_by_uid(cluster['id'])
+        attrs = objects.Cluster.get_attributes(cluster_db)
+        orig_attrs = objects.Attributes.merged_attrs(attrs)
+        attrs = objects.Attributes.merged_attrs_values(attrs)
         for group, group_attrs in orig_attrs.iteritems():
             for attr, orig_value in group_attrs.iteritems():
                 if group == 'common':

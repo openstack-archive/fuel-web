@@ -15,7 +15,6 @@
 #    under the License.
 
 
-from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.orchestrator.provisioning_serializers import serialize
 from nailgun.test.base import BaseIntegrationTest
@@ -25,17 +24,18 @@ class TestProvisioningSerializer(BaseIntegrationTest):
 
     def test_ubuntu_serializer(self):
         release = self.env.create_release(
-            api=False, operating_system='Ubuntu')
+            api=False,
+            operating_system='Ubuntu')
 
-        cluster = self.env.create(
+        self.env.create(
             cluster_kwargs={
                 'mode': 'multinode',
-                'release': release.id},
+                'release_id': release.id},
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True}])
 
-        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        cluster_db = self.env.clusters[0]
         serialized_cluster = serialize(cluster_db, cluster_db.nodes)
 
         for node in serialized_cluster['nodes']:

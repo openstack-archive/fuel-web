@@ -12,7 +12,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import string
+
 from copy import deepcopy
+from random import choice
+
+from nailgun.logger import logger
+from nailgun.settings import settings
 
 
 def dict_merge(a, b):
@@ -29,3 +35,46 @@ def dict_merge(a, b):
         else:
             result[k] = deepcopy(v)
     return result
+
+
+def traverse(cdict, generator_class):
+    new_dict = {}
+    if cdict:
+        for i, val in cdict.iteritems():
+            if isinstance(val, (str, unicode, int, float)):
+                new_dict[i] = val
+            elif isinstance(val, dict) and "generator" in val:
+                try:
+                    generator = getattr(
+                        generator_class,
+                        val["generator"]
+                    )
+                except AttributeError:
+                    logger.error("Attribute error: %s" % val["generator"])
+                    raise
+                else:
+                    new_dict[i] = generator(val.get("generator_arg"))
+            else:
+                new_dict[i] = traverse(val, generator_class)
+    return new_dict
+
+
+class AttributesGenerator(object):
+    @classmethod
+    def password(cls, arg=None):
+        try:
+            length = int(arg)
+        except Exception:
+            length = 8
+        chars = string.letters + string.digits
+        return u''.join([choice(chars) for _ in xrange(length)])
+
+    @classmethod
+    def ip(cls, arg=None):
+        if str(arg) in ("admin", "master"):
+            return settings.MASTER_IP
+        return "127.0.0.1"
+
+    @classmethod
+    def identical(cls, arg=None):
+        return str(arg)

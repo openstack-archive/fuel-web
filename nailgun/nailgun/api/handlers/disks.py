@@ -23,6 +23,9 @@ import web
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.node import NodeDisksValidator
+
+from nailgun import objects
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
@@ -56,7 +59,11 @@ class NodeDisksHandler(BaseHandler):
         data = self.checked_data()
 
         if node.cluster:
-            node.cluster.add_pending_changes('disks', node_id=node.id)
+            objects.Cluster.add_pending_changes(
+                node.cluster,
+                'disks',
+                node_id=node.id
+            )
 
         volumes_data = DisksFormatConvertor.format_disks_to_full(node, data)
         # For some reasons if we update node attributes like

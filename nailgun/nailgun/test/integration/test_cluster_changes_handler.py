@@ -21,6 +21,8 @@ from mock import patch
 
 import nailgun
 
+from nailgun import objects
+
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
@@ -86,7 +88,9 @@ class TestHandlers(BaseIntegrationTest):
             'deployment_id': cluster_db.id
         }
 
-        cluster_attrs = cluster_db.attributes.merged_attrs_values()
+        cluster_attrs = objects.Attributes.merged_attrs_values(
+            cluster_db.attributes
+        )
         common_attrs.update(cluster_attrs)
 
         # Common attrs calculation
@@ -341,7 +345,9 @@ class TestHandlers(BaseIntegrationTest):
             'deployment_id': cluster_db.id
         }
 
-        cluster_attrs = cluster_db.attributes.merged_attrs_values()
+        cluster_attrs = objects.Attributes.merged_attrs_values(
+            cluster_db.attributes
+        )
         common_attrs.update(cluster_attrs)
 
         L2 = {

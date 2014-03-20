@@ -14,11 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from random import choice
-import string
-
-import web
-
 from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Enum
@@ -33,10 +28,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Node
-from nailgun.db.sqlalchemy.models.release import Release
-from nailgun.logger import logger
-from nailgun.settings import settings
-from nailgun.utils import dict_merge
 
 
 class ClusterChanges(Base):
@@ -168,52 +159,6 @@ class Cluster(Base):
             return False
         return True
 
-    @classmethod
-    def validate(cls, data):
-        d = cls.validate_json(data)
-        if d.get("name"):
-            if db().query(Cluster).filter_by(
-                name=d["name"]
-            ).first():
-                c = web.webapi.conflict
-                c.message = "Environment with this name already exists"
-                raise c()
-        if d.get("release"):
-            release = db().query(Release).get(d.get("release"))
-            if not release:
-                raise web.webapi.badrequest(message="Invalid release id")
-        return d
-
-    def add_pending_changes(self, changes_type, node_id=None):
-        ex_chs = db().query(ClusterChanges).filter_by(
-            cluster=self,
-            name=changes_type
-        )
-        if not node_id:
-            ex_chs = ex_chs.first()
-        else:
-            ex_chs = ex_chs.filter_by(node_id=node_id).first()
-        # do nothing if changes with the same name already pending
-        if ex_chs:
-            return
-        ch = ClusterChanges(
-            cluster_id=self.id,
-            name=changes_type
-        )
-        if node_id:
-            ch.node_id = node_id
-        db().add(ch)
-        db().flush()
-
-    def clear_pending_changes(self, node_id=None):
-        chs = db().query(ClusterChanges).filter_by(
-            cluster_id=self.id
-        )
-        if node_id:
-            chs = chs.filter_by(node_id=node_id)
-        map(db().delete, chs.all())
-        db().flush()
-
     @property
     def network_manager(self):
         if self.net_provider == 'neutron':
@@ -224,78 +169,9 @@ class Cluster(Base):
             return NovaNetworkManager
 
 
-class AttributesGenerators(object):
-    @classmethod
-    def password(cls, arg=None):
-        try:
-            length = int(arg)
-        except Exception:
-            length = 8
-        chars = string.letters + string.digits
-        return u''.join([choice(chars) for _ in xrange(length)])
-
-    @classmethod
-    def ip(cls, arg=None):
-        if str(arg) in ("admin", "master"):
-            return settings.MASTER_IP
-        return "127.0.0.1"
-
-    @classmethod
-    def identical(cls, arg=None):
-        return str(arg)
-
-
 class Attributes(Base):
     __tablename__ = 'attributes'
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     editable = Column(JSON)
     generated = Column(JSON)
-
-    def generate_fields(self):
-        self.generated = self.traverse(self.generated)
-        db().add(self)
-        db().flush()
-
-    @classmethod
-    def traverse(cls, cdict):
-        new_dict = {}
-        if cdict:
-            for i, val in cdict.iteritems():
-                if isinstance(val, (str, unicode, int, float)):
-                    new_dict[i] = val
-                elif isinstance(val, dict) and "generator" in val:
-                    try:
-                        generator = getattr(
-                            AttributesGenerators,
-                            val["generator"]
-                        )
-                    except AttributeError:
-                        logger.error("Attribute error: %s" % val["generator"])
-                        raise
-                    else:
-                        new_dict[i] = generator(val.get("generator_arg"))
-                else:
-                    new_dict[i] = cls.traverse(val)
-        return new_dict
-
-    def merged_attrs(self):
-        return dict_merge(self.generated, self.editable)
-
-    def merged_attrs_values(self):
-        attrs = self.merged_attrs()
-        for group_attrs in attrs.itervalues():
-            for attr, value in group_attrs.iteritems():
-                if isinstance(value, dict) and 'value' in value:
-                    group_attrs[attr] = value['value']
-        if 'common' in attrs:
-            attrs.update(attrs.pop('common'))
-        if 'additional_components' in attrs:
-            for comp, enabled in attrs['additional_components'].iteritems():
-                if isinstance(enabled, bool):
-                    attrs.setdefault(comp, {}).update({
-                        "enabled": enabled
-                    })
-
-            attrs.pop('additional_components')
-        return attrs

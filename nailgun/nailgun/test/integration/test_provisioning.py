@@ -16,6 +16,8 @@
 
 from mock import patch
 
+from nailgun import objects
+
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 
@@ -64,7 +66,7 @@ class TestProvisioning(BaseIntegrationTest):
             ]
         )
         cluster = self.env.clusters[0]
-        cluster.clear_pending_changes()
+        objects.Cluster.clear_pending_changes(cluster)
         nodes_ids = map(lambda n: n.id, self.env.nodes)
         self.env.network_manager.assign_ips(nodes_ids, 'management')
         self.env.network_manager.assign_ips(nodes_ids, 'storage')

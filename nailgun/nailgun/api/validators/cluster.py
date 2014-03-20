@@ -14,10 +14,10 @@
 #    under the License.
 
 from nailgun.api.validators.base import BasicValidator
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Cluster
-from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
+
+from nailgun.objects import ClusterCollection
+from nailgun.objects import Release
 
 
 class ClusterValidator(BasicValidator):
@@ -25,15 +25,14 @@ class ClusterValidator(BasicValidator):
     def _validate_common(cls, data):
         d = cls.validate_json(data)
         if d.get("name"):
-            if db().query(Cluster).filter_by(
-                name=d["name"]
-            ).first():
+            if ClusterCollection.filter_by(name=d["name"]).first():
                 raise errors.AlreadyExists(
                     "Environment with this name already exists",
                     log_message=True
                 )
-        if d.get("release"):
-            release = db().query(Release).get(d.get("release"))
+        release_id = d.get("release", d.get("release_id", None))
+        if release_id:
+            release = Release.get_by_uid(release_id)
             if not release:
                 raise errors.InvalidData(
                     "Invalid release ID",
@@ -43,7 +42,14 @@ class ClusterValidator(BasicValidator):
 
     @classmethod
     def validate(cls, data):
-        return cls._validate_common(data)
+        d = cls._validate_common(data)
+        release_id = d.get("release", d.get("release_id", None))
+        if not release_id:
+            raise errors.InvalidData(
+                u"Release ID is required",
+                log_message=True
+            )
+        return d
 
     @classmethod
     def validate_update(cls, data, instance):

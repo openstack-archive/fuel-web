@@ -16,6 +16,8 @@
 
 import json
 
+from nailgun import objects
+
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import ClusterChanges
 from nailgun.test.base import BaseIntegrationTest
@@ -93,7 +95,7 @@ class TestClusterChanges(BaseIntegrationTest):
     def test_attributes_changing_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]
-        cluster_db.clear_pending_changes()
+        objects.Cluster.clear_pending_changes(cluster_db)
         all_changes = self.db.query(ClusterChanges).all()
         self.assertEquals(len(all_changes), 0)
         self.app.put(
@@ -115,7 +117,7 @@ class TestClusterChanges(BaseIntegrationTest):
     def test_default_attributes_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]
-        cluster_db.clear_pending_changes()
+        objects.Cluster.clear_pending_changes(cluster_db)
         all_changes = self.db.query(ClusterChanges).all()
         self.assertEquals(len(all_changes), 0)
         self.app.put(
@@ -132,7 +134,7 @@ class TestClusterChanges(BaseIntegrationTest):
     def test_network_changing_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]
-        cluster_db.clear_pending_changes()
+        objects.Cluster.clear_pending_changes(cluster_db)
         all_changes = self.db.query(ClusterChanges).all()
         self.assertEquals(len(all_changes), 0)
         resp = self.app.get(

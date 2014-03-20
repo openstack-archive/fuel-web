@@ -66,7 +66,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.db.query(Cluster).get(cluster["id"])
         cluster2 = self.env.create_cluster(api=True,
-                                           release=cluster_db.release.id)
+                                           release_id=cluster_db.release.id)
         cluster2_db = self.db.query(Cluster).get(cluster2["id"])
 
         for clstr in (cluster_db, cluster2_db):

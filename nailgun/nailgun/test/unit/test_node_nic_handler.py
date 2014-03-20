@@ -262,3 +262,56 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
         self.assertNotEquals(response[0]['mac'], new_mac.lower())
+
+    def test_remove_assigned_interface(self):
+        def get_nodes(test):
+            resp = test.app.get(
+                reverse('NodeCollectionHandler',
+                        kwargs={'cluster_id': self.env.clusters[0].id}),
+                headers=self.default_headers,
+            )
+            return json.loads(resp.body)
+
+        # create node and check it availability
+        self.env.create(nodes_kwargs=[{'api': True}])
+        nodes_data = get_nodes(self)
+        self.assertEqual(len(nodes_data), 1)
+
+        # remove all interfaces except admin one
+        ifaces = list(nodes_data[0]['meta']['interfaces'])
+        nodes_data[0]['meta']['interfaces'] = \
+            [i for i in ifaces if i['name'] == 'eth1']
+
+        self.app.put(
+            reverse(
+                'NodeAgentHandler',
+            ),
+            json.dumps({
+                'id': nodes_data[0]['id'],
+                'meta': nodes_data[0]['meta'],
+            }),
+            headers=self.default_headers,
+        )
+
+        # check error state and availability
+        nodes_data = get_nodes(self)
+        self.assertEqual(len(nodes_data), 1)
+        self.assertEqual(nodes_data[0]['status'], u'error')
+
+        # restore removed interfaces
+        nodes_data[0]['meta']['interfaces'] = ifaces
+        self.app.put(
+            reverse(
+                'NodeAgentHandler',
+            ),
+            json.dumps({
+                'id': nodes_data[0]['id'],
+                'meta': nodes_data[0]['meta'],
+            }),
+            headers=self.default_headers,
+        )
+
+        # check non error state and availability
+        nodes_data = get_nodes(self)
+        self.assertEqual(len(nodes_data), 1)
+        self.assertNotEqual(nodes_data[0]['status'], u'error')

@@ -39,6 +39,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun import notifier
 
@@ -231,9 +232,16 @@ class NodeAgentHandler(BaseHandler):
 
             db().flush()
 
-        objects.Node.get_network_manager(
-            node
-        ).update_interfaces_info(node)
+        try:
+            network_manager = objects.Node.get_network_manager(node)
+
+            network_manager.check_interfaces_correctness(node)
+            network_manager.update_interfaces_info(node)
+        except errors.InvalidInterfacesInfo as exc:
+            logger.warning(
+                "Interfaces correctness for node '%s' has been broken: %s",
+                node.human_readable_name, exc.message
+            )
 
         return {"id": node.id}
 

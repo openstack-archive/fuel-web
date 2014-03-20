@@ -153,9 +153,18 @@ class Node(NailgunObject):
 
     @classmethod
     def update_interfaces(cls, instance):
-        Cluster.get_network_manager(
-            instance.cluster
-        ).update_interfaces_info(instance)
+        try:
+            network_manager = Cluster.get_network_manager(instance.cluster)
+
+            network_manager.check_interfaces_correctness(instance)
+            network_manager.update_interfaces_info(instance)
+
+            db().refresh(instance)
+        except errors.InvalidInterfacesInfo as exc:
+            logger.warning(
+                "Interfaces correctness for node '%s' has been broken: %s",
+                instance.human_readable_name, exc.message
+            )
 
     @classmethod
     def update_volumes(cls, instance):

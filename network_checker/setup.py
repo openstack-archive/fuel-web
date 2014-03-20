@@ -27,12 +27,14 @@ setuptools.setup(
         "Programming Language :: Python",
         "Topic :: Software Development :: Testing"
     ],
-    install_requires=[
-        'argparse',
-        'cliff-tablib',
-        'scapy',
-        'pcap'
-    ],
+    # dependencies will be maintained by specs
+    # to prevent name collisions
+    # install_requires=[
+    #     'argparse',
+    #     'cliff-tablib',
+    #     'scapy',
+    #     'pcap'
+    # ],
     include_package_data=True,
     packages=['net_check', 'dhcp_checker'],
     entry_points={

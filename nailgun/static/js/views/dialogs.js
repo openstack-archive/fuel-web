@@ -490,7 +490,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             try {
                 var additionalServices = settings.get('editable').additional_components;
                 if (additionalServices) {
-                    additionalServices.savanna.value = this.$('input[name=savanna]').is(':checked');
+                    additionalServices.sahara.value = this.$('input[name=sahara]').is(':checked');
                     additionalServices.murano.value = this.$('input[name=murano]').is(':checked');
                     additionalServices.ceilometer.value = this.$('input[name=ceilometer]').is(':checked');
                 }
@@ -501,7 +501,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            var disabledDueToRelease = !release || release.get('operating_system') == 'RHEL'; // no Savanna & Murano for RHOS for now
+            var disabledDueToRelease = !release || release.get('operating_system') == 'RHEL'; // no Sahara & Murano for RHOS for now
             var networkMode = this.wizard.findPane(clusterWizardPanes.ClusterNetworkPane).manager;
             var disabledDueToNetworkMode = networkMode == 'nova-network'; // no Murano for Nova Network
             this.$el.html(this.template({

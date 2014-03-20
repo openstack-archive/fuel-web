@@ -395,8 +395,8 @@
                         "title": "Additional Services",
                         "release_alert": "Additional services are not available in __releaseName__",
                         "network_mode_alert": "Murano is not available for current network mode. Please choose Neutron networking to enable.",
-                        "install_savanna": "Install Savanna",
-                        "install_savanna_description": "Savanna enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
+                        "install_sahara": "Install Sahara",
+                        "install_sahara_description": "Sahara enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
                         "install_murano": "Install Murano",
                         "install_murano_description": "Murano enables Windows or Linux based datacenter services like Active Directory, IIS, Apache, Microsoft SQL and ASP.NET to be deployed on OpenStack.",
                         "install_ceilometer": "Install Ceilometer (OpenStack Telemetry)",
@@ -692,9 +692,9 @@
                     },
                     "additional_components": {
                         "group_name": "额外组件",
-                        "savanna": {
-                            "label": "安装Savanna",
-                            "description": "如果选择，Savanna组件将被安装。"
+                        "sahara": {
+                            "label": "安装Sahara",
+                            "description": "如果选择，Sahara组件将被安装。"
                         },
                         "murano": {
                             "label": "安装Murano",
@@ -950,8 +950,8 @@
                     "additional": {
                         "title": "附加服务",
                         "release_alert": "__releaseName__不支持附加服务",
-                        "install_savanna": "安装Savanna",
-                        "install_savanna_description": "利用Savanna能在各大版本厂商的OpenStack上的部署Hadoop集群。",
+                        "install_sahara": "安装Sahara",
+                        "install_sahara_description": "利用Sahara能在各大版本厂商的OpenStack上的部署Hadoop集群。",
                         "install_murano": "安装Murano",
                         "install_murano_description": "利用Murano能将基于Windows的数据中心服务，如活动目录、IIS、Microsoft SQL和ASP.NET部署到OpenStack上。"
                     },

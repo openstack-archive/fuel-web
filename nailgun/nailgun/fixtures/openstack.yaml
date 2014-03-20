@@ -453,10 +453,10 @@
         additional_components:
           metadata:
             weight: 20
-          savanna:
+          sahara:
             value: false
-            label: "Install Savanna"
-            description: "If selected, Savanna component will be installed"
+            label: "Install Sahara"
+            description: "If selected, Sahara component will be installed"
             weight: 10
             type: "checkbox"
           murano:
@@ -509,7 +509,7 @@
             weight: 70
             type: "text"
       generated:
-        savanna:
+        sahara:
           user_password:
             generator: "password"
           db_password:

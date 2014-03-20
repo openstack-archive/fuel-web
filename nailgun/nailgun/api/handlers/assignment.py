@@ -26,9 +26,11 @@ from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.assignment import NodeAssignmentValidator
 from nailgun.api.validators.assignment import NodeUnassignmentValidator
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Cluster
+
 from nailgun.db.sqlalchemy.models import Node
+
+from nailgun import objects
+
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun import notifier
@@ -50,7 +52,7 @@ class NodeAssignmentHandler(BaseHandler):
             cluster_id=cluster_id
         )
         nodes = self.get_objects_list_or_404(Node, data.keys())
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster.model, cluster_id)
         for node in nodes:
             node.cluster = cluster
             node.pending_roles = data[node.id]
@@ -58,7 +60,12 @@ class NodeAssignmentHandler(BaseHandler):
             try:
                 node.attributes.volumes = \
                     node.volume_manager.gen_volumes_info()
-                node.cluster.add_pending_changes("disks", node_id=node.id)
+
+                objects.Cluster.add_pending_changes(
+                    node.cluster,
+                    "disks",
+                    node_id=node.id
+                )
 
                 network_manager = node.cluster.network_manager
                 network_manager.assign_networks_by_default(node)
@@ -73,7 +80,6 @@ class NodeAssignmentHandler(BaseHandler):
                     ),
                     node_id=node.id
                 )
-            db().commit()
         raise web.ok
 
 
@@ -88,19 +94,21 @@ class NodeUnassignmentHandler(BaseHandler):
         :http: * 204 (node successfully unassigned)
                * 404 (node not found in db)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster.model, cluster_id)
         nodes = self.checked_data(
             self.validator.validate_collection_update,
             cluster_id=cluster.id
         )
         for node in nodes:
             if node.status == "discover":
-                node.cluster.clear_pending_changes(node_id=node.id)
+                objects.Cluster.clear_pending_changes(
+                    node.cluster,
+                    node_id=node.id
+                )
                 node.pending_roles = []
                 node.cluster_id = None
                 node.pending_addition = False
                 NetworkManager.clear_assigned_networks(node)
             else:
                 node.pending_deletion = True
-            db().commit()
         raise web.ok

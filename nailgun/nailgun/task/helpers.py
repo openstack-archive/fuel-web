@@ -19,6 +19,8 @@ import shutil
 
 from sqlalchemy import or_
 
+from nailgun import objects
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
@@ -252,7 +254,7 @@ class TaskHelper(object):
                         n.progress = 100
 
                 cls.__set_cluster_status(cluster, 'operational')
-                cluster.clear_pending_changes()
+                objects.Cluster.clear_pending_changes(cluster)
             elif task.status == 'error' and \
                     not cls.__before_deployment_error(task):
                 # We don't want to set cluster status to

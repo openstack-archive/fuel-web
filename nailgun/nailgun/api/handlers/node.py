@@ -40,6 +40,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 
+from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun import notifier
@@ -534,7 +535,22 @@ class NodeAgentHandler(BaseHandler):
 
             db().commit()
 
-        NetworkManager.update_interfaces_info(node)
+        try:
+            NetworkManager.check_interfaces_correctness(node)
+            NetworkManager.update_interfaces_info(node)
+
+            if node.status in ('error', ):
+                node.status = 'ready' if node.cluster_id else 'discover'
+
+        except errors.InvalidInterfacesInfo as exc:
+            if node.status not in ('provisioning', 'deploying', 'error'):
+                node.status = 'error'
+                node.error_msg = exc.message
+
+                notifier.notify('error', '{0}: {1}'.format(
+                    node.human_readable_name,
+                    exc.message
+                ), node_id=node.id)
 
         return {"id": node.id}
 

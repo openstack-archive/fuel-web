@@ -729,9 +729,9 @@ class NetworkManager(object):
         in meta field in node's model
         """
         try:
-            cls.__check_interfaces_correctness(node)
+            cls.check_interfaces_correctness(node)
         except errors.InvalidInterfacesInfo as e:
-            logger.warn("Cannot update interfaces: %s" % str(e))
+            logger.warn("Cannot update interfaces: %s" % e.message)
             return
 
         for interface in node.meta["interfaces"]:
@@ -745,13 +745,14 @@ class NetworkManager(object):
         cls.__delete_not_found_interfaces(node, node.meta["interfaces"])
 
     @classmethod
-    def __check_interfaces_correctness(cls, node):
+    def check_interfaces_correctness(cls, node):
         """Check that
         * interface list in meta field is not empty
         * at least one interface has ip which
           includes to admin subnet. It can happens in
           case if agent was running, but network
           interfaces were not configured yet.
+        * there're no networks assigned to removed interface
         """
         if not node.meta:
             raise errors.InvalidInterfacesInfo(
@@ -776,6 +777,16 @@ class NetworkManager(object):
             raise errors.InvalidInterfacesInfo(
                 u'Cannot find interface with ip which '
                 'includes to admin subnet "%s"' % node.full_name)
+
+        # raise exception if an interface is about to remove,
+        # but has binded network and it's already deployed
+        interfaces = [i['name'] for i in interfaces]
+        for iface in node.interfaces:
+            if iface.name not in interfaces and iface.assigned_networks_list:
+                raise errors.InvalidInterfacesInfo(
+                    u'Could not remove interface "{0}", since it is assigned '
+                    u'to one or more neworks'.format(iface.name)
+                )
 
     @classmethod
     def is_ip_belongs_to_admin_subnet(cls, ip_addr):

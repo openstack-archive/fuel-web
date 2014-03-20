@@ -201,9 +201,19 @@ class Node(NailgunObject):
         :param instance: Node instance
         :returns: None
         """
-        Cluster.get_network_manager(
-            instance.cluster
-        ).update_interfaces_info(instance)
+        try:
+            network_manager = Cluster.get_network_manager(instance.cluster)
+
+            network_manager.check_interfaces_correctness(instance)
+            network_manager.update_interfaces_info(instance)
+
+            db().refresh(instance)
+        except errors.InvalidInterfacesInfo as exc:
+            logger.warning(
+                "Failed to update interfaces for node '%s' - invalid info "
+                "in meta: %s", instance.human_readable_name, exc.message
+            )
+            logger.warning(traceback.format_exc())
 
     @classmethod
     def update_volumes(cls, instance):

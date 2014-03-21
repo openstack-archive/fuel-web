@@ -103,6 +103,9 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                 render.call(this);
             } else {
                 cluster = new models.Cluster({id: id});
+                var settings = new models.Settings();
+                settings.url = _.result(cluster, 'url') + '/attributes';
+                cluster.set({settings: settings});
                 tasks = new models.Tasks();
                 tasks.fetch = function(options) {
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));

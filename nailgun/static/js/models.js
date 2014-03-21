@@ -18,6 +18,21 @@ define(['utils', 'deepModel'], function(utils) {
 
     var models = {};
 
+    var cacheMixin = {
+        fetch: function(options) {
+            if (this.cacheFor && options && options.cache && this.lastSyncTime && (this.cacheFor > (new Date() - this.lastSyncTime))) {
+                return $.Deferred().resolve();
+            }
+            return this.constructor.__super__.fetch.apply(this, arguments);
+        },
+        sync: function(options) {
+            if (this.cacheFor) {
+                this.lastSyncTime = new Date();
+            }
+            return this.constructor.__super__.sync.apply(this, arguments);
+        }
+    };
+
     models.Release = Backbone.Model.extend({
         constructorName: 'Release',
         urlRoot: '/api/releases'
@@ -289,10 +304,18 @@ define(['utils', 'deepModel'], function(utils) {
     models.Settings = Backbone.DeepModel.extend({
         constructorName: 'Settings',
         urlRoot: '/api/clusters/',
+        cacheFor: 60 * 1000,
         isNew: function() {
             return false;
+        },
+        parse: function(response) {
+            return response.editable;
+        },
+        toJSON: function(options) {
+            return {editable: this.constructor.__super__.toJSON.call(this, options)};
         }
     });
+    _.extend(models.Settings.prototype, cacheMixin);
 
     models.Disk = Backbone.Model.extend({
         constructorName: 'Disk',

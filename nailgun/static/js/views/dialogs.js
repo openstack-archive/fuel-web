@@ -385,7 +385,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         template: _.template(clusterComputePaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
-                settings.get('editable').common.libvirt_type.value = this.$('input[name=hypervisor]:checked').val();
+                settings.attributes.common.libvirt_type.value = this.$('input[name=hypervisor]:checked').val();
             } catch (e) {
                 return $.Deferred().reject();
             }
@@ -450,7 +450,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         template: _.template(clusterStoragePaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
-                var storageSettings = settings.get('editable').storage;
+                var storageSettings = settings.attributes.storage;
                 if (storageSettings) {
                     if (this.$('input[name=cinder]:checked').val() == 'ceph' && storageSettings.volumes_ceph) {
                         storageSettings.volumes_lvm.value = false;
@@ -488,7 +488,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         template: _.template(clusterAdditionalServicesPaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
-                var additionalServices = settings.get('editable').additional_components;
+                var additionalServices = settings.attributes.additional_components;
                 if (additionalServices) {
                     additionalServices.savanna.value = this.$('input[name=savanna]').is(':checked');
                     additionalServices.murano.value = this.$('input[name=murano]').is(':checked');

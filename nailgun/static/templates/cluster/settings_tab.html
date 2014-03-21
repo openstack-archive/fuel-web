@@ -2,19 +2,19 @@
 
   <h3 data-i18n="cluster_page.settings_tab.title">OpenStack Settings</h3>
 
-  <% if (cluster.get('settings').deferred.state() != 'pending') { %>
-    <div class="settings"></div>
-  <% } else { %>
-    <div class="progress-bar">
-      <div class="progress progress-striped progress-success active"><div class="bar"></div></div>
-    </div>
-  <% } %>
+  <div class="settings">
+    <% if (loading.state() == 'pending') { %>
+      <div class="progress-bar">
+        <div class="progress progress-striped progress-success active"><div class="bar"></div></div>
+      </div>
+    <% } %>
+  </div>
 
   <!-- page-control box -->
   <div class="row">
     <div class="page-control-box">
       <div class="page-control-button-placeholder">
-        <button data-i18n="common.load_defaults_button" class="btn btn-load-defaults"<%= locked || cluster.get('settings').deferred.state() == 'pending' ? ' disabled' : '' %>></button>
+        <button data-i18n="common.load_defaults_button" class="btn btn-load-defaults" <%= locked || loading.state() == 'pending' ? ' disabled' : '' %>></button>
         <button data-i18n="common.cancel_changes_button" class="btn btn-revert-changes" disabled></button>
         <button data-i18n="common.save_settings_button" class="btn btn-success btn-apply-changes" disabled></button>
       </div>

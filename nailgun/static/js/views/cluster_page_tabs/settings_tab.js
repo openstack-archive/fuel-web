@@ -29,7 +29,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
     SettingsTab = commonViews.Tab.extend({
         template: _.template(settingsTabTemplate),
         hasChanges: function() {
-            return !_.isEqual(this.settings.attributes, this.previousSettings);
+            return !_.isEqual(this.settings.attributes, this.initialSettings);
         },
         events: {
             'click .btn-apply-changes:not([disabled])': 'applyChanges',
@@ -51,8 +51,8 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         applyChanges: function() {
             this.disableControls();
-            return this.model.get('settings').save({editable: _.cloneDeep(this.settings.attributes)}, {patch: true, wait: true, url: _.result(this.model, 'url') + '/attributes'})
-                .done(_.bind(this.setInitialData, this))
+            return this.settings.save(null, {patch: true, wait: true})
+                .done(_.bind(this.updateInitialSettings, this))
                 .always(_.bind(function() {
                     this.render();
                     this.model.fetch();
@@ -63,26 +63,23 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 }, this));
         },
         revertChanges: function() {
-            this.setInitialData();
-            this.render();
+            this.loadInitialSettings();
+        },
+        beforeTearDown: function() {
+            this.loadInitialSettings();
         },
         loadDefaults: function() {
             this.disableControls();
-            this.settings.fetch({url: _.result(this.model, 'url') + '/attributes/defaults'}).always(_.bind(function() {
+            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'}).always(_.bind(function() {
                 this.render();
                 this.checkForChanges();
             }, this));
         },
-        setInitialData: function() {
-            this.previousSettings = _.cloneDeep(this.model.get('settings').get('editable'));
-            this.settings = new models.Settings(this.previousSettings);
-            this.settings.parse = function(response) {return response.editable;};
-            // some hacks until settings dependecies are implemented
-            this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
-            this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
-            this.settings.on('change:storage.volumes_lvm.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_ceph.value': !value});}}, this));
-            this.settings.on('change:storage.volumes_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_lvm.value': !value});}}, this));
-            this.settings.on('change', _.bind(this.checkForChanges, this));
+        updateInitialSettings: function() {
+            this.initialSettings = _.cloneDeep(this.settings.attributes);
+        },
+        loadInitialSettings: function() {
+            this.settings.set(this.initialSettings);
         },
         composeBindings: function() {
             this.bindings = {};
@@ -109,8 +106,11 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({cluster: this.model, locked: this.isLocked()})).i18n();
-            if (this.model.get('settings').deferred.state() != 'pending') {
+            this.$el.html(this.template({
+                loading: this.loading,
+                locked: this.isLocked()
+            })).i18n();
+            if (this.loading.state() != 'pending') {
                 this.$('.settings').html('');
                 var sortedSettings = _.sortBy(_.keys(this.settings.attributes), _.bind(function(setting) {
                     return this.settings.get(setting + '.metadata.weight');
@@ -127,8 +127,6 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 if (this.model.get('net_provider') == 'nova_network') {
                     this.$('input[name=murano]').attr('disabled', true);
                 }
-            }
-            if (this.settings) {
                 this.composeBindings();
                 this.stickit(this.settings);
             }
@@ -144,17 +142,17 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
-            if (!this.model.get('settings')) {
-                this.model.set({'settings': new models.Settings()}, {silent: true});
-                this.model.get('settings').deferred = this.model.get('settings').fetch({url: _.result(this.model, 'url') + '/attributes'});
-                this.model.get('settings').deferred
-                    .done(_.bind(function() {
-                        this.setInitialData();
-                        this.render();
-                    }, this));
-            } else {
-                this.setInitialData();
+            this.settings = this.model.get('settings');
+            (this.loading = this.settings.fetch({cache: true})).done(_.bind(this.updateInitialSettings, this));
+            if (this.loading.state() == 'pending') {
+                this.loading.done(_.bind(this.render, this));
             }
+            // some hacks until settings dependecies are implemented
+            this.settings.on('change:storage.objects_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.images_ceph.value': value});}}, this));
+            this.settings.on('change:storage.images_ceph.value', _.bind(function(model, value) {if (!value) {this.settings.set({'storage.objects_ceph.value': value});}}, this));
+            this.settings.on('change:storage.volumes_lvm.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_ceph.value': !value});}}, this));
+            this.settings.on('change:storage.volumes_ceph.value', _.bind(function(model, value) {if (value) {this.settings.set({'storage.volumes_lvm.value': !value});}}, this));
+            this.settings.on('change', this.checkForChanges, this);
         }
     });
 

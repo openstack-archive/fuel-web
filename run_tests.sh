@@ -26,6 +26,8 @@ function usage {
   echo "  -W, --no-webui              Don't run WEB-UI tests"
   echo "  -c, --cli                   Run FUELCLIENT tests"
   echo "  -C, --no-cli                Don't run FUELCLIENT tests"
+  echo "  -u, --upgrade               Run tests for UPGRADE system"
+  echo "  -U, --no-upgrade            Don't run tests for UPGRADE system"
   echo "  -p, --flake8                Run FLAKE8 and HACKING compliance check"
   echo "  -P, --no-flake8             Don't run static code checks"
   echo "  -j, --jslint                Run JSLINT compliance checks"
@@ -49,6 +51,8 @@ function process_options {
       -W|--no-webui) no_webui_tests=1;;
       -c|--cli) cli_tests=1;;
       -C|--no-cli) no_cli_tests=1;;
+      -u|--upgrade) upgrade_system=1;;
+      -U|--no-upgrade) no_upgrade_system=1;;
       -p|--flake8) flake8_checks=1;;
       -P|--no-flake8) no_flake8_checks=1;;
       -j|--jslint) jslint_checks=1;;
@@ -81,6 +85,8 @@ webui_tests=0
 no_webui_tests=0
 cli_tests=0
 no_cli_tests=0
+upgrade_system=0
+no_upgrade_system=0
 flake8_checks=0
 no_flake8_checks=0
 jslint_checks=0
@@ -105,14 +111,19 @@ function run_tests {
   fi
 
   # Enable all tests if none was specified skipping all explicitly disabled tests.
-  if [[ $nailgun_tests -eq 0 && $webui_tests -eq 0 && $cli_tests -eq 0 \
-        && $flake8_checks -eq 0 && $jslint_checks -eq 0 ]]; then
+  if [[ $nailgun_tests -eq 0 && \
+      $webui_tests -eq 0 && \
+      $cli_tests -eq 0 && \
+      $upgrade_system -eq 0 && \
+      $flake8_checks -eq 0 && \
+      $jslint_checks -eq 0 ]]; then
 
-    if [ $no_nailgun_tests -ne 1 ]; then nailgun_tests=1; fi
-    if [ $no_webui_tests -ne 1 ];   then webui_tests=1;   fi
-    if [ $no_cli_tests -ne 1 ];     then cli_tests=1;     fi
-    if [ $no_flake8_checks -ne 1 ]; then flake8_checks=1; fi
-    if [ $no_jslint_checks -ne 1 ]; then jslint_checks=1; fi
+    if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
+    if [ $no_webui_tests -ne 1 ];    then webui_tests=1;    fi
+    if [ $no_cli_tests -ne 1 ];      then cli_tests=1;      fi
+    if [ $no_upgrade_system -ne 1 ]; then upgrade_system=1; fi
+    if [ $no_flake8_checks -ne 1 ];  then flake8_checks=1;  fi
+    if [ $no_jslint_checks -ne 1 ];  then jslint_checks=1;  fi
   fi
 
   # Run all enabled tests
@@ -129,6 +140,11 @@ function run_tests {
   if [ $cli_tests -eq 1 ]; then
     echo "Starting Fuel client tests..."
     run_cli_tests || errors+=" cli_tests"
+  fi
+
+  if [ $upgrade_system -eq 1 ]; then
+    echo "Starting upgrade system tests..."
+    run_upgrade_system_tests || errors+=" upgrade_system_tests"
   fi
 
   if [ $flake8_checks -eq 1 ]; then
@@ -274,6 +290,26 @@ function run_cli_tests {
 
   rm $server_log
   popd >> /dev/null
+
+  return $result
+}
+
+
+# Run tests for fuel upgrade system
+#
+# Arguments:
+#
+#   $@ -- tests to be run; with no arguments all tests will be run
+function run_upgrade_system_tests {
+  local TESTS="$ROOT/fuel_upgrade_system/fuel_upgrade/fuel_upgrade/tests/"
+
+  if [ $# -ne 0 ]; then
+    TESTS="$@"
+  fi
+
+  # make tests
+  $TESTRTESTS -vv $testropts $TESTS
+  local result=$?
 
   return $result
 }

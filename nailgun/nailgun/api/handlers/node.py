@@ -143,10 +143,8 @@ class NodeHandler(BaseHandler):
         node = self.get_object_or_404(Node, node_id)
         db().delete(node)
         db().commit()
-        raise web.webapi.HTTPError(
-            status="204 No Content",
-            data=""
-        )
+
+        raise self.http(204)
 
 
 class NodeCollectionHandler(BaseHandler):
@@ -187,7 +185,7 @@ class NodeCollectionHandler(BaseHandler):
         :returns: Collection of JSONized Node objects.
         :http: * 200 (OK)
         """
-        user_data = web.input(cluster_id=None)
+        cluster_id = web.input(cluster_id=None).cluster_id
         nodes = db().query(Node).options(
             joinedload('cluster'),
             joinedload('nic_interfaces'),
@@ -196,12 +194,12 @@ class NodeCollectionHandler(BaseHandler):
             joinedload('bond_interfaces.assigned_networks_list'),
             joinedload('role_list'),
             joinedload('pending_role_list'))
-        if user_data.cluster_id == '':
+        if cluster_id == '':
             nodes = nodes.filter_by(
                 cluster_id=None).all()
-        elif user_data.cluster_id:
+        elif cluster_id:
             nodes = nodes.filter_by(
-                cluster_id=user_data.cluster_id).all()
+                cluster_id=cluster_id).all()
         else:
             nodes = nodes.all()
         return self.render(nodes)
@@ -216,13 +214,14 @@ class NodeCollectionHandler(BaseHandler):
         """
         data = self.checked_data()
         if data.get("status", "") != "discover":
-            error = web.forbidden()
-            error.data = "Only bootstrap nodes are allowed to be registered."
             msg = u"Node with mac '{0}' was not created, " \
                   u"because request status is '{1}'."\
                 .format(data[u'mac'], data.get(u'status'))
             logger.warning(msg)
-            raise error
+            raise self.http(
+                403, "Only bootstrap nodes are allowed to be registered."
+            )
+
         node = Node(
             name="Untitled (%s)" % data['mac'][-5:],
             timestamp=datetime.now()
@@ -309,10 +308,8 @@ class NodeCollectionHandler(BaseHandler):
             (cores, ram, hd_size),
             node_id=node.id
         )
-        raise web.webapi.created(json.dumps(
-            NodeHandler.render(node),
-            indent=4
-        ))
+
+        raise self.http(201, json.dumps(NodeHandler.render(node), indent=4))
 
     @content_json
     def PUT(self):
@@ -447,7 +444,7 @@ class NodeAgentHandler(BaseHandler):
             node = q.get(nd["id"])
 
         if not node:
-            raise web.notfound()
+            raise self.http(404)
 
         node.timestamp = datetime.now()
         if not node.online:
@@ -621,13 +618,13 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
-        user_data = web.input(cluster_id=None)
-        if user_data.cluster_id == '':
+        cluster_id = web.input(cluster_id=None).cluster_id
+        if cluster_id == '':
             nodes = self.get_object_or_404(Node, cluster_id=None)
-        elif user_data.cluster_id:
+        elif cluster_id:
             nodes = self.get_object_or_404(
                 Node,
-                cluster_id=user_data.cluster_id
+                cluster_id=cluster_id
             )
         else:
             nodes = self.get_object_or_404(Node)

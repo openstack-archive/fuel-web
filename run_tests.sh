@@ -301,15 +301,18 @@ function run_cli_tests {
 #
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_upgrade_system_tests {
-  local TESTS="$ROOT/fuel_upgrade_system/fuel_upgrade/fuel_upgrade/tests/"
+  local UPGRADE_TESTS="$ROOT/fuel_upgrade_system/fuel_upgrade/fuel_upgrade/tests/"
+  local DOWNLOADER_TESTS="$ROOT/fuel_upgrade_system/fuel_update_downloader/fuel_update_downloader/tests/"
 
   if [ $# -ne 0 ]; then
     TESTS="$@"
   fi
 
-  # make tests
-  $TESTRTESTS -vv $testropts $TESTS
-  local result=$?
+  local result=0
+
+  # Run tests
+  $TESTRTESTS -vv $testropts $UPGRADE_TESTS || result=1
+  $TESTRTESTS -vv $testropts $DOWNLOADER_TESTS || result=1
 
   return $result
 }

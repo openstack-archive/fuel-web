@@ -862,6 +862,8 @@ class VolumeManager(object):
         if self._all_size_volumes:
             self._allocate_all_free_space_for_volume(
                 self._all_size_volumes[-1])
+        elif len(self.allowed_volumes) == 1:
+            self._allocate_all_free_space_for_volume(self.allowed_volumes[0])
 
         self.volumes = self.expand_generators(self.volumes)
         self.__logger('Generated volumes: %s' % self.volumes)

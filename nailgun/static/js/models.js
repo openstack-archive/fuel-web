@@ -291,6 +291,12 @@ define(['utils', 'deepModel'], function(utils) {
         urlRoot: '/api/clusters/',
         isNew: function() {
             return false;
+        },
+        parse: function(response) {
+            return response.editable;
+        },
+        toJSON: function(options) {
+            return {editable: this.constructor.__super__.toJSON.call(this, options)};
         }
     });
 

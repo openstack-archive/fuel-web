@@ -64,7 +64,7 @@ Setup for Nailgun Unit Tests
 
 #. Run the Nailgun backend unit tests::
 
-    ./run_tests.sh --no-jslint --no-ui-tests
+    ./run_tests.sh --no-jslint --no-webui
 
 #. Run the Nailgun flake8 test::
 
@@ -98,7 +98,7 @@ Setup for Web UI Tests
 
     cd fuel-web
     ./run_tests.sh --jslint
-    ./run_tests.sh --ui-tests
+    ./run_tests.sh --webui
 
 Running Nailgun in Fake Mode
 ----------------------------

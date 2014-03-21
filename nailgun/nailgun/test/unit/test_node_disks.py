@@ -508,7 +508,6 @@ class TestVolumeManager(BaseIntegrationTest):
 
     def test_allocates_full_disks_for_ceph_for_ceph_role(self):
         node = self.create_node('ceph-osd')
-        self.should_contain_os_with_minimal_size(node.volume_manager)
         self.all_free_space_except_os_disks_for_volume(
             node.volume_manager, 'ceph')
 

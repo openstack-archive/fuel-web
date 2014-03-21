@@ -73,6 +73,9 @@ if __name__ == "__main__":
                   'assassind = nailgun.assassin.assassind:run',
                   'receiverd = nailgun.rpc.receiverd:run'
               ],
+              'nose.plugins.0.10': [
+                  'db = nailgun.test.db_plugin:DbPlugin'
+              ]
           },
           data_files=recursive_data_files([('share/nailgun', 'static')])
           )

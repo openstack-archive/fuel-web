@@ -802,6 +802,16 @@ class VolumeManager(object):
                                                    size_to_allocation)
             not_allocated_size -= size_to_allocation
 
+    def _allocate_free_space_for_os_partition(self):
+        for disk in self.disks:
+            if disk.free_space:
+                self.__logger(
+                    'Allocate free space to os'
+                    ' partition on disk %s' % disk)
+                os_min_size = self.get_pv_size(disk.id, 'os')
+                self.set_volume_size(
+                    disk.id, 'os', disk.free_space + os_min_size)
+
     def _allocate_full_disk(self, volume_info):
         """Allocate full disks for a volume."""
         self.__logger('Allocate full disk for volume %s ' % (volume_info))
@@ -839,6 +849,7 @@ class VolumeManager(object):
 
         # Firstly allocate volumes which required
         # minimal size
+
         for volume in self._min_size_volumes:
             min_size = self.expand_generators(volume)['min_size']
             self._allocate_size_for_volume(volume, min_size)
@@ -864,6 +875,15 @@ class VolumeManager(object):
                 self._all_size_volumes[-1])
 
         self.volumes = self.expand_generators(self.volumes)
+
+        # if we still have free space it means that we have either:
+        # 1. min - full-disk combo
+        # 2. simply min volume group
+        # opinion (dshulyak) it should be allocated to os vg, if user wants
+        # he can reallocate it to ceph-journal or any other
+        if self._all_disks_free_space:
+            self._allocate_free_space_for_os_partition()
+
         self.__logger('Generated volumes: %s' % self.volumes)
         return self.volumes
 

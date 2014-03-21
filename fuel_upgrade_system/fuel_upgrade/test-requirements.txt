@@ -1,0 +1,5 @@
+-r requirements.txt
+mock==1.0
+nose==1.1.2
+nose2==0.4.1
+nose-timer==0.2.0

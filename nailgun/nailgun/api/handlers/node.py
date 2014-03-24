@@ -31,12 +31,15 @@ from nailgun.api.handlers.base import content_json
 from nailgun.api.serializers.node import NodeInterfacesSerializer
 from nailgun.api.validators.network import NetAssignmentValidator
 from nailgun.api.validators.node import NodeValidator
+
+from nailgun import objects
+
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
+
 from nailgun.logger import logger
 from nailgun.network.manager import NetworkManager
 from nailgun import notifier
@@ -88,11 +91,17 @@ class NodeHandler(BaseHandler):
         old_cluster_id = node.cluster_id
 
         if data.get("pending_roles") == [] and node.cluster:
-            node.cluster.clear_pending_changes(node_id=node.id)
+            objects.Cluster.clear_pending_changes(
+                node.cluster,
+                node_id=node.id
+            )
 
         if "cluster_id" in data:
             if data["cluster_id"] is None and node.cluster:
-                node.cluster.clear_pending_changes(node_id=node.id)
+                objects.Cluster.clear_pending_changes(
+                    node.cluster,
+                    node_id=node.id
+                )
                 node.roles = node.pending_roles = []
                 node.reset_name_to_default()
             node.cluster_id = data["cluster_id"]
@@ -116,6 +125,7 @@ class NodeHandler(BaseHandler):
             if key in ("id", "cluster_id"):
                 continue
             setattr(node, key, value)
+        db().flush()
 
         if not node.status in ('provisioning', 'deploying'
                                ) and regenerate_volumes:
@@ -132,7 +142,6 @@ class NodeHandler(BaseHandler):
                 )
                 logger.warning(traceback.format_exc())
                 notifier.notify("error", msg, node_id=node.id)
-        db().commit()
         return self.render(node)
 
     def DELETE(self, node_id):
@@ -142,7 +151,6 @@ class NodeHandler(BaseHandler):
         """
         node = self.get_object_or_404(Node, node_id)
         db().delete(node)
-        db().commit()
 
         raise self.http(204)
 
@@ -235,7 +243,7 @@ class NodeCollectionHandler(BaseHandler):
             # We need to assign cluster first
             cluster_id = data.pop("cluster_id")
             if cluster_id:
-                node.cluster = db.query(Cluster).get(cluster_id)
+                node.cluster = objects.Cluster.get_by_uid(cluster_id)
         for key, value in data.iteritems():
             if key == "id":
                 continue
@@ -252,7 +260,8 @@ class NodeCollectionHandler(BaseHandler):
         try:
             node.attributes.volumes = node.volume_manager.gen_volumes_info()
             if node.cluster:
-                node.cluster.add_pending_changes(
+                objects.Cluster.add_pending_changes(
+                    node.cluster,
                     "disks",
                     node_id=node.id
                 )
@@ -334,11 +343,17 @@ class NodeCollectionHandler(BaseHandler):
             old_cluster_id = node.cluster_id
 
             if nd.get("pending_roles") == [] and node.cluster:
-                node.cluster.clear_pending_changes(node_id=node.id)
+                objects.Cluster.clear_pending_changes(
+                    node.cluster,
+                    node_id=node.id
+                )
 
             if "cluster_id" in nd:
                 if nd["cluster_id"] is None and node.cluster:
-                    node.cluster.clear_pending_changes(node_id=node.id)
+                    objects.Cluster.clear_pending_changes(
+                        node.cluster,
+                        node_id=node.id
+                    )
                     node.roles = node.pending_roles = []
                     node.reset_name_to_default()
                 node.cluster_id = nd["cluster_id"]
@@ -381,7 +396,8 @@ class NodeCollectionHandler(BaseHandler):
                         node.attributes.volumes = \
                             node.volume_manager.gen_volumes_info()
                         if node.cluster:
-                            node.cluster.add_pending_changes(
+                            objects.Cluster.add_pending_changes(
+                                node.cluster,
                                 "disks",
                                 node_id=node.id
                             )
@@ -501,8 +517,10 @@ class NodeAgentHandler(BaseHandler):
                         node.volume_manager.gen_volumes_info()
                     )
                     if node.cluster:
-                        node.cluster.add_pending_changes(
-                            "disks", node_id=node.id
+                        objects.Cluster.add_pending_changes(
+                            node.cluster,
+                            "disks",
+                            node_id=node.id
                         )
                 except Exception as exc:
                     msg = (
@@ -517,7 +535,6 @@ class NodeAgentHandler(BaseHandler):
             db().commit()
 
         NetworkManager.update_interfaces_info(node)
-        db().commit()
 
         return {"id": node.id}
 

@@ -21,6 +21,8 @@ from copy import deepcopy
 from netaddr import IPNetwork
 from sqlalchemy import and_
 
+from nailgun import objects
+
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -80,7 +82,9 @@ class DeploymentMultinodeSerializer(object):
     @classmethod
     def get_common_attrs(cls, cluster):
         """Cluster attributes."""
-        attrs = cluster.attributes.merged_attrs_values()
+        attrs = objects.Attributes.merged_attrs_values(
+            cluster.attributes
+        )
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
         attrs['nodes'] = cls.node_list(get_nodes_not_for_deletion(cluster))

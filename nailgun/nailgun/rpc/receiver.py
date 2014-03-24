@@ -24,6 +24,7 @@ import traceback
 from sqlalchemy import or_
 
 from nailgun import notifier
+from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -517,11 +518,12 @@ class NailgunReceiver(object):
 
             # restoring pending changes
             task.cluster.status = "new"
-            task.cluster.add_pending_changes("attributes")
-            task.cluster.add_pending_changes("networks")
+            objects.Cluster.add_pending_changes(task.cluster, "attributes")
+            objects.Cluster.add_pending_changes(task.cluster, "networks")
 
             for node in task.cluster.nodes:
-                task.cluster.add_pending_changes(
+                objects.Cluster.add_pending_changes(
+                    task.cluster,
                     "disks",
                     node_id=node.id
                 )

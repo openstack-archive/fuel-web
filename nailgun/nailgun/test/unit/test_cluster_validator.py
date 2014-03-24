@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from contextlib import nested
+
 from mock import Mock
 from mock import patch
 
@@ -24,37 +26,44 @@ from nailgun.test.base import BaseTestCase
 class TestClusterValidator(BaseTestCase):
     def setUp(self):
         super(TestClusterValidator, self).setUp()
-        self.cluster_data = '{"name": "test"}'
-        self.release_data = '{"release": 1}'
+        self.cluster_data = '{"name": "test", "release": 1}'
 
     def test_cluster_exists_validation(self):
-        with patch('nailgun.api.validators.cluster.db', Mock()) as db:
-            db.return_value.query.return_value.filter_by.\
-                return_value.first.return_value = 'cluster'
+        with patch(
+            'nailgun.api.validators.cluster.ClusterCollection',
+            Mock()
+        ) as cc:
+            cc.filter_by.return_value.first.return_value = 'cluster'
             self.assertRaises(errors.AlreadyExists,
                               ClusterValidator.validate, self.cluster_data)
 
     def test_cluster_non_exists_validation(self):
-        with patch('nailgun.api.validators.cluster.db', Mock()) as db:
+        with nested(
+            patch('nailgun.api.validators.cluster.ClusterCollection', Mock()),
+            patch('nailgun.api.validators.cluster.Release', Mock())
+        ) as (cc, r):
             try:
-                db.return_value.query.return_value.filter_by.\
-                    return_value.first.return_value = None
+                cc.filter_by.return_value.first.return_value = None
+                r.get_by_uuid.return_value = 'release'
                 ClusterValidator.validate(self.cluster_data)
             except errors.AlreadyExists as e:
-                self.fail('Cluster exists validation failed: {0}'.format(e))
+                self.fail(
+                    'Cluster exists validation failed: {0}'.format(e)
+                )
 
     def test_release_exists_validation(self):
-        with patch('nailgun.api.validators.cluster.db', Mock()) as db:
-            db.return_value.query.return_value.get.\
-                return_value = None
+        with patch(
+            'nailgun.api.validators.cluster.ClusterCollection',
+            Mock()
+        ) as cc:
+            cc.filter_by.return_value.first.return_value = None
             self.assertRaises(errors.InvalidData,
-                              ClusterValidator.validate, self.release_data)
+                              ClusterValidator.validate, self.cluster_data)
 
     def test_release_non_exists_validation(self):
-        with patch('nailgun.api.validators.cluster.db', Mock()) as db:
+        with patch('nailgun.api.validators.cluster.Release', Mock()) as r:
             try:
-                db.return_value.query.return_value.get.\
-                    return_value = 'release'
-                ClusterValidator.validate(self.release_data)
+                r.get_by_uuid.return_value = None
+                ClusterValidator.validate(self.cluster_data)
             except errors.InvalidData as e:
                 self.fail('Release exists validation failed: {0}'.format(e))

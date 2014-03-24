@@ -46,7 +46,6 @@ from nailgun.logger import logger
 
 from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.fixman import upload_fixture
-from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
@@ -55,6 +54,7 @@ from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
+from nailgun.objects import Cluster
 from nailgun.objects import Release
 
 from nailgun.consts import NETWORK_INTERFACE_TYPES
@@ -122,7 +122,7 @@ class Environment(object):
             'name': u"release_name_" + version,
             'version': version,
             'description': u"release_desc" + version,
-            'operating_system': 'CensOS',
+            'operating_system': 'CentOS',
             'roles': self.get_default_roles(),
             'networks_metadata': self.get_default_networks_metadata(),
             'attributes_metadata': self.get_default_attributes_metadata(),
@@ -166,15 +166,14 @@ class Environment(object):
 
     def create_cluster(self, api=True, exclude=None, **kwargs):
         cluster_data = {
-            'name': 'cluster-api-' + str(randint(0, 1000000))
+            'name': 'cluster-api-' + str(randint(0, 1000000)),
         }
-        if api:
-            cluster_data['release'] = self.create_release(api=False).id
-        else:
-            cluster_data['release'] = self.create_release(api=False)
 
         if kwargs:
             cluster_data.update(kwargs)
+
+        if 'release_id' not in cluster_data:
+            cluster_data['release_id'] = self.create_release(api=False).id
 
         if exclude and isinstance(exclude, list):
             for ex in exclude:
@@ -186,19 +185,17 @@ class Environment(object):
             resp = self.app.post(
                 reverse('ClusterCollectionHandler'),
                 json.dumps(cluster_data),
-                headers=self.default_headers
+                headers=self.default_headers,
+                expect_errors=True
             )
             self.tester.assertEquals(resp.status_code, 201)
             cluster = json.loads(resp.body)
             self.clusters.append(
-                self.db.query(Cluster).get(cluster['id'])
+                Cluster.get_by_uid(cluster['id'])
             )
         else:
-            cluster = Cluster()
-            for field, value in cluster_data.iteritems():
-                setattr(cluster, field, value)
-            self.db.add(cluster)
-            self.db.commit()
+            cluster = Cluster.create(cluster_data)
+            db().commit()
             self.clusters.append(cluster)
         return cluster
 

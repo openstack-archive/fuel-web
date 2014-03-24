@@ -102,7 +102,7 @@ class TestHandlers(BaseIntegrationTest):
                 headers=self.default_headers
             )
             self.assertEquals(resp.status_code, 200)
-            self.db.refresh(node)
+        self.db.refresh(node)
 
         node_from_db = self.db.query(Node).filter(
             Node.id == node.id

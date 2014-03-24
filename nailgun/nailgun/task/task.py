@@ -24,6 +24,8 @@ from sqlalchemy.orm import object_mapper
 
 import nailgun.rpc as rpc
 
+from nailgun import objects
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.db.sqlalchemy.models import Cluster
@@ -467,7 +469,9 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_ceph(cls, task):
-        storage = task.cluster.attributes.merged_attrs()['storage']
+        storage = objects.Attributes.merged_attrs(
+            task.cluster.attributes
+        )['storage']
         for option in storage:
             if '_ceph' in option and\
                storage[option] and\
@@ -490,7 +494,8 @@ class CheckBeforeDeploymentTask(object):
         osd_count = len(filter(
             lambda node: 'ceph-osd' in node.all_roles,
             task.cluster.nodes))
-        osd_pool_size = int(task.cluster.attributes.merged_attrs(
+        osd_pool_size = int(objects.Attributes.merged_attrs(
+            task.cluster.attributes
         )['storage']['osd_pool_size']['value'])
         if osd_count < osd_pool_size:
             raise errors.NotEnoughOsdNodes(

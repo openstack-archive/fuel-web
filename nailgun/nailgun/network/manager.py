@@ -29,9 +29,10 @@ from netaddr import IPRange
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 
+from nailgun import objects
+
 from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import IPAddrRange
 from nailgun.db.sqlalchemy.models import NetworkGroup
@@ -242,7 +243,7 @@ class NetworkManager(object):
         :returns: None
         :raises: Exception
         """
-        cluster = db().query(Cluster).get(cluster_id)
+        cluster = objects.Cluster.get_by_uid(cluster_id)
         if not cluster:
             raise Exception(u"Cluster id='%s' not found" % cluster_id)
 
@@ -886,7 +887,7 @@ class NetworkManager(object):
 
     @classmethod
     def get_end_point_ip(cls, cluster_id):
-        cluster_db = db().query(Cluster).get(cluster_id)
+        cluster_db = objects.Cluster.get_by_uid(cluster_id)
         ip = None
         if cluster_db.is_ha_mode:
             ip = cls.assign_vip(cluster_db.id, "public")
@@ -987,7 +988,7 @@ class NetworkManager(object):
         :type  cluster_id: int
         :returns: None
         """
-        cluster_db = db().query(Cluster).get(cluster_id)
+        cluster_db = objects.Cluster.get_by_uid(cluster_id)
         networks_metadata = cluster_db.release.networks_metadata
         networks_list = networks_metadata[cluster_db.net_provider]["networks"]
         used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
@@ -1077,7 +1078,7 @@ class NetworkManager(object):
                     cls.update_cidr_from_gw_mask(ng_db, ng)
                 if ng_db.meta.get("notation"):
                     cls.cleanup_network_group(ng_db)
-                ng_db.cluster.add_pending_changes('networks')
+                objects.Cluster.add_pending_changes(ng_db.cluster, 'networks')
 
     @classmethod
     def cluster_has_bonds(cls, cluster_id):

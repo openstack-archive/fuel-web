@@ -305,7 +305,7 @@ class LogPackageHandler(BaseHandler):
             logger.warn(u'DumpTask: error while execution '
                         'dump environment task: {0}'.format(str(exc)))
             raise self.http(400, str(exc))
-        return Task.to_json(task)
+        raise self.http(202, Task.to_json(task))
 
 
 class LogSourceCollectionHandler(BaseHandler):

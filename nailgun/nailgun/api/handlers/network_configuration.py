@@ -120,6 +120,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                 TaskHelper.set_error(task.uuid, exc)
                 logger.error(traceback.format_exc())
 
+        #TODO(enchantner): research this behaviour
         if task.status == 'error':
             db().rollback()
         else:
@@ -180,6 +181,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                 TaskHelper.set_error(task.uuid, exc)
                 logger.error(traceback.format_exc())
 
+        #TODO(enchantner): research this behaviour
         if task.status == 'error':
             db().rollback()
         else:
@@ -203,7 +205,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
         """
         cluster = self.get_object_or_404(Cluster, cluster_id)
         self.check_net_provider(cluster)
-        return self.launch_verify(cluster)
+        raise self.http(202, self.launch_verify(cluster))
 
     def launch_verify(self, cluster):
         data = self.validator.validate_networks_update(web.data())

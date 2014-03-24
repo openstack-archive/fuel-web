@@ -333,7 +333,7 @@ class TestLogs(BaseIntegrationTest):
         tm_patcher.stop()
         th_patcher.stop()
         self.assertEquals(task, resp.body)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEquals(resp.status_code, 202)
 
     def test_log_package_handler_failed(self):
         tm_patcher = patch('nailgun.api.handlers.logs.DumpTaskManager')

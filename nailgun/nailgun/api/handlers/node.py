@@ -276,7 +276,7 @@ class NodeCollectionHandler(BaseHandler):
             logger.warning(traceback.format_exc())
             notifier.notify("error", msg, node_id=node.id)
         db().add(node)
-        db().commit()
+        db().flush()
 
         network_manager = NetworkManager
         # Add interfaces for node from 'meta'.
@@ -372,14 +372,15 @@ class NodeCollectionHandler(BaseHandler):
                 # don't update node ID
                 elif key != "id":
                     setattr(node, key, value)
-            db().commit()
+            db().flush()
+            db().refresh(node)
             if not node.attributes:
                 node.attributes = NodeAttributes()
-                db().commit()
+                db().flush()
             if not node.attributes.volumes:
                 node.attributes.volumes = \
                     node.volume_manager.gen_volumes_info()
-                db().commit()
+                db().flush()
             if not node.status in ('provisioning', 'deploying'):
                 variants = (
                     "disks" in node.meta and
@@ -412,7 +413,7 @@ class NodeCollectionHandler(BaseHandler):
                         logger.warning(traceback.format_exc())
                         notifier.notify("error", msg, node_id=node.id)
 
-                db().commit()
+                db().flush()
 
             network_manager = NetworkManager
 
@@ -470,7 +471,7 @@ class NodeAgentHandler(BaseHandler):
             msg = u"Node '{0}' is back online".format(node.human_readable_name)
             logger.info(msg)
             notifier.notify("discover", msg, node_id=node.id)
-        db().commit()
+        db().flush()
 
         if 'agent_checksum' in nd and (
             node.agent_checksum == nd['agent_checksum']
@@ -495,13 +496,13 @@ class NodeAgentHandler(BaseHandler):
             # don't update node ID
             elif key != "id":
                 setattr(node, key, value)
-        db().commit()
+        db().flush()
         if not node.attributes:
             node.attributes = NodeAttributes()
-            db().commit()
+            db().flush()
         if not node.attributes.volumes:
             node.attributes.volumes = node.volume_manager.gen_volumes_info()
-            db().commit()
+            db().flush()
         if node.status not in ('provisioning', 'deploying'):
             variants = (
                 "disks" in node.meta and len(node.meta["disks"]) != len(
@@ -532,7 +533,7 @@ class NodeAgentHandler(BaseHandler):
                     logger.warning(traceback.format_exc())
                     notifier.notify("error", msg, node_id=node.id)
 
-            db().commit()
+            db().flush()
 
         NetworkManager.update_interfaces_info(node)
 

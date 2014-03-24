@@ -31,3 +31,19 @@ class ClusterSerializer(BasicSerializer):
         "net_segment_type",
         "release_id"
     )
+
+
+class AttributesSerializer(BasicSerializer):
+
+    fields = (
+        "id",
+        "name",
+        "mode",
+        "changes",
+        "status",
+        "grouping",
+        "is_customized",
+        "net_provider",
+        "net_segment_type",
+        "release_id"
+    )

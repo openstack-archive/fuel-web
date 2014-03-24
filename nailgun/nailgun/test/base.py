@@ -505,7 +505,7 @@ class Environment(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEquals(200, resp.status_code)
+            self.tester.assertEquals(202, resp.status_code)
             response = json.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
@@ -606,7 +606,7 @@ class Environment(object):
                 nets,
                 headers=self.default_headers
             )
-            self.tester.assertEquals(200, resp.status_code)
+            self.tester.assertEquals(202, resp.status_code)
             response = json.loads(resp.body)
             task_uuid = response['uuid']
             return self.db.query(Task).filter_by(uuid=task_uuid).first()

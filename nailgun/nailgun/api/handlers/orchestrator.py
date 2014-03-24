@@ -22,7 +22,6 @@ from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.node import NodesFilterValidator
 
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.logger import logger
@@ -151,7 +150,6 @@ class ProvisioningInfo(OrchestratorInfo):
 
     def update_orchestrator_info(self, cluster, data):
         cluster.replace_provisioning_info(data)
-        db().commit()
         return cluster.replaced_provisioning_info
 
 
@@ -162,7 +160,6 @@ class DeploymentInfo(OrchestratorInfo):
 
     def update_orchestrator_info(self, cluster, data):
         cluster.replace_deployment_info(data)
-        db().commit()
         return cluster.replaced_deployment_info
 
 
@@ -187,7 +184,7 @@ class SelectedNodesBase(NodesFilterMixin, BaseHandler):
                 task_manager.__class__.__name__, traceback.format_exc()))
             raise self.http(400, message=str(exc))
 
-        return Task.to_json(task)
+        raise self.http(202, Task.to_json(task))
 
 
 class ProvisionSelectedNodes(SelectedNodesBase):

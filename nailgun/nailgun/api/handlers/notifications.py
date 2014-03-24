@@ -79,7 +79,6 @@ class NotificationHandler(BaseHandler):
         for key, value in data.iteritems():
             setattr(notification, key, value)
         db().add(notification)
-        db().commit()
         return self.render(notification)
 
 
@@ -115,7 +114,6 @@ class NotificationCollectionHandler(BaseHandler):
                 setattr(notification, key, value)
             notifications_updated.append(notification)
             db().add(notification)
-        db().commit()
         return map(
             NotificationHandler.render,
             notifications_updated

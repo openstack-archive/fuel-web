@@ -79,7 +79,6 @@ class RedHatAccountHandler(BaseHandler):
         else:
             account = RedHatAccount(**data)
             db().add(account)
-        db().commit()
         return self.render(account)
 
 
@@ -121,7 +120,7 @@ class RedHatSetupHandler(BaseHandler):
         else:
             account = RedHatAccount(**data)
             db().add(account)
-        db().commit()
+        db().flush()
 
         task_manager = RedHatSetupTaskManager(release_data)
         try:

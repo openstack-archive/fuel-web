@@ -71,7 +71,8 @@ class NodeDisksHandler(BaseHandler):
         # it resets to previous state
         db().query(NodeAttributes).filter_by(node_id=node_id).update(
             {'volumes': volumes_data})
-        db().commit()
+        db().flush()
+        db().refresh(node)
 
         return DisksFormatConvertor.format_disks_to_simple(
             node.attributes.volumes)

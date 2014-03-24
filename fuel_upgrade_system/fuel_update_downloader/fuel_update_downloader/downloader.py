@@ -53,7 +53,7 @@ class Downloader(object):
         free_space = calculate_free_space(self.dst_path)
         if free_space < self.required_free_space:
             raise errors.NotEnoughFreeSpace(
-                'Not enough free space, path - "{0}", '
+                u'Not enough free space, path - "{0}", '
                 'free space - "{1}", '
                 'required free space - "{2}"'.format(
                     self.dst_path, free_space, self.required_free_space))
@@ -66,6 +66,6 @@ class Downloader(object):
         calculated_checksum = calculate_md5sum(self.dst_path)
         if calculated_checksum != self.checksum:
             raise errors.WrongChecksum(
-                'File "{0}" has wrong checkum, actual '
+                u'File "{0}" has wrong checkum, actual '
                 'checksum "{1}" expected checksum "{2}"'.format(
                     self.dst_path, calculated_checksum, self.checksum))

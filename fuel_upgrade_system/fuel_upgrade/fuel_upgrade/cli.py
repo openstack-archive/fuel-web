@@ -14,15 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from fuel_upgrade.logger import configure_logger
-
-# TODO(eli): move to config
-logger = configure_logger('/tmp/file.log')
-
-
 import argparse
 import sys
 import traceback
+
+from fuel_upgrade.logger import configure_logger
+# TODO(eli): move to config
+logger = configure_logger('/tmp/file.log')
 
 from fuel_upgrade import errors
 from fuel_upgrade.upgrade import PuppetUpgrader
@@ -31,8 +29,7 @@ from fuel_upgrade.upgrade import Upgrade
 
 def handle_exception(exc):
     if isinstance(exc, errors.FuelUpgradeException):
-        err_msg = str(exc)
-        logger.error(err_msg)
+        logger.error(exc.message)
         sys.exit(-1)
     else:
         traceback.print_exc(exc)

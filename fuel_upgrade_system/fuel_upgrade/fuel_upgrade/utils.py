@@ -30,13 +30,13 @@ def exec_cmd(cmd):
     :param cmd: shell command
     :raises: ExecutedErrorNonZeroExitCode
     """
-    logger.debug('Execute command "{0}"'.format(cmd))
+    logger.debug(u'Execute command "{0}"'.format(cmd))
     child = subprocess.Popen(
         cmd, stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         shell=True)
 
-    logger.debug('Stdout and stderr of command "{0}":'.format(cmd))
+    logger.debug(u'Stdout and stderr of command "{0}":'.format(cmd))
     for line in child.stdout:
         logger.debug(line.rstrip())
 
@@ -45,7 +45,7 @@ def exec_cmd(cmd):
 
     if return_code != 0:
         raise errors.ExecutedErrorNonZeroExitCode(
-            'Shell command executed with "{0}" '
+            u'Shell command executed with "{0}" '
             'exit code: {1} '.format(return_code, cmd))
 
-    logger.debug('Command "{0}" successfully executed'.format(cmd))
+    logger.debug(u'Command "{0}" successfully executed'.format(cmd))

@@ -15,9 +15,8 @@
 #    under the License.
 
 import logging
+import os
 import traceback
-
-from os import path
 
 from fuel_upgrade.utils import exec_cmd
 
@@ -33,8 +32,10 @@ class PuppetUpgrader(object):
     puppet_modules_dir = 'puppet_modules'
 
     def __init__(self, update_path):
-        puppet_modules_path = path.join(update_path, self.puppet_modules_dir)
-        self.puppet_cmd = 'puppet apply --debug --modulepath={0} -e '.format(
+        puppet_modules_path = os.path.join(
+            update_path, self.puppet_modules_dir)
+
+        self.puppet_cmd = u'puppet apply --debug --modulepath={0} -e '.format(
             puppet_modules_path)
 
     def upgrade(self):
@@ -58,7 +59,7 @@ class Upgrade(object):
                  disable_rollback=False):
 
         logger.debug(
-            'Create Upgrade object with update path "{0}", '
+            u'Create Upgrade object with update path "{0}", '
             'working directory "{1}", '
             'upgrade engine "{2}", '
             'disable rollback is "{3}"'.format(
@@ -78,7 +79,7 @@ class Upgrade(object):
             self.upgrade()
             self.after_upgrade()
         except Exception as exc:
-            logger.error('Upgrade failed: {0}'.format(exc))
+            logger.error(u'Upgrade failed: {0}'.format(exc))
             logger.error(traceback.format_exc())
             if not self.disable_rollback:
                 self.rollback()

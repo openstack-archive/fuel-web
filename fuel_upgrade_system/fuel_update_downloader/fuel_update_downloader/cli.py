@@ -24,7 +24,7 @@ from fuel_update_downloader import errors
 
 def handle_exception(exc):
     if isinstance(exc, errors.FuelUpgradeException):
-        sys.stderr.write(str(exc) + "\n")
+        sys.stderr.write(exc.message + "\n")
         sys.exit(-1)
     else:
         traceback.print_exc(exc)

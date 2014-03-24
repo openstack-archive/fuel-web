@@ -18,7 +18,6 @@ import json
 
 from sqlalchemy.exc import IntegrityError
 
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Role
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -108,10 +107,10 @@ class TestRoles(BaseIntegrationTest):
                     release_id=release_json["id"])
         added = True
         try:
-            db().add(role)
-            db().commit()
+            self.db.add(role)
+            self.db.commit()
         except IntegrityError:
-            db.rollback()
+            self.db.rollback()
             added = False
         self.assertFalse(added)
 

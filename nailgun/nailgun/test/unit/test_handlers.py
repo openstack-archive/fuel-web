@@ -25,7 +25,7 @@ from nailgun.test.base import reverse
 class TestHandlers(BaseIntegrationTest):
     def test_all_api_urls_404_or_405(self):
         urls = {
-            'ClusterHandler': {'cluster_id': 1},
+            'ClusterHandler': {'obj_id': 1},
             'NodeHandler': {'node_id': 1},
             'ReleaseHandler': {'obj_id': 1},
         }

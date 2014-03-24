@@ -22,9 +22,8 @@ from nailgun.errors import errors
 
 class ClusterValidator(BasicValidator):
     @classmethod
-    def validate(cls, data, **kwargs):
+    def _validate_common(cls, data):
         d = cls.validate_json(data)
-        cluster_id = kwargs.get("cluster_id") or d.get("id")
         if d.get("name"):
             if db().query(Cluster).filter_by(
                 name=d["name"]
@@ -37,18 +36,24 @@ class ClusterValidator(BasicValidator):
             release = db().query(Release).get(d.get("release"))
             if not release:
                 raise errors.InvalidData(
-                    "Invalid release id",
+                    "Invalid release ID",
                     log_message=True
                 )
-        if cluster_id:
-            cluster = db().query(Cluster).get(cluster_id)
-            if cluster:
-                for k in ("net_provider", "net_segment_type"):
-                    if k in d and getattr(cluster, k) != d[k]:
-                        raise errors.InvalidData(
-                            "Change of '%s' is prohibited" % k,
-                            log_message=True
-                        )
+        return d
+
+    @classmethod
+    def validate(cls, data):
+        return cls._validate_common(data)
+
+    @classmethod
+    def validate_update(cls, data, instance):
+        d = cls._validate_common(data)
+        for k in ("net_provider", "net_segment_type"):
+            if k in d and getattr(instance, k) != d[k]:
+                raise errors.InvalidData(
+                    u"Changing '{0}' for environment is prohibited".format(k),
+                    log_message=True
+                )
         return d
 
 

@@ -1,0 +1,11 @@
+Verified+2: Jenkins
+Code-Review+1: Ivan Kolodyazhny <e0ne@e0ne.info>
+Approved+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Code-Review+2: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Code-Review+1: Julia Aranovich <jkirnosova@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Tue, 25 Mar 2014 09:37:51 +0000
+Reviewed-on: https://review.openstack.org/82119
+Project: stackforge/fuel-web
+Branch: refs/heads/master

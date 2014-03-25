@@ -57,9 +57,9 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.objects import Cluster
 from nailgun.objects import Release
 
+from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.network.manager import NetworkManager
-from nailgun.wsgi import build_app
 
 
 class TimeoutError(Exception):

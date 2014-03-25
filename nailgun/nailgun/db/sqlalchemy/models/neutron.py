@@ -25,7 +25,7 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 
 class NeutronConfig(Base):
     __tablename__ = 'neutron_configs'
-    NET_SEGMENT_TYPES = ('vlan', 'gre')
+    NET_SEGMENT_TYPES = ('vlan', 'gre', 'vxlan')
     id = Column(Integer, primary_key=True)
     cluster_id = Column(
         Integer,

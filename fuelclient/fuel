@@ -1640,7 +1640,7 @@ actions = {
             "params": {
                 "dest": "net_segment_type",
                 "action": "store",
-                "choices": ["gre", "vlan"],
+                "choices": ["gre", "vlan", "vxlan"],
                 "help": "Set network segment type",
                 "default": False
             }

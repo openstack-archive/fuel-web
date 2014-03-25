@@ -68,7 +68,8 @@ CLUSTER_NET_L23_PROVIDERS = Enum(
 CLUSTER_NET_SEGMENT_TYPES = Enum(
     'none',
     'vlan',
-    'gre'
+    'gre',
+    'vxlan'
 )
 
 NETWORK_INTERFACE_TYPES = Enum(

@@ -82,6 +82,30 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
         image_volume = next((v for v in volumes if v['id'] == 'image'), None)
         self.assertIsNone(image_volume)
 
+    def test_all_space_allocated(self):
+        """Verifies that all space allocated for single volume
+        """
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['ceph-osd']}])
+        self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            params=json.dumps({
+                'editable': {'storage': {'images_ceph': {'value': True}}}}),
+            headers=self.default_headers)
+
+        controller_manager = self.env.nodes[0].volume_manager
+
+        volumes = controller_manager.gen_volumes_info()
+        os_volume = next(volume for volume in volumes if volume['id'] == 'os')
+        os_volume_size = sum(volume['size'] for volume in os_volume['volumes'])
+        total_size = sum(disk.size for disk in controller_manager.disks)
+        self.assertEqual(manager.byte_to_megabyte(os_volume_size),
+                         manager.byte_to_megabyte(total_size))
+
     def test_glance_partition_without_ceph_osd(self):
         self.env.create(
             cluster_kwargs={

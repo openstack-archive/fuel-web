@@ -29,8 +29,7 @@ OS Provisioning
     WebUser -> Nailgun: add nodes to cluster
     WebUser -> Nailgun: deploy cluster
     |||
-    Nailgun -> Naily: Provision CentOS
-    Naily -> Astute: Provision CentOS
+    Nailgun -> Astute: Provision CentOS
     Astute -> Cobbler: Provision CentOS
     Cobbler -> NodePXE: ssh to reboot
     Cobbler --> NodePXE: CentOS image
@@ -45,8 +44,7 @@ Networks Verification
     actor WebUser
 
     WebUser -> Nailgun: verify networks (cluster #1)
-    Nailgun -> Naily: verify nets (100-120 vlans)
-    Naily -> Astute: verify nets
+    Nailgun -> Astute: verify nets (100-120 vlans)
     Astute -> MC: start listeners
     MC -> net_probe.py: forks to listen
     MC --> Astute: listening
@@ -59,8 +57,7 @@ Networks Verification
     MC -> net_probe.py: stop listeners
     net_probe.py --> MC: result
     MC --> Astute: result graph
-    Astute --> Naily: vlans Ok
-    Naily --> Nailgun: response
+    Astute --> Nailgun: response vlans Ok
     Nailgun --> WebUser: response
 
 
@@ -70,16 +67,14 @@ Details on Cluster Provisioning & Deployment (via Facter extension)
     title Cluster Deployment
     actor WebUser
 
-    Nailgun -> Naily: Provision,Deploy
-    Naily -> Astute: Provision,Deploy
+    Nailgun -> Astute: Provision,Deploy
     Astute -> MC: Type of nodes?
     MC -> Astute: bootstrap
     Astute -> Cobbler: create system,reboot
     Astute -> MC: Type of nodes?
 
     MC --> Astute: booted in target OS
-    Astute --> Naily: provisioned
-    Naily --> Nailgun: provisioned
+    Astute --> Nailgun: provisioned
     Nailgun --> WebUser: status on UI
     Astute -> MC: Create /etc/astute.yaml
 
@@ -91,29 +86,28 @@ Details on Cluster Provisioning & Deployment (via Facter extension)
     Puppet -> Puppet: applies $role
     Puppet --> MC: done
     MC --> Astute: deploy is done
-    Astute --> Naily: deploy is done
-    Naily --> Nailgun: deploy is done
+    Astute --> Nailgun: deploy is done
     Nailgun --> WebUser: deploy is done
 
-Once deploy and provisioning messages are accepted by Naily, provisioining 
-method is called in Astute.  Provisioning part creates system in Cobbler and 
-calls reboot over Cobbler. Then Astute uses `MCollective direct addressing 
-mode 
+Once deploy and provisioning messages are accepted by Astute, provisioning
+method is called.  Provisioning part creates system in Cobbler and
+calls reboot over Cobbler. Then Astute uses `MCollective direct addressing
+mode
 <http://www.devco.net/archives/2012/06/19/mcollective-direct-addressing-mode.ph
 p>`_
-to check if all required nodes are available, include puppet agent on them. If 
+to check if all required nodes are available, include puppet agent on them. If
 some nodes are not yet ready, Astute waits for a few seconds and tries to
-request again.  When nodes are booted in target OS, Astute uses upload_file 
-MCollective plugin to push data to a special file */etc/astute.yaml* on the 
+request again.  When nodes are booted in target OS, Astute uses upload_file
+MCollective plugin to push data to a special file */etc/astute.yaml* on the
 target system.
-Data include role and all other variables needed for deployment. Then, Astute 
-calls puppetd MCollective plugin to start deployment. Puppet is started on 
+Data include role and all other variables needed for deployment. Then, Astute
+calls puppetd MCollective plugin to start deployment. Puppet is started on
 nodes.
 
-Accordingly, puppet agent starts its run. Modules contain facter extension, 
-which runs before deployment. Extension reads data from */etc/astute.yaml* 
-placed by mcollective, and extends Facter data with it as a single fact, which 
-is then parsed by *parseyaml* function to create *$::fuel_settings* data 
+Accordingly, puppet agent starts its run. Modules contain facter extension,
+which runs before deployment. Extension reads data from */etc/astute.yaml*
+placed by mcollective, and extends Facter data with it as a single fact, which
+is then parsed by *parseyaml* function to create *$::fuel_settings* data
 structure. This structure contains all variables as a single hash and
 supports embedding of other rich structures such as nodes hash or arrays.
 Case structure in running class chooses appropriate class to import,

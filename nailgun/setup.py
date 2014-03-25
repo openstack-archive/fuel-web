@@ -68,7 +68,7 @@ if __name__ == "__main__":
                   'nailgun_syncdb = nailgun.db:syncdb',
                   'nailgun_fixtures = \
                       nailgun.db.sqlalchemy.fixman:upload_fixtures',
-                  'nailgund = nailgun.wsgi:appstart',
+                  'nailgund = nailgun.app:appstart',
                   'nailgun_dump = nailgun.task.task:dump',
                   'assassind = nailgun.assassin.assassind:run',
                   'receiverd = nailgun.rpc.receiverd:run'

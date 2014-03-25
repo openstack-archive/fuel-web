@@ -602,8 +602,8 @@ define(['utils', 'deepModel'], function(utils) {
                 var segmentation = attrs.neutron_parameters.get('segmentation_type');
 
                 var config = attrs.neutron_parameters.get('L2');
-                var idRange = segmentation == 'gre' ? config.tunnel_id_ranges : config.phys_nets.physnet2.vlan_range;
-                var maxId = segmentation == 'gre' ? 65535 : 4094;
+                var idRange = segmentation == 'gre'|| segmentation == 'vxlan' ? config.tunnel_id_ranges : config.phys_nets.physnet2.vlan_range;
+                var maxId = segmentation == 'gre' || segmentation == 'vxlan' ? 65535 : 4094;
                 if (!utils.isNaturalNumber(idRange[0]) || idRange[0] < 2 || idRange[0] > maxId) {
                     neutronErrors.id0 = $.t('cluster_page.network_tab.validation.invalid_id_start');
                 } else if (!utils.isNaturalNumber(idRange[1]) || idRange[1] < 2 || idRange[1] > maxId) {

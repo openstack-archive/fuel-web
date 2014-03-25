@@ -56,6 +56,15 @@ new_task_names_options = sorted(
     )
 )
 
+old_neutron_segmentation_types = (
+    'vlan',
+    'gre'
+)
+new_neutron_segmentation_types = sorted(
+    old_neutron_segmentation_types + (
+        'vxlan'
+    )
+)
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
     old_type = sa.Enum(*old_options, name=enum_name)
@@ -176,6 +185,15 @@ def upgrade():
         "task_name",                 # ENUM name
         old_task_names_options,      # old options
         new_task_names_options       # new options
+    )
+
+    # NEUTRON SEGMENTATION ENUM UPGRADE
+    upgrade_enum(
+        "neutron_configs",               # table
+        "segmentation_type",             # column
+        "segmentation_type",             # ENUM name
+        old_neutron_segmentation_types,  # old options
+        new_neutron_segmentation_types   # new options
     )
 
     op.add_column('nodes', sa.Column(
@@ -300,6 +318,14 @@ def downgrade():
         "task_name",                 # ENUM name
         new_task_names_options,      # old options
         old_task_names_options       # new options
+    )
+
+    upgrade_enum(
+        "neutron_configs",               # table
+        "segmentation_type",             # column
+        "segmentation_type",             # ENUM name
+        new_neutron_segmentation_types,  # old options
+        old_neutron_segmentation_types   # new options
     )
 
     op.drop_column(

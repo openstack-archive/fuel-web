@@ -93,7 +93,7 @@ class NeutronManager(NetworkManager):
                 }
             }
         }
-        if cluster.net_segment_type == 'gre':
+        if cluster.net_segment_type in ('gre' , 'vxlan'):
             res["tunnel_id_ranges"] = [2, 65535]
         elif cluster.net_segment_type == 'vlan':
             res["phys_nets"]["physnet2"] = {

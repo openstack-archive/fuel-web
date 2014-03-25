@@ -470,7 +470,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.configuration.on('change', this.tab.updateNetworkConfiguration, this.tab);
         },
         getIdRange: function() {
-            return this.configuration.get('segmentation_type') == 'gre' ? this.configuration.get('L2').tunnel_id_ranges : this.configuration.get('L2').phys_nets.physnet2.vlan_range;
+            return (this.configuration.get('segmentation_type') == 'gre') || (this.configuration.get('segmentation_type') == 'vxlan') ? this.configuration.get('L2').tunnel_id_ranges : this.configuration.get('L2').phys_nets.physnet2.vlan_range;
         },
         stickitConfiguration: function() {
             var bindings = {
@@ -478,7 +478,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 'input[name=cidr-int]': 'predefined_networks.net04.L3.cidr',
                 'input[name=gateway]': 'predefined_networks.net04.L3.gateway'
             };
-            var observedAttribute = this.configuration.get('segmentation_type') == 'gre' ? 'L2.tunnel_id_ranges' : 'L2.phys_nets.physnet2.vlan_range';
+            var observedAttribute = (this.configuration.get('segmentation_type') == 'gre') || (this.configuration.get('segmentation_type') == 'vxlan') ? 'L2.tunnel_id_ranges' : 'L2.phys_nets.physnet2.vlan_range';
             _.each(this.getIdRange(), function(id, idIndex) {
                 bindings['input[name=id' + idIndex + ']'] = {
                     observe: observedAttribute,

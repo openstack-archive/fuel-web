@@ -14,78 +14,66 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+import datetime
 import unittest
 
-from sqlalchemy import exc
 import web
 
 from nailgun.api.handlers import load_db_driver
-
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
-from nailgun.errors import errors
-from nailgun.errors import NailgunException
 
 
-class TestLoadDBDriverHandler(unittest.TestCase):
-
-    def test_session_invalid_request_error(self):
-        """Test verifies reason why load_db_driver
-        failes with InvalidRequestError
-        """
-
-        def handler_sample():
-            try:
-                db().add(models.Role())
-                db().flush()
-            except exc.IntegrityError:
-                db().commit()
-
-        self.assertRaises(exc.InvalidRequestError, handler_sample)
-
-    def test_session_integrity_error(self):
-        """Test verifies reason why load_db_driver
-        failes with InvalidRequestError
-        """
-
-        def handler_sample():
-            try:
-                db().add(models.Role())
-                db().flush()
-            except exc.IntegrityError:
-                db().rollback()
-                raise
-
-        self.assertRaises(exc.IntegrityError, handler_sample)
-
-    def test_session_state_after_random_error(self):
-        """Test verifies that expected error would be raised in case of errors
-        happened not during flush
-        """
-
-        def handler_sample():
-            db().add(models.Role())
-            raise errors.DumpError()
-
-        self.assertRaises(NailgunException, load_db_driver, handler_sample)
-
-    def test_session_state_after_random_error_and_flush(self):
-
-        def handler_sample():
-            db().add(models.Role())
-            db().flush()
-            raise errors.DumpError()
-
-        self.assertRaises(exc.IntegrityError, load_db_driver, handler_sample)
-
-    def test_load_db_driver_with_web_error(self):
-
-        def handler_sample():
-            raise web.HTTPError('400 Bad Request')
-
-        self.assertRaises(web.HTTPError,
-                          load_db_driver, handler_sample)
+class TestLoadDbDriverWithSAExceptions(unittest.TestCase):
+    def setUp(self):
+        web.ctx.headers = []
 
     def tearDown(self):
-        db().rollback()
+        db.rollback()
+
+    def test_sa_not_null_constraint(self):
+        def handler():
+            node = models.Node(mac=None)
+            db.add(node)
+            db.flush()
+
+        self.assertRaises(web.HTTPError, load_db_driver, handler)
+
+    def test_sa_unique_constraint(self):
+        def handler():
+            mac = '60:a4:4c:35:28:95'
+
+            node1 = models.Node(mac=mac, timestamp=datetime.datetime.now())
+            db.add(node1)
+            db.flush()
+
+            node2 = models.Node(mac=mac, timestamp=datetime.datetime.now())
+            db.add(node2)
+            db.flush()
+
+        self.assertRaises(web.HTTPError, load_db_driver, handler)
+
+    def test_sa_enum_constraint(self):
+        def handler():
+            node = models.Node(
+                mac='60:a4:4c:35:28:95',
+                timestamp=datetime.datetime.now(),
+                status='batman'
+            )
+            db.add(node)
+            db.flush()
+
+        self.assertRaises(web.HTTPError, load_db_driver, handler)
+
+    def test_sa_relationship_constraint(self):
+        def handler():
+            node = models.Node(
+                mac='60:a4:4c:35:28:95',
+                timestamp=datetime.datetime.now()
+            )
+
+            node.attributes = models.IPAddr()
+            db.add(node)
+            db.flush()
+
+        self.assertRaises(AssertionError, load_db_driver, handler)

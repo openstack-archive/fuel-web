@@ -387,6 +387,8 @@
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "cephjournal"}
           - {allocate_size: "full-disk", id: "ceph"}
+        controller_ceph_for_image:
+          - {allocate_size: 'all', id: 'os'}
       volumes:
         - id: "ceph"
           type: "partition"

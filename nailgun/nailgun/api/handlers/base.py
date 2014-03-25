@@ -18,6 +18,7 @@ from datetime import datetime
 from decorator import decorator
 import json
 
+from sqlalchemy import exc as sa_exc
 import web
 
 from nailgun.api.serializers.base import BasicSerializer
@@ -56,17 +57,35 @@ def forbid_client_caching(handler):
 
 
 def load_db_driver(handler):
+    """Wrap all handlers calls in a special construction, that's call
+    rollback if something wrong or commit changes otherwise. Please note,
+    only HTTPError should be rised up from this function. All another
+    possible errors should be handle.
+    """
     try:
-        return handler()
+        # execute handler and commit changes if all is ok
+        response = handler()
+        db.commit()
+        return response
+
     except web.HTTPError:
-        if str(web.ctx.status).startswith(("4", "5")):
-            db.rollback()
+        # a special case: commit changes if http error ends with
+        # 200, 201, 202, etc
+        if web.ctx.status.startswith('2'):
+            db.commit()
+        db.rollback()
         raise
+
+    except (sa_exc.IntegrityError, sa_exc.DataError) as exc:
+        # respond a "400 Bad Request" if database constraints were broken
+        db.rollback()
+        raise BaseHandler.http(400, exc.message)
+
     except Exception:
         db.rollback()
         raise
+
     finally:
-        db.commit()
         db.remove()
 
 

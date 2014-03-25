@@ -889,8 +889,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         formatNodeButtonIcon: function(value, options) {
             return this.hasChanges() && !(this.screen instanceof EditNodesScreen) ? 'icon-back-in-time' : 'icon-logs';
         },
-        calculateNodeDisabledState: function() {
+        calculateNodeState: function() {
             this.node.set('disabled', !this.node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked());
+            if (this.screen.isLocked()) {
+                this.node.set('checked', false);
+            }
         },
         startNodeRenaming: function() {
             if (!this.renameable || this.renaming) {return;}
@@ -985,7 +988,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.screen.nodes.get(node.id).set('checked', checked);
             }, this);
             this.node.set('checked', this.screen instanceof EditNodesScreen || this.screen.nodes.get(this.node.id).get('checked') || false);
-            this.node.on('change:status', this.calculateNodeDisabledState, this);
+            this.node.on('change:status', this.calculateNodeState, this);
             this.node.on('change:disabled', this.group.calculateSelectAllDisabledState, this.group);
             if (!(this.screen instanceof ClusterNodesScreen)) {
                 this.node.on('change:checked', this.screen.roles.handleChanges, this.screen.roles);
@@ -1001,7 +1004,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 locked: this.screen.isLocked()
             }, this.templateHelpers))).i18n();
             this.stickit(this.node);
-            this.calculateNodeDisabledState();
+            this.calculateNodeState();
             return this;
         }
     });

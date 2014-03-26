@@ -332,7 +332,7 @@ function run_flake8 {
   local result=0
   ${FLAKE8} \
     --exclude=__init__.py,docs \
-    --ignore=H302,H802 \
+    --ignore=H234,H302,H802 \
     --show-source \
     --show-pep8 \
     --count . \

@@ -273,7 +273,7 @@ database_opts = [
     cfg.StrOpt('connection',
                default='sqlite:///' +
                        os.path.abspath(os.path.join(os.path.dirname(__file__),
-                       '../', '$sqlite_db')),
+                                                    '../', '$sqlite_db')),
                help='The SQLAlchemy connection string used to connect to the '
                     'database',
                deprecated_opts=[cfg.DeprecatedOpt('sql_connection',

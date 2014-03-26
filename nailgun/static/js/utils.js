@@ -45,6 +45,28 @@ define(['require'], function(require) {
         composeList: function(value) {
             return _.isUndefined(value) ? [] : _.isArray(value) ? value : [value];
         },
+        parseModelPath: function(path, models) {
+            var modelName, attribute;
+            var pathParts = path.split(':');
+            if (_.isUndefined(pathParts[1])) {
+                modelName = 'default';
+                attribute = pathParts[0];
+            } else {
+                modelName = pathParts[0];
+                attribute = pathParts[1];
+            }
+            var model = models[modelName];
+            if (!model) {
+                throw new Error('No model with name "' + modelName + '" defined');
+            }
+            return {
+                model: model,
+                attribute: attribute,
+                get: _.bind(model.get, model, attribute),
+                set: _.bind(model.set, model, attribute),
+                change: _.bind(model.on, model, 'change:' + attribute)
+            };
+        },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;
             var dialogViews = require('views/dialogs'); // avoid circular dependencies
@@ -127,10 +149,10 @@ define(['require'], function(require) {
             return !_.isString(ip) || !ip.match(utils.regexes.ip);
         },
         validateIPrange: function(startIP, endIP) {
-            return this.ipIntRepresentation(startIP) - this.ipIntRepresentation(endIP) <= 0;
+            return utils.ipIntRepresentation(startIP) - utils.ipIntRepresentation(endIP) <= 0;
         },
         validateNetmask: function(netmask) {
-            return utils.validateIP(netmask) || !this.ipIntRepresentation(netmask).toString(2).match(/^1+00+$/);
+            return utils.validateIP(netmask) || !utils.ipIntRepresentation(netmask).toString(2).match(/^1+00+$/);
         },
         ipIntRepresentation: function(ip) {
             return _.reduce(ip.split('.'), function(sum, octet, index) {return sum + octet * Math.pow(256, 3 - index);}, 0);
@@ -145,8 +167,8 @@ define(['require'], function(require) {
             return result;
         },
         composeCidr: function(ip, netmask) {
-            var netmaskInt = this.ipIntRepresentation(netmask);
-            var ipInt = this.ipIntRepresentation(ip);
+            var netmaskInt = utils.ipIntRepresentation(netmask);
+            var ipInt = utils.ipIntRepresentation(ip);
             var networkSize = netmaskInt.toString(2).match(/1/g).length;
             /*jslint bitwise: true*/
             var networkAddressInt = netmaskInt & ipInt;

@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Approved+1: Evgeniy L <eli@mirantis.com>
+Code-Review+2: Evgeniy L <eli@mirantis.com>
+Code-Review+1: Dmitry Shulyak <dshulyak@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 26 Mar 2014 08:17:56 +0000
+Reviewed-on: https://review.openstack.org/82860
+Project: stackforge/fuel-web
+Branch: refs/heads/master

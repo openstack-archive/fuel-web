@@ -137,6 +137,7 @@ class TestHandlers(BaseIntegrationTest):
         common_attrs['nodes'][0]['role'] = 'primary-controller'
 
         common_attrs['last_controller'] = controller_nodes[-1]['name']
+        common_attrs['storage']['pg_num'] = 128
 
         # Individual attrs calculation and
         # merging with common attrs
@@ -444,6 +445,7 @@ class TestHandlers(BaseIntegrationTest):
         common_attrs['nodes'][0]['role'] = 'primary-controller'
 
         common_attrs['last_controller'] = controller_nodes[-1]['name']
+        common_attrs['storage']['pg_num'] = 128
 
         # Individual attrs calculation and
         # merging with common attrs

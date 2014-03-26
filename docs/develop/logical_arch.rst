@@ -19,9 +19,8 @@ You can find a detailed breakdown of how this works in the
 Following components are involved in managing this process:
 
 - Astute: deployment orchestrator, manages the Puppet cluster (via
-  MCollective) and the Cobbler provisioning service (over XML-RPC)
-- Naily: RPC consumer implementing communication between Nailgun and
-  Astute over AMQP protocol
+  MCollective) and the Cobbler provisioning service (over XML-RPC).
+  RPC consumer implementing communication for Nailgun over AMQP protocol
 - Nailgun [#fn1]_: Web UI backend based on the web.py framework,
   includes following sub-components:
 
@@ -59,8 +58,8 @@ Logical Architecture Diagram:
             [RPC Receiver] --> [Nailgun DB]
         }
         [Provisioner (Cobbler)] --> [DHCP, DNS, TFTP]
-        [RPC Consumer (Naily)] --> [RPC Receiver] : AMQP
-        [RPC Consumer (Naily)] --> [Orchestrator (Astute)] : AMQP
+        [RPC Consumer (Astute)] --> [RPC Receiver] : AMQP
+        [RPC Consumer (Astute)] --> [Orchestrator (Astute)] : AMQP
         [Orchestrator (Astute)] --> [MCollective]
     }
     package "Target Node" {

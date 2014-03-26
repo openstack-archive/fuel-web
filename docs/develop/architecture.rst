@@ -52,15 +52,14 @@ a new environment. The Nailgun service creates a JSON data structure
 with the environment settings, its nodes and their roles and puts this
 file into the *RabbitMQ* queue. This message should be received by one
 of the worker processes who will actually deploy the environment. These
-processes are called *Naily*.
+processes are called *Astute*.
 
 .. uml::
     package "Master Node" {
       component "Nailgun"
       interface "RabbitMQ"
 
-      package "Naily Worker" {
-        component Naily
+      package "Astute Worker" {
         component Astute
       }
 
@@ -69,12 +68,11 @@ processes are called *Naily*.
     }
 
     [Nailgun] -> [RabbitMQ] : Put task into Nailgun queue
-    [Naily] <- [RabbitMQ] : Take task from Nailgun queue
-    [Naily] -> [Astute]
+    [Astute] <- [RabbitMQ] : Take task from Nailgun queue
     [Astute] -> [Cobbler] : Set node's settings through XML-RPC
     [Cobbler] -> [DHCP and TFTP]
 
-The Naily workers are listening to the RabbitMQ queue and receives
+The Astute workers are listening to the RabbitMQ queue and receives
 messages. They use the *Astute* library which implements all deployment
 actions. First, it starts the provisioning of the environment's nodes.
 Astute uses XML-RPC to set these nodes' configuration in Cobbler and

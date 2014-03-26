@@ -15,7 +15,7 @@
       <p class="enable-selection">
         <%= urlify(linebreaks(task.escape('message'))) %>
         <% if (task.match({name: 'redhat_setup'})) { %>
-            <% var options = {type: 'local', source: 'naily', level: 'warning'} %>
+            <% var options = {type: 'local', source: 'astute', level: 'warning'} %>
             <% logsLink = '#cluster/' + cluster.id + '/logs/' + serializeTabOptions(options) %>
             <br/><%- $.t('cluster_page.reconfigure_redhat_account', {opt1: '<a href="#releases">', opt2: '</a>'}) %> <a href="<%- logsLink %>" data-i18n="common.see_logs"></a>.
         <% } %>

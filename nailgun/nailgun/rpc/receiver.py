@@ -75,7 +75,7 @@ class NailgunReceiver(object):
             node_db = db().query(Node).get(node['uid'])
             if not node_db:
                 logger.error(
-                    u"Failed to delete node '%s' marked as error from Naily:"
+                    u"Failed to delete node '%s' marked as error from Astute:"
                     " node doesn't exist", str(node)
                 )
                 break

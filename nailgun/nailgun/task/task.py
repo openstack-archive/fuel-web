@@ -179,7 +179,7 @@ class DeletionTask(object):
 
         USE_FAKE = settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
 
-        # no need to call naily if there are no nodes in cluster
+        # no need to call astute if there are no nodes in cluster
         if respond_to == 'remove_cluster_resp' and \
                 not list(task.cluster.nodes):
             rcvr = rpc.receiver.NailgunReceiver()

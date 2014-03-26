@@ -174,10 +174,10 @@ For all additional features and needs you may refer to Alembic documentation:
 http://alembic.readthedocs.org/en/latest/tutorial.html
 
 
-Astute and Naily
+Astute
 ----------------
 
-#. Astute and Naily can be found in fuel-astute repository
+#. Astute can be found in fuel-astute repository
 
 #. Install Ruby dependencies::
 

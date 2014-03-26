@@ -136,11 +136,11 @@ LOGS:
     <<: *local_log_type
     <<: *python_log_format
     path: *api_log
-  - id: naily
+  - id: astute
     name: "Orchestrator"
     <<: *local_log_type
     <<: *remote_syslog_log_format
-    path: '/var/log/naily/naily.log'
+    path: '/var/log/astute/astute.log'
   - id: ostf
     name: "HealthCheck"
     <<: *local_log_type
@@ -403,11 +403,11 @@ DUMP:
       - type: dir
         path: /etc/nailgun
       - type: dir
-        path: /etc/naily
+        path: /etc/astute
       - type: dir
         path: /var/log/nailgun
       - type: dir
-        path: /var/log/naily
+        path: /var/log/astute
       - type: dir
         path: /var/log/cobbler
       - type: dir

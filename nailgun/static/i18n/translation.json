@@ -14,6 +14,7 @@
                 "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
                 "cancel_button": "Cancel",
+                "upgrade_button": "Upgrade",
                 "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
                 "size": {
@@ -220,6 +221,7 @@
                     "title": "Actions",
                     "rename_environment": "Rename Environment",
                     "delete_environment": "Delete Environment",
+                    "upgrade_cluster": "Upgrade cluster",
                     "alert_delete": "Clean up each node and return it to the pool of unallocated nodes.",
                     "reset_environment": "Reset Environment",
                     "reset_environment_description": "Enables you to modify the settings for the environment and redeploy.",

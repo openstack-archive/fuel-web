@@ -2569,11 +2569,13 @@ input.error:focus {
       overflow: hidden;
       .margin-padding-mixin(10px 20px 0px 20px);
       position: relative;
-      input[type=text] {
+      input[type=text], select {
         width: 250px;
         margin-top: 4px;
         margin-left: 2px;
       }
+      select {width: 290px;}
+      .upgrade-btn {margin-top: -5px;}
       .action-item-description {
         display: block;
         max-height: 100px;

@@ -72,8 +72,7 @@ define(['require'], function(require) {
             var dialogViews = require('views/dialogs'); // avoid circular dependencies
             var dialog = new dialogViews.Dialog();
             parentView.registerSubView(dialog);
-            dialog.render(_.extend({title: '', message: ''}, options));
-            dialog.displayErrorMessage(options);
+            dialog.render(_.extend({error: true}, options));
         },
         showBandwidth: function(bandwidth) {
             bandwidth = parseInt(bandwidth, 10);
@@ -186,6 +185,9 @@ define(['require'], function(require) {
                 var index = _.indexOf(sortOrder, property);
                 return index == -1 ? properties.length : index;
             });
+        },
+        getResponseText: function(response) {
+            return _.contains([400, 409], response.status) ? response.responseText : '';
         }
     };
 

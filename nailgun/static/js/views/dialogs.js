@@ -18,7 +18,7 @@ define(
     'require',
     'utils',
     'models',
-    'text!templates/dialogs/simple_message.html',
+    'text!templates/dialogs/base_dialog.html',
     'text!templates/dialogs/create_cluster_wizard.html',
     'text!templates/dialogs/create_cluster_wizard/name_and_release.html',
     'text!templates/dialogs/create_cluster_wizard/mode.html',
@@ -33,47 +33,47 @@ define(
     'text!templates/dialogs/remove_cluster.html',
     'text!templates/dialogs/stop_deployment.html',
     'text!templates/dialogs/reset_environment.html',
-    'text!templates/dialogs/error_message.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
     'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, baseDialogTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
 
     var views = {};
 
     views.Dialog = Backbone.View.extend({
         className: 'modal fade',
-        template: _.template(simpleMessageTemplate),
-        errorMessageTemplate: _.template(errorMessageTemplate),
+        template: _.template(baseDialogTemplate),
         modalBound: false,
         beforeTearDown: function() {
             this.$el.modal('hide');
         },
-        displayError: function() {
+        displayError: function(options) {
             var logsLink;
-            try {
-                if (app.page.model.constructor == models.Cluster) {
-                    var options = {type: 'local', source: 'api', level: 'error'};
-                    logsLink = '#cluster/' + app.page.model.id + '/logs/' + utils.serializeTabOptions(options);
-                }
-            } catch (ignore) {}
-            this.$('.modal-body').removeClass().addClass('modal-body');
-            this.$('.modal-body').html(views.Dialog.prototype.errorMessageTemplate({logsLink: logsLink})).i18n();
-        },
-        displayErrorMessage: function(options) {
-            this.displayError();
-            if (options.message) {
-                this.$('.text-error').text(options.message);
+            var cluster = app.page.model;
+            if (!options.hideLogsLink && cluster && cluster.constructor == models.Cluster) {
+                var logOptions = {type: 'local', source: 'api', level: 'error'};
+                logsLink = '#cluster/' + cluster.id + '/logs/' + utils.serializeTabOptions(logOptions);
             }
+            var dialogOptions = _.extend({
+                error: true,
+                title: $.t('dialog.error_dialog.title'),
+                message: $.t('dialog.error_dialog.warning'),
+                logsLink: logsLink
+            }, options);
+            this.$el.removeClass().addClass('modal').html(views.Dialog.prototype.template(dialogOptions)).i18n();
+        },
+        getResponseText: function(response) {
+            return _.contains([400, 409], response.status) ? response.responseText : '';
         },
         initialize: function(options) {
             _.defaults(this, options);
         },
         render: function(options) {
+            var templateOptions = _.extend({title: '', message: '', error: false, logsLink: ''}, options);
             this.$el.attr('tabindex', -1);
-            this.$el.html(this.template(options)).i18n();
+            this.$el.html(this.template(templateOptions)).i18n();
             if (!this.modalBound) {
                 this.$el.on('hidden', _.bind(this.tearDown, this));
                 this.$el.on('shown', _.bind(function() {
@@ -81,6 +81,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 }, this));
                 this.$el.modal(_.extend({}, this.modalOptions));
                 this.modalBound = true;
+            }
+            if (options && options.error) {
+                this.displayError(options);
             }
             return this;
         }
@@ -188,18 +191,22 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                                 this.$el.modal('hide');
                             }, this))
                             .fail(_.bind(function() {
-                                this.displayErrorMessage({message: 'Your OpenStack environment has been created, but configuration failed. You can configure it manually.'});
+                                this.displayError({
+                                    title: $.t('dialog.create_cluster_wizard.create_cluster_error.title'),
+                                    message: $.t('dialog.create_cluster_wizard.create_cluster_error.create_cluster_configuration_warning')
+                                });
                             }, this));
                     }, this))
                     .fail(_.bind(function(response) {
                         if (response.status == 409) {
                             this.$('.wizard-footer button').prop('disabled', false);
                             this.goToPane(0);
-                            cluster.trigger('invalid', cluster, {name: response.responseText});
-                        } else if (response.status == 400) {
-                            this.displayErrorMessage({message: response.responseText});
+                            cluster.trigger('invalid', cluster, {name: this.getResponseText(response)});
                         } else {
-                            this.displayError();
+                            this.displayError({
+                                title: $.t('dialog.create_cluster_wizard.create_cluster_error.title'),
+                                message: this.getResponseText(response) || $.t('dialog.create_cluster_wizard.create_cluster_error.create_cluster_warning')
+                            });
                         }
                     }, this));
             }
@@ -677,11 +684,10 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     app.page.deploymentTaskStarted();
                 }, this))
                 .fail(_.bind(function(response) {
-                    if (response.status == 400) {
-                        this.displayErrorMessage({message: response.responseText});
-                    } else {
-                        this.displayError();
-                    }
+                    this.displayError({
+                        title: $.t('dialog.stop_deployment.stop_deployment_error.title'),
+                        message: this.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
+                    });
                 }, this));
         },
         render: function() {
@@ -856,7 +862,12 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         app.navbar.refresh();
                         app.page.removeFinishedTasks();
                     }, this))
-                    .fail(_.bind(this.displayError, this));
+                    .fail(_.bind(function() {
+                        utils.showErrorDialog({
+                            title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
+                            message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
+                        });
+                    }, this));
             }
         },
         render: function() {

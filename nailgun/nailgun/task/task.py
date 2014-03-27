@@ -453,8 +453,10 @@ class CheckBeforeDeploymentTask(object):
                     node.volume_manager.check_disk_space_for_deployment()
         except errors.NotEnoughFreeSpace:
             raise errors.NotEnoughFreeSpace(
-                u"Node '%s' has insufficient disk space" %
-                node.human_readable_name)
+                u"Node '{0}' has insufficient disk space".format(
+                    node.human_readable_name
+                )
+            )
 
     @classmethod
     def _check_volumes(cls, task):

@@ -19,6 +19,30 @@ from nailgun import consts
 from nailgun.api.serializers.base import BasicSerializer
 
 
+class NodeSerializer(BasicSerializer):
+
+    fields = (
+        'id',
+        'name',
+        'meta',
+        'progress',
+        'roles',
+        'pending_roles',
+        'status',
+        'mac',
+        'fqdn',
+        'ip',
+        'manufacturer',
+        'platform_name',
+        'pending_addition',
+        'pending_deletion',
+        'os_platform',
+        'error_type',
+        'online',
+        'cluster'
+    )
+
+
 class NodeInterfacesSerializer(BasicSerializer):
 
     nic_fields = (

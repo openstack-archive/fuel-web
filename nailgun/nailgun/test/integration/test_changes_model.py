@@ -209,7 +209,7 @@ class TestClusterChanges(BaseIntegrationTest):
         )
         self.app.put(
             reverse("NodeHandler",
-                    kwargs={"node_id": new_node["id"]}),
+                    kwargs={"obj_id": new_node["id"]}),
             json.dumps({
                 "cluster": None,
                 "pending_addition": False,

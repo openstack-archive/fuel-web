@@ -15,12 +15,13 @@
 **/
 define(
 [
+    'utils',
     'models',
     'views/common',
     'views/dialogs',
     'text!templates/cluster/actions_tab.html'
 ],
-function(models, commonViews, dialogViews, actionsTabTemplate) {
+function(utils, models, commonViews, dialogViews, actionsTabTemplate) {
     'use strict';
 
     var ActionsTab = commonViews.Tab.extend({
@@ -42,6 +43,8 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
                         .fail(_.bind(function(response) {
                             if (response.status == 409) {
                                 this.model.trigger('invalid', this.model, {name: response.responseText});
+                            } else {
+                                utils.showErrorDialog({title: $.t('cluster_page.actions_tab.rename_error.title')});
                             }
                         }, this))
                         .always(_.bind(function() {

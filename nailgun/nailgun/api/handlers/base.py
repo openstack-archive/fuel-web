@@ -166,14 +166,20 @@ class BaseHandler(object):
             notifier.notify("error", exc.message)
             raise self.http(400, exc.message)
         except (
+            errors.NotAllowed,
+        ) as exc:
+            raise self.http(403, exc.message)
+        except (
             errors.AlreadyExists
         ) as exc:
             raise self.http(409, exc.message)
         except (
             errors.InvalidData,
-            Exception
+            errors.NodeOffline,
         ) as exc:
-            raise self.http(400, str(exc))
+            raise self.http(400, exc.message)
+        except Exception as exc:
+            raise
         return valid_data
 
     def get_object_or_404(self, model, *args, **kwargs):
@@ -242,20 +248,10 @@ class SingleHandler(BaseHandler):
             obj_id
         )
 
-        try:
-            data = self.checked_data(
-                self.validator.validate_update,
-                instance=obj
-            )
-        except (
-            errors.InvalidData,
-            errors.NodeOffline
-        ) as exc:
-            raise self.http(400, exc.message)
-        except (
-            errors.AlreadyExists,
-        ) as exc:
-            raise self.http(409, exc.message)
+        data = self.checked_data(
+            self.validator.validate_update,
+            instance=obj
+        )
 
         self.single.update(obj, data)
         return self.single.to_json(obj)
@@ -283,13 +279,15 @@ class CollectionHandler(BaseHandler):
 
     validator = BasicValidator
     collection = None
+    eager = ()
 
     @content_json
     def GET(self):
         """:returns: Collection of JSONized REST objects.
         :http: * 200 (OK)
         """
-        return self.collection.to_json()
+        q = self.collection.eager(self.eager, None)
+        return self.collection.to_json(q)
 
     @content_json
     def POST(self):
@@ -298,6 +296,7 @@ class CollectionHandler(BaseHandler):
                * 400 (invalid object data specified)
                * 409 (object with such parameters already exists)
         """
+
         data = self.checked_data()
 
         try:
@@ -306,6 +305,10 @@ class CollectionHandler(BaseHandler):
             raise self.http(400, exc.message)
 
         raise self.http(201, self.collection.single.to_json(new_obj))
+
+    @content_json
+    def PUT(self):
+        pass
 
 
 # TODO(enchantner): rewrite more handlers to inherit from this

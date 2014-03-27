@@ -116,7 +116,7 @@ class TestHandlers(BaseIntegrationTest):
             )
             self.assertEquals(resp.status_code, 200)
             resp = self.app.get(
-                reverse('NodeHandler', kwargs={'node_id': node['id']}),
+                reverse('NodeHandler', kwargs={'obj_id': node['id']}),
                 headers=self.default_headers
             )
             ifaces = json.loads(resp.body)['meta']['interfaces']

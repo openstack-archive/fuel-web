@@ -17,6 +17,8 @@ from nailgun.api.validators.base import BasicValidator
 from nailgun.api.validators.json_schema.disks import disks_simple_format_schema
 from nailgun.api.validators.json_schema.node import node_format_schema
 
+from nailgun import consts
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
@@ -101,6 +103,11 @@ class NodeValidator(BasicValidator):
         data = cls.validate_json(data)
         cls.validate_schema(data, node_format_schema)
 
+        if data.get("status", "") != "discover":
+            raise errors.NotAllowed(
+                "Only bootstrap nodes are allowed to be registered."
+            )
+
         if 'mac' not in data:
             raise errors.InvalidData(
                 "No mac address specified",
@@ -173,9 +180,9 @@ class NodeValidator(BasicValidator):
                 )
 
     @classmethod
-    def validate_update(cls, data):
+    def validate_update(cls, data, instance):
         d = cls.validate_json(data)
-        if "status" in d and d["status"] not in Node.NODE_STATUSES:
+        if "status" in d and d["status"] not in consts.NODE_STATUSES:
             raise errors.InvalidData(
                 "Invalid status for node",
                 log_message=True
@@ -186,6 +193,10 @@ class NodeValidator(BasicValidator):
         if 'meta' in d:
             d['meta'] = MetaValidator.validate_update(d['meta'])
         return d
+
+    @classmethod
+    def validate_delete(cls, instance):
+        pass
 
     @classmethod
     def validate_collection_update(cls, data):

@@ -26,7 +26,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_get(self):
         node = self.env.create_node(api=False)
         resp = self.app.get(
-            reverse('NodeHandler', kwargs={'node_id': node.id}),
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
             headers=self.default_headers)
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
@@ -60,7 +60,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_deletion(self):
         node = self.env.create_node(api=False)
         resp = self.app.delete(
-            reverse('NodeHandler', kwargs={'node_id': node.id}),
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
             "",
             headers=self.default_headers,
             expect_errors=True
@@ -71,7 +71,7 @@ class TestHandlers(BaseIntegrationTest):
         new_metadata = self.env.default_metadata()
         node = self.env.create_node(api=False)
         resp = self.app.put(
-            reverse('NodeHandler', kwargs={'node_id': node.id}),
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
             json.dumps({'meta': new_metadata}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
@@ -87,7 +87,7 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=False)
         params = {'status': 'error'}
         resp = self.app.put(
-            reverse('NodeHandler', kwargs={'node_id': node.id}),
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
             json.dumps(params),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
@@ -97,7 +97,7 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=False)
         for flag in flags:
             resp = self.app.put(
-                reverse('NodeHandler', kwargs={'node_id': node.id}),
+                reverse('NodeHandler', kwargs={'obj_id': node.id}),
                 json.dumps({flag: True}),
                 headers=self.default_headers
             )
@@ -113,7 +113,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_put_returns_400_if_no_body(self):
         node = self.env.create_node(api=False)
         resp = self.app.put(
-            reverse('NodeHandler', kwargs={'node_id': node.id}),
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
             "",
             headers=self.default_headers,
             expect_errors=True)
@@ -123,7 +123,7 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=False)
         params = {'status': 'invalid_status'}
         resp = self.app.put(
-            reverse('NodeHandler', kwargs={'node_id': node.id}),
+            reverse('NodeHandler', kwargs={'obj_id': node.id}),
             json.dumps(params),
             headers=self.default_headers,
             expect_errors=True)

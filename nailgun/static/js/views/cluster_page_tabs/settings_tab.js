@@ -58,7 +58,10 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 }, this))
                 .fail(_.bind(function() {
                     this.calculateButtonsState();
-                    utils.showErrorDialog({title: $.t('cluster_page.settings_tab.title')});
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.settings_tab.settings_error.title'),
+                        message: $.t('cluster_page.settings_tab.settings_error.saving_warning')
+                    });
                 }, this));
         },
         revertChanges: function() {
@@ -69,7 +72,14 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         loadDefaults: function() {
             this.disableControls();
-            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'}).always(_.bind(this.render, this));
+            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'})
+                .fail(function() {
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.settings_tab.settings_error.title'),
+                        message: $.t('cluster_page.settings_tab.settings_error.load_defaults_warning')
+                    });
+                })
+                .always(_.bind(this.render, this));
         },
         updateInitialSettings: function() {
             this.initialSettings.set(this.settings.attributes);

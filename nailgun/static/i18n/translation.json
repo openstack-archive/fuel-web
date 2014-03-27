@@ -13,6 +13,7 @@
                 "stop_button": "Stop",
                 "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
+                "close_button": "Close",
                 "cancel_button": "Cancel",
                 "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
@@ -157,6 +158,8 @@
                         },
                         "drag_and_drop_description": "You can drag and drop logical networks between interfaces",
                         "neutron_vlan_range": "Neutron VLAN IDs",
+                        "load_error_title": "Unable to load default configuration",
+                        "apply_error_title": "Interfaces configuration error",
                         "validation": {
                             "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface"
                         }
@@ -168,7 +171,8 @@
                         "volume_groups": "Volume Groups",
                         "total_space": "Total Space",
                         "unallocated": "Unallocated",
-                        "use_all_allowed_space": "Use All Allowed Space"
+                        "use_all_allowed_space": "Use All Allowed Space",
+                        "apply_error_title": "Disks configuration error"
                     },
                     "node_management_panel": {
                         "group_by": "Group By",
@@ -176,6 +180,7 @@
                         "filter_placeholder": "Node name/mac",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
+                        "apply_error_title": "Unable to apply changes",
                         "cant_configure_disks": "Unable to configure disks",
                         "cant_configure_interfaces": "Unable to configure interfaces",
                         "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
@@ -214,6 +219,7 @@
                     "filtered_nodes_count_plural": "__filteredNodesCount__ of __count__ nodes"
                 },
                 "settings_tab": {
+                    "error_title": "OpenStack Settings saving error",
                     "title": "OpenStack Settings"
                 },
                 "actions_tab": {
@@ -244,6 +250,8 @@
                         "step_3": "3. Nodes listeners register test frames from other nodes",
                         "step_4": "4. Send DHCP discover messages on all available ports.",
                         "success_alert": "Verification succeeded. Your network is configured correctly.",
+                        "verification_error_title": "Network verification error",
+                        "save_error_title": "Network error",
                         "fail_alert": "Verification failed.",
                         "node_name": "Node Name",
                         "node_mac_address": "Node MAC address",
@@ -409,6 +417,10 @@
                         "console": "console.",
                         "deploy": "Deploy Changes",
                         "env": "Environments"
+                    },
+                    "error": {
+                        "title" : "OpenStack environment creation error",
+                        "message" : "Your OpenStack environment has been created, but configuration failed. You can configure it manually."
                     }
                 },
                 "dismiss_settings": {
@@ -486,6 +498,7 @@
                     "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state."
                 },
                 "error_occured": {
+                    "default_title": "Error",
                     "alert_text": "A server error has occured. Please contact the administrators."
                 }
             }

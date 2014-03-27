@@ -15,6 +15,7 @@
 **/
 define(
 [
+    'utils',
     'models',
     'views/common',
     'views/dialogs',
@@ -24,7 +25,7 @@ define(
     'text!templates/cluster/actions_delete.html',
     'text!templates/cluster/actions_update.html'
 ],
-function(models, commonViews, dialogViews, actionsTabTemplate, renameEnvironmentTemplate, resetEnvironmentTemplate, deleteEnvironmentTemplate, updateEnvironmentTemplate) {
+function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvironmentTemplate, resetEnvironmentTemplate, deleteEnvironmentTemplate, updateEnvironmentTemplate) {
     'use strict';
 
     var ActionsTab, Action, RenameEnvironmentAction, ResetEnvironmentAction, DeleteEnvironmentAction, UpdateEnvironmentAction;
@@ -101,6 +102,8 @@ function(models, commonViews, dialogViews, actionsTabTemplate, renameEnvironment
                         .fail(_.bind(function(response) {
                             if (response.status == 409) {
                                 this.model.trigger('invalid', this.model, {name: response.responseText});
+                            } else {
+                                utils.showErrorDialog({title: $.t('cluster_page.actions_tab.rename_error.title')});
                             }
                         }, this))
                         .always(_.bind(function() {

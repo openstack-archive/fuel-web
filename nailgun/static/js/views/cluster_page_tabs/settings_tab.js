@@ -57,7 +57,10 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 }, this))
                 .fail(_.bind(function() {
                     this.defaultButtonsState(false);
-                    utils.showErrorDialog({title: $.t('cluster_page.settings_tab.title')});
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.settings_tab.settings_error.title'),
+                        message: $.t('cluster_page.settings_tab.settings_error.saving_warning')
+                    });
                 }, this));
         },
         revertChanges: function() {

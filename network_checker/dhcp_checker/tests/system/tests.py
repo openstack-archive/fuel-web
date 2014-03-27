@@ -24,26 +24,21 @@ from dhcp_checker import utils
 
 class TestDhcpServers(unittest.TestCase):
 
-    def test_dhcp_server_on_eth0(self):
-        """Test verifies dhcp server on eth0 iface
-        """
-        response = api.check_dhcp_on_eth('eth0', 2)
-        self.assertEqual(len(response), 1)
-        self.assertEqual(response[0]['server_ip'], '10.0.2.2')
-
     def test_dhcp_server_on_eth1(self):
         """Test verifies dhcp server on eth1 iface
         """
         response = api.check_dhcp_on_eth('eth1', 2)
         self.assertEqual(len(response), 1)
-        self.assertEqual(response[0]['server_ip'], '192.168.0.5')
+        # we need to guarantee that received answer has server_ip
+        # but dont want to check its real address
+        self.assertTrue(response[0]['server_ip'])
 
     def test_dhcp_server_on_eth2(self):
         """Test verifies dhcp server on eth2 iface
         """
         response = api.check_dhcp_on_eth('eth2', 2)
         self.assertEqual(len(response), 1)
-        self.assertEqual(response[0]['server_ip'], '10.10.0.8')
+        self.assertTrue(response[0]['server_ip'])
 
 
 class TestDhcpUtils(unittest.TestCase):
@@ -83,7 +78,7 @@ class TestDhcpWithNetworkDown(unittest.TestCase):
             response = api.check_dhcp_on_eth(iface, 2)
 
         self.assertEqual(len(response), 1)
-        self.assertEqual(response[0]['server_ip'], '10.10.0.8')
+        self.assertTrue(response[0]['server_ip'])
         self.assertEqual(manager.pre_iface_state, 'DOWN')
         self.assertEqual(manager.iface_state, 'UP')
         self.assertEqual(manager.post_iface_state, 'DOWN')
@@ -96,7 +91,7 @@ class TestDhcpWithNetworkDown(unittest.TestCase):
             response = api.check_dhcp_on_eth(iface, 2)
 
         self.assertEqual(len(response), 1)
-        self.assertEqual(response[0]['server_ip'], '10.0.2.2')
+        self.assertTrue(response[0]['server_ip'])
         self.assertEqual(manager.pre_iface_state, 'UP')
         self.assertEqual(manager.iface_state, 'UP')
         self.assertEqual(manager.post_iface_state, 'UP')
@@ -116,15 +111,15 @@ class TestDhcpWithNetworkDown(unittest.TestCase):
 class TestMainFunctions(unittest.TestCase):
 
     def test_with_vlans(self):
-        config = {'eth0': (100, 101), 'eth1': (103, 105),
+        config = {'eth1': (103, 105),
                   'eth2': range(106, 120)}
         result = api.check_dhcp_with_vlans(config)
-        self.assertEqual(len(list(result)), 3)
+        self.assertEqual(len(list(result)), 2)
 
     def test_with_duplicated_with_repeat(self):
-        ifaces = ['eth0', 'eth1', 'eth2']
+        ifaces = ['eth1', 'eth2']
         result = api.check_dhcp(ifaces, repeat=3)
-        self.assertEqual(len(list(result)), 3)
+        self.assertEqual(len(list(result)), 2)
 
 
 if __name__ == '__main__':

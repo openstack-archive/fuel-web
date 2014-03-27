@@ -6,39 +6,20 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-  config.vm.box = "centos"
-
-  config.vm.box_url = "http://developer.nrel.gov/downloads/vagrant-boxes/CentOS-6.4-i386-v20130427.box"
+  config.vm.box = "precise64"
 
   config.vm.provider "virtualbox" do |v|
     v.customize ["modifyvm", :id, "--memory", 348]
   end
 
   config.vm.define :develop do |config|
-    config.vm.network :private_network, ip: "192.168.0.2"
-    config.vm.network :private_network, ip: "10.10.0.5"
+    config.vm.network :private_network, ip: '10.100.0.0', type: "dhcp"
+    config.vm.network :private_network, ip: '10.200.0.0', type: 'dhcp'
+    config.vm.provision :shell, :inline => "echo 'deb http://fuel-repository.mirantis.com/fwm/5.0/ubuntu precise main' >> /etc/apt/sources.list"
+    config.vm.provision :shell, :inline => "sudo apt-get update"
+    config.vm.provision :shell, :inline => "sudo apt-get -y --force-yes install cliff-tablib python-pyparsing python-pypcap scapy python-pip vde2"
+    config.vm.provision :shell, :inline => "sudo pip install pytest mock"
+    config.vm.provision :shell, :inline => "cd /vagrant && sudo python setup.py develop"
   end
 
-   config.vm.define :dhcp2 do |config|
-    config.vm.network :private_network, ip: "10.10.0.8"
-    config.vm.provision :shell, :inline => "sudo yum -y install dhcp"
-    config.vm.provision :shell, :inline => "sudo route add -host 255.255.255.255 dev eth1"
-    config.vm.provision :shell, :inline => "sudo cp /vagrant/test_utils/dhcpd.conf.sample2 /etc/dhcp/dhcpd.conf"
-    config.vm.provision :shell, :inline => "sudo /usr/sbin/dhcpd eth1"
-   end
-
-   config.vm.define :dhcp_relay do |config|
-    config.vm.network :private_network, ip: "10.10.0.10"
-    config.vm.provision :shell, :inline => "sudo yum -y install dhcp"
-    config.vm.provision :shell, :inline => "cp /vagrant/test_utils/dhcp_relay.conf /etc/sysconfig/dhcrelay"
-    config.vm.provision :shell, :inline => "service dhcrelay start"
-   end
-
-   config.vm.define :dhcp1 do |config|
-    config.vm.network :private_network, ip: "192.168.0.5"
-    config.vm.provision :shell, :inline => "sudo yum -y install dhcp"
-    config.vm.provision :shell, :inline => "sudo route add -host 255.255.255.255 dev eth1"
-    config.vm.provision :shell, :inline => "sudo cp /vagrant/test_utils/dhcpd.conf.sample /etc/dhcp/dhcpd.conf"
-    config.vm.provision :shell, :inline => "sudo /usr/sbin/dhcpd eth1"
-   end
 end

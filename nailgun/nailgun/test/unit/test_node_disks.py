@@ -78,7 +78,11 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             self.assertEqual(len(disk['volumes']), 0)
 
     def test_volumes_regeneration_after_roles_update(self):
-        self.create_node(roles=[], pending_roles=['compute'])
+        self.env.create(
+            nodes_kwargs=[
+                {"roles": [], "pending_roles": ['compute']}
+            ]
+        )
         node_db = self.env.nodes[0]
         original_roles_response = self.get(node_db.id)
 

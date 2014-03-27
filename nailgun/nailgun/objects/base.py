@@ -16,6 +16,8 @@
 
 import json
 
+from sqlalchemy.orm import joinedload
+
 from nailgun.api.serializers.base import BasicSerializer
 from nailgun.db import db
 from nailgun.errors import errors
@@ -93,7 +95,7 @@ class NailgunCollection(object):
         ).yield_per(yield_per)
 
     @classmethod
-    def filter_by(cls, yield_per=100, **kwargs):
+    def filter_by(cls, query, yield_per=100, **kwargs):
         for k in kwargs.iterkeys():
             if k not in cls.single.schema["properties"]:
                 raise AttributeError(
@@ -103,14 +105,25 @@ class NailgunCollection(object):
                     )
                 )
 
-        return db().query(
-            cls.single.model
-        ).filter_by(
-            **kwargs
-        ).yield_per(yield_per)
+        use_query = query or cls.all(yield_per=yield_per)
+        return use_query.filter_by(**kwargs)
 
     @classmethod
-    def to_list(cls, fields=None, yield_per=100, query=None):
+    def get_by_id_list(cls, query, id_list, yield_per=100):
+        use_query = query or cls.all(yield_per=yield_per)
+        return use_query.filter(cls.single.model.id.in_(id_list))
+
+    @classmethod
+    def eager(cls, query, fields, yield_per=100):
+        use_query = query or cls.all(yield_per=yield_per)
+        if fields:
+            return use_query.options(
+                *[joinedload(f) for f in fields]
+            )
+        return use_query
+
+    @classmethod
+    def to_list(cls, query=None, fields=None, yield_per=100):
         use_query = query or cls.all(yield_per=yield_per)
         return map(
             lambda o: cls.single.to_dict(o, fields=fields),
@@ -118,7 +131,7 @@ class NailgunCollection(object):
         )
 
     @classmethod
-    def to_json(cls, fields=None, yield_per=100, query=None):
+    def to_json(cls, query=None, fields=None, yield_per=100):
         return json.dumps(
             cls.to_list(
                 fields=fields,

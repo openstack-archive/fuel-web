@@ -81,11 +81,11 @@ class TestErrors(BaseIntegrationTest):
         self.assertIsNotNone(
             self.db.query(Notification).filter_by(message=err_msg).first()
         )
-        self.assertEqual(
+        self.assertIsNotNone(
             self.db.query(Notification).filter_by(
-                node_id=self.env.nodes[2].id
-            ).first().message,
-            "Failed to deploy node 'Third': I forgot about teapot!"
+                node_id=self.env.nodes[2].id,
+                message="Failed to deploy node 'Third': I forgot about teapot!"
+            ).first()
         )
         self.env.refresh_nodes()
         self.env.refresh_clusters()

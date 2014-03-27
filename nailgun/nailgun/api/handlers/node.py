@@ -19,15 +19,14 @@ Handlers dealing with nodes
 """
 
 from datetime import datetime
-import json
 import traceback
-
-from sqlalchemy.orm import joinedload
 
 import web
 
 from nailgun.api.handlers.base import BaseHandler
+from nailgun.api.handlers.base import CollectionHandler
 from nailgun.api.handlers.base import content_json
+from nailgun.api.handlers.base import SingleHandler
 from nailgun.api.serializers.node import NodeInterfacesSerializer
 from nailgun.api.validators.network import NetAssignmentValidator
 from nailgun.api.validators.node import NodeValidator
@@ -45,117 +44,13 @@ from nailgun.network.manager import NetworkManager
 from nailgun import notifier
 
 
-class NodeHandler(BaseHandler):
-    fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
-              'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
-              'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster', 'uuid')
-    model = Node
+class NodeHandler(SingleHandler):
+
+    single = objects.Node
     validator = NodeValidator
 
-    @classmethod
-    def render(cls, instance, fields=None):
-        json_data = None
-        try:
-            json_data = BaseHandler.render(instance, fields=cls.fields)
-            json_data['network_data'] = NetworkManager.get_node_networks(
-                instance.id)
-        except Exception:
-            logger.error(traceback.format_exc())
-        return json_data
 
-    @content_json
-    def GET(self, node_id):
-        """:returns: JSONized Node object.
-        :http: * 200 (OK)
-               * 404 (node not found in db)
-        """
-        node = self.get_object_or_404(Node, node_id)
-        return self.render(node)
-
-    @content_json
-    def PUT(self, node_id):
-        """:returns: JSONized Node object.
-        :http: * 200 (OK)
-               * 400 (invalid node data specified)
-               * 404 (node not found in db)
-        """
-        node = self.get_object_or_404(Node, node_id)
-        if not node.attributes:
-            node.attributes = NodeAttributes(node_id=node.id)
-
-        data = self.checked_data(self.validator.validate_update)
-
-        network_manager = NetworkManager
-
-        old_cluster_id = node.cluster_id
-
-        if data.get("pending_roles") == [] and node.cluster:
-            objects.Cluster.clear_pending_changes(
-                node.cluster,
-                node_id=node.id
-            )
-
-        if "cluster_id" in data:
-            if data["cluster_id"] is None and node.cluster:
-                objects.Cluster.clear_pending_changes(
-                    node.cluster,
-                    node_id=node.id
-                )
-                node.roles = node.pending_roles = []
-                node.reset_name_to_default()
-            node.cluster_id = data["cluster_id"]
-            if node.cluster_id != old_cluster_id:
-                if old_cluster_id:
-                    network_manager.clear_assigned_networks(node)
-                if node.cluster_id:
-                    network_manager = node.cluster.network_manager
-                    network_manager.assign_networks_by_default(node)
-
-        regenerate_volumes = any((
-            'roles' in data and set(data['roles']) != set(node.roles),
-            'pending_roles' in data and
-            set(data['pending_roles']) != set(node.pending_roles),
-            node.cluster_id != old_cluster_id
-        ))
-
-        for key, value in data.iteritems():
-            # we don't allow to update id explicitly
-            # and updated cluster_id before all other fields
-            if key in ("id", "cluster_id"):
-                continue
-            setattr(node, key, value)
-        db().flush()
-
-        if not node.status in ('provisioning', 'deploying'
-                               ) and regenerate_volumes:
-            try:
-                node.attributes.volumes = \
-                    node.volume_manager.gen_volumes_info()
-            except Exception as exc:
-                msg = (
-                    u"Failed to generate volumes "
-                    "info for node '{0}': '{1}'"
-                ).format(
-                    node.name or data.get("mac") or data.get("id"),
-                    str(exc) or "see logs for details"
-                )
-                logger.warning(traceback.format_exc())
-                notifier.notify("error", msg, node_id=node.id)
-        return self.render(node)
-
-    def DELETE(self, node_id):
-        """:returns: Empty string
-        :http: * 204 (node successfully deleted)
-               * 404 (cluster not found in db)
-        """
-        node = self.get_object_or_404(Node, node_id)
-        db().delete(node)
-
-        raise self.http(204)
-
-
-class NodeCollectionHandler(BaseHandler):
+class NodeCollectionHandler(CollectionHandler):
     """Node collection handler
     """
 
@@ -165,25 +60,16 @@ class NodeCollectionHandler(BaseHandler):
               'error_type', 'online', 'cluster', 'uuid')
 
     validator = NodeValidator
-
-    @classmethod
-    def render(cls, nodes, fields=None):
-        json_list = []
-        network_manager = NetworkManager
-        ips_mapped = network_manager.get_grouped_ips_by_node()
-        networks_grouped = network_manager.get_networks_grouped_by_cluster()
-        for node in nodes:
-            try:
-                json_data = BaseHandler.render(node, fields=cls.fields)
-
-                json_data['network_data'] = network_manager.\
-                    get_node_networks_optimized(
-                        node, ips_mapped.get(node.id, []),
-                        networks_grouped.get(node.cluster_id, []))
-                json_list.append(json_data)
-            except Exception:
-                logger.error(traceback.format_exc())
-        return json_list
+    collection = objects.NodeCollection
+    eager = (
+        'cluster',
+        'nic_interfaces',
+        'nic_interfaces.assigned_networks_list',
+        'bond_interfaces',
+        'bond_interfaces.assigned_networks_list',
+        'role_list',
+        'pending_role_list'
+    )
 
     @content_json
     def GET(self):
@@ -194,133 +80,14 @@ class NodeCollectionHandler(BaseHandler):
         :http: * 200 (OK)
         """
         cluster_id = web.input(cluster_id=None).cluster_id
-        nodes = db().query(Node).options(
-            joinedload('cluster'),
-            joinedload('nic_interfaces'),
-            joinedload('nic_interfaces.assigned_networks_list'),
-            joinedload('bond_interfaces'),
-            joinedload('bond_interfaces.assigned_networks_list'),
-            joinedload('role_list'),
-            joinedload('pending_role_list'))
+        nodes = self.collection.eager(None, self.eager)
+
         if cluster_id == '':
-            nodes = nodes.filter_by(
-                cluster_id=None).all()
+            nodes = nodes.filter_by(cluster_id=None)
         elif cluster_id:
-            nodes = nodes.filter_by(
-                cluster_id=cluster_id).all()
-        else:
-            nodes = nodes.all()
-        return self.render(nodes)
+            nodes = nodes.filter_by(cluster_id=cluster_id)
 
-    @content_json
-    def POST(self):
-        """:returns: JSONized Node object.
-        :http: * 201 (cluster successfully created)
-               * 400 (invalid node data specified)
-               * 403 (node has incorrect status)
-               * 409 (node with such parameters already exists)
-        """
-        data = self.checked_data()
-        if data.get("status", "") != "discover":
-            msg = u"Node with mac '{0}' was not created, " \
-                  u"because request status is '{1}'."\
-                .format(data[u'mac'], data.get(u'status'))
-            logger.warning(msg)
-            raise self.http(
-                403, "Only bootstrap nodes are allowed to be registered."
-            )
-
-        node = Node(
-            #always produce unified (i.e. with lowercased letters)
-            #default name for nodes
-            name="Untitled ({0})".format(data['mac'][-5:].lower()),
-            timestamp=datetime.now()
-        )
-        if "cluster_id" in data:
-            # FIXME(vk): this part is needed only for tests. Normally,
-            # nodes are created only by agent and POST requests don't contain
-            # cluster_id, but our integration and unit tests widely use it.
-            # We need to assign cluster first
-            cluster_id = data.pop("cluster_id")
-            if cluster_id:
-                node.cluster = objects.Cluster.get_by_uid(cluster_id)
-        for key, value in data.iteritems():
-            if key == "id":
-                continue
-            elif key == "meta":
-                node.create_meta(value)
-            else:
-                setattr(node, key, value)
-
-        db().add(node)
-        db().flush()
-
-        node.attributes = NodeAttributes()
-
-        try:
-            node.attributes.volumes = node.volume_manager.gen_volumes_info()
-            if node.cluster:
-                objects.Cluster.add_pending_changes(
-                    node.cluster,
-                    "disks",
-                    node_id=node.id
-                )
-        except Exception as exc:
-            msg = (
-                u"Failed to generate volumes "
-                "info for node '{0}': '{1}'"
-            ).format(
-                node.name or data.get("mac") or data.get("id"),
-                str(exc) or "see logs for details"
-            )
-            logger.warning(traceback.format_exc())
-            notifier.notify("error", msg, node_id=node.id)
-        db().add(node)
-        db().flush()
-
-        network_manager = NetworkManager
-        # Add interfaces for node from 'meta'.
-        if node.meta and node.meta.get('interfaces'):
-            network_manager.update_interfaces_info(node)
-
-        if node.cluster_id:
-            network_manager = node.cluster.network_manager
-            network_manager.assign_networks_by_default(node)
-
-        try:
-            # we use multiplier of 1024 because there are no problems here
-            # with unfair size calculation
-            ram = str(round(float(
-                node.meta['memory']['total']) / 1073741824, 1)) + " GB RAM"
-        except Exception as exc:
-            logger.warning(traceback.format_exc())
-            ram = "unknown RAM"
-
-        try:
-            # we use multiplier of 1000 because disk vendors specify HDD size
-            # in terms of decimal capacity. Sources:
-            # http://knowledge.seagate.com/articles/en_US/FAQ/172191en
-            # http://physics.nist.gov/cuu/Units/binary.html
-            hd_size = round(float(
-                sum([d["size"] for d in node.meta["disks"]]) / 1000000000), 1)
-            # if HDD > 100 GB we show it's size in TB
-            if hd_size > 100:
-                hd_size = str(hd_size / 1000) + " TB HDD"
-            else:
-                hd_size = str(hd_size) + " GB HDD"
-        except Exception as exc:
-            logger.warning(traceback.format_exc())
-            hd_size = "unknown HDD"
-
-        cores = str(node.meta.get('cpu', {}).get('total', "unknown"))
-        notifier.notify(
-            "discover",
-            "New node is discovered: %s CPUs / %s / %s " %
-            (cores, ram, hd_size),
-            node_id=node.id
-        )
-
-        raise self.http(201, json.dumps(NodeHandler.render(node), indent=4))
+        return self.collection.to_json(nodes)
 
     @content_json
     def PUT(self):
@@ -328,112 +95,42 @@ class NodeCollectionHandler(BaseHandler):
         :http: * 200 (nodes are successfully updated)
                * 400 (invalid nodes data specified)
         """
-        data = self.checked_data(self.validator.validate_collection_update)
+        data = self.checked_data(
+            self.validator.validate_collection_update
+        )
 
-        q = db().query(Node)
         nodes_updated = []
         for nd in data:
-            node = None
-            if nd.get("mac"):
-                node = q.filter_by(mac=nd["mac"]).first() \
-                    or self.validator.validate_existent_node_mac_update(nd)
-            else:
-                node = q.get(nd["id"])
-
-            old_cluster_id = node.cluster_id
-
-            if nd.get("pending_roles") == [] and node.cluster:
-                objects.Cluster.clear_pending_changes(
-                    node.cluster,
-                    node_id=node.id
-                )
-
-            if "cluster_id" in nd:
-                if nd["cluster_id"] is None and node.cluster:
-                    objects.Cluster.clear_pending_changes(
-                        node.cluster,
-                        node_id=node.id
+            node = self.collection.single.get_by_mac_or_uid(
+                mac=nd.get("mac"),
+                node_uid=nd.get("id")
+            )
+            if not node:
+                can_search_by_ifaces = all([
+                    nd.get("mac"),
+                    nd.get("meta"),
+                    nd["meta"].get("interfaces")
+                ])
+                if can_search_by_ifaces:
+                    node = self.collection.single.search_by_interfaces(
+                        nd["meta"]["interfaces"]
                     )
-                    node.roles = node.pending_roles = []
-                    node.reset_name_to_default()
-                node.cluster_id = nd["cluster_id"]
 
-            regenerate_volumes = any((
-                'roles' in nd and
-                set(nd['roles']) != set(node.roles),
-                'pending_roles' in nd and
-                set(nd['pending_roles']) != set(node.pending_roles),
-                node.cluster_id != old_cluster_id
-            ))
-
-            for key, value in nd.iteritems():
-                if key == "meta":
-                    node.update_meta(value)
-                # don't update node ID
-                elif key != "id":
-                    setattr(node, key, value)
-            db().flush()
-            db().refresh(node)
-            if not node.attributes:
-                node.attributes = NodeAttributes()
-                db().flush()
-            if not node.attributes.volumes:
-                node.attributes.volumes = \
-                    node.volume_manager.gen_volumes_info()
-                db().flush()
-            if not node.status in ('provisioning', 'deploying'):
-                variants = (
-                    "disks" in node.meta and
-                    len(node.meta["disks"]) != len(
-                        filter(
-                            lambda d: d["type"] == "disk",
-                            node.attributes.volumes
-                        )
-                    ),
-                    regenerate_volumes
+            if not node:
+                raise self.http(
+                    404,
+                    "Can't find node: {0}".format(nd)
                 )
-                if any(variants):
-                    try:
-                        node.attributes.volumes = \
-                            node.volume_manager.gen_volumes_info()
-                        if node.cluster:
-                            objects.Cluster.add_pending_changes(
-                                node.cluster,
-                                "disks",
-                                node_id=node.id
-                            )
-                    except Exception as exc:
-                        msg = (
-                            "Failed to generate volumes "
-                            "info for node '{0}': '{1}'"
-                        ).format(
-                            node.name or data.get("mac") or data.get("id"),
-                            str(exc) or "see logs for details"
-                        )
-                        logger.warning(traceback.format_exc())
-                        notifier.notify("error", msg, node_id=node.id)
 
-                db().flush()
-
-            network_manager = NetworkManager
-
+            self.collection.single.update(node, nd)
             nodes_updated.append(node.id)
-            if 'cluster_id' in nd and nd['cluster_id'] != old_cluster_id:
-                if old_cluster_id:
-                    network_manager.clear_assigned_networks(node)
-                if node.cluster:
-                    network_manager = node.cluster.network_manager
-                    network_manager.assign_networks_by_default(node)
 
         # we need eagerload everything that is used in render
-        nodes = db().query(Node).options(
-            joinedload('cluster'),
-            joinedload('nic_interfaces'),
-            joinedload('nic_interfaces.assigned_networks_list'),
-            joinedload('bond_interfaces'),
-            joinedload('bond_interfaces.assigned_networks_list')).\
-            filter(Node.id.in_(nodes_updated)).all()
-        return self.render(nodes)
+        nodes = self.collection.get_by_id_list(
+            self.collection.eager(None, self.eager),
+            nodes_updated
+        )
+        return self.collection.to_json(nodes)
 
 
 class NodeAgentHandler(BaseHandler):

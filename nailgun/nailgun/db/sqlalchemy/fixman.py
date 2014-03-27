@@ -30,7 +30,7 @@ import sqlalchemy.types
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
-from nailgun.network.manager import NetworkManager
+from nailgun import objects
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 
@@ -178,11 +178,9 @@ def upload_fixture(fileobj, loader=None):
 
         # UGLY HACK for testing
         if new_obj.__class__.__name__ == 'Node':
-            new_obj.attributes = models.NodeAttributes()
-            db().commit()
-            new_obj.attributes.volumes = \
-                new_obj.volume_manager.gen_volumes_info()
-            NetworkManager.update_interfaces_info(new_obj)
+            objects.Node.create_attributes(new_obj)
+            objects.Node.update_volumes(new_obj)
+            objects.Node.update_interfaces(new_obj)
             db().commit()
 
 

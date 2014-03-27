@@ -26,7 +26,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_all_api_urls_404_or_405(self):
         urls = {
             'ClusterHandler': {'obj_id': 1},
-            'NodeHandler': {'node_id': 1},
+            'NodeHandler': {'obj_id': 1},
             'ReleaseHandler': {'obj_id': 1},
         }
         for handler in urls:

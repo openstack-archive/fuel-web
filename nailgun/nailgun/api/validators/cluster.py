@@ -25,7 +25,10 @@ class ClusterValidator(BasicValidator):
     def _validate_common(cls, data):
         d = cls.validate_json(data)
         if d.get("name"):
-            if ClusterCollection.filter_by(name=d["name"]).first():
+            if ClusterCollection.filter_by(
+                query=None,
+                name=d["name"]
+            ).first():
                 raise errors.AlreadyExists(
                     "Environment with this name already exists",
                     log_message=True

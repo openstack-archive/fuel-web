@@ -71,6 +71,21 @@ CLUSTER_NET_SEGMENT_TYPES = Enum(
     'gre'
 )
 
+NODE_STATUSES = Enum(
+    'ready',
+    'discover',
+    'provisioning',
+    'provisioned',
+    'deploying',
+    'error'
+)
+
+NODE_ERRORS = Enum(
+    'deploy',
+    'provision',
+    'deletion'
+)
+
 NETWORK_INTERFACE_TYPES = Enum(
     'ether',
     'bond'

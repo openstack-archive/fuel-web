@@ -66,26 +66,13 @@ class Role(Base):
 
 class Node(Base):
     __tablename__ = 'nodes'
-    NODE_STATUSES = (
-        'ready',
-        'discover',
-        'provisioning',
-        'provisioned',
-        'deploying',
-        'error'
-    )
-    NODE_ERRORS = (
-        'deploy',
-        'provision',
-        'deletion'
-    )
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     name = Column(Unicode(100))
     status = Column(
-        Enum(*NODE_STATUSES, name='node_status'),
+        Enum(*consts.NODE_STATUSES, name='node_status'),
         nullable=False,
-        default='discover'
+        default=consts.NODE_STATUSES.discover
     )
     meta = Column(JSON, default={})
     mac = Column(LowercaseString(17), nullable=False, unique=True)
@@ -98,7 +85,7 @@ class Node(Base):
     pending_addition = Column(Boolean, default=False)
     pending_deletion = Column(Boolean, default=False)
     changes = relationship("ClusterChanges", backref="node")
-    error_type = Column(Enum(*NODE_ERRORS, name='node_error_type'))
+    error_type = Column(Enum(*consts.NODE_ERRORS, name='node_error_type'))
     error_msg = Column(String(255))
     timestamp = Column(DateTime, nullable=False)
     online = Column(Boolean, default=True)
@@ -252,16 +239,17 @@ class Node(Base):
     def update_meta(self, data):
         # helper for basic checking meta before updation
         result = []
-        for iface in data["interfaces"]:
-            if not self._check_interface_has_required_params(iface):
-                logger.warning(
-                    "Invalid interface data: {0}. "
-                    "Interfaces are not updated.".format(iface)
-                )
-                data["interfaces"] = self.meta.get("interfaces")
-                self.meta = data
-                return
-            result.append(self._clean_iface(iface))
+        if "interfaces" in data:
+            for iface in data["interfaces"]:
+                if not self._check_interface_has_required_params(iface):
+                    logger.warning(
+                        "Invalid interface data: {0}. "
+                        "Interfaces are not updated.".format(iface)
+                    )
+                    data["interfaces"] = self.meta.get("interfaces")
+                    self.meta = data
+                    return
+                result.append(self._clean_iface(iface))
 
         data["interfaces"] = result
         self.meta = data
@@ -269,14 +257,15 @@ class Node(Base):
     def create_meta(self, data):
         # helper for basic checking meta before creation
         result = []
-        for iface in data["interfaces"]:
-            if not self._check_interface_has_required_params(iface):
-                logger.warning(
-                    "Invalid interface data: {0}. "
-                    "Skipping interface.".format(iface)
-                )
-                continue
-            result.append(self._clean_iface(iface))
+        if "interfaces" in data:
+            for iface in data["interfaces"]:
+                if not self._check_interface_has_required_params(iface):
+                    logger.warning(
+                        "Invalid interface data: {0}. "
+                        "Skipping interface.".format(iface)
+                    )
+                    continue
+                result.append(self._clean_iface(iface))
 
         data["interfaces"] = result
         self.meta = data

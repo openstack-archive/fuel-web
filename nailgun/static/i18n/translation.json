@@ -13,6 +13,7 @@
                 "stop_button": "Stop",
                 "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
+                "close_button": "Close",
                 "cancel_button": "Cancel",
                 "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
@@ -29,7 +30,7 @@
                 "important": "Important",
                 "success": "Success",
                 "error": "Error",
-                "see_logs": "see the logs",
+                "see_logs": "Please see the logs",
                 "copyright": "Copyright © 2013-2014 Mirantis. All rights reserved."
             },
             "node_details": {
@@ -158,6 +159,11 @@
                         },
                         "drag_and_drop_description": "You can drag and drop logical networks between interfaces",
                         "neutron_vlan_range": "Neutron VLAN IDs",
+                        "configuration_error": {
+                            "title": "Interfaces configuration error",
+                            "saving_warning": "Unable to apply changes",
+                            "load_defaults_warning": "Unable to load default configuration"
+                        },
                         "validation": {
                             "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface"
                         }
@@ -169,7 +175,10 @@
                         "volume_groups": "Volume Groups",
                         "total_space": "Total Space",
                         "unallocated": "Unallocated",
-                        "use_all_allowed_space": "Use All Allowed Space"
+                        "use_all_allowed_space": "Use All Allowed Space",
+                        "configure_disks_error": {
+                            "title": "Disks configuration error"
+                        }
                     },
                     "node_management_panel": {
                         "group_by": "Group By",
@@ -177,10 +186,12 @@
                         "filter_placeholder": "Node name/mac",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
-                        "cant_configure_disks": "Unable to configure disks",
-                        "cant_configure_interfaces": "Unable to configure interfaces",
-                        "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
-                        "interfaces_configuration_warning": "Only undeployed nodes with an identical number of network interfaces can be configured together in the same action."
+                        "node_management_error": {
+                            "title": "Node management error",
+                            "saving_warning": "Unable to apply changes",
+                            "disks_configuration_warning": "Unable to configure disks: only nodes with identical disk capacities can be configured together in the same action.",
+                            "interfaces_configuration_warning": "Unable to configure interfaces: only undeployed nodes with an identical number of network interfaces can be configured together in the same action."
+                        }
                     },
                     "node": {
                         "status": {
@@ -210,11 +221,20 @@
                     "one_controller_restriction": "Only one controller can be assigned in a multi-node deployment that is not Highly-Available (HA).",
                     "incompatible_roles_warning" : "This role cannot be combined with the other roles already selected.",
                     "new_controllers_in_ha_mode_restriction": "New controllers cannot be added to an operational environment.",
+                    "node_deletion_error": {
+                        "title": "Node deletion error",
+                        "node_deletion_warning": "Unable to delete the node"
+                    },
                     "no_filtered_nodes_warning": "There are no nodes found matching the filter value.",
                     "filtered_nodes_count":"__filteredNodesCount__ of __count__ node",
                     "filtered_nodes_count_plural": "__filteredNodesCount__ of __count__ nodes"
                 },
                 "settings_tab": {
+                    "settings_error": {
+                        "title": "OpenStack Settings configuration error",
+                        "load_defaults_warning": "Unable to load default configuration",
+                        "saving_warning": "Unable to apply changes"
+                    },
                     "title": "OpenStack Settings"
                 },
                 "actions_tab": {
@@ -227,7 +247,10 @@
                     "reset_environment_warning": "This action will reset all existing nodes to their pre-deployment state, deleting your existing environment.",
                     "reset_disabled_for_new_cluster": "Reset Environment is not available for an environment not yet deployed.",
                     "repeated_reset_disabled": "The current environment is already being reset.",
-                    "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed. Use Stop Deployment to stop the deployment process."
+                    "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed. Use Stop Deployment to stop the deployment process.",
+                    "rename_error": {
+                        "title": "Rename Environment failed"
+                    }
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -245,6 +268,10 @@
                         "step_3": "3. Nodes listeners register test frames from other nodes",
                         "step_4": "4. Send DHCP discover messages on all available ports.",
                         "success_alert": "Verification succeeded. Your network is configured correctly.",
+                        "verification_error": {
+                            "title": "Network verification error",
+                            "saving_warning": "Verification failed"
+                        },
                         "fail_alert": "Verification failed.",
                         "node_name": "Node Name",
                         "node_mac_address": "Node MAC address",
@@ -410,6 +437,11 @@
                         "console": "console.",
                         "deploy": "Deploy Changes",
                         "env": "Environments"
+                    },
+                    "create_cluster_error": {
+                        "title" : "OpenStack environment error",
+                        "create_cluster_configuration_warning" : "Your OpenStack environment has been created, but configuration failed. You can configure it manually.",
+                        "create_cluster_warning" : "Your OpenStack environment creation has failed."
                     }
                 },
                 "dismiss_settings": {
@@ -480,14 +512,19 @@
                 "stop_deployment": {
                     "title": "Stop Deployment",
                     "text": "Are you sure you want to stop this deployment? Any progress will be lost and nodes will be reset to their pre-deployment state.",
-                    "provisioning_warning": "Are you sure you want to stop this deployment? Any progress on nodes not yet provisioned will be lost and those nodes will be reset to their pre-deployment state."
+                    "provisioning_warning": "Are you sure you want to stop this deployment? Any progress on nodes not yet provisioned will be lost and those nodes will be reset to their pre-deployment state.",
+                    "stop_deployment_error": {
+                        "title": "Stop Deployment Error",
+                        "stop_deployment_warning": "Unable to stop deployment"
+                    }
                 },
                 "reset_environment": {
                     "title": "Reset Environment",
                     "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state."
                 },
-                "error_occured": {
-                    "alert_text": "A server error has occured. Please contact the administrators."
+                "error_dialog": {
+                    "title": "Error",
+                    "warning": "A server error has occured. Please contact the administrators."
                 }
             }
         }

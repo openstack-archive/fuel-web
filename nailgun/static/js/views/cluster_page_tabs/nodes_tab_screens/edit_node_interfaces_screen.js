@@ -137,7 +137,10 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
             this.disableControls(true);
             this.interfaces.fetch({url: _.result(this.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true})
                 .fail(_.bind(function() {
-                    utils.showErrorDialog({title: 'Unable to load default configuration'});
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.title'),
+                        message: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.load_defaults_warning')
+                    });
                 }, this));
         },
         revertChanges: function() {
@@ -180,7 +183,10 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
             })
             .always(_.bind(this.checkForChanges, this))
             .fail(function() {
-                utils.showErrorDialog({title: 'Interfaces configuration'});
+                utils.showErrorDialog({
+                    title: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.title'),
+                    message: $.t('cluster_page.nodes_tab.configure_interfaces.configuration_error.saving_warning')
+                });
             });
         },
         initialize: function(options) {

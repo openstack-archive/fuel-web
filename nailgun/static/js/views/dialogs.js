@@ -18,55 +18,59 @@ define(
     'require',
     'utils',
     'models',
-    'text!templates/dialogs/simple_message.html',
+    'text!templates/dialogs/base_dialog.html',
     'text!templates/dialogs/discard_changes.html',
     'text!templates/dialogs/display_changes.html',
     'text!templates/dialogs/remove_cluster.html',
     'text!templates/dialogs/stop_deployment.html',
     'text!templates/dialogs/reset_environment.html',
     'text!templates/dialogs/update_environment.html',
-    'text!templates/dialogs/error_message.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
     'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, baseDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
 
     var views = {};
 
     views.Dialog = Backbone.View.extend({
         className: 'modal fade',
-        template: _.template(simpleMessageTemplate),
-        errorMessageTemplate: _.template(errorMessageTemplate),
+        template: _.template(baseDialogTemplate),
         modalBound: false,
         beforeTearDown: function() {
             this.unstickit();
             this.$el.modal('hide');
         },
-        displayError: function() {
+        displayError: function(options) {
             var logsLink;
-            try {
-                if (app.page.model.constructor == models.Cluster) {
-                    var options = {type: 'local', source: 'api', level: 'error'};
-                    logsLink = '#cluster/' + app.page.model.id + '/logs/' + utils.serializeTabOptions(options);
-                }
-            } catch (ignore) {}
-            this.$('.modal-body').removeClass().addClass('modal-body');
-            this.$('.modal-body').html(views.Dialog.prototype.errorMessageTemplate({logsLink: logsLink})).i18n();
-        },
-        displayErrorMessage: function(options) {
-            this.displayError();
-            if (options.message) {
-                this.$('.text-error').text(options.message);
+            var cluster = app.page.model;
+            if (!options.hideLogsLink && cluster && cluster.constructor == models.Cluster) {
+                var logOptions = {type: 'local', source: 'api', level: 'error'};
+                logsLink = '#cluster/' + cluster.id + '/logs/' + utils.serializeTabOptions(logOptions);
             }
+            var dialogOptions = _.defaults(options, {
+                error: true,
+                title: $.t('dialog.error_dialog.title'),
+                message: $.t('dialog.error_dialog.warning'),
+                logsLink: logsLink
+            });
+            this.$el.removeClass().addClass('modal').html(views.Dialog.prototype.template(dialogOptions)).i18n();
+        },
+        getResponseText: function(response) {
+            return _.contains([400, 409], response.status) ? response.responseText : '';
         },
         initialize: function(options) {
             _.defaults(this, options);
         },
         render: function(options) {
             this.$el.attr('tabindex', -1);
-            this.$el.html(this.template(options)).i18n();
+            if (options && options.error) {
+                this.displayError(options);
+            } else {
+                var templateOptions = _.extend({title: '', message: '', error: false, logsLink: ''}, options);
+                this.$el.html(this.template(templateOptions)).i18n();
+            }
             if (!this.modalBound) {
                 this.$el.on('hidden', _.bind(this.tearDown, this));
                 this.$el.on('shown', _.bind(function() {
@@ -182,11 +186,10 @@ function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemp
                     app.page.deploymentTaskStarted();
                 }, this))
                 .fail(_.bind(function(response) {
-                    if (response.status == 400) {
-                        this.displayErrorMessage({message: response.responseText});
-                    } else {
-                        this.displayError();
-                    }
+                    this.displayError({
+                        title: $.t('dialog.stop_deployment.stop_deployment_error.title'),
+                        message: this.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
+                    });
                 }, this));
         },
         render: function() {
@@ -392,7 +395,12 @@ function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemp
                         app.navbar.refresh();
                         app.page.removeFinishedNetworkTasks();
                     }, this))
-                    .fail(_.bind(this.displayError, this));
+                    .fail(_.bind(function() {
+                        utils.showErrorDialog({
+                            title: $.t('cluster_page.nodes_tab.node_deletion_error.title'),
+                            message: $.t('cluster_page.nodes_tab.node_deletion_error.node_deletion_warning')
+                        });
+                    }, this));
             }
         },
         render: function() {

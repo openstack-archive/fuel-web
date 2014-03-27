@@ -12,7 +12,6 @@ down_revision = '3540e7a3ba1e'
 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
@@ -84,6 +83,12 @@ def upgrade_enum(table, column_name, enum_name, old_options, new_options):
     )
     tmp_type.drop(op.get_bind(), checkfirst=False)
     ### end Alembic commands ###
+
+
+def drop_enum(name):
+    op.execute(
+        u'DROP TYPE {0}'.format(name)
+    )
 
 
 def upgrade():
@@ -182,6 +187,11 @@ def upgrade():
         'agent_checksum', sa.String(40), nullable=True
     ))
 
+    op.add_column('nodes', sa.Column(
+        'uuid', sa.String(length=36), nullable=False
+    ))
+    op.create_unique_constraint("uq_node_uuid", "nodes", ["uuid"])
+
     ### end Alembic commands ###
 
 
@@ -195,94 +205,42 @@ def downgrade():
     )
     op.create_table(
         'global_parameters',
-        sa.Column(
-            'id',
-            sa.INTEGER(),
-            server_default="nextval('global_parameters_id_seq'::regclass)",
-            nullable=False
-        ),
-        sa.Column(
-            'parameters',
-            sa.TEXT(),
-            autoincrement=False,
-            nullable=True
-        ),
-        sa.PrimaryKeyConstraint(
-            'id',
-            name=u'global_parameters_pkey'
-        )
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('parameters', JSON(), nullable=True),
+        sa.PrimaryKeyConstraint('id')
     )
     op.drop_column('network_groups', 'meta')
     op.create_table(
         'allowed_networks',
-        sa.Column(
-            'id',
-            sa.INTEGER(),
-            server_default="nextval('allowed_networks_id_seq'::regclass)",
-            nullable=False
-        ),
-        sa.Column(
-            'network_id',
-            sa.INTEGER(),
-            autoincrement=False,
-            nullable=False
-        ),
-        sa.Column(
-            'interface_id',
-            sa.INTEGER(),
-            autoincrement=False,
-            nullable=False
-        ),
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('network_id', sa.Integer(), nullable=False),
+        sa.Column('interface_id', sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ['interface_id'],
-            [u'node_nic_interfaces.id'],
-            name=u'allowed_networks_interface_id_fkey',
-            ondelete=u'CASCADE'
+            ['node_nic_interfaces.id'],
+            ondelete='CASCADE'
         ),
         sa.ForeignKeyConstraint(
             ['network_id'],
-            [u'network_groups.id'],
-            name=u'allowed_networks_network_id_fkey',
-            ondelete=u'CASCADE'
+            ['network_groups.id'],
+            ondelete='CASCADE'
         ),
-        sa.PrimaryKeyConstraint(
-            'id',
-            name=u'allowed_networks_pkey'
-        )
+        sa.PrimaryKeyConstraint('id')
     )
+    drop_enum('plugin_type')
     op.create_table(
         'plugins',
-        sa.Column(
-            'id',
-            sa.INTEGER(),
-            server_default="nextval('plugins_id_seq'::regclass)",
-            nullable=False
-        ),
+        sa.Column('id', sa.Integer(), nullable=False),
         sa.Column(
             'type',
-            postgresql.ENUM(u'nailgun', u'fuel', name='plugin_type'),
-            autoincrement=False,
+            sa.Enum('nailgun', 'fuel', name='plugin_type'),
             nullable=False
         ),
-        sa.Column(
-            'name',
-            sa.VARCHAR(length=128),
-            autoincrement=False,
-            nullable=False
-        ),
-        sa.Column(
-            'state',
-            sa.VARCHAR(length=128),
-            autoincrement=False,
-            nullable=False
-        ),
-        sa.Column(
-            'version',
-            sa.VARCHAR(length=128),
-            autoincrement=False,
-            nullable=False
-        ),
-        sa.PrimaryKeyConstraint('id', name=u'plugins_pkey')
+        sa.Column('name', sa.String(length=128), nullable=False),
+        sa.Column('state', sa.String(length=128), nullable=False),
+        sa.Column('version', sa.String(length=128), nullable=False),
+        sa.PrimaryKeyConstraint('id'),
+        sa.UniqueConstraint('name')
     )
     # CLUSTER STATUS ENUM DOWNGRADE
     upgrade_enum(
@@ -312,5 +270,7 @@ def downgrade():
     )
     op.drop_table('net_bond_assignments')
     op.drop_table('node_bond_interfaces')
+    drop_enum('bond_mode')
     op.drop_column('nodes', 'agent_checksum')
+    op.drop_column('nodes', 'uuid')
     ### end Alembic commands ###

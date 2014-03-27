@@ -239,7 +239,10 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 }, this))
                 .fail(_.bind(function() {
                     this.$('.btn-apply').prop('disabled', false);
-                    utils.showErrorDialog({title: 'Unable to apply changes'});
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.title'),
+                        message: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.saving_warning')
+                    });
                 }, this));
         },
         goToConfigurationScreen: function(e) {
@@ -263,9 +266,11 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         },
         showUnavailableGroupConfigurationDialog: function (e) {
             var action = this.$(e.currentTarget).data('action');
-            var dialog = new dialogViews.Dialog();
-            app.page.registerSubView(dialog);
-            dialog.render({title: $.t('cluster_page.nodes_tab.node_management_panel.cant_configure_' + action), message: $.t('cluster_page.nodes_tab.node_management_panel.' + action + '_configuration_warning')});
+            utils.showErrorDialog({
+                title: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.title'),
+                message: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.' + action + '_configuration_warning'),
+                hideLogsLink: true
+            });
         },
         render: function() {
             this.tearDownRegisteredSubViews();

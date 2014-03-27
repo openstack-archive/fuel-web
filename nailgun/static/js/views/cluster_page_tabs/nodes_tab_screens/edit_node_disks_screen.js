@@ -61,7 +61,12 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
         loadDefaults: function() {
             this.disableControls(true);
             this.disks.fetch({url: _.result(this.nodes.at(0), 'url') + '/disks/defaults/'})
-                .fail(_.bind(function() {utils.showErrorDialog({title: 'Disks configuration'});}, this));
+                .fail(_.bind(function() {
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
+                        message: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.load_defaults_warning')
+                    });
+                }, this));
         },
         revertChanges: function() {
             this.disks.reset(_.cloneDeep(this.nodes.at(0).disks.toJSON()), {parse: true});
@@ -83,7 +88,10 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
                 }, this))
                 .fail(_.bind(function() {
                     this.checkForChanges();
-                    utils.showErrorDialog({title: 'Disks configuration'});
+                    utils.showErrorDialog({
+                        title: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
+                        message: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.saving_warning')
+                    });
                 }, this));
         },
         mapVolumesColors: function() {

@@ -381,7 +381,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this))
                 .fail(_.bind(function() {
                     this.$('.btn-apply').prop('disabled', false);
-                    utils.showErrorDialog({title: 'Unable to apply changes'});
+                    utils.showErrorDialog({title: $.t('cluster_page.nodes_tab.node_management_panel.apply_error_title')});
                 }, this));
         },
         goToConfigurationScreen: function(e) {
@@ -405,9 +405,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         showUnavailableGroupConfigurationDialog: function (e) {
             var action = this.$(e.currentTarget).data('action');
-            var dialog = new dialogViews.Dialog();
-            app.page.registerSubView(dialog);
-            dialog.render({title: $.t('cluster_page.nodes_tab.node_management_panel.cant_configure_' + action), message: $.t('cluster_page.nodes_tab.node_management_panel.' + action + '_configuration_warning')});
+            utils.showErrorDialog({title: $.t('cluster_page.nodes_tab.node_management_panel.cant_configure_' + action), message: $.t('cluster_page.nodes_tab.node_management_panel.' + action + '_configuration_warning')});
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -1061,7 +1059,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         loadDefaults: function() {
             this.disableControls(true);
             this.disks.fetch({url: _.result(this.nodes.at(0), 'url') + '/disks/defaults/'})
-                .fail(_.bind(function() {utils.showErrorDialog({title: 'Disks configuration'});}, this));
+                .fail(_.bind(function() {utils.showErrorDialog({title: $.t('cluster_page.nodes_tab.configure_disks.apply_error_title')});}, this));
         },
         revertChanges: function() {
             this.disks.reset(_.cloneDeep(this.nodes.at(0).disks.toJSON()), {parse: true});
@@ -1084,7 +1082,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this))
                 .fail(_.bind(function() {
                     this.checkForChanges();
-                    utils.showErrorDialog({title: 'Disks configuration'});
+                    utils.showErrorDialog({title: $.t('cluster_page.nodes_tab.configure_disks.apply_error_title')});
                 }, this));
         },
         mapVolumesColors: function() {
@@ -1408,7 +1406,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.disableControls(true);
             this.interfaces.fetch({url: _.result(this.nodes.at(0), 'url') + '/interfaces/default_assignment', reset: true})
                 .fail(_.bind(function() {
-                    utils.showErrorDialog({title: 'Unable to load default configuration'});
+                    utils.showErrorDialog({title: $.t('cluster_page.nodes_tab.configure_interfaces.load_error_title')});
                 }, this));
         },
         revertChanges: function() {
@@ -1448,7 +1446,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }, this))
             .always(_.bind(this.checkForChanges, this))
             .fail(function() {
-                utils.showErrorDialog({title: 'Interfaces configuration'});
+                utils.showErrorDialog({title: $.t('cluster_page.nodes_tab.configure_interfaces.load_error_title')});
             });
         },
         initialize: function(options) {

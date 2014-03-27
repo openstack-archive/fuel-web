@@ -69,7 +69,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             };
             task.save({}, options)
                 .fail(_.bind(function() {
-                    utils.showErrorDialog({title: 'Network verification'});
+                    utils.showErrorDialog({title: $.t('cluster_page.network_tab.verify_networks.verification_error_title')});
                     this.$('.verify-networks-btn').prop('disabled', false);
                 }, this))
                 .always(_.bind(function() {
@@ -115,7 +115,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                         }
                     }, this))
                     .fail(_.bind(function() {
-                        utils.showErrorDialog({title: 'Networks'});
+                        utils.showErrorDialog({title: $.t('cluster_page.network_tab.verify_networks.save_error_title')});
                         this.defaultButtonsState(false);
                         this.model.fetch();
                         this.model.fetchRelated('tasks');

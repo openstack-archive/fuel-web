@@ -59,7 +59,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 }, this))
                 .fail(_.bind(function() {
                     this.defaultButtonsState(false);
-                    utils.showErrorDialog({title: 'OpenStack Settings'});
+                    utils.showErrorDialog({title: $.t('cluster_page.settings_tab.error_title')});
                 }, this));
         },
         revertChanges: function() {

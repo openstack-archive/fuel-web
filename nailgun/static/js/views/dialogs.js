@@ -18,7 +18,7 @@ define(
     'require',
     'utils',
     'models',
-    'text!templates/dialogs/simple_message.html',
+    'text!templates/dialogs/base_dialog.html',
     'text!templates/dialogs/create_cluster_wizard.html',
     'text!templates/dialogs/create_cluster_wizard/name_and_release.html',
     'text!templates/dialogs/create_cluster_wizard/mode.html',
@@ -33,45 +33,39 @@ define(
     'text!templates/dialogs/remove_cluster.html',
     'text!templates/dialogs/stop_deployment.html',
     'text!templates/dialogs/reset_environment.html',
-    'text!templates/dialogs/error_message.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
     'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, baseDialogTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
 
     var views = {};
 
     views.Dialog = Backbone.View.extend({
         className: 'modal fade',
-        template: _.template(simpleMessageTemplate),
-        errorMessageTemplate: _.template(errorMessageTemplate),
+        template: _.template(baseDialogTemplate),
         modalBound: false,
         beforeTearDown: function() {
             this.$el.modal('hide');
         },
-        displayError: function() {
+        displayError: function(options) {
+            options = options || {};
             var logsLink;
             try {
                 if (app.page.model.constructor == models.Cluster) {
-                    var options = {type: 'local', source: 'api', level: 'error'};
-                    logsLink = '#cluster/' + app.page.model.id + '/logs/' + utils.serializeTabOptions(options);
+                    var logOptions = {type: 'local', source: 'api', level: 'error'};
+                    logsLink = '#cluster/' + app.page.model.id + '/logs/' + utils.serializeTabOptions(logOptions);
                 }
-            } catch (ignore) {}
-            this.$('.modal-body').removeClass().addClass('modal-body');
-            this.$('.modal-body').html(views.Dialog.prototype.errorMessageTemplate({logsLink: logsLink})).i18n();
-        },
-        displayErrorMessage: function(options) {
-            this.displayError();
-            if (options.message) {
-                this.$('.text-error').text(options.message);
-            }
+            } catch  (ignore) {}
+            var dialogOptions = _.extend({error: true, title: $.t('dialog.error_occured.default_title'), message: $.t('dialog.error_occured.alert_text'), logsLink: logsLink}, options);
+            this.$el.removeClass().addClass('modal').html(views.Dialog.prototype.template(dialogOptions)).i18n();
         },
         initialize: function(options) {
             _.defaults(this, options);
         },
         render: function(options) {
+            options = _.extend({title: '', message: '', error: '', logsLink: ''}, options);
             this.$el.attr('tabindex', -1);
             this.$el.html(this.template(options)).i18n();
             if (!this.modalBound) {
@@ -188,7 +182,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                                 this.$el.modal('hide');
                             }, this))
                             .fail(_.bind(function() {
-                                this.displayErrorMessage({message: 'Your OpenStack environment has been created, but configuration failed. You can configure it manually.'});
+                                this.displayError({title: $.t('dialog.create_cluster_wizard.error.title'), message: $.t('dialog.create_cluster_wizard.error.message')});
                             }, this));
                     }, this))
                     .fail(_.bind(function(response) {
@@ -197,7 +191,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                             this.goToPane(0);
                             cluster.trigger('invalid', cluster, {name: response.responseText});
                         } else if (response.status == 400) {
-                            this.displayErrorMessage({message: response.responseText});
+                            this.displayError({message: response.responseText});
                         } else {
                             this.displayError();
                         }
@@ -677,11 +671,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     app.page.deploymentTaskStarted();
                 }, this))
                 .fail(_.bind(function(response) {
-                    if (response.status == 400) {
-                        this.displayErrorMessage({message: response.responseText});
-                    } else {
-                        this.displayError();
-                    }
+                    this.displayError(response.status == 400 ? {message: response.responseText} : {});
                 }, this));
         },
         render: function() {

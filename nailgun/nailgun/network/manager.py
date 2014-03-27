@@ -29,7 +29,7 @@ from netaddr import IPRange
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 
-from nailgun import objects
+from nailgun.objects import Cluster
 
 from nailgun import consts
 from nailgun.db import db
@@ -243,7 +243,7 @@ class NetworkManager(object):
         :returns: None
         :raises: Exception
         """
-        cluster = objects.Cluster.get_by_uid(cluster_id)
+        cluster = Cluster.get_by_uid(cluster_id)
         if not cluster:
             raise Exception(u"Cluster id='%s' not found" % cluster_id)
 
@@ -362,6 +362,7 @@ class NetworkManager(object):
             ips = ips.filter_by(node=node_id)
         if network_id:
             ips = ips.filter_by(network=network_id)
+
         try:
             admin_net_id = cls.get_admin_network_group_id()
         except errors.AdminNetworkNotFound:
@@ -445,9 +446,13 @@ class NetworkManager(object):
             # Assign remaining networks to NIC #0
             # as all the networks must be assigned.
             # But network check will not pass if we get here.
-            logger.warn("Cannot assign all networks appropriately for"
-                        " node %r. Set all unassigned networks to the"
-                        " interface %r", node.name, nics[0]['name'])
+            logger.warn(
+                u"Cannot assign all networks appropriately for"
+                u"node %r. Set all unassigned networks to the"
+                u"interface %r",
+                node.name,
+                nics[0]['name']
+            )
             for ng_id in to_assign_ids:
                 nics[0].setdefault('assigned_networks', []).append(
                     {'id': ng_id, 'name': ngs_by_id[ng_id].name})
@@ -731,7 +736,9 @@ class NetworkManager(object):
         try:
             cls.__check_interfaces_correctness(node)
         except errors.InvalidInterfacesInfo as e:
-            logger.warn("Cannot update interfaces: %s" % str(e))
+            logger.warn(
+                "Cannot update interfaces: {0}".format(str(e))
+            )
             return
 
         for interface in node.meta["interfaces"]:
@@ -790,14 +797,14 @@ class NetworkManager(object):
         interface.node_id = node.id
         cls.__set_interface_attributes(interface, interface_attrs)
         db().add(interface)
-        db().commit()
-        node.nic_interfaces.append(interface)
+        db().flush()
 
     @classmethod
     def __update_existing_interface(cls, interface_id, interface_attrs):
         interface = db().query(NodeNICInterface).get(interface_id)
         cls.__set_interface_attributes(interface, interface_attrs)
-        db().commit()
+        db().add(interface)
+        db().flush()
 
     @classmethod
     def __set_interface_attributes(cls, interface, interface_attrs):
@@ -830,6 +837,7 @@ class NetworkManager(object):
                 mac_addresses, node_name))
 
             map(db().delete, interfaces_to_delete)
+        db().flush()
 
     @classmethod
     def get_admin_ip_for_node(cls, node):
@@ -887,7 +895,7 @@ class NetworkManager(object):
 
     @classmethod
     def get_end_point_ip(cls, cluster_id):
-        cluster_db = objects.Cluster.get_by_uid(cluster_id)
+        cluster_db = Cluster.get_by_uid(cluster_id)
         ip = None
         if cluster_db.is_ha_mode:
             ip = cls.assign_vip(cluster_db.id, "public")
@@ -988,7 +996,7 @@ class NetworkManager(object):
         :type  cluster_id: int
         :returns: None
         """
-        cluster_db = objects.Cluster.get_by_uid(cluster_id)
+        cluster_db = Cluster.get_by_uid(cluster_id)
         networks_metadata = cluster_db.release.networks_metadata
         networks_list = networks_metadata[cluster_db.net_provider]["networks"]
         used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
@@ -1078,7 +1086,7 @@ class NetworkManager(object):
                     cls.update_cidr_from_gw_mask(ng_db, ng)
                 if ng_db.meta.get("notation"):
                     cls.cleanup_network_group(ng_db)
-                objects.Cluster.add_pending_changes(ng_db.cluster, 'networks')
+                Cluster.add_pending_changes(ng_db.cluster, 'networks')
 
     @classmethod
     def cluster_has_bonds(cls, cluster_id):

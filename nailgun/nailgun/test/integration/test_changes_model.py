@@ -190,8 +190,12 @@ class TestClusterChanges(BaseIntegrationTest):
             name="networks"
         ).all()
         self.assertEquals(len(networks_changes), 1)
+        disks_changes = self.db.query(ClusterChanges).filter_by(
+            name="disks"
+        ).all()
+        self.assertEquals(len(disks_changes), 1)
         all_changes = self.db.query(ClusterChanges).all()
-        self.assertEquals(len(all_changes), 2)
+        self.assertEquals(len(all_changes), 3)
 
     @fake_tasks(godmode=True)
     def test_role_unassignment_drops_changes(self):
@@ -209,7 +213,7 @@ class TestClusterChanges(BaseIntegrationTest):
         )
         self.app.put(
             reverse("NodeHandler",
-                    kwargs={"node_id": new_node["id"]}),
+                    kwargs={"obj_id": new_node["id"]}),
             json.dumps({
                 "cluster": None,
                 "pending_addition": False,
@@ -217,7 +221,6 @@ class TestClusterChanges(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-
         all_changes = self.db.query(ClusterChanges).filter_by(
             cluster_id=self.env.clusters[0].id,
             node_id=new_node["id"]

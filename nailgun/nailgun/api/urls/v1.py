@@ -139,7 +139,7 @@ urls = (
     NodeCollectionHandler,
     r'/nodes/agent/?$',
     NodeAgentHandler,
-    r'/nodes/(?P<node_id>\d+)/?$',
+    r'/nodes/(?P<obj_id>\d+)/?$',
     NodeHandler,
     r'/nodes/(?P<node_id>\d+)/disks/?$',
     NodeDisksHandler,

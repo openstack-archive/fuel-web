@@ -207,14 +207,16 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps([{'id': None,
                          'mac': node.mac,
                          'manufacturer': 'man5'}]),
-            headers=self.default_headers)
+            headers=self.default_headers
+        )
         self.assertEquals(resp.status_code, 200)
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node.id,
                          'manufacturer': 'man6'}]),
-            headers=self.default_headers)
+            headers=self.default_headers
+        )
         self.assertEquals(resp.status_code, 200)
 
         resp = self.app.put(
@@ -335,7 +337,8 @@ class TestHandlers(BaseIntegrationTest):
         )
         node2_json = {
             "mac": self.env.generate_random_mac(),
-            "meta": self.env.default_metadata()
+            "meta": self.env.default_metadata(),
+            "status": "discover"
         }
         node2_json["meta"]["interfaces"][0]["mac"] = node1.mac
         resp = self.app.post(
@@ -424,7 +427,7 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=False)
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
-            json.dumps({'mac': node.mac}),
+            json.dumps({'mac': node.mac, 'status': 'discover'}),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(409, resp.status_code)
@@ -485,7 +488,7 @@ class TestHandlers(BaseIntegrationTest):
         )[0]['id']
 
         self.app.delete(
-            reverse('NodeHandler', {'node_id': node_id})
+            reverse('NodeHandler', {'obj_id': node_id})
         )
 
         node_name_test(node_mac.lower())

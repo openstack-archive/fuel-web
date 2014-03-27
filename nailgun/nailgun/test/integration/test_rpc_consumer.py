@@ -318,7 +318,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
             u'absent_vlans': [100, 101, 102, 103, 104],
             u'interface': 'eth0',
             u'mac': node2.interfaces[0].mac,
-            u'name': None,
+            u'name': 'Untitled ({0})'.format(node2.mac[-5:].lower()),
             u'uid': node2.id}])
 
     def test_verify_networks_resp_forgotten_node_error(self):

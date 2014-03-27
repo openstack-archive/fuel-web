@@ -48,7 +48,7 @@ class TestNodeDeletion(BaseIntegrationTest):
         resp = self.app.delete(
             reverse(
                 'NodeHandler',
-                kwargs={'node_id': node.id}),
+                kwargs={'obj_id': node.id}),
             headers=self.default_headers
         )
         self.assertEquals(204, resp.status_code)

@@ -32,7 +32,7 @@ class BaseListenerTestCase(unittest.TestCase):
         default_config = {
             "src": "1.0.0.0", "ready_port": None,
             "ready_address": "localhost", "dst": "1.0.0.0",
-            "interfaces": {"eth0": "0,100,100,101,102,103,104,105,106,107"},
+            "interfaces": {"eth1": "0,100,101,102,103,104,105,106,107"},
             "action": "listen",
             "cookie": "Nailgun:", "dport": 31337, "sport": 31337,
             "src_mac": None, "dump_file": "/var/tmp/net-probe-dump"
@@ -72,34 +72,48 @@ class BaseListenerTestCase(unittest.TestCase):
             os.unlink(self.config['dump_file'])
 
 
-class TestCaseListenerPcapFile(BaseListenerTestCase):
+class TestCaseListenerPcap(BaseListenerTestCase):
 
     def send_packets(self):
-        directory_path = os.path.dirname(__file__)
-        scapy_data = scapy.rdpcap(os.path.join(directory_path, 'vlan.pcap'))
-        for p in scapy_data:
-            scapy.sendp(p, iface='eth0')
+        for vlan in self.config['interfaces']['eth1'].split(','):
+            p = self.get_packet(vlan)
+            for i in xrange(5):
+                scapy.sendp(p, iface='eth1')
+
+    def get_packet(self, vlan):
+        normal_data = 'Nailgun:eth1 1'
+        p = scapy.Ether(src='64:0b:36:0e:0a:b7',
+                        dst="ff:ff:ff:ff:ff:ff")
+        if int(vlan) > 0:
+            p = p / scapy.Dot1Q(vlan=int(vlan))
+        message_len = len(normal_data) + 8
+        p = p / scapy.IP(src=self.config['src'], dst=self.config['dst'])
+        p = p / scapy.UDP(sport=self.config['sport'],
+                          dport=self.config['dport'],
+                          len=message_len) / normal_data
+        return p
 
     def test_listener_pcap_file(self):
 
         with open(self.config['dump_file'], 'r') as f:
             data = json.loads(f.read())
 
-        self.assertEqual(data, {u'eth0': {
-            u'102': {u'1': [u'eth0'], u'2': [u'eth0']},
-            u'103': {u'1': [u'eth0'], u'2': [u'eth0']},
-            u'100': {u'1': [u'eth0'], u'2': [u'eth0']},
-            u'101': {u'1': [u'eth0'], u'2': [u'eth0']},
-            u'106': {u'1': [u'eth0'], u'2': [u'eth0']},
-            u'107': {u'1': [u'eth0'], u'2': [u'eth0']},
-            u'104': {u'1': [u'eth0'], u'2': [u'eth0']},
-            u'105': {u'1': [u'eth0'], u'2': [u'eth0']}}})
+        self.assertEqual(data, {u'eth1': {
+            u'0': {u'1': [u'eth1']},
+            u'102': {u'1': [u'eth1']},
+            u'103': {u'1': [u'eth1']},
+            u'100': {u'1': [u'eth1']},
+            u'101': {u'1': [u'eth1']},
+            u'106': {u'1': [u'eth1']},
+            u'107': {u'1': [u'eth1']},
+            u'104': {u'1': [u'eth1']},
+            u'105': {u'1': [u'eth1']}}})
 
 
 class TestCaseListenerCorruptedData(BaseListenerTestCase):
 
     def send_packets(self):
-        normal_data = 'Nailgun:eth0 2'
+        normal_data = 'Nailgun:eth1 2'
         corrupted_data = normal_data + '7h 7\00\00\00'
         message_len = len(normal_data) + 8
         p = scapy.Ether(src=self.config['src_mac'],
@@ -109,26 +123,23 @@ class TestCaseListenerCorruptedData(BaseListenerTestCase):
                           dport=self.config['dport'],
                           len=message_len) / corrupted_data
         for i in xrange(5):
-            scapy.sendp(p, iface='eth0')
+            scapy.sendp(p, iface='eth1')
 
     def test_listener_corrupted_data(self):
 
         with open(self.config['dump_file'], 'r') as f:
             data = json.loads(f.read())
 
-        self.assertEqual(data, {u'eth0': {u'0': {u'2': [u'eth0']}}})
+        self.assertEqual(data, {u'eth1': {u'0': {u'2': [u'eth1']}}})
 
 
 class TestNetCheckSender(unittest.TestCase):
 
     def setUp(self):
-        directory_path = os.path.dirname(__file__)
-        self.scapy_data = scapy.rdpcap(os.path.join(directory_path,
-                                                    'vlan.pcap'))
         self.config = {
             "src": "1.0.0.0", "ready_port": 31338,
             "ready_address": "localhost", "dst": "1.0.0.0",
-            "interfaces": {"eth0": "0,100,101,102,106,107,108"},
+            "interfaces": {"eth1": "0,100,101,102,106,107,108"},
             "action": "listen",
             "cookie": "Nailgun:", "dport": 31337, "sport": 31337,
             "src_mac": None,
@@ -137,8 +148,8 @@ class TestNetCheckSender(unittest.TestCase):
         }
 
     def start_pcap_listener(self):
-        self.pcap_listener = pcap.pcap('eth0')
-        self.vlan_pcap_listener = pcap.pcap('eth0')
+        self.pcap_listener = pcap.pcap('eth1')
+        self.vlan_pcap_listener = pcap.pcap('eth1')
         filter_string = 'udp and dst port {0}'.format(self.config['dport'])
         self.vlan_pcap_listener.setfilter('vlan and {0}'.format(filter_string))
         self.pcap_listener.setfilter(filter_string)
@@ -173,5 +184,5 @@ class TestNetCheckSender(unittest.TestCase):
         time.sleep(3)
         self.sender.join()
 
-        expected_vlans = set(self.config['interfaces']['eth0'].split(','))
+        expected_vlans = set(self.config['interfaces']['eth1'].split(','))
         self.assertEqual(expected_vlans, self.received_vlans)

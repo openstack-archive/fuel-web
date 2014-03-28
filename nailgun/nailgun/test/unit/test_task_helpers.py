@@ -20,10 +20,10 @@ from nailgun.db.sqlalchemy.models import Task
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentHASerializer
 from nailgun.task.helpers import TaskHelper
-from nailgun.test.base import BaseUnitTest
+from nailgun.test.base import BaseTestCase
 
 
-class TestTaskHelpers(BaseUnitTest):
+class TestTaskHelpers(BaseTestCase):
 
     def create_env(self, nodes):
         cluster = self.env.create(

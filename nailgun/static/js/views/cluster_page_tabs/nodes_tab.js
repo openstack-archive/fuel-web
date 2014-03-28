@@ -457,8 +457,28 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         checkForConflicts: function(e) {
             this.collection.each(function(role) {
-                var selectedRoles = this.collection.filter(function(role) {return role.get('checked') || role.get('indeterminate');});
-                role.set('disabled', !this.screen.nodes.length || !this.isControllerSelectable(role) || _.contains(this.getListOfIncompatibleRoles(selectedRoles), role.get('name')));
+                var conflict = '';
+                var disabled = !this.screen.nodes.length || this.loading.state() == 'pending';
+                // checking if role is unavailable
+                if (!disabled && role.get('unavailable')) {
+                    disabled = true;
+                    conflict = role.get('unavailabityReason');
+                }
+                // checking if role conflict with another role
+                if (!disabled) {
+                    var selectedRoles = this.collection.filter(function(role) {return role.get('checked') || role.get('indeterminate');});
+                    var roleConflictsWithAnotherRole = _.contains(this.getListOfIncompatibleRoles(selectedRoles), role.get('name'));
+                    if (roleConflictsWithAnotherRole) {
+                        disabled = true;
+                        conflict = $.t('cluster_page.nodes_tab.incompatible_roles_warning');
+                    }
+                }
+                // checking controller role conditions
+                if (!disabled && !this.isControllerSelectable(role)) {
+                    disabled = true;
+                    conflict = $.t('cluster_page.nodes_tab.one_controller_restriction');
+                }
+                role.set({disabled: disabled, conflict: conflict});
             }, this);
             if (this.cluster.get('mode') == 'multinode' && this.screen.nodeList) {
                 var controllerNode = this.nodes.filter(function(node) {return node.hasRole('controller');})[0];
@@ -474,22 +494,42 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 _.invoke(this.screen.nodeList.subViews, 'calculateSelectAllDisabledState', this);
             }
         },
+        getRoleData: function(role) {
+            return this.cluster.get('release').get('roles_metadata')[role];
+        },
+        checkRolesAvailability: function() {
+            this.collection.each(function(role) {
+                var dependency = this.getRoleData(role.get('name')).depends;
+                if (dependency) {
+                    var configModels = {settings: this.settings, cluster: this.cluster, default: this.settings};
+                    var path = _.keys(dependency.condition)[0];
+                    var value = dependency.condition[path];
+                    if (utils.parseModelPath(path, configModels).get() != value) {
+                        role.set({unavailable: true, unavailabityReason: dependency.warning});
+                    }
+                }
+            }, this);
+        },
         initialize: function(options) {
             _.defaults(this, options);
             this.cluster = this.screen.tab.model;
             this.collection = new Backbone.Collection(_.map(this.cluster.get('release').get('roles'), function(role) {
-                var roleData = this.cluster.get('release').get('roles_metadata')[role];
+                var roleData = this.getRoleData(role);
                 var nodesWithRole = this.nodes.filter(function(node) {return node.hasRole(role);});
                 return {
                     name: role,
                     label: roleData.name,
                     description: roleData.description,
                     disabled: false,
+                    unavailable: false,
+                    conflict: '',
                     checked: !!nodesWithRole.length && nodesWithRole.length == this.nodes.length,
                     indeterminate: !!nodesWithRole.length && nodesWithRole.length != this.nodes.length
                 };
             }, this));
             this.collection.on('change:checked', this.handleChanges, this);
+            this.settings = this.cluster.get('settings');
+            (this.loading = this.settings.fetch({cache: true})).done(_.bind(this.checkRolesAvailability, this));
         },
         stickitRole: function (role) {
             var bindings = {};
@@ -507,16 +547,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     observe: 'indeterminate'
                 }]
             };
-            bindings['.role-conflict.' + role.get('name')] = {
-                observe: 'disabled',
-                stickitChange: role,
-                onGet: _.bind(function(value, options) {
-                    if (value && this.screen.nodes.length) {
-                        return this.isControllerSelectable(options.stickitChange) ? $.t('cluster_page.nodes_tab.incompatible_roles_warning'): $.t('cluster_page.nodes_tab.one_controller_restriction');
-                    }
-                    return '';
-                }, this)
-            };
+            bindings['.role-conflict.' + role.get('name')] = 'conflict';
             return this.stickit(role, bindings);
         },
         render: function() {

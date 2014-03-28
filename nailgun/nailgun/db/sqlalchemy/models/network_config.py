@@ -72,6 +72,10 @@ class NeutronConfig(NetworkingConfig):
         default='ovs'
     )
 
+    # Run gre traffic over this network; use separate network in case
+    # of `mesh`. Management is used for backward compatibility.
+    gre_network = Column(String(30), default='management')
+
 
 class NovaNetworkConfig(NetworkingConfig):
     __tablename__ = 'nova_network_config'

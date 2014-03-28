@@ -433,7 +433,7 @@ class TestNeutronManager(BaseIntegrationTest):
 
         self.assertEqual(len(node_nics), len(def_nics))
         for n_nic in node_nics:
-            n_assigned = set(n['name'] for n in n_nic.assigned_networks)
+            n_assigned = set(n.name for n in n_nic.assigned_networks_list)
             for d_nic in def_nics:
                 if d_nic['id'] == n_nic.id:
                     d_assigned = set(n['name']

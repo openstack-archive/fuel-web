@@ -50,6 +50,7 @@ class NetworkConfigurationSerializer(BasicSerializer):
                 net_manager.get_admin_network_group()
             )
         )
+
         if cluster.is_ha_mode:
             for ng in cluster.network_groups:
                 if ng.meta.get("assign_vip"):
@@ -77,6 +78,23 @@ class NovaNetworkConfigurationSerializer(NetworkConfigurationSerializer):
 class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
 
     @classmethod
+    def serialize_net_groups_and_vips(cls, cluster):
+        result = super(NeutronNetworkConfigurationSerializer, cls)\
+            .serialize_net_groups_and_vips(cluster)
+
+        # ensure that we have mesh in response
+        # (we need it for UI)
+        mesh = filter(lambda net: net['name'] == 'mesh', result['networks'])
+        if not mesh:
+            net_manager = objects.Cluster.get_network_manager(cluster)
+            mesh = net_manager.get_mesh_network_group(cluster.id)
+
+            if mesh:
+                result['networks'].append(cls.serialize_network_group(mesh))
+
+        return result
+
+    @classmethod
     def serialize_for_cluster(cls, cluster):
         result = cls.serialize_net_groups_and_vips(cluster)
 
@@ -89,5 +107,9 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
             'L2': cluster.neutron_config.L2,
             'segmentation_type': cluster.neutron_config.segmentation_type
         }
+
+        if cluster.neutron_config.segmentation_type == 'gre':
+            result['neutron_parameters']['gre_network'] = \
+                cluster.neutron_config.gre_network
 
         return result

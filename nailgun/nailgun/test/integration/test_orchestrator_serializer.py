@@ -359,7 +359,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         super(TestNeutronOrchestratorSerializer, self).setUp()
         self.cluster = self.create_env('ha_compact')
 
-    def create_env(self, mode, segment_type='vlan'):
+    def create_env(self, mode, segment_type='vlan', **kwargs):
         cluster = self.env.create(
             cluster_kwargs={
                 'mode': mode,
@@ -374,7 +374,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                  'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+
+        if 'gre_network' in kwargs:
+            cluster_db.network_config.gre_network = kwargs['gre_network']
+            for node in self.env.nodes:
+                self.env.network_manager.assign_networks_by_default(node)
+
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
+
         return cluster_db
 
     def assert_roles_flattened(self, nodes):
@@ -478,17 +485,33 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             test_gateway
         )
 
-    def test_gre_segmentation(self):
+    def test_gre_segmentation_over_existing_network(self):
         cluster = self.create_env('ha_compact', 'gre')
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
             self.assertEquals(
                 fact['quantum_settings']['L2']['segmentation_type'], 'gre')
+
+            self.assertNotIn('br-prv', fact['network_scheme']['endpoints'])
+            self.assertNotIn('private', fact['network_scheme']['roles'])
+
+            self.assertNotIn('br-msh', fact['network_scheme']['endpoints'])
+            self.assertIn('mesh', fact['network_scheme']['roles'])
+
+    def test_gre_segmentation_over_separate_network(self):
+        cluster = self.create_env('ha_compact', 'gre', gre_network='mesh')
+        facts = self.serializer.serialize(cluster, cluster.nodes)
+
+        for fact in facts:
             self.assertEquals(
-                'br-prv' in fact['network_scheme']['endpoints'], False)
-            self.assertEquals(
-                'private' in (fact['network_scheme']['roles']), False)
+                fact['quantum_settings']['L2']['segmentation_type'], 'gre')
+
+            self.assertNotIn('br-prv', fact['network_scheme']['endpoints'])
+            self.assertNotIn('private', fact['network_scheme']['roles'])
+
+            self.assertIn('br-msh', fact['network_scheme']['endpoints'])
+            self.assertIn('mesh', fact['network_scheme']['roles'])
 
     def _create_cluster_for_vlan_splinters(self, segment_type='gre'):
         meta = {
@@ -619,7 +642,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.db.commit()
 
         vlan_set = set(
-            [ng.vlan_start for ng in cluster.network_groups if ng.vlan_start]
+            [ng.vlan_start for ng in cluster.network_groups_ if ng.vlan_start]
         )
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
         interfaces = node['network_scheme']['interfaces']

@@ -27,6 +27,7 @@ from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun import objects
 import nailgun.rpc as rpc
 from nailgun.task import task as tasks
 from nailgun.task.task import TaskHelper
@@ -302,8 +303,13 @@ class ApplyChangesTaskManager(TaskManager):
     def check_before_deployment(self, supertask):
         # checking admin intersection with untagged
         network_info = self.serialize_network_cfg(self.cluster)
+
+        nm = objects.Cluster.get_network_manager(self.cluster)
+        skip_networks = nm.get_ignore_networks_ids(self.cluster)
+        skip_networks.append(nm.get_admin_network_group_id())
+
         network_info["networks"] = [
-            n for n in network_info["networks"] if n["name"] != "fuelweb_admin"
+            n for n in network_info["networks"] if n["id"] not in skip_networks
         ]
 
         check_networks = supertask.create_subtask('check_networks')

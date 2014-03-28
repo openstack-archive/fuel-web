@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-#    Copyright 2013 Mirantis, Inc.
+#    Copyright 2013-2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -20,7 +18,7 @@ import os
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from fuelclient.tests.base import BaseTestCase
+from tests.base import BaseTestCase
 
 
 class TestHandlers(BaseTestCase):
@@ -28,9 +26,9 @@ class TestHandlers(BaseTestCase):
     def test_env_action(self):
         #check env help
         help_msgs = ["usage: fuel environment [-h]",
-                     "[-h] [--env ENV] [-l] [-s]",
+                     "[--list | --set | --delete | --create]",
                      "optional arguments:", "--help", "--list", "--set",
-                     "--delete", "--rel", "--release", "--env-create,",
+                     "--delete", "--rel", "--env-create",
                      "--create", "--name", "--env-name", "--mode", "--net",
                      "--network-mode", "--nst", "--net-segment-type",
                      "--deployment-mode"]
@@ -59,12 +57,11 @@ class TestHandlers(BaseTestCase):
             self.check_for_stdout(cmd, msg)
 
     def test_node_action(self):
-        help_msg = ["fuel node [-h] [--env ENV] [-l]",
-                    "[-l] [-s] [--delete] [--default]", "-h", "--help", "-l",
-                    "--list", "-s", "--set", "--delete", "--default", "-d",
-                    "--download", "-u", "--upload", "--dir", "--node",
-                    "--node-id", "-r", "--role", "--net", "--network",
-                    "--disk", "--deploy", "--provision"]
+        help_msg = ["fuel node [-h] [--env ENV]",
+                    "[--list | --set | --delete | --network | --disk |"
+                    " --deploy | --provision]", "-h", "--help", " -s",
+                    "--default", " -d", "--download", " -u", "--upload",
+                    "--dir", "--node", "--node-id", " -r", "--role", "--net"]
         self.check_all_in_msg("node --help", help_msg)
 
         self.check_for_rows_in_table("node")

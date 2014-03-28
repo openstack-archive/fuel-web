@@ -11,23 +11,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-
-from setuptools import find_packages
-from setuptools import setup
-
-setup(
-    name='fuelclient',
-    version='0.1',
-    description='Command line interface for Nailgun',
-    long_description="""Command line interface for Nailgun""",
-    author='Mirantis Inc.',
-    author_email='product@mirantis.com',
-    url='http://mirantis.com',
-    install_requires=['PyYAML==3.10', "argparse==1.2.1"],
-    packages=find_packages(),
-    entry_points={
-        'console_scripts': [
-            'fuel = fuelclient.cli.parser:main',
-        ],
-    }
-)
+try:
+    import pkg_resources
+    try:
+        __version__ = pkg_resources.get_distribution(
+            "fuelclient").version
+    except pkg_resources.DistributionNotFound:
+        __version__ = ""
+except ImportError:
+    __version__ = ""

@@ -115,7 +115,8 @@ class TestNetworkModels(BaseIntegrationTest):
             "internal_gateway": "192.168.111.1",
             "floating_ranges": [["172.16.0.130", "172.16.0.254"]],
             "dns_nameservers": ["8.8.4.4", "8.8.8.8"],
-            "cluster_id": cluster.id
+            "cluster_id": cluster.id,
+            "gre_network": "storage",
         }
         nc = NeutronConfig(**kw)
         self.db.add(nc)

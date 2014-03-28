@@ -87,6 +87,33 @@ class NetworkManager(object):
         return admin_ng
 
     @classmethod
+    def get_mesh_network_group(cls, cluster_id):
+        """Method for receiving Mesh NetworkGroup in Neutron-GRE mode.
+
+        :returns: Mesh NetworkGroup or None.
+        """
+        return db().query(NetworkGroup).filter_by(
+            name='mesh', cluster_id=cluster_id
+        ).first()
+
+    @classmethod
+    def get_ignore_networks_ids(cls, cluster):
+        """Returns a list with networks IDs which should be ignored
+        in a given cluster (e.g. mesh network if gre runs over existing
+        network).
+        """
+        networks_ids = []
+
+        if cluster.net_provider == 'neutron' and \
+           cluster.network_config.segmentation_type == 'gre' and \
+           cluster.network_config.gre_network != 'mesh':
+            networks_ids.append(
+                cls.get_mesh_network_group(cluster.id).id
+            )
+
+        return networks_ids
+
+    @classmethod
     def cleanup_network_group(cls, nw_group):
         """Network group cleanup - deletes all IPs were assigned within
         the network group.
@@ -518,6 +545,10 @@ class NetworkManager(object):
                 'dev': interface.name})
             network_ids.append(net.id)
 
+        network_ids.extend(
+            cls.get_ignore_networks_ids(cluster_db)
+        )
+
         network_data.extend(
             cls._add_networks_wo_ips(cluster_db, network_ids, node_db))
 
@@ -606,6 +637,10 @@ class NetworkManager(object):
                 'dev': interface.name})
             network_ids.append(net.id)
 
+        network_ids.extend(
+            cls.get_ignore_networks_ids(cluster_db)
+        )
+
         nets_wo_ips = [n for n in networks if n.id not in network_ids]
 
         for net in nets_wo_ips:
@@ -632,6 +667,7 @@ class NetworkManager(object):
         # And now let's add networks w/o IP addresses
         nets = db().query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_db.id)
+
         if network_ids:
             nets = nets.filter(not_(NetworkGroup.id.in_(network_ids)))
 

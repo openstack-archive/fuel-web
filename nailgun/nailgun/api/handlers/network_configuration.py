@@ -152,13 +152,21 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
     @content_json
     def PUT(self, cluster_id):
         data = json.loads(web.data())
-        if data.get("networks"):
-            data["networks"] = [
-                n for n in data["networks"] if n.get("name") != "fuelweb_admin"
-            ]
         cluster = self.get_object_or_404(Cluster, cluster_id)
-        self.check_net_provider(cluster)
 
+        if data.get('networking_parameters', {}).get('gre_network') == 'mesh':
+            cluster.network_config.gre_network = 'mesh'
+
+        if "networks" in data:
+            nm = objects.Cluster.get_network_manager(cluster)
+            skip_networks = nm.get_ignore_networks_ids(cluster)
+            skip_networks.append(nm.get_admin_network_group_id())
+
+            data["networks"] = [
+                n for n in data["networks"] if n["id"] not in skip_networks
+            ]
+
+        self.check_net_provider(cluster)
         self.check_if_network_configuration_locked(cluster)
 
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
@@ -214,8 +222,12 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
     def launch_verify(self, cluster):
         data = self.validator.validate_networks_update(web.data())
 
+        nm = objects.Cluster.get_network_manager(cluster)
+        skip_networks = nm.get_ignore_networks_ids(cluster)
+        skip_networks.append(nm.get_admin_network_group_id())
+
         data["networks"] = [
-            n for n in data["networks"] if n.get("name") != "fuelweb_admin"
+            n for n in data["networks"] if n["id"] not in skip_networks
         ]
 
         vlan_ids = [{

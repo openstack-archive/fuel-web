@@ -8,7 +8,7 @@
         "lodash": "1.1.1",
         "autoNumeric": "http://github.com/BobKnothe/autoNumeric/zipball/1.9.12",
         "jquery.timeout": "http://jquery-timeout.googlecode.com/files/jquery.timeout-1.1.0.js",
-        "backbone.stickit": "https://raw.github.com/NYTimes/backbone.stickit/7437202ec91863aa29a6ad31b0bd00c6b130f506/backbone.stickit.js",
+        "backbone.stickit": "https://raw.github.com/NYTimes/backbone.stickit/0.7.0/backbone.stickit.js",
         "i18next": "1.7.1",
         "backbone-deep-model": "0.10.4",
         "less": "1.5.1"

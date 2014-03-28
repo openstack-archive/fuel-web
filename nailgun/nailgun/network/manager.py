@@ -90,6 +90,14 @@ class NetworkManager(object):
         return admin_ng
 
     @classmethod
+    def get_mesh_network_group(cls):
+        """Method for receiving Mesh NetworkGroup in Neutron-GRE mode.
+
+        :returns: Mesh NetworkGroup or None.
+        """
+        return db().query(NetworkGroup).filter_by(name='mesh').first()
+
+    @classmethod
     def cleanup_network_group(cls, nw_group):
         """Network group cleanup - deletes all IPs were assigned within
         the network group.
@@ -533,6 +541,12 @@ class NetworkManager(object):
                 'dev': interface.name})
             network_ids.append(net.id)
 
+        # skip GRE network if not used
+        if cluster_db.neutron_config:
+            if cluster_db.neutron_config.segmentation_type == 'gre' and \
+               cluster_db.neutron_config.gre_network != 'mesh':
+                network_ids.append(cls.get_mesh_network_group().id)
+
         network_data.extend(
             cls._add_networks_wo_ips(cluster_db, network_ids, node_db))
 
@@ -625,6 +639,12 @@ class NetworkManager(object):
                 'dev': interface.name})
             network_ids.append(net.id)
 
+        # skip GRE network if not used
+        if cluster_db.neutron_config:
+            if cluster_db.neutron_config.segmentation_type == 'gre' and \
+               cluster_db.neutron_config.gre_network != 'mesh':
+                network_ids.append(cls.get_mesh_network_group().id)
+
         nets_wo_ips = [n for n in networks if n.id not in network_ids]
 
         for net in nets_wo_ips:
@@ -650,6 +670,7 @@ class NetworkManager(object):
         # And now let's add networks w/o IP addresses
         nets = db().query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_db.id)
+
         if network_ids:
             nets = nets.filter(not_(NetworkGroup.id.in_(network_ids)))
 
@@ -1008,7 +1029,6 @@ class NetworkManager(object):
                         cidr_range))
                     break
             used_nets.append(cidr_range)
-
         for net in networks_list:
             if "seg_type" in net and \
                     cluster_db.net_segment_type != net['seg_type']:

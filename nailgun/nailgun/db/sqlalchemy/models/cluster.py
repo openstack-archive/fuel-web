@@ -89,7 +89,7 @@ class Cluster(Base):
     # During cluster deletion sqlalchemy engine will set null
     # into cluster foreign key column of notification entity
     notifications = relationship("Notification", backref="cluster")
-    network_groups = relationship(
+    network_groups_ = relationship(
         "NetworkGroup",
         backref="cluster",
         cascade="delete",
@@ -108,6 +108,17 @@ class Cluster(Base):
         self.replaced_deployment_info = data
         self.is_customized = True
         return self.replaced_deployment_info
+
+    @property
+    def network_groups(self):
+        net_groups = self.network_groups_
+
+        if self.net_provider == 'neutron':
+            if self.network_config.segmentation_type == 'gre' and \
+               self.network_config.gre_network != 'mesh':
+                net_groups = [ng for ng in net_groups if ng.name != 'mesh']
+
+        return net_groups
 
     @property
     def changes(self):

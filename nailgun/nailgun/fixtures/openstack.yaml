@@ -365,6 +365,17 @@
             neutron_vlan_range: true
             configurable: false
             assign_vip: false
+          - name: "mesh"
+            cidr: "192.168.2.0/24"
+            seg_type: "gre"
+            vlan_start: 103
+            use_gateway: false
+            notation: "cidr"
+            render_type: "cidr"
+            render_addr_mask: "mesh"
+            map_priority: 2
+            configurable: true
+            assign_vip: false
         config:
           vlan_range: [1000, 1030]
           gre_id_range: [2, 65535]

@@ -474,19 +474,25 @@ class TaskHelper(object):
 
     @classmethod
     def prepare_for_deployment(cls, nodes):
-        """Prepare environment for deployment,
-        assign management, public, storage ips
+        """Prepare environment for deployment, assign management, public,
+        storage ips and mesh if needed. All nodes must belong to the same
+        cluster.
         """
         cls.update_slave_nodes_fqdn(nodes)
 
         nodes_ids = [n.id for n in nodes]
 
-        # TODO(enchantner): check network manager instance for each node
-        netmanager = objects.Cluster.get_network_manager()
         if nodes_ids:
+            # TODO(enchantner): check network manager instance for each node
+            cluster = nodes[0].cluster
+            netmanager = objects.Cluster.get_network_manager(cluster)
+
             netmanager.assign_ips(nodes_ids, 'management')
             netmanager.assign_ips(nodes_ids, 'public')
             netmanager.assign_ips(nodes_ids, 'storage')
+
+            if netmanager.should_use_mesh(cluster):
+                netmanager.assign_ips(nodes_ids, 'mesh')
 
             for node in nodes:
                 netmanager.assign_admin_ips(node.id)

@@ -394,9 +394,8 @@ class NetworkDeploymentSerializer(object):
         """Returns ranges for network groups
         except range for public network
         """
-        ng_db = db().query(NetworkGroup).filter_by(cluster_id=cluster.id).all()
         attrs = {}
-        for net in ng_db:
+        for net in cluster.network_groups:
             net_name = net.name + '_network_range'
             if net.meta.get("render_type") == 'ip_ranges':
                 attrs[net_name] = cls.get_ip_ranges_first_last(net)
@@ -687,9 +686,15 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def generate_network_scheme(cls, node):
+        # raise exception if unsupported neutron segmentation is used
+        if node.cluster.net_segment_type not in ('vlan', 'gre'):
+            raise errors.CheckBeforeDeploymentError(
+                'Invalid Neutron segmentation type: {0}'.format(
+                    node.cluster.net_segment_type
+                )
+            )
 
         # Create a data structure and fill it with static values.
-
         attrs = {
             'version': '1.0',
             'provider': 'ovs',
@@ -798,34 +803,48 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 # FIXME! Should raise some exception I think.
                 logger.error('Invalid vlan for network: %s' % str(netgroup))
 
-        # Dance around Neutron segmentation type.
-        if node.cluster.net_segment_type == 'vlan':
-            attrs['endpoints']['br-prv'] = {'IP': 'none'}
-            attrs['roles']['private'] = 'br-prv'
+        # if gre traffic should run over another network
+        if node.cluster.net_segment_type == 'gre' and \
+           node.cluster.neutron_config.gre_network != 'mesh':
 
-            attrs['transformations'].append({
-                'action': 'add-br',
-                'name': 'br-prv',
-            })
+            bridge = attrs['roles'].get(
+                node.cluster.neutron_config.gre_network)
 
-            attrs['transformations'].append({
-                'action': 'add-patch',
-                'bridges': [
-                    'br-%s' % nm.get_node_interface_by_netname(
-                        node.id,
-                        'private'
-                    ).name,
-                    'br-prv'
-                ]
-            })
-        elif node.cluster.net_segment_type == 'gre':
-            attrs['roles']['mesh'] = 'br-mgmt'
+            if not bridge:
+                raise errors.CheckBeforeDeploymentError(
+                    'Invalid netname to run GRE traffic: {0}'.format(
+                        node.cluster.neutron_config.gre_network
+                    )
+                )
+
+            attrs['roles']['mesh'] = bridge
         else:
-            # FIXME! Should raise some exception I think.
-            logger.error(
-                'Invalid Neutron segmentation type: %s' %
-                node.cluster.net_segment_type
-            )
+            if node.cluster.net_segment_type == 'vlan':
+                role = 'private'
+                bridge = 'br-prv'
+            elif node.cluster.net_segment_type == 'gre':
+                role = 'mesh'
+                bridge = 'br-msh'
+
+            attrs['roles'][role] = bridge
+            attrs['endpoints'][bridge] = {'IP': 'none'}
+            attrs['transformations'].extend([
+                {
+                    'action': 'add-br',
+                    'name': bridge
+                },
+                {
+                    'action': 'add-patch',
+                    'bridges': [
+                        'br-{0}'.format(
+                            nm.get_node_interface_by_netname(
+                                node.id, role
+                            ).name
+                        ),
+                        bridge
+                    ]
+                }
+            ])
 
         return attrs
 

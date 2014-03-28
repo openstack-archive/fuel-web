@@ -473,6 +473,12 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                       data['networks'])[0]
         self.assertIsNone(strg['gateway'])
 
+    def test_gre_network_should_be_in_neutron_parameters(self):
+        response = self.env.neutron_networks_get(self.cluster.id)
+        data = json.loads(response.body)
+
+        self.assertIn('gre_network', data['neutron_parameters'])
+
 
 class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
     def setUp(self):

@@ -365,6 +365,15 @@
             map_priority: 2
             neutron_vlan_range: true
             assign_vip: false
+          - name: "mesh"
+            seg_type: "gre"
+            vlan_start: null
+            use_gateway: false
+            notation: null
+            render_type: null
+            render_addr_mask: null
+            map_priority: 2
+            assign_vip: false
         config:
           parameters:
             amqp:

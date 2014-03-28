@@ -55,6 +55,21 @@ new_task_names_options = sorted(
     )
 )
 
+old_netgroup_names_options = (
+    'fuelweb_admin',
+    'storage',
+    'management',
+    'public',
+    'floating',
+    'fixed',
+    'private',
+)
+new_netgroup_names_options = sorted(
+    old_netgroup_names_options + (
+        'mesh',
+    )
+)
+
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
     old_type = sa.Enum(*old_options, name=enum_name)
@@ -183,6 +198,15 @@ def upgrade():
         new_task_names_options       # new options
     )
 
+    # NETWORK GROUPS ENUM UPGRADE
+    upgrade_enum(
+        "network_groups",            # table
+        "name",                      # column
+        "network_group_name",        # ENUM name
+        old_netgroup_names_options,  # old options
+        new_netgroup_names_options   # new options
+    )
+
     op.add_column('nodes', sa.Column(
         'agent_checksum', sa.String(40), nullable=True
     ))
@@ -191,6 +215,10 @@ def upgrade():
         'uuid', sa.String(length=36), nullable=False
     ))
     op.create_unique_constraint("uq_node_uuid", "nodes", ["uuid"])
+
+    op.add_column('neutron_configs', sa.Column(
+        'gre_network', sa.String(30), nullable=True
+    ))
 
     ### end Alembic commands ###
 
@@ -273,4 +301,5 @@ def downgrade():
     drop_enum('bond_mode')
     op.drop_column('nodes', 'agent_checksum')
     op.drop_column('nodes', 'uuid')
+    op.drop_column('neutron_configs', 'gre_network')
     ### end Alembic commands ###

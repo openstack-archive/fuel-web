@@ -90,4 +90,8 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
             'segmentation_type': cluster.neutron_config.segmentation_type
         }
 
+        if cluster.neutron_config.segmentation_type == 'gre':
+            result['neutron_parameters']['gre_network'] = \
+                cluster.neutron_config.gre_network
+
         return result

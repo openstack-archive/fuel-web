@@ -365,6 +365,18 @@
             map_priority: 2
             neutron_vlan_range: true
             assign_vip: false
+          - name: "mesh"
+            cidr: "192.168.2.0/24"
+            seg_type: "gre"
+            vlan_start: 103
+            use_gateway: false
+            notation: null
+            render_type: null
+            render_addr_mask: null
+            map_priority: 2
+            assign_vip: false
+            notation: "cidr"
+            render_type: "cidr"
         config:
           parameters:
             amqp:

@@ -18,6 +18,7 @@ from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy import String
 
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
@@ -25,7 +26,9 @@ from nailgun.db.sqlalchemy.models.fields import JSON
 
 class NeutronConfig(Base):
     __tablename__ = 'neutron_configs'
+
     NET_SEGMENT_TYPES = ('vlan', 'gre')
+
     id = Column(Integer, primary_key=True)
     cluster_id = Column(
         Integer,
@@ -42,3 +45,7 @@ class NeutronConfig(Base):
         nullable=False,
         default='vlan'
     )
+
+    # Run gre traffic over this network; use separate network in case
+    # of `mesh`. Management is used for backward compatibility.
+    gre_network = Column(String(30), default='management')

@@ -62,7 +62,7 @@ old_network_group_name = (
     'public',
     'floating',
     'fixed',
-    'private'
+    'private',
 )
 new_network_group_name = (
     'fuelweb_admin',
@@ -70,7 +70,8 @@ new_network_group_name = (
     'management',
     'public',
     'fixed',
-    'private'
+    'private',
+    'mesh',
 )
 
 
@@ -233,6 +234,10 @@ def upgrade():
 
     op.add_column('nodes', sa.Column(
         'agent_checksum', sa.String(40), nullable=True
+    ))
+
+    op.add_column('neutron_config', sa.Column(
+        'gre_network', sa.String(30), nullable=False
     ))
 
     # CLUSTER STATUS ENUM UPGRADE
@@ -460,8 +465,8 @@ def downgrade():
     op.drop_table('net_bond_assignments')
     op.drop_table('node_bond_interfaces')
     drop_enum('bond_mode')
-    op.drop_column('nodes', 'agent_checksum')
     op.drop_column('nodes', 'uuid')
+    op.drop_column('neutron_config', 'gre_network')
     op.drop_table('neutron_config')
     op.drop_table('nova_network_config')
     op.drop_table('networking_configs')

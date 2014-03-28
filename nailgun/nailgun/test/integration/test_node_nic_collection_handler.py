@@ -52,4 +52,8 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
         new_response = jsonutils.loads(resp.body)
+
+        for resp in new_response:
+            for resp_nic in resp['interfaces']:
+                resp_nic['assigned_networks'].sort()
         self.assertEquals(new_response, nodes_list)

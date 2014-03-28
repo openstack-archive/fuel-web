@@ -83,7 +83,24 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
     network_cfg_fields = (
         'dns_nameservers', 'segmentation_type', 'net_l23_provider',
         'floating_ranges', 'vlan_range', 'gre_id_range',
-        'base_mac', 'internal_cidr', 'internal_gateway')
+        'base_mac', 'internal_cidr', 'internal_gateway', 'gre_network')
+
+    @classmethod
+    def serialize_net_groups_and_vips(cls, cluster):
+        result = super(NeutronNetworkConfigurationSerializer, cls)\
+            .serialize_net_groups_and_vips(cluster)
+
+        # ensure that we have mesh in response
+        # (we need it for UI)
+        mesh = filter(lambda net: net['name'] == 'mesh', result['networks'])
+        if not mesh:
+            net_manager = objects.Cluster.get_network_manager(cluster)
+            mesh = net_manager.get_mesh_network_group(cluster.id)
+
+            if mesh:
+                result['networks'].append(cls.serialize_network_group(mesh))
+
+        return result
 
     @classmethod
     def serialize_for_cluster(cls, cluster):

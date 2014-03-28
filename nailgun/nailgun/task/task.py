@@ -409,11 +409,11 @@ class VerifyNetworksTask(object):
             node_json = {'uid': n.id, 'networks': []}
 
             for nic in n.nic_interfaces:
-                assigned_networks = nic.assigned_networks_list
+                assigned_networks = nic.assigned_networks
                 # in case of using bond interface - use networks assigned
                 # to bond
                 if nic.bond:
-                    assigned_networks = nic.bond.assigned_networks_list
+                    assigned_networks = nic.bond.assigned_networks
                 vlans = []
                 for ng in assigned_networks:
                     # Handle FuelWeb admin network first.

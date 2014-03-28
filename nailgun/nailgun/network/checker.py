@@ -110,7 +110,7 @@ class NetworkCheck(object):
                 # network name is changed for Admin on UI
                 nets = [[ng['name'] for ng in self.networks
                          if n.id == ng['id']][0]
-                        for n in iface.assigned_networks_list]
+                        for n in iface.assigned_networks]
                 crossed_nets = set(nets) & untagged_nets
                 if len(crossed_nets) > 1:
                     err_net_names = ['"{0}"'.format(i)

@@ -29,7 +29,6 @@ from nailgun import objects
 
 from nailgun import consts
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -478,9 +477,8 @@ class NetworkDeploymentSerializer(object):
         """Returns ranges for network groups
         except range for public network
         """
-        ng_db = db().query(NetworkGroup).filter_by(cluster_id=cluster.id).all()
         attrs = {}
-        for net in ng_db:
+        for net in cluster.network_groups:
             net_name = net.name + '_network_range'
             if net.meta.get("render_type") == 'ip_ranges':
                 attrs[net_name] = cls.get_ip_ranges_first_last(net)
@@ -707,18 +705,26 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
     @classmethod
     def generate_network_scheme(cls, node):
+        network_config = node.cluster.network_config
+
+        # raise exception if unsupported neutron segmentation is used
+        if network_config.segmentation_type not in ('vlan', 'gre'):
+            raise errors.CheckBeforeDeploymentError(
+                'Invalid Neutron segmentation type: {0}'.format(
+                    node.cluster.net_segment_type
+                )
+            )
 
         # Create a data structure and fill it with static values.
-
         attrs = {
             'version': '1.0',
             'provider': 'ovs',
             'interfaces': {},  # It's a list of physical interfaces.
             'endpoints': {
-                'br-storage': {},
                 'br-ex': {},
-                'br-mgmt': {},
                 'br-fw-admin': {},
+                'br-mgmt': {},
+                'br-storage': {},
             },
             'roles': {
                 'ex': 'br-ex',
@@ -728,6 +734,31 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             },
             'transformations': []
         }
+
+        netgroup_mapping = [
+            ('storage', 'br-storage'),
+            ('public', 'br-ex'),
+            ('management', 'br-mgmt'),
+            ('fuelweb_admin', 'br-fw-admin'),
+        ]
+
+        # add mesh network to attrs if it should runs over separate network
+        if network_config.segmentation_type == 'gre':
+            if network_config.gre_network == 'mesh':
+                bridge = 'br-msh'
+                attrs['endpoints'][bridge] = {}
+                netgroup_mapping.append(
+                    ('mesh', bridge)
+                )
+            else:
+                bridge = attrs['roles'].get(network_config.gre_network)
+                if not bridge:
+                    raise errors.CheckBeforeDeploymentError(
+                        'Invalid network name to run GRE traffic: {0}'.format(
+                            network_config.gre_network
+                        )
+                    )
+            attrs['roles']['mesh'] = bridge
 
         nm = objects.Node.get_network_manager(node)
         iface_types = consts.NETWORK_INTERFACE_TYPES
@@ -785,19 +816,13 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         # We have to add them after br-ethXX bridges because it is the way
         # to provide a right ordering of ifdown/ifup operations with
         # IP interfaces.
-        for brname in ('br-ex', 'br-mgmt', 'br-storage', 'br-fw-admin'):
+        for brname in sorted(attrs['endpoints']):
             attrs['transformations'].append({
                 'action': 'add-br',
                 'name': brname
             })
 
         # Populate IP address information to endpoints.
-        netgroup_mapping = [
-            ('storage', 'br-storage'),
-            ('public', 'br-ex'),
-            ('management', 'br-mgmt'),
-            ('fuelweb_admin', 'br-fw-admin'),
-        ]
         netgroups = {}
         for ngname, brname in netgroup_mapping:
             # Here we get a dict with network description for this particular
@@ -829,7 +854,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 logger.error('Invalid vlan for network: %s' % str(netgroup))
 
         # Dance around Neutron segmentation type.
-        if node.cluster.network_config.segmentation_type == 'vlan':
+        if network_config.segmentation_type == 'vlan':
             attrs['endpoints']['br-prv'] = {'IP': 'none'}
             attrs['roles']['private'] = 'br-prv'
 
@@ -848,8 +873,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                     'br-prv'
                 ]
             })
-        elif node.cluster.network_config.segmentation_type == 'gre':
-            attrs['roles']['mesh'] = 'br-mgmt'
 
         return attrs
 

@@ -578,13 +578,13 @@ class TestHandlers(BaseIntegrationTest):
                                 "name": "br-ex"},
                             {
                                 "action": "add-br",
+                                "name": "br-fw-admin"},
+                            {
+                                "action": "add-br",
                                 "name": "br-mgmt"},
                             {
                                 "action": "add-br",
                                 "name": "br-storage"},
-                            {
-                                "action": "add-br",
-                                "name": "br-fw-admin"},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-storage"],

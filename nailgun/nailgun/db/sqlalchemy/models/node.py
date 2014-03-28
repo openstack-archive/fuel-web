@@ -323,9 +323,16 @@ class NodeNICInterface(Base):
 
     @property
     def assigned_networks(self):
+        exceptions = []
+
+        if self.node.cluster and self.node.cluster.net_provider == 'neutron':
+            neutron_config = self.node.cluster.network_config
+            if neutron_config.segmentation_type == 'gre' and \
+               neutron_config.gre_network != 'mesh':
+                exceptions.append('mesh')
+
         return [
-            {"id": n.id, "name": n.name}
-            for n in self.assigned_networks_list
+            n for n in self.assigned_networks_list if n.name not in exceptions
         ]
 
     @assigned_networks.setter
@@ -372,10 +379,7 @@ class NodeBondInterface(Base):
 
     @property
     def assigned_networks(self):
-        return [
-            {"id": n.id, "name": n.name}
-            for n in self.assigned_networks_list
-        ]
+        return self.assigned_networks_list
 
     @assigned_networks.setter
     def assigned_networks(self, value):

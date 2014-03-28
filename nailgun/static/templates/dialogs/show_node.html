@@ -37,7 +37,7 @@
                       interfaces: ['name', 'mac', 'state', 'ip', 'netmask', 'current_speed', 'max_speed']
                     } %>
                     <% _.each(sortEntryProperties(entry, sortOrder[group]), function(propertyName) { %>
-                      <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, entry[propertyName]) %></div>
+                      <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><span><%- showPropertyValue(group, propertyName, entry[propertyName]) %></span></div>
                     <% }) %>
                   </div>
                 <% }) %>
@@ -45,14 +45,14 @@
                 <% var subentries = _.find(_.values(groupEntries), _.isArray) %>
                 <% _.each(groupEntries, function(propertyValue, propertyName) { %>
                   <% if (!_.isArray(propertyValue)) { %>
-                    <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, propertyValue) %></div>
+                    <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><span><%- showPropertyValue(group, propertyName, propertyValue) %></span></div>
                   <% } %>
                 <% }) %>
                 <% if (_.isArray(subentries)) { %>
                   <% _.each(subentries, function(subentry) { %>
                     <div class="nested-object">
                       <% _.each(sortEntryProperties(subentry), function(propertyName) { %>
-                        <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><%- showPropertyValue(group, propertyName, subentry[propertyName]) %></div>
+                        <div><label><%- $.t('dialog.show_node.' + propertyName, {defaultValue: showPropertyName(propertyName)}) %></label><span><%- showPropertyValue(group, propertyName, subentry[propertyName]) %></span></div>
                       <% }) %>
                     </div>
                   <% }) %>

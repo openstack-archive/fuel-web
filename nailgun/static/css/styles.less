@@ -2523,13 +2523,18 @@ input.error:focus {
     padding: 4px;
     label {
       text-transform: uppercase;
-      display: inline-block;
-      float: left;
-      width: 150px;
-      margin-left: -@node-details-label-margin;
+      display: block;
+      position: absolute;
+      left: 15px;
+      width: @node-details-label-margin - 10;
       font-size: 12px;
       line-height: 12px;
       word-break: break-all;
+      font-weight: normal;
+    }
+    span {
+      display: block;
+      margin-left: @node-details-label-margin;
     }
   }
   .nested-object {
@@ -2538,12 +2543,11 @@ input.error:focus {
     margin-top: 3px;
     div {
       padding: 0;
-      padding-left: @node-details-label-margin;
+      position: relative;
+      margin-top: 3px;
       font-weight: normal;
       word-break: break-all;
-      label {
-        font-weight: normal;
-      }
+      label { left: 0px; }
     }
   }
 }

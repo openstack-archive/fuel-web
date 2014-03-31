@@ -98,7 +98,10 @@ class HTTPLoggerMiddleware(object):
             self.api_logger.debug(response_info)
 
     def __logging_request(self, env):
-        length = int(env.get('CONTENT_LENGTH', 0))
+        content_length = env.get('CONTENT_LENGTH', 0)
+        if content_length == '':
+            content_length = 0
+        length = int(content_length)
         body = ''
 
         if length != 0:

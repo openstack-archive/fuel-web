@@ -80,26 +80,33 @@ def get_allocate_size(node, vol):
         return vol['allocate_size']
 
 
-def exclude_glance_partition(node, volume):
+def exclude_glance_partition(role_mapping, node):
     """In case images_ceph used as glance image storage
     no need to create partition /var/lib/glance
     """
     if node.cluster.attributes.editable['storage'].get('images_ceph'):
         images_ceph = (node.cluster.attributes['editable']['storage']
                        ['images_ceph']['value'])
-        return volume['id'] == 'image' and images_ceph
-    return False
+        if images_ceph:
+            if node.all_roles == set(['controller']):
+                role_mapping['controller'] = \
+                    role_mapping['controller-ceph-image']
+            else:
+                # just filter out image volume
+                role_mapping['controller'] = \
+                    filter(lambda space: space['id'] != 'image',
+                           role_mapping['controller'])
+    return
 
 
-def filter_node_volumes(node, volume):
+def modify_volumes_hook(role_mapping, node):
     """Filter node volumes based on filter functions logic
     """
     filters = [exclude_glance_partition]
 
     for f in filters:
-        if f(node, volume):
-            return False
-    return True
+        f(role_mapping, node)
+    return role_mapping
 
 
 def get_node_spaces(node):
@@ -113,13 +120,17 @@ def get_node_spaces(node):
 
     role_mapping = node.cluster.release.volumes_metadata[
         'volumes_roles_mapping']
+
+    # TODO(dshulyak)
+    # This logic should go to openstack.yaml (or other template)
+    # when it will be extended with flexible template engine
+    modify_volumes_hook(role_mapping, node)
     all_spaces = node.cluster.release.volumes_metadata['volumes']
 
     for role in node.all_roles:
         if not role_mapping.get(role):
             continue
-        volumes = [v for v in role_mapping[role]
-                   if filter_node_volumes(node, v)]
+        volumes = role_mapping[role]
 
         for volume in volumes:
             space = find_space_by_id(all_spaces, volume['id'])
@@ -839,6 +850,7 @@ class VolumeManager(object):
 
         # Firstly allocate volumes which required
         # minimal size
+
         for volume in self._min_size_volumes:
             min_size = self.expand_generators(volume)['min_size']
             self._allocate_size_for_volume(volume, min_size)
@@ -864,6 +876,7 @@ class VolumeManager(object):
                 self._all_size_volumes[-1])
 
         self.volumes = self.expand_generators(self.volumes)
+
         self.__logger('Generated volumes: %s' % self.volumes)
         return self.volumes
 

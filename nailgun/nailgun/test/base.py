@@ -197,6 +197,7 @@ class Environment(object):
             cluster = Cluster.create(cluster_data)
             db().commit()
             self.clusters.append(cluster)
+
         return cluster
 
     def create_node(

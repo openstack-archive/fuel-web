@@ -183,11 +183,8 @@ function run_nailgun_tests {
   dropdb
   syncdb
 
-  # make tests
-  local output=$($TESTRTESTS -vv $testropts $TESTS 3>&1 1>&2 2>&3 | tee /dev/stderr)
-  local result=$?
-
-  return $result
+  # run tests
+  $TESTRTESTS -vv $testropts $TESTS
 }
 
 

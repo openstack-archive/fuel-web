@@ -39,6 +39,7 @@ from nailgun.db.sqlalchemy.models import NodeBondInterface
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.utils.zabbix import ZabbixManager
 
 
 class NetworkManager(object):
@@ -851,6 +852,16 @@ class NetworkManager(object):
     @classmethod
     def get_keystone_url(cls, cluster_id):
         return 'http://%s:5000/' % cls.get_end_point_ip(cluster_id)
+
+    @classmethod
+    def get_zabbix_url(cls, cluster):
+        zabbix_node = ZabbixManager.get_zabbix_node(cluster)
+
+        ip_cidr = cls.get_node_network_by_netname(
+            zabbix_node, 'public'
+        )['ip']
+        ip = ip_cidr.split('/')[0]
+        return 'http://{0}/zabbix'.format(ip)
 
     @classmethod
     def is_cidr_intersection(cls, cidr1, cidr2):

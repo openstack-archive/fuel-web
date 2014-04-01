@@ -440,12 +440,16 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 });
             }, this);
         },
-        isControllerRoleSelected: function() {
-            return this.collection.filter(function(role) {return role.get('name') == 'controller' && (role.get('checked') || role.get('indeterminate'));}).length;
+        isRoleSelected: function(roleName) {
+            return this.collection.filter(function(role) {return role.get('name') == roleName && (role.get('checked') || role.get('indeterminate'));}).length;
         },
         isControllerSelectable: function(role) {
             var allocatedController = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
-            return role.get('name') != 'controller' || this.cluster.get('mode') != 'multinode' || ((this.isControllerRoleSelected() || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedController.length);
+            return role.get('name') != 'controller' || this.cluster.get('mode') != 'multinode' || ((this.isRoleSelected('controller') || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedController.length);
+        },
+        isZabbixSelectable: function(role) {
+            var allocatedZabbix = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('zabbix-server') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
+            return role.get('name') != 'zabbix-server' || ((this.isRoleSelected('zabbix-server') || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedZabbix.length);
         },
         getListOfIncompatibleRoles: function(roles) {
             var forbiddenRoles = [];
@@ -478,12 +482,20 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     disabled = true;
                     conflict = $.t('cluster_page.nodes_tab.one_controller_restriction');
                 }
+                // checking zabbix role conditions
+                if (!disabled && !this.isZabbixSelectable(role)) {
+                    disabled = true;
+                    conflict = $.t('cluster_page.nodes_tab.one_zabbix_restriction');
+                }
                 role.set({disabled: disabled, conflict: conflict});
             }, this);
-            if (this.cluster.get('mode') == 'multinode' && this.screen.nodeList) {
+            if (this.screen.nodeList) {
                 var controllerNode = this.nodes.filter(function(node) {return node.hasRole('controller');})[0];
+                var zabbixNode = this.nodes.filter(function(node) {return node.hasRole('zabbix-server');})[0];
                 _.each(this.screen.nodes.where({checked: false}), function(node) {
-                    var disabled = (this.isControllerRoleSelected() && controllerNode && controllerNode.id != node.id) || !node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked();
+                    var isControllerAssigned = this.cluster.get('mode') == 'multinode' && this.isRoleSelected('controller') && controllerNode && controllerNode.id != node.id;
+                    var isZabbixAssigned = this.isRoleSelected('zabbix-server') && zabbixNode && zabbixNode.id != node.id;
+                    var disabled = isControllerAssigned || isZabbixAssigned || !node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked();
                     node.set('disabled', disabled);
                     var filteredNode = this.screen.nodeList.filteredNodes.get(node.id);
                     if (filteredNode) {
@@ -605,7 +617,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         calculateSelectAllDisabledState: function() {
             var availableNodes = this.filteredNodes.filter(function(node) {return node.isSelectable();});
-            var disabled = !this.filteredNodes.where({disabled: false}).length || (this.screen.roles && this.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.screen instanceof EditNodesScreen;
+            var roleAmountRestrictions = this.screen.roles && (this.screen.roles.isRoleSelected('controller') || this.screen.roles.isRoleSelected('zabbix-server')) && availableNodes.length > 1;
+            var disabled = !this.filteredNodes.where({disabled: false}).length || roleAmountRestrictions || this.screen instanceof EditNodesScreen;
             this.selectAllCheckbox.set('disabled', disabled);
         },
         groupNodes: function(grouping) {
@@ -707,7 +720,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         calculateSelectAllDisabledState: function() {
             var availableNodes = this.nodes.where({disabled: false});
-            var disabled = !availableNodes.length || (this.nodeList.screen.roles && this.nodeList.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.nodeList.screen instanceof EditNodesScreen;
+            var roleAmountRestrictions = this.nodeList.screen.roles && (this.nodeList.screen.roles.isRoleSelected('controller') || this.nodeList.screen.roles.isRoleSelected('zabbix-server')) && availableNodes.length > 1;
+            var disabled = !availableNodes.length || roleAmountRestrictions || this.nodeList.screen instanceof EditNodesScreen;
             this.selectAllCheckbox.set('disabled', disabled);
         },
         initialize: function(options) {

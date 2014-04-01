@@ -279,6 +279,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         nodes = [
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
+            {'role': 'zabbix-server'},
             {'role': 'primary-swift-proxy'},
             {'role': 'swift-proxy'},
             {'role': 'storage'},
@@ -292,6 +293,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         expected_priorities = [
             {'role': 'mongo', 'priority': 100},
             {'role': 'primary-mongo', 'priority': 200},
+            {'role': 'zabbix-server', 'priority': 250},
             {'role': 'primary-swift-proxy', 'priority': 300},
             {'role': 'swift-proxy', 'priority': 400},
             {'role': 'storage', 'priority': 500},

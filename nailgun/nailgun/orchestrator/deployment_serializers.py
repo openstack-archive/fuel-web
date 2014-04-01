@@ -160,11 +160,14 @@ class DeploymentMultinodeSerializer(object):
         for n in cls.by_role(nodes, 'mongo'):
             n['priority'] = prior.next
 
+        for n in cls.by_role(nodes, 'zabbix-server'):
+            n['priority'] = prior.next
+
         for n in cls.by_role(nodes, 'controller'):
             n['priority'] = prior.next
 
         other_nodes_prior = prior.next
-        for n in cls.not_roles(nodes, ['controller', 'mongo']):
+        for n in cls.not_roles(nodes, ['controller', 'mongo', 'zabbix-server']):
             n['priority'] = other_nodes_prior
 
     @classmethod
@@ -345,6 +348,10 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         for n in cls.by_role(nodes, 'primary-mongo'):
             n['priority'] = prior.next
 
+        primary_zabbix_server_prior = prior.next
+        for n in cls.by_role(nodes, 'zabbix-server'):
+            n['priority'] = primary_zabbix_server_prior
+
         primary_swift_proxy_piror = prior.next
         for n in cls.by_role(nodes, 'primary-swift-proxy'):
             n['priority'] = primary_swift_proxy_piror
@@ -373,7 +380,8 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                                        'controller',
                                        'quantum',
                                        'mongo',
-                                       'primary-mongo']):
+                                       'primary-mongo',
+                                       'zabbix-server']):
             n['priority'] = other_nodes_prior
 
 

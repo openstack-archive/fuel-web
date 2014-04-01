@@ -931,8 +931,12 @@ class VolumeManager(object):
         disks_space = sum([d.size for d in self.disks])
         minimal_installation_size = self.__calc_minimal_installation_size()
 
-        self.__logger('Checking disks space: disks space %s, minimal size %s' %
-                      (disks_space, minimal_installation_size))
+        self.__logger(
+            'Checking disks space: disks space {0}, minimal size {1}'.format(
+                disks_space,
+                minimal_installation_size
+            )
+        )
 
         if disks_space < minimal_installation_size:
             raise errors.NotEnoughFreeSpace()

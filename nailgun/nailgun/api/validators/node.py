@@ -17,6 +17,10 @@ from nailgun.api.validators.base import BasicValidator
 from nailgun.api.validators.json_schema.disks import disks_simple_format_schema
 from nailgun.api.validators.json_schema.node import node_format_schema
 
+from nailgun import consts
+
+from nailgun import objects
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
@@ -98,8 +102,14 @@ class MetaValidator(BasicValidator):
 class NodeValidator(BasicValidator):
     @classmethod
     def validate(cls, data):
+        # TODO(enchantner): rewrite validators to use Node object
         data = cls.validate_json(data)
         cls.validate_schema(data, node_format_schema)
+
+        if data.get("status", "") != "discover":
+            raise errors.NotAllowed(
+                "Only bootstrap nodes are allowed to be registered."
+            )
 
         if 'mac' not in data:
             raise errors.InvalidData(
@@ -173,19 +183,65 @@ class NodeValidator(BasicValidator):
                 )
 
     @classmethod
-    def validate_update(cls, data):
-        d = cls.validate_json(data)
-        if "status" in d and d["status"] not in Node.NODE_STATUSES:
+    def validate_update(cls, data, instance=None):
+        if isinstance(data, (str, unicode)):
+            d = cls.validate_json(data)
+        else:
+            d = data
+
+        if "status" in d and d["status"] not in consts.NODE_STATUSES:
             raise errors.InvalidData(
                 "Invalid status for node",
                 log_message=True
             )
-        if 'roles' in d and 'id' in d:
-            node = db().query(Node).get(d['id'])
+
+        if not d.get("mac") and not d.get("id") and not instance:
+            raise errors.InvalidData(
+                "Neither MAC nor ID is specified",
+                log_message=True
+            )
+
+        q = db().query(Node)
+        if "mac" in d:
+            if not d["mac"]:
+                raise errors.InvalidData(
+                    "Null MAC is specified",
+                    log_message=True
+                )
+            else:
+                existent_node = q.filter_by(mac=d["mac"]).first() \
+                    or cls.validate_existent_node_mac_update(d)
+                if not existent_node:
+                    raise errors.InvalidData(
+                        "Invalid MAC is specified",
+                        log_message=True
+                    )
+
+        if "id" in d and d["id"]:
+            existent_node = q.get(d["id"])
+            if not existent_node:
+                raise errors.InvalidData(
+                    "Invalid ID specified",
+                    log_message=True
+                )
+
+        if "roles" in d:
+            if instance:
+                node = instance
+            else:
+                node = objects.Node.get_by_mac_or_uid(
+                    mac=d.get("mac"),
+                    node_uid=d.get("id")
+                )
             cls.validate_roles(d, node)
+
         if 'meta' in d:
             d['meta'] = MetaValidator.validate_update(d['meta'])
         return d
+
+    @classmethod
+    def validate_delete(cls, instance):
+        pass
 
     @classmethod
     def validate_collection_update(cls, data):
@@ -196,38 +252,8 @@ class NodeValidator(BasicValidator):
                 log_message=True
             )
 
-        q = db().query(Node)
         for nd in d:
-            if not nd.get("mac") and not nd.get("id"):
-                raise errors.InvalidData(
-                    "Neither MAC nor ID is specified",
-                    log_message=True
-                )
-            if "mac" in nd and not nd["mac"]:
-                raise errors.InvalidData(
-                    "Null MAC is specified",
-                    log_message=True
-                )
-            else:
-                if nd.get("mac"):
-                    existent_node = q.filter_by(mac=nd["mac"]).first() \
-                        or cls.validate_existent_node_mac_update(nd)
-                    if not existent_node:
-                        raise errors.InvalidData(
-                            "Invalid MAC specified",
-                            log_message=True
-                        )
-                if nd.get("id"):
-                    existent_node = q.get(nd["id"])
-                    if not existent_node:
-                        raise errors.InvalidData(
-                            "Invalid ID specified",
-                            log_message=True
-                        )
-                if 'roles' in nd:
-                    cls.validate_roles(nd, existent_node)
-            if 'meta' in nd:
-                nd['meta'] = MetaValidator.validate_update(nd['meta'])
+            cls.validate_update(nd)
         return d
 
 

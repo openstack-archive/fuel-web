@@ -46,7 +46,6 @@ from nailgun.logger import logger
 
 from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.fixman import upload_fixture
-from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
@@ -55,6 +54,7 @@ from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
 from nailgun.objects import Cluster
+from nailgun.objects import Node
 from nailgun.objects import Release
 
 from nailgun.app import build_app
@@ -251,7 +251,7 @@ class Environment(object):
                 return None
             self.tester.assertEquals(resp.status_code, expect_http)
             node = json.loads(resp.body)
-            node_db = self.db.query(Node).get(node['id'])
+            node_db = Node.get_by_uid(node['id'])
             if 'interfaces' not in node_data['meta'] \
                     or not node_data['meta']['interfaces']:
                 self._set_interfaces_if_not_set_in_meta(
@@ -259,25 +259,8 @@ class Environment(object):
                     kwargs.get('meta', None))
             self.nodes.append(node_db)
         else:
-            node = Node()
-            node.timestamp = datetime.now()
-            if 'cluster_id' in node_data:
-                cluster_id = node_data.pop('cluster_id')
-                for cluster in self.clusters:
-                    if cluster.id == cluster_id:
-                        node.cluster = cluster
-                        break
-                else:
-                    node.cluster_id = cluster_id
-            for key, value in node_data.iteritems():
-                setattr(node, key, value)
-            node.attributes = self.create_attributes()
-            node.attributes.volumes = node.volume_manager.gen_volumes_info()
-            self.db.add(node)
-            self.db.commit()
-            if node.meta and node.meta.get('interfaces'):
-                self._create_interfaces_from_meta(node)
-
+            node = Node.create(node_data)
+            db().commit()
             self.nodes.append(node)
 
         return node

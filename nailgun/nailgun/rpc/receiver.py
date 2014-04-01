@@ -428,6 +428,16 @@ class NailgunReceiver(object):
                     )
                 )
 
+        zabbix_url = objects.Cluster.get_network_manager(
+            task.cluster
+        ).get_zabbix_url(task.cluster)
+
+        if zabbix_url:
+            zabbix_suffix = " Access Zabbix dashboard at {0}".format(
+                zabbix_url
+            )
+            message += zabbix_suffix
+
         notifier.notify(
             "done",
             message,

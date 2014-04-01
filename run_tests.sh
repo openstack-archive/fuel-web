@@ -216,13 +216,8 @@ function run_nailgun_tests {
   ./manage.py dropdb > /dev/null
   ./manage.py syncdb > /dev/null
   [ -z "$noseargs" ] && test_args=. || test_args="$noseargs"
-  stderr=$(nosetests -vv $noseopts $test_args 3>&1 1>&2 2>&3 | tee /dev/stderr)
+  nosetests -vv $noseopts $test_args
   )
-# TODO: uncomment after cluster deletion issue fix
-#  if [[ "$stderr" =~ "Exception" ]]; then
-#    echo "Tests executed with errors!"
-#    exit 1
-#  fi
 }
 
 function run_cli_tests {

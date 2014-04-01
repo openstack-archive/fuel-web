@@ -911,12 +911,48 @@ class NetworkManager(object):
         return ip
 
     @classmethod
+    def get_node_ip(cls, node, network='public'):
+        net = filter(
+            lambda n: n['name'] == network and 'ip' in n,
+            Cluster.get_network_manager(
+                node.cluster
+            ).get_node_networks(node.id)
+        )
+
+        if not net:
+            raise errors.CanNotFindNetworkForNode(
+                u'Can not find network {0} for node {1}'.format(
+                    network, node.id
+                )
+            )
+
+        ip = net[0]['ip'].split('/')[0]
+        return ip
+
+    @classmethod
     def get_horizon_url(cls, cluster_id):
         return 'http://%s/' % cls.get_end_point_ip(cluster_id)
 
     @classmethod
     def get_keystone_url(cls, cluster_id):
         return 'http://%s:5000/' % cls.get_end_point_ip(cluster_id)
+
+    @classmethod
+    def get_zabbix_url(cls, cluster_id):
+        cluster = Cluster.get_by_uid(cluster_id)
+        zabbix_node = filter(
+            lambda node: filter(
+                lambda role: role.name == 'zabbix-server',
+                node.role_list
+            ),
+            cluster.nodes
+        )
+
+        if not zabbix_node:
+            return None
+
+        ip = cls.get_node_ip(zabbix_node[0])
+        return 'http://%s/zabbix' % ip
 
     @classmethod
     def is_cidr_intersection(cls, cidr1, cidr2):

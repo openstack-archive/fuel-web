@@ -364,25 +364,24 @@ class NailgunReceiver(object):
                         "Access the OpenStack dashboard (Horizon) at "
                         "http://{1}/ or via internal network at http://{2}/"
                     ).format(
-                        task.cluster.name,
+                        task.cluster.id,
                         horizon_ip,
                         controller.ip
                     )
                 else:
                     message = (
                         u"Deployment of environment '{0}' is done"
-                    ).format(task.cluster.name)
+                    ).format(task.cluster.id)
                     logger.warning(
                         u"Public ip for controller node "
-                        "not found in '{0}'".format(task.cluster.name)
+                        "not found in '{0}'".format(task.cluster.id)
                     )
             else:
                 message = (
-                    u"Deployment of environment"
-                    " '{0}' is done"
-                ).format(task.cluster.name)
+                    u"Deployment of environment '{0}' is done"
+                ).format(task.cluster.id)
                 logger.warning(u"Controller node not found in '{0}'".format(
-                    task.cluster.name
+                    task.cluster.id
                 ))
         elif task.cluster.is_ha_mode:
             # determining horizon url in HA mode - it's vip
@@ -392,7 +391,7 @@ class NailgunReceiver(object):
                     u"Deployment of environment '{0}' is done. "
                     "Access the OpenStack dashboard (Horizon) at {1}"
                 ).format(
-                    task.cluster.name,
+                    task.cluster.id,
                     objects.Cluster.get_network_manager(
                         task.cluster
                     ).get_horizon_url(task.cluster.id)
@@ -403,12 +402,11 @@ class NailgunReceiver(object):
                     traceback.format_exc()
                 ]))
                 message = (
-                    u"Deployment of environment"
-                    " '{0}' is done"
-                ).format(task.cluster.name)
+                    u"Deployment of environment '{0}' is done"
+                ).format(task.cluster.id)
                 logger.warning(
                     u"Cannot find virtual IP for '{0}'".format(
-                        task.cluster.name
+                        task.cluster.id
                     )
                 )
 
@@ -483,11 +481,8 @@ class NailgunReceiver(object):
                 )
 
             message = (
-                u"Deployment of environment '{0}' "
-                u"was successfully stopped".format(
-                    task.cluster.name or task.cluster_id
-                )
-            )
+                u"Deployment of environment '{0}' was successfully stopped"
+            ).format(task.cluster_id)
 
             notifier.notify(
                 "done",
@@ -563,9 +558,8 @@ class NailgunReceiver(object):
                 )
 
             message = (
-                u"Environment '{0}' "
-                u"was successfully reset".format(
-                    task.cluster.name or task.cluster_id
+                u"Environment '{0}' was successfully reset".format(
+                    task.cluster_id
                 )
             )
 

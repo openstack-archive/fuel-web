@@ -40,6 +40,7 @@ from nailgun.orchestrator import provisioning_serializers
 from nailgun.settings import settings
 from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
+from nailgun.utils.zabbix import ZabbixManager
 
 
 def make_astute_message(method, respond_to, args):
@@ -263,6 +264,21 @@ class DeletionTask(object):
                             new_node[prop.key] = getattr(node, prop.key)
                     nodes_to_restore.append(new_node)
                     # /only fake tasks
+
+        # check if there's a zabbix server in an environment
+        # and if there is, remove hosts
+        if ZabbixManager.get_zabbix_node(task.cluster):
+            zabbix_credentials = ZabbixManager.get_zabbix_credentials(
+                task.cluster
+            )
+            logger.debug("Removing nodes %s from zabbix" % (nodes_to_delete))
+            try:
+                ZabbixManager.remove_from_zabbix(
+                    zabbix_credentials, nodes_to_delete
+                )
+            except (errors.CannotMakeZabbixRequest,
+                    errors.ZabbixRequestError) as e:
+                logger.warning("%s, skipping removing nodes from Zabbix", e)
 
         # this variable is used to iterate over it
         # and be able to delete node from nodes_to_delete safely

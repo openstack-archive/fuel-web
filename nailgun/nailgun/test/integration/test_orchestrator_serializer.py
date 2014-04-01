@@ -277,6 +277,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def test_set_deployment_priorities(self):
         nodes = [
+            {'role': 'zabbix-server'},
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
             {'role': 'primary-swift-proxy'},
@@ -290,16 +291,17 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         ]
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'mongo', 'priority': 100},
-            {'role': 'primary-mongo', 'priority': 200},
-            {'role': 'primary-swift-proxy', 'priority': 300},
-            {'role': 'swift-proxy', 'priority': 400},
-            {'role': 'storage', 'priority': 500},
-            {'role': 'primary-controller', 'priority': 600},
-            {'role': 'controller', 'priority': 700},
+            {'role': 'zabbix-server', 'priority': 100},
+            {'role': 'mongo', 'priority': 200},
+            {'role': 'primary-mongo', 'priority': 300},
+            {'role': 'primary-swift-proxy', 'priority': 400},
+            {'role': 'swift-proxy', 'priority': 500},
+            {'role': 'storage', 'priority': 600},
+            {'role': 'primary-controller', 'priority': 700},
             {'role': 'controller', 'priority': 800},
-            {'role': 'ceph-osd', 'priority': 900},
-            {'role': 'other', 'priority': 900}
+            {'role': 'controller', 'priority': 900},
+            {'role': 'ceph-osd', 'priority': 1000},
+            {'role': 'other', 'priority': 1000}
         ]
         self.assertEquals(expected_priorities, nodes)
 

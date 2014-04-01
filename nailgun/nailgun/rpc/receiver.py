@@ -412,6 +412,23 @@ class NailgunReceiver(object):
                     )
                 )
 
+        zabbix = db().query(Node).filter_by(
+            cluster_id=task.cluster_id
+        ).filter(Node.role_list.any(name='zabbix-server')).first()
+
+        if zabbix:
+            public_net = filter(
+                lambda n: n['name'] == 'public' and 'ip' in n,
+                objects.Node.get_network_manager(
+                    zabbix
+                ).get_node_networks(zabbix.id)
+            )
+            zabbix_ip = public_net[0]['ip'].split('/')[0]
+            suffix = " Access Zabbix dashboard at http://{0}/zabbix".format(
+                zabbix_ip
+            )
+            message += suffix
+
         notifier.notify(
             "done",
             message,

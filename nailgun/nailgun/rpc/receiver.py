@@ -359,11 +359,10 @@ class NailgunReceiver(object):
                 if public_net:
                     horizon_ip = public_net[0]['ip'].split('/')[0]
                     message = (
-                        u"Deployment of environment '{0}' is done. "
+                        "Deployment of environment is done. "
                         "Access the OpenStack dashboard (Horizon) at "
-                        "http://{1}/ or via internal network at http://{2}/"
+                        "http://{0}/ or via internal network at http://{1}/"
                     ).format(
-                        task.cluster.name,
                         horizon_ip,
                         controller.ip
                     )

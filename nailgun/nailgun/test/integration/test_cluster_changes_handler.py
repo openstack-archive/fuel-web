@@ -162,9 +162,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [600, 500, 400],
-            'cinder': 700,
-            'compute': 700
+            'controller': [700, 600, 500],
+            'cinder': 800,
+            'compute': 800
         }
 
         deployment_info = []
@@ -504,9 +504,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [600, 500, 400],
-            'cinder': 700,
-            'compute': 700
+            'controller': [700, 600, 500],
+            'cinder': 800,
+            'compute': 800
         }
         deployment_info = []
         for node in nodes_db:
@@ -1128,7 +1128,7 @@ class TestHandlers(BaseIntegrationTest):
         if path is None:
             path = []
 
-        print("Path: {0}".format("->".join(path)))
+        # print("Path: {0}".format("->".join(path)))
         if not isinstance(node1, dict) or not isinstance(node2, dict):
             if isinstance(node1, list):
                 newpath = path[:]

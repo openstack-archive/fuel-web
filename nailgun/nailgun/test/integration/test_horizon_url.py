@@ -50,9 +50,8 @@ class TestHorizonURL(BaseIntegrationTest):
         self.assertEquals(len(lost_ips), 1)
 
         self.assertEquals(supertask.message, (
-            u"Deployment of environment '{0}' is done. "
-            "Access the OpenStack dashboard (Horizon) at http://{1}/"
+            u"Deployment of environment is done. "
+            "Access the OpenStack dashboard (Horizon) at http://{0}/"
         ).format(
-            self.env.clusters[0].name,
             lost_ips[0].ip_addr
         ))

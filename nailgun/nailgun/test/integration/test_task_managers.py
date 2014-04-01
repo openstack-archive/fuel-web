@@ -69,9 +69,7 @@ class TestTaskManagers(BaseIntegrationTest):
             supertask,
             60,
             u"Successfully removed 1 node(s). No errors occurred; "
-            "Deployment of environment '{0}' is done".format(
-                self.env.clusters[0].name
-            )
+            "Deployment of environment is done"
         )
         self.env.refresh_nodes()
         for n in filter(

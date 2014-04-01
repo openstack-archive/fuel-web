@@ -447,6 +447,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var allocatedController = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
             return role.get('name') != 'controller' || this.cluster.get('mode') != 'multinode' || ((this.isControllerRoleSelected() || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedController.length);
         },
+        isZabbixRoleSelected: function() {
+            return this.collection.filter(function(role) {return role.get('name') == 'zabbix-server' && (role.get('checked') || role.get('indeterminate'));}).length;
+        },
+        isZabbixSelectable: function(role) {
+            var allocatedZabbix = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('zabbix-server') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
+            return role.get('name') != 'zabbix-server' || ((this.isZabbixRoleSelected() || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedZabbix.length);
+        },
         getListOfIncompatibleRoles: function(roles) {
             var forbiddenRoles = [];
             var release = this.cluster.get('release');
@@ -477,6 +484,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 if (!disabled && !this.isControllerSelectable(role)) {
                     disabled = true;
                     conflict = $.t('cluster_page.nodes_tab.one_controller_restriction');
+                }
+                // checking zabbix role conditions
+                if (!disabled && !this.isZabbixSelectable(role)) {
+                    disabled = true;
+                    conflict = $.t('cluster_page.nodes_tab.one_zabbix_restriction');
                 }
                 role.set({disabled: disabled, conflict: conflict});
             }, this);

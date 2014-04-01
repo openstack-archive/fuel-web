@@ -270,6 +270,19 @@
             type: "checkbox"
             conflicts:
               - "settings:storage.volumes_ceph.value": true
+        zabbix:
+          username:
+            value: "Admin"
+            label: "username"
+            description: "Username for Zabbix Administrator"
+            weight: 10
+            type: "text"
+          password:
+            value: "zabbix"
+            label: "password"
+            description: "Password for Zabbix Administrator"
+            weight: 20
+            type: "password"
       generated:
         mysql:
           root_password:
@@ -319,10 +332,20 @@
       - compute
       - cinder
       - ceph-osd
+      - zabbix-server
     roles_metadata:
+      controller:
+        conflicts:
+          - compute
+          - zabbix-server
       ceph-osd:
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
+      zabbix-server:
+        name: "Zabbix Server"
+        description: "Zabbix monitoring system server."
+        conflicts:
+          - controller
     networks_metadata:
       neutron:
         networks:
@@ -542,6 +565,11 @@
           user_password:
             generator: "password"
           metering_secret:
+            generator: "password"
+        zabbix:
+          db_password:
+            generator: "password"
+          db_root_password:
             generator: "password"
         quantum_settings:
           database:

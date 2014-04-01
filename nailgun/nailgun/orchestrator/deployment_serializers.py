@@ -130,11 +130,14 @@ class DeploymentMultinodeSerializer(object):
         """Set priorities of deployment."""
         prior = Priority()
 
+        for n in cls.by_role(nodes, 'zabbix-server'):
+            n['priority'] = prior.next
+
         for n in cls.by_role(nodes, 'controller'):
             n['priority'] = prior.next
 
         other_nodes_prior = prior.next
-        for n in cls.not_roles(nodes, 'controller'):
+        for n in cls.not_roles(nodes, ['controller', 'zabbix-server']):
             n['priority'] = other_nodes_prior
 
     @classmethod
@@ -283,6 +286,10 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         """Set priorities of deployment for HA mode."""
         prior = Priority()
 
+        primary_zabbix_server_prior = prior.next
+        for n in cls.by_role(nodes, 'zabbix-server'):
+            n['priority'] = primary_zabbix_server_prior
+
         primary_swift_proxy_piror = prior.next
         for n in cls.by_role(nodes, 'primary-swift-proxy'):
             n['priority'] = primary_swift_proxy_piror
@@ -309,7 +316,8 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                                        'storage',
                                        'primary-controller',
                                        'controller',
-                                       'quantum']):
+                                       'quantum',
+                                       'zabbix-server']):
             n['priority'] = other_nodes_prior
 
 

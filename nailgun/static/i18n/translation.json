@@ -216,6 +216,7 @@
                     "no_nodes_in_fuel": "A pool of one or more unallocated nodes is needed for this operation. To add to the pool, configure nodes to boot from the network (a.k.a. PXE booting). Fuel will automatically provision and discover the nodes.",
                     "one_controller_restriction": "Only one controller can be assigned in a multi-node deployment that is not Highly-Available (HA).",
                     "mongo_restriction": "The environment already has deployed MongoDB nodes.",
+                    "one_zabbix_restriction": "Only one zabbix can be assigned in an environment.",
                     "incompatible_roles_warning" : "This role cannot be combined with the other roles already selected.",
                     "new_controllers_in_ha_mode_restriction": "New controllers cannot be added to an operational environment.",
                     "no_filtered_nodes_warning": "There are no nodes found matching the filter value.",

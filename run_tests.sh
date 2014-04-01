@@ -101,7 +101,7 @@ function run_flake8 {
   # H802 - first line of git commit commentary should be less than 50 characters
   # __init__.py - excluded because it doesn't comply with pep8 standard
   flake_status=0
-  flake8 --exclude=__init__.py,docs --ignore=H302,H802 --show-source --show-pep8 --count . || flake_status=1
+  flake8 --exclude=__init__.py,docs --ignore=H234,H302,H802 --show-source --show-pep8 --count . || flake_status=1
   pep8 --exclude=welcome.py docs || flake_status=1
   [[ $flake_status = 0 ]] || return 1
   echo "Flake8 check passed successfully."

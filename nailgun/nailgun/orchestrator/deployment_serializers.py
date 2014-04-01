@@ -20,6 +20,10 @@ from copy import deepcopy
 
 from netaddr import IPNetwork
 from sqlalchemy import and_
+from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
+
+import math
 
 from nailgun import consts
 from nailgun.db import db
@@ -89,12 +93,39 @@ class DeploymentMultinodeSerializer(object):
             if node['role'] in 'cinder':
                 attrs['use_cinder'] = True
 
+        cls.set_storage_parameters(cluster, attrs)
+
         attrs = dict_merge(
             attrs,
             cls.get_net_provider_serializer(cluster).get_common_attrs(cluster,
                                                                       attrs))
 
         return attrs
+
+    @classmethod
+    def set_storage_parameters(cls, cluster, attrs):
+        """Generate pg_num as the number of OSDs across the cluster
+        multiplied by 100, divided by Ceph replication factor, and
+        rounded up to the nearest power of 2.
+        """
+        osd_num = 0
+        nodes = db().query(Node). \
+            filter(or_(
+                Node.role_list.any(name='ceph-osd'),
+                Node.pending_role_list.any(name='ceph-osd'))). \
+            filter(Node.cluster == cluster). \
+            options(joinedload('attributes'))
+        for node in nodes:
+            for disk in node.attributes.volumes:
+                for part in disk.get('volumes', []):
+                    if part.get('name') == 'ceph' and part.get('size', 0) > 0:
+                        osd_num += 1
+        if osd_num > 0:
+            repl = int(attrs['storage']['osd_pool_size'])
+            pg_num = 2 ** int(math.ceil(math.log(osd_num * 100.0 / repl, 2)))
+        else:
+            pg_num = 128
+        attrs['storage']['pg_num'] = pg_num
 
     @classmethod
     def node_list(cls, nodes):

@@ -56,6 +56,14 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
             filter(Node.role_list.any(name='controller')).\
             order_by(Node.id)
 
+    @property
+    def serializer(self):
+        return DeploymentMultinodeSerializer
+
+    def serialize(self, cluster):
+        TaskHelper.prepare_for_deployment(cluster.nodes)
+        return self.serializer.serialize(cluster, cluster.nodes)
+
 
 class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
@@ -79,10 +87,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         cluster_db = self.db.query(Cluster).get(cluster['id'])
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
-
-    @property
-    def serializer(self):
-        return DeploymentMultinodeSerializer
 
     def assert_roles_flattened(self, nodes):
         self.assertEquals(len(nodes), 6)
@@ -374,10 +378,6 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         cluster_db = self.db.query(Cluster).get(cluster['id'])
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
-
-    @property
-    def serializer(self):
-        return DeploymentMultinodeSerializer
 
     def assert_roles_flattened(self, nodes):
         self.assertEquals(len(nodes), 6)
@@ -779,10 +779,6 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
         cluster_db = self.db.query(Cluster).get(cluster['id'])
         return cluster_db
 
-    def serialize(self, cluster):
-        TaskHelper.prepare_for_deployment(cluster.nodes)
-        return DeploymentMultinodeSerializer.serialize(cluster, cluster.nodes)
-
     def check_add_bond_msg_lacp(self, msg):
         self.assertEqual(
             msg,
@@ -826,3 +822,49 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
     def test_bonds_serialization(self):
         for mode in OVS_BOND_MODES:
             self.check_bond_with_mode(mode)
+
+
+class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
+
+    def create_env(self, nodes, osd_pool_size='2'):
+        cluster = self.env.create(
+            cluster_kwargs={
+                'mode': 'multinode'},
+            nodes_kwargs=nodes)
+        self.app.put(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster['id']}),
+            params=json.dumps(
+                {'editable': {
+                    'storage': {
+                        'osd_pool_size': {'value': osd_pool_size}}}}),
+            headers=self.default_headers)
+        return self.db.query(Cluster).get(cluster['id'])
+
+    def test_pg_num_no_osd_nodes(self):
+        cluster = self.create_env([
+            {'roles': ['controller']}])
+        data = self.serialize(cluster)
+        self.assertEqual(data[0]['storage']['pg_num'], 128)
+
+    def test_pg_num_1_osd_node(self):
+        cluster = self.create_env([
+            {'roles': ['controller', 'ceph-osd']}])
+        data = self.serialize(cluster)
+        self.assertEqual(data[0]['storage']['pg_num'], 256)
+
+    def test_pg_num_1_osd_node_repl_4(self):
+        cluster = self.create_env(
+            [{'roles': ['controller', 'ceph-osd']}],
+            '4')
+        data = self.serialize(cluster)
+        self.assertEqual(data[0]['storage']['pg_num'], 128)
+
+    def test_pg_num_3_osd_nodes(self):
+        cluster = self.create_env([
+            {'roles': ['controller', 'ceph-osd']},
+            {'roles': ['compute', 'ceph-osd']},
+            {'roles': ['compute', 'ceph-osd']}])
+        data = self.serialize(cluster)
+        self.assertEqual(data[0]['storage']['pg_num'], 512)

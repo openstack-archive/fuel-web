@@ -311,6 +311,10 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             });
             return role.get('name') != 'mongo' || !deployedNodes.length;
         },
+        isZabbixSelectable: function(role) {
+            var allocatedZabbix = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('zabbix-server') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
+            return role.get('name') != 'zabbix-server' || ((this.isRoleSelected('zabbix-server') || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedZabbix.length);
+        },
         getListOfIncompatibleRoles: function(roles) {
             var forbiddenRoles = [];
             var release = this.cluster.get('release');
@@ -346,6 +350,11 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 if (!disabled && !this.isMongoSelectable(role)) {
                     disabled = true;
                     conflict = $.t('cluster_page.nodes_tab.mongo_restriction');
+                }
+                // checking zabbix role conditions
+                if (!disabled && !this.isZabbixSelectable(role)) {
+                    disabled = true;
+                    conflict = $.t('cluster_page.nodes_tab.one_zabbix_restriction');
                 }
                 role.set({disabled: disabled, conflict: conflict});
             }, this);

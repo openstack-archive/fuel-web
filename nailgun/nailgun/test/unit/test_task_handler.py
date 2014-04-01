@@ -15,12 +15,12 @@
 
 
 from nailgun.db.sqlalchemy.models import Task
-from nailgun.test.base import BaseUnitTest
+from nailgun.test.base import BaseTestCase
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
-class TestTaskHandlers(BaseUnitTest):
+class TestTaskHandlers(BaseTestCase):
 
     @fake_tasks(godmode=True)
     def test_task_deletion(self):

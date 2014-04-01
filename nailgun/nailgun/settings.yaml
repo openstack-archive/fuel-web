@@ -169,6 +169,12 @@ LOGS:
     <<: *remote_syslog_log_format
     <<: *main_install_log_group
     path: 'puppet-apply.log'
+  - id: 'zabbix'
+    name: "zabbix"
+    <<: *remote_log_type
+    <<: *remote_syslog_log_format
+    <<: *main_install_log_group
+    path: 'zabbix_server.log'
   - id: 'install/anaconda'
     name: "anaconda"
     <<: *remote_log_type

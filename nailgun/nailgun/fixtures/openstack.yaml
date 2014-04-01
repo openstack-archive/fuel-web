@@ -199,6 +199,11 @@
               - data: "qemu"
                 label: "QEMU"
                 description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
+              - data: "vmware"
+                label: "VMWare"
+                description: "VMWare description"
+                depends:
+                  - "settings:vsphere.metadata.enabled": true
             label: "Hypervisor type"
             weight: 30
             type: "radio"
@@ -231,6 +236,17 @@
             label: "Public Key"
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
+            type: "text"
+        vsphere:
+          metadata:
+            toggleable: true
+            enabled: false
+            weight: 35
+          credentials:
+            value: "some stuff"
+            label: "credentials"
+            description: "description"
+            weight: 10
             type: "text"
         syslog:
           metadata:

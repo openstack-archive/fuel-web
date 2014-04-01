@@ -853,6 +853,25 @@ class NetworkManager(object):
         return 'http://%s:5000/' % cls.get_end_point_ip(cluster_id)
 
     @classmethod
+    def get_zabbix_url(cls, cluster):
+        zabbix_nodes = filter(
+            lambda node: filter(
+                lambda role: role.name == 'zabbix-server',
+                node.role_list
+            ),
+            cluster.nodes
+        )
+
+        if not zabbix_nodes:
+            return None
+
+        ip_cidr = cls.get_node_network_by_netname(
+            zabbix_nodes[0], 'public'
+        )['ip']
+        ip = ip_cidr.split('/')[0]
+        return 'http://%s/zabbix' % ip
+
+    @classmethod
     def is_cidr_intersection(cls, cidr1, cidr2):
         """Checks intersection of two CIDRs (IPNetwork objects)
         """

@@ -82,7 +82,9 @@ class TestClusterChanges(BaseIntegrationTest):
         self.assertEquals(len(node_disks_changes), 1)
         self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{"id": node_db.id, "cluster_id": None}]),
+            json.dumps({
+                "objects": [{"id": node_db.id, "cluster_id": None}]
+            }),
             headers=self.default_headers
         )
         self.env.refresh_clusters()

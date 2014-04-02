@@ -494,12 +494,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         checkRolesAvailability: function() {
             this.collection.each(function(role) {
+                var unavailable = false;
+                var unavailabityReasons = [];
                 var dependencies = this.getRoleData(role.get('name')).depends;
                 if (dependencies) {
                     var configModels = {settings: this.settings, cluster: this.cluster, default: this.settings};
-                    var unavailable = false;
-                    var unavailabityReasons = [];
-                    _.each(dependencies, function(dependency){
+                    _.each(dependencies, function(dependency) {
                         var path = _.keys(dependency.condition)[0];
                         var value = dependency.condition[path];
                         if (utils.parseModelPath(path, configModels).get() != value) {
@@ -507,9 +507,21 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                             unavailabityReasons.push(dependency.warning);
                         }
                     });
-                    if (unavailable) {
-                        role.set({unavailable: true, unavailabityReason: unavailabityReasons.join(' ')});
+                }
+                // FIXME(vk): hack for vCenter, do not allow ceph and controllers
+                // has to be removed when we describe it in role metadata
+                if (this.settings.get('common.libvirt_type.value') == 'vcenter') {
+                    if (role.get('name') == 'compute') {
+                        unavailable = true;
+                        unavailabityReasons.push('Computes cannot be used with vCenter');
+                    } else if (role.get('name') == 'ceph-osd') {
+                        unavailable = true;
+                        unavailabityReasons.push('Ceph cannot be used with vCenter');
                     }
+                }
+
+                if (unavailable) {
+                    role.set({unavailable: true, unavailabityReason: unavailabityReasons.join(' ')});
                 }
             }, this);
         },

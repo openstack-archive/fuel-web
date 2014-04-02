@@ -184,10 +184,7 @@ class NodeValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, instance=None):
-        if isinstance(data, (str, unicode)):
-            d = cls.validate_json(data)
-        else:
-            d = data
+        d = super(NodeValidator, cls).validate_update(data)
 
         if "status" in d and d["status"] not in consts.NODE_STATUSES:
             raise errors.InvalidData(
@@ -239,31 +236,24 @@ class NodeValidator(BasicValidator):
             d['meta'] = MetaValidator.validate_update(d['meta'])
         return d
 
-    @classmethod
-    def validate_delete(cls, instance):
-        pass
-
-    @classmethod
-    def validate_collection_update(cls, data):
-        d = cls.validate_json(data)
-        if not isinstance(d, list):
-            raise errors.InvalidData(
-                "Invalid json list",
-                log_message=True
-            )
-
-        for nd in d:
-            cls.validate_update(nd)
-        return d
-
 
 class NodeDisksValidator(BasicValidator):
     @classmethod
     def validate(cls, data):
         dict_data = cls.validate_json(data)
-        cls.validate_schema(dict_data, disks_simple_format_schema)
-        cls.at_least_one_disk_exists(dict_data)
-        cls.sum_of_volumes_not_greater_than_disk_size(dict_data)
+        if not isinstance(dict_data, dict):
+            raise errors.InvalidData(
+                'Collection should be a dict',
+                log_message=True
+            )
+        if "objects" not in dict_data:
+            raise errors.InvalidData(
+                'Can\'t find "objects" in data',
+                log_message=True
+            )
+        cls.validate_schema(dict_data["objects"], disks_simple_format_schema)
+        cls.at_least_one_disk_exists(dict_data["objects"])
+        cls.sum_of_volumes_not_greater_than_disk_size(dict_data["objects"])
         return dict_data
 
     @classmethod

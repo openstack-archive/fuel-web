@@ -19,6 +19,7 @@ import os
 from fuelclient import __version__
 from fuelclient.cli.error import ArgumentException
 from fuelclient.client import APIClient
+from fuelclient.objects import Node
 
 substitutions = {
     #replace from: to
@@ -63,7 +64,7 @@ class NodeAction(argparse.Action):
             if input_macs:
                 nodes_mac_to_id_map = dict(
                     (n["mac"], n["id"])
-                    for n in APIClient.get_request("nodes/")
+                    for n in Node.get_all_data()
                 )
                 for short_mac in input_macs:
                     target_node = None

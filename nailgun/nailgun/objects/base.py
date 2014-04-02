@@ -208,6 +208,14 @@ class NailgunCollection(object):
             raise TypeError("First argument should be iterable")
 
     @classmethod
+    def order_by(cls, iterable, field, order="asc", yield_per=100):
+        cls.single.check_field(field)
+        use_iterable = iterable or cls.all(yield_per=yield_per)
+        return use_iterable.order_by(
+            getattr(cls.single.model, field)
+        )
+
+    @classmethod
     def eager(cls, iterable, fields, yield_per=100):
         """Eager load linked object instances (SQLAlchemy FKs).
         In case if iterable=None applies to all object instances
@@ -251,7 +259,14 @@ class NailgunCollection(object):
         )
 
     @classmethod
-    def to_json(cls, iterable=None, fields=None, yield_per=100):
+    def to_json(
+        cls,
+        iterable=None,
+        limit=None,
+        offset=0,
+        fields=None,
+        yield_per=100
+    ):
         """Serialize iterable to JSON
         In case if iterable=None serializes all object instances
 
@@ -260,13 +275,62 @@ class NailgunCollection(object):
         :param yield_per: SQLAlchemy's yield_per() clause
         :returns: collection of objects as a JSON string
         """
-        return json.dumps(
-            cls.to_list(
+        if limit is None:
+            use_iterable = iterable or cls.all(yield_per=yield_per)
+        else:
+            use_iterable = cls.paginate(
+                iterable or cls.all(yield_per=yield_per),
+                limit,
+                offset
+            )
+
+        return json.dumps({
+            "objects": cls.to_list(
                 fields=fields,
                 yield_per=yield_per,
-                iterable=iterable
-            )
-        )
+                iterable=use_iterable
+            ),
+            "meta": {
+                "total_count": cls.count(iterable),
+                "limit": limit,
+                "offset": offset
+            }
+        })
+
+    @classmethod
+    def paginate(cls, iterable, limit, offset):
+        """Paginate iterable by using limit and offset parameters.
+        In case if iterable=None uses all object instances
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param limit: limit of objects to get
+        :param offset: offset from the beginning of iterable
+        :returns: iterable (SQLAlchemy query)
+        """
+        use_iterable = iterable or cls.all()
+        return use_iterable.limit(limit).offset(offset)
+
+    @classmethod
+    def update(cls, iterable, data):
+        """Update objects in iterable using data specified.
+        In case if iterable=None updates object instances by ids in data
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param data: data for objects to update
+        :returns: list of updated objects
+        """
+        objects_updated = []
+        for o in data["objects"]:
+            obj = cls.single.get_by_uid(o.get("id"))
+
+            if not obj:
+                raise errors.CannotFindObject(
+                    "Can't find obj: {0}".format(o)
+                )
+
+            cls.single.update(obj, o)
+            objects_updated.append(obj)
+        return objects_updated
 
     @classmethod
     def create(cls, data):

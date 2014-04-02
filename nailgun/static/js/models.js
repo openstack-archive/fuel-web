@@ -18,6 +18,25 @@ define(['utils', 'deepModel'], function(utils) {
 
     var models = {};
 
+    // server-specific hooks for collections
+    var sync = Backbone.sync;
+    Backbone.sync = function(method, model, options) {
+        // for collection updates wrap the collection into object
+        if ((method == 'patch' || method == 'update') && model instanceof Backbone.Collection) {
+            options = options || {};
+            options.attrs = {objects: model.toJSON(options)};
+        }
+        // our server doesn't support PATCH, so use PUT instead
+        if (method == 'patch') {
+            method = 'update';
+        }
+        return sync.apply(this, [method, model, options]);
+    };
+    Backbone.Collection.prototype.parse = function(response) {
+        this.meta = (response && response.meta) || {};
+        return (response && response.objects) || response;
+    };
+
     var cacheMixin = {
         fetch: function(options) {
             if (this.cacheFor && options && options.cache && this.lastSyncTime && (this.cacheFor > (new Date() - this.lastSyncTime))) {

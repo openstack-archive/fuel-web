@@ -607,7 +607,7 @@ class Environment(object):
                     kwargs={"node_id": node_id}),
             headers=self.default_headers)
         self.tester.assertEquals(resp.status_code, 200)
-        data = json.loads(resp.body)
+        data = json.loads(resp.body)["objects"]
 
         nics = self.db.query(NodeNICInterface).filter(
             NodeNICInterface.name.in_(nic_names)
@@ -757,7 +757,7 @@ class Environment(object):
                                  expect_errors=False):
         return self._api_put('NodeCollectionNICsHandler',
                              {},
-                             nodes,
+                             {"objects": nodes},
                              expect_errors)
 
 

@@ -55,7 +55,7 @@ class BaseObject(object):
 
     @classmethod
     def get_all_data(cls):
-        return cls.connection.get_request(cls.class_api_path)
+        return cls.connection.get_request(cls.class_api_path)["objects"]
 
     @classmethod
     def get_all(cls):

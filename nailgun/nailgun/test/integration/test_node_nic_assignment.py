@@ -46,7 +46,7 @@ class TestClusterHandlers(BaseIntegrationTest):
 
         response = json.loads(resp.body)
 
-        for resp_nic in response:
+        for resp_nic in response["objects"]:
             net_names = [net['name'] for net in resp_nic['assigned_networks']]
             if resp_nic['mac'] == mac:
                 self.assertTrue("fuelweb_admin" in net_names)
@@ -76,7 +76,7 @@ class TestClusterHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
-        for resp_nic in response:
+        for resp_nic in response["objects"]:
             self.assertEquals(resp_nic['assigned_networks'], [])
 
     def test_assignment_is_removed_when_delete_cluster(self):
@@ -113,7 +113,7 @@ class TestNodeHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
-        for resp_nic in response:
+        for resp_nic in response["objects"]:
             net_names = [net['name'] for net in resp_nic['assigned_networks']]
             if resp_nic['mac'] == mac:
                 self.assertTrue("fuelweb_admin" in net_names)
@@ -132,7 +132,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -142,7 +144,7 @@ class TestNodeHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
-        for resp_nic in response:
+        for resp_nic in response["objects"]:
             net_names = [net['name'] for net in resp_nic['assigned_networks']]
             if resp_nic['mac'] == mac:
                 self.assertTrue("fuelweb_admin" in net_names)
@@ -173,7 +175,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -186,7 +190,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         net_name_per_nic = [['fuelweb_admin', 'storage', 'fixed'],
                             ['public'],
                             ['management']]
-        for i, nic in enumerate(sorted(response, key=lambda x: x['name'])):
+        for i, nic in enumerate(
+            sorted(response["objects"], key=lambda x: x['name'])
+        ):
             net_names = set([net['name'] for net in nic['assigned_networks']])
             self.assertEqual(set(net_name_per_nic[i]), net_names)
 
@@ -210,7 +216,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -223,7 +231,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         net_name_per_nic = [['fuelweb_admin', 'storage', 'fixed',
                              'public', 'management'],
                             [], []]
-        for i, nic in enumerate(sorted(response, key=lambda x: x['name'])):
+        for i, nic in enumerate(
+            sorted(response["objects"], key=lambda x: x['name'])
+        ):
             net_names = set([net['name'] for net in nic['assigned_networks']])
             self.assertEqual(set(net_name_per_nic[i]), net_names)
 
@@ -251,7 +261,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -264,7 +276,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         net_name_per_nic = [['fuelweb_admin', 'storage', 'private'],
                             ['public'],
                             ['management']]
-        for i, nic in enumerate(sorted(response, key=lambda x: x['name'])):
+        for i, nic in enumerate(
+            sorted(response["objects"], key=lambda x: x['name'])
+        ):
             net_names = set([net['name'] for net in nic['assigned_networks']])
             self.assertEqual(set(net_name_per_nic[i]), net_names)
 
@@ -288,7 +302,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -301,7 +317,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         net_name_per_nic = [['fuelweb_admin', 'storage', 'public',
                              'management', 'private'],
                             [], []]
-        for i, nic in enumerate(sorted(response, key=lambda x: x['name'])):
+        for i, nic in enumerate(
+            sorted(response["objects"], key=lambda x: x['name'])
+        ):
             net_names = set([net['name'] for net in nic['assigned_networks']])
             self.assertEqual(set(net_name_per_nic[i]), net_names)
 
@@ -317,7 +335,9 @@ class TestNodeHandlers(BaseIntegrationTest):
                                     cluster_id=cluster['id'])
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': None}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': None}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -327,7 +347,7 @@ class TestNodeHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
         response = json.loads(resp.body)
-        for resp_nic in response:
+        for resp_nic in response["objects"]:
             self.assertEquals(resp_nic['assigned_networks'], [])
 
     def test_getting_default_nic_information_for_node(self):
@@ -347,7 +367,7 @@ class TestNodeHandlers(BaseIntegrationTest):
         )
         resp_macs = map(
             lambda interface: interface["mac"],
-            json.loads(resp.body)
+            json.loads(resp.body)["objects"]
         )
         self.assertEquals(resp.status_code, 200)
         self.assertItemsEqual(macs, resp_macs)
@@ -451,8 +471,9 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node_db.id,
-                         'cluster_id': None}]),
+            json.dumps({
+                "objects": [{'id': node_db.id, 'cluster_id': None}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -482,7 +503,7 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
-        data = json.loads(resp.body)
+        data = json.loads(resp.body)["objects"]
         eth1 = [nic for nic in data if nic['name'] == 'eth1']
         self.assertEqual(len(eth1), 1)
         self.assertEqual(
@@ -525,20 +546,25 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
                     kwargs={"node_id": self.env.nodes[0]["id"]}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
-        self.data = json.loads(resp.body)
+        self.data = json.loads(resp.body)["objects"]
         self.nics_w_nets = filter(lambda nic: nic.get("assigned_networks"),
                                   self.data)
         self.assertGreater(len(self.nics_w_nets), 0)
 
     def put_single(self):
-        return self.env.node_nics_put(self.env.nodes[0]["id"], self.data,
-                                      expect_errors=True)
+        return self.env.node_nics_put(
+            self.env.nodes[0]["id"],
+            self.data,
+            expect_errors=True
+        )
 
     def put_collection(self):
         nodes_list = [{"id": self.env.nodes[0]["id"],
                        "interfaces": self.data}]
-        return self.env.node_collection_nics_put(nodes_list,
-                                                 expect_errors=True)
+        return self.env.node_collection_nics_put(
+            nodes_list,
+            expect_errors=True
+        )
 
     def node_nics_put_check_error(self, message):
         for put_func in (self.put_single, self.put_collection):

@@ -68,12 +68,12 @@ class Node(BaseObject):
     def get_default_attribute(self, attributes_type):
         return self.connection.get_request(
             self.get_attribute_default_url(attributes_type)
-        )
+        )["objects"]
 
     def get_attribute(self, attributes_type):
         return self.connection.get_request(
             self.get_attribute_url(attributes_type)
-        )
+        )["objects"]
 
     def upload_node_attribute(self, attributes_type, attributes):
         url = self.get_attribute_url(attributes_type)
@@ -84,7 +84,7 @@ class Node(BaseObject):
             }]
         return self.connection.put_request(
             url,
-            attributes
+            {"objects": attributes}
         )
 
     def write_attribute(self, attribute_type, attributes, directory):
@@ -97,7 +97,7 @@ class Node(BaseObject):
         )
         if os.path.exists(attribute_path):
             os.remove(attribute_path)
-        self.serializer.write_to_file(
+        return self.serializer.write_to_file(
             attribute_path,
             attributes
         )

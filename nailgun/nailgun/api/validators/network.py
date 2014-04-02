@@ -220,12 +220,17 @@ class NetAssignmentValidator(BasicValidator):
     @classmethod
     def validate_collection_structure_and_data(cls, webdata):
         data = cls.validate_json(webdata)
-        if not isinstance(data, list):
+        if not isinstance(data, dict):
             raise errors.InvalidData(
-                "Data should be list of nodes",
+                "Data should be dict",
                 log_message=True
             )
-        for node_data in data:
+        if "objects" not in data:
+            raise errors.InvalidData(
+                'Can\'t find "objects" in data',
+                log_message=True
+            )
+        for node_data in data["objects"]:
             cls.validate(node_data)
             cls.verify_data_correctness(node_data)
         return data

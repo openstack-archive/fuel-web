@@ -33,8 +33,6 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.network.manager import NetworkManager
-from nailgun.network.neutron import NeutronManager
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from nailgun.utils import dict_merge
@@ -283,9 +281,11 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
             cls
         ).get_common_attrs(cluster)
 
+        net_manager = objects.Cluster.get_network_manager(cluster)
+
         for ng in cluster.network_groups:
             if ng.meta.get("assign_vip"):
-                common_attrs[ng.name + '_vip'] = NetworkManager.assign_vip(
+                common_attrs[ng.name + '_vip'] = net_manager.assign_vip(
                     cluster.id, ng.name)
 
         common_attrs['mp'] = [
@@ -435,7 +435,7 @@ class NetworkDeploymentSerializer(object):
     @staticmethod
     def get_admin_ip_w_prefix(node):
         """Getting admin ip and assign prefix from admin network."""
-        network_manager = NetworkManager
+        network_manager = objects.Node.get_network_manager(node)
         admin_ip = network_manager.get_admin_ip_for_node(node)
         admin_ip = IPNetwork(admin_ip)
 
@@ -491,7 +491,8 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """Assign fixed_interfaces and vlan_interface.
         They should be equal.
         """
-        fixed_interface = NetworkManager._get_interface_by_network_name(
+        net_manager = objects.Node.get_network_manager(node)
+        fixed_interface = net_manager._get_interface_by_network_name(
             node.id, 'fixed')
 
         attrs = {'fixed_interface': fixed_interface.name,
@@ -581,7 +582,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if cluster.mode == 'multinode':
             for node in cluster.nodes:
                 if cls._node_has_role_by_name(node, 'controller'):
-                    mgmt_cidr = NetworkManager.get_node_network_by_netname(
+                    net_manager = objects.Node.get_network_manager(node)
+                    mgmt_cidr = net_manager.get_node_network_by_netname(
                         node.id,
                         'management'
                     )['ip']
@@ -707,7 +709,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             'transformations': []
         }
 
-        nm = NeutronManager
+        nm = objects.Node.get_network_manager(node)
         iface_types = consts.NETWORK_INTERFACE_TYPES
 
         # Add a dynamic data to a structure.

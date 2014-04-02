@@ -32,7 +32,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.logger import logger
-from nailgun.network.manager import NetworkManager
 from nailgun.task.helpers import TaskHelper
 
 
@@ -354,7 +353,9 @@ class NailgunReceiver(object):
                 )
                 public_net = filter(
                     lambda n: n['name'] == 'public' and 'ip' in n,
-                    NetworkManager.get_node_networks(controller.id)
+                    objects.Node.get_network_manager(
+                        controller
+                    ).get_node_networks(controller.id)
                 )
                 if public_net:
                     horizon_ip = public_net[0]['ip'].split('/')[0]
@@ -392,7 +393,9 @@ class NailgunReceiver(object):
                     "Access the OpenStack dashboard (Horizon) at {1}"
                 ).format(
                     task.cluster.name,
-                    NetworkManager.get_horizon_url(task.cluster.id)
+                    objects.Cluster.get_network_manager(
+                        task.cluster
+                    ).get_horizon_url(task.cluster.id)
                 )
             except Exception as exc:
                 logger.error(": ".join([

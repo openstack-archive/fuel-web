@@ -14,8 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import objects
+
 from nailgun.api.serializers.base import BasicSerializer
-from nailgun.network.manager import NetworkManager
 
 
 class NetworkConfigurationSerializer(BasicSerializer):
@@ -39,7 +40,7 @@ class NetworkConfigurationSerializer(BasicSerializer):
     @classmethod
     def serialize_net_groups_and_vips(cls, cluster):
         result = {}
-        net_manager = NetworkManager
+        net_manager = objects.Cluster.get_network_manager(cluster)
         result['networks'] = map(
             cls.serialize_network_group,
             cluster.network_groups

@@ -302,14 +302,51 @@ class CollectionHandler(BaseHandler):
     validator = BasicValidator
     collection = None
     eager = ()
+    default_limit = None
 
     @content_json
     def GET(self):
         """:returns: Collection of JSONized REST objects.
         :http: * 200 (OK)
         """
-        q = self.collection.eager(self.eager, None)
-        return self.collection.to_json(q)
+        get_params = web.input(
+            limit=self.default_limit,
+            offset=0
+        )
+        try:
+            if get_params.limit is None:
+                limit = None
+            else:
+                limit = int(get_params.limit)
+            offset = int(get_params.offset)
+        except ValueError:
+            raise self.http(400, "Invalid request parameters")
+        return self.collection.to_json(
+            self.collection.eager(self.eager, None),
+            limit=limit,
+            offset=offset
+        )
+
+    @content_json
+    def PUT(self):
+        """:returns: Collection of JSONized REST objects.
+        :http: * 200 (objects are successfully updated)
+               * 400 (invalid objects data specified)
+               * 409 (object with such parameters already exists)
+        """
+        data = self.checked_data(
+            self.validator.validate_collection_update
+        )
+
+        # returns list of updated objects
+        try:
+            updated = self.collection.update(None, data)
+        except errors.CannotFindObject as exc:
+            raise self.http(404, exc.message)
+        except errors.CannotUpdate as exc:
+            raise self.http(400, exc.message)
+
+        return self.collection.to_json(updated)
 
     @content_json
     def POST(self):

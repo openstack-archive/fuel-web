@@ -141,6 +141,7 @@
       editable:
         access:
           metadata:
+            label: "Access"
             weight: 10
           user:
             value: "admin"
@@ -172,8 +173,51 @@
             description: "Password for Administrator"
             weight: 20
             type: "password"
+        vcenter:
+          metadata:
+            label: "vCenter"
+            weight: 20
+          use_vcenter:
+            value: true
+            label: ""
+            description: ""
+            weight: 05
+            type: "hidden"
+          host_ip:
+            value: ""
+            label: "vCenter IP"
+            description: ""
+            weight: 10
+            type: "text"
+            depends:
+              - "settings:common.libvirt_type.value": "vcenter"
+          vc_user:
+            value: ""
+            label: "username"
+            description: "vCenter Username"
+            weight: 30
+            type: "text"
+            depends:
+              - "settings:common.libvirt_type.value": "vcenter"
+          vc_password:
+            value: ""
+            label: "password"
+            description: "vCenter Password"
+            weight: 30
+            type: "password"
+            depends:
+              - "settings:common.libvirt_type.value": "vcenter"
+          cluster:
+            value: ""
+            label: "cluster"
+            description: "vCenter cluster name"
+            weight: 40
+            type: "text"
+            depends:
+              - "settings:common.libvirt_type.value": "vcenter"
         common:
           metadata:
+            label: "Common"
             weight: 30
           debug:
             value: false
@@ -202,6 +246,11 @@
               - data: "qemu"
                 label: "QEMU"
                 description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
+              - data: "vcenter"
+                label: "VCENTER"
+                description: "Choose this type of hypervisor if you run OpenStack in a vCenter environment."
+                conflicts:
+                  - "cluster:net_provider": "neutron"
             label: "Hypervisor type"
             weight: 30
             type: "radio"
@@ -237,6 +286,7 @@
             type: "text"
         syslog:
           metadata:
+            label: "Syslog"
             weight: 50
           syslog_transport:
             value: "tcp"
@@ -264,6 +314,7 @@
             type: "text"
         storage:
           metadata:
+            label: "Storage"
             weight: 60
           volumes_lvm:
             value: true
@@ -497,6 +548,7 @@
       editable:
         additional_components:
           metadata:
+            label: "Additional Components"
             weight: 20
           sahara:
             value: false
@@ -609,6 +661,7 @@
           metadata:
             toggleable: true
             enabled: false
+            label: "VLAN Splinters"
             weight: 40
           vswitch:
             value: "disabled"

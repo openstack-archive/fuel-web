@@ -29,3 +29,6 @@ from nailgun.objects.node import NodeCollection
 
 from nailgun.objects.task import Task
 from nailgun.objects.task import TaskCollection
+
+from nailgun.objects.notification import Notification
+from nailgun.objects.notification import NotificationCollection

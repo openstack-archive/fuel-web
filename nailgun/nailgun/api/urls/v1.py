@@ -164,7 +164,7 @@ urls = (
 
     r'/notifications/?$',
     NotificationCollectionHandler,
-    r'/notifications/(?P<notification_id>\d+)/?$',
+    r'/notifications/(?P<obj_id>\d+)/?$',
     NotificationHandler,
 
     r'/logs/?$',

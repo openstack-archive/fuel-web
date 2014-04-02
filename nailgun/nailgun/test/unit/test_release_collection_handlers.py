@@ -29,7 +29,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals([], response)
+        self.assertEquals([], response["objects"])
 
     def test_release_creation(self):
         resp = self.app.post(

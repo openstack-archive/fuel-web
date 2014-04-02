@@ -44,7 +44,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals([], response)
+        self.assertEquals([], response["objects"])
 
     def test_cluster_create(self):
         release_id = self.env.create_release(api=False).id

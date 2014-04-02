@@ -276,7 +276,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
                     kwargs={'node_id': node['id']}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
-        data = json.loads(resp.body)
+        data = json.loads(resp.body)["objects"]
         admin_nic, other_nic, empty_nic = None, None, None
         for nic in data:
             net_names = [n['name'] for n in nic['assigned_networks']]
@@ -292,7 +292,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
     def verify_bonds(self, node):
         resp = self.env.node_nics_get(node["id"])
         self.assertEqual(resp.status_code, 200)
-        data = json.loads(resp.body)
+        data = json.loads(resp.body)["objects"]
         bond = filter(lambda nic: nic["type"] == NETWORK_INTERFACE_TYPES.bond,
                       data)
         self.assertEqual(len(bond), 1)
@@ -399,7 +399,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                             headers=self.default_headers)
         self.assertEquals(200, resp.status_code)
         priv_nics = {}
-        for node in json.loads(resp.body):
+        for node in json.loads(resp.body)["objects"]:
             for net in node['network_data']:
                 if net['name'] == 'private':
                     priv_nics[node['id']] = net['dev']

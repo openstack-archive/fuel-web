@@ -295,7 +295,7 @@ Running the FuelWeb Integration Test
     cd fuel-main
     export ENV_NAME=fuelweb
     export PUBLIC_FORWARD=nat
-    export ISO_PATH=`pwd`/build/iso/fuelweb-centos-6.4-x86_64.iso
+    export ISO_PATH=`pwd`/build/iso/fuelweb-centos-6.5-x86_64.iso
     nosetests -w fuelweb_test -s fuelweb_test.integration.test_admin_node:TestAdminNode.test_cobbler_alive
 
 #. The test harness creates a snapshot of all nodes called 'empty'

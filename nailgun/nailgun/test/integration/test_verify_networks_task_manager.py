@@ -332,7 +332,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEquals(202, resp.status_code)
         data = json.loads(resp.body)
         self.assertEqual(
             data['result'],

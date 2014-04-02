@@ -21,23 +21,13 @@ from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import Text
 
+from nailgun import consts
+
 from nailgun.db.sqlalchemy.models.base import Base
 
 
 class Notification(Base):
     __tablename__ = 'notifications'
-
-    NOTIFICATION_STATUSES = (
-        'read',
-        'unread',
-    )
-
-    NOTIFICATION_TOPICS = (
-        'discover',
-        'done',
-        'error',
-        'warning',
-    )
 
     id = Column(Integer, primary_key=True)
     cluster_id = Column(
@@ -47,13 +37,13 @@ class Notification(Base):
     node_id = Column(Integer, ForeignKey('nodes.id', ondelete='SET NULL'))
     task_id = Column(Integer, ForeignKey('tasks.id', ondelete='SET NULL'))
     topic = Column(
-        Enum(*NOTIFICATION_TOPICS, name='notif_topic'),
+        Enum(*consts.NOTIFICATION_TOPICS, name='notif_topic'),
         nullable=False
     )
     message = Column(Text)
     status = Column(
-        Enum(*NOTIFICATION_STATUSES, name='notif_status'),
+        Enum(*consts.NOTIFICATION_STATUSES, name='notif_status'),
         nullable=False,
-        default='unread'
+        default=consts.NOTIFICATION_STATUSES.unread
     )
     datetime = Column(DateTime, nullable=False)

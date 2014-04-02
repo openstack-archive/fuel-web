@@ -30,9 +30,8 @@ from nailgun.db.sqlalchemy.models import Cluster
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun import notifier
 
-from nailgun.objects import Task
+from nailgun import objects
 
 
 def check_client_content_type(handler):
@@ -183,7 +182,10 @@ class BaseHandler(object):
             errors.InvalidInterfacesInfo,
             errors.InvalidMetadata
         ) as exc:
-            notifier.notify("error", exc.message)
+            objects.Notification.create({
+                "topic": "error",
+                "message": exc.message
+            })
             raise self.http(400, exc.message)
         except (
             errors.NotAllowed,
@@ -334,7 +336,7 @@ class DeferredTaskHandler(BaseHandler):
     """
 
     validator = BasicValidator
-    single = Task
+    single = objects.Task
     log_message = u"Starting deferred task on environment '{env_id}'"
     log_error = u"Error during execution of deferred task " \
                 u"on environment '{env_id}': {error}"

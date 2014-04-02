@@ -141,6 +141,7 @@
       editable:
         access:
           metadata:
+            label: "Access"
             weight: 10
           user:
             value: "admin"
@@ -174,6 +175,7 @@
             type: "password"
         common:
           metadata:
+            label: "Common"
             weight: 30
           debug:
             value: false
@@ -237,6 +239,7 @@
             type: "text"
         syslog:
           metadata:
+            label: "Syslog"
             weight: 50
           syslog_transport:
             value: "tcp"
@@ -264,6 +267,7 @@
             type: "text"
         storage:
           metadata:
+            label: "Storage"
             weight: 60
           volumes_lvm:
             value: true
@@ -497,6 +501,7 @@
       editable:
         additional_components:
           metadata:
+            label: "Additional components"
             weight: 20
           sahara:
             value: false
@@ -596,10 +601,78 @@
           metadata:
             metadata_proxy_shared_secret:
               generator: "password"
-- pk: 1
+- &vcenter_release
   extend: *full_release
   fields:
-    name: "Havana on CentOS 6.5"
+    attributes_metadata:
+      editable:
+        common:
+          libvirt_type:
+            value: "qemu"
+            values:
+              - data: "kvm"
+                label: "KVM"
+                description: "Choose this type of hypervisor if you run OpenStack on hardware"
+              - data: "qemu"
+                label: "QEMU"
+                description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
+              - data: "vcenter"
+                label: "VCENTER"
+                description: "Choose this type of hypervisor if you run OpenStack in a vCenter environment."
+        vcenter:
+          metadata:
+            label: "vCenter"
+            weight: 10
+          use_vcenter:
+            value: true
+            label: ""
+            description: ""
+            weight: 05
+            type: "hidden"
+          host_ip:
+            value: ""
+            label: "vCenter IP"
+            description: ""
+            weight: 10
+            type: "text"
+            depends:
+              - "settings:common.libvirt_type.value": "vcenter"
+            conflicts:
+              - "cluster:net_provider": "neutron"
+          vc_user:
+            value: ""
+            label: "username"
+            description: "vCenter Username"
+            weight: 30
+            type: "text"
+            depends:
+              - "settings:common.libvirt_type.value": "vcenter"
+            conflicts:
+              - "cluster:net_provider": "neutron"
+          vc_password:
+            value: ""
+            label: "password"
+            description: "vCenter Password"
+            weight: 30
+            type: "password"
+            depends:
+              - "settings:common.libvirt_type.value": "vcenter"
+            conflicts:
+              - "cluster:net_provider": "neutron"
+          cluster:
+            value: ""
+            label: "cluster"
+            description: "vCenter cluster name"
+            weight: 40
+            type: "text"
+            depends:
+              - "settings:common.libvirt_type.value": "vcenter"
+            conflicts:
+              - "cluster:net_provider": "neutron"
+- pk: 1
+  extend: *vcenter_release
+  fields:
+    name: "Havana on CentOS 6.4"
     version: "2013.2.2"
     operating_system: "CentOS"
     description: "This option will install the OpenStack Havana packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
@@ -609,6 +682,7 @@
           metadata:
             toggleable: true
             enabled: false
+            label: "VLAN Splinters"
             weight: 40
           vswitch:
             value: "disabled"
@@ -630,7 +704,7 @@
           profile:
             generator_arg: "centos-x86_64"
 - pk: 3
-  extend: *full_release
+  extend: *vcenter_release
   fields:
     name: "Havana on Ubuntu 12.04"
     version: "2013.2.2"

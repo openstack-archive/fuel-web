@@ -1,10 +1,11 @@
 <form class="form-horizontal compute-step" onsubmit="return false">
   <fieldset>
     <div class="control-group">
-      <% var hypervisors = ['kvm', 'qemu'] %>
+      <% var hypervisors = ['kvm', 'qemu', 'vcenter'] %>
       <% var descriptions = {
         kvm: $.t('dialog.create_cluster_wizard.compute.kvm_description'),
-        qemu: $.t('dialog.create_cluster_wizard.compute.qemu_description')
+        qemu: $.t('dialog.create_cluster_wizard.compute.qemu_description'),
+        vcenter: $.t('dialog.create_cluster_wizard.compute.vcenter_description')
       } %>
       <% _.each(hypervisors, function(hypervisor) { %>
         <label class="parameter-box clearfix">

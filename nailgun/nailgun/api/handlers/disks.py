@@ -38,17 +38,25 @@ class NodeDisksHandler(BaseHandler):
 
     @content_json
     def GET(self, node_id):
-        """:returns: JSONized node disks.
+        """IMPORTANT NOTE: this handler doesn't support pagination yet
+
+        :returns: JSONized node disks.
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(Node, node_id)
         node_volumes = node.attributes.volumes
-        return DisksFormatConvertor.format_disks_to_simple(node_volumes)
+        return {
+            "objects": DisksFormatConvertor.format_disks_to_simple(
+                node_volumes
+            )
+        }
 
     @content_json
     def PUT(self, node_id):
-        """:returns: JSONized node disks.
+        """IMPORTANT NOTE: this handler doesn't support pagination yet
+
+        :returns: JSONized node disks.
         :http: * 200 (OK)
                * 400 (invalid disks data specified)
                * 404 (node not found in db)
@@ -63,7 +71,10 @@ class NodeDisksHandler(BaseHandler):
                 node_id=node.id
             )
 
-        volumes_data = DisksFormatConvertor.format_disks_to_full(node, data)
+        volumes_data = DisksFormatConvertor.format_disks_to_full(
+            node,
+            data["objects"]
+        )
         # For some reasons if we update node attributes like
         #   node.attributes.volumes = volumes_data
         # after
@@ -74,8 +85,11 @@ class NodeDisksHandler(BaseHandler):
         db().flush()
         db().refresh(node)
 
-        return DisksFormatConvertor.format_disks_to_simple(
-            node.attributes.volumes)
+        return {
+            "objects": DisksFormatConvertor.format_disks_to_simple(
+                node.attributes.volumes
+            )
+        }
 
 
 class NodeDefaultsDisksHandler(BaseHandler):
@@ -84,7 +98,9 @@ class NodeDefaultsDisksHandler(BaseHandler):
 
     @content_json
     def GET(self, node_id):
-        """:returns: JSONized node disks.
+        """IMPORTANT NOTE: this handler doesn't support pagination yet
+
+        :returns: JSONized node disks.
         :http: * 200 (OK)
                * 404 (node or its attributes not found in db)
         """
@@ -95,11 +111,15 @@ class NodeDefaultsDisksHandler(BaseHandler):
         volumes = DisksFormatConvertor.format_disks_to_simple(
             node.volume_manager.gen_volumes_info())
 
-        return volumes
+        return {
+            "objects": volumes
+        }
 
 
 class NodeVolumesInformationHandler(BaseHandler):
-    """Node volumes information handler
+    """IMPORTANT NOTE: this handler doesn't support pagination yet
+
+    Node volumes information handler
     """
 
     @content_json
@@ -113,4 +133,6 @@ class NodeVolumesInformationHandler(BaseHandler):
             raise self.http(404, 'Cannot calculate volumes info. '
                                  'Please, add node to an environment.')
         volumes_info = DisksFormatConvertor.get_volumes_info(node)
-        return volumes_info
+        return {
+            "objects": volumes_info
+        }

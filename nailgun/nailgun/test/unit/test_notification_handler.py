@@ -49,7 +49,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        notif_api = json.loads(resp.body)[0]
+        notif_api = json.loads(resp.body)["objects"][0]
         self.assertIn('date', notif_api)
         self.assertNotEqual(notif_api['date'], '')
         self.assertIn('time', notif_api)

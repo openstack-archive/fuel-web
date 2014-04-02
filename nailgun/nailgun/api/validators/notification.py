@@ -13,21 +13,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
+from nailgun import objects
+
 from nailgun.api.validators.base import BasicValidator
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Notification
 from nailgun.errors import errors
 
 
 class NotificationValidator(BasicValidator):
     @classmethod
-    def validate_update(cls, data):
+    def validate_update(cls, data, instance):
 
         valid = {}
         d = cls.validate_json(data)
 
         status = d.get("status", None)
-        if status in Notification.NOTIFICATION_STATUSES:
+        if status in consts.NOTIFICATION_STATUSES:
             valid["status"] = status
         else:
             raise errors.InvalidData(
@@ -46,7 +47,6 @@ class NotificationValidator(BasicValidator):
                 log_message=True
             )
 
-        q = db().query(Notification)
         valid_d = []
         for nd in d:
             valid_nd = {}
@@ -62,7 +62,7 @@ class NotificationValidator(BasicValidator):
                     log_message=True
                 )
 
-            if not q.get(nd["id"]):
+            if not objects.Notification.get_by_uid(nd["id"]):
                 raise errors.InvalidData(
                     "Invalid ID specified",
                     log_message=True

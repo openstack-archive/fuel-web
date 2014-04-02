@@ -14,14 +14,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun import objects
+from nailgun.api.serializers.base import BasicSerializer
 
 
-def notify(topic, message, cluster_id=None, node_id=None, task_uuid=None):
-    objects.Notification.create({
-        "topic": topic,
-        "message": message,
-        "cluster_id": cluster_id,
-        "node_id": node_id,
-        "task_uuid": task_uuid
-    })
+class NotificationSerializer(BasicSerializer):
+
+    fields = (
+        "id",
+        "cluster",
+        "topic",
+        "message",
+        "status",
+        "node_id",
+        "task_id"
+    )

@@ -143,3 +143,15 @@ TASK_NAMES = Enum(
 
     'capacity_log'
 )
+
+NOTIFICATION_STATUSES = Enum(
+    'read',
+    'unread'
+)
+
+NOTIFICATION_TOPICS = Enum(
+    'discover',
+    'done',
+    'error',
+    'warning'
+)

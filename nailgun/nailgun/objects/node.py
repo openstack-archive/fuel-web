@@ -22,8 +22,6 @@ from nailgun import consts
 
 from nailgun.api.serializers.node import NodeSerializer
 
-from nailgun import notifier
-
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
@@ -33,6 +31,7 @@ from nailgun.network.manager import NetworkManager
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+from nailgun.objects import Notification
 
 
 class Node(NailgunObject):
@@ -173,7 +172,11 @@ class Node(NailgunObject):
                 str(exc) or "see logs for details"
             )
             logger.warning(traceback.format_exc())
-            notifier.notify("error", msg, node_id=instance.id)
+            Notification.create({
+                "topic": "error",
+                "message": msg,
+                "node_id": instance.id
+            })
 
         if instance.cluster_id:
             Cluster.add_pending_changes(
@@ -219,12 +222,13 @@ class Node(NailgunObject):
             hd_size = "unknown HDD"
 
         cores = str(instance.meta.get('cpu', {}).get('total', "unknown"))
-        notifier.notify(
-            "discover",
-            "New node is discovered: %s CPUs / %s / %s " %
-            (cores, ram, hd_size),
-            node_id=instance.id
-        )
+
+        Notification.create({
+            "topic": "discover",
+            "message": u"New node is discovered: "
+                       u"{0} CPUs / {1} / {2} ".format(cores, ram, hd_size),
+            "node_id": instance.id
+        })
 
     @classmethod
     def update(cls, instance, data):

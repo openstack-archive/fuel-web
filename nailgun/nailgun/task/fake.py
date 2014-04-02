@@ -26,12 +26,10 @@ from kombu import Connection
 from kombu import Exchange
 from kombu import Queue
 
-from nailgun import notifier
+from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import NodeAttributes
-from nailgun.network.manager import NetworkManager
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.settings import settings
 
@@ -365,28 +363,15 @@ class FakeDeletionThread(FakeThread):
             return
 
         for node_data in nodes_to_restore:
-            node = Node(**node_data)
-
             # Offline node just deleted from db
             # and could not recreated with status
             # discover
-            if not node.online:
+            if "online" in node_data and not node_data["online"]:
                 continue
 
-            node.status = 'discover'
-            db().add(node)
-            db().commit()
-            node.attributes = NodeAttributes(node_id=node.id)
-            node.attributes.volumes = node.volume_manager.gen_volumes_info()
-            NetworkManager.update_interfaces_info(node)
-            db().commit()
-
-            ram = round(node.meta.get('ram') or 0, 1)
-            cores = node.meta.get('cores') or 'unknown'
-            notifier.notify("discover",
-                            "New node with %s CPU core(s) "
-                            "and %s GB memory is discovered" %
-                            (cores, ram), node_id=node.id)
+            node_data["status"] = "discover"
+            objects.Node.create(node_data)
+        db().commit()
 
 
 class FakeStopDeploymentThread(FakeThread):

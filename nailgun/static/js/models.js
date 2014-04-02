@@ -112,7 +112,7 @@ define(['utils', 'deepModel'], function(utils) {
             return true;
         },
         availableModes: function() {
-            return ['multinode', 'ha_compact'];
+            return ['ha_compact', 'multinode'];
         },
         fetchRelated: function(related, options) {
             return this.get(related).fetch(_.extend({data: {cluster_id: this.id}}, options));

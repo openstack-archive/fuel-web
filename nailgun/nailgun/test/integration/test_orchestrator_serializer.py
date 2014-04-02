@@ -27,8 +27,6 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentHASerializer
-from nailgun.orchestrator.deployment_serializers \
-    import DeploymentMultinodeSerializer
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
@@ -40,7 +38,7 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
     """Class containts helpers."""
 
     def filter_by_role(self, nodes, role):
-        return filter(lambda node: node['role'] == role, nodes)
+        return filter(lambda node: role in node['role'], nodes)
 
     def filter_by_uid(self, nodes, uid):
         return filter(lambda node: node['uid'] == uid, nodes)
@@ -57,18 +55,19 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
 
     @property
     def serializer(self):
-        return DeploymentMultinodeSerializer
+        return DeploymentHASerializer
 
     def serialize(self, cluster):
         TaskHelper.prepare_for_deployment(cluster.nodes)
         return self.serializer.serialize(cluster, cluster.nodes)
 
 
+# TODO(awoodward): multinode deprecation: probably has duplicates
 class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def setUp(self):
         super(TestNovaOrchestratorSerializer, self).setUp()
-        self.cluster = self.create_env('multinode')
+        self.cluster = self.create_env('ha_compact')
 
     def create_env(self, mode, network_manager='FlatDHCPManager'):
         node_args = [
@@ -173,7 +172,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                                   node['storage_address'])
 
     def test_vlan_manager(self):
-        cluster = self.create_env('multinode')
+        cluster = self.create_env('ha_compact')
         data = {'net_manager': 'VlanManager'}
         url = reverse('NovaNetworkConfigurationHandler',
                       kwargs={'cluster_id': cluster.id})
@@ -354,11 +353,12 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
              {'point': '2', 'weight': '2'}])
 
 
+# TODO(awoodward): multinode deprecation: probably has duplicates
 class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def setUp(self):
         super(TestNeutronOrchestratorSerializer, self).setUp()
-        self.cluster = self.create_env('multinode')
+        self.cluster = self.create_env('ha_compact')
 
     def create_env(self, mode, segment_type='vlan'):
         cluster = self.env.create(
@@ -460,7 +460,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                                   node['storage_address'])
 
     def test_neutron_l3_gateway(self):
-        cluster = self.create_env('multinode', 'gre')
+        cluster = self.create_env('ha_compact', 'gre')
         test_gateway = "192.168.111.255"
         public_ng = self.db.query(NetworkGroup).filter(
             NetworkGroup.name == 'public'
@@ -480,7 +480,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         )
 
     def test_gre_segmentation(self):
-        cluster = self.create_env('multinode', 'gre')
+        cluster = self.create_env('ha_compact', 'gre')
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
@@ -503,7 +503,6 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         }
         cluster = self.env.create(
             cluster_kwargs={
-                'mode': 'multinode',
                 'net_provider': 'neutron',
                 'net_segment_type': segment_type
             },
@@ -760,7 +759,6 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
 
     def create_env(self, nodes_count=2, nic_count=3, segment_type='vlan'):
         cluster = self.env.create_cluster(
-            mode='multinode',
             net_provider='neutron',
             net_segment_type=segment_type)
         self.env.create_nodes_w_interfaces_count(

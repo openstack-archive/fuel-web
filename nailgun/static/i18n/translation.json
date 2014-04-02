@@ -51,8 +51,8 @@
                     "stopped": "Stopped"
                 },
                 "mode": {
-                    "multinode": "Multi-node",
-                    "ha_compact": "Multi-node with HA"
+                    "ha_compact": "Multi-node with HA",
+                    "multinode": "Multi-node"
                 }
             },
             "network": {
@@ -534,8 +534,8 @@
                     "removing": "移除中"
                 },
                 "mode": {
-                    "multinode": "多节点",
-                    "ha_compact": "HA多节点"
+                    "ha_compact": "HA多节点",
+                    "multinode": "多节点"
                 }
             },
             "network": {

@@ -52,7 +52,7 @@ class Cluster(Base):
     mode = Column(
         Enum(*consts.CLUSTER_MODES, name='cluster_mode'),
         nullable=False,
-        default=consts.CLUSTER_MODES.multinode
+        default=consts.CLUSTER_MODES.ha_compact
     )
     status = Column(
         Enum(*consts.CLUSTER_STATUSES, name='cluster_status'),

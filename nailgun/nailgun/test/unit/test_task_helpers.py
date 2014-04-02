@@ -27,8 +27,6 @@ class TestTaskHelpers(BaseTestCase):
 
     def create_env(self, nodes):
         cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'ha_compact'},
             nodes_kwargs=nodes)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])

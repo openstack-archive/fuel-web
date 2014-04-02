@@ -384,3 +384,32 @@ class Node(NailgunObject):
 class NodeCollection(NailgunCollection):
 
     single = Node
+
+    @classmethod
+    def update(cls, query, data):
+        nodes_updated = []
+        for nd in data["objects"]:
+            node = cls.single.get_by_mac_or_uid(
+                mac=nd.get("mac"),
+                node_uid=nd.get("id")
+            )
+            if not node:
+                can_search_by_ifaces = all([
+                    nd.get("mac"),
+                    nd.get("meta"),
+                    nd["meta"].get("interfaces")
+                ])
+                if can_search_by_ifaces:
+                    node = cls.single.search_by_interfaces(
+                        nd["meta"]["interfaces"]
+                    )
+
+            if not node:
+                raise errors.CannotFindObject(
+                    "Can't find node: {0}".format(nd)
+                )
+
+            cls.single.update(node, nd)
+            nodes_updated.append(node)
+
+        return nodes_updated

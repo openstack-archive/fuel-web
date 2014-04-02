@@ -82,6 +82,49 @@ Here's a test example which confirms the above explanations:
 
 .. image:: _images/test_docstring_structure.png
 
+Test run ordering and profiles
+------------------------------
+
+Each test set (sanity, smoke, ha and platform_tests) contains a special container in __init__.py module which is called __profile__.
+Profile makes it possible to set different rules of test run ordering, setup deployment tags, provide information on cleanup and
+test set duration.
+
+If you are willing to create a new test set, you will be obliged to create __init__.py module and place __profile__ dictionary
+in it. It is important that your profile complies with the following structure::
+
+    __profile__ = {
+        "test_runs_ordering_priority": 4,
+        "id": "platform_tests",
+        "driver": "nose",
+        "test_path": "fuel_health/tests/platform_tests",
+        "description": ("Platform services functional tests."
+                        " Duration 3 min - 60 min"),
+        "cleanup_path": "fuel_health.cleanup",
+        "deployment_tags": ['additional_components'],
+        "exclusive_testsets": []
+        }
+
+Let us observe what each of the fields means and what values are acceptable for each of them.
+
+  - test_runs_ordering_priority is a field responsible for setting the priority in which the test set will be displayed, for
+    example if you set "6" for sanity tests and "3" for smoke tests, smoke test set will be displayed first on the HealthCheck
+    tab;
+  - id is just the id of a test set;
+  - driver field is used for setting the test runner;
+  - test_path is the field representing path where test set is located starting from fuel_health directory;
+  - description is the field which contains the value to be shown on the UI as the tests duration;
+  - cleanup_path is the field that specifies path to module responsible for cleanup mechanism (if you do not specify its
+    value, cleanup will not be started after your test set);
+  - deployment_tags field is used for defining when these tests should be available depending on cluster settings;
+  - exclusive_testsets field gives you an opportunity to specify test sets that will be ran successively, for example you
+    can specify "smoke_sanity" for smoke and sanity test set profiles, then these tests will be ran not simultaneously, but
+    successively.
+
+It is necessary to specify a value for each of the attributes. The optional attribute is "deployment_tags", meaning you may
+not specify it in your profile at all. You can leave the "exclusive_testsets" empty ([]) to run your testset simultaneously
+with the other ones.
+
+
 How to execute my tests?
 ------------------------
 

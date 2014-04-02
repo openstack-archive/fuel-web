@@ -25,6 +25,7 @@ default_messages = {
     # REST errors
     "CannotDelete": "Can't delete object",
     "CannotCreate": "Can't create object",
+    "CannotFindObject": "Can't find object",
     "NotAllowed": "Action is not allowed",
     "InvalidField": "Invalid field specified for object",
 

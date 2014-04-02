@@ -350,7 +350,9 @@ class TestNovaHandlers(TestNetworkChecking):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': self.cluster.id}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': self.cluster.id}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)

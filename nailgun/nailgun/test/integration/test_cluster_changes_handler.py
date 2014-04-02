@@ -451,6 +451,19 @@ class TestHandlers(BaseIntegrationTest):
         common_attrs['last_controller'] = controller_nodes[-1]['name']
         common_attrs['storage']['pg_num'] = 128
 
+        common_attrs['test_vm_image'] = {
+            'container_format': 'bare',
+            'public': 'true',
+            'disk_format': 'qcow2',
+            'img_name': 'TestVM',
+            'img_path': '/opt/vm/cirros-x86_64-disk.img',
+            'os_name': 'cirros',
+            'glance_properties': """
+                --property murano_image_info=
+                '{"title": "Murano Demo", "type": "cirros.demo"}'
+            """,
+        }
+
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {

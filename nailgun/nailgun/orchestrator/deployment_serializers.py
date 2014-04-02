@@ -200,10 +200,11 @@ class DeploymentMultinodeSerializer(object):
         node_attrs.update(
             cls.get_net_provider_serializer(node.cluster).get_node_attrs(node))
         node_attrs.update(cls.get_image_cache_max_size(node))
+        node_attrs.update(cls.generate_test_vm_image_data(node))
         return node_attrs
 
     @classmethod
-    def get_image_cache_max_size(self, node):
+    def get_image_cache_max_size(cls, node):
         images_ceph = (node.cluster.attributes['editable']['storage']
                        ['images_ceph']['value'])
         if images_ceph:
@@ -212,6 +213,45 @@ class DeploymentMultinodeSerializer(object):
             image_cache_max_size = volume_manager.calc_glance_cache_size(
                 node.attributes.volumes)
         return {'glance': {'image_cache_max_size': image_cache_max_size}}
+
+    @classmethod
+    def generate_test_vm_image_data(cls, node):
+        # Instantiate all default values in dict.
+        image_data = {
+            'container_format': 'bare',
+            'public': 'true',
+            'disk_format': 'qcow2',
+            'img_name': 'TestVM',
+            'img_path': '',
+            'os_name': 'cirros',
+            'glance_properties': '',
+        }
+        # Generate a right path to image.
+        c_attrs = node.cluster.attributes
+        if 'ubuntu' in c_attrs['generated']['cobbler']['profile']:
+            img_dir = '/usr/share/cirros-testvm/'
+        else:
+            img_dir = '/opt/vm/'
+        image_data['img_path'] = '{0}cirros-x86_64-disk.img'.format(img_dir)
+        # Add default Glance property for Murano.
+        glance_properties = [
+            """--property murano_image_info="""
+            """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
+        ]
+
+        # Alternate VMWare specific values.
+        if c_attrs['editable']['common']['libvirt_type'] == 'vcenter':
+            image_data.update({
+                'disk_format': 'vmdk',
+                'img_path': '{0}cirros-x86_64-disk.vmdk'.format(img_dir),
+            })
+            glance_properties.append('--property vmware_disktype=sparse')
+            glance_properties.append('--property vmware_adaptertype=ide')
+            glance_properties.append('--property hypervisor_type=vmware')
+
+        image_data['glance_properties'] = ' '.join(glance_properties)
+
+        return {'test_vm_image': image_data}
 
     @classmethod
     def get_net_provider_serializer(cls, cluster):

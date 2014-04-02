@@ -18,6 +18,11 @@ define(['utils', 'deepModel'], function(utils) {
 
     var models = {};
 
+    Backbone.Collection.prototype.parse = function(response) {
+        this.meta = (response && response.meta) || {};
+        return (response && response.objects) || response;
+    };
+
     var cacheMixin = {
         fetch: function(options) {
             if (this.cacheFor && options && options.cache && this.lastSyncTime && (this.cacheFor > (new Date() - this.lastSyncTime))) {

@@ -184,10 +184,7 @@ class NodeValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, instance=None):
-        if isinstance(data, (str, unicode)):
-            d = cls.validate_json(data)
-        else:
-            d = data
+        d = super(NodeValidator, cls).validate_update(data)
 
         if "status" in d and d["status"] not in consts.NODE_STATUSES:
             raise errors.InvalidData(
@@ -237,23 +234,6 @@ class NodeValidator(BasicValidator):
 
         if 'meta' in d:
             d['meta'] = MetaValidator.validate_update(d['meta'])
-        return d
-
-    @classmethod
-    def validate_delete(cls, instance):
-        pass
-
-    @classmethod
-    def validate_collection_update(cls, data):
-        d = cls.validate_json(data)
-        if not isinstance(d, list):
-            raise errors.InvalidData(
-                "Invalid json list",
-                log_message=True
-            )
-
-        for nd in d:
-            cls.validate_update(nd)
         return d
 
 

@@ -30,7 +30,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals([], response)
+        self.assertEquals([], response["objects"])
 
     def test_notification_node_id(self):
         node = self.env.create_node(
@@ -63,10 +63,10 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
+        self.assertEquals(1, len(response["objects"]))
         self.assertEquals(
             self.env.nodes[1].id,
-            response[0]['id']
+            response["objects"][0]['id']
         )
 
     def test_node_get_with_cluster_None(self):
@@ -85,8 +85,11 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
-        self.assertEquals(self.env.nodes[0].id, response[0]['id'])
+        self.assertEquals(1, len(response["objects"]))
+        self.assertEquals(
+            self.env.nodes[0].id,
+            response["objects"][0]['id']
+        )
 
     def test_node_get_without_cluster_specification(self):
         self.env.create(
@@ -420,8 +423,11 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         # Here we are checking if node mac is successfully updated
-        self.assertEqual(node1_json["mac"], response[0]["mac"])
-        self.assertEqual(meta, response[0]["meta"])
+        self.assertEqual(
+            node1_json["mac"],
+            response["objects"][0]["mac"]
+        )
+        self.assertEqual(meta, response["objects"][0]["meta"])
 
     def test_duplicated_node_create_fails(self):
         node = self.env.create_node(api=False)
@@ -460,8 +466,8 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
-        self.assertEquals(node.id, response[0]['id'])
+        self.assertEquals(1, len(response["objects"]))
+        self.assertEquals(node.id, response["objects"][0]['id'])
         self.assertEquals(node.name, default_name)
         self.assertEquals(node.cluster, None)
         self.assertEquals(node.pending_roles, [])
@@ -477,7 +483,7 @@ class TestHandlers(BaseIntegrationTest):
 
             node = json.loads(
                 self.app.get(reverse('NodeCollectionHandler')).body
-            )[0]
+            )["objects"][0]
             self.assertEqual(node['name'],
                              'Untitled ({0})'.format(node_mac[-5:]))
 
@@ -485,7 +491,7 @@ class TestHandlers(BaseIntegrationTest):
 
         node_id = json.loads(
             self.app.get(reverse('NodeCollectionHandler')).body
-        )[0]['id']
+        )["objects"][0]['id']
 
         self.app.delete(
             reverse('NodeHandler', {'obj_id': node_id})

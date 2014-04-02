@@ -159,16 +159,6 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
 
     return {
         initialize: function() {
-            // our server doesn't support PATCH, so use PUT instead
-            var originalSync = Backbone.sync;
-            Backbone.sync = function() {
-                var args = arguments;
-                if (args[0] == 'patch') {
-                    args[0] = 'update';
-                }
-                return originalSync.apply(this, args);
-            };
-
             // add deferred-related mixins
             _.extend(Backbone.View.prototype, coccyxMixins);
 

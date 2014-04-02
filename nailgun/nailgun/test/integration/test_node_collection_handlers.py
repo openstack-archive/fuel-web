@@ -30,7 +30,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals([], response)
+        self.assertEquals([], response["objects"])
 
     def test_notification_node_id(self):
         node = self.env.create_node(
@@ -43,7 +43,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        notif_api = json.loads(resp.body)[0]
+        notif_api = json.loads(resp.body)["objects"][0]
         self.assertEqual(node['id'], notif_api['node_id'])
 
     def test_node_get_with_cluster(self):
@@ -63,10 +63,10 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
+        self.assertEquals(1, len(response["objects"]))
         self.assertEquals(
             self.env.nodes[1].id,
-            response[0]['id']
+            response["objects"][0]['id']
         )
 
     def test_node_get_with_cluster_None(self):
@@ -85,8 +85,11 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
-        self.assertEquals(self.env.nodes[0].id, response[0]['id'])
+        self.assertEquals(1, len(response["objects"]))
+        self.assertEquals(
+            self.env.nodes[0].id,
+            response["objects"][0]['id']
+        )
 
     def test_node_get_without_cluster_specification(self):
         self.env.create(
@@ -143,7 +146,9 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=False)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'mac': node.mac, 'manufacturer': 'new'}]),
+            json.dumps({
+                "objects": [{'mac': node.mac, 'manufacturer': 'new'}]
+            }),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
         resp = self.app.get(
@@ -158,7 +163,9 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'manufacturer': 'man0'}]),
+            json.dumps({
+                "objects": [{'manufacturer': 'man0'}]
+            }),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
@@ -166,8 +173,9 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'mac': None,
-                         'manufacturer': 'man1'}]),
+            json.dumps({
+                "objects": [{'mac': None, 'manufacturer': 'man1'}]
+            }),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
@@ -175,8 +183,9 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': None,
-                         'manufacturer': 'man2'}]),
+            json.dumps({
+                "objects": [{'id': None, 'manufacturer': 'man2'}]
+            }),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
@@ -184,9 +193,11 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'mac': None,
-                         'id': None,
-                         'manufacturer': 'man3'}]),
+            json.dumps({
+                "objects": [{'mac': None,
+                             'id': None,
+                             'manufacturer': 'man3'}]
+            }),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
@@ -194,9 +205,11 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node.id,
-                         'mac': None,
-                         'manufacturer': 'man4'}]),
+            json.dumps({
+                "objects": [{'id': node.id,
+                             'mac': None,
+                             'manufacturer': 'man4'}]
+            }),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
@@ -204,33 +217,41 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': None,
-                         'mac': node.mac,
-                         'manufacturer': 'man5'}]),
+            json.dumps({
+                "objects": [{'id': None,
+                             'mac': node.mac,
+                             'manufacturer': 'man5'}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node.id,
-                         'manufacturer': 'man6'}]),
+            json.dumps({
+                "objects": [{'id': node.id,
+                             'manufacturer': 'man6'}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'mac': node.mac,
-                         'manufacturer': 'man7'}]),
+            json.dumps({
+                "objects": [{'mac': node.mac,
+                             'manufacturer': 'man7'}]
+            }),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node.id,
-                         'mac': node.mac,
-                         'manufacturer': 'man8'}]),
+            json.dumps({
+                "objects": [{'id': node.id,
+                             'mac': node.mac,
+                             'manufacturer': 'man8'}]
+            }),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
 
@@ -239,8 +260,10 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': 'new_id',
-                         'mac': node.mac}]),
+            json.dumps({
+                "objects": [{'id': 'new_id',
+                             'mac': node.mac}]
+            }),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
@@ -275,10 +298,10 @@ class TestHandlers(BaseIntegrationTest):
         timestamp = node.timestamp
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([
-                {'mac': node.mac, 'status': 'discover',
-                 'manufacturer': 'old'}
-            ]),
+            json.dumps({
+                "objects": [{'mac': node.mac, 'status': 'discover',
+                             'manufacturer': 'old'}]
+            }),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
         node = self.db.query(Node).get(node.id)
@@ -413,15 +436,20 @@ class TestHandlers(BaseIntegrationTest):
         # Here we are trying to update node
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([node1_json]),
+            json.dumps({
+                "objects": [node1_json]
+            }),
             headers=self.default_headers,
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         # Here we are checking if node mac is successfully updated
-        self.assertEqual(node1_json["mac"], response[0]["mac"])
-        self.assertEqual(meta, response[0]["meta"])
+        self.assertEqual(
+            node1_json["mac"],
+            response["objects"][0]["mac"]
+        )
+        self.assertEqual(meta, response["objects"][0]["meta"])
 
     def test_duplicated_node_create_fails(self):
         node = self.env.create_node(api=False)
@@ -454,14 +482,16 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node.id,
-                         'cluster_id': None,
-                         'pending_roles': []}]),
+            json.dumps({
+                "objects": [{'id': node.id,
+                             'cluster_id': None,
+                             'pending_roles': []}]
+            }),
             headers=self.default_headers)
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
-        self.assertEquals(node.id, response[0]['id'])
+        self.assertEquals(1, len(response["objects"]))
+        self.assertEquals(node.id, response["objects"][0]['id'])
         self.assertEquals(node.name, default_name)
         self.assertEquals(node.cluster, None)
         self.assertEquals(node.pending_roles, [])
@@ -477,7 +507,7 @@ class TestHandlers(BaseIntegrationTest):
 
             node = json.loads(
                 self.app.get(reverse('NodeCollectionHandler')).body
-            )[0]
+            )["objects"][0]
             self.assertEqual(node['name'],
                              'Untitled ({0})'.format(node_mac[-5:]))
 
@@ -485,7 +515,7 @@ class TestHandlers(BaseIntegrationTest):
 
         node_id = json.loads(
             self.app.get(reverse('NodeCollectionHandler')).body
-        )[0]['id']
+        )["objects"][0]['id']
 
         self.app.delete(
             reverse('NodeHandler', {'obj_id': node_id})

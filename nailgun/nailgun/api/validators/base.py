@@ -28,7 +28,7 @@ class BasicValidator(object):
                 res = json.loads(data)
             except Exception:
                 raise errors.InvalidData(
-                    "Invalid json received",
+                    "Invalid JSON received",
                     log_message=True
                 )
         else:
@@ -41,6 +41,35 @@ class BasicValidator(object):
     @classmethod
     def validate(cls, data):
         return cls.validate_json(data)
+
+    @classmethod
+    def validate_delete(cls, instance):
+        # abstract method - allowed by default
+        pass
+
+    @classmethod
+    def validate_update(cls, data, instance=None):
+        if isinstance(data, (str, unicode)):
+            d = cls.validate_json(data)
+        else:
+            d = data
+        return d
+
+    @classmethod
+    def validate_collection_update(cls, data):
+        d = cls.validate_json(data)
+        if "objects" not in d:
+            raise errors.InvalidData(
+                "No objects specified to update",
+                log_message=True
+            )
+        if not isinstance(d["objects"], list):
+            raise errors.InvalidData(
+                "Invalid objects list",
+                log_message=True
+            )
+        map(cls.validate_update, d["objects"])
+        return d
 
     @classmethod
     def validate_schema(cls, data, schema):

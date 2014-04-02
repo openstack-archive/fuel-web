@@ -79,15 +79,30 @@ class NodeCollectionHandler(CollectionHandler):
         :returns: Collection of JSONized Node objects.
         :http: * 200 (OK)
         """
-        cluster_id = web.input(cluster_id=None).cluster_id
+        get_params = web.input(
+            limit=self.default_limit,
+            offset=0,
+            cluster_id=None
+        )
+        try:
+            limit = int(get_params.limit)
+            offset = int(get_params.offset)
+        except ValueError:
+            raise self.http(400, "Invalid request parameters")
+
         nodes = self.collection.eager(None, self.eager)
 
+        cluster_id = web.input(cluster_id=None).cluster_id
         if cluster_id == '':
             nodes = nodes.filter_by(cluster_id=None)
         elif cluster_id:
             nodes = nodes.filter_by(cluster_id=cluster_id)
 
-        return self.collection.to_json(nodes)
+        return self.collection.to_json(
+            nodes,
+            limit=limit,
+            offset=offset
+        )
 
     @content_json
     def PUT(self):

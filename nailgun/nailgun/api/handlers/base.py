@@ -280,14 +280,27 @@ class CollectionHandler(BaseHandler):
     validator = BasicValidator
     collection = None
     eager = ()
+    default_limit = 10
 
     @content_json
     def GET(self):
         """:returns: Collection of JSONized REST objects.
         :http: * 200 (OK)
         """
-        q = self.collection.eager(self.eager, None)
-        return self.collection.to_json(q)
+        get_params = web.input(
+            limit=self.default_limit,
+            offset=0
+        )
+        try:
+            limit = int(get_params.limit)
+            offset = int(get_params.offset)
+        except ValueError:
+            raise self.http(400, "Invalid request parameters")
+        return self.collection.to_json(
+            self.collection.eager(self.eager, None),
+            limit=limit,
+            offset=offset
+        )
 
     @content_json
     def POST(self):

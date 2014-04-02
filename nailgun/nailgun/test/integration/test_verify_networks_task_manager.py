@@ -385,7 +385,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                             headers=self.default_headers)
         self.assertEquals(200, resp.status_code)
         priv_nics = {}
-        for node in json.loads(resp.body):
+        for node in json.loads(resp.body)["objects"]:
             for net in node['network_data']:
                 if net['name'] == 'private':
                     priv_nics[node['id']] = net['dev']

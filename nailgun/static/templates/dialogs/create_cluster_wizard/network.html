@@ -1,6 +1,10 @@
 <% if (disabledDueToRelease && release) { %>
   <div class="alert" style="margin:0">
-      <%- $.t("dialog.create_cluster_wizard.network.alert", { releaseName: release.get('name')} ) %>
+      <%- $.t("dialog.create_cluster_wizard.network.release_alert", { releaseName: release.get('name')} ) %>
+  </div>
+<% } else if (disableDueToHypervisorType && hypervisor) { %>
+  <div class="alert" style="margin:0">
+      <%- $.t("dialog.create_cluster_wizard.network.hypervisor_alert", {hypervisor: hypervisor} ) %>
   </div>
 <% } %>
 <form class="form-horizontal" onsubmit="return false">

@@ -58,7 +58,7 @@
     if (cluster.get('nodes').nodesAfterDeploymentWithRole('controller') < size) {
       canDeploy = false;
       warning = 'controller';
-    } else if (!cluster.get('nodes').nodesAfterDeploymentWithRole('compute')) {
+    } else if (!cluster.get('nodes').nodesAfterDeploymentWithRole('compute') && cluster.get('settings').get('common').libvirt_type.value !== 'vcenter') {
       warning = 'compute';
     }
   %>

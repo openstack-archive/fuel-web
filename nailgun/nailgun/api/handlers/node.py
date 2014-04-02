@@ -79,58 +79,33 @@ class NodeCollectionHandler(CollectionHandler):
         :returns: Collection of JSONized Node objects.
         :http: * 200 (OK)
         """
-        cluster_id = web.input(cluster_id=None).cluster_id
+        get_params = web.input(
+            limit=self.default_limit,
+            offset=0,
+            cluster_id=None
+        )
+        try:
+            if get_params.limit is None:
+                limit = None
+            else:
+                limit = int(get_params.limit)
+            offset = int(get_params.offset)
+        except ValueError:
+            raise self.http(400, "Invalid request parameters")
+
         nodes = self.collection.eager(None, self.eager)
 
+        cluster_id = web.input(cluster_id=None).cluster_id
         if cluster_id == '':
             nodes = nodes.filter_by(cluster_id=None)
         elif cluster_id:
             nodes = nodes.filter_by(cluster_id=cluster_id)
 
-        return self.collection.to_json(nodes)
-
-    @content_json
-    def PUT(self):
-        """:returns: Collection of JSONized Node objects.
-        :http: * 200 (nodes are successfully updated)
-               * 400 (invalid nodes data specified)
-        """
-        data = self.checked_data(
-            self.validator.validate_collection_update
+        return self.collection.to_json(
+            nodes,
+            limit=limit,
+            offset=offset
         )
-
-        nodes_updated = []
-        for nd in data:
-            node = self.collection.single.get_by_mac_or_uid(
-                mac=nd.get("mac"),
-                node_uid=nd.get("id")
-            )
-            if not node:
-                can_search_by_ifaces = all([
-                    nd.get("mac"),
-                    nd.get("meta"),
-                    nd["meta"].get("interfaces")
-                ])
-                if can_search_by_ifaces:
-                    node = self.collection.single.search_by_interfaces(
-                        nd["meta"]["interfaces"]
-                    )
-
-            if not node:
-                raise self.http(
-                    404,
-                    "Can't find node: {0}".format(nd)
-                )
-
-            self.collection.single.update(node, nd)
-            nodes_updated.append(node.id)
-
-        # we need eagerload everything that is used in render
-        nodes = self.collection.get_by_id_list(
-            self.collection.eager(None, self.eager),
-            nodes_updated
-        )
-        return self.collection.to_json(nodes)
 
 
 class NodeAgentHandler(BaseHandler):
@@ -147,8 +122,8 @@ class NodeAgentHandler(BaseHandler):
         """
         nd = self.checked_data(
             self.validator.validate_collection_update,
-            data=u'[{0}]'.format(web.data())
-        )[0]
+            data=u'{{ "objects": [{0}] }}'.format(web.data())
+        )["objects"][0]
 
         q = db().query(Node)
         if nd.get("mac"):

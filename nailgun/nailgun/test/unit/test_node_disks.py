@@ -93,7 +93,9 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         def update_node_roles(roles):
             resp = self.app.put(
                 reverse('NodeCollectionHandler'),
-                json.dumps([{'id': node_db.id, 'pending_roles': roles}]),
+                json.dumps({
+                    "objects": [{'id': node_db.id, 'pending_roles': roles}]
+                }),
                 headers=self.default_headers)
             self.assertEquals(200, resp.status_code)
 

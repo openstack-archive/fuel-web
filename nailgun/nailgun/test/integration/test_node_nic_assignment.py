@@ -132,7 +132,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -173,7 +175,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -210,7 +214,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -251,7 +257,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -288,7 +296,9 @@ class TestNodeHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': cluster['id']}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -317,7 +327,9 @@ class TestNodeHandlers(BaseIntegrationTest):
                                     cluster_id=cluster['id'])
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': None}]),
+            json.dumps({
+                "objects": [{'id': node['id'], 'cluster_id': None}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -451,8 +463,9 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node_db.id,
-                         'cluster_id': None}]),
+            json.dumps({
+                "objects": [{'id': node_db.id, 'cluster_id': None}]
+            }),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)

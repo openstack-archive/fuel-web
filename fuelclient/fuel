@@ -99,7 +99,7 @@ class NodeAction(argparse.Action):
             if input_macs:
                 nodes_mac_to_id_map = dict(
                     (n["mac"], n["id"])
-                    for n in json_api_get_request("nodes/")
+                    for n in json_api_get_request("nodes/")["objects"]
                 )
                 for short_mac in input_macs:
                     target_node = None
@@ -139,7 +139,7 @@ def handle_exceptions(exc):
     elif isinstance(exc, urllib2.URLError):
         print_error("Can't connect to Nailgun server!")
     else:
-        raise exc
+        raise
 
 
 def exceptions_decorator(func):
@@ -397,7 +397,7 @@ def release(params):
                 .format(params.rel)
             )]
         else:
-            data = json_api_get_request("releases/")
+            data = json_api_get_request("releases/")["objects"]
         print_to_output(
             data,
             format_table(
@@ -440,7 +440,7 @@ def environment(params):
             "nodes": [],
             "tasks": [],
             "name": params.name,
-            "release": int(params.rel)
+            "release_id": int(params.rel)
         }
         if params.net.lower() == "nova":
             data["net_provider"] = "nova_network"
@@ -508,7 +508,7 @@ def environment(params):
     else:
         acceptable_keys = ["id", "status", "name", "mode",
                            "release_id", "changes"]
-        data = json_api_get_request("clusters/")
+        data = json_api_get_request("clusters/")["objects"]
         if params.env:
             data = filter(
                 lambda x: x[u"id"] == int(params.env),
@@ -550,7 +550,7 @@ def node(params):
                     n["id"] for n in
                     json_api_get_request(
                         "nodes/?cluster_id={0}".format(params.env)
-                    )
+                    )["objects"]
                 ]
                 if not node_ids:
                     print_error(
@@ -632,7 +632,7 @@ def node(params):
     else:
         acceptable_keys = ["id", "status", "name", "cluster", "ip",
                            "mac", "roles", "pending_roles", "online"]
-        data = json_api_get_request("nodes/")
+        data = json_api_get_request("nodes/")["objects"]
         if params.env:
             data = filter(
                 lambda x: x[u"cluster"] == int(params.env),
@@ -845,7 +845,7 @@ def task(params):
     else:
         acceptable_keys = ["id", "status", "name",
                            "cluster", "progress", "uuid"]
-        tasks = json_api_get_request("tasks/")
+        tasks = json_api_get_request("tasks/")["objects"]
         if params.tid:
             task_ids = map(int, chain(*params.tid))
             tasks = [t for t in tasks if t["id"] in task_ids]
@@ -953,7 +953,7 @@ class DeployProgressFactory:
         self.progress = task_response["progress"]
         self.nodes = json_api_get_request(
             "nodes?cluster_id={0}".format(self.env)
-        )
+        )["objects"]
         self.nodes.sort(key=lambda n: n.get("id"))
         for _node in self.nodes:
             _node["norm_progress"] = _node["progress"] / 100.0

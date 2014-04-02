@@ -29,7 +29,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals([], response)
+        self.assertEquals([], response["objects"])
 
     def test_not_empty(self):
         c = self.env.create_cluster(api=False)
@@ -41,13 +41,13 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(len(response), 2)
-        if response[0]['id'] == n0.id:
-            rn0 = response[0]
-            rn1 = response[1]
+        self.assertEquals(len(response["objects"]), 2)
+        if response["objects"][0]['id'] == n0.id:
+            rn0 = response["objects"][0]
+            rn1 = response["objects"][1]
         else:
-            rn0 = response[1]
-            rn1 = response[0]
+            rn0 = response["objects"][1]
+            rn1 = response["objects"][0]
         self.assertEquals(rn1['cluster'], n1.cluster_id)
         self.assertIsNone(rn0.get('cluster', None))
 
@@ -72,13 +72,13 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(len(response), 2)
-        if response[0]['id'] == n0.id:
-            rn0 = response[0]
-            rn1 = response[1]
+        self.assertEquals(len(response["objects"]), 2)
+        if response["objects"][0]['id'] == n0.id:
+            rn0 = response["objects"][0]
+            rn1 = response["objects"][1]
         else:
-            rn0 = response[1]
-            rn1 = response[0]
+            rn0 = response["objects"][1]
+            rn1 = response["objects"][0]
         self.assertEquals(rn1['cluster'], n1.cluster_id)
         self.assertEquals(rn1['status'], 'read')
         self.assertIsNone(rn0.get('cluster', None))

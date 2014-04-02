@@ -37,9 +37,10 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             'click .btn-load-defaults:not([disabled])': 'loadDefaults'
         },
         calculateButtonsState: function() {
-            this.$('.btn-revert-changes').attr('disabled', !this.hasChanges());
-            this.$('.btn-apply-changes').attr('disabled', !this.hasChanges() || this.settings.validationError);
-            this.$('.btn-load-defaults').attr('disabled', false);
+            var hasChanges = this.hasChanges();
+            this.$('.btn-revert-changes').attr('disabled', !hasChanges);
+            this.$('.btn-apply-changes').attr('disabled', !hasChanges || this.settings.validationError);
+            this.$('.btn-load-defaults').attr('disabled', this.isLocked());
         },
         disableControls: function() {
             this.$('.btn, input, select').attr('disabled', true);
@@ -68,10 +69,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         loadDefaults: function() {
             this.disableControls();
-            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'}).always(_.bind(function() {
-                this.render();
-                this.calculateButtonsState();
-            }, this));
+            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'}).always(_.bind(this.render, this));
         },
         updateInitialSettings: function() {
             this.initialSettings.set(this.settings.attributes);
@@ -90,59 +88,96 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             var bindings = {};
             _.each(this.settings.attributes, function(group, groupName) {
                 if (this.settings.get(groupName + '.metadata.toggleable')) {
-                    bindings['input[name="' + groupName + '.enabled' + '"]'] = groupName + '.metadata.enabled';
+                    bindings['input[name="' + groupName + '.enabled' + '"]'] = {
+                        observe: groupName + '.metadata.enabled',
+                        attributes: [{name: 'disabled', onGet: _.bind(this.isLocked, this)}]
+                    };
                 }
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
-                    bindings['input[name="' + groupName + '.' + settingName + '"]'] = {
-                        observe: groupName + '.' + settingName + '.value',
-                        attributes: [{name: 'disabled', observe: groupName + '.' + settingName + '.disabled'}]
+                    var settingPath = groupName + '.' + settingName;
+                    bindings['input[name="' + settingPath + '"]'] = {
+                        observe: settingPath + '.value',
+                        attributes: [{
+                            name: 'disabled',
+                            observe: [groupName + '.metadata.enabled', settingPath + '.disabled'],
+                            onGet: _.bind(function(value) {
+                                var isSettingGroupDisabled = !(_.isUndefined(value[0]) || value[0]);
+                                return this.isLocked() || isSettingGroupDisabled || value[1];
+                            }, this)
+                        }]
                     };
+                    _.each(setting.values, function(option, index) {
+                        bindings['input[name="' + settingPath + '"][value="' + option.data + '"]'] = {
+                            attributes: [{
+                                name: 'disabled',
+                                observe: [groupName + '.metadata.enabled', settingPath + '.disabled', settingPath + '.values'],
+                                onGet: _.bind(function(value) {
+                                    var isSettingGroupDisabled = !(_.isUndefined(value[0]) || value[0]);
+                                    return this.isLocked() || isSettingGroupDisabled || value[1] || value[2][index].disabled;
+                                }, this)
+                            }]
+                        };
+                    }, this);
                 }, this);
             }, this);
             this.stickit(this.settings, bindings);
         },
-        checkDependentSettings: function(settingPath, composeListeners, callback) {
-            var hasActiveDependentSetting = false;
+        handleCondition: function(groupName, settingName, callback, condition, isDisabled, isConflict) {
+            var path = _.keys(condition)[0];
+            var isEqual = utils.parseModelPath(path, this.configModels).get() == condition[path];
+            isDisabled = isDisabled || isConflict ? isEqual : !isEqual;
+            if (this.composeListeners) {
+                utils.parseModelPath(path, this.configModels).change(callback);
+            }
+            return isDisabled;
+        },
+        checkDependentSettings: function(settingPath, callback) {
+            var disabled = false;
             _.each(this.settings.attributes, function(group, groupName) {
                 _.each(group, function(setting, settingName) {
-                    var isDependent = _.filter(setting.depends, function(dependency) {return !_.isUndefined(dependency['settings:' + settingPath + '.value']); }).length;
-                    if (isDependent) {
-                        hasActiveDependentSetting = hasActiveDependentSetting || setting.value;
-                        if (composeListeners) {
-                            this.settings.on('change:' + groupName + '.' + settingName + '.value', callback);
-                        }
+                    // setting is disabled if it's dependent setting is chosen
+                    var isActiveDependentSetting = false;
+                    var isDependentSetting = !!_.filter(setting.depends, function(dep) {return dep['settings:' + settingPath + '.value'];}).length;
+                    isActiveDependentSetting = isActiveDependentSetting || (setting.value === true && isDependentSetting);
+                    _.each(setting.values, function(option) {
+                        var isDependentOption = !!_.filter(option.depends, function(dep) {return dep['settings:' + settingPath + '.value'];}).length;
+                        isDependentSetting = isDependentSetting || isDependentOption;
+                        isActiveDependentSetting = isActiveDependentSetting || (setting.value == option.data && isDependentOption);
+                    });
+                    if (isDependentSetting && this.composeListeners) {
+                        this.settings.on('change:' + groupName + '.' + settingName + '.value', callback);
                     }
+                    disabled = disabled || isActiveDependentSetting;
                 }, this);
             }, this);
-            return hasActiveDependentSetting;
+            return disabled;
         },
-        calculateSettingDisabledState: function(groupName, settingName, composeListeners) {
+        calculateSettingDisabledState: function(groupName, settingName) {
             var settingPath = groupName + '.' + settingName;
-            var disable = false;
-            var callback = _.bind(this.calculateSettingDisabledState, this, groupName, settingName, false);
+            var isSettingDisabled = false;
+            var callback = _.bind(this.calculateSettingDisabledState, this, groupName, settingName);
+            var handleCondition = _.bind(this.handleCondition, this, groupName, settingName, callback);
             _.each(this.settings.get(settingPath + '.depends'), function(dependency) {
-                var path = _.keys(dependency)[0];
-                disable = disable || utils.parseModelPath(path, this.configModels).get() != dependency[path];
-                if (composeListeners) {
-                    utils.parseModelPath(path, this.configModels).change(callback);
-                }
-            }, this);
-            disable = disable || this.checkDependentSettings(settingPath, composeListeners, callback);
+                isSettingDisabled = handleCondition(dependency, isSettingDisabled, false);
+            });
+            isSettingDisabled = isSettingDisabled || this.checkDependentSettings(settingPath, callback);
             _.each(this.settings.get(settingPath + '.conflicts'), function(conflict) {
-                var path = _.keys(conflict)[0];
-                disable = disable || utils.parseModelPath(path, this.configModels).get() == conflict[path];
-                if (composeListeners) {
-                    utils.parseModelPath(path, this.configModels).change(callback);
-                }
+                isSettingDisabled = handleCondition(conflict, isSettingDisabled, true);
+            });
+            this.settings.set(settingPath + '.disabled', isSettingDisabled);
+            _.each(this.settings.get(settingPath + '.values'), function(value, index) {
+                var isOptionDisabled = false;
+                _.each(value.depends, function(dependency) {
+                    isOptionDisabled = handleCondition(dependency, isOptionDisabled, false);
+                });
+                _.each(value.conflicts, function(conflict) {
+                    isOptionDisabled = handleCondition(conflict, isOptionDisabled, true);
+                });
+                var settingValues = _.cloneDeep(this.settings.get(settingPath + '.values'));
+                settingValues[index].disabled = isOptionDisabled;
+                this.settings.set(settingPath + '.values', settingValues);
             }, this);
-            if (this.settings.get(groupName + '.metadata.toggleable')) {
-                disable = disable || !this.settings.get(groupName + '.metadata.enabled');
-                if (composeListeners) {
-                    this.settings.on('change:' + groupName + '.metadata.enabled', callback);
-                }
-            }
-            this.settings.set(settingPath + '.disabled', disable);
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -166,6 +201,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 }, this);
                 this.composeBindings();
                 this.settings.isValid();
+                this.calculateButtonsState();
             }
             return this;
         },
@@ -191,11 +227,13 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.configModels = {settings: this.settings, cluster: this.model, default: this.settings};
             (this.loading = this.settings.fetch({cache: true})).done(_.bind(function() {
                 this.updateInitialSettings();
+                this.composeListeners = true;
                 _.each(this.settings.attributes, function(group, groupName) {
                     _.each(group, function(setting, settingName) {
-                        this.calculateSettingDisabledState(groupName, settingName, true);
+                        this.calculateSettingDisabledState(groupName, settingName);
                     }, this);
                 }, this);
+                this.composeListeners = false;
                 this.settings.on('change', this.onSettingChange, this);
             }, this));
             if (this.loading.state() == 'pending') {

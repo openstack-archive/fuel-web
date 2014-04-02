@@ -199,6 +199,8 @@
               - data: "qemu"
                 label: "QEMU"
                 description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
+                depends:
+                  - "settings:common.auto_assign_floating_ip.value": true
             label: "Hypervisor type"
             weight: 30
             type: "radio"

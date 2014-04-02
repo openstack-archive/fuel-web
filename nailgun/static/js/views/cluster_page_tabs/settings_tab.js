@@ -39,7 +39,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         calculateButtonsState: function() {
             this.$('.btn-revert-changes').attr('disabled', !this.hasChanges());
             this.$('.btn-apply-changes').attr('disabled', !this.hasChanges() || this.settings.validationError);
-            this.$('.btn-load-defaults').attr('disabled', false);
+            this.$('.btn-load-defaults').attr('disabled', this.isLocked());
         },
         disableControls: function() {
             this.$('.btn, input, select').attr('disabled', true);
@@ -68,10 +68,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         loadDefaults: function() {
             this.disableControls();
-            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'}).always(_.bind(function() {
-                this.render();
-                this.calculateButtonsState();
-            }, this));
+            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'}).always(_.bind(this.render, this));
         },
         updateInitialSettings: function() {
             this.initialSettings.set(this.settings.attributes);
@@ -90,14 +87,40 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             var bindings = {};
             _.each(this.settings.attributes, function(group, groupName) {
                 if (this.settings.get(groupName + '.metadata.toggleable')) {
-                    bindings['input[name="' + groupName + '.enabled' + '"]'] = groupName + '.metadata.enabled';
+                    bindings['input[name="' + groupName + '.enabled' + '"]'] = {
+                        observe: groupName + '.metadata.enabled',
+                        attributes: [{
+                            name: 'disabled',
+                            onGet: _.bind(function(value) {
+                                return this.isLocked();
+                            }, this)
+                        }]
+                    };
                 }
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
-                    bindings['input[name="' + groupName + '.' + settingName + '"]'] = {
-                        observe: groupName + '.' + settingName + '.value',
-                        attributes: [{name: 'disabled', observe: groupName + '.' + settingName + '.disabled'}]
+                    var settingPath = groupName + '.' + settingName;
+                    bindings['input[name="' + settingPath + '"]'] = {
+                        observe: settingPath + '.value',
+                        attributes: [{
+                            name: 'disabled',
+                            observe: settingPath + '.disabled',
+                            onGet: _.bind(function(value) {
+                                return this.isLocked() || value;
+                            }, this)
+                        }]
                     };
+                    _.each(setting.values, function(option) {
+                        bindings['input[name="' + settingPath + '"][value="' + option.data + '"]'] = {
+                            attributes: [{
+                                name: 'disabled',
+                                observe: [settingPath + '.disabled', settingPath + '.disabledValues'],
+                                onGet: _.bind(function(value) {
+                                    return this.isLocked() || value[0] || _.contains(value[1], option.data);
+                                }, this)
+                            }]
+                        };
+                    }, this);
                 }, this);
             }, this);
             this.stickit(this.settings, bindings);
@@ -119,30 +142,50 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         calculateSettingDisabledState: function(groupName, settingName, composeListeners) {
             var settingPath = groupName + '.' + settingName;
-            var disable = false;
+            var disabled = false;
             var callback = _.bind(this.calculateSettingDisabledState, this, groupName, settingName, false);
+            // handle setting dependencies
             _.each(this.settings.get(settingPath + '.depends'), function(dependency) {
                 var path = _.keys(dependency)[0];
-                disable = disable || utils.parseModelPath(path, this.configModels).get() != dependency[path];
+                disabled = disabled || utils.parseModelPath(path, this.configModels).get() != dependency[path];
                 if (composeListeners) {
                     utils.parseModelPath(path, this.configModels).change(callback);
                 }
             }, this);
-            disable = disable || this.checkDependentSettings(settingPath, composeListeners, callback);
+            // handle setting values dependencies
+            if (this.settings.get(settingPath + '.values')) {
+                var disabledValues = [];
+                _.each(this.settings.get(settingPath + '.values'), function(value) {
+                    _.each(value.depends, function(dependency) {
+                        var path = _.keys(dependency)[0];
+                        if (utils.parseModelPath(path, this.configModels).get() != dependency[path]) {
+                            disabledValues.push(value.data);
+                        }
+                        if (composeListeners) {
+                            utils.parseModelPath(path, this.configModels).change(callback);
+                        }
+                    }, this);
+                }, this);
+                this.settings.set(settingPath + '.disabledValues', disabledValues);
+            }
+            // check dependent settings
+            disabled = disabled || this.checkDependentSettings(settingPath, composeListeners, callback);
+            // handle setting conflicts
             _.each(this.settings.get(settingPath + '.conflicts'), function(conflict) {
                 var path = _.keys(conflict)[0];
-                disable = disable || utils.parseModelPath(path, this.configModels).get() == conflict[path];
+                disabled = disabled || utils.parseModelPath(path, this.configModels).get() == conflict[path];
                 if (composeListeners) {
                     utils.parseModelPath(path, this.configModels).change(callback);
                 }
             }, this);
+            // handle toggleable setting group
             if (this.settings.get(groupName + '.metadata.toggleable')) {
-                disable = disable || !this.settings.get(groupName + '.metadata.enabled');
+                disabled = disabled || !this.settings.get(groupName + '.metadata.enabled');
                 if (composeListeners) {
                     this.settings.on('change:' + groupName + '.metadata.enabled', callback);
                 }
             }
-            this.settings.set(settingPath + '.disabled', disable);
+            this.settings.set(settingPath + '.disabled', disabled);
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -166,6 +209,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 }, this);
                 this.composeBindings();
                 this.settings.isValid();
+                this.calculateButtonsState();
             }
             return this;
         },

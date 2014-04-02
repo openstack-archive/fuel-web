@@ -315,7 +315,7 @@ define(['utils', 'deepModel'], function(utils) {
             var result = this.constructor.__super__.toJSON.call(this, options);
             _.each(result, function(group, groupName) {
                 _.each(group, function(setting, settingName) {
-                    group[settingName] = _.omit(setting, 'disabled');
+                    group[settingName] = _.omit(setting, 'disabled', 'disabledValues');
                 }, this);
             }, this);
             return {editable: result};

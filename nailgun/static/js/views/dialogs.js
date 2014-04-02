@@ -383,12 +383,22 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
     clusterWizardPanes.ClusterComputePane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.compute.title',
         template: _.template(clusterComputePaneTemplate),
+        events: {
+            'change input[name=hypervisor]': 'onHypervisorChange'
+        },
         beforeSettingsSaving: function(settings) {
             try {
-                settings.attributes.common.libvirt_type.value = this.$('input[name=hypervisor]:checked').val();
+                settings.attributes.common.libvirt_type.value = this.hypervisor;
             } catch (e) {
                 return $.Deferred().reject();
             }
+            return $.Deferred().resolve();
+        },
+        onHypervisorChange: function() {
+            this.hypervisor = this.$('input[name=hypervisor]:checked').val();
+        },
+        processPaneData: function() {
+            _.invoke(this.dependentPanes(), 'render');
             return $.Deferred().resolve();
         },
         render: function() {
@@ -400,8 +410,8 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterNetworkPane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.network.title',
-        deps: [clusterWizardPanes.ClusterNameAndReleasePane],
         template: _.template(clusterNetworkPaneTemplate),
+        deps: [clusterWizardPanes.ClusterNameAndReleasePane, clusterWizardPanes.ClusterComputePane],
         events: {
             'change input[name=manager]': 'onManagerChange'
         },
@@ -432,11 +442,12 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             var disabledDueToRelease = !release || release.get('operating_system') == 'RHEL'; // no Neutron for RHOS for now
+            var disableDueToHypervisorType = this.wizard.findPane(clusterWizardPanes.ClusterComputePane).hypervisor == 'vcenter'; // no Neutron for vCenter
             this.$el.html(this.template({
                 disabledDueToRelease: disabledDueToRelease,
                 release: release
             })).i18n();
-            if (disabledDueToRelease) {
+            if (disabledDueToRelease || disableDueToHypervisorType) {
                 this.$('input[value^=neutron]').prop('disabled', true);
             }
             this.$('input[name=manager]:first').prop('checked', true);

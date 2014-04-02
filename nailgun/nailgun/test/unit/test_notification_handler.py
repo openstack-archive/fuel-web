@@ -27,7 +27,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse(
                 'NotificationHandler',
-                kwargs={'notification_id': notification.id}
+                kwargs={'obj_id': notification.id}
             ),
             headers=self.default_headers
         )
@@ -61,7 +61,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse(
                 'NotificationHandler',
-                kwargs={'notification_id': notification.id}
+                kwargs={'obj_id': notification.id}
             ),
             headers=self.default_headers
         )
@@ -82,7 +82,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse(
                 'NotificationHandler',
-                kwargs={'notification_id': notification.id}
+                kwargs={'obj_id': notification.id}
             ),
             json.dumps(notification_update),
             headers=self.default_headers
@@ -98,7 +98,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse(
                 'NotificationHandler',
-                kwargs={'notification_id': notification.id + 1}
+                kwargs={'obj_id': notification.id + 1}
             ),
             headers=self.default_headers,
             expect_errors=True

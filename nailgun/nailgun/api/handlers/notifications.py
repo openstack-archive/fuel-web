@@ -19,85 +19,28 @@ Handlers dealing with notifications
 """
 import web
 
-from nailgun.api.handlers.base import BaseHandler
+from nailgun.api.handlers.base import CollectionHandler
+from nailgun.api.handlers.base import SingleHandler
+
+from nailgun import objects
+
 from nailgun.api.handlers.base import content_json
 from nailgun.api.validators.notification import NotificationValidator
 from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Notification
-from nailgun.settings import settings
 
 
-class NotificationHandler(BaseHandler):
+class NotificationHandler(SingleHandler):
     """Notification single handler
     """
 
-    fields = (
-        "id",
-        "cluster",
-        "topic",
-        "message",
-        "status",
-        "node_id",
-        "task_id"
-    )
-    model = Notification
+    single = objects.Notification
     validator = NotificationValidator
 
-    @classmethod
-    def render(cls, instance, fields=None):
-        json_data = BaseHandler.render(instance, fields=cls.fields)
-        json_data["time"] = ":".join([
-            instance.datetime.strftime("%H"),
-            instance.datetime.strftime("%M"),
-            instance.datetime.strftime("%S")
-        ])
-        json_data["date"] = "-".join([
-            instance.datetime.strftime("%d"),
-            instance.datetime.strftime("%m"),
-            instance.datetime.strftime("%Y")
-        ])
-        return json_data
 
-    @content_json
-    def GET(self, notification_id):
-        """:returns: JSONized Notification object.
-        :http: * 200 (OK)
-               * 404 (notification not found in db)
-        """
-        notification = self.get_object_or_404(Notification, notification_id)
-        return self.render(notification)
+class NotificationCollectionHandler(CollectionHandler):
 
-    @content_json
-    def PUT(self, notification_id):
-        """:returns: JSONized Notification object.
-        :http: * 200 (OK)
-               * 400 (invalid notification data specified)
-               * 404 (notification not found in db)
-        """
-        notification = self.get_object_or_404(Notification, notification_id)
-        data = self.validator.validate_update(web.data())
-        for key, value in data.iteritems():
-            setattr(notification, key, value)
-        db().add(notification)
-        return self.render(notification)
-
-
-class NotificationCollectionHandler(BaseHandler):
-
+    collection = objects.NotificationCollection
     validator = NotificationValidator
-
-    @content_json
-    def GET(self):
-        """:returns: Collection of JSONized Notification objects.
-        :http: * 200 (OK)
-        """
-        limit = web.input(limit=settings.MAX_ITEMS_PER_PAGE).limit
-        query = db().query(Notification).limit(limit)
-        notifications = query.all()
-        return map(
-            NotificationHandler.render,
-            notifications
-        )
 
     @content_json
     def PUT(self):
@@ -106,15 +49,11 @@ class NotificationCollectionHandler(BaseHandler):
                * 400 (invalid data specified for collection update)
         """
         data = self.validator.validate_collection_update(web.data())
-        q = db().query(Notification)
+
         notifications_updated = []
         for nd in data:
-            notification = q.get(nd["id"])
-            for key, value in nd.iteritems():
-                setattr(notification, key, value)
-            notifications_updated.append(notification)
-            db().add(notification)
-        return map(
-            NotificationHandler.render,
-            notifications_updated
-        )
+            notif = self.collection.single.get_by_uid(nd["id"])
+            notif.update(nd)
+            notifications_updated.append(notif)
+            db().add(notif)
+        return self.collection.to_json(notifications_updated)

@@ -17,7 +17,8 @@
 
 from nailgun.api.serializers.task import TaskSerializer
 
-from nailgun.db.sqlalchemy.models import Task as DBTask
+from nailgun.db import db
+from nailgun.db.sqlalchemy import models
 
 from nailgun import consts
 
@@ -28,7 +29,7 @@ from nailgun.objects import NailgunObject
 
 class Task(NailgunObject):
 
-    model = DBTask
+    model = models.Task
     serializer = TaskSerializer
 
     schema = {
@@ -68,6 +69,11 @@ class Task(NailgunObject):
             "cluster_id": instance.cluster_id,
             "parent_id": instance.id
         })
+
+    @classmethod
+    def get_by_uuid(cls, uuid):
+        # maybe consider using uuid as pk?
+        return db().query(cls.model).filter_by(uuid=uuid).first()
 
 
 class TaskCollection(NailgunCollection):

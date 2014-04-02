@@ -1,7 +1,8 @@
 <% var disabled = locked ? 'disabled' : '' %>
 <% var ns = "cluster_page.settings_tab." + groupName + "." %>
+<% var groupMetadata = settings.metadata || {} %>
 
-<% if (settings.metadata && settings.metadata.toggleable) { %>
+<% if (groupMetadata.toggleable) { %>
   <legend class="openstack-settings">
     <label class="toggleable">
       <div class="tumbler">
@@ -12,13 +13,11 @@
           </div>
         </div>
       </div>
-      <%- $.t(ns + 'group_name', {defaultValue: groupName.replace('_', ' ')}) %>
+      <%- $.t(ns + 'label', {defaultValue: groupMetadata.label || groupName}) %>
     </label>
   </legend>
 <% } else { %>
-  <legend class="openstack-settings">
-    <%- $.t(ns + 'group_name', {defaultValue: groupName.replace('_', ' ')}) %>
-  </legend>
+  <legend class="openstack-settings"><%- $.t(ns + 'label', {defaultValue: groupMetadata.label || groupName}) %></legend>
 <% } %>
 <div class="settings-group" data-settings-group="<%- groupName %>">
   <% var sortedSettings = _.sortBy(_.keys(settings), function(setting) {return settings[setting].weight;}); %>

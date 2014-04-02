@@ -19,7 +19,6 @@
 from nailgun import objects
 
 from nailgun.logger import logger
-from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 
@@ -103,7 +102,7 @@ class ProvisioningSerializer(object):
     def serialize_interfaces(cls, node):
         interfaces = {}
         interfaces_extra = {}
-        net_manager = NetworkManager
+        net_manager = objects.Node.get_network_manager(node)
         admin_ip = net_manager.get_admin_ip_for_node(node)
         admin_netmask = net_manager.get_admin_network_group().netmask
 

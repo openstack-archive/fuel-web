@@ -27,11 +27,11 @@ from kombu import Exchange
 from kombu import Queue
 
 from nailgun import notifier
+from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
-from nailgun.network.manager import NetworkManager
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.settings import settings
 
@@ -378,7 +378,9 @@ class FakeDeletionThread(FakeThread):
             db().commit()
             node.attributes = NodeAttributes(node_id=node.id)
             node.attributes.volumes = node.volume_manager.gen_volumes_info()
-            NetworkManager.update_interfaces_info(node)
+            objects.Node.get_network_manager(
+                node
+            ).update_interfaces_info(node)
             db().commit()
 
             ram = round(node.meta.get('ram') or 0, 1)

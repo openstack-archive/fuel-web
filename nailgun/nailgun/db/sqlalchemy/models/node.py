@@ -130,6 +130,7 @@ class Node(Base):
 
     @property
     def network_data(self):
+        # TODO(enchantner): move to object
         from nailgun.network.manager import NetworkManager
         return NetworkManager.get_node_networks(self.id)
 
@@ -211,6 +212,7 @@ class Node(Base):
 
         :raises: errors.CanNotFindInterface
         """
+        # TODO(enchantner): move to object
         from nailgun.network.manager import NetworkManager
 
         admin_ng = NetworkManager.get_admin_network_group()

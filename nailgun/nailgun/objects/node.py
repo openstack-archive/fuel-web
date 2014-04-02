@@ -28,7 +28,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.network.manager import NetworkManager
 
 from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
@@ -154,7 +153,9 @@ class Node(NailgunObject):
 
     @classmethod
     def update_interfaces(cls, instance):
-        NetworkManager.update_interfaces_info(instance)
+        Cluster.get_network_manager(
+            instance.cluster
+        ).update_interfaces_info(instance)
 
     @classmethod
     def update_volumes(cls, instance):
@@ -351,8 +352,17 @@ class Node(NailgunObject):
     def add_into_cluster(cls, instance, cluster_id):
         instance.cluster_id = cluster_id
         db().flush()
-        network_manager = instance.cluster.network_manager
+        db().refresh(instance)
+        network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
+
+    @classmethod
+    def get_network_manager(cls, instance=None):
+        if not instance.cluster:
+            from nailgun.network.manager import NetworkManager
+            return NetworkManager
+        else:
+            return Cluster.get_network_manager(instance.cluster)
 
     @classmethod
     def remove_from_cluster(cls, instance):
@@ -360,20 +370,23 @@ class Node(NailgunObject):
             instance.cluster,
             node_id=instance.id
         )
+        Cluster.get_network_manager(
+            instance.cluster
+        ).clear_assigned_networks(instance)
         instance.cluster_id = None
         instance.roles = instance.pending_roles = []
         instance.reset_name_to_default()
         db().flush()
         db().refresh(instance)
-        NetworkManager.clear_assigned_networks(instance)
 
     @classmethod
     def to_dict(cls, instance, fields=None):
         node_dict = super(Node, cls).to_dict(instance, fields=fields)
-        ips_mapped = NetworkManager.get_grouped_ips_by_node()
-        networks_grouped = NetworkManager.get_networks_grouped_by_cluster()
+        net_manager = Cluster.get_network_manager(instance.cluster)
+        ips_mapped = net_manager.get_grouped_ips_by_node()
+        networks_grouped = net_manager.get_networks_grouped_by_cluster()
 
-        node_dict['network_data'] = NetworkManager.get_node_networks_optimized(
+        node_dict['network_data'] = net_manager.get_node_networks_optimized(
             instance,
             ips_mapped.get(instance.id, []),
             networks_grouped.get(instance.cluster_id, [])

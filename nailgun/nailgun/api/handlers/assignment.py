@@ -30,7 +30,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun import objects
 
 from nailgun.logger import logger
-from nailgun.network.manager import NetworkManager
 from nailgun import notifier
 
 
@@ -65,7 +64,7 @@ class NodeAssignmentHandler(BaseHandler):
                     node_id=node.id
                 )
 
-                network_manager = node.cluster.network_manager
+                network_manager = objects.Node.get_network_manager(node)
                 network_manager.assign_networks_by_default(node)
             except Exception as exc:
                 logger.warning(traceback.format_exc())
@@ -105,6 +104,8 @@ class NodeUnassignmentHandler(BaseHandler):
                 node.pending_roles = []
                 node.cluster_id = None
                 node.pending_addition = False
-                NetworkManager.clear_assigned_networks(node)
+                objects.Node.get_network_manager(
+                    node
+                ).clear_assigned_networks(node)
             else:
                 node.pending_deletion = True

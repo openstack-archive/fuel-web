@@ -20,12 +20,13 @@ from itertools import product
 
 import netaddr
 
+from nailgun import objects
+
 from nailgun.api.serializers.network_configuration \
     import NetworkConfigurationSerializer
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.network.manager import NetworkManager
 from nailgun.task.helpers import TaskHelper
 
 
@@ -37,7 +38,7 @@ class NetworkCheck(object):
         self.cluster = task.cluster
         self.task = task
         self.data = data
-        self.net_man = self.cluster.network_manager
+        self.net_man = objects.Cluster.get_network_manager(self.cluster)
         self.net_provider = self.cluster.net_provider
         admin_ng = self.net_man.get_admin_network_group()
         fields = NetworkGroup.__mapper__.columns.keys() + ['meta']
@@ -177,7 +178,9 @@ class NetworkCheck(object):
         ng = [ng for ng in self.networks
               if ng['name'] == 'public'][0]
         pub_gw = netaddr.IPAddress(ng['gateway'])
-        pub_cidr = NetworkManager.calc_cidr_from_gw_mask(ng)
+        pub_cidr = objects.Cluster.get_network_manager(
+            self.cluster
+        ).calc_cidr_from_gw_mask(ng)
         if not pub_cidr:
             self.err_msgs.append(
                 u"Invalid gateway or netmask for public network")
@@ -379,7 +382,9 @@ class NetworkCheck(object):
         """
         # calculate and check public CIDR
         public = filter(lambda ng: ng['name'] == 'public', self.networks)[0]
-        public_cidr = NetworkManager.calc_cidr_from_gw_mask(public)
+        public_cidr = objects.Cluster.get_network_manager(
+            self.cluster
+        ).calc_cidr_from_gw_mask(public)
         if not public_cidr:
             self.err_msgs.append(
                 u"Invalid gateway or netmask for public network")

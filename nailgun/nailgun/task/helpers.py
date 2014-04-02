@@ -27,7 +27,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.network.manager import NetworkManager
 from nailgun.settings import settings
 
 
@@ -61,7 +60,10 @@ class TaskHelper(object):
         bak = os.path.join(prefix, "%s.bak" % str(node.fqdn))
         new = os.path.join(prefix, str(node.fqdn))
 
-        admin_net_id = NetworkManager.get_admin_network_group_id()
+        admin_net_id = objects.Node.get_network_manager(
+            node
+        ).get_admin_network_group_id()
+
         links = map(
             lambda i: os.path.join(prefix, i.ip_addr),
             db().query(IPAddr.ip_addr).
@@ -466,7 +468,9 @@ class TaskHelper(object):
         """
         cls.update_slave_nodes_fqdn(nodes)
         for node in nodes:
-            NetworkManager.assign_admin_ips(node.id)
+            objects.Node.get_network_manager(
+                node
+            ).assign_admin_ips(node.id)
 
     @classmethod
     def prepare_for_deployment(cls, nodes):
@@ -476,7 +480,9 @@ class TaskHelper(object):
         cls.update_slave_nodes_fqdn(nodes)
 
         nodes_ids = [n.id for n in nodes]
-        netmanager = NetworkManager
+
+        # TODO(enchantner): check network manager instance for each node
+        netmanager = objects.Cluster.get_network_manager()
         if nodes_ids:
             netmanager.assign_ips(nodes_ids, 'management')
             netmanager.assign_ips(nodes_ids, 'public')

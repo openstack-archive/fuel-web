@@ -37,9 +37,10 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             'click .btn-load-defaults:not([disabled])': 'loadDefaults'
         },
         calculateButtonsState: function() {
-            this.$('.btn-revert-changes').attr('disabled', !this.hasChanges());
-            this.$('.btn-apply-changes').attr('disabled', !this.hasChanges() || this.settings.validationError);
-            this.$('.btn-load-defaults').attr('disabled', false);
+            var hasChanges = this.hasChanges();
+            this.$('.btn-revert-changes').attr('disabled', !hasChanges);
+            this.$('.btn-apply-changes').attr('disabled', !hasChanges || this.settings.validationError);
+            this.$('.btn-load-defaults').attr('disabled', this.isLocked());
         },
         disableControls: function() {
             this.$('.btn, input, select').attr('disabled', true);
@@ -68,10 +69,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         loadDefaults: function() {
             this.disableControls();
-            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'}).always(_.bind(function() {
-                this.render();
-                this.calculateButtonsState();
-            }, this));
+            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'}).always(_.bind(this.render, this));
         },
         updateInitialSettings: function() {
             this.initialSettings.set(this.settings.attributes);
@@ -90,59 +88,116 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             var bindings = {};
             _.each(this.settings.attributes, function(group, groupName) {
                 if (this.settings.get(groupName + '.metadata.toggleable')) {
-                    bindings['input[name="' + groupName + '.enabled' + '"]'] = groupName + '.metadata.enabled';
+                    bindings['input[name="' + groupName + '.enabled' + '"]'] = {
+                        observe: groupName + '.metadata.enabled',
+                        attributes: [{name: 'disabled', onGet: _.bind(this.isLocked, this)}]
+                    };
                 }
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
-                    bindings['input[name="' + groupName + '.' + settingName + '"]'] = {
-                        observe: groupName + '.' + settingName + '.value',
-                        attributes: [{name: 'disabled', observe: groupName + '.' + settingName + '.disabled'}]
+                    var settingPath = groupName + '.' + settingName;
+                    bindings['input[name="' + settingPath + '"]'] = {
+                        observe: settingPath + '.value',
+                        attributes: [{
+                            name: 'disabled',
+                            observe: [groupName + '.metadata.enabled', settingPath + '.disabled'],
+                            onGet: _.bind(function(value) {
+                                var isSettingGroupActive = value[0];
+                                var isSettingDisabled = value[1];
+                                return this.isLocked() || isSettingGroupActive === false || isSettingDisabled;
+                            }, this)
+                        }]
                     };
+                    _.each(setting.values, function(option, index) {
+                        bindings['input[name="' + settingPath + '"][value="' + option.data + '"]'] = {
+                            attributes: [{
+                                name: 'disabled',
+                                observe: [groupName + '.metadata.enabled', settingPath + '.disabled', settingPath + '.values'],
+                                onGet: _.bind(function(value) {
+                                    var isSettingGroupActive = value[0];
+                                    var isSettingDisabled = value[1];
+                                    var settingValues = value[2];
+                                    return this.isLocked() || isSettingGroupActive === false || isSettingDisabled || settingValues[index].disabled;
+                                }, this)
+                            }]
+                        };
+                    }, this);
                 }, this);
             }, this);
             this.stickit(this.settings, bindings);
         },
-        checkDependentSettings: function(settingPath, composeListeners, callback) {
-            var hasActiveDependentSetting = false;
+        checkDependentSettings: function(settingPath, callback, composeListeners) {
+            var disabled = false;
             _.each(this.settings.attributes, function(group, groupName) {
                 _.each(group, function(setting, settingName) {
-                    var isDependent = _.filter(setting.depends, function(dependency) {return !_.isUndefined(dependency['settings:' + settingPath + '.value']); }).length;
-                    if (isDependent) {
-                        hasActiveDependentSetting = hasActiveDependentSetting || setting.value;
-                        if (composeListeners) {
-                            this.settings.on('change:' + groupName + '.' + settingName + '.value', callback);
-                        }
+                    // setting is disabled if it's dependent setting is chosen
+                    var isActiveDependentSetting = false;
+                    var isDependentSetting = !!_.filter(setting.depends, function(dep) {return dep['settings:' + settingPath + '.value'];}).length;
+                    isActiveDependentSetting = isActiveDependentSetting || (setting.value === true && isDependentSetting);
+                    _.each(setting.values, function(option) {
+                        var isDependentOption = !!_.filter(option.depends, function(dep) {return dep['settings:' + settingPath + '.value'];}).length;
+                        isDependentSetting = isDependentSetting || isDependentOption;
+                        isActiveDependentSetting = isActiveDependentSetting || (setting.value == option.data && isDependentOption);
+                    });
+                    if (isDependentSetting && composeListeners) {
+                        this.settings.on('change:' + groupName + '.' + settingName + '.value', callback);
                     }
+                    disabled = disabled || isActiveDependentSetting;
                 }, this);
             }, this);
-            return hasActiveDependentSetting;
+            return disabled;
         },
         calculateSettingDisabledState: function(groupName, settingName, composeListeners) {
             var settingPath = groupName + '.' + settingName;
-            var disable = false;
+            var isSettingDisabled = false;
             var callback = _.bind(this.calculateSettingDisabledState, this, groupName, settingName, false);
+            var handleCondition = _.bind(function(condition, isDisabled, isConflict) {
+                var path = _.keys(condition)[0];
+                var isEqual = utils.parseModelPath(path, this.configModels).get() == condition[path];
+                isDisabled = isDisabled || isConflict ? isEqual : !isEqual;
+                if (composeListeners) {
+                    utils.parseModelPath(path, this.configModels).change(callback);
+                }
+                return isDisabled;
+            }, this);
             _.each(this.settings.get(settingPath + '.depends'), function(dependency) {
-                var path = _.keys(dependency)[0];
-                disable = disable || utils.parseModelPath(path, this.configModels).get() != dependency[path];
-                if (composeListeners) {
-                    utils.parseModelPath(path, this.configModels).change(callback);
+                if (!isSettingDisabled) {
+                    isSettingDisabled = handleCondition(dependency, isSettingDisabled, false);
+                } else {
+                    return false;
                 }
-            }, this);
-            disable = disable || this.checkDependentSettings(settingPath, composeListeners, callback);
-            _.each(this.settings.get(settingPath + '.conflicts'), function(conflict) {
-                var path = _.keys(conflict)[0];
-                disable = disable || utils.parseModelPath(path, this.configModels).get() == conflict[path];
-                if (composeListeners) {
-                    utils.parseModelPath(path, this.configModels).change(callback);
-                }
-            }, this);
-            if (this.settings.get(groupName + '.metadata.toggleable')) {
-                disable = disable || !this.settings.get(groupName + '.metadata.enabled');
-                if (composeListeners) {
-                    this.settings.on('change:' + groupName + '.metadata.enabled', callback);
-                }
+            });
+            if (!isSettingDisabled) {
+                isSettingDisabled = this.checkDependentSettings(settingPath, callback, composeListeners);
             }
-            this.settings.set(settingPath + '.disabled', disable);
+            _.each(this.settings.get(settingPath + '.conflicts'), function(conflict) {
+                if (!isSettingDisabled) {
+                    isSettingDisabled = handleCondition(conflict, isSettingDisabled, true);
+                } else {
+                    return false;
+                }
+            });
+            this.settings.set(settingPath + '.disabled', isSettingDisabled);
+            _.each(this.settings.get(settingPath + '.values'), function(value, index) {
+                var isOptionDisabled = false;
+                _.each(value.depends, function(dependency) {
+                    if (!isOptionDisabled) {
+                        isOptionDisabled = handleCondition(dependency, isOptionDisabled, false);
+                    } else {
+                        return false;
+                    }
+                });
+                _.each(value.conflicts, function(conflict) {
+                    if (!isOptionDisabled) {
+                        isOptionDisabled = handleCondition(conflict, isOptionDisabled, true);
+                    } else {
+                        return false;
+                    }
+                });
+                var settingValues = _.cloneDeep(this.settings.get(settingPath + '.values'));
+                settingValues[index].disabled = isOptionDisabled;
+                this.settings.set(settingPath + '.values', settingValues);
+            }, this);
         },
         render: function() {
             this.tearDownRegisteredSubViews();
@@ -166,6 +221,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 }, this);
                 this.composeBindings();
                 this.settings.isValid();
+                this.calculateButtonsState();
             }
             return this;
         },

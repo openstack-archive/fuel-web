@@ -240,11 +240,13 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         self.env.set_interfaces_in_meta(meta1, [
             {"name": "eth0", "mac": "00:00:00:00:00:66"},
             {"name": "eth1", "mac": "00:00:00:00:00:77"},
-            {"name": "eth2", "mac": "00:00:00:00:00:88"}])
+            {"name": "eth2", "mac": "00:00:00:00:00:88"}]
+        )
         self.env.set_interfaces_in_meta(meta2, [
-            {"name": "eth0", "mac": "00:00:00:00:11:66"},
-            {"name": "eth1", "mac": "00:00:00:00:22:77"},
-            {"name": "eth2", "mac": "00:00:00:00:33:88"}])
+            {"name": "eth0", "mac": "00:00:00:00:11:66", "current_speed": 100},
+            {"name": "eth1", "mac": "00:00:00:00:22:77", "current_speed": 100},
+            {"name": "eth2", "mac": "00:00:00:00:33:88", "current_speed": 100}]
+        )
         self.env.create(
             cluster_kwargs={
                 'net_provider': 'neutron',
@@ -262,7 +264,10 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
 
         for node in self.env.nodes:
             data, admin_nic, other_nic, empty_nic = self.verify_nics(node)
-            self.nics_bond_create(node, data, admin_nic, other_nic, empty_nic)
+            self.env.make_bond_via_api("ovs-bond0",
+                                       OVS_BOND_MODES.balance_slb,
+                                       [other_nic["name"], empty_nic["name"]],
+                                       node["id"])
             self.verify_bonds(node)
 
     def verify_nics(self, node):
@@ -293,21 +298,6 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         self.assertEqual(len(bond), 1)
         self.assertEqual(bond[0]["name"], "ovs-bond0")
 
-    def nics_bond_create(self, node, data, admin_nic, other_nic, empty_nic):
-        data.append({
-            "name": "ovs-bond0",
-            "type": NETWORK_INTERFACE_TYPES.bond,
-            "mode": OVS_BOND_MODES.balance_slb,
-            "slaves": [
-                {"name": other_nic["name"]},
-                {"name": empty_nic["name"]},
-            ],
-            "assigned_networks": other_nic["assigned_networks"]
-        })
-        other_nic["assigned_networks"] = []
-        resp = self.env.node_nics_put(node['id'], data)
-        self.assertEqual(resp.status_code, 200)
-
     @property
     def expected_args(self):
         expected_networks = [{u'vlans': [0, 101, 102], u'iface': u'eth0'},
@@ -324,6 +314,31 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
         task = self.env.launch_verify_networks()
         self.assertEqual(task.cache['args']['nodes'], self.expected_args)
         self.env.wait_ready(task, 30)
+
+    @fake_tasks()
+    def test_network_verification_neutron_with_bonds_warn(self):
+        resp = self.app.get(
+            reverse(
+                'NeutronNetworkConfigurationHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}
+            ),
+            headers=self.default_headers
+        )
+        resp = self.app.put(
+            reverse(
+                'NeutronNetworkConfigurationVerifyHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}),
+            resp.body,
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEquals(200, resp.status_code)
+        data = json.loads(resp.body)
+        self.assertEqual(
+            data['result'],
+            {u'warning': [u"Node '{0}': interface 'ovs-bond0' slave NICs have "
+                          u"different or unrecognized speeds".format(
+                              self.env.nodes[0].name)]})
 
 
 class TestVerifyNeutronVlan(BaseIntegrationTest):

@@ -633,6 +633,22 @@ class NetworkCheck(object):
                                                 "errors": ["ip_ranges"]})
         self.expose_error_messages()
 
+    def check_bond_slaves_speeds(self):
+        """check bond slaves speeds are equal
+        """
+        for node in self.cluster.nodes:
+            for bond in node.bond_interfaces:
+                slaves_speed = set()
+                for slave in bond.slaves:
+                    speed = slave.current_speed
+                    slaves_speed.add(speed)
+                if len(slaves_speed) != 1 or slaves_speed.pop() is None:
+                    warn_msg = u"Node '{0}': interface '{1}' slave NICs " \
+                        u"have different or unrecognized speeds". \
+                        format(node.name, bond.name)
+                    logger.warn(warn_msg)
+                    self.err_msgs.append(warn_msg)
+
     def check_configuration(self):
         """check network configuration parameters
         """
@@ -657,3 +673,5 @@ class NetworkCheck(object):
         else:
             self.check_untagged_intersection()
             self.check_public_floating_assignment()
+        self.check_bond_slaves_speeds()
+        return self.err_msgs

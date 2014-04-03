@@ -14,6 +14,7 @@
  * under the License.
  **/
 module.exports = function(grunt) {
+    var staticDir = grunt.option('static-dir') || '/tmp/static_compressed';
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         requirejs: {
@@ -21,7 +22,7 @@ module.exports = function(grunt) {
                 options: {
                     baseUrl: '.',
                     appDir: 'static',
-                    dir: grunt.option('static-dir') || '/tmp/static_compressed',
+                    dir: staticDir,
                     mainConfigFile: 'static/js/main.js',
                     waitSeconds: 60,
                     optimize: 'uglify2',
@@ -84,15 +85,48 @@ module.exports = function(grunt) {
                     }
                 }
             }
+        },
+        clean: {
+            trim: {
+                expand: true,
+                cwd: staticDir,
+                src: [
+                    '**/*.js',
+                    '!js/main.js',
+                    '!js/libs/bower/requirejs/js/require.js',
+                    '**/*.css',
+                    '**/*.less',
+                    '!css/styles.css',
+                    'templates',
+                    'i18n'
+                ]
+            },
+            options: {
+                force: true
+            }
+        },
+        cleanempty: {
+            trim: {
+                expand: true,
+                cwd: staticDir,
+                src: ['**']
+            },
+            options: {
+                files: false,
+                force: true
+            }
         }
     });
 
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-less');
+    grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-cleanempty');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
     grunt.loadNpmTasks('grunt-debug-task');
-    grunt.registerTask('build', ['bower', 'less', 'requirejs']);
+    grunt.registerTask('trimstatic', ['clean', 'cleanempty']);
+    grunt.registerTask('build', ['bower', 'less', 'requirejs', 'trimstatic']);
     grunt.registerTask('default', ['build']);
     grunt.task.loadTasks('grunt');
 };

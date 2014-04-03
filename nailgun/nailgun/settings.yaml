@@ -146,11 +146,6 @@ LOGS:
     <<: *local_log_type
     <<: *python_log_format
     path: "/var/log/ostf.log"
-  - id: puppet
-    name: "Releases"
-    <<: *local_log_type
-    <<: *remote_syslog_log_format
-    path: "/var/log/puppet/agent.log"
 # Fake target logs.
   - id: 'fake-target-mcollective'
     name: "mcollective"
@@ -380,8 +375,6 @@ DNS_SEARCH: "example.com"
 
 FAKE_TASKS_TICK_INTERVAL: "1"
 FAKE_TASKS_TICK_COUNT: "30"
-
-RHEL_VALIDATION_TIMEOUT: 10
 
 MAX_ITEMS_PER_PAGE: 500
 

@@ -27,7 +27,6 @@ define(
     'text!templates/dialogs/create_cluster_wizard/storage.html',
     'text!templates/dialogs/create_cluster_wizard/additional.html',
     'text!templates/dialogs/create_cluster_wizard/ready.html',
-    'text!templates/dialogs/rhel_license.html',
     'text!templates/dialogs/discard_changes.html',
     'text!templates/dialogs/display_changes.html',
     'text!templates/dialogs/remove_cluster.html',
@@ -38,7 +37,7 @@ define(
     'text!templates/dialogs/dismiss_settings.html',
     'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
 
     var views = {};
@@ -85,15 +84,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             return this;
         }
     });
-
-    var rhelCredentialsMixin = {
-        renderRhelCredentialsForm: function(options) {
-            var commonViews = require('views/common'); // avoid circular dependencies
-            this.rhelCredentialsForm = new commonViews.RhelCredentialsForm(_.extend({dialog: this}, options));
-            this.registerSubView(this.rhelCredentialsForm);
-            this.$('.credentials').html('').append(this.rhelCredentialsForm.render().el).i18n();
-        }
-    };
 
     var clusterWizardPanes = {};
 
@@ -251,7 +241,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         }
     });
 
-    clusterWizardPanes.ClusterNameAndReleasePane = views.WizardPane.extend(_.extend({
+    clusterWizardPanes.ClusterNameAndReleasePane = views.WizardPane.extend({
         title:'dialog.create_cluster_wizard.name_release.title',
         template: _.template(clusterNameAndReleasePaneTemplate),
         events: {
@@ -260,14 +250,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         processPaneData: function() {
             var success = this.createCluster();
-            if (success && this.rhelCredentialsFormVisible()) {
-                success = this.rhelCredentialsForm.setCredentials();
-                if (success) {
-                    this.rhelCredentialsForm.saveCredentials();
-                    this.rhelCredentialsForm.visible = false;
-                    this.redHatAccount.absent = false;
-                    this.updateReleaseParameters();
-                }
+            if (success) {
+                this.updateReleaseParameters();
+
             }
             if (success && (!this.previousRelease || this.previousRelease.id != this.release.id)) {
                 this.previousRelease = this.release;
@@ -309,8 +294,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 var releaseId = parseInt(this.$('select[name=release]').val(), 10);
                 this.release = this.releases.get(releaseId);
                 this.$('.release-description').text(this.release.get('description'));
-                this.$('.rhel-license').toggle(this.rhelCredentialsFormVisible());
-                this.rhelCredentialsForm.render();
             }
         },
         renderReleases: function(e) {
@@ -321,36 +304,19 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             });
             this.updateReleaseParameters();
         },
-        rhelCredentialsFormVisible: function() {
-            return this.redHatAccount.absent && this.release.get('state') == 'not_available';
-        },
         initialize: function(options) {
             _.defaults(this, options);
             this.releases = new models.Releases();
             this.releases.fetch();
             this.releases.on('sync', this.renderReleases, this);
-            this.redHatAccount = new models.RedHatAccount();
-            this.redHatAccount.absent = false;
-            this.redHatAccount.deferred = this.redHatAccount.fetch();
-            this.redHatAccount.deferred
-                .fail(_.bind(function(response) {
-                    if (response.status == 404) {
-                        this.redHatAccount.absent = true;
-                    }
-                }, this))
-                .always(_.bind(this.render, this));
-        },
+                    },
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template()).i18n();
             this.renderReleases();
-            this.renderRhelCredentialsForm({
-                redHatAccount: this.redHatAccount,
-                visible: _.bind(this.rhelCredentialsFormVisible, this)
-            });
             return this;
         }
-    }, rhelCredentialsMixin));
+    });
 
     clusterWizardPanes.ClusterModePane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.mode.title',
@@ -431,7 +397,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            var disabledDueToRelease = !release || release.get('operating_system') == 'RHEL'; // no Neutron for RHOS for now
+            var disabledDueToRelease = !release;
             this.$el.html(this.template({
                 disabledDueToRelease: disabledDueToRelease,
                 release: release
@@ -501,7 +467,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            var disabledDueToRelease = !release || release.get('operating_system') == 'RHEL'; // no Sahara & Murano for RHOS for now
+            var disabledDueToRelease = !release;
             var networkMode = this.wizard.findPane(clusterWizardPanes.ClusterNetworkPane).manager;
             var disabledDueToNetworkMode = networkMode == 'nova-network'; // no Murano for Nova Network
             this.$el.html(this.template({
@@ -532,48 +498,6 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         clusterWizardPanes.ClusterAdditionalServicesPane,
         clusterWizardPanes.ClusterReadyPane
     ];
-
-    views.RhelCredentialsDialog = views.Dialog.extend(_.extend({
-        template: _.template(rhelCredentialsDialogTemplate),
-        events: {
-            'click .btn-os-download': 'submitForm',
-            'keydown input': 'onInputKeydown'
-        },
-        submitForm: function() {
-            if (this.rhelCredentialsForm.setCredentials()) {
-                this.$('.btn-os-download').attr('disabled', true);
-                var task = this.rhelCredentialsForm.saveCredentials();
-                if (task.deferred) {
-                    task.deferred
-                        .done(_.bind(function(response) {
-                            this.release.fetch();
-                            app.page.update();
-                            this.$el.modal('hide');
-                        }, this))
-                        .fail(_.bind(this.displayError, this));
-                } else {
-                    this.$el.modal('hide');
-                }
-            }
-        },
-        onInputKeydown: function(e) {
-            if (e.which == 13) {
-                this.submitForm();
-            }
-        },
-        initialize: function(options) {
-            _.defaults(this, options);
-            this.redHatAccount = new models.RedHatAccount();
-            this.redHatAccount.deferred = this.redHatAccount.fetch();
-            this.redHatAccount.deferred.always(_.bind(this.render, this));
-        },
-        render: function() {
-            this.tearDownRegisteredSubViews();
-            this.constructor.__super__.render.call(this);
-            this.renderRhelCredentialsForm({redHatAccount: this.redHatAccount});
-            return this;
-        }
-    }, rhelCredentialsMixin));
 
     views.DiscardChangesDialog = views.Dialog.extend({
         template: _.template(discardChangesDialogTemplate),

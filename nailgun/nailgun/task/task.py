@@ -30,8 +30,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import RedHatAccount
-from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.network.checker import NetworkCheck
@@ -545,83 +543,6 @@ class CheckBeforeDeploymentTask(object):
             'for the current environment.'
 
 
-# Red Hat related tasks
-
-class RedHatTask(object):
-
-    @classmethod
-    def message(cls, task, data):
-        raise NotImplementedError()
-
-    @classmethod
-    def execute(cls, task, data):
-        logger.debug(
-            "%s(uuid=%s) is running" %
-            (cls.__name__, task.uuid)
-        )
-        message = cls.message(task, data)
-        task.cache = message
-        task.result = {'release_info': data}
-        db().add(task)
-        db().commit()
-        rpc.cast('naily', message)
-
-
-class RedHatDownloadReleaseTask(RedHatTask):
-
-    @classmethod
-    def message(cls, task, data):
-        # TODO(NAME): fix this ugly code
-        cls.__update_release_state(
-            data["release_id"]
-        )
-        return {
-            'method': 'download_release',
-            'respond_to': 'download_release_resp',
-            'args': {
-                'task_uuid': task.uuid,
-                'release_info': data
-            }
-        }
-
-    @classmethod
-    def __update_release_state(cls, release_id):
-        release = db().query(Release).get(release_id)
-        release.state = 'downloading'
-        db().commit()
-
-
-class RedHatCheckCredentialsTask(RedHatTask):
-
-    @classmethod
-    def message(cls, task, data):
-        return {
-            "method": "check_redhat_credentials",
-            "respond_to": "check_redhat_credentials_resp",
-            "args": {
-                "task_uuid": task.uuid,
-                "release_info": data
-            }
-        }
-
-
-class RedHatCheckLicensesTask(RedHatTask):
-
-    @classmethod
-    def message(cls, task, data, nodes=None):
-        msg = {
-            'method': 'check_redhat_licenses',
-            'respond_to': 'redhat_check_licenses_resp',
-            'args': {
-                'task_uuid': task.uuid,
-                'release_info': data
-            }
-        }
-        if nodes:
-            msg['args']['nodes'] = nodes
-        return msg
-
-
 class DumpTask(object):
     @classmethod
     def conf(cls):
@@ -635,18 +556,6 @@ class DumpTask(object):
         logger.debug("Dump slave nodes: %s",
                      ", ".join(dump_conf['dump_roles']['slave']))
 
-        """
-        here we try to filter out sensitive data from logs
-        """
-        rh_accounts = db().query(RedHatAccount).all()
-        for num, obj in enumerate(dump_conf['dump_objects']['master']):
-            if obj['type'] == 'subs' and obj['path'] == '/var/log/remote':
-                for fieldname in ("username", "password"):
-                    for fieldvalue in [getattr(acc, fieldname)
-                                       for acc in rh_accounts]:
-                        obj['subs'][fieldvalue] = ('substituted_{0}'
-                                                   ''.format(fieldname))
-        logger.debug("Dump conf: %s", str(dump_conf))
         return dump_conf
 
     @classmethod

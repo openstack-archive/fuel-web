@@ -69,8 +69,6 @@ from nailgun.api.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.handlers.orchestrator import ProvisionSelectedNodes
 
-from nailgun.api.handlers.redhat import RedHatAccountHandler
-from nailgun.api.handlers.redhat import RedHatSetupHandler
 from nailgun.api.handlers.registration import FuelKeyHandler
 from nailgun.api.handlers.release import ReleaseCollectionHandler
 from nailgun.api.handlers.release import ReleaseHandler
@@ -181,11 +179,6 @@ urls = (
 
     r'/version/?$',
     VersionHandler,
-
-    r'/redhat/account/?$',
-    RedHatAccountHandler,
-    r'/redhat/setup/?$',
-    RedHatSetupHandler,
 
     r'/capacity/?$',
     CapacityLogHandler,

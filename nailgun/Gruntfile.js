@@ -92,7 +92,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
     grunt.loadNpmTasks('grunt-debug-task');
-    grunt.registerTask('build', ['bower', 'less', 'requirejs']);
+    grunt.registerTask('build', ['bower', 'less', 'requirejs', 'trim-compressed-static']);
     grunt.registerTask('default', ['build']);
     grunt.task.loadTasks('grunt');
 };

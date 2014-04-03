@@ -29,13 +29,11 @@ casper.then(function() {
     this.test.assertSelectorAppears('.modal form select[name=release] option', 'Release select box updates with releases');
     this.then(function() {
         this.evaluate(function() {
-            $('form.create-cluster-form select[name=release]').val(2).trigger('change');
+            $('form.create-cluster-form select[name=release]').val(1).trigger('change');
         });
-        this.test.assertSelectorAppears('form.rhel-license', 'RHEL credentials form appears after selecting RHOS');
     });
     this.then(function() {
         this.fill('form.create-cluster-form', {name: name});
-        this.fill('form.rhel-license', {username: 'rheltest', password: 'password'});
         for (var i = 0; i < 6; i++) {
             this.click('.next-pane-btn');
         }

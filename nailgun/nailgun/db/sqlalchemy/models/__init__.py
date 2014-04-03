@@ -45,4 +45,3 @@ from nailgun.db.sqlalchemy.models.notification import Notification
 from nailgun.db.sqlalchemy.models.task import Task
 
 from nailgun.db.sqlalchemy.models.redhat import RedHatAccount
-

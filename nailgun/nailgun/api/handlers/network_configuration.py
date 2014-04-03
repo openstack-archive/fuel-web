@@ -37,10 +37,10 @@ from nailgun.api.validators.network \
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 
+from nailgun import objects
+
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.network.neutron import NeutronManager
-from nailgun.network.nova_network import NovaNetworkManager
 from nailgun.objects import Task
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import CheckNetworksTaskManager
@@ -115,7 +115,9 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                         json.dumps(data)
                     )
 
-                NovaNetworkManager.update(cluster, data)
+                objects.Cluster.get_network_manager(
+                    cluster
+                ).update(cluster, data)
             except Exception as exc:
                 TaskHelper.set_error(task.uuid, exc)
                 logger.error(traceback.format_exc())
@@ -176,7 +178,9 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                         cluster_id=cluster_id
                     )
 
-                NeutronManager.update(cluster, data)
+                objects.Cluster.get_network_manager(
+                    cluster
+                ).update(cluster, data)
             except Exception as exc:
                 TaskHelper.set_error(task.uuid, exc)
                 logger.error(traceback.format_exc())
@@ -216,7 +220,9 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
 
         vlan_ids = [{
                     'name': n['name'],
-                    'vlans': cluster.network_manager.generate_vlan_ids_list(
+                    'vlans': objects.Cluster.get_network_manager(
+                        cluster
+                    ).generate_vlan_ids_list(
                         data, cluster, n)
                     } for n in data['networks']]
 

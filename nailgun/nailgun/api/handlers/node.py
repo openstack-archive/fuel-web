@@ -40,7 +40,6 @@ from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 
 from nailgun.logger import logger
-from nailgun.network.manager import NetworkManager
 from nailgun import notifier
 
 
@@ -232,7 +231,9 @@ class NodeAgentHandler(BaseHandler):
 
             db().flush()
 
-        NetworkManager.update_interfaces_info(node)
+        objects.Node.get_network_manager(
+            node
+        ).update_interfaces_info(node)
 
         return {"id": node.id}
 
@@ -264,7 +265,7 @@ class NodeNICsHandler(BaseHandler):
             self.validator.validate_structure_and_data, node_id=node_id)
         node_data = {'id': node_id, 'interfaces': interfaces_data}
 
-        NetworkManager._update_attrs(node_data)
+        objects.Cluster.get_network_manager()._update_attrs(node_data)
         node = self.get_object_or_404(Node, node_id)
         return map(self.render, node.interfaces)
 
@@ -287,7 +288,8 @@ class NodeCollectionNICsHandler(BaseHandler):
             self.validator.validate_collection_structure_and_data)
         updated_nodes_ids = []
         for node_data in data:
-            node_id = NetworkManager._update_attrs(node_data)
+            node_id = objects.Cluster.get_network_manager(
+            )._update_attrs(node_data)
             updated_nodes_ids.append(node_id)
         updated_nodes = db().query(Node).filter(
             Node.id.in_(updated_nodes_ids)
@@ -316,8 +318,9 @@ class NodeNICsDefaultHandler(BaseHandler):
 
     def get_default(self, node):
         if node.cluster:
-            return node.cluster.network_manager.\
-                get_default_networks_assignment(node)
+            return objects.Node.get_network_manager(
+                node
+            ).get_default_networks_assignment(node)
 
 
 class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):

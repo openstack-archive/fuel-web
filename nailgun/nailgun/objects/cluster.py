@@ -134,7 +134,7 @@ class Cluster(NailgunObject):
 
         cls.create_attributes(new_cluster)
 
-        netmanager = new_cluster.network_manager
+        netmanager = cls.get_network_manager(new_cluster)
 
         try:
             netmanager.create_network_groups(new_cluster.id)
@@ -180,6 +180,19 @@ class Cluster(NailgunObject):
         return db().query(models.Attributes).filter(
             models.Attributes.cluster_id == instance.id
         ).first()
+
+    @classmethod
+    def get_network_manager(cls, instance=None):
+        if not instance:
+            from nailgun.network.manager import NetworkManager
+            return NetworkManager
+
+        if instance.net_provider == 'neutron':
+            from nailgun.network.neutron import NeutronManager
+            return NeutronManager
+        else:
+            from nailgun.network.nova_network import NovaNetworkManager
+            return NovaNetworkManager
 
     @classmethod
     def add_pending_changes(cls, instance, changes_type, node_id=None):
@@ -245,12 +258,14 @@ class Cluster(NailgunObject):
 
         map(instance.nodes.remove, nodes_to_remove)
         map(instance.nodes.append, nodes_to_add)
+
+        net_manager = cls.get_network_manager(instance)
         map(
-            instance.network_manager.clear_assigned_networks,
+            net_manager.clear_assigned_networks,
             nodes_to_remove
         )
         map(
-            instance.network_manager.assign_networks_by_default,
+            net_manager.assign_networks_by_default,
             nodes_to_add
         )
         db().flush()

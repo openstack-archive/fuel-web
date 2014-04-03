@@ -19,11 +19,13 @@ from netaddr import IPNetwork
 from nailgun.api.validators.base import BasicValidator
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
+
+from nailgun import objects
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
-from nailgun.network.manager import NetworkManager
 
 
 class NetworkConfigurationValidator(BasicValidator):
@@ -258,7 +260,9 @@ class NetAssignmentValidator(BasicValidator):
             )
         interfaces = node['interfaces']
         db_interfaces = db_node.nic_interfaces
-        network_group_ids = NetworkManager.get_node_networkgroups_ids(db_node)
+        network_group_ids = objects.Node.get_network_manager(
+            db_node
+        ).get_node_networkgroups_ids(db_node)
 
         bonded_eth_ids = set()
         for iface in interfaces:

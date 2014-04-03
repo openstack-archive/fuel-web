@@ -159,15 +159,6 @@ class Cluster(Base):
             return False
         return True
 
-    @property
-    def network_manager(self):
-        if self.net_provider == 'neutron':
-            from nailgun.network.neutron import NeutronManager
-            return NeutronManager
-        else:
-            from nailgun.network.nova_network import NovaNetworkManager
-            return NovaNetworkManager
-
 
 class Attributes(Base):
     __tablename__ = 'attributes'

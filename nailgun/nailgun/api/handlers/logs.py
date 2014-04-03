@@ -31,7 +31,6 @@ from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.objects import Task
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
@@ -211,20 +210,6 @@ class LogEntryCollectionHandler(BaseHandler):
             logger.debug("Invalid 'max_entries' value: %d", max_entries)
             raise self.http(400, "Invalid 'max_entries' value")
 
-        accs = db().query(RedHatAccount).all()
-        regs = []
-        if len(accs) > 0:
-            regs = [
-                (
-                    re.compile(r"|".join([a.username for a in accs])),
-                    "username"
-                ),
-                (
-                    re.compile(r"|".join([a.password for a in accs])),
-                    "password"
-                )
-            ]
-
         has_more = False
         with open(log_file, 'r') as f:
             f.seek(0, 2)
@@ -269,9 +254,6 @@ class LogEntryCollectionHandler(BaseHandler):
                                  log_config['date_format'],
                                  m.group('date'))
                     continue
-
-                for regex, replace in regs:
-                    entry_text = regex.sub(replace, entry_text)
 
                 entries.append([
                     time.strftime(settings.UI_LOG_DATE_FORMAT, entry_date),

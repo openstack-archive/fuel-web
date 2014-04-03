@@ -675,14 +675,6 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
             attrs['predefined_networks'][net] = net_conf
 
-        if cluster.release.operating_system == 'RHEL':
-            if 'amqp' not in attrs:
-                attrs['amqp'] = {}
-            elif not isinstance(attrs.get('amqp'), dict):
-                # FIXME Raise some meaningful exception.
-                pass
-            attrs['amqp']['provider'] = 'qpid-rh'
-
         return attrs
 
     @classmethod

@@ -276,6 +276,7 @@ def upgrade():
     op.drop_column(u'network_groups', u'netmask')
 
     op.drop_table(u'neutron_configs')
+    op.drop_table(u'red_hat_accounts')
     ### end Alembic commands ###
 
 
@@ -446,4 +447,19 @@ def downgrade():
     op.drop_table('neutron_config')
     op.drop_table('nova_network_config')
     op.drop_table('networking_configs')
+
+    op.create_table(
+        'red_hat_accounts',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('username', sa.String(100), nullable=False),
+        sa.Column('password', sa.String(100), nullable=False),
+        sa.Column(
+            'license_type',
+            sa.Enum('rhsm', 'rhn', name='license_type'),
+            nullable=False
+        ),
+        sa.Column('satellite', sa.String(250)),
+        sa.Column('activation_key', sa.String(300)),
+        sa.PrimaryKeyConstraint('id')
+    )
     ### end Alembic commands ###

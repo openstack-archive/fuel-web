@@ -131,13 +131,6 @@ TASK_NAMES = Enum(
     'check_dhcp',
     'verify_network_connectivity',
 
-    # red hat
-    'redhat_setup',
-    'redhat_check_credentials',
-    'redhat_check_licenses',
-    'redhat_download_release',
-    'redhat_update_cobbler_profile',
-
     # dump
     'dump',
 

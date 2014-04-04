@@ -25,6 +25,7 @@ from datetime import datetime
 from nailgun import consts
 
 from nailgun.api.serializers.node import NodeSerializer
+from nailgun.consts import CLUSTER_CHANGES
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
@@ -467,6 +468,20 @@ class Node(NailgunObject):
         db().refresh(instance)
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
+        cls.add_pending_change(instance, CLUSTER_CHANGES.interfaces)
+
+    @classmethod
+    def add_pending_change(cls, instance, change):
+        """Add pending changes into Cluster.
+
+        :param instance: Node instance
+        :param change: const.CLUSTER_CHANGES
+        :returns None
+        """
+        if instance.cluster:
+            Cluster.add_pending_changes(
+                instance.cluster, change, node_id=instance.id
+            )
 
     @classmethod
     def get_network_manager(cls, instance=None):

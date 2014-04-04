@@ -32,16 +32,11 @@ from nailgun.db.sqlalchemy.models.node import Node
 
 class ClusterChanges(Base):
     __tablename__ = 'cluster_changes'
-    POSSIBLE_CHANGES = (
-        'networks',
-        'attributes',
-        'disks'
-    )
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
     node_id = Column(Integer, ForeignKey('nodes.id', ondelete='CASCADE'))
     name = Column(
-        Enum(*POSSIBLE_CHANGES, name='possible_changes'),
+        Enum(consts.CLUSTER_CHANGES, name='possible_changes'),
         nullable=False
     )
 

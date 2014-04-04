@@ -53,9 +53,7 @@ Setup for Nailgun Unit Tests
    so you can install pip and then all of them at once::
 
     pip install ./shotgun  # this fuel project is listed in setup.py requirements
-    cd nailgun
-    pip install -r test-requirements.txt
-    cd ..
+    pip install --allow-all-external -r nailgun/test-requirements.txt
 
 #. Create required folder for log files::
 

@@ -29,6 +29,7 @@ from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.network import NetAssignmentValidator
 from nailgun.api.v1.validators.node import NodeValidator
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.objects.serializers.node import NodeInterfacesSerializer
@@ -183,6 +184,10 @@ class NodeNICsHandler(BaseHandler):
 
         objects.Cluster.get_network_manager()._update_attrs(node_data)
         node = self.get_object_or_404(Node, node_id)
+        objects.Node.add_pending_change(
+            node,
+            consts.CLUSTER_CHANGES.interfaces
+        )
         return map(self.render, node.interfaces)
 
 

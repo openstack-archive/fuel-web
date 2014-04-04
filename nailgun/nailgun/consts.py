@@ -167,3 +167,10 @@ NOTIFICATION_TOPICS = Enum(
     'warning',
     'release',
 )
+
+CLUSTER_CHANGES = Enum(
+    'networks',
+    'attributes',
+    'disks',
+    'interfaces'
+)

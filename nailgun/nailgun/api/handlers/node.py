@@ -33,6 +33,8 @@ from nailgun.api.validators.node import NodeValidator
 
 from nailgun import objects
 
+from nailgun.consts import CLUSTER_CHANGES
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
@@ -265,6 +267,7 @@ class NodeNICsHandler(BaseHandler):
 
         objects.Cluster.get_network_manager()._update_attrs(node_data)
         node = self.get_object_or_404(Node, node_id)
+        objects.Node.add_pending_change(node, CLUSTER_CHANGES.interfaces)
         return map(self.render, node.interfaces)
 
 

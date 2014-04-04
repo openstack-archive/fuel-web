@@ -35,7 +35,8 @@ class ClusterChanges(Base):
     POSSIBLE_CHANGES = (
         'networks',
         'attributes',
-        'disks'
+        'disks',
+        'interfaces'
     )
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))

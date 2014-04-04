@@ -266,6 +266,10 @@ class NodeNICsHandler(BaseHandler):
 
         NetworkManager._update_attrs(node_data)
         node = self.get_object_or_404(Node, node_id)
+        if node.cluster:
+            objects.Cluster.add_pending_changes(
+                node.cluster, "interfaces", node_id=node.id
+            )
         return map(self.render, node.interfaces)
 
 

@@ -195,7 +195,7 @@ class TestClusterChanges(BaseIntegrationTest):
         ).all()
         self.assertEquals(len(disks_changes), 1)
         all_changes = self.db.query(ClusterChanges).all()
-        self.assertEquals(len(all_changes), 3)
+        self.assertEquals(len(all_changes), 4)
 
     @fake_tasks(godmode=True)
     def test_role_unassignment_drops_changes(self):

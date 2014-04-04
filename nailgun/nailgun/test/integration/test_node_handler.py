@@ -15,9 +15,11 @@
 #    under the License.
 
 import json
+from nailgun.consts import CLUSTER_CHANGES
 
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
@@ -128,3 +130,36 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
+
+    @fake_tasks()
+    def test_interface_changes_for_new_node(self):
+        # Creating cluster with node
+        self.env.create(
+            cluster_kwargs={
+                'name': 'test_name'
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}
+            ]
+        )
+        cluster = self.env.clusters[0]
+
+        def filter_changes(chg_type, chg_list):
+            return filter(lambda x: x.get('name') == chg_type, chg_list)
+
+        changes = filter_changes(
+            CLUSTER_CHANGES.interfaces,
+            cluster['changes']
+        )
+        # Checking interfaces change added after node creation
+        self.assertEquals(1, len(changes))
+
+        deployment_task = self.env.launch_deployment()
+        self.env.wait_ready(deployment_task)
+
+        changes = filter_changes(
+            CLUSTER_CHANGES.interfaces,
+            cluster['changes']
+        )
+        # Checking no interfaces change after deployment
+        self.assertEquals(0, len(changes))

@@ -468,6 +468,20 @@ class Node(NailgunObject):
         db().refresh(instance)
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
+        cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
+
+    @classmethod
+    def add_pending_change(cls, instance, change):
+        """Add pending change into Cluster.
+
+        :param instance: Node instance
+        :param change: string value of cluster change
+        :returns: None
+        """
+        if instance.cluster:
+            Cluster.add_pending_changes(
+                instance.cluster, change, node_id=instance.id
+            )
 
     @classmethod
     def get_network_manager(cls, instance=None):

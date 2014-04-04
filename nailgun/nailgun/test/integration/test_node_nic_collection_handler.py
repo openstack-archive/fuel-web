@@ -54,3 +54,31 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 200)
         new_response = json.loads(resp.body)
         self.assertEquals(new_response, nodes_list)
+
+    def test_interface_changes_added(self):
+        # Creating cluster with node
+        self.env.create(
+            cluster_kwargs={
+                'name': 'test_name'
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}
+            ]
+        )
+
+        def filter_changes(chg_type, chns):
+            return filter(lambda x: x.get('name') == chg_type, chns)
+
+        cluster = self.env.clusters[0]
+        changes = filter_changes('interfaces', cluster['changes'])
+        changes_len = len(changes)
+        self.assertEquals(0, changes_len)
+        node_id = self.env.nodes[0].id
+        # Getting nics
+        resp = self.env.node_nics_get(node_id)
+        interfaces = json.loads(resp.body)
+        # Updating nics
+        self.env.node_nics_put(node_id, interfaces)
+        # Checking 'interfaces' change in cluster changes
+        new_changes = filter_changes('interfaces', cluster['changes'])
+        self.assertEquals(changes_len + 1, len(new_changes))

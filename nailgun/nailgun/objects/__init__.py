@@ -24,8 +24,11 @@ from nailgun.objects.cluster import Attributes
 from nailgun.objects.cluster import Cluster
 from nailgun.objects.cluster import ClusterCollection
 
-from nailgun.objects.node import Node
-from nailgun.objects.node import NodeCollection
-
 from nailgun.objects.task import Task
 from nailgun.objects.task import TaskCollection
+
+from nailgun.objects.notification import Notification
+from nailgun.objects.notification import NotificationCollection
+
+from nailgun.objects.node import Node
+from nailgun.objects.node import NodeCollection

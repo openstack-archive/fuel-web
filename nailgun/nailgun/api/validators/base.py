@@ -13,10 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import jsonschema
 
 from nailgun.errors import errors
+from nailgun.openstack.common import jsonutils
 
 
 class BasicValidator(object):
@@ -25,7 +25,7 @@ class BasicValidator(object):
     def validate_json(cls, data):
         if data:
             try:
-                res = json.loads(data)
+                res = jsonutils.loads(data)
             except Exception:
                 raise errors.InvalidData(
                     "Invalid json received",

@@ -14,10 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from mock import patch
 
+from nailgun.openstack.common import jsonutils
 from nailgun.test import base
 from nailgun.test.base import reverse
 from nailgun.volumes import manager
@@ -74,7 +73,7 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': {'storage': {'images_ceph': {'value': True}}}}),
             headers=self.default_headers)
         volumes = self.env.nodes[0].volume_manager.gen_volumes_info()
@@ -93,7 +92,7 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': {'storage': {'images_ceph': {'value': True}}}}),
             headers=self.default_headers)
 

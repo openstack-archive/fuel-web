@@ -15,11 +15,11 @@
 #    under the License.
 
 from copy import deepcopy
-import json
 from mock import patch
 import string
 
 from nailgun.errors import errors
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 from nailgun.volumes.manager import Disk
@@ -50,18 +50,18 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEquals(200, resp.status_code)
-        return json.loads(resp.body)
+        return jsonutils.loads(resp.body)
 
     def put(self, node_id, data, expect_errors=False):
         resp = self.app.put(
             reverse('NodeDisksHandler', kwargs={'node_id': node_id}),
-            json.dumps(data),
+            jsonutils.dumps(data),
             headers=self.default_headers,
             expect_errors=expect_errors)
 
         if not expect_errors:
             self.assertEquals(200, resp.status_code)
-            return json.loads(resp.body)
+            return jsonutils.loads(resp.body)
         else:
             return resp
 
@@ -93,7 +93,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         def update_node_roles(roles):
             resp = self.app.put(
                 reverse('NodeCollectionHandler'),
-                json.dumps([{'id': node_db.id, 'pending_roles': roles}]),
+                jsonutils.dumps([{'id': node_db.id, 'pending_roles': roles}]),
                 headers=self.default_headers)
             self.assertEquals(200, resp.status_code)
 
@@ -234,7 +234,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEquals(200, resp.status_code)
-        return json.loads(resp.body)
+        return jsonutils.loads(resp.body)
 
     def test_node_disk_amount_regenerates_volumes_info_if_new_disk_added(self):
         cluster = self.env.create_cluster(api=True)
@@ -255,7 +255,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
 
         self.app.put(
             reverse('NodeAgentHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 "mac": node_db.mac,
                 "meta": new_meta}),
             headers=self.default_headers)
@@ -290,7 +290,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEquals(200, resp.status_code)
-        return json.loads(resp.body)
+        return jsonutils.loads(resp.body)
 
     def create_node(self, role):
         self.env.create(
@@ -581,7 +581,7 @@ class TestVolumeManager(BaseIntegrationTest):
 
         self.app.put(
             reverse('NodeAgentHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 'mac': node.mac,
                 'meta': new_meta}),
             headers=self.default_headers)
@@ -600,7 +600,7 @@ class TestVolumeManager(BaseIntegrationTest):
 
         self.app.put(
             reverse('NodeAgentHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 'mac': node.mac,
                 'meta': new_meta}),
             headers=self.default_headers)

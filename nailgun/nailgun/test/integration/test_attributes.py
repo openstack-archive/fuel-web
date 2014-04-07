@@ -14,11 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import Release
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -37,7 +36,7 @@ class TestAttributes(BaseIntegrationTest):
         release = objects.Release.get_by_uid(cluster['release_id'])
         self.assertEquals(200, resp.status_code)
         self.assertEquals(
-            json.loads(resp.body)['editable'],
+            jsonutils.loads(resp.body)['editable'],
             release.attributes_metadata['editable']
         )
         attrs = objects.Cluster.get_attributes(cluster_db)
@@ -54,7 +53,7 @@ class TestAttributes(BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster.id}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': {
                     "foo": "bar"
                 },
@@ -78,7 +77,7 @@ class TestAttributes(BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster_id}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': {
                     "foo": "bar"
                 },
@@ -95,7 +94,7 @@ class TestAttributes(BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster_id}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'generated': {
                     "foo": "bar"
                 },
@@ -109,7 +108,7 @@ class TestAttributes(BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster_id}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': ["foo", "bar"],
             }),
             headers=self.default_headers,
@@ -131,7 +130,7 @@ class TestAttributes(BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster_id}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': {
                     "foo": "bar"
                 },
@@ -157,7 +156,7 @@ class TestAttributes(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         self.assertEquals(
-            json.loads(resp.body)['editable'],
+            jsonutils.loads(resp.body)['editable'],
             release.attributes_metadata['editable']
         )
 
@@ -169,7 +168,7 @@ class TestAttributes(BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': {
                     "foo": "bar"
                 },
@@ -192,7 +191,7 @@ class TestAttributes(BaseIntegrationTest):
             cluster['release_id']
         )
         self.assertEquals(
-            json.loads(resp.body)['editable'],
+            jsonutils.loads(resp.body)['editable'],
             release.attributes_metadata['editable']
         )
 

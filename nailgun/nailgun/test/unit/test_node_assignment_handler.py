@@ -14,8 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -41,7 +40,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 'NodeAssignmentHandler',
                 kwargs={'cluster_id': cluster.id}
             ),
-            json.dumps(assignment_data),
+            jsonutils.dumps(assignment_data),
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
@@ -56,7 +55,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 'NodeAssignmentHandler',
                 kwargs={'cluster_id': cluster.id}
             ),
-            json.dumps(assignment_data),
+            jsonutils.dumps(assignment_data),
             headers=self.default_headers,
             expect_errors=True
         )
@@ -74,7 +73,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 'NodeUnassignmentHandler',
                 kwargs={'cluster_id': cluster['id']}
             ),
-            json.dumps([{'id': node.id}]),
+            jsonutils.dumps([{'id': node.id}]),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
@@ -88,7 +87,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                     'NodeUnassignmentHandler',
                     kwargs={'cluster_id': cluster['id']}
                 ),
-                json.dumps([{'id': node_id}]),
+                jsonutils.dumps([{'id': node_id}]),
                 headers=self.default_headers,
                 expect_errors=True
             )
@@ -99,7 +98,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 'NodeUnassignmentHandler',
                 kwargs={'cluster_id': cluster['id'] + 5}
             ),
-            json.dumps([{'id': node.id}]),
+            jsonutils.dumps([{'id': node.id}]),
             headers=self.default_headers,
             expect_errors=True
         )
@@ -116,7 +115,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 'NodeUnassignmentHandler',
                 kwargs={'cluster_id': cluster['id']}
             ),
-            json.dumps([{'id': self.env.clusters[1].nodes[0].id}]),
+            jsonutils.dumps([{'id': self.env.clusters[1].nodes[0].id}]),
             headers=self.default_headers,
             expect_errors=True
         )
@@ -134,7 +133,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
                 'NodeUnassignmentHandler',
                 kwargs={'cluster_id': cluster['id']}
             ),
-            json.dumps([{'id': node.id}]),
+            jsonutils.dumps([{'id': node.id}]),
             headers=self.default_headers
         )
         self.assertEqual(resp.status_code, 200)

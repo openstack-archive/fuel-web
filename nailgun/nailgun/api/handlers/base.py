@@ -16,7 +16,6 @@
 
 from datetime import datetime
 from decorator import decorator
-import json
 
 from sqlalchemy import exc as sa_exc
 import web
@@ -32,6 +31,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 
 from nailgun import objects
+from nailgun.openstack.common import jsonutils
 
 
 def check_client_content_type(handler):
@@ -107,7 +107,7 @@ def content_json(func, *args, **kwargs):
 def build_json_response(data):
     web.header('Content-Type', 'application/json')
     if type(data) in (dict, list):
-        return json.dumps(data)
+        return jsonutils.dumps(data)
     return data
 
 

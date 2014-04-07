@@ -20,7 +20,6 @@ except ImportError:
     # Runing unit-tests in production environment
     from unittest2.case import TestCase
 
-import json
 import mock
 import os
 import re
@@ -60,6 +59,7 @@ from nailgun.objects import Release
 from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.network.manager import NetworkManager
+from nailgun.openstack.common import jsonutils
 
 
 class TimeoutError(Exception):
@@ -133,11 +133,11 @@ class Environment(object):
         if api:
             resp = self.app.post(
                 reverse('ReleaseCollectionHandler'),
-                params=json.dumps(release_data),
+                params=jsonutils.dumps(release_data),
                 headers=self.default_headers
             )
             self.tester.assertEquals(resp.status_code, 201)
-            release = json.loads(resp.body)
+            release = jsonutils.loads(resp.body)
             self.releases.append(
                 self.db.query(Release).get(release['id'])
             )
@@ -157,11 +157,11 @@ class Environment(object):
 
         resp = self.app.post(
             reverse('RedHatAccountHandler'),
-            params=json.dumps(release_data),
+            params=jsonutils.dumps(release_data),
             headers=self.default_headers
         )
         self.tester.assertEquals(resp.status_code, 200)
-        download_task = json.loads(resp.body)
+        download_task = jsonutils.loads(resp.body)
         return self.db.query(Task).get(download_task['id'])
 
     def create_cluster(self, api=True, exclude=None, **kwargs):
@@ -184,12 +184,12 @@ class Environment(object):
         if api:
             resp = self.app.post(
                 reverse('ClusterCollectionHandler'),
-                json.dumps(cluster_data),
+                jsonutils.dumps(cluster_data),
                 headers=self.default_headers,
                 expect_errors=True
             )
             self.tester.assertEquals(resp.status_code, 201)
-            cluster = json.loads(resp.body)
+            cluster = jsonutils.loads(resp.body)
             self.clusters.append(
                 Cluster.get_by_uid(cluster['id'])
             )
@@ -240,7 +240,7 @@ class Environment(object):
         if api:
             resp = self.app.post(
                 reverse('NodeCollectionHandler'),
-                json.dumps(node_data),
+                jsonutils.dumps(node_data),
                 headers=self.default_headers,
                 expect_errors=True
             )
@@ -250,7 +250,7 @@ class Environment(object):
             if str(expect_http)[0] != "2":
                 return None
             self.tester.assertEquals(resp.status_code, expect_http)
-            node = json.loads(resp.body)
+            node = jsonutils.loads(resp.body)
             node_db = Node.get_by_uid(node['id'])
             if 'interfaces' not in node_data['meta'] \
                     or not node_data['meta']['interfaces']:
@@ -490,7 +490,7 @@ class Environment(object):
                 expect_errors=True
             )
             self.tester.assertEquals(202, resp.status_code)
-            response = json.loads(resp.body)
+            response = jsonutils.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
             ).first()
@@ -508,7 +508,7 @@ class Environment(object):
                 headers=self.default_headers)
 
             self.tester.assertEquals(202, resp.status_code)
-            response = json.loads(resp.body)
+            response = jsonutils.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
             ).first()
@@ -528,7 +528,7 @@ class Environment(object):
             self.tester.assertEquals(expect_http, resp.status_code)
             if not str(expect_http).startswith("2"):
                 return resp.body
-            response = json.loads(resp.body)
+            response = jsonutils.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
             ).first()
@@ -548,7 +548,7 @@ class Environment(object):
             self.tester.assertEquals(resp.status_code, expect_http)
             if not str(expect_http).startswith("2"):
                 return resp.body
-            response = json.loads(resp.body)
+            response = jsonutils.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
             ).first()
@@ -571,7 +571,7 @@ class Environment(object):
             }
             provider = self.clusters[0].net_provider
             if data:
-                nets = json.dumps(data)
+                nets = jsonutils.dumps(data)
             else:
                 resp = self.app.get(
                     reverse(
@@ -591,7 +591,7 @@ class Environment(object):
                 headers=self.default_headers
             )
             self.tester.assertEquals(202, resp.status_code)
-            response = json.loads(resp.body)
+            response = jsonutils.loads(resp.body)
             task_uuid = response['uuid']
             return self.db.query(Task).filter_by(uuid=task_uuid).first()
         else:
@@ -607,7 +607,7 @@ class Environment(object):
                     kwargs={"node_id": node_id}),
             headers=self.default_headers)
         self.tester.assertEquals(resp.status_code, 200)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
 
         nics = self.db.query(NodeNICInterface).filter(
             NodeNICInterface.name.in_(nic_names)
@@ -710,7 +710,7 @@ class Environment(object):
         return self.app.put(
             reverse(method,
                     kwargs=instance_id),
-            json.dumps(data),
+            jsonutils.dumps(data),
             headers=self.default_headers,
             expect_errors=expect_errors)
 

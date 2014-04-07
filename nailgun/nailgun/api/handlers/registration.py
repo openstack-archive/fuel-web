@@ -19,11 +19,11 @@ Product registration handlers
 """
 
 import base64
-import json
 
 
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
+from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 
 
@@ -41,6 +41,6 @@ class FuelKeyHandler(BaseHandler):
             "release": str(settings.VERSION['release']),
             "uuid": str(settings.FUEL_KEY)
         }
-        signature = base64.b64encode(json.dumps(key_data))
+        signature = base64.b64encode(jsonutils.dumps(key_data))
         key_data["signature"] = signature
-        return {"key": base64.b64encode(json.dumps(key_data))}
+        return {"key": base64.b64encode(jsonutils.dumps(key_data))}

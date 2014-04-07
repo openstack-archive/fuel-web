@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from mock import patch
 from sqlalchemy.sql import not_
 
@@ -23,6 +21,7 @@ from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.network.nova_network import NovaNetworkManager
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -30,7 +29,7 @@ from nailgun.test.base import reverse
 class TestHandlers(BaseIntegrationTest):
 
     def _get_cluster_networks(self, cluster_id):
-        nets = json.loads(self.app.get(
+        nets = jsonutils.loads(self.app.get(
             reverse('NovaNetworkConfigurationHandler',
                     {"cluster_id": cluster_id}),
             headers=self.default_headers,
@@ -43,14 +42,14 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals([], response)
 
     def test_cluster_create(self):
         release_id = self.env.create_release(api=False).id
         resp = self.app.post(
             reverse('ClusterCollectionHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 'name': 'cluster-name',
                 'release': release_id,
             }),
@@ -145,7 +144,7 @@ class TestHandlers(BaseIntegrationTest):
         self.db.commit()
         resp = self.app.post(
             reverse('ClusterCollectionHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 'name': 'cluster-name',
                 'release': release.id,
             }),
@@ -206,9 +205,9 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_verify_networks(self, mocked_rpc):
         cluster = self.env.create_cluster(api=True)
-        nets = json.loads(self.env.nova_networks_get(cluster['id']).body)
+        nets = jsonutils.loads(self.env.nova_networks_get(cluster['id']).body)
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
         self.assertEquals(202, resp.status_code)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')

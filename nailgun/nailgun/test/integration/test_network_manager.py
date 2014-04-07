@@ -15,7 +15,6 @@
 #    under the License.
 
 import itertools
-import json
 
 from mock import Mock
 from mock import patch
@@ -33,6 +32,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.nova_network import NovaNetworkManager
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -154,7 +154,7 @@ class TestNetworkManager(BaseIntegrationTest):
         self.app.put(
             reverse('NovaNetworkConfigurationHandler',
                     kwargs={"cluster_id": cluster['id']}),
-            json.dumps(networks_data),
+            jsonutils.dumps(networks_data),
             headers=self.default_headers
         )
         network_data = self.env.network_manager.get_node_networks(

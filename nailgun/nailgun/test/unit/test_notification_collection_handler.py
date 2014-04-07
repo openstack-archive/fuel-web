@@ -14,8 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -28,7 +27,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals([], response)
 
     def test_not_empty(self):
@@ -40,7 +39,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(len(response), 2)
         if response[0]['id'] == n0.id:
             rn0 = response[0]
@@ -67,11 +66,11 @@ class TestHandlers(BaseIntegrationTest):
         ]
         resp = self.app.put(
             reverse('NotificationCollectionHandler'),
-            json.dumps(notification_update),
+            jsonutils.dumps(notification_update),
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(len(response), 2)
         if response[0]['id'] == n0.id:
             rn0 = response[0]

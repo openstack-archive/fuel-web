@@ -17,7 +17,6 @@
 from datetime import datetime
 import itertools
 import jinja2
-import json
 import os.path
 import Queue
 import StringIO
@@ -31,6 +30,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.logger import logger
 from nailgun import objects
+from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 
@@ -48,7 +48,7 @@ def template_fixture(fileobj, **kwargs):
 
 def load_fixture(fileobj, loader=None):
     if not loader:
-        loaders = {'.json': json, '.yaml': yaml, '.yml': yaml}
+        loaders = {'.json': jsonutils, '.yaml': yaml, '.yml': yaml}
         extension = os.path.splitext(fileobj.name)[1]
         if extension not in loaders:
             raise Exception("Unknown file extension '{0}'".format(extension))
@@ -225,4 +225,4 @@ def dump_fixture(model_name):
                         list, dict, str, unicode, int, float, bool)):
                     value = ""
                 obj_dump['fields'][field] = value
-    sys.stdout.write(json.dumps(dump, indent=4))
+    sys.stdout.write(jsonutils.dumps(dump, indent=4))

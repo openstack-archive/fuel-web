@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from mock import patch
 import uuid
 
@@ -25,6 +24,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
+from nailgun.openstack.common import jsonutils
 from nailgun.rpc import receiver as rcvr
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -150,7 +150,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEqual(task['status'], "error")
         error_nodes = [{'uid': node1.id, 'interface': 'eth0',
                         'name': node1.name, 'absent_vlans': [104],

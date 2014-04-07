@@ -19,12 +19,11 @@ Classes for working with disks and volumes.
 All sizes in megabytes.
 '''
 
-import json
-
 from copy import deepcopy
 from functools import partial
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.openstack.common import jsonutils
 
 
 def is_service(space):
@@ -567,10 +566,10 @@ class Disk(object):
         }
 
     def __repr__(self):
-        return json.dumps(self.render())
+        return jsonutils.dumps(self.render())
 
     def __str__(self):
-        return json.dumps(self.render(), indent=4)
+        return jsonutils.dumps(self.render(), indent=4)
 
 
 class VolumeManager(object):

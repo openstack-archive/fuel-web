@@ -14,13 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from kombu import Connection
 from kombu import Exchange
 from kombu import Queue
 
 from nailgun.logger import logger
+from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 
 creds = (
@@ -74,7 +73,7 @@ nailgun_queue = Queue(
 def cast(name, message, service=False):
     logger.debug(
         "RPC cast to orchestrator:\n{0}".format(
-            json.dumps(message, indent=4)
+            jsonutils.dumps(message, indent=4)
         )
     )
     use_queue = naily_queue if not service else naily_service_queue

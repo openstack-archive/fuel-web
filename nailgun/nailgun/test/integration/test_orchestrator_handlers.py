@@ -14,12 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import nailgun
 
 from mock import patch
 
 from nailgun.db.sqlalchemy.models import Cluster
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -41,7 +41,7 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
         put_resp = self.app.put(
             reverse(handler_name,
                     kwargs={'cluster_id': self.cluster.id}),
-            json.dumps(orchestrator_data),
+            jsonutils.dumps(orchestrator_data),
             headers=self.default_headers)
 
         self.assertEquals(put_resp.status_code, 200)
@@ -54,7 +54,7 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEquals(get_resp.status_code, 200)
-        self.datadiff(orchestrator_data, json.loads(get_resp.body))
+        self.datadiff(orchestrator_data, jsonutils.loads(get_resp.body))
 
         # deleting provisioning info
         delete_resp = self.app.delete(
@@ -94,7 +94,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse(handler_name,
                     kwargs={'cluster_id': self.cluster.id}),
-            json.dumps(facts),
+            jsonutils.dumps(facts),
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(self.cluster.is_customized)
@@ -107,7 +107,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(3, len(json.loads(resp.body)))
+        self.assertEqual(3, len(jsonutils.loads(resp.body)))
 
     def test_default_provisioning_handler(self):
         resp = self.app.get(
@@ -116,7 +116,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(3, len(json.loads(resp.body)['nodes']))
+        self.assertEqual(3, len(jsonutils.loads(resp.body)['nodes']))
 
     def test_default_provisioning_handler_for_selected_nodes(self):
         node_ids = [node.uid for node in self.cluster.nodes][:2]
@@ -127,7 +127,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         resp = self.app.get(url, headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        data = json.loads(resp.body)['nodes']
+        data = jsonutils.loads(resp.body)['nodes']
         self.assertEqual(2, len(data))
         actual_uids = [node['uid'] for node in data]
         self.assertItemsEqual(actual_uids, node_ids)
@@ -141,7 +141,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         resp = self.app.get(url, headers=self.default_headers)
 
         self.assertEqual(resp.status_code, 200)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         self.assertEqual(2, len(data))
         actual_uids = [node['uid'] for node in data]
         self.assertItemsEqual(actual_uids, node_ids)

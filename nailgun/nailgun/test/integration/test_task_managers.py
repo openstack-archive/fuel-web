@@ -15,7 +15,6 @@
 #    under the License.
 
 
-import json
 import nailgun
 import nailgun.rpc as rpc
 import time
@@ -30,6 +29,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
+from nailgun.openstack.common import jsonutils
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.test.base import BaseIntegrationTest
@@ -283,7 +283,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster_id}),
             headers=self.default_headers
         )
-        deploy_uuid = json.loads(resp.body)['uuid']
+        deploy_uuid = jsonutils.loads(resp.body)['uuid']
         resp = self.app.delete(
             reverse(
                 'ClusterHandler',

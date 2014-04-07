@@ -7,6 +7,37 @@ and how to avoid different problems and potential mistakes. Fuel Library is a
 very big project and even experienced Puppet user will have problems 
 understanding its structure and internal workings.
 
+Adding new modules to fuel-library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+*Case A. Pulling in an existing module*
+
+If you are adding a module that is the work of another project and is already
+tracked in separate repo then:
+
+1. Create a review request with a un-modified copy of the upstream module from
+what ever point you are working from and *no* other related modifications.
+
+* This review should also contain the commit hash from the upstream repo
+  in the commit message.
+* The review should be evaluated to determine its suitability and either rejected
+  (for licensing, code quality, outdated version requested) or accepted
+  without requiring modifications.
+* The review should not include code that calls this new module.
+
+2.  Any changes necessary to make it work with Fuel should then be proposed
+as a dependent change(s).
+
+*Case B. Adding a new module*
+
+If you are adding a new module that is a work purely for Fuel and will not be
+tracked in a separate repo then submit incremental reviews that consist of
+working implementation of features for your module.
+
+If you have features that are necessary, but do not work fully yet, then prevent
+them from running during the deployment. Once your feature is complete, submit
+a review to activate the module during deployment.
+
 The Puppet modules structure
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

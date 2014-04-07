@@ -14,8 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -36,7 +35,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         a_nets = filter(lambda nic: nic['mac'] == mac,
                         response)[0]['assigned_networks']
         for resp_nic in response:
@@ -49,8 +48,8 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('NodeCollectionNICsHandler'),
-            json.dumps(nodes_list),
+            jsonutils.dumps(nodes_list),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
-        new_response = json.loads(resp.body)
+        new_response = jsonutils.loads(resp.body)
         self.assertEquals(new_response, nodes_list)

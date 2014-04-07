@@ -16,7 +16,6 @@
 
 from copy import deepcopy
 from itertools import izip
-import json
 from mock import patch
 import netaddr
 
@@ -26,6 +25,7 @@ from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
+from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
@@ -804,7 +804,7 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = json.loads(
+        net_data = jsonutils.loads(
             self.env.neutron_networks_get(self.env.clusters[0].id).body)
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -813,7 +813,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
         self.env.launch_deployment()
@@ -844,7 +844,7 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = json.loads(
+        net_data = jsonutils.loads(
             self.env.neutron_networks_get(self.env.clusters[0].id).body)
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -853,7 +853,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
         self.env.launch_deployment()
@@ -881,7 +881,7 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = json.loads(
+        net_data = jsonutils.loads(
             self.env.neutron_networks_get(self.env.clusters[0].id).body)
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -893,7 +893,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
         self.env.launch_deployment()
@@ -920,7 +920,7 @@ class TestHandlers(BaseIntegrationTest):
                           {"pending_addition": True}]
         )
 
-        net_data = json.loads(
+        net_data = jsonutils.loads(
             self.env.neutron_networks_get(self.env.clusters[0].id).body)
         pub = filter(lambda ng: ng['name'] == 'public',
                      net_data['networks'])[0]
@@ -928,7 +928,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
         task = self.env.launch_deployment()
@@ -965,7 +965,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse(
                 'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': cluster.id}),
-            json.dumps(net_data),
+            jsonutils.dumps(net_data),
             headers=self.default_headers,
             expect_errors=True)
 
@@ -1041,7 +1041,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': {
                     'storage': {'volumes_ceph': {'value': True},
                                 'osd_pool_size': {'value': 3}}}}),
@@ -1067,7 +1067,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': {
                     'storage': {'volumes_ceph': {'value': True},
                                 'osd_pool_size': {'value': 1}}}}),
@@ -1104,7 +1104,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster_id = self.env.clusters[0].id
 
         resp = self.env.nova_networks_get(cluster_id)
-        nets = json.loads(resp.body)
+        nets = jsonutils.loads(resp.body)
         for net in nets["networks"]:
             if net["name"] in ["management", ]:
                 net["vlan_start"] = None

@@ -14,10 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -50,7 +49,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
                     kwargs={"node_id": self.env.nodes[0]["id"]}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
-        self.data = json.loads(resp.body)
+        self.data = jsonutils.loads(resp.body)
         self.admin_nic, self.other_nic, self.empty_nic = None, None, None
         for nic in self.data:
             net_names = [n["name"] for n in nic["assigned_networks"]]
@@ -95,7 +94,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
         resp = self.env.node_nics_get(self.env.nodes[0]["id"])
         self.assertEquals(resp.status_code, 200)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         bonds = filter(
             lambda iface: iface["type"] == NETWORK_INTERFACE_TYPES.bond,
             data)
@@ -105,7 +104,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
     def nics_bond_remove(self, put_func):
         resp = self.env.node_nics_get(self.env.nodes[0]["id"])
         self.assertEquals(resp.status_code, 200)
-        self.data = json.loads(resp.body)
+        self.data = jsonutils.loads(resp.body)
         for nic in self.data:
             if nic["type"] == NETWORK_INTERFACE_TYPES.bond:
                 bond = nic
@@ -131,7 +130,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
 
             resp = self.env.node_nics_get(self.env.nodes[0]["id"])
             self.assertEquals(resp.status_code, 200)
-            data = json.loads(resp.body)
+            data = jsonutils.loads(resp.body)
             for nic in data:
                 self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
 

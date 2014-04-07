@@ -19,7 +19,6 @@ Handlers dealing with logs
 """
 
 from itertools import dropwhile
-import json
 import logging
 import os
 import re
@@ -33,6 +32,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.objects import Task
+from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 
@@ -198,7 +198,7 @@ class LogEntryCollectionHandler(BaseHandler):
 
         log_file_size = os.stat(log_file).st_size
         if to_byte >= log_file_size:
-            return json.dumps({
+            return jsonutils.dumps({
                 'entries': [],
                 'to': log_file_size,
                 'has_more': False,

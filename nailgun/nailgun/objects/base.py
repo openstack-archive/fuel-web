@@ -14,8 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from sqlalchemy.orm import joinedload
 
 from nailgun.api.serializers.base import BasicSerializer
@@ -23,6 +21,7 @@ from nailgun.db import db
 from nailgun.errors import errors
 
 from nailgun.openstack.common.db import api as db_api
+from nailgun.openstack.common import jsonutils
 
 
 _BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}
@@ -79,7 +78,7 @@ class NailgunObject(object):
 
     @classmethod
     def to_json(cls, instance, fields=None):
-        return json.dumps(
+        return jsonutils.dumps(
             cls.to_dict(instance, fields=fields)
         )
 
@@ -132,7 +131,7 @@ class NailgunCollection(object):
 
     @classmethod
     def to_json(cls, query=None, fields=None, yield_per=100):
-        return json.dumps(
+        return jsonutils.dumps(
             cls.to_list(
                 fields=fields,
                 yield_per=yield_per,

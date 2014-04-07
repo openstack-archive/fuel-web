@@ -12,8 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from mock import Mock
 from mock import patch
 
@@ -21,6 +19,7 @@ import nailgun
 from nailgun.api.handlers.redhat import RedHatSetupHandler
 from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Task
+from nailgun.openstack.common import jsonutils
 from nailgun.task.manager import RedHatSetupTaskManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -64,8 +63,8 @@ class TestHandlers(BaseIntegrationTest):
     def test_redhat_account_invalid_data_handler(self):
         resp = self.app.post(
             reverse('RedHatSetupHandler'),
-            json.dumps({'username': 'rheltest',
-                        'password': 'password'}),
+            jsonutils.dumps({'username': 'rheltest',
+                             'password': 'password'}),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
@@ -80,10 +79,10 @@ class TestHandlers(BaseIntegrationTest):
                 mng.return_value.execute.return_value = task
                 resp = self.app.post(
                     reverse('RedHatSetupHandler'),
-                    json.dumps({'license_type': 'rhsm',
-                                'username': 'rheltest',
-                                'password': 'password',
-                                'release_id': self.release.id}),
+                    jsonutils.dumps({'license_type': 'rhsm',
+                                     'username': 'rheltest',
+                                     'password': 'password',
+                                     'release_id': self.release.id}),
                     headers=self.default_headers)
                 self.assertEquals(resp.status_code, 202)
 
@@ -91,10 +90,10 @@ class TestHandlers(BaseIntegrationTest):
     def test_redhat_account_validation_failure(self):
         resp = self.app.post(
             reverse('RedHatSetupHandler'),
-            json.dumps({'license_type': 'rhsm',
-                        'username': 'some_user',
-                        'password': 'password',
-                        'release_id': self.release.id}),
+            jsonutils.dumps({'license_type': 'rhsm',
+                             'username': 'some_user',
+                             'password': 'password',
+                             'release_id': self.release.id}),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 202)
@@ -113,10 +112,10 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.post(
             reverse('RedHatAccountHandler'),
-            json.dumps({'license_type': 'rhsm',
-                        'username': 'rheltest',
-                        'password': 'password',
-                        'release_id': self.release.id}),
+            jsonutils.dumps({'license_type': 'rhsm',
+                             'username': 'rheltest',
+                             'password': 'password',
+                             'release_id': self.release.id}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
 
@@ -125,7 +124,7 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True)
         self.assertEquals(resp.status_code, 200)
 
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
 
         self.assertTrue(
             all(k in response for k in RedHatSetupHandler.fields))

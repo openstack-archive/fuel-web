@@ -14,13 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
+from nailgun.openstack.common import jsonutils
 
 
 class TestNetworkChecking(BaseIntegrationTest):
@@ -48,7 +48,7 @@ class TestNetworkChecking(BaseIntegrationTest):
         resp = self.env.cluster_changes_put(cluster_id,
                                             expect_errors=True)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'deploy')
@@ -59,7 +59,7 @@ class TestNetworkChecking(BaseIntegrationTest):
         resp = self.env.nova_networks_put(cluster_id, nets,
                                           expect_errors=True)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
@@ -69,7 +69,7 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_nova_networks_success(self, cluster_id, nets):
         resp = self.env.nova_networks_put(cluster_id, nets)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
@@ -79,7 +79,7 @@ class TestNetworkChecking(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(cluster_id, nets,
                                              expect_errors=True)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
@@ -89,7 +89,7 @@ class TestNetworkChecking(BaseIntegrationTest):
     def update_neutron_networks_success(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
@@ -114,7 +114,7 @@ class TestNovaHandlers(TestNetworkChecking):
         )
         self.cluster = self.env.clusters[0]
         resp = self.env.nova_networks_get(self.cluster.id)
-        self.nets = json.loads(resp.body)
+        self.nets = jsonutils.loads(resp.body)
 
     def test_network_checking(self):
         self.update_nova_networks_success(self.cluster.id, self.nets)
@@ -350,7 +350,8 @@ class TestNovaHandlers(TestNetworkChecking):
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{'id': node['id'], 'cluster_id': self.cluster.id}]),
+            jsonutils.dumps([{'id': node['id'],
+                              'cluster_id': self.cluster.id}]),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -358,7 +359,7 @@ class TestNovaHandlers(TestNetworkChecking):
         resp = self.app.get(reverse('NodeNICsHandler',
                                     kwargs={'node_id': node['id']}),
                             headers=self.default_headers)
-        nics = json.loads(resp.body)
+        nics = jsonutils.loads(resp.body)
 
         for nic in nics:
             if not nic.get('assigned_networks'):
@@ -372,7 +373,7 @@ class TestNovaHandlers(TestNetworkChecking):
 
         resp = self.app.put(reverse('NodeNICsHandler',
                                     kwargs={'node_id': node['id']}),
-                            json.dumps(nics),
+                            jsonutils.dumps(nics),
                             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
 
@@ -507,7 +508,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         )
         self.cluster = self.env.clusters[0]
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.nets = json.loads(resp.body)
+        self.nets = jsonutils.loads(resp.body)
 
     def test_network_checking(self):
         self.update_neutron_networks_success(self.cluster.id, self.nets)
@@ -663,7 +664,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
         self.update_neutron_networks_success(self.cluster.id, self.nets)
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.nets = json.loads(resp.body)
+        self.nets = jsonutils.loads(resp.body)
         self.assertEquals(self.find_net_by_name('public')['cidr'],
                           '172.16.0.0/25')
         self.assertEquals(self.find_net_by_name('public')['network_size'], 128)
@@ -822,7 +823,7 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
         )
         self.cluster = self.env.clusters[0]
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.nets = json.loads(resp.body)
+        self.nets = jsonutils.loads(resp.body)
 
     def test_network_checking(self):
         self.update_neutron_networks_success(self.cluster.id, self.nets)

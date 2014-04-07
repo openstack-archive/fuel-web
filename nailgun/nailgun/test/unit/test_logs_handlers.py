@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import os
 import shutil
 import tempfile
@@ -28,6 +27,7 @@ from nailgun.api.handlers.logs import read_backwards
 from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Role
 from nailgun.errors import errors
+from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
 from nailgun.task.task import DumpTask
@@ -77,7 +77,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(response, settings.LOGS)
 
     def test_log_source_by_node_collection_handler(self):
@@ -90,7 +90,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(response, [])
 
         log_entry = ['date111', 'level222', 'text333']
@@ -101,7 +101,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(response, [settings.LOGS[1]])
 
     def test_log_entry_collection_handler(self):
@@ -129,7 +129,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         response['entries'].reverse()
         self.assertEquals(response['entries'], log_entries)
 
@@ -139,7 +139,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         response['entries'].reverse()
         self.assertEquals(response['entries'], log_entries)
 
@@ -171,7 +171,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         response['entries'].reverse()
         self.assertEquals(response['entries'], log_entries)
         settings.LOGS[0]['multiline'] = False
@@ -312,7 +312,7 @@ class TestLogs(BaseIntegrationTest):
         self.assertRaises(errors.DumpRunning, tm.execute)
 
     def test_log_package_handler_ok(self):
-        task = json.dumps({
+        task = jsonutils.dumps({
             "status": "running",
             "name": "dump",
             "progress": 0,
@@ -381,7 +381,7 @@ class TestLogs(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         response['entries'].reverse()
         self.assertEquals(response['entries'], response_log_entries)
 

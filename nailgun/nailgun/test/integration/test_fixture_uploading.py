@@ -15,12 +15,12 @@
 #    under the License.
 
 import cStringIO
-import json
 import yaml
 
 from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 
 

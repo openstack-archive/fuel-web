@@ -14,9 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from mock import patch
 
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -37,7 +37,7 @@ class TestVersionHandler(BaseIntegrationTest):
         )
         self.assertEqual(200, resp.status_code)
         self.assertEqual(
-            json.loads(resp.body),
+            jsonutils.loads(resp.body),
             {
                 "release": "0.1b",
                 "nailgun_sha": "12345",

@@ -15,10 +15,10 @@
 #    under the License.
 
 import inspect
-import json
 
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.urls.v1 import urls
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import reverse
 
 
@@ -84,7 +84,7 @@ class SampleGenerator(object):
         return "\n.. code-block:: javascript\n\n{0}\n\n".format(
             "\n".join([
                 "   " + s
-                for s in json.dumps(data, indent=4).split("\n")
+                for s in jsonutils.dumps(data, indent=4).split("\n")
             ])
         )
 

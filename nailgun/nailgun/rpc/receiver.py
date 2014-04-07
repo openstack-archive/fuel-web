@@ -16,7 +16,6 @@
 
 import collections
 import itertools
-import json
 import netifaces
 import os
 import traceback
@@ -32,6 +31,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.logger import logger
+from nailgun.openstack.common import jsonutils
 from nailgun.task.helpers import TaskHelper
 
 
@@ -41,7 +41,7 @@ class NailgunReceiver(object):
     def remove_nodes_resp(cls, **kwargs):
         logger.info(
             "RPC method remove_nodes_resp received: %s" %
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
         nodes = kwargs.get('nodes') or []
@@ -108,7 +108,7 @@ class NailgunReceiver(object):
     def remove_cluster_resp(cls, **kwargs):
         logger.info(
             "RPC method remove_cluster_resp received: %s" %
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
 
@@ -158,7 +158,7 @@ class NailgunReceiver(object):
     def deploy_resp(cls, **kwargs):
         logger.info(
             "RPC method deploy_resp received: %s" %
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
         nodes = kwargs.get('nodes') or []
@@ -250,7 +250,7 @@ class NailgunReceiver(object):
     def provision_resp(cls, **kwargs):
         logger.info(
             "RPC method provision_resp received: %s" %
-            json.dumps(kwargs))
+            jsonutils.dumps(kwargs))
 
         task_uuid = kwargs.get('task_uuid')
         message = kwargs.get('error')
@@ -423,7 +423,7 @@ class NailgunReceiver(object):
     def stop_deployment_resp(cls, **kwargs):
         logger.info(
             "RPC method stop_deployment_resp received: %s" %
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
         nodes = kwargs.get('nodes', [])
@@ -506,7 +506,7 @@ class NailgunReceiver(object):
     def reset_environment_resp(cls, **kwargs):
         logger.info(
             "RPC method reset_environment_resp received: %s",
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
         nodes = kwargs.get('nodes', [])
@@ -608,7 +608,7 @@ class NailgunReceiver(object):
     def verify_networks_resp(cls, **kwargs):
         logger.info(
             "RPC method verify_networks_resp received: %s" %
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
         nodes = kwargs.get('nodes')
@@ -750,7 +750,7 @@ class NailgunReceiver(object):
         """
         logger.info(
             "RPC method check_dhcp_resp received: %s",
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         messages = []
 
@@ -798,7 +798,7 @@ class NailgunReceiver(object):
     def check_redhat_credentials_resp(cls, **kwargs):
         logger.info(
             "RPC method check_redhat_credentials_resp received: %s" %
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
         error_msg = kwargs.get('error')
@@ -843,7 +843,7 @@ class NailgunReceiver(object):
     def redhat_check_licenses_resp(cls, **kwargs):
         logger.info(
             "RPC method redhat_check_licenses_resp received: %s" %
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
         error_msg = kwargs.get('error')
@@ -891,7 +891,7 @@ class NailgunReceiver(object):
     def download_release_resp(cls, **kwargs):
         logger.info(
             "RPC method download_release_resp received: %s" %
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
         error_msg = kwargs.get('error')
@@ -967,7 +967,7 @@ class NailgunReceiver(object):
     def dump_environment_resp(cls, **kwargs):
         logger.info(
             "RPC method dump_environment_resp received: %s" %
-            json.dumps(kwargs)
+            jsonutils.dumps(kwargs)
         )
         task_uuid = kwargs.get('task_uuid')
         status = kwargs.get('status')

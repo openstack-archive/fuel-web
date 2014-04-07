@@ -14,13 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from mock import patch
 
 import nailgun
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -42,7 +42,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(cluster.id, response['id'])
         self.assertEquals(cluster.name, response['name'])
         self.assertEquals(cluster.release.id, response['release_id'])
@@ -52,14 +52,14 @@ class TestHandlers(BaseIntegrationTest):
         yet_another_cluster_name = 'Yet another cluster'
         resp = self.app.post(
             reverse('ClusterCollectionHandler'),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'name': yet_another_cluster_name,
                 'release': release.id
             }),
             headers=self.default_headers
         )
         self.assertEquals(201, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(yet_another_cluster_name, response['name'])
         self.assertEquals(release.id, response['release_id'])
 
@@ -71,7 +71,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
-            json.dumps({'name': updated_name}),
+            jsonutils.dumps({'name': updated_name}),
             headers=self.default_headers
         )
         self.db.refresh(cluster)
@@ -90,7 +90,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(cluster.net_manager, "FlatDHCPManager")
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
-            json.dumps({'net_manager': 'VlanManager'}),
+            jsonutils.dumps({'net_manager': 'VlanManager'}),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -102,7 +102,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(cluster.net_provider, "nova_network")
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
-            json.dumps({'net_provider': 'neutron'}),
+            jsonutils.dumps({'net_provider': 'neutron'}),
             headers=self.default_headers,
             expect_errors=True
         )
@@ -121,7 +121,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(cluster.net_provider, "neutron")
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
-            json.dumps({'net_segment_type': 'vlan'}),
+            jsonutils.dumps({'net_segment_type': 'vlan'}),
             headers=self.default_headers,
             expect_errors=True
         )
@@ -137,7 +137,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=False)
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
-            json.dumps({'nodes': [node1.id]}),
+            jsonutils.dumps({'nodes': [node1.id]}),
             headers=self.default_headers,
             expect_errors=True
         )
@@ -149,7 +149,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
-            json.dumps({'nodes': [node2.id]}),
+            jsonutils.dumps({'nodes': [node2.id]}),
             headers=self.default_headers
         )
         self.assertEquals(resp.status_code, 200)
@@ -260,4 +260,5 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(get_resp.status_code, 200)
-        self.datadiff(json.loads(get_resp.body), cluster.attributes.generated)
+        self.datadiff(jsonutils.loads(get_resp.body),
+                      cluster.attributes.generated)

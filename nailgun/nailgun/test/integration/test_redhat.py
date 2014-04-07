@@ -12,9 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from nailgun.db.sqlalchemy.models import Task
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -29,7 +28,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_redhat_account_validation_failure(self):
         resp = self.app.post(
             reverse('RedHatSetupHandler'),
-            json.dumps({'license_type': 'rhsm',
+            jsonutils.dumps({'license_type': 'rhsm',
                         'username': 'some_user',
                         'password': 'password',
                         'release_id': self.release.id}),

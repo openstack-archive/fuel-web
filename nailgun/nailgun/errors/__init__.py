@@ -65,6 +65,10 @@ default_messages = {
     # RPC errors
     "CannotFindTask": "Cannot find task",
 
+    # Zabbix errors
+    "CannotMakeZabbixRequest": "Can't make a request to Zabbix",
+    "ZabbixRequestError": "Zabbix request returned an error",
+
     # unknown
     "UnknownError": "Unknown error"
 }

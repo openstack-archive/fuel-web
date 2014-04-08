@@ -82,6 +82,7 @@ class Release(NailgunObject):
             "id": {"type": "number"},
             "name": {"type": "string"},
             "version": {"type": "string"},
+            "can_update_versions": {"type": "array"},
             "description": {"type": "string"},
             "operating_system": {"type": "string"},
             "state": {

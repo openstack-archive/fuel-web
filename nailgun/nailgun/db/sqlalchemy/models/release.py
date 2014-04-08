@@ -16,6 +16,7 @@
 
 from sqlalchemy import Column
 from sqlalchemy import Enum
+from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Unicode
@@ -29,6 +30,14 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Role
+
+
+class ReleaseOrchestratorData(Base):
+    __tablename__ = 'release_orchestrator_data'
+    id = Column(Integer, primary_key=True)
+    release_id = Column(Integer, ForeignKey('releases.id'))
+    repo = Column(Unicode(255))
+    puppet_base = Column(Unicode(255))
 
 
 class Release(Base):
@@ -65,6 +74,9 @@ class Release(Base):
         backref="release",
         cascade="all,delete"
     )
+    orchestrator_data = relationship("ReleaseOrchestratorData",
+                                     uselist=False,
+                                     cascade="delete")
 
     #TODO(enchantner): get rid of properties
 

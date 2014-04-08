@@ -59,6 +59,7 @@ class ProvisioningSerializer(object):
 
         serialized_node = {
             'uid': node.uid,
+            'fuel_version': node.cluster.fuel_version,
             'power_address': node.ip,
             'name': TaskHelper.make_slave_name(node.id),
             # right now it duplicates to avoid possible issues
@@ -77,6 +78,8 @@ class ProvisioningSerializer(object):
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'ks_spaces': node.attributes.volumes,
+                'repo_metadata': objects.Release.repo_metadata(
+                    node.cluster.release),
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,
                 'puppet_enable': 0,

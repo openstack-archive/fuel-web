@@ -3,7 +3,8 @@ LISTEN_PORT: "8000"
 DEVELOPMENT: 1
 
 VERSION:
-  release: "3.0"
+  release: "5.0"
+  api: "1"
   nailgun_sha: "Unknown build"
   astute_sha: "Unknown build"
   fuellib_sha: "Unknown build"

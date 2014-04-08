@@ -61,7 +61,8 @@
                 "public": "Public",
                 "floating": "Floating",
                 "management": "Management",
-                "storage": "Storage"
+                "storage": "Storage",
+                "mesh": "Mesh"
             },
             "navbar": {
                 "environments": "Environments",
@@ -256,7 +257,8 @@
                         "ip_range": "IP Range",
                         "gateway": "Gateway",
                         "cidr": "CIDR",
-                        "use_vlan_tagging": "Use VLAN tagging"
+                        "use_vlan_tagging": "Use VLAN tagging",
+                        "gre_network": "Run GRE over network"
                     },
                     "networking_parameters": {
                         "fixed_cidr": "Fixed network CIDR",

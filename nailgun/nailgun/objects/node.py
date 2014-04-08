@@ -280,7 +280,6 @@ class Node(NailgunObject):
             # smarter check needed
             cls.update_interfaces(instance)
 
-        new_cluster_id = instance.cluster_id
         cluster_changed = False
         if "cluster_id" in data:
             new_cluster_id = data.pop("cluster_id")
@@ -420,8 +419,8 @@ class Node(NailgunObject):
         Cluster.get_network_manager(
             instance.cluster
         ).clear_assigned_networks(instance)
-        instance.cluster_id = None
         instance.roles = instance.pending_roles = []
+        instance.cluster_id = None
         instance.reset_name_to_default()
         db().flush()
         db().refresh(instance)
@@ -442,6 +441,13 @@ class Node(NailgunObject):
             networks_grouped.get(group_id, [])
         )
         return node_dict
+
+    @classmethod
+    def can_be_updated(cls, instance):
+        return (instance.status in (consts.NODE_STATUSES.ready,
+                                    consts.NODE_STATUSES.provisioned)) or \
+               (instance.status == consts.NODE_STATUSES.error
+                and instance.error_type == consts.NODE_ERRORS.deploy)
 
 
 class NodeCollection(NailgunCollection):

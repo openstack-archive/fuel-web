@@ -22,7 +22,7 @@ from nailgun.objects import Release
 
 class ClusterValidator(BasicValidator):
     @classmethod
-    def _validate_common(cls, data):
+    def _validate_common(cls, data, instance=None):
         d = cls.validate_json(data)
         if d.get("name"):
             if ClusterCollection.filter_by(
@@ -35,10 +35,32 @@ class ClusterValidator(BasicValidator):
                 )
         release_id = d.get("release", d.get("release_id", None))
         if release_id:
-            release = Release.get_by_uid(release_id)
-            if not release:
+            if not Release.get_by_uid(release_id):
                 raise errors.InvalidData(
                     "Invalid release ID",
+                    log_message=True
+                )
+        if d.get("pending_release_id", None):
+            pend_rel = Release.get_by_uid(d["pending_release_id"])
+            if not pend_rel:
+                raise errors.InvalidData(
+                    "Invalid pending release ID",
+                    log_message=True
+                )
+            if not release_id and not instance:
+                raise errors.InvalidData(
+                    "Cannot set pending release when "
+                    "there is no current release",
+                    log_message=True
+                )
+            curr_rel = Release.get_by_uid(release_id)
+            if release_id != d["pending_release_id"] and (
+                    curr_rel.operating_system != pend_rel.operating_system or
+                    curr_rel.openstack_version not in
+                    pend_rel.can_update_openstack_versions):
+                raise errors.InvalidData(
+                    "Cannot set pending release as "
+                    "it cannot update current release",
                     log_message=True
                 )
         return d
@@ -56,7 +78,7 @@ class ClusterValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, instance):
-        d = cls._validate_common(data)
+        d = cls._validate_common(data, instance)
         for k in ("net_provider",):
             if k in d and getattr(instance, k) != d[k]:
                 raise errors.InvalidData(

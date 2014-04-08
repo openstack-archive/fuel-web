@@ -102,6 +102,7 @@ class Cluster(NailgunObject):
                 "enum": list(consts.CLUSTER_GROUPING)
             },
             "release_id": {"type": "number"},
+            "pending_release_id": {"type": "number"},
             "replaced_deployment_info": {"type": "object"},
             "replaced_provisioning_info": {"type": "object"},
             "is_customized": {"type": "boolean"}

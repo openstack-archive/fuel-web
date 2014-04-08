@@ -55,7 +55,7 @@ class ReleaseAction(Action):
             "name",
             "state",
             "operating_system",
-            "version"
+            "openstack_version"
         )
         if params.release:
             release = Release(params.release)

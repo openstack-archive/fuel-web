@@ -34,11 +34,17 @@ from nailgun.db.sqlalchemy.models.node import Role
 class Release(Base):
     __tablename__ = 'releases'
     __table_args__ = (
-        UniqueConstraint('name', 'version'),
+        UniqueConstraint('name', 'openstack_version'),
     )
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(100), nullable=False)
-    version = Column(String(30), nullable=False)
+    openstack_version = Column(String(30), nullable=False)
+    can_update_openstack_versions = Column(JSON, default=[])
+    api_version = Column(String(30), nullable=False)
+    fuel_version = Column(JSON, default=[])
+    repo_metadata = Column(JSON, default={})
+    pp_modules_source = Column(Unicode(255))
+    pp_manifests_source = Column(Unicode(255))
     description = Column(Unicode)
     operating_system = Column(String(50), nullable=False)
     state = Column(
@@ -62,6 +68,7 @@ class Release(Base):
     )
     clusters = relationship(
         "Cluster",
+        primaryjoin="Release.id==Cluster.release_id",
         backref="release",
         cascade="all,delete"
     )

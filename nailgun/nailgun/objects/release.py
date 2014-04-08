@@ -46,7 +46,13 @@ class Release(NailgunObject):
         "properties": {
             "id": {"type": "number"},
             "name": {"type": "string"},
-            "version": {"type": "string"},
+            "openstack_version": {"type": "string"},
+            "can_update_openstack_versions": {"type": "array"},
+            "api_version": {"type": "string"},
+            "fuel_version": {"type": "array"},
+            "repo_metadata": {"type": "object"},
+            "pp_modules_source": {"type": "string"},
+            "pp_manifests_source": {"type": "string"},
             "description": {"type": "string"},
             "operating_system": {"type": "string"},
             "state": {

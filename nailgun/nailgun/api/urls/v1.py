@@ -30,6 +30,7 @@ from nailgun.api.handlers.cluster import ClusterGeneratedData
 from nailgun.api.handlers.cluster import ClusterHandler
 from nailgun.api.handlers.cluster import ClusterResetHandler
 from nailgun.api.handlers.cluster import ClusterStopDeploymentHandler
+from nailgun.api.handlers.cluster import ClusterUpdateHandler
 
 from nailgun.api.handlers.network import NetworkGroupCollectionHandler
 from nailgun.api.handlers.network import NetworkGroupHandler
@@ -134,6 +135,8 @@ urls = (
     ClusterStopDeploymentHandler,
     r'/clusters/(?P<cluster_id>\d+)/reset/?$',
     ClusterResetHandler,
+    r'/clusters/(?P<cluster_id>\d+)/update/?$',
+    ClusterUpdateHandler,
 
 
     r'/networks/?$',

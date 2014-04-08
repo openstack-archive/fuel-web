@@ -19,6 +19,8 @@ import shutil
 
 from sqlalchemy import or_
 
+from nailgun import consts
+
 from nailgun import objects
 
 from nailgun.db import db
@@ -278,6 +280,15 @@ class TaskHelper(object):
                 cls.__set_cluster_status(cluster, 'error')
             else:
                 cls.__set_cluster_status(cluster, 'stopped')
+        elif task.name == consts.TASK_NAMES.update:
+            if task.status == consts.TASK_STATUSES.error:
+                cls.__set_cluster_status(cluster,
+                                         consts.CLUSTER_STATUSES.error)
+            else:
+                cls.__set_cluster_status(cluster,
+                                         consts.CLUSTER_STATUSES.operational)
+                cluster.release_id = cluster.pending_release_id
+                cluster.pending_release_id = None
 
         db().commit()
 
@@ -407,6 +418,18 @@ class TaskHelper(object):
             lambda n: n.status == 'provisioning',
             cluster.nodes
         ), key=lambda n: n.id)
+
+    @classmethod
+    def nodes_to_upgrade(cls, cluster):
+        nodes_to_upgrade = sorted(filter(
+            lambda n: objects.Node.can_be_updated(n),
+            cluster.nodes
+        ), key=lambda n: n.id)
+
+        if cluster.is_ha_mode:
+            return cls.__nodes_to_deploy_ha(cluster, nodes_to_upgrade)
+
+        return nodes_to_upgrade
 
     @classmethod
     def __nodes_to_deploy_ha(cls, cluster, nodes):

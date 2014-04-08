@@ -1,0 +1,29 @@
+version: '5.1'
+working_directory: /var/lib/fuel_upgrade/
+log_path: /var/log/fuel_upgrade.log
+puppet_modules_dir: puppet_modules
+
+docker:
+  url: unix://var/run/docker.sock
+  api_version: '1.9'
+  http_timeout: 160
+  stop_container_timeout: 160
+
+container_prefix: fuel/
+
+endpoints:
+  nailgun:
+    port: 8000
+    host: 127.0.0.1
+
+containers:
+  - id: nailgun
+    post_build_command: "bash -c '. /opt/nailgun/bin/activate; manage.py migrate upgrade head'"
+
+  - id: postgresql
+    port: 5432
+
+  - id: data
+    post_build_command: 'true'
+    volumes:
+      - /var/lib/postgresql

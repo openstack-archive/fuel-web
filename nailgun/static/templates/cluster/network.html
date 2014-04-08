@@ -63,7 +63,7 @@
           <% } %>
         <% } else { %>
           <% var hidden = net_manager != 'VlanManager' && network.get('name') == 'fixed' && _.contains(['network_size', 'amount'], attribute); %>
-          <label class="parameter-box clearfix setting <%= hidden ? 'hide' : '' %>">
+          <div class="parameter-box clearfix setting <%= hidden ? 'hide' : '' %>">
             <div class="networks-sub-title parameter-name"><%= labels[attribute] %></div>
             <div class="parameter-control <%- attribute %>">
               <% if (attribute == 'network_size') { %>
@@ -73,7 +73,7 @@
               <% } %>
             </div>
             <div class="error validation-error"><span class="help-inline"></span></div>
-          </label>
+          </div>
         <% } %>
       </div>
     <% }) %>

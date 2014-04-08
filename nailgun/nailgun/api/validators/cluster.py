@@ -14,6 +14,7 @@
 #    under the License.
 
 from nailgun.api.validators.base import BasicValidator
+from nailgun.db import db
 from nailgun.errors import errors
 
 from nailgun.objects import ClusterCollection
@@ -24,39 +25,49 @@ class ClusterValidator(BasicValidator):
     @classmethod
     def _validate_common(cls, data):
         d = cls.validate_json(data)
-        if d.get("name"):
-            if ClusterCollection.filter_by(
-                query=None,
-                name=d["name"]
-            ).first():
-                raise errors.AlreadyExists(
-                    "Environment with this name already exists",
-                    log_message=True
-                )
+
         release_id = d.get("release", d.get("release_id", None))
         if release_id:
             release = Release.get_by_uid(release_id)
             if not release:
                 raise errors.InvalidData(
-                    "Invalid release ID",
-                    log_message=True
-                )
+                    "Invalid release ID", log_message=True)
         return d
 
     @classmethod
     def validate(cls, data):
         d = cls._validate_common(data)
+
+        # TODO(ikalnitsky): move it to _validate_common when
+        # PATCH method will be implemented
         release_id = d.get("release", d.get("release_id", None))
         if not release_id:
             raise errors.InvalidData(
-                u"Release ID is required",
-                log_message=True
-            )
+                u"Release ID is required", log_message=True)
+
+        if "name" in d:
+            if ClusterCollection.filter_by(None, name=d["name"]).first():
+                raise errors.AlreadyExists(
+                    "Environment with this name already exists",
+                    log_message=True
+                )
+
         return d
 
     @classmethod
     def validate_update(cls, data, instance):
         d = cls._validate_common(data)
+
+        if "name" in d:
+            query = db().query(ClusterCollection.single.model)\
+                .filter(ClusterCollection.single.model.id != instance.id)
+
+            if ClusterCollection.filter_by(query, name=d["name"]).first():
+                raise errors.AlreadyExists(
+                    "Environment with this name already exists",
+                    log_message=True
+                )
+
         for k in ("net_provider",):
             if k in d and getattr(instance, k) != d[k]:
                 raise errors.InvalidData(

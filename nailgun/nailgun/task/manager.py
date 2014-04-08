@@ -170,8 +170,6 @@ class ApplyChangesTaskManager(TaskManager):
             logger.debug("There are nodes to provision: %s",
                          " ".join([n.fqdn for n in nodes_to_provision]))
             task_provision = supertask.create_subtask("provision")
-            # For more accurate progress calulation
-            task_provision.weight = 0.4
             provision_message = self._call_silently(
                 task_provision,
                 tasks.ProvisionTask,

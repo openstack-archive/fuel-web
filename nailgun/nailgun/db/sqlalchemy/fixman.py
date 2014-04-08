@@ -186,18 +186,28 @@ def upload_fixture(fileobj, loader=None):
 
 def upload_fixtures():
     fns = []
-    for path in settings.FIXTURES_TO_UPLOAD:
-        if not os.path.isabs(path):
+    for orig_path in settings.FIXTURES_TO_UPLOAD:
+        if not os.path.isabs(orig_path):
             path = os.path.abspath(
                 os.path.join(
-                    os.path.dirname(__file__),
-                    "..",
-                    "..",
-                    "fixtures",
-                    path
+                    "/etc/nailgun/fixtures/",
+                    orig_path
                 )
             )
-        fns.append(path)
+            if not os.access(path, os.R_OK):
+                path = os.path.abspath(
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        "..",
+                        "..",
+                        "fixtures",
+                        orig_path
+                    )
+                )
+        else:
+            path = orig_path
+        if os.access(path, os.R_OK):
+            fns.append(path)
 
     for fn in fns:
         with open(fn, "r") as fileobj:

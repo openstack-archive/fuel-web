@@ -31,6 +31,8 @@ from nailgun.errors import errors
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
+from nailgun.settings import settings
+
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
 from nailgun.utils import traverse
@@ -136,7 +138,8 @@ class Cluster(NailgunObject):
             "release_id": {"type": "number"},
             "replaced_deployment_info": {"type": "object"},
             "replaced_provisioning_info": {"type": "object"},
-            "is_customized": {"type": "boolean"}
+            "is_customized": {"type": "boolean"},
+            "fuel_version": {"type": "string"}
         }
     }
 
@@ -163,6 +166,7 @@ class Cluster(NailgunObject):
 
         assign_nodes = data.pop("nodes", [])
 
+        data["fuel_version"] = settings.VERSION["release"]
         new_cluster = super(Cluster, cls).create(data)
 
         cls.create_attributes(new_cluster)
@@ -303,6 +307,8 @@ class Cluster(NailgunObject):
         :returns: Cluster instance
         """
         nodes = data.pop("nodes", None)
+        # fuel_version cannot be changed
+        data.pop("fuel_version", None)
         super(Cluster, cls).update(instance, data)
         if nodes is not None:
             cls.update_nodes(instance, nodes)

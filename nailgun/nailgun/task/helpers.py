@@ -272,6 +272,13 @@ class TaskHelper(object):
                 cls.__set_cluster_status(cluster, 'error')
             else:
                 cls.__set_cluster_status(cluster, 'stopped')
+        elif task.name == 'upgrade':
+            if task.status == 'error':
+                cls.__set_cluster_status(cluster, 'error')
+            else:
+                cls.__set_cluster_status(cluster, 'operational')
+                cluster.release_id = cluster.pending_release_id
+                cluster.pending_release_id = None
 
         db().commit()
 
@@ -401,6 +408,18 @@ class TaskHelper(object):
             lambda n: n.status == 'provisioning',
             cluster.nodes
         ), key=lambda n: n.id)
+
+    @classmethod
+    def nodes_to_upgrade(cls, cluster):
+        nodes_to_upgrade = sorted(filter(
+            lambda n: n.can_be_upgraded,
+            cluster.nodes
+        ), key=lambda n: n.id)
+
+        if cluster.is_ha_mode:
+            return cls.__nodes_to_deploy_ha(cluster, nodes_to_upgrade)
+
+        return nodes_to_upgrade
 
     @classmethod
     def __nodes_to_deploy_ha(cls, cluster, nodes):

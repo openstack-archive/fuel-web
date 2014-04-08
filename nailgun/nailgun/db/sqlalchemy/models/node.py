@@ -153,6 +153,11 @@ class Node(Base):
         return self.status == 'error' and self.error_type == 'deletion'
 
     @property
+    def can_be_upgraded(self):
+        return (self.status in ('ready', 'provisioned')) or \
+               (self.status == 'error' and self.error_type == 'deploy')
+
+    @property
     def human_readable_name(self):
         return self.name or self.mac
 

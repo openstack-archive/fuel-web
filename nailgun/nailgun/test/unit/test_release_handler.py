@@ -28,7 +28,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
             params=json.dumps({
                 'name': 'modified release',
-                'version': '5.1'
+                'openstack_version': '5.1'
             }),
             headers=self.default_headers,
             expect_errors=True)
@@ -36,8 +36,8 @@ class TestHandlers(BaseIntegrationTest):
         response = json.loads(resp.body)
         release_from_db = self.db.query(Release).one()
         self.db.refresh(release_from_db)
-        self.assertEquals('5.1', release_from_db.version)
-        self.assertEquals('5.1', response['version'])
+        self.assertEquals('5.1', release_from_db.openstack_version)
+        self.assertEquals('5.1', response['openstack_version'])
         self.assertEquals('modified release', response['name'])
 
     def test_release_put_returns_400_if_no_body(self):

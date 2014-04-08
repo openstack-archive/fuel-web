@@ -66,6 +66,15 @@ class Task(Base):
     # sum([t.weight for t in supertask.subtasks])
     weight = Column(Float, default=1.0)
 
+    def __set_task_weights(self, kwargs):
+        if not kwargs.get('weight') and kwargs.get('name') == 'provision':
+            # For more accurate progress calculation
+            kwargs['weight'] = 0.4
+
+    def __init__(self, *args, **kwargs):
+        self.__set_task_weights(kwargs)
+        super(Task, self).__init__(*args, **kwargs)
+
     def __repr__(self):
         return "<Task '{0}' {1} ({2}) {3}>".format(
             self.name,

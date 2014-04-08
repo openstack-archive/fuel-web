@@ -147,6 +147,21 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
             TaskHelper.update_cluster_status(supertask.uuid)
             self.assertEquals(self.cluster.status, 'new')
 
+    def test_provision_task_weight(self):
+        task = Task(
+            name='provision',
+            cluster=self.cluster,
+            status='error'
+        )
+        self.assertEquals(0.4, task.weight)
+        task = Task(
+            name='provision',
+            cluster=self.cluster,
+            status='error',
+            weight=0.9
+        )
+        self.assertEquals(0.9, task.weight)
+
 
 class TestCheckBeforeDeploymentTask(BaseTestCase):
 

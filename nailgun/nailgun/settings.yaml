@@ -3,7 +3,8 @@ LISTEN_PORT: "8000"
 DEVELOPMENT: 1
 
 VERSION:
-  release: "3.0"
+  release: "5.0"
+  api: "1"
   nailgun_sha: "Unknown build"
   astute_sha: "Unknown build"
   fuellib_sha: "Unknown build"
@@ -53,6 +54,8 @@ PATH_TO_SSH_KEY: = "/root/.ssh/id_rsa"
 PATH_TO_BOOTSTRAP_SSH_KEY: "/root/.ssh/bootstrap.rsa"
 
 MASTER_IP: "127.0.0.1"
+
+REPO_PORT: "8080"
 
 COBBLER_URL: "http://localhost/cobbler_api"
 COBBLER_USER: "cobbler"

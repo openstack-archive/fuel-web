@@ -887,3 +887,55 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
             {'roles': ['compute', 'ceph-osd']}])
         data = self.serialize(cluster)
         self.assertEqual(data[0]['storage']['pg_num'], 512)
+
+
+class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
+
+    def test_repo_and_puppet_data(self):
+        release_id = self.env.create_release().id
+
+        orch_data = {
+            "repo": "centos-5.0/centos/fuelweb/x86_64/",
+            "puppet_base": "puppet/release"
+        }
+        resp = self.app.put(
+            reverse('ReleaseHandler', kwargs={'obj_id': release_id}),
+            params=json.dumps(
+                {
+                    "orchestrator_data": orch_data,
+                    "version": "5.0.1"
+                }
+            ),
+            headers=self.default_headers)
+        self.assertEquals(200, resp.status_code)
+
+        cluster_id = self.env.create(
+            cluster_kwargs={
+                'release_id': release_id
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}
+            ]
+        )["id"]
+
+        cluster = self.db.query(Cluster).get(cluster_id)
+        TaskHelper.prepare_for_deployment(cluster.nodes)
+        facts = self.serializer.serialize(cluster, cluster.nodes)
+
+        self.assertEquals(1, len(facts))
+        fact = facts[0]
+        self.assertEquals(
+            fact['repo_metadata'],
+            {
+                'nailgun': 'http://127.0.0.1:8080'
+                           '/centos-5.0/centos/fuelweb/x86_64/'
+            }
+        )
+        self.assertEquals(
+            fact['puppet_modules_source'],
+            'rsync://127.0.0.1/puppet/release/5.0.1/modules'
+        )
+        self.assertEquals(
+            fact['puppet_manifests_source'],
+            'rsync://127.0.0.1/puppet/release/5.0.1/manifests'
+        )

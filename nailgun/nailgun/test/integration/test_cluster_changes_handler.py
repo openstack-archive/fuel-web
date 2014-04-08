@@ -83,7 +83,14 @@ class TestHandlers(BaseIntegrationTest):
 
             'master_ip': '127.0.0.1',
             'use_cinder': True,
-            'deployment_id': cluster_db.id
+            'deployment_id': cluster_db.id,
+            'repo_metadata': objects.Release.repo_metadata(cluster_db.release),
+            'puppet_modules_source': objects.Release.puppet_modules_source(
+                cluster_db.release),
+            'puppet_manifests_source': objects.Release.puppet_manifests_source(
+                cluster_db.release),
+            'openstack_version': cluster_db.release.version,
+            'fuel_version': cluster_db.fuel_version
         }
 
         cluster_attrs = objects.Attributes.merged_attrs_values(
@@ -202,9 +209,12 @@ class TestHandlers(BaseIntegrationTest):
         deploy_task_uuid = [x.uuid for x in supertask.subtasks
                             if x.name == 'deployment'][0]
 
-        deployment_msg = {'method': 'deploy',
-                          'respond_to': 'deploy_resp',
-                          'args': {}}
+        deployment_msg = {
+            'api_version': '1',
+            'method': 'deploy',
+            'respond_to': 'deploy_resp',
+            'args': {}
+        }
 
         deployment_msg['args']['task_uuid'] = deploy_task_uuid
         deployment_msg['args']['deployment_info'] = deployment_info
@@ -232,9 +242,11 @@ class TestHandlers(BaseIntegrationTest):
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
                 'netboot_enabled': '1',
                 'ks_meta': {
+                    'fuel_version': cluster_db.fuel_version,
+                    'repo_metadata': objects.Release.repo_metadata(
+                        cluster_db.release),
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
-                    'puppet_version': settings.PUPPET_VERSION,
                     'puppet_enable': 0,
                     'mco_auto_setup': 1,
                     'install_log_2_syslog': 1,
@@ -286,6 +298,7 @@ class TestHandlers(BaseIntegrationTest):
             supertask.subtasks)[0].uuid
 
         provision_msg = {
+            'api_version': '1',
             'method': 'provision',
             'respond_to': 'provision_resp',
             'args': {
@@ -341,7 +354,14 @@ class TestHandlers(BaseIntegrationTest):
 
             'master_ip': '127.0.0.1',
             'use_cinder': True,
-            'deployment_id': cluster_db.id
+            'deployment_id': cluster_db.id,
+            'repo_metadata': objects.Release.repo_metadata(cluster_db.release),
+            'puppet_modules_source': objects.Release.puppet_modules_source(
+                cluster_db.release),
+            'puppet_manifests_source': objects.Release.puppet_manifests_source(
+                cluster_db.release),
+            'openstack_version': cluster_db.release.version,
+            'fuel_version': cluster_db.fuel_version
         }
 
         cluster_attrs = objects.Attributes.merged_attrs_values(
@@ -569,9 +589,12 @@ class TestHandlers(BaseIntegrationTest):
         deploy_task_uuid = [x.uuid for x in supertask.subtasks
                             if x.name == 'deployment'][0]
 
-        deployment_msg = {'method': 'deploy',
-                          'respond_to': 'deploy_resp',
-                          'args': {}}
+        deployment_msg = {
+            'api_version': '1',
+            'method': 'deploy',
+            'respond_to': 'deploy_resp',
+            'args': {}
+        }
 
         deployment_msg['args']['task_uuid'] = deploy_task_uuid
         deployment_msg['args']['deployment_info'] = deployment_info
@@ -599,9 +622,11 @@ class TestHandlers(BaseIntegrationTest):
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
                 'netboot_enabled': '1',
                 'ks_meta': {
+                    'fuel_version': cluster_db.fuel_version,
+                    'repo_metadata': objects.Release.repo_metadata(
+                        cluster_db.release),
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
-                    'puppet_version': settings.PUPPET_VERSION,
                     'puppet_enable': 0,
                     'mco_auto_setup': 1,
                     'install_log_2_syslog': 1,
@@ -653,6 +678,7 @@ class TestHandlers(BaseIntegrationTest):
             supertask.subtasks)[0].uuid
 
         provision_msg = {
+            'api_version': '1',
             'method': 'provision',
             'respond_to': 'provision_resp',
             'args': {

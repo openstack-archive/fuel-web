@@ -70,7 +70,7 @@ class TestStopDeployment(BaseIntegrationTest):
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
         self.assertIsNone(
-            db().query(Task).filter_by(
+            self.db().query(Task).filter_by(
                 uuid=provision_task_uuid
             ).first()
         )

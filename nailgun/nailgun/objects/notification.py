@@ -19,7 +19,6 @@ from datetime import datetime
 from nailgun import consts
 from nailgun.db.sqlalchemy import models
 
-from nailgun.errors import errors
 from nailgun.logger import logger
 
 from nailgun.objects import NailgunCollection
@@ -61,30 +60,23 @@ class Notification(NailgunObject):
 
     @classmethod
     def create(cls, data):
-        topic = data.get("topic")
         node_id = data.get("node_id")
         task_uuid = data.pop("task_uuid", None)
         message = data.get("message")
 
-        if topic == 'discover' and node_id is None:
-            raise errors.CannotFindNodeIDForDiscovering(
-                "No node id in discover notification"
-            )
-
         if "datetime" not in data:
             data["datetime"] = datetime.now()
 
-        task = None
         exist = None
         if task_uuid:
             task = Task.get_by_uuid(task_uuid)
             if task and node_id:
-                exist = NotificationCollection.filter_by(
+                NotificationCollection.count(NotificationCollection.filter_by(
                     None,
                     node_id=node_id,
                     message=message,
                     task_id=task.id
-                ).first()
+                ))
 
         if not exist:
             super(Notification, cls).create(data)

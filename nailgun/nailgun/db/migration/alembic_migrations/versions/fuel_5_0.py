@@ -43,6 +43,7 @@ def upgrade():
                     sa.Column('id', sa.Integer(), nullable=False),
                     sa.Column('name', sa.Unicode(length=100), nullable=False),
                     sa.Column('version', sa.String(length=30), nullable=False),
+                    sa.Column('can_update_versions', JSON(), nullable=False),
                     sa.Column('description', sa.Unicode(), nullable=True),
                     sa.Column(
                         'operating_system', sa.String(length=50),
@@ -66,7 +67,7 @@ def upgrade():
                         name='cluster_mode'), nullable=False),
                     sa.Column('status', sa.Enum('new', 'deployment', 'stopped',
                                                 'operational', 'error',
-                                                'remove',
+                                                'remove', 'update',
                                                 name='cluster_status'),
                               nullable=False),
                     sa.Column('net_provider', sa.Enum(
@@ -78,6 +79,8 @@ def upgrade():
                     sa.Column('name', sa.Unicode(length=50), nullable=False),
                     sa.Column('release_id', sa.Integer(), nullable=False),
                     sa.Column(
+                        'pending_release_id', sa.Integer(), nullable=True),
+                    sa.Column(
                         'replaced_deployment_info', JSON(), nullable=True),
                     sa.Column(
                         'replaced_provisioning_info', JSON(),
@@ -86,6 +89,8 @@ def upgrade():
                     sa.Column(
                         'fuel_version', sa.String(length=30), nullable=False),
                     sa.ForeignKeyConstraint(['release_id'], ['releases.id'], ),
+                    sa.ForeignKeyConstraint(
+                        ['pending_release_id'], ['releases.id'], ),
                     sa.PrimaryKeyConstraint('id'),
                     sa.UniqueConstraint('name')
                     )
@@ -153,7 +158,7 @@ def upgrade():
                     sa.Column('uuid', sa.String(length=36), nullable=False),
                     sa.Column('name', sa.Enum('super', 'deploy', 'deployment',
                                               'provision', 'stop_deployment',
-                                              'reset_environment',
+                                              'reset_environment', 'update',
                                               'node_deletion',
                                               'cluster_deletion',
                                               'check_before_deployment',

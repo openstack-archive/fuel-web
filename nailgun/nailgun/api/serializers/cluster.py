@@ -29,7 +29,8 @@ class ClusterSerializer(BasicSerializer):
         "is_customized",
         "net_provider",
         "release_id",
-        "fuel_version"
+        "fuel_version",
+        "pending_release_id"
     )
 
 
@@ -45,5 +46,6 @@ class AttributesSerializer(BasicSerializer):
         "is_customized",
         "net_provider",
         "release_id",
-        "fuel_version"
+        "fuel_version",
+        "pending_release_id"
     )

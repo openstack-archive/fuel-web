@@ -74,17 +74,18 @@ class Notification(NailgunObject):
         if "datetime" not in data:
             data["datetime"] = datetime.now()
 
-        task = None
         exist = None
         if task_uuid:
             task = Task.get_by_uuid(task_uuid)
             if task and node_id:
-                exist = NotificationCollection.filter_by(
-                    None,
-                    node_id=node_id,
-                    message=message,
-                    task_id=task.id
-                ).first()
+                exist = NotificationCollection.count(
+                    NotificationCollection.filter_by(
+                        None,
+                        node_id=node_id,
+                        message=message,
+                        task_id=task.id
+                    )
+                )
 
         if not exist:
             super(Notification, cls).create(data)

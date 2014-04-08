@@ -22,6 +22,27 @@
         <div class="error validation-error"><span class="help-inline"></span></div>
       </label>
     </div>
+    <% if (segmentation == 'gre') { %>
+      <div class="network-attribute">
+        <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.neutron.gre_network"></div>
+        <div class="range-row clearfix">
+          <label class="parameter-box clearfix">
+            <div class="parameter-control">
+              <div class="custom-tumbler">
+                <input type="checkbox" name="use-separate-network" disabled>
+                <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+              </div>
+            </div>
+          </label>
+          <label class="parameter-box clearfix">
+            <div class="parameter-control">
+              <select name="gre_network" <%= disabled %>></select>
+            </div>
+          </label>
+          <div class="error validation-error"><span class="help-inline"></span></div>
+        </div>
+      </div>
+    <% } %>
   </div>
 </div>
 <div>

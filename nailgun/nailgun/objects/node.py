@@ -340,6 +340,7 @@ class Node(NailgunObject):
         :returns: Node instance
         """
         data.pop("id", None)
+        data.pop("network_data", None)
 
         roles = data.pop("roles", None)
         pending_roles = data.pop("pending_roles", None)
@@ -354,7 +355,7 @@ class Node(NailgunObject):
 
             disks_changed = (new_disks != old_disks)
 
-        #TODO(enchantner): fix this temporary hack in clients
+        # TODO(enchantner): fix this temporary hack in clients
         if "cluster_id" not in data and "cluster" in data:
             cluster_id = data.pop("cluster", None)
             data["cluster_id"] = cluster_id

@@ -50,6 +50,7 @@ class Release(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(100), nullable=False)
     version = Column(String(30), nullable=False)
+    can_update_versions = Column(JSON, default=[], nullable=False)
     description = Column(Unicode)
     operating_system = Column(String(50), nullable=False)
     state = Column(
@@ -73,6 +74,7 @@ class Release(Base):
     )
     clusters = relationship(
         "Cluster",
+        primaryjoin="Release.id==Cluster.release_id",
         backref="release",
         cascade="all,delete"
     )

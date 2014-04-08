@@ -2,7 +2,27 @@
 <legend class="networks" data-i18n="network.<%- network.get('name') %>"></legend>
 <div class="<%- network.get('name') %>" data-network-id="<%- network.id %>">
 
-  
+  <% if (network.get('name') == 'mesh') { %>
+    <div class="network-attribute gre-network">
+      <div class="parameter-name" data-i18n="cluster_page.network_tab.network_parameters.gre_network"></div>
+      <div class="clearfix">
+        <label class="parameter-box clearfix">
+          <div class="parameter-control">
+            <div class="custom-tumbler">
+              <input type="checkbox" name="use-network-for-gre" <%= disabled %>>
+              <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+            </div>
+          </div>
+        </label>
+        <label class="parameter-box clearfix">
+          <div class="parameter-control">
+            <select name="gre_network" <%= disabled %>></select>
+          </div>
+        </label>
+      </div>
+    </div>
+  <% } %>
+
   <% if (networkConfig.notation == 'ip_ranges') { %>
     <div class="network-attribute ip-ranges">
       <div class="range-row-header">

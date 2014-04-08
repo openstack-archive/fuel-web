@@ -318,7 +318,8 @@ class TestNodeHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node['id'], 'cluster_id': None}]),
-            headers=self.default_headers
+            headers=self.default_headers,
+            expect_errors=True
         )
         self.assertEquals(resp.status_code, 200)
 

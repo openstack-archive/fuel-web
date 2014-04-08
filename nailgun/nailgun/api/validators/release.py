@@ -66,7 +66,7 @@ class ReleaseValidator(BasicValidator):
             )
         if db().query(Release).filter_by(
             name=d["name"],
-            version=d["version"]
+            current_os_version=d["version"]
         ).first():
             raise errors.AlreadyExists(
                 "Release with the same name and version "
@@ -90,7 +90,7 @@ class ReleaseValidator(BasicValidator):
 
         if db().query(Release).filter_by(
             name=d.get("name", instance.name),
-            version=d.get("version", instance.version)
+            version=d.get("version", instance.current_os_version)
         ).filter(
             not_(Release.id == instance.id)
         ).first():

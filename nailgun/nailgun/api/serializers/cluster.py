@@ -29,7 +29,8 @@ class ClusterSerializer(BasicSerializer):
         "is_customized",
         "net_provider",
         "net_segment_type",
-        "release_id"
+        "current_release_id",
+        #"pending_release_id"
     )
 
 
@@ -45,5 +46,6 @@ class AttributesSerializer(BasicSerializer):
         "is_customized",
         "net_provider",
         "net_segment_type",
-        "release_id"
+        "current_release_id",
+        #"pending_release_id"
     )

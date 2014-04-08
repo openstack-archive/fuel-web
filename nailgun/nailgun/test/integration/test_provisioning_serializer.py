@@ -29,7 +29,7 @@ class TestProvisioningSerializer(BaseIntegrationTest):
 
         self.env.create(
             cluster_kwargs={
-                'release_id': release.id},
+                'current_release_id': release.id},
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True}])

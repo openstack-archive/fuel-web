@@ -61,7 +61,8 @@
                 "public": "Public",
                 "floating": "Floating",
                 "management": "Management",
-                "storage": "Storage"
+                "storage": "Storage",
+                "mesh": "Mesh"
             },
             "navbar": {
                 "environments": "Environments",
@@ -278,7 +279,8 @@
                         "floaing_ip": "Floating IP range",
                         "internal_network": "Internal network",
                         "gateway": "Gateway",
-                        "name_servers": "Name servers"
+                        "name_servers": "Name servers",
+                        "gre_network": "Use separate network for GRE"
                     },
                     "validation": {
                         "invalid_ip_start": "Invalid IP range start",

@@ -1,6 +1,6 @@
 <% if (shownAttributes.length) { %>
 
-  <legend class="networks"><%- $.t('network.' + network.get('name')) %></legend>
+  <legend class="networks <%- network.get('name') %>"><%- $.t('network.' + network.get('name')) %></legend>
 
   <% var disabled = locked ? 'disabled' : '' %>
   <% var labels = {

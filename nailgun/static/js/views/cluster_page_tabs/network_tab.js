@@ -266,7 +266,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 hasChanges: this.hasChanges,
                 locked: this.isLocked(),
                 verificationLocked: !!this.model.task({group: ['deployment', 'network'], status: 'running'}),
-                segment_type: this.model.get("net_segment_type")
+                segment_type: this.model.get('net_segment_type')
             })).i18n();
             this.stickit(this.networkConfiguration);
             this.renderNetworks();
@@ -467,6 +467,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         rangeTemplate: _.template(rangeTemplate),
         initialize: function(options) {
             _.defaults(this, options);
+            this.configuration.on('change:gre_network', this.showMeshNetwork, this);
             this.configuration.on('change', this.tab.updateNetworkConfiguration, this.tab);
         },
         getIdRange: function() {
@@ -476,7 +477,29 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             var bindings = {
                 'input[name=base_mac]': 'L2.base_mac',
                 'input[name=cidr-int]': 'predefined_networks.net04.L3.cidr',
-                'input[name=gateway]': 'predefined_networks.net04.L3.gateway'
+                'input[name=gateway]': 'predefined_networks.net04.L3.gateway',
+                'input[name=use-separate-network]': {
+                    observe: 'gre_network',
+                    onGet: function(value) {
+                        return value != 'mesh';
+                    },
+                    onSet: _.bind(function(value) {
+                        return value ? this.tab.networkConfiguration.get('networks').at(0).get('name') : 'mesh';
+                    }, this)
+                },
+                'select[name=gre_network]': {
+                    observe: 'gre_network',
+                    visible: function(value) {
+                        return value != 'mesh';
+                    },
+                    selectOptions: {
+                        collection: _.bind(function() {
+                            return _.map(this.tab.networkConfiguration.get('networks').pluck('name'), function(name) {
+                                return {value: name, label: $.t('network.' + name)};
+                            });
+                        }, this)
+                    }
+                }
             };
             var observedAttribute = this.configuration.get('segmentation_type') == 'gre' ? 'L2.tunnel_id_ranges' : 'L2.phys_nets.physnet2.vlan_range';
             _.each(this.getIdRange(), function(id, idIndex) {
@@ -511,6 +534,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                     }, this)
                 };
             }, this);
+        },
+        showMeshNetwork: function() {
+            this.tab.$('.mesh').toggle(this.configuration.get('gre_network') == 'mesh');
         },
         render: function() {
             this.$el.html(this.template({

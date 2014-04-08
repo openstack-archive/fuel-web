@@ -28,4 +28,14 @@ class BaseTestCase(TestCase):
     def method_was_not_called(self, method):
         """Checks that mocked method was not called
         """
-        self.assertEqual(method, 0)
+        self.assertEqual(method.call_count, 0)
+
+    def called_once(self, method):
+        """Checks that mocked method was called once
+        """
+        self.assertEqual(method.call_count, 1)
+
+    def called_times(self, method, count):
+        """Checks that mocked method was called `count` times
+        """
+        self.assertEqual(method.call_count, count)

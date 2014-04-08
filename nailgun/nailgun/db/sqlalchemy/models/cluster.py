@@ -139,7 +139,8 @@ class Cluster(Base):
 
     @changes.setter
     def changes(self, value):
-        self.changes_list = value
+        changes = [ClusterChanges(**changes) for changes in value]
+        self.changes_list = changes
 
     @property
     def is_ha_mode(self):

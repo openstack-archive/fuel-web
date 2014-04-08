@@ -509,6 +509,61 @@ class ResetEnvironmentTaskManager(TaskManager):
         return task
 
 
+class UpgradeEnvironmentTaskManager(TaskManager):
+
+    def execute(self):
+        if not self.cluster.pending_release_id:
+            raise errors.InvalidReleaseId(
+                u"Can't upgrade environment '{0}' when "
+                u"new release Id is invalid")
+
+        running_tasks = db().query(Task).filter_by(
+            cluster_id=self.cluster.id,
+        ).filter(
+            Task.name.in_([
+                'deploy',
+                'deployment',
+                'reset_environment',
+                'stop_deployment'
+            ])
+        )
+        if running_tasks:
+            raise errors.TaskAlreadyRunning(
+                u"Can't upgrade environment '{0}' when "
+                u"other task is running".format(
+                    self.cluster.id
+                )
+            )
+
+        nodes_to_change = TaskHelper.nodes_to_upgrade(self.cluster)
+        TaskHelper.update_slave_nodes_fqdn(nodes_to_change)
+        logger.debug('Nodes to upgrade: {0}'.format(
+            ' '.join([n.fqdn for n in nodes_to_change])))
+        task_upgrade = Task(name='upgrade', cluster=self.cluster)
+        db().add(task_upgrade)
+        self.cluster.status = 'upgrade'
+        db().commit()
+
+        deployment_message = self._call_silently(
+            task_upgrade,
+            tasks.UpgradeTask,
+            nodes_to_change,
+            method_name='message')
+
+        db().refresh(task_upgrade)
+
+        task_upgrade.cache = deployment_message
+
+        for node in nodes_to_change:
+            node.status = 'deploying'
+            node.progress = 0
+
+        db().commit()
+        rpc.cast('naily', deployment_message)
+
+        return task_upgrade
+
+
 class CheckNetworksTaskManager(TaskManager):
 
     def execute(self, data, check_admin_untagged=False):

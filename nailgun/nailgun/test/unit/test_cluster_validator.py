@@ -29,10 +29,11 @@ class TestClusterValidator(BaseTestCase):
         self.cluster_data = '{"name": "test", "release": 1}'
 
     def test_cluster_exists_validation(self):
-        with patch(
-            'nailgun.api.validators.cluster.ClusterCollection',
-            Mock()
-        ) as cc:
+        with nested(
+            patch('nailgun.api.validators.cluster.ClusterCollection', Mock()),
+            patch('nailgun.api.validators.cluster.Release', Mock())
+        ) as (cc, r):
+            r.get_by_uid.return_value = 'release'
             cc.filter_by.return_value.first.return_value = 'cluster'
             self.assertRaises(errors.AlreadyExists,
                               ClusterValidator.validate, self.cluster_data)

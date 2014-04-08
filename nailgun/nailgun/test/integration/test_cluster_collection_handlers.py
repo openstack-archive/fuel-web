@@ -121,9 +121,11 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_if_cluster_creates_correct_networks(self):
         release = Release()
-        release.version = "1.1.1"
-        release.name = u"release_name_" + str(release.version)
-        release.description = u"release_desc" + str(release.version)
+        release.openstack_version = "1.1.1"
+        release.name = u"release_name_" + \
+                       str(release.openstack_version)
+        release.description = u"release_desc" + \
+                              str(release.openstack_version)
         release.operating_system = "CentOS"
         release.networks_metadata = self.env.get_default_networks_metadata()
         release.attributes_metadata = {

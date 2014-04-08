@@ -66,6 +66,12 @@ class Task(Base):
     # sum([t.weight for t in supertask.subtasks])
     weight = Column(Float, default=1.0)
 
+    def __get_task_weight(self, name):
+        if name == 'provision':
+            return 0.4
+        else:
+            return 1.0
+
     def __repr__(self):
         return "<Task '{0}' {1} ({2}) {3}>".format(
             self.name,
@@ -78,7 +84,8 @@ class Task(Base):
         if not name:
             raise ValueError("Subtask name not specified")
 
-        task = Task(name=name, cluster=self.cluster)
+        weight = self.__get_task_weight(name)
+        task = Task(name=name, cluster=self.cluster, weight=weight)
 
         self.subtasks.append(task)
         db().commit()

@@ -19,6 +19,7 @@ from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy import String
 from sqlalchemy import Unicode
 from sqlalchemy.orm import relationship, backref
 
@@ -98,6 +99,7 @@ class Cluster(Base):
     replaced_deployment_info = Column(JSON, default={})
     replaced_provisioning_info = Column(JSON, default={})
     is_customized = Column(Boolean, default=False)
+    fuel_version = Column(String(30), default=[])
 
     def replace_provisioning_info(self, data):
         self.replaced_provisioning_info = data

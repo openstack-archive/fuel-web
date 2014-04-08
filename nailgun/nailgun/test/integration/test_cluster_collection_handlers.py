@@ -65,8 +65,10 @@ class TestHandlers(BaseIntegrationTest):
         """
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.db.query(Cluster).get(cluster["id"])
-        cluster2 = self.env.create_cluster(api=True,
-                                           release_id=cluster_db.release.id)
+        cluster2 = self.env.create_cluster(
+            api=True,
+            release_id=cluster_db.current_release_id
+        )
         cluster2_db = self.db.query(Cluster).get(cluster2["id"])
 
         for clstr in (cluster_db, cluster2_db):
@@ -121,9 +123,9 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_if_cluster_creates_correct_networks(self):
         release = Release()
-        release.version = "1.1.1"
-        release.name = u"release_name_" + str(release.version)
-        release.description = u"release_desc" + str(release.version)
+        release.current_os_version = "1.1.1"
+        release.name = u"release_name_" + str(release.current_os_version)
+        release.description = u"release_desc" + str(release.current_os_version)
         release.operating_system = "CentOS"
         release.networks_metadata = self.env.get_default_networks_metadata()
         release.attributes_metadata = {

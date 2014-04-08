@@ -29,7 +29,9 @@ from nailgun.api.handlers.cluster import ClusterCollectionHandler
 from nailgun.api.handlers.cluster import ClusterGeneratedData
 from nailgun.api.handlers.cluster import ClusterHandler
 from nailgun.api.handlers.cluster import ClusterResetHandler
+from nailgun.api.handlers.cluster import ClusterRollbackHandler
 from nailgun.api.handlers.cluster import ClusterStopDeploymentHandler
+from nailgun.api.handlers.cluster import ClusterUpgradeHandler
 
 from nailgun.api.handlers.disks import NodeDefaultsDisksHandler
 from nailgun.api.handlers.disks import NodeDisksHandler
@@ -129,6 +131,10 @@ urls = (
     ClusterStopDeploymentHandler,
     r'/clusters/(?P<cluster_id>\d+)/reset/?$',
     ClusterResetHandler,
+    r'/clusters/(?P<cluster_id>\d+)/upgrade/?$',
+    ClusterUpgradeHandler,
+    r'/clusters/(?P<cluster_id>\d+)/rollback/?$',
+    ClusterRollbackHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/assignment/?$',
     NodeAssignmentHandler,

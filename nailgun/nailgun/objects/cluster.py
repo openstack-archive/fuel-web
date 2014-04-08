@@ -101,7 +101,8 @@ class Cluster(NailgunObject):
                 "type": "string",
                 "enum": list(consts.CLUSTER_GROUPING)
             },
-            "release_id": {"type": "number"},
+            "current_release_id": {"type": "number"},
+            "pending_release_id": {"type": "number"},
             "replaced_deployment_info": {"type": "object"},
             "replaced_provisioning_info": {"type": "object"},
             "is_customized": {"type": "boolean"}
@@ -111,9 +112,9 @@ class Cluster(NailgunObject):
     @classmethod
     def create(cls, data):
         #TODO(enchantner): fix this temporary hack in clients
-        if "release_id" not in data:
+        if "current_release_id" not in data:
             release_id = data.pop("release", None)
-            data["release_id"] = release_id
+            data["current_release_id"] = release_id
 
         assign_nodes = data.pop("nodes", [])
 

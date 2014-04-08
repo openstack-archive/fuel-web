@@ -22,7 +22,12 @@ class ReleaseSerializer(BasicSerializer):
     fields = (
         "id",
         "name",
-        "version",
+        "current_os_version",
+        "can_update_os_versions",
+        "compatible_fuel_versions",
+        "repo_source",
+        "pp_modules_source",
+        "pp_manifests_source",
         "description",
         "operating_system",
         "modes_metadata",

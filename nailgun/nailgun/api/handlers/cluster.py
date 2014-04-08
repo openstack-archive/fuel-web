@@ -38,7 +38,9 @@ from nailgun.logger import logger
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
+from nailgun.task.manager import RollbackEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
+from nailgun.task.manager import UpgradeEnvironmentTaskManager
 from nailgun import utils
 
 
@@ -100,6 +102,22 @@ class ClusterResetHandler(DeferredTaskHandler):
     log_error = u"Error during execution of resetting task " \
                 u"on environment '{env_id}': {error}"
     task_manager = ResetEnvironmentTaskManager
+
+
+class ClusterUpgradeHandler(DeferredTaskHandler):
+
+    log_message = u"Trying to upgrade environment '{env_id}'"
+    log_error = u"Error during execution of upgrade task " \
+                u"on environment '{env_id}': {error}"
+    task_manager = UpgradeEnvironmentTaskManager
+
+
+class ClusterRollbackHandler(DeferredTaskHandler):
+
+    log_message = u"Trying to rollback environment '{env_id}'"
+    log_error = u"Error during execution of rollback task " \
+                u"on environment '{env_id}': {error}"
+    task_manager = RollbackEnvironmentTaskManager
 
 
 class ClusterAttributesHandler(BaseHandler):

@@ -24,6 +24,7 @@ from nailgun.api.serializers.network_configuration \
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import RedHatAccount
+from nailgun.db.sqlalchemy.models import Release
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -502,6 +503,117 @@ class ResetEnvironmentTaskManager(TaskManager):
             tasks.ResetEnvironmentTask
         )
         return task
+
+
+class UpgradeEnvironmentTaskManager(TaskManager):
+
+    def execute(self):
+        new_rel = db().query(Release).get(self.cluster.pending_release_id) \
+            if self.cluster.pending_release_id else None
+        if not new_rel:
+            raise errors.InvalidReleaseId(
+                u"Can't upgrade environment '{0}' when "
+                u"new release Id is invalid")
+
+        running_tasks = db().query(Task).filter_by(
+            cluster_id=self.cluster.id,
+        ).filter(
+            Task.name.in_([
+                'deploy',
+                'deployment',
+                'reset_environment',
+                'stop_deployment',
+                'rollback'
+            ])
+        )
+        if running_tasks:
+            raise errors.TaskAlreadyRunning(
+                u"Can't upgrade environment '{0}' when "
+                u"other task is running".format(
+                    self.cluster.id
+                )
+            )
+
+        nodes_to_change = TaskHelper.nodes_to_upgrade(self.cluster)
+        TaskHelper.update_slave_nodes_fqdn(nodes_to_change)
+        logger.debug('Nodes to upgrade: {0}'.format(
+            ' '.join([n.fqdn for n in nodes_to_change])))
+        task_upgrade = Task(name='upgrade', cluster=self.cluster)
+        db().add(task_upgrade)
+        self.cluster.status = 'upgrade'
+        db().add(self.cluster)
+        db().commit()
+
+        deployment_message = self._call_silently(
+            task_upgrade,
+            tasks.UpgradeTask,
+            nodes_to_change,
+            method_name='message')
+
+        db().refresh(task_upgrade)
+
+        task_upgrade.cache = deployment_message
+
+        for node in nodes_to_change:
+            node.status = 'deploying'
+            node.progress = 0
+
+        db().commit()
+        rpc.cast('naily', deployment_message)
+
+        return task_upgrade
+
+
+class RollbackEnvironmentTaskManager(TaskManager):
+
+    def execute(self):
+        running_tasks = db().query(Task).filter_by(
+            cluster_id=self.cluster.id,
+        ).filter(
+            Task.name.in_([
+                'deploy',
+                'deployment',
+                'reset_environment',
+                'stop_deployment',
+                'upgrade'
+            ])
+        )
+        if running_tasks:
+            raise errors.TaskAlreadyRunning(
+                u"Can't rollback environment '{0}' when "
+                u"other task is running".format(
+                    self.cluster.id
+                )
+            )
+
+        nodes_to_change = TaskHelper.nodes_to_upgrade(self.cluster)
+        TaskHelper.update_slave_nodes_fqdn(nodes_to_change)
+        logger.debug('Nodes to rollback: {0}'.format(
+            ' '.join([n.fqdn for n in nodes_to_change])))
+        task_rollback = Task(name='rollback', cluster=self.cluster)
+        db().add(task_rollback)
+        self.cluster.status = 'rollback'
+        db().add(self.cluster)
+        db().commit()
+
+        deployment_message = self._call_silently(
+            task_rollback,
+            tasks.RollbackTask,
+            nodes_to_change,
+            method_name='message')
+
+        db().refresh(task_rollback)
+
+        task_rollback.cache = deployment_message
+
+        for node in nodes_to_change:
+            node.status = 'deploying'
+            node.progress = 0
+
+        db().commit()
+        rpc.cast('naily', deployment_message)
+
+        return task_rollback
 
 
 class CheckNetworksTaskManager(TaskManager):

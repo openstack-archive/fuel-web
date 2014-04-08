@@ -42,7 +42,9 @@ CLUSTER_STATUSES = Enum(
     'stopped',
     'operational',
     'error',
-    'remove'
+    'remove',
+    'upgrade',
+    'rollback'
 )
 
 NOVA_NET_MANAGERS = Enum(
@@ -119,6 +121,8 @@ TASK_NAMES = Enum(
     'provision',
     'stop_deployment',
     'reset_environment',
+    'upgrade',
+    'rollback',
 
     'node_deletion',
     'cluster_deletion',

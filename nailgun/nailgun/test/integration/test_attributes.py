@@ -34,7 +34,7 @@ class TestAttributes(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers
         )
-        release = objects.Release.get_by_uid(cluster['release_id'])
+        release = objects.Release.get_by_uid(cluster['current_release_id'])
         self.assertEquals(200, resp.status_code)
         self.assertEquals(
             json.loads(resp.body)['editable'],
@@ -147,7 +147,7 @@ class TestAttributes(BaseIntegrationTest):
     def test_get_default_attributes(self):
         cluster = self.env.create_cluster(api=True)
         release = self.db.query(Release).get(
-            cluster['release_id']
+            cluster['current_release_id']
         )
         resp = self.app.put(
             reverse(
@@ -189,7 +189,7 @@ class TestAttributes(BaseIntegrationTest):
         )
         self.assertEquals(200, resp.status_code)
         release = self.db.query(Release).get(
-            cluster['release_id']
+            cluster['current_release_id']
         )
         self.assertEquals(
             json.loads(resp.body)['editable'],

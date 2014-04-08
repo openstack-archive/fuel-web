@@ -42,6 +42,15 @@ from nailgun.task.fake import FAKE_THREADS
 from nailgun.task.helpers import TaskHelper
 
 
+def make_astute_message(method, respond_to, args):
+    return {
+        'api_version': settings.VERSION['api'],
+        'method': method,
+        'respond_to': respond_to,
+        'args': args
+    }
+
+
 def fake_cast(queue, messages, **kwargs):
     def make_thread(message, join_to=None):
         thread = FAKE_THREADS[message['method']](
@@ -123,21 +132,23 @@ class DeploymentTask(object):
                 db().add(n)
                 db().commit()
 
-        # here we replace provisioning data if user redefined them
+        # here we replace deployment data if user redefined them
         serialized_cluster = task.cluster.replaced_deployment_info or \
             deployment_serializers.serialize(task.cluster, nodes)
 
-        # After searilization set pending_addition to False
+        # After serialization set pending_addition to False
         for node in nodes:
             node.pending_addition = False
         db().commit()
 
-        return {
-            'method': 'deploy',
-            'respond_to': 'deploy_resp',
-            'args': {
+        return make_astute_message(
+            'deploy',
+            'deploy_resp',
+            {
                 'task_uuid': task.uuid,
-                'deployment_info': serialized_cluster}}
+                'deployment_info': serialized_cluster
+            }
+        )
 
 
 class ProvisionTask(object):
@@ -156,14 +167,14 @@ class ProvisionTask(object):
 
             TaskHelper.prepare_syslog_dir(node)
 
-        message = {
-            'method': 'provision',
-            'respond_to': 'provision_resp',
-            'args': {
+        return make_astute_message(
+            'provision',
+            'provision_resp',
+            {
                 'task_uuid': task.uuid,
-                'provisioning_info': serialized_cluster}}
-
-        return message
+                'provisioning_info': serialized_cluster
+            }
+        )
 
 
 class DeletionTask(object):
@@ -236,10 +247,10 @@ class DeletionTask(object):
 
                 nodes_to_delete.remove(node)
 
-        msg_delete = {
-            'method': 'remove_nodes',
-            'respond_to': respond_to,
-            'args': {
+        msg_delete = make_astute_message(
+            'remove_nodes',
+            respond_to,
+            {
                 'task_uuid': task.uuid,
                 'nodes': nodes_to_delete,
                 'engine': {
@@ -248,7 +259,7 @@ class DeletionTask(object):
                     'password': settings.COBBLER_PASSWORD,
                 }
             }
-        }
+        )
         # only fake tasks
         if USE_FAKE and nodes_to_restore:
             msg_delete['args']['nodes_to_restore'] = nodes_to_restore
@@ -266,10 +277,10 @@ class StopDeploymentTask(object):
         ).filter(
             not_(Node.status == 'ready')
         ).yield_per(100)
-        return {
-            "method": "stop_deploy_task",
-            "respond_to": "stop_deployment_resp",
-            "args": {
+        return make_astute_message(
+            "stop_deploy_task",
+            "stop_deployment_resp",
+            {
                 "task_uuid": task.uuid,
                 "stop_task_uuid": stop_task.uuid,
                 "nodes": [
@@ -285,7 +296,7 @@ class StopDeploymentTask(object):
                     "password": settings.COBBLER_PASSWORD,
                 }
             }
-        }
+        )
 
     @classmethod
     def execute(cls, task, deploy_task, provision_task):
@@ -310,10 +321,10 @@ class ResetEnvironmentTask(object):
         nodes_to_reset = db().query(Node).filter(
             Node.cluster_id == task.cluster.id
         ).yield_per(100)
-        return {
-            "method": "reset_environment",
-            "respond_to": "reset_environment_resp",
-            "args": {
+        return make_astute_message(
+            "reset_environment",
+            "reset_environment_resp",
+            {
                 "task_uuid": task.uuid,
                 "nodes": [
                     {
@@ -328,7 +339,7 @@ class ResetEnvironmentTask(object):
                     "password": settings.COBBLER_PASSWORD,
                 }
             }
-        }
+        )
 
     @classmethod
     def execute(cls, task):
@@ -382,12 +393,16 @@ class VerifyNetworksTask(object):
                     {'iface': nic.name, 'vlans': vlans}
                 )
             nodes.append(node_json)
-        return {
-            'method': task.name,
-            'respond_to': '{0}_resp'.format(task.name),
-            'args': {'task_uuid': task.uuid,
-                     'nodes': nodes},
-            'subtasks': dict(cls._subtask_message(task))}
+        message = make_astute_message(
+            task.name,
+            '{0}_resp'.format(task.name),
+            {
+                'task_uuid': task.uuid,
+                'nodes': nodes
+            }
+        )
+        message['subtasks'] = dict(cls._subtask_message(task))
+        return message
 
     @classmethod
     def execute(cls, task, data):
@@ -652,14 +667,14 @@ class DumpTask(object):
     @classmethod
     def execute(cls, task):
         logger.debug("DumpTask: task={0}".format(task.uuid))
-        message = {
-            'method': 'dump_environment',
-            'respond_to': 'dump_environment_resp',
-            'args': {
+        message = make_astute_message(
+            'dump_environment',
+            'dump_environment_resp',
+            {
                 'task_uuid': task.uuid,
                 'settings': cls.conf()
             }
-        }
+        )
         task.cache = message
         db().add(task)
         db().commit()

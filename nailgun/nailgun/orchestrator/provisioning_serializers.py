@@ -77,6 +77,7 @@ class ProvisioningSerializer(object):
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'ks_spaces': node.attributes.volumes,
+                'fuel_version': node.cluster.fuel_version,
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,
                 'puppet_enable': 0,
@@ -90,6 +91,12 @@ class ProvisioningSerializer(object):
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
                 'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')}}
+
+        orchestrator_data = objects.Release.get_orchestrator_data_dict(
+            node.cluster.release)
+        if orchestrator_data:
+            serialized_node['ks_meta']['repo_metadata'] = \
+                orchestrator_data['repo_metadata']
 
         vlan_splinters = cluster_attrs.get('vlan_splinters', None)
         if vlan_splinters == 'kernel_lt':

@@ -335,7 +335,6 @@ class Node(NailgunObject):
             # smarter check needed
             cls.update_interfaces(instance)
 
-        new_cluster_id = instance.cluster_id
         cluster_changed = False
         if "cluster_id" in data:
             new_cluster_id = data.pop("cluster_id")

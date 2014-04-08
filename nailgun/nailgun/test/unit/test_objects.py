@@ -26,7 +26,7 @@ from nailgun import objects
 
 class TestObjects(BaseIntegrationTest):
 
-    def test_filtering(self):
+    def test_filter_by(self):
         names = cycle('ABCD')
         os = cycle(['CentOS', 'Ubuntu'])
         for i in xrange(12):
@@ -64,3 +64,49 @@ class TestObjects(BaseIntegrationTest):
         for r in iterable_filtered:
             self.assertEqual(r.name, "A")
             self.assertEqual(r.operating_system, "CentOS")
+
+    def test_filter_by_not(self):
+        names = cycle('ABCDE')
+        os = cycle(['CentOS', 'Ubuntu'])
+
+        # create releases: we'll have only two releases with both
+        # name A and operating_system CentOS
+        for i in xrange(12):
+            self.env.create_release(
+                name=names.next(),
+                operating_system=os.next()
+            )
+
+        # filtering query - returns query
+        query_filtered = objects.ReleaseCollection.filter_by_not(
+            objects.ReleaseCollection.all(),
+            name="A",
+            operating_system="CentOS"
+        )
+        self.assertIsInstance(query_filtered, NoCacheQuery)
+        self.assertEqual(
+            objects.ReleaseCollection.count(query_filtered),
+            10
+        )
+        for r in query_filtered:
+            if r.name == "A":
+                self.assertNotEqual(r.operating_system, "CentOS")
+            elif r.operating_system == "CentOS":
+                self.assertNotEqual(r.name, "A")
+
+        # filtering iterable - returns ifilter
+        iterable_filtered = objects.ReleaseCollection.filter_by_not(
+            list(objects.ReleaseCollection.all()),
+            name="A",
+            operating_system="CentOS"
+        )
+        self.assertIsInstance(iterable_filtered, ifilter)
+        self.assertEqual(
+            objects.ReleaseCollection.count(iterable_filtered),
+            10
+        )
+        for r in iterable_filtered:
+            if r.name == "A":
+                self.assertNotEqual(r.operating_system, "CentOS")
+            elif r.operating_system == "CentOS":
+                self.assertNotEqual(r.name, "A")

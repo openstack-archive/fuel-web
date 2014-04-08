@@ -11,6 +11,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+from mock import patch
+
 from nailgun.openstack.common import jsonutils as json
 from nailgun.test import base
 
@@ -83,7 +86,8 @@ class TestPutSameJson(base.BaseIntegrationTest):
             cluster, 200
         )
 
-    def test_cluster_changes(self):
+    @patch('nailgun.rpc.cast')
+    def test_cluster_changes(self, mock_rpc):
         cluster = self.http_get(
             'ClusterHandler', {
                 'obj_id': self.cluster.id

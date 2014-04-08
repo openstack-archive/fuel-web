@@ -86,7 +86,10 @@ class Cluster(Base):
         default=consts.CLUSTER_GROUPING.roles
     )
     name = Column(Unicode(50), unique=True, nullable=False)
-    release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
+    current_release_id = Column(
+        Integer, ForeignKey('releases.id'), nullable=False)
+    # pending_release_id = Column(
+    #     Integer, ForeignKey('releases.id'))
     nodes = relationship(
         "Node", backref="cluster", cascade="delete", order_by='Node.id')
     tasks = relationship("Task", backref="cluster", cascade="delete")

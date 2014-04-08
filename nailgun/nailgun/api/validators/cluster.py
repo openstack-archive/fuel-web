@@ -33,7 +33,7 @@ class ClusterValidator(BasicValidator):
                     "Environment with this name already exists",
                     log_message=True
                 )
-        release_id = d.get("release", d.get("release_id", None))
+        release_id = d.get("release", d.get("current_release_id", None))
         if release_id:
             release = Release.get_by_uid(release_id)
             if not release:
@@ -46,7 +46,7 @@ class ClusterValidator(BasicValidator):
     @classmethod
     def validate(cls, data):
         d = cls._validate_common(data)
-        release_id = d.get("release", d.get("release_id", None))
+        release_id = d.get("release", d.get("current_release_id", None))
         if not release_id:
             raise errors.InvalidData(
                 u"Release ID is required",

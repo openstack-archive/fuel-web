@@ -36,7 +36,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ReleaseCollectionHandler'),
             params=json.dumps({
                 'name': 'Another test release',
-                'version': '1.0',
+                'current_os_version': '1.0',
                 'operating_system': 'CentOS'
             }),
             headers=self.default_headers
@@ -51,7 +51,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ReleaseCollectionHandler'),
             json.dumps({
                 'name': release_name,
-                'version': release_version,
+                'current_os_version': release_version,
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
@@ -106,7 +106,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ReleaseCollectionHandler'),
             json.dumps({
                 'name': release_name,
-                'version': release_version,
+                'current_os_version': release_version,
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
@@ -135,7 +135,7 @@ class TestHandlers(BaseIntegrationTest):
 
         release_from_db = self.db.query(Release).filter_by(
             name=release_name,
-            version=release_version,
+            current_os_version=release_version,
             description=release_description
         ).all()
         self.assertEquals(len(release_from_db), 1)
@@ -148,7 +148,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ReleaseCollectionHandler'),
             json.dumps({
                 'name': release_name,
-                'version': release_version,
+                'current_os_version': release_version,
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {
@@ -203,7 +203,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ReleaseCollectionHandler'),
             json.dumps({
                 'name': release_name,
-                'version': release_version,
+                'current_os_version': release_version,
                 'description': release_description,
                 'operating_system': 'CentOS',
                 'networks_metadata': {

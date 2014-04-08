@@ -81,6 +81,34 @@ class TestTaskManagers(BaseIntegrationTest):
             self.assertEquals(n.status, 'ready')
             self.assertEquals(n.progress, 100)
 
+    @fake_tasks(godmode=True)
+    def test_provision_task_weight(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"pending_addition": True},
+                {"pending_deletion": True, 'status': 'provisioned'},
+            ]
+        )
+        supertask = self.env.launch_deployment()
+        self.env.wait_for_nodes_status([self.env.nodes[0]], 'provisioning')
+        self.env.wait_ready(
+            supertask,
+            60,
+            u"Successfully removed 1 node(s). No errors occurred; "
+            "Deployment of environment '{0}' is done".format(
+                self.env.clusters[0].name
+            )
+        )
+        # Checking tasks has correct weights after reset and redeployment
+        self.env.reset_environment()
+        self.env.launch_deployment()
+        provision_tasks = filter(
+            lambda t: t.name == 'provision',
+            supertask.subtasks
+        )
+        for task in provision_tasks:
+            self.assertEquals(0.4, task.weight)
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_do_not_send_node_to_orchestrator_which_has_status_discover(

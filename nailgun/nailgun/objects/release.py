@@ -27,10 +27,39 @@ from nailgun.api.serializers.release import ReleaseSerializer
 from nailgun.db import db
 
 from nailgun.db.sqlalchemy.models import Release as DBRelease
+from nailgun.db.sqlalchemy.models import \
+    ReleaseOrchestratorData as DBReleaseOrchData
 from nailgun.db.sqlalchemy.models import Role as DBRole
 
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
+
+from nailgun.settings import settings
+
+
+class ReleaseOrchestratorData(NailgunObject):
+    """ReleaseOrchestratorData object
+    """
+
+    #: SQLAlchemy model
+    model = DBReleaseOrchData
+
+    #: JSON schema
+    schema = {
+        "$schema": "http://json-schema.org/draft-04/schema#",
+        "title": "ReleaseOrchestratorData",
+        "description": "Serialized ReleaseOrchestratorData object",
+        "type": "object",
+        "required": [
+            "release_id"
+        ],
+        "properties": {
+            "id": {"type": "number"},
+            "release_id": {"type": "number"},
+            "repo": {"type": "string"},
+            "puppet_base": {"type": "string"}
+        }
+    }
 
 
 class Release(NailgunObject):
@@ -83,9 +112,13 @@ class Release(NailgunObject):
         :returns: Release instance
         """
         roles = data.pop("roles", None)
+        orch_data = data.pop("orchestrator_data", None)
         new_obj = super(Release, cls).create(data)
         if roles:
             cls.update_roles(new_obj, roles)
+        if orch_data:
+            orch_data["release_id"] = new_obj.id
+            ReleaseOrchestratorData.create(orch_data)
         return new_obj
 
     @classmethod
@@ -99,9 +132,12 @@ class Release(NailgunObject):
         :returns: Release instance
         """
         roles = data.pop("roles", None)
+        orch_data = data.pop("orchestrator_data", None)
         super(Release, cls).update(instance, data)
         if roles is not None:
             cls.update_roles(instance, roles)
+        if orch_data:
+            cls.update_orchestrator_data(instance, orch_data)
         return instance
 
     @classmethod
@@ -133,6 +169,47 @@ class Release(NailgunObject):
                 db().add(new_role)
                 added_roles.append(role)
         db().flush()
+
+    @classmethod
+    def update_orchestrator_data(cls, instance, orchestrator_data):
+        [orchestrator_data.pop(k)
+         for k in ["id", "release_id"] if k in orchestrator_data]
+        if instance.orchestrator_data:
+            ReleaseOrchestratorData.update(
+                instance.orchestrator_data, orchestrator_data)
+        else:
+            orchestrator_data["release_id"] = instance.id
+            ReleaseOrchestratorData.create(orchestrator_data)
+
+    @classmethod
+    def repo_metadata(cls, instance):
+        if not instance.orchestrator_data:
+            return {}
+        return {
+            "nailgun": "http://{0}:{1}/{2}".format(
+                settings.MASTER_IP,
+                settings.REPO_PORT,
+                instance.orchestrator_data.repo)
+        }
+
+    @classmethod
+    def puppet_source(cls, instance, payload):
+        if not instance.orchestrator_data:
+            return ""
+        return "rsync://{0}/{1}/{2}/{3}".format(
+            settings.MASTER_IP,
+            instance.orchestrator_data.puppet_base,
+            instance.version,
+            payload
+        )
+
+    @classmethod
+    def puppet_modules_source(cls, instance):
+        return cls.puppet_source(instance, 'modules')
+
+    @classmethod
+    def puppet_manifests_source(cls, instance):
+        return cls.puppet_source(instance, 'manifests')
 
 
 class ReleaseCollection(NailgunCollection):

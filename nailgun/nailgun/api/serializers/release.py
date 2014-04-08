@@ -30,3 +30,22 @@ class ReleaseSerializer(BasicSerializer):
         "roles_metadata",
         "state"
     )
+
+    @classmethod
+    def serialize(cls, instance, fields=None):
+        release_dict = super(ReleaseSerializer, cls).serialize(instance,
+                                                               fields)
+        if instance.orchestrator_data:
+            release_dict["orchestrator_data"] = \
+                ReleaseOrchestratorDataSerializer.serialize(
+                    instance.orchestrator_data
+                )
+        return release_dict
+
+
+class ReleaseOrchestratorDataSerializer(BasicSerializer):
+
+    fields = (
+        "repo",
+        "puppet_base"
+    )

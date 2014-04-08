@@ -15,6 +15,7 @@
 #    under the License.
 
 import subprocess
+import urllib2
 
 import mock
 from mock import patch
@@ -22,6 +23,7 @@ from mock import patch
 from fuel_upgrade import errors
 from fuel_upgrade.tests.base import BaseTestCase
 from fuel_upgrade.utils import exec_cmd
+from fuel_upgrade.utils import get_request
 
 
 class TestUtils(BaseTestCase):
@@ -58,3 +60,17 @@ class TestUtils(BaseTestCase):
                 'Shell command executed with "{0}" '
                 'exit code: {1} '.format(return_code, cmd),
                 exec_cmd, cmd)
+
+    def test_get_request(self):
+        url = 'http://some-url.com/path'
+        response = mock.MagicMock()
+        response.read.return_value = '{"key": "value"}'
+        response.read.getcode = 200
+
+        with patch.object(
+                urllib2, 'urlopen', return_value=response) as urlopen:
+
+            json_resp = get_request(url)
+            self.assertEquals({'key': 'value'}, json_resp)
+
+        urlopen.assert_called_once_with(url)

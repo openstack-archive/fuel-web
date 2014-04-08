@@ -665,6 +665,83 @@ class TestDhcpCheckTask(BaseIntegrationTest):
         self.assertEqual(self.task.result, {})
 
 
+class TestClusterUpdate(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestClusterUpdate, self).setUp()
+        self.receiver = rcvr.NailgunReceiver()
+        cluster_id = self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}]
+        )['id']
+        self.cluster = self.db.query(Cluster).get(cluster_id)
+        self.cluster.pending_release_id = self.cluster.release_id
+        self.cluster.status = 'update'
+        self.db.commit()
+
+        self.task = Task(
+            uuid=str(uuid.uuid4()),
+            name="update",
+            cluster_id=self.cluster.id
+        )
+        self.db.add(self.task)
+        self.db.commit()
+
+    def test_node_deploy_resp_ready(self):
+        node1, node2 = self.env.nodes
+        kwargs = {'task_uuid': self.task.uuid,
+                  'status': 'ready',
+                  'nodes': [{'uid': node1.id, 'status': 'ready'},
+                            {'uid': node2.id, 'status': 'ready'}]}
+        self.receiver.deploy_resp(**kwargs)
+        self.db.refresh(node1)
+        self.db.refresh(node2)
+        self.db.refresh(self.task)
+        self.db.refresh(self.cluster)
+        self.assertEqual((node1.status, node2.status),
+                         ("ready", "ready"))
+        self.assertEqual(self.task.status, "ready")
+        self.assertEqual(self.cluster.status, "operational")
+        self.assertEqual(self.cluster.pending_release_id, None)
+
+    def test_node_deploy_resp_node_error(self):
+        node1, node2 = self.env.nodes
+        kwargs = {'task_uuid': self.task.uuid,
+                  'nodes': [{'uid': node1.id, 'status': 'ready'},
+                            {'uid': node2.id, 'status': 'error'}]}
+        self.receiver.deploy_resp(**kwargs)
+        self.db.refresh(node1)
+        self.db.refresh(node2)
+        self.db.refresh(self.task)
+        self.db.refresh(self.cluster)
+        self.assertEqual((node1.status, node2.status),
+                         ("ready", "error"))
+        self.assertEqual(self.task.status, "running")
+        self.assertEqual(self.cluster.status, "update")
+        self.assertEqual(self.cluster.pending_release_id,
+                         self.cluster.release_id)
+
+    def test_node_deploy_resp_update_error(self):
+        node1, node2 = self.env.nodes
+        kwargs = {'task_uuid': self.task.uuid,
+                  'status': 'error',
+                  'nodes': [{'uid': node1.id, 'status': 'ready'},
+                            {'uid': node2.id, 'status': 'error'}]}
+        self.receiver.deploy_resp(**kwargs)
+        self.db.refresh(node1)
+        self.db.refresh(node2)
+        self.db.refresh(self.task)
+        self.db.refresh(self.cluster)
+        self.assertEqual((node1.status, node2.status),
+                         ("ready", "error"))
+        self.assertEqual(self.task.status, "error")
+        self.assertEqual(self.cluster.status, "update_error")
+        self.assertEqual(self.cluster.pending_release_id,
+                         self.cluster.release_id)
+
+
 class TestConsumer(BaseIntegrationTest):
 
     def setUp(self):

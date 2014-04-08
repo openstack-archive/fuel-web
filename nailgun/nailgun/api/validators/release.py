@@ -54,7 +54,7 @@ class ReleaseValidator(BasicValidator):
                 "No release name specified",
                 log_message=True
             )
-        if "version" not in d:
+        if "openstack_version" not in d:
             raise errors.InvalidData(
                 "No release version specified",
                 log_message=True
@@ -66,7 +66,7 @@ class ReleaseValidator(BasicValidator):
             )
         if db().query(Release).filter_by(
             name=d["name"],
-            version=d["version"]
+            openstack_version=d["openstack_version"]
         ).first():
             raise errors.AlreadyExists(
                 "Release with the same name and version "
@@ -90,7 +90,8 @@ class ReleaseValidator(BasicValidator):
 
         if db().query(Release).filter_by(
             name=d.get("name", instance.name),
-            version=d.get("version", instance.version)
+            openstack_version=d.get("openstack_version",
+                                    instance.openstack_version)
         ).filter(
             not_(Release.id == instance.id)
         ).first():

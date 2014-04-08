@@ -39,6 +39,7 @@ from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
 from nailgun.task.manager import ResetEnvironmentTaskManager
 from nailgun.task.manager import StopDeploymentTaskManager
+from nailgun.task.manager import UpgradeEnvironmentTaskManager
 from nailgun import utils
 
 
@@ -100,6 +101,14 @@ class ClusterResetHandler(DeferredTaskHandler):
     log_error = u"Error during execution of resetting task " \
                 u"on environment '{env_id}': {error}"
     task_manager = ResetEnvironmentTaskManager
+
+
+class ClusterUpgradeHandler(DeferredTaskHandler):
+
+    log_message = u"Trying to upgrade environment '{env_id}'"
+    log_error = u"Error during execution of upgrade task " \
+                u"on environment '{env_id}': {error}"
+    task_manager = UpgradeEnvironmentTaskManager
 
 
 class ClusterAttributesHandler(BaseHandler):

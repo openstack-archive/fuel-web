@@ -22,15 +22,41 @@ from nailgun.objects import Release
 
 class ClusterValidator(BasicValidator):
     @classmethod
-    def _validate_common(cls, data):
+    def _validate_common(cls, data, instance=None):
         d = cls.validate_json(data)
 
-        release_id = d.get("release", d.get("release_id", None))
+        release_id = d.get("release", d.get("release_id"))
         if release_id:
-            release = Release.get_by_uid(release_id)
-            if not release:
+            if not Release.get_by_uid(release_id):
                 raise errors.InvalidData(
                     "Invalid release ID", log_message=True)
+        pend_release_id = d.get("pending_release_id")
+        if pend_release_id:
+            pend_release = Release.get_by_uid(pend_release_id,
+                                              fail_if_not_found=True)
+            if not release_id:
+                if not instance:
+                    raise errors.InvalidData(
+                        "Cannot set pending release when "
+                        "there is no current release",
+                        log_message=True
+                    )
+                release_id = instance.release_id
+            curr_release = Release.get_by_uid(release_id)
+
+            def curr_release_can_be_updated_with_pend_release():
+                return release_id == pend_release_id or (
+                    curr_release.operating_system ==
+                    pend_release.operating_system
+                    and curr_release.version in
+                    pend_release.can_update_from_versions)
+
+            if not curr_release_can_be_updated_with_pend_release():
+                raise errors.InvalidData(
+                    "Cannot set pending release as "
+                    "it cannot update current release",
+                    log_message=True
+                )
         return d
 
     @classmethod
@@ -55,7 +81,7 @@ class ClusterValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, instance):
-        d = cls._validate_common(data)
+        d = cls._validate_common(data, instance=instance)
 
         if "name" in d:
             query = ClusterCollection.filter_by_not(None, id=instance.id)

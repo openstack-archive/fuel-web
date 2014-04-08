@@ -89,6 +89,11 @@ class DeploymentMultinodeSerializer(object):
         )
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
+        attrs['openstack_version'] = cluster.release.version
+        attrs['fuel_version'] = cluster.fuel_version
+        attrs.update(
+            objects.Release.get_orchestrator_data_dict(cluster.release)
+        )
         attrs['nodes'] = cls.node_list(get_nodes_not_for_deletion(cluster))
 
         for node in attrs['nodes']:

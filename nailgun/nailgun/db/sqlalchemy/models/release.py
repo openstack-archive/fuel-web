@@ -16,8 +16,10 @@
 
 from sqlalchemy import Column
 from sqlalchemy import Enum
+from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Text
 from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 
@@ -29,6 +31,15 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Role
+
+
+class ReleaseOrchestratorData(Base):
+    __tablename__ = 'release_orchestrator_data'
+    id = Column(Integer, primary_key=True)
+    release_id = Column(Integer, ForeignKey('releases.id'), nullable=False)
+    repo_metadata = Column(JSON, nullable=False)
+    puppet_manifests_source = Column(Text, nullable=False)
+    puppet_modules_source = Column(Text, nullable=False)
 
 
 class Release(Base):
@@ -65,6 +76,9 @@ class Release(Base):
         backref="release",
         cascade="all,delete"
     )
+    orchestrator_data = relationship("ReleaseOrchestratorData",
+                                     uselist=False,
+                                     cascade="delete")
 
     #TODO(enchantner): get rid of properties
 

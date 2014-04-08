@@ -266,7 +266,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 hasChanges: this.hasChanges,
                 locked: this.isLocked(),
                 verificationLocked: !!this.model.task({group: ['deployment', 'network'], status: 'running'}),
-                segment_type: this.model.get("net_segment_type")
+                segment_type: this.model.get('net_segment_type')
             })).i18n();
             this.stickit(this.networkConfiguration);
             this.renderNetworks();
@@ -355,6 +355,33 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             };
             bindings = _.merge(bindings, this.ipRangeBindings);
             this.stickit(this.network, bindings);
+            if (this.network.get('name') == 'mesh') {
+                var greNetworkBindings = {
+                    'input[name=use-network-for-gre]': {
+                        observe: 'gre_network',
+                        onGet: function(value) { return value != 'mesh'; },
+                        onSet: _.bind(function(value) {
+                            return value ? _.first(this.tab.networkConfiguration.get('networks').pluck('name')) : 'mesh';
+                        }, this)
+                    },
+                    'select[name=gre_network]': {
+                        observe: 'gre_network',
+                        visible: function(value) { return value != 'mesh'; },
+                        selectOptions: {
+                            collection: _.bind(function() {
+                                return _.map(_.without(this.tab.networkConfiguration.get('networks').pluck('name'), 'mesh'), function(name) {
+                                    return {value: name, label: $.t('network.' + name)};
+                                });
+                            }, this)
+                        }
+                    },
+                    '.network-attribute': {
+                        observe: 'gre_network',
+                        visible: function(value) { return value == 'mesh'; }
+                    }
+                };
+                this.stickit(this.tab.networkConfiguration.get('neutron_parameters'), greNetworkBindings);
+            }
         },
         changeIpRanges: function(e, addRange) {
             var index = this.$('.range-row').index($(e.currentTarget).parents('.range-row'));

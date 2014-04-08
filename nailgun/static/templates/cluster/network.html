@@ -15,6 +15,26 @@
   } %>
 
   <div data-network-id="<%- network.id %>" class="<%- network.get('name') %>">
+
+    <% if (network.get('name') == 'mesh') { %>
+      <div class="networks-sub-title parameter-name" data-i18n="cluster_page.network_tab.network_parameters.gre_network"></div>
+      <div class="range-row clearfix">
+        <label class="parameter-box clearfix">
+          <div class="parameter-control">
+            <div class="custom-tumbler">
+              <input type="checkbox" name="use-network-for-gre" <%= disabled %>>
+              <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
+            </div>
+          </div>
+        </label>
+        <label class="parameter-box clearfix setting">
+          <div class="parameter-control">
+            <select name="gre_network" <%= disabled %>></select>
+          </div>
+        </label>
+      </div>
+    <% } %>
+
     <% _.each(shownAttributes, function(attribute) { %>
       <div class="network-attribute <%= attribute %>">
         <% if (attribute == 'ip_ranges') { %>

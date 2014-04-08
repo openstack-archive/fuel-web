@@ -61,7 +61,8 @@
                 "public": "Public",
                 "floating": "Floating",
                 "management": "Management",
-                "storage": "Storage"
+                "storage": "Storage",
+                "mesh": "Mesh"
             },
             "navbar": {
                 "environments": "Environments",
@@ -260,7 +261,8 @@
                         "nubmer_of_networks": "Number of Networks",
                         "size_of_networks": "Size of Networks",
                         "vlan_id_range": "VLAN ID range",
-                        "use_vlan_tagging": "Use VLAN Tagging"
+                        "use_vlan_tagging": "Use VLAN Tagging",
+                        "gre_network": "Run GRE over network"
                     },
                     "nova": {
                         "dns_servers": "DNS Servers",

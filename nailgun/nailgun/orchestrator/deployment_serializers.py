@@ -88,6 +88,12 @@ class DeploymentMultinodeSerializer(object):
         )
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
+        attrs['repo_metadata'] = cluster.release.repo_metadata
+        attrs['puppet_modules_source'] = cluster.release.pp_modules_source
+        attrs['puppet_manifests_source'] = cluster.release.pp_manifests_source
+        attrs['openstack_version'] = cluster.release.version
+        attrs['fuel_version'] = cluster.release.fuel_version
+
         attrs['nodes'] = cls.node_list(get_nodes_not_for_deletion(cluster))
 
         for node in attrs['nodes']:

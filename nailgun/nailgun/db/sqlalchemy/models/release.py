@@ -39,6 +39,11 @@ class Release(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(100), nullable=False)
     version = Column(String(30), nullable=False)
+    api_version = Column(String(30), nullable=False)
+    fuel_version = Column(JSON, default=[])
+    repo_metadata = Column(JSON, default={})
+    pp_modules_source = Column(Unicode(255))
+    pp_manifests_source = Column(Unicode(255))
     description = Column(Unicode)
     operating_system = Column(String(50), nullable=False)
     state = Column(

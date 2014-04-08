@@ -190,13 +190,20 @@ def upload_fixtures():
         if not os.path.isabs(path):
             path = os.path.abspath(
                 os.path.join(
-                    os.path.dirname(__file__),
-                    "..",
-                    "..",
-                    "fixtures",
+                    "/etc/nailgun/fixtures/",
                     path
                 )
             )
+            if not (os.path.exists(path) and os.path.isfile(path)):
+                path = os.path.abspath(
+                    os.path.join(
+                        os.path.dirname(__file__),
+                        "..",
+                        "..",
+                        "fixtures",
+                        path
+                    )
+                )
         fns.append(path)
 
     for fn in fns:

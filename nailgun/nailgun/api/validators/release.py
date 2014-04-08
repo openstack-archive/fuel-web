@@ -45,6 +45,12 @@ class ReleaseValidator(BasicValidator):
                     str(exc),
                     log_message=True
                 )
+        if "orchestrator_data" in d:
+            if not isinstance(d["orchestrator_data"], dict):
+                raise errors.InvalidData(
+                    "'orchestrator_data' field must be a dict",
+                    log_message=True
+                )
 
     @classmethod
     def validate(cls, data):

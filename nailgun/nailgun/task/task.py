@@ -260,7 +260,7 @@ class DeletionTask(object):
 class StopDeploymentTask(object):
 
     @classmethod
-    def message(cls, task, deploy_task):
+    def message(cls, task, stop_task):
         nodes_to_stop = db().query(Node).filter(
             Node.cluster_id == task.cluster.id
         ).filter(
@@ -271,7 +271,7 @@ class StopDeploymentTask(object):
             "respond_to": "stop_deployment_resp",
             "args": {
                 "task_uuid": task.uuid,
-                "stop_task_uuid": deploy_task.uuid,
+                "stop_task_uuid": stop_task.uuid,
                 "nodes": [
                     {
                         'uid': n.uid,
@@ -288,9 +288,19 @@ class StopDeploymentTask(object):
         }
 
     @classmethod
-    def execute(cls, task, deploy_task):
-        msg_stop = cls.message(task, deploy_task)
-        rpc.cast('naily', msg_stop, service=True)
+    def execute(cls, task, deploy_task, provision_task):
+        if provision_task:
+            rpc.cast(
+                'naily',
+                cls.message(task, provision_task),
+                service=True
+            )
+        if deploy_task:
+            rpc.cast(
+                'naily',
+                cls.message(task, deploy_task),
+                service=True
+            )
 
 
 class ResetEnvironmentTask(object):

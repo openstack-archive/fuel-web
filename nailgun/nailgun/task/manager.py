@@ -429,24 +429,17 @@ class StopDeploymentTaskManager(TaskManager):
                 db().delete(stop_running)
                 db().commit()
 
-        deploy_running = db().query(Task).filter_by(
+        deployment_task = db().query(Task).filter_by(
             cluster=self.cluster,
             name='deployment',
             status='running'
         ).first()
-        if not deploy_running:
-            provisioning_running = db().query(Task).filter_by(
-                cluster=self.cluster,
-                name='provision',
-                status='running'
-            ).first()
-            if provisioning_running:
-                raise errors.DeploymentNotRunning(
-                    u"Provisioning interruption for environment "
-                    u"'{0}' is not implemented right now".format(
-                        self.cluster.id
-                    )
-                )
+        provisioning_task = db().query(Task).filter_by(
+            cluster=self.cluster,
+            name='provision',
+            status='running'
+        ).first()
+        if not deployment_task and not provisioning_task:
             raise errors.DeploymentNotRunning(
                 u"Nothing to stop - deployment is "
                 u"not running on environment '{0}'".format(
@@ -463,7 +456,8 @@ class StopDeploymentTaskManager(TaskManager):
         self._call_silently(
             task,
             tasks.StopDeploymentTask,
-            deploy_task=deploy_running
+            deploy_task=deployment_task,
+            provision_task=provisioning_task
         )
         return task
 

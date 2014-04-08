@@ -437,7 +437,7 @@ class NailgunReceiver(object):
         stop_tasks = db().query(Task).filter_by(
             cluster_id=task.cluster_id,
         ).filter(
-            Task.name.in_(["deploy", "deployment"])
+            Task.name.in_(["deploy", "deployment", "provision"])
         ).all()
         if not stop_tasks:
             logger.warning("stop_deployment_resp: deployment tasks \

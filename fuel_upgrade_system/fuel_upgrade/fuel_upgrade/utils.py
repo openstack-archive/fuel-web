@@ -16,6 +16,9 @@
 
 import logging
 import subprocess
+import urllib2
+
+import json
 
 from fuel_upgrade import errors
 
@@ -49,3 +52,19 @@ def exec_cmd(cmd):
             'exit code: {1} '.format(return_code, cmd))
 
     logger.debug(u'Command "{0}" successfully executed'.format(cmd))
+
+
+def get_request(url):
+    """Make http get request and deserializer json response
+
+    :param url: url
+    :returns list|dict: deserialized response
+    """
+    logger.debug('GET request to {0}'.format(url))
+    response = urllib2.urlopen(url)
+    response_data = response.read()
+    response_code = response.getcode()
+    logger.debug('GET response from {0}, code {1}, data: {2}'.format(
+        url, response_code, response_data))
+
+    return json.loads(response_data)

@@ -497,7 +497,8 @@ define(['utils', 'deepModel'], function(utils) {
                     'management': ['cidr', 'vlan_start'],
                     'storage': ['cidr', 'vlan_start'],
                     'private': [],
-                    'fuelweb_admin': []
+                    'fuelweb_admin': [],
+                    'mesh': ['cidr', 'vlan_start']
                 };
             }
             return attributes[this.get('name')] || ['vlan_start'];
@@ -507,7 +508,7 @@ define(['utils', 'deepModel'], function(utils) {
     models.Networks = Backbone.Collection.extend({
         constructorName: 'Networks',
         model: models.Network,
-        preferredOrder: ['public', 'floating', 'management', 'storage', 'fixed'],
+        preferredOrder: ['public', 'floating', 'management', 'storage', 'fixed', 'mesh'],
         comparator: function(network) {
             return _.indexOf(this.preferredOrder, network.get('name'));
         }

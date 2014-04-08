@@ -21,9 +21,18 @@ from nailgun.errors import errors
 
 
 class NotificationValidator(BasicValidator):
+
+    @classmethod
+    def validate(cls, data):
+        d = cls.validate_json(data)
+        if not d.get('topic') or d['topic'] not in consts.NOTIFICATION_TOPICS:
+            raise errors.InvalidData(
+                "Notification topic is not found or invalid"
+            )
+        return d
+
     @classmethod
     def validate_update(cls, data, instance):
-
         valid = {}
         d = cls.validate_json(data)
 

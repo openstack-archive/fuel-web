@@ -670,6 +670,7 @@
   fields:
     name: "Icehouse on CentOS 6.5"
     version: "2014.1"
+    can_update_versions: []
     operating_system: "CentOS"
     description: "This option will install the OpenStack Icehouse packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
@@ -707,6 +708,7 @@
   fields:
     name: "Icehouse on Ubuntu 12.04.4"
     version: "2014.1"
+    can_update_versions: []
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Icehouse packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:

@@ -601,6 +601,13 @@ class Node(NailgunObject):
         )
         return node_dict
 
+    @classmethod
+    def can_be_updated(cls, instance):
+        return (instance.status in (consts.NODE_STATUSES.ready,
+                                    consts.NODE_STATUSES.provisioned)) or \
+               (instance.status == consts.NODE_STATUSES.error
+                and instance.error_type == consts.NODE_ERRORS.deploy)
+
 
 class NodeCollection(NailgunCollection):
     """Node collection

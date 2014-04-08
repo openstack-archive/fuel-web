@@ -24,6 +24,7 @@ from nailgun.api.serializers.network_configuration \
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import RedHatAccount
+from nailgun.db.sqlalchemy.models import Release
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
@@ -502,6 +503,64 @@ class ResetEnvironmentTaskManager(TaskManager):
             tasks.ResetEnvironmentTask
         )
         return task
+
+
+class UpgradeEnvironmentTaskManager(TaskManager):
+
+    def execute(self):
+        new_rel = db().query(Release).get(self.cluster.pending_release_id) \
+            if self.cluster.pending_release_id else None
+        if not new_rel:
+            raise errors.InvalidReleaseId(
+                u"Can't upgrade environment '{0}' when "
+                u"new release Id is invalid")
+
+        running_tasks = db().query(Task).filter_by(
+            cluster_id=self.cluster.id,
+        ).filter(
+            Task.name.in_([
+                'deploy',
+                'deployment',
+                'reset_environment',
+                'stop_deployment'
+            ])
+        )
+        if running_tasks:
+            raise errors.TaskAlreadyRunning(
+                u"Can't upgrade environment '{0}' when "
+                u"other task is running".format(
+                    self.cluster.id
+                )
+            )
+
+        nodes_to_upgrade = TaskHelper.nodes_to_upgrade(self.cluster)
+        TaskHelper.update_slave_nodes_fqdn(nodes_to_upgrade)
+        logger.debug('Nodes to upgrade: {0}'.format(
+            ' '.join([n.fqdn for n in nodes_to_upgrade])))
+        task_upgrade = Task(name='upgrade', cluster=self.cluster)
+        db().add(task_upgrade)
+        self.cluster.status = 'upgrade'
+        db().add(self.cluster)
+        db().commit()
+
+        deployment_message = self._call_silently(
+            task_upgrade,
+            tasks.UpgradeTask,
+            nodes_to_upgrade,
+            method_name='message')
+
+        db().refresh(task_upgrade)
+
+        task_upgrade.cache = deployment_message
+
+        for node in nodes_to_upgrade:
+            node.status = 'deploying'
+            node.progress = 0
+
+        db().commit()
+        rpc.cast('naily', deployment_message)
+
+        return task_upgrade
 
 
 class CheckNetworksTaskManager(TaskManager):

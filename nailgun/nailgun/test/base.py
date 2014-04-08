@@ -120,7 +120,7 @@ class Environment(object):
         version = str(randint(0, 100000000))
         release_data = {
             'name': u"release_name_" + version,
-            'version': version,
+            'current_os_version': version,
             'description': u"release_desc" + version,
             'operating_system': 'CentOS',
             'roles': self.get_default_roles(),
@@ -172,8 +172,9 @@ class Environment(object):
         if kwargs:
             cluster_data.update(kwargs)
 
-        if 'release_id' not in cluster_data:
-            cluster_data['release_id'] = self.create_release(api=False).id
+        if 'current_release_id' not in cluster_data:
+            cluster_data['current_release_id'] = \
+                self.create_release(api=False).id
 
         if exclude and isinstance(exclude, list):
             for ex in exclude:

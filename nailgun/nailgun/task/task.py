@@ -123,11 +123,42 @@ class DeploymentTask(object):
                 db().add(n)
                 db().commit()
 
-        # here we replace provisioning data if user redefined them
+        # here we replace deployment data if user redefined them
         serialized_cluster = task.cluster.replaced_deployment_info or \
             deployment_serializers.serialize(task.cluster, nodes)
 
-        # After searilization set pending_addition to False
+        # After serialization set pending_addition to False
+        for node in nodes:
+            node.pending_addition = False
+        db().commit()
+
+        return {
+            'method': 'deploy',
+            'respond_to': 'deploy_resp',
+            'args': {
+                'task_uuid': task.uuid,
+                'deployment_info': serialized_cluster}}
+
+
+class UpgradeTask(object):
+
+    @classmethod
+    def message(cls, task, nodes):
+        logger.debug("UpgradeTask.message(task=%s)" % task.uuid)
+
+        for n in nodes:
+            if n.pending_roles:
+                n.roles += n.pending_roles
+                n.pending_roles = []
+            n.status = 'provisioned'
+            n.progress = 0
+        db().commit()
+
+        # here we replace deployment data if user redefined them
+        serialized_cluster = task.cluster.replaced_deployment_info or \
+            deployment_serializers.serialize(task.cluster, nodes)
+
+        # After serialization set pending_addition to False
         for node in nodes:
             node.pending_addition = False
         db().commit()

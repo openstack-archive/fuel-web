@@ -77,6 +77,9 @@ class ProvisioningSerializer(object):
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'ks_spaces': node.attributes.volumes,
+                'fuel_version': node.cluster.fuel_version,
+                'repo_metadata': objects.Release.repo_metadata(
+                    node.cluster.release),
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,
                 'puppet_enable': 0,

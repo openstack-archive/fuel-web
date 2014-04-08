@@ -214,9 +214,13 @@ class Cluster(NailgunObject):
     @classmethod
     def update(cls, instance, data):
         nodes = data.pop("nodes", None)
+        changes = data.pop("changes", None)
+
         super(Cluster, cls).update(instance, data)
         if nodes is not None:
             cls.update_nodes(instance, nodes)
+        if changes is not None:
+            cls.update_changes(instance, changes)
         return instance
 
     @classmethod
@@ -253,6 +257,13 @@ class Cluster(NailgunObject):
             net_manager.assign_networks_by_default,
             nodes_to_add
         )
+        db().flush()
+
+    @classmethod
+    def update_changes(cls, instance, changes):
+        instance.changes_list = [
+            models.ClusterChanges(**change) for change in changes
+        ]
         db().flush()
 
 

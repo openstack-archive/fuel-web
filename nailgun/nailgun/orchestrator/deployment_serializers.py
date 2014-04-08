@@ -31,6 +31,7 @@ from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
@@ -87,8 +88,16 @@ class DeploymentMultinodeSerializer(object):
         attrs = objects.Attributes.merged_attrs_values(
             cluster.attributes
         )
+        release = Release.get_by_uid(cluster.pending_release_id) \
+            if cluster.status == 'update' else cluster.release
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
+        attrs['repo_metadata'] = release.repo_metadata
+        attrs['puppet_modules_source'] = release.pp_modules_source
+        attrs['puppet_manifests_source'] = release.pp_manifests_source
+        attrs['openstack_version'] = release.openstack_version
+        attrs['fuel_version'] = release.fuel_version
+
         attrs['nodes'] = cls.node_list(get_nodes_not_for_deletion(cluster))
 
         for node in attrs['nodes']:

@@ -47,6 +47,9 @@ class Release(NailgunObject):
             "id": {"type": "number"},
             "name": {"type": "string"},
             "version": {"type": "string"},
+            "repo_metadata": {"type": "object"},
+            "pp_modules_source": {"type": "string"},
+            "pp_manifests_source": {"type": "string"},
             "description": {"type": "string"},
             "operating_system": {"type": "string"},
             "state": {

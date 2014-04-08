@@ -83,7 +83,10 @@ class TestHandlers(BaseIntegrationTest):
 
             'master_ip': '127.0.0.1',
             'use_cinder': True,
-            'deployment_id': cluster_db.id
+            'deployment_id': cluster_db.id,
+            'repo_metadata': {'nailgun': cluster_db.release.repo_source},
+            'puppet_modules_source': cluster_db.release.pp_modules_source,
+            'puppet_manifests_source': cluster_db.release.pp_manifests_source
         }
 
         cluster_attrs = objects.Attributes.merged_attrs_values(
@@ -341,7 +344,10 @@ class TestHandlers(BaseIntegrationTest):
 
             'master_ip': '127.0.0.1',
             'use_cinder': True,
-            'deployment_id': cluster_db.id
+            'deployment_id': cluster_db.id,
+            'repo_metadata': {'nailgun': cluster_db.release.repo_source},
+            'puppet_modules_source': cluster_db.release.pp_modules_source,
+            'puppet_manifests_source': cluster_db.release.pp_manifests_source
         }
 
         cluster_attrs = objects.Attributes.merged_attrs_values(

@@ -66,7 +66,12 @@ class Notification(NailgunObject):
         task_uuid = data.pop("task_uuid", None)
         message = data.get("message")
 
-        if topic == 'discover' and node_id is None:
+        if topic not in consts.NOTIFICATION_TOPICS:
+            raise errors.InvalidData(
+                "Notification topic is not found or invalid"
+            )
+
+        if topic == consts.NOTIFICATION_TOPICS.discover and node_id is None:
             raise errors.CannotFindNodeIDForDiscovering(
                 "No node id in discover notification"
             )
@@ -74,7 +79,6 @@ class Notification(NailgunObject):
         if "datetime" not in data:
             data["datetime"] = datetime.now()
 
-        task = None
         exist = None
         if task_uuid:
             task = Task.get_by_uuid(task_uuid)
@@ -84,7 +88,7 @@ class Notification(NailgunObject):
                     node_id=node_id,
                     message=message,
                     task_id=task.id
-                ).first()
+                ).count()
 
         if not exist:
             super(Notification, cls).create(data)

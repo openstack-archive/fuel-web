@@ -44,6 +44,7 @@ default_messages = {
     "NodeOffline": "Node is offline",
     "NotEnoughControllers": "Not enough controllers",
     "RedHatSetupError": "Red Hat setup error",
+    "TaskAlreadyRunning": "A task is already running",
 
     # disk errors
     "NotEnoughFreeSpace": "Not enough free space",

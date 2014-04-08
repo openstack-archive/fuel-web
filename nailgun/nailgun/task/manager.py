@@ -504,6 +504,28 @@ class ResetEnvironmentTaskManager(TaskManager):
         return task
 
 
+class UpgradeEnvironmentTaskManager(TaskManager):
+
+    def execute(self):
+        running_tasks = db().query(Task).filter_by(
+            cluster_id=self.cluster.id,
+        ).filter(
+            Task.name.in_([
+                'deploy',
+                'deployment',
+                'reset_environment',
+                'stop_deployment'
+            ])
+        )
+        if running_tasks:
+            raise errors.TaskAlreadyRunning(
+                u"Can't reset environment '{0}' when "
+                u"deployment is running".format(
+                    self.cluster.id
+                )
+            )
+
+
 class CheckNetworksTaskManager(TaskManager):
 
     def execute(self, data, check_admin_untagged=False):

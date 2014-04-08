@@ -249,7 +249,6 @@ class Node(NailgunObject):
             # smarter check needed
             cls.update_interfaces(instance)
 
-        new_cluster_id = instance.cluster_id
         cluster_changed = False
         if "cluster_id" in data:
             new_cluster_id = data.pop("cluster_id")
@@ -310,7 +309,7 @@ class Node(NailgunObject):
             return
 
         instance.role_list = db().query(models.Role).filter_by(
-            release_id=instance.cluster.release_id,
+            release_id=instance.cluster.current_release_id,
         ).filter(
             models.Role.name.in_(new_roles)
         ).all()
@@ -344,7 +343,7 @@ class Node(NailgunObject):
             )
         else:
             instance.pending_role_list = db().query(models.Role).filter_by(
-                release_id=instance.cluster.release_id,
+                release_id=instance.cluster.current_release_id,
             ).filter(
                 models.Role.name.in_(new_pending_roles)
             ).all()
@@ -377,8 +376,8 @@ class Node(NailgunObject):
         Cluster.get_network_manager(
             instance.cluster
         ).clear_assigned_networks(instance)
-        instance.cluster_id = None
         instance.roles = instance.pending_roles = []
+        instance.cluster_id = None
         instance.reset_name_to_default()
         db().flush()
         db().refresh(instance)

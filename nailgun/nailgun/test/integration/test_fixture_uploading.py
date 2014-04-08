@@ -38,7 +38,7 @@ class TestFixture(BaseIntegrationTest):
             "model": "nailgun.release",
             "fields": {
                 "name": "JSONFixtureRelease",
-                "version": "0.0.1",
+                "current_os_version": "0.0.1",
                 "description": "Sample release for testing",
                 "operating_system": "CentOS"
             }
@@ -56,13 +56,13 @@ class TestFixture(BaseIntegrationTest):
   model: nailgun.release
   fields:
     name: BaseRelease
-    version: 0.0.1
+    current_os_version: 0.0.1
     operating_system: AbstractOS
 - pk: 2
   extend: *base_release
   fields:
     name: YAMLFixtureRelease
-    version: 1.0.0
+    current_os_version: 1.0.0
     operating_system: CentOS
 '''
 
@@ -82,7 +82,7 @@ class TestFixture(BaseIntegrationTest):
             "model": "nailgun.release",
             "fields": {
                 "name": "CustomFixtureRelease1",
-                "version": "0.0.1",
+                "current_os_version": "0.0.1",
                 "description": "Sample release for testing",
                 "operating_system": "CentOS",
                 "roles": ["controller", "compute", "cinder", "ceph-osd"]
@@ -101,7 +101,7 @@ class TestFixture(BaseIntegrationTest):
             "model": "nailgun.release",
             "fields": {
                 "name": "CustomFixtureRelease2",
-                "version": "0.0.1",
+                "current_os_version": "0.0.1",
                 "description": "Sample release for testing",
                 "operating_system": "CentOS",
                 "roles": ["compute", "ceph-osd", "controller", "cinder"]
@@ -120,7 +120,7 @@ class TestFixture(BaseIntegrationTest):
             "model": "nailgun.release",
             "fields": {
                 "name": "CustomFixtureRelease3",
-                "version": "0.0.1",
+                "current_os_version": "0.0.1",
                 "description": "Sample release for testing",
                 "operating_system": "CentOS",
                 "roles": ["compute", "cinder", "controller", "cinder"]

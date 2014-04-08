@@ -30,3 +30,7 @@ class TaskValidator(BasicValidator):
             raise errors.CannotDelete(
                 "You cannot delete running task manually"
             )
+
+    @classmethod
+    def validate_update(cls, data, instance):
+        return super(TaskValidator, cls).validate(data)

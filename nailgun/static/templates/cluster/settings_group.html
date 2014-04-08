@@ -55,7 +55,7 @@
       </div>
       <div class="parameter-spacer"></div>
     <% } else if (setting.type != 'hidden' && settingName != 'metadata') { %>
-      <label class="parameter-box clearfix">
+      <div class="parameter-box clearfix">
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
         <div class="parameter-control <%= setting.type == 'password' ? 'input-append' : '' %>">
           <input type="<%= setting.type %>" class="<%= setting.type == 'password' ? 'input-append' : '' %>" name="<%- groupName + '.' + settingName %>" value="" <%= disabled %> />
@@ -67,7 +67,7 @@
           <%- setting.description ? $.t(ns + settingName + '.description', {defaultValue: setting.description}) : '' %>
         </div>
         <div class="parameter-description validation-error hide"></div>
-      </label>
+      </div>
     <% } %>
   <% }) %>
 </div>

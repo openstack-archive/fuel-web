@@ -366,6 +366,36 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             'input[name=gateway]': 'gateway',
             'input[name=cidr]': 'cidr'
         },
+        stickitNetwork: function() {
+            this.stickit(this.network, _.merge(this.bindings, this.composeVlanBindings()));
+            if (this.network.get('name') == 'mesh') {
+                var greNetworkBindings = {
+                    'input[name=use-network-for-gre]': {
+                        observe: 'gre_network',
+                        onGet: function(value) { return value != 'mesh'; },
+                        onSet: _.bind(function(value) {
+                            return value ? _.first(this.tab.networkConfiguration.get('networks').pluck('name')) : 'mesh';
+                        }, this)
+                    },
+                    'select[name=gre_network]': {
+                        observe: 'gre_network',
+                        visible: function(value) { return value != 'mesh'; },
+                        selectOptions: {
+                            collection: _.bind(function() {
+                                return _.map(_.without(this.tab.networkConfiguration.get('networks').pluck('name'), 'mesh'), function(name) {
+                                    return {value: name, label: $.t('network.' + name)};
+                                });
+                            }, this)
+                        }
+                    },
+                    '.network-attribute:not(.gre-network)': {
+                        observe: 'gre_network',
+                        visible: function(value) { return value == 'mesh'; }
+                    }
+                };
+                this.stickit(this.tab.networkingParameters, greNetworkBindings);
+            }
+        },
         initialize: function(options) {
             _.defaults(this, options);
             this.ipRangesConfig = {model: this.network, attribute: 'ip_ranges', domSelector: 'ip', bindings: this.bindings};
@@ -385,7 +415,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             if (this.network.get('meta').notation == 'ip_ranges') {
                 this.renderIpRanges(this.ipRangesConfig);
             }
-            this.stickit(this.network, _.merge(this.bindings, this.composeVlanBindings()));
+            this.stickitNetwork();
             return this;
         }
     });

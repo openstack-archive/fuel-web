@@ -23,6 +23,7 @@ import json
 
 from itertools import ifilter
 
+from sqlalchemy import and_, not_
 from sqlalchemy.orm import joinedload
 
 from nailgun.api.serializers.base import BasicSerializer
@@ -179,6 +180,34 @@ class NailgunCollection(object):
         elif cls._is_iterable(use_iterable):
             return ifilter(
                 lambda i: all(
+                    (getattr(i, k) == v for k, v in kwargs.iteritems())
+                ),
+                use_iterable
+            )
+        else:
+            raise TypeError("First argument should be iterable")
+
+    @classmethod
+    def filter_by_not(cls, iterable, yield_per=100, **kwargs):
+        """Filter given iterable by specified kwargs with negation.
+        In case of `iterable` is `None` filters all object instances.
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param yield_per: SQLAlchemy's yield_per() clause
+        :returns: filtered iterable (SQLAlchemy query)
+        """
+        map(cls.single.check_field, kwargs.iterkeys())
+        use_iterable = iterable or cls.all(yield_per=yield_per)
+        if cls._is_query(use_iterable):
+            conditions = []
+            for key, value in kwargs.iteritems():
+                conditions.append(
+                    getattr(cls.single.model, key) == value
+                )
+            return use_iterable.filter(not_(and_(*conditions)))
+        elif cls._is_iterable(use_iterable):
+            return ifilter(
+                lambda i: not all(
                     (getattr(i, k) == v for k, v in kwargs.iteritems())
                 ),
                 use_iterable

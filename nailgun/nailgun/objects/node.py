@@ -270,7 +270,10 @@ class Node(NailgunObject):
         pending_roles = data.pop("pending_roles", None)
         new_meta = data.pop("meta", None)
 
-        #TODO(enchantner): fix this temporary hack in clients
+        # TODO(ikalnitsky): should we do something with this stuff?
+        data.pop("network_data", None)
+
+        # TODO(enchantner): fix this temporary hack in clients
         if "cluster_id" not in data and "cluster" in data:
             cluster_id = data.pop("cluster", None)
             data["cluster_id"] = cluster_id

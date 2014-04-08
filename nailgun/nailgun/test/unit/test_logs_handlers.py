@@ -288,6 +288,7 @@ class TestLogs(BaseIntegrationTest):
         task = self.env.create_task(name='dump')
         DumpTask.execute(task)
         message = {
+            'api_version': '1',
             'method': 'dump_environment',
             'respond_to': 'dump_environment_resp',
             'args': {

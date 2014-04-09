@@ -162,6 +162,11 @@ class ApplyChangesTaskManager(TaskManager):
 
         if nodes_to_delete:
             task_deletion = supertask.create_subtask("node_deletion")
+            # For more accurate progress calculation
+            task_deletion.weight = 0.4
+            db().add(task_deletion)
+            db().commit()
+
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
             self._call_silently(task_deletion, tasks.DeletionTask)
 

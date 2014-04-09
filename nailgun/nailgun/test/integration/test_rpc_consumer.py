@@ -745,6 +745,70 @@ class TestConsumer(BaseIntegrationTest):
         self.assertEqual(task.progress, 20)
         self.assertEqual(task.status, "running")
 
+    def test_node_deletion_subtask_progress(self):
+        supertask = Task(
+            uuid=str(uuid.uuid4()),
+            name="super",
+            status="running"
+        )
+
+        self.db.add(supertask)
+        self.db.commit()
+
+        task_deletion = supertask.create_subtask("node_deletion")
+        task_provision = supertask.create_subtask("provision")
+
+        task_provision.weight = 0.4
+        self.db.merge(task_provision)
+
+        import random
+        subtask_progress = random.randint(1, 20)
+
+        deletion_kwargs = {'task_uuid': task_deletion.uuid,
+                           'progress': subtask_progress}
+        provision_kwargs = {'task_uuid': task_provision.uuid,
+                            'progress': subtask_progress}
+
+        def progress_difference():
+            self.receiver.provision_resp(**provision_kwargs)
+
+            self.db.refresh(task_provision)
+            self.assertEqual(task_provision.progress, subtask_progress)
+
+            self.db.refresh(supertask)
+            progress_before_delete_subtask = supertask.progress
+
+            self.receiver.remove_nodes_resp(**deletion_kwargs)
+
+            self.db.refresh(task_deletion)
+            self.assertEqual(task_deletion.progress, subtask_progress)
+
+            self.db.refresh(supertask)
+            progress_after_delete_subtask = supertask.progress
+
+            return abs(progress_after_delete_subtask -
+                       progress_before_delete_subtask)
+
+        without_coeff = progress_difference()
+
+        task_deletion.progress = 0
+        task_deletion.weight = 0.5
+        self.db.merge(task_deletion)
+
+        task_provision.progress = 0
+        self.db.merge(task_provision)
+
+        supertask.progress = 0
+        self.db.merge(supertask)
+
+        self.db.commit()
+
+        with_coeff = progress_difference()
+
+        # some freaking magic is here but haven't found
+        # better way to test what is already working
+        self.assertTrue((without_coeff / with_coeff) < 2)
+
     def test_error_node_progress(self):
         self.env.create(
             cluster_kwargs={},

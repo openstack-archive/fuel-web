@@ -22,16 +22,30 @@
   <% var settingsChangesDescriptions = {
       'attributes': $.t("dialog.display_changes.settings_changes.attrs"),
       'networks': $.t("dialog.display_changes.settings_changes.networks"),
-      'disks': $.t("dialog.display_changes.settings_changes.disks")
+      'disks': $.t("dialog.display_changes.settings_changes.disks"),
+      'interfaces': $.t("dialog.display_changes.settings_changes.interfaces")
   } %>
-  <% _.each(_.reject(cluster.get('changes'), {name: 'disks'}), function(change) { %>
-    <div class="deploy-task-name"><%- $.t("dialog.display_changes.changed_task_name", {item: settingsChangesDescriptions[change.name] }) %> </div>
-  <% }) %>
+  <% _.each(cluster.get('changes'), function(change) { %>
+    <% if (!_.contains(['disks', 'interfaces'], change.name)) { %>
+      <div class="deploy-task-name"><%- $.t("dialog.display_changes.changed_task_name", {item: settingsChangesDescriptions[change.name] }) %> </div>
+    <% } %>
+  <% }); %>
   <% var nodesWithChangedDisks = _.pluck(_.where(cluster.get('changes'), {name: 'disks'}), 'node_id') %>
   <% if (nodesWithChangedDisks.length) { %>
     <div class="deploy-task-name"><%- $.t("dialog.display_changes.changed_task_name", {item: settingsChangesDescriptions.disks }) %> </div>
     <ul>
       <% _.each(nodesWithChangedDisks, function(nodeId) { %>
+        <% if (nodes.get(nodeId)) { %>
+          <li><%- nodes.get(nodeId).get('name') %></li>
+        <% } %>
+      <% }) %>
+    </ul>
+  <% } %>
+  <% var nodesWithChangedInterfaces = _.pluck(_.where(cluster.get('changes'), {name: 'interfaces'}), 'node_id') %>
+  <% if (nodesWithChangedInterfaces.length) { %>
+    <div class="deploy-task-name"><%- $.t("dialog.display_changes.changed_task_name", {item: settingsChangesDescriptions.interfaces }) %> </div>
+    <ul>
+      <% _.each(nodesWithChangedInterfaces, function(nodeId) { %>
         <% if (nodes.get(nodeId)) { %>
           <li><%- nodes.get(nodeId).get('name') %></li>
         <% } %>

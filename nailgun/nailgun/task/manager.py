@@ -161,7 +161,10 @@ class ApplyChangesTaskManager(TaskManager):
         task_deletion, task_provision, task_deployment = None, None, None
 
         if nodes_to_delete:
-            task_deletion = supertask.create_subtask("node_deletion")
+            # For more accurate progress calulation
+            task_weight = 0.4
+            task_deletion = supertask.create_subtask("node_deletion",
+                                                     weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
             self._call_silently(task_deletion, tasks.DeletionTask)
 
@@ -169,9 +172,11 @@ class ApplyChangesTaskManager(TaskManager):
             TaskHelper.update_slave_nodes_fqdn(nodes_to_provision)
             logger.debug("There are nodes to provision: %s",
                          " ".join([n.fqdn for n in nodes_to_provision]))
-            task_provision = supertask.create_subtask("provision")
+
             # For more accurate progress calulation
-            task_provision.weight = 0.4
+            task_weight = 0.4
+            task_provision = supertask.create_subtask("provision",
+                                                      weight=task_weight)
             provision_message = self._call_silently(
                 task_provision,
                 tasks.ProvisionTask,

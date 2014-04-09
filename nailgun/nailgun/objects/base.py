@@ -14,32 +14,46 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"""
+Base classes for objects and collections
+"""
+
+import collections
 import json
+
+from itertools import ifilter
 
 from sqlalchemy.orm import joinedload
 
 from nailgun.api.serializers.base import BasicSerializer
 from nailgun.db import db
+from nailgun.db import NoCacheQuery
 from nailgun.errors import errors
-
-from nailgun.openstack.common.db import api as db_api
-
-
-_BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}
-
-IMPL = db_api.DBAPI(backend_mapping=_BACKEND_MAPPING)
 
 
 class NailgunObject(object):
+    """Base class for objects
+    """
 
     serializer = BasicSerializer
+    """Serializer class for object"""
+
     model = None
+    """SQLAlchemy model for object"""
+
     schema = {
         "properties": {}
     }
+    """JSON schema for object"""
 
     @classmethod
-    def _check_field(cls, field):
+    def check_field(cls, field):
+        """Check if field is described in object's JSON schema
+
+        :param field: name of the field as string
+        :returns: None
+        :raises: errors.InvalidField
+        """
         if field not in cls.schema["properties"]:
             raise errors.InvalidField(
                 u"Invalid field '{0}' for object '{1}'".format(
@@ -50,10 +64,20 @@ class NailgunObject(object):
 
     @classmethod
     def get_by_uid(cls, uid):
+        """Get instance by it's uid (PK in case of SQLAlchemy)
+
+        :param uid: uid of object
+        :returns: instance of an object (model)
+        """
         return db().query(cls.model).get(uid)
 
     @classmethod
     def create(cls, data):
+        """Create object instance with specified parameters in DB
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: instance of an object (model)
+        """
         new_obj = cls.model()
         for key, value in data.iteritems():
             setattr(new_obj, key, value)
@@ -63,6 +87,12 @@ class NailgunObject(object):
 
     @classmethod
     def update(cls, instance, data):
+        """Update existing instance with specified parameters
+
+        :param instance: object (model) instance
+        :param data: dictionary of key-value pairs as object fields
+        :returns: instance of an object (model)
+        """
         instance.update(data)
         db().add(instance)
         db().flush()
@@ -70,76 +100,169 @@ class NailgunObject(object):
 
     @classmethod
     def delete(cls, instance):
+        """Delete object (model) instance
+
+        :param instance: object (model) instance
+        :returns: None
+        """
         db().delete(instance)
         db().flush()
 
     @classmethod
     def to_dict(cls, instance, fields=None):
+        """Serialize instance to Python dict
+
+        :param instance: object (model) instance
+        :param fields: exact fields to serialize
+        :returns: serialized object (model) as dictionary
+        """
         return cls.serializer.serialize(instance, fields=fields)
 
     @classmethod
     def to_json(cls, instance, fields=None):
+        """Serialize instance to JSON
+
+        :param instance: object (model) instance
+        :param fields: exact fields to serialize
+        :returns: serialized object (model) as JSON string
+        """
         return json.dumps(
             cls.to_dict(instance, fields=fields)
         )
 
 
 class NailgunCollection(object):
+    """Base class for object collections
+    """
 
     single = NailgunObject
+    """Single object class"""
+
+    @classmethod
+    def _is_iterable(cls, obj):
+        return isinstance(
+            obj,
+            collections.Iterable
+        )
+
+    @classmethod
+    def _is_query(cls, obj):
+        return isinstance(
+            obj,
+            NoCacheQuery
+        )
 
     @classmethod
     def all(cls, yield_per=100):
+        """Get all instances of this object (model)
+
+        :param yield_per: SQLAlchemy's yield_per() clause
+        :returns: iterable (SQLAlchemy query)
+        """
         return db().query(
             cls.single.model
         ).yield_per(yield_per)
 
     @classmethod
-    def filter_by(cls, query, yield_per=100, **kwargs):
-        for k in kwargs.iterkeys():
-            if k not in cls.single.schema["properties"]:
-                raise AttributeError(
-                    u"'{0}' object has no parameter '{1}'".format(
-                        cls.single.__name__,
-                        k
-                    )
-                )
+    def filter_by(cls, iterable, yield_per=100, **kwargs):
+        """Filter given iterable by specified kwargs.
+        In case if iterable=None filters all object instances
 
-        use_query = query or cls.all(yield_per=yield_per)
-        return use_query.filter_by(**kwargs)
+        :param iterable: iterable (SQLAlchemy query)
+        :param yield_per: SQLAlchemy's yield_per() clause
+        :returns: filtered iterable (SQLAlchemy query)
+        """
+        map(cls.single.check_field, kwargs.iterkeys())
+        use_iterable = iterable or cls.all(yield_per=yield_per)
+        if cls._is_query(use_iterable):
+            return use_iterable.filter_by(**kwargs)
+        elif cls._is_iterable(use_iterable):
+            return ifilter(
+                lambda i: all(
+                    (getattr(i, k) == v for k, v in kwargs.iteritems())
+                ),
+                use_iterable
+            )
+        else:
+            raise TypeError("First argument should be iterable")
 
     @classmethod
-    def get_by_id_list(cls, query, id_list, yield_per=100):
-        use_query = query or cls.all(yield_per=yield_per)
-        return use_query.filter(cls.single.model.id.in_(id_list))
+    def get_by_id_list(cls, iterable, uid_list, yield_per=100):
+        """Filter given iterable by list of uids.
+        In case if iterable=None filters all object instances
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param uid_list: list of uids for objects
+        :param yield_per: SQLAlchemy's yield_per() clause
+        :returns: filtered iterable (SQLAlchemy query)
+        """
+        use_iterable = iterable or cls.all(yield_per=yield_per)
+        if cls._is_query(use_iterable):
+            return use_iterable.filter(cls.single.model.id.in_(uid_list))
+        elif cls._is_iterable(use_iterable):
+            return ifilter(
+                lambda i: i.id in uid_list,
+                use_iterable
+            )
+        else:
+            raise TypeError("First argument should be iterable")
 
     @classmethod
-    def eager(cls, query, fields, yield_per=100):
-        use_query = query or cls.all(yield_per=yield_per)
+    def eager(cls, iterable, fields, yield_per=100):
+        """Eager load linked object instances (SQLAlchemy FKs).
+        In case if iterable=None applies to all object instances
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param fields: list of links (model FKs) to eagerload
+        :param yield_per: SQLAlchemy's yield_per() clause
+        :returns: iterable (SQLAlchemy query)
+        """
+        use_iterable = iterable or cls.all(yield_per=yield_per)
         if fields:
-            return use_query.options(
+            return use_iterable.options(
                 *[joinedload(f) for f in fields]
             )
-        return use_query
+        return use_iterable
 
     @classmethod
-    def to_list(cls, query=None, fields=None, yield_per=100):
-        use_query = query or cls.all(yield_per=yield_per)
+    def to_list(cls, iterable=None, fields=None, yield_per=100):
+        """Serialize iterable to list of dicts
+        In case if iterable=None serializes all object instances
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param fields: exact fields to serialize
+        :param yield_per: SQLAlchemy's yield_per() clause
+        :returns: collection of objects as a list of dicts
+        """
+        use_iterable = iterable or cls.all(yield_per=yield_per)
         return map(
             lambda o: cls.single.to_dict(o, fields=fields),
-            use_query
+            use_iterable
         )
 
     @classmethod
-    def to_json(cls, query=None, fields=None, yield_per=100):
+    def to_json(cls, iterable=None, fields=None, yield_per=100):
+        """Serialize iterable to JSON
+        In case if iterable=None serializes all object instances
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param fields: exact fields to serialize
+        :param yield_per: SQLAlchemy's yield_per() clause
+        :returns: collection of objects as a JSON string
+        """
         return json.dumps(
             cls.to_list(
                 fields=fields,
                 yield_per=yield_per,
-                query=query
+                iterable=iterable
             )
         )
 
     @classmethod
     def create(cls, data):
+        """Create object instance with specified parameters in DB
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: instance of an object (model)
+        """
         return cls.single.create(data)

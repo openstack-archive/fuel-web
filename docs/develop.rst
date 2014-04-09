@@ -13,6 +13,7 @@ Development Documentation
    develop/env
    develop/nailgun
    develop/api_doc
+   develop/objects
    develop/module_structure
    develop/fuel_settings
    develop/puppet_tips

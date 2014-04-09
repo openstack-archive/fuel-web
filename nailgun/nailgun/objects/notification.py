@@ -80,7 +80,7 @@ class Notification(NailgunObject):
             task = Task.get_by_uuid(task_uuid)
             if task and node_id:
                 exist = NotificationCollection.filter_by(
-                    query=None,
+                    None,
                     node_id=node_id,
                     message=message,
                     task_id=task.id

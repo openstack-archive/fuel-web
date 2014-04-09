@@ -37,7 +37,7 @@ class TestRoles(BaseIntegrationTest):
         old_roles = set(release_json["roles"])
         release_json["roles"].append(test_role_name)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ReleaseHandler',
                     kwargs={"obj_id": release_json["id"]}),
             json.dumps(release_json),
@@ -61,7 +61,7 @@ class TestRoles(BaseIntegrationTest):
         release_json["roles"].remove(old_roles[0])
         expected_roles = list(release_json["roles"])
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ReleaseHandler',
                     kwargs={"obj_id": release_json["id"]}),
             json.dumps(release_json),
@@ -85,7 +85,7 @@ class TestRoles(BaseIntegrationTest):
         # add some duplicates
         release_json["roles"].extend(old_roles)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ReleaseHandler',
                     kwargs={"obj_id": release_json["id"]}),
             json.dumps(release_json),
@@ -134,7 +134,7 @@ class TestRoles(BaseIntegrationTest):
         removed_role = release_json["roles"][0]
         release_json["roles"] = release_json["roles"][1:]
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ReleaseHandler',
                     kwargs={"obj_id": release_json["id"]}),
             json.dumps(release_json),
@@ -161,7 +161,7 @@ class TestRoles(BaseIntegrationTest):
         old_roles.remove("controller")
         release_json["roles"] = list(old_roles)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse(
                 'ReleaseHandler',
                 kwargs={

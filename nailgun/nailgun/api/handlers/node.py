@@ -89,7 +89,7 @@ class NodeCollectionHandler(CollectionHandler):
         return self.collection.to_json(nodes)
 
     @content_json
-    def PUT(self):
+    def PATCH(self):
         """:returns: Collection of JSONized Node objects.
         :http: * 200 (nodes are successfully updated)
                * 400 (invalid nodes data specified)

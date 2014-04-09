@@ -348,7 +348,7 @@ class TestNovaHandlers(TestNetworkChecking):
              {'name': 'eth2', 'mac': self.env.generate_random_mac()}]
         )
         node = self.env.create_node(api=True, meta=meta, mac=mac)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node['id'], 'cluster_id': self.cluster.id}]),
             headers=self.default_headers

@@ -236,6 +236,23 @@ def json_api_delete_request(api):
     return {}
 
 
+def json_api_patch_request(api, data):
+    """Make PATCH request to specific API with some data
+    """
+    data_json = json.dumps(data)
+    print_debug(
+        "PUT {0} data={1}"
+        .format(API_ROOT + api, data_json)
+    )
+    opener = urllib2.build_opener(urllib2.HTTPHandler)
+    request = urllib2.Request(API_ROOT + api, data=data_json)
+    request.add_header('Content-Type', ' application/json')
+    request.get_method = lambda: 'PATCH'
+    return json.loads(
+        opener.open(request).read()
+    )
+
+
 def json_api_put_request(api, data):
     """Make PUT request to specific API with some data
     """
@@ -475,7 +492,7 @@ def environment(params):
                 if params.mode.lower() == "ha" else "multinode"
         if params.name:
             data["name"] = params.name
-        put_response = json_api_put_request(
+        put_response = json_api_patch_request(
             "clusters/{0}/".format(params.env),
             data
         )

@@ -24,7 +24,7 @@ from nailgun.test.base import reverse
 class TestHandlers(BaseIntegrationTest):
     def test_release_put_change_name_and_version(self):
         release = self.env.create_release(api=False)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
             params=json.dumps({
                 'name': 'modified release',
@@ -42,7 +42,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_release_put_returns_400_if_no_body(self):
         release = self.env.create_release(api=False)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
             "",
             headers=self.default_headers,

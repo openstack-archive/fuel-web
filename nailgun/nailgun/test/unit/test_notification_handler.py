@@ -79,7 +79,7 @@ class TestHandlers(BaseIntegrationTest):
         notification_update = {
             'status': 'read'
         }
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse(
                 'NotificationHandler',
                 kwargs={'obj_id': notification.id}

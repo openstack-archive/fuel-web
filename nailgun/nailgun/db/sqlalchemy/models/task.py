@@ -74,11 +74,11 @@ class Task(Base):
             self.status
         )
 
-    def create_subtask(self, name):
+    def create_subtask(self, name, **kwargs):
         if not name:
             raise ValueError("Subtask name not specified")
 
-        task = Task(name=name, cluster=self.cluster)
+        task = Task(name=name, cluster=self.cluster, **kwargs)
 
         self.subtasks.append(task)
         db().commit()

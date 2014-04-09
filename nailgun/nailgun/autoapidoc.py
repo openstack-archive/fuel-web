@@ -17,6 +17,8 @@
 import inspect
 import json
 
+from nailgun import objects
+
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.urls.v1 import urls
 from nailgun.test.base import reverse
@@ -43,9 +45,14 @@ class SampleGenerator(object):
             if skip:
                 return skip
 
-            skip = inspect.isclass(obj) and not cls._ishandler(obj)
-            if not skip:
-                skip = inspect.ismethod(obj) and not cls._ishandlermethod(obj)
+            if any([
+                cls._ishandler(obj),
+                cls._ishandlermethod(obj),
+                cls._isrestobject(obj),
+                cls._isrestobjectmethod(obj)
+            ]):
+                return False
+
             return skip
 
         return process
@@ -57,8 +64,19 @@ class SampleGenerator(object):
 
     @classmethod
     def _ishandlermethod(cls, obj):
-        return inspect.ismethod(obj) and issubclass(obj.im_class, BaseHandler)\
+        return inspect.ismethod(obj) and cls._ishandler(obj.im_class)\
             and obj.__name__ in cls.http_methods
+
+    @classmethod
+    def _isrestobject(cls, obj):
+        return inspect.isclass(obj) and issubclass(
+            obj,
+            (objects.NailgunObject, objects.NailgunCollection)
+        )
+
+    @classmethod
+    def _isrestobjectmethod(cls, obj):
+        return inspect.ismethod(obj) and cls._isrestobject(obj.im_class)
 
     @classmethod
     def generate_handler_url_doc(cls, handler):

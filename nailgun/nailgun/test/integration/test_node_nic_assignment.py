@@ -64,7 +64,7 @@ class TestClusterHandlers(BaseIntegrationTest):
              {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
         cluster = self.env.create_cluster(api=True, nodes=[node['id']])
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ClusterHandler', kwargs={'obj_id': cluster['id']}),
             json.dumps({'nodes': []}),
             headers=self.default_headers
@@ -130,7 +130,7 @@ class TestNodeHandlers(BaseIntegrationTest):
             [{'name': 'eth0', 'mac': mac},
              {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
@@ -171,7 +171,7 @@ class TestNodeHandlers(BaseIntegrationTest):
              {'name': 'eth1', 'mac': self.env.generate_random_mac()},
              {'name': 'eth2', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
@@ -208,7 +208,7 @@ class TestNodeHandlers(BaseIntegrationTest):
              {'name': 'eth1', 'mac': self.env.generate_random_mac()},
              {'name': 'eth2', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
@@ -249,7 +249,7 @@ class TestNodeHandlers(BaseIntegrationTest):
              {'name': 'eth1', 'mac': self.env.generate_random_mac()},
              {'name': 'eth2', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
@@ -286,7 +286,7 @@ class TestNodeHandlers(BaseIntegrationTest):
              {'name': 'eth1', 'mac': self.env.generate_random_mac()},
              {'name': 'eth2', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
@@ -315,7 +315,7 @@ class TestNodeHandlers(BaseIntegrationTest):
              {'name': 'eth1', 'mac': self.env.generate_random_mac()}])
         node = self.env.create_node(api=True, meta=meta, mac=mac,
                                     cluster_id=cluster['id'])
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node['id'], 'cluster_id': None}]),
             headers=self.default_headers
@@ -449,7 +449,7 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         self.assertEquals(node_db.admin_interface.mac, mac2)
         self.assertEquals(node_db.admin_interface.ip_addr, None)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node_db.id,
                          'cluster_id': None}]),

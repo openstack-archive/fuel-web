@@ -80,7 +80,7 @@ class TestClusterChanges(BaseIntegrationTest):
             node_id=node_db.id
         ).all()
         self.assertEquals(len(node_disks_changes), 1)
-        self.app.put(
+        self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{"id": node_db.id, "cluster_id": None}]),
             headers=self.default_headers
@@ -211,7 +211,7 @@ class TestClusterChanges(BaseIntegrationTest):
             pending_addition=True,
             api=True
         )
-        self.app.put(
+        self.app.patch(
             reverse("NodeHandler",
                     kwargs={"obj_id": new_node["id"]}),
             json.dumps({

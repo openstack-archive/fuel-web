@@ -141,7 +141,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_node_update(self):
         node = self.env.create_node(api=False)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'mac': node.mac, 'manufacturer': 'new'}]),
             headers=self.default_headers)
@@ -156,7 +156,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_update_empty_mac_or_id(self):
         node = self.env.create_node(api=False)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'manufacturer': 'man0'}]),
             headers=self.default_headers,
@@ -164,7 +164,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 400)
         self.assertEquals(resp.body, "Neither MAC nor ID is specified")
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'mac': None,
                          'manufacturer': 'man1'}]),
@@ -173,7 +173,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 400)
         self.assertEquals(resp.body, "Neither MAC nor ID is specified")
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': None,
                          'manufacturer': 'man2'}]),
@@ -182,7 +182,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 400)
         self.assertEquals(resp.body, "Neither MAC nor ID is specified")
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'mac': None,
                          'id': None,
@@ -192,7 +192,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 400)
         self.assertEquals(resp.body, "Neither MAC nor ID is specified")
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node.id,
                          'mac': None,
@@ -202,7 +202,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 400)
         self.assertEquals(resp.body, "Null MAC is specified")
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': None,
                          'mac': node.mac,
@@ -211,7 +211,7 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(resp.status_code, 200)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node.id,
                          'manufacturer': 'man6'}]),
@@ -219,14 +219,14 @@ class TestHandlers(BaseIntegrationTest):
         )
         self.assertEquals(resp.status_code, 200)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'mac': node.mac,
                          'manufacturer': 'man7'}]),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node.id,
                          'mac': node.mac,
@@ -237,7 +237,7 @@ class TestHandlers(BaseIntegrationTest):
     def node_update_with_invalid_id(self):
         node = self.env.create_node(api=False)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': 'new_id',
                          'mac': node.mac}]),
@@ -273,7 +273,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_timestamp_updated_only_by_agent(self):
         node = self.env.create_node(api=False)
         timestamp = node.timestamp
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([
                 {'mac': node.mac, 'status': 'discover',
@@ -411,7 +411,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertNotEqual(node1.mac, node1_json["mac"])
 
         # Here we are trying to update node
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([node1_json]),
             headers=self.default_headers,
@@ -452,7 +452,7 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.nodes[0]
         default_name = 'Untitled ({0})'.format(node.mac[-5:])
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeCollectionHandler'),
             json.dumps([{'id': node.id,
                          'cluster_id': None,

@@ -67,7 +67,7 @@ class Environment(BaseObject):
                 if mode.lower() == "ha" else "multinode"
         if name:
             data["name"] = name
-        return self.connection.put_request(
+        return self.connection.patch_request(
             "clusters/{0}/".format(self.id),
             data
         )

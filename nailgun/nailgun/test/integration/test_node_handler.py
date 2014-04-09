@@ -70,7 +70,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_valid_metadata_gets_updated(self):
         new_metadata = self.env.default_metadata()
         node = self.env.create_node(api=False)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             json.dumps({'meta': new_metadata}),
             headers=self.default_headers)
@@ -86,7 +86,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_valid_status_gets_updated(self):
         node = self.env.create_node(api=False)
         params = {'status': 'error'}
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             json.dumps(params),
             headers=self.default_headers)
@@ -96,7 +96,7 @@ class TestHandlers(BaseIntegrationTest):
         flags = ['pending_addition', 'pending_deletion']
         node = self.env.create_node(api=False)
         for flag in flags:
-            resp = self.app.put(
+            resp = self.app.patch(
                 reverse('NodeHandler', kwargs={'obj_id': node.id}),
                 json.dumps({flag: True}),
                 headers=self.default_headers
@@ -112,7 +112,7 @@ class TestHandlers(BaseIntegrationTest):
 
     def test_put_returns_400_if_no_body(self):
         node = self.env.create_node(api=False)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             "",
             headers=self.default_headers,
@@ -122,7 +122,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_put_returns_400_if_wrong_status(self):
         node = self.env.create_node(api=False)
         params = {'status': 'invalid_status'}
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             json.dumps(params),
             headers=self.default_headers,

@@ -91,7 +91,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             return set(vgs)
 
         def update_node_roles(roles):
-            resp = self.app.put(
+            resp = self.app.patch(
                 reverse('NodeCollectionHandler'),
                 json.dumps([{'id': node_db.id, 'pending_roles': roles}]),
                 headers=self.default_headers)

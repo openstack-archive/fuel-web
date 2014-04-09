@@ -63,21 +63,29 @@ class Client(object):
         opener.open(request)
         return {}
 
-    def put_request(self, api, data):
-        """Make PUT request to specific API with some data
-        """
+    def _update_request(self, method, api, data):
         data_json = json.dumps(data)
         self.print_debug(
-            "PUT {0} data={1}"
-            .format(self.api_root + api, data_json)
+            "{0} {1} data={2}"
+            .format(method, self.api_root + api, data_json)
         )
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         request = urllib2.Request(self.api_root + api, data=data_json)
         request.add_header('Content-Type', 'application/json')
-        request.get_method = lambda: 'PUT'
+        request.get_method = lambda: method
         return json.loads(
             opener.open(request).read()
         )
+
+    def put_request(self, api, data):
+        """Make PUT request to specific API with some data
+        """
+        return self._update_request("PUT", api, data)
+
+    def patch_request(self, api, data):
+        """Make PATCH request to specific API with some data
+        """
+        return self._update_request("PATCH", api, data)
 
     def get_request(self, api, ostf=False):
         """Make GET request to specific API

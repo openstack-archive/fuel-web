@@ -260,7 +260,7 @@ class SingleHandler(BaseHandler):
         return self.single.to_json(obj)
 
     @content_json
-    def PUT(self, obj_id):
+    def PATCH(self, obj_id):
         """:returns: JSONized REST object.
         :http: * 200 (OK)
                * 404 (object not found in db)

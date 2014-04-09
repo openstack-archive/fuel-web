@@ -69,7 +69,7 @@ class TestHandlers(BaseIntegrationTest):
 
         clusters_before = len(self.db.query(Cluster).all())
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'name': updated_name}),
             headers=self.default_headers
@@ -88,7 +88,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_cluster_update_fails_on_net_provider_change(self):
         cluster = self.env.create_cluster(api=False)
         self.assertEquals(cluster.net_provider, "nova_network")
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'net_provider': 'neutron'}),
             headers=self.default_headers,
@@ -104,7 +104,7 @@ class TestHandlers(BaseIntegrationTest):
         node1 = self.env.create_node(api=False)
         node2 = self.env.create_node(api=False)
         cluster = self.env.create_cluster(api=False)
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'nodes': [node1.id]}),
             headers=self.default_headers,
@@ -116,7 +116,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(1, len(nodes))
         self.assertEquals(nodes[0].id, node1.id)
 
-        resp = self.app.put(
+        resp = self.app.patch(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'nodes': [node2.id]}),
             headers=self.default_headers

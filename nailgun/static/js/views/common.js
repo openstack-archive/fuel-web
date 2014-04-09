@@ -187,7 +187,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
                         return _.pick(notification.attributes, 'id', 'status');
                     }, this);
                 };
-                Backbone.sync('update', notificationsToMark).done(_.bind(function() {
+                Backbone.sync('patch', notificationsToMark).done(_.bind(function() {
                     this.collection.trigger('sync');
                 }, this));
             }

@@ -602,7 +602,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     return _.pick(node.attributes, 'id', 'cluster_id', 'pending_addition', 'pending_deletion', 'pending_roles');
                 });
             };
-            Backbone.sync('update', nodes)
+            Backbone.sync('patch', nodes)
                 .done(_.bind(function() {
                     this.$el.modal('hide');
                     this.model.get('nodes').fetch({data: {cluster_id: this.model.id}});
@@ -846,7 +846,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition', 'pending_deletion');
                     });
                 };
-                this.nodes.sync('update', this.nodes)
+                this.nodes.sync('patch', this.nodes)
                     .done(_.bind(function() {
                         this.$el.modal('hide');
                         app.page.tab.model.fetch();

@@ -19,6 +19,14 @@ casper.on('page.error', function(msg) {
     casper.echo(msg, 'ERROR');
 });
 
+// phantomjs doesn't support PATCH method, so set Backbone.emulateHTTP to true
+// after Backbone is loaded
+casper.on('resource.received', function(resource) {
+    this.evaluate(function() {
+        return typeof Backbone != 'undefined' && (Backbone.emulateHTTP = true);
+    });
+});
+
 casper.loadPage = function(page) {
     return this.thenOpen(baseUrl + page).waitWhileSelector('#content > .loading');
 }

@@ -371,7 +371,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     return _.pick(node.attributes, 'id', 'cluster_id', 'pending_roles', 'pending_addition');
                 });
             };
-            nodes.sync('update', nodes)
+            nodes.sync('patch', nodes)
                 .done(_.bind(function() {
                     this.cluster.fetch();
                     app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});

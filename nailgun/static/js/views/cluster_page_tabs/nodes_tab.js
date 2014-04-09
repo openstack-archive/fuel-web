@@ -1514,10 +1514,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }, this);
                 return Backbone.sync('update', node.interfaces, {url: _.result(node, 'url') + '/interfaces'});
             }, this))
+            .done(_.bind(function() {this.model.fetch();}, this))
             .always(_.bind(this.checkForChanges, this))
-            .fail(function() {
-                utils.showErrorDialog({title: 'Interfaces configuration'});
-            });
+            .fail(function() {utils.showErrorDialog({title: 'Interfaces configuration'});});
         },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);

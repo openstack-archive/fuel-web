@@ -74,16 +74,12 @@ class TestCharsetIssues(BaseIntegrationTest):
                 kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
-        timeout = 10
+        timeout = 15
         timer = time.time()
         while True:
-            task_delete = self.db.query(Task).filter_by(
-                cluster_id=cluster_id,
-                name="cluster_deletion"
-            ).first()
-            if not task_delete:
+            c = self.db.query(Cluster).get(cluster_id)
+            if not c:
                 break
-            self.db.expire(task_delete)
             if (time.time() - timer) > timeout:
                 raise Exception("Cluster deletion timeout")
             time.sleep(0.24)

@@ -56,7 +56,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     this.model.fetch();
                 }, this))
                 .fail(_.bind(function() {
-                    this.defaultButtonsState(false);
+                    this.calculateButtonsState();
                     utils.showErrorDialog({title: $.t('cluster_page.settings_tab.title')});
                 }, this));
         },

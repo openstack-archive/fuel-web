@@ -270,6 +270,7 @@
                         "l3_configuration": "Neutron L3 Configuration",
                         "gre_id_range": "Tunnel ID range",
                         "vlan_range": "VLAN ID range",
+                        "vxlan_id_range": "VXLAN ID range",
                         "base_mac": "Base MAC address",
                         "internal_cidr": "Internal network CIDR",
                         "internal_gateway": "Internal network gateway",
@@ -377,7 +378,8 @@
                         "alert": "Neutron is not supported in __releaseName__",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron with GRE segmentation",
-                        "neutr_vlan": "Neutron with VLAN segmentation"
+                        "neutr_vlan": "Neutron with VLAN segmentation",
+                        "neutr_vxlan": "Neutron with VXLAN segmentation"
                     },
                     "storage": {
                         "title": "Storage Backends",
@@ -845,6 +847,7 @@
                         "gateway": "网关",
                         "cidr": "CIDR",
                         "vlan_id_range": "VLAN ID范围",
+                        "vxlan_id_range": "VXLAN ID范围",
                         "use_vlan_tagging": "使用VLAN标记"
                     },
                     "networking_parameters": {
@@ -922,7 +925,8 @@
                         "alert": "__releaseName__不支持Neutron",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron GRE",
-                        "neutr_vlan": "Neutron VLAN"
+                        "neutr_vlan": "Neutron VLAN",
+                        "neutr_vxlan": "Neutron VXLAN"
                     },
                     "storage": {
                         "title": "后端存储",

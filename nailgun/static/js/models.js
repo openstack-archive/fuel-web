@@ -569,8 +569,8 @@ define(['utils', 'deepModel'], function(utils) {
             } else {
                 var idRangeErrors = ['', ''];
                 var segmentation = attrs.networking_parameters.get('segmentation_type');
-                var idRangeAttr = segmentation == 'gre' ? 'gre_id_range' : 'vlan_range';
-                var maxId = segmentation == 'gre' ? 65535 : 4094;
+                var idRangeAttr = segmentation == 'gre' || segmentation == 'vxlan' ? 'gre_id_range' : 'vlan_range';
+                var maxId = segmentation == 'gre'|| segmentation == 'vxlan' ? 65535 : 4094;
                 var idRange = attrs.networking_parameters.get(idRangeAttr);
                 var idStart = Number(idRange[0]), idEnd = Number(idRange[1]);
                 if (!utils.isNaturalNumber(idStart) || idStart < 2 || idStart > maxId) {

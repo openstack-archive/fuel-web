@@ -105,7 +105,7 @@ class NeutronManager(NetworkManager):
                 }
             }
         }
-        if cluster.network_config.segmentation_type == 'gre':
+        if cluster.network_config.segmentation_type in ('gre', 'vlan'):
             res["tunnel_id_ranges"] = join_range(
                 cluster.network_config.gre_id_range)
         elif cluster.network_config.segmentation_type == 'vlan':

@@ -67,7 +67,8 @@ NEUTRON_L23_PROVIDERS = Enum(
 
 NEUTRON_SEGMENT_TYPES = Enum(
     'vlan',
-    'gre'
+    'gre',
+    'vxlan'
 )
 
 NODE_STATUSES = Enum(

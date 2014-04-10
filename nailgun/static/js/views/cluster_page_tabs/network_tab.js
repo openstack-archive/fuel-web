@@ -432,7 +432,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         composeBindings: function() {
             var segmentation = this.parameters.get('segmentation_type');
             if (segmentation) {
-                var idRangeAttr = segmentation == 'gre' ? 'gre_id_range' : 'vlan_range';
+                var idRangeAttr = segmentation == 'gre' || segmentation == 'vxlan' ? 'gre_id_range' : 'vlan_range';
                 _.each(this.parameters.get(idRangeAttr), function(id, index) {
                     _.merge(this.bindings, this.composeRangeFieldBindings(idRangeAttr, index));
                 }, this);

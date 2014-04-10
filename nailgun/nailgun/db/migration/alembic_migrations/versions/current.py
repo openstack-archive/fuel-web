@@ -73,6 +73,16 @@ new_network_group_name = (
     'private'
 )
 
+old_neutron_segmentation_types = (
+    'vlan',
+    'gre'
+)
+new_neutron_segmentation_types = sorted(
+    old_neutron_segmentation_types + (
+        'vxlan',
+    )
+)
+
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
     old_type = sa.Enum(*old_options, name=enum_name)
@@ -262,6 +272,15 @@ def upgrade():
         new_network_group_name       # new options
     )
 
+    # NEUTRON SEGMENTATION ENUM UPGRADE
+    upgrade_enum(
+        "neutron_config",                # table
+        "segmentation_type",             # column
+        "segmentation_type",             # ENUM name
+        old_neutron_segmentation_types,  # old options
+        new_neutron_segmentation_types   # new options
+    )
+
     op.add_column('nodes', sa.Column(
         'uuid', sa.String(length=36), nullable=False
     ))
@@ -424,6 +443,15 @@ def downgrade():
         "network_group_name",        # ENUM name
         new_network_group_name,      # old options
         old_network_group_name       # new options
+    )
+
+    # NEUTRON SEGMENTATION ENUM DOWNGRADE
+    upgrade_enum(
+        "neutron_configs",               # table
+        "segmentation_type",             # column
+        "segmentation_type",             # ENUM name
+        new_neutron_segmentation_types,  # old options
+        old_neutron_segmentation_types   # new options
     )
 
     op.drop_column(

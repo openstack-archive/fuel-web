@@ -419,13 +419,18 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         beforeClusterCreation: function(cluster) {
             if (this.manager == 'nova-network') {
                 cluster.set({net_provider: 'nova_network'});
-            } else {
+            }
+            if (this.manager == 'neutron-gre') {
                 cluster.set({net_provider: 'neutron'});
-                if (this.manager == 'neutron-gre') {
-                    cluster.set({net_segment_type: 'gre'});
-                } else if (this.manager == 'neutron-vlan') {
-                    cluster.set({net_segment_type: 'vlan'});
-                }
+                cluster.set({net_segment_type: 'gre'});
+            }
+            if (this.manager == 'neutron-vlan') {
+                cluster.set({net_provider: 'neutron'});
+                cluster.set({net_segment_type: 'vlan'});
+            }
+            if (this.manager == 'neutron-vxlan') {
+                cluster.set({net_provider: 'neutron'});
+                cluster.set({net_segment_type: 'vxlan'});
             }
             return $.Deferred().resolve();
         },

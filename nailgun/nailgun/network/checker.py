@@ -92,7 +92,7 @@ class NetworkCheck(object):
         (both nova-net and neutron)
         """
         netw_untagged = lambda n: (n['vlan_start'] is None) \
-            and (not n['meta'].get('ext_vlan_tag')) \
+            and (not n['meta'].get('ext_net_data')) \
             and (not n['meta'].get('neutron_vlan_range'))
         untagged_nets = set([n['name'] for n in self.networks
                             if netw_untagged(n)])

@@ -157,12 +157,12 @@ class DeploymentMultinodeSerializer(object):
     @classmethod
     def set_deployment_priorities(cls, nodes):
         """Set priorities of deployment."""
-        prior = Priority()
+        priority = Priority()
 
         for n in cls.by_role(nodes, 'controller'):
-            n['priority'] = prior.next
+            n['priority'] = priority.next
 
-        other_nodes_prior = prior.next
+        other_nodes_prior = priority.next
         for n in cls.not_roles(nodes, 'controller'):
             n['priority'] = other_nodes_prior
 
@@ -233,21 +233,28 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         return serialized_nodes
 
     @classmethod
-    def set_primary_controller(cls, nodes):
-        """Set primary controller for the first controller
-        node if it not set yet
+    def __set_primary_role_on_first_node(cls, nodes, role, primary_role):
+        """Sets a special primary_role on the first node of role.
         """
         sorted_nodes = sorted(
             nodes, key=lambda node: int(node['uid']))
 
-        primary_controller = cls.filter_by_roles(
-            sorted_nodes, ['primary-controller'])
+        primary_node = cls.filter_by_roles(
+            sorted_nodes, [primary_role])
 
-        if not primary_controller:
-            controllers = cls.filter_by_roles(
-                sorted_nodes, ['controller'])
-            if controllers:
-                controllers[0]['role'] = 'primary-controller'
+        if not primary_node:
+            filterd_nodes = cls.filter_by_roles(
+                sorted_nodes, [role])
+            if filterd_nodes:
+                filterd_nodes[0]['role'] = primary_role
+
+    @classmethod
+    def set_primary_controller(cls, nodes):
+        """Set primary controller for the first controller
+        node if it not set yet
+        """
+        cls.__set_primary_role_on_first_node(
+            nodes, 'controller', 'primary-controller')
 
     @classmethod
     def get_last_controller(cls, nodes):
@@ -312,29 +319,29 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
     @classmethod
     def set_deployment_priorities(cls, nodes):
         """Set priorities of deployment for HA mode."""
-        prior = Priority()
+        priority = Priority()
 
-        primary_swift_proxy_piror = prior.next
+        primary_swift_proxy_piror = priority.next
         for n in cls.by_role(nodes, 'primary-swift-proxy'):
             n['priority'] = primary_swift_proxy_piror
 
-        swift_proxy_prior = prior.next
+        swift_proxy_prior = priority.next
         for n in cls.by_role(nodes, 'swift-proxy'):
             n['priority'] = swift_proxy_prior
 
-        storage_prior = prior.next
+        storage_prior = priority.next
         for n in cls.by_role(nodes, 'storage'):
             n['priority'] = storage_prior
 
         # Deploy primary-controller
         for n in cls.by_role(nodes, 'primary-controller'):
-            n['priority'] = prior.next
+            n['priority'] = priority.next
 
         # Then deploy other controllers one by one
         for n in cls.by_role(nodes, 'controller'):
-            n['priority'] = prior.next
+            n['priority'] = priority.next
 
-        other_nodes_prior = prior.next
+        other_nodes_prior = priority.next
         for n in cls.not_roles(nodes, ['primary-swift-proxy',
                                        'swift-proxy',
                                        'storage',

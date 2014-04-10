@@ -19,19 +19,40 @@ import os
 import yaml
 
 
+def make_config_path(file_name):
+    return os.path.join(os.path.dirname(__file__), file_name)
+
+
+def read_yaml_config(path):
+    return yaml.load(file(path, 'r'))
+
+
 class Config(object):
     """Config object, returns None if field doesn't exist
     """
 
-    def __init__(self):
-        config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
-        self.config = yaml.load(file(config_path, 'r'))
+    def __init__(self, path):
+        self.config = read_yaml_config(path)
 
     def __getattr__(self, name):
         return self.config.get(name, None)
 
-    def __repr__(self):
-        self.config
 
+def build_config():
+    """Builds config
 
-config = Config()
+    We cannot use plain yaml based config
+    because our config consists of several files.
+
+    This method generates additional properties
+    for configuration data from config.yaml
+
+    :returns: Config object
+    """
+    config = Config(make_config_path('config.yaml'))
+    config.config['current_version'] = read_yaml_config(
+        config.current_fuel_version_path)
+    config.config['new_version'] = read_yaml_config(
+        make_config_path('version.yaml'))
+
+    return config

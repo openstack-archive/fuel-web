@@ -1,29 +1,330 @@
-version: '5.1'
+current_fuel_version_path: /etc/fuel/version.yaml
+
 working_directory: /var/lib/fuel_upgrade/
-log_path: /var/log/fuel_upgrade.log
 puppet_modules_dir: puppet_modules
+images_extension: tar
 
 docker:
   url: unix://var/run/docker.sock
-  api_version: '1.9'
+  api_version: '1.10'
   http_timeout: 160
-  stop_container_timeout: 160
+  stop_container_timeout: 10
 
-container_prefix: fuel/
+image_prefix: fuel/
+container_prefix: fuel-core-
+
+supervisor:
+  configs_prefix: /etc/supervisord.d/
+  current_configs_prefix: /etc/supervisord.d/current
+  endpoint: '/var/run/supervisor.sock'
+  restart_timeout: 300
 
 endpoints:
   nailgun:
     port: 8000
     host: 127.0.0.1
 
-containers:
+images:
+  - id: astute
+  - id: cobbler
+  - id: mcollective
   - id: nailgun
-    post_build_command: "bash -c '. /opt/nailgun/bin/activate; manage.py migrate upgrade head'"
+  - id: nginx
+  - id: ostf
+  - id: postgres
+  - id: rabbitmq
+  - id: rsync
+  - id: rsyslog
+  - id: busybox
+
+
+containers:
+
+  - id: nailgun
+    supervisor_config: True
+    from_image: nailgun
+    post_build_command: "puppet apply -v /etc/puppet/modules/nailgun/examples/nailgun-only.pp"
+    port_bindings:
+      8001:
+        - '0.0.0.0'
+        - 8001
+    ports:
+      - 8001
+    links:
+      - id: postgresql
+        alias: db
+      - id: rabbitmq
+        alias: rabbitmq
+    volumes:
+      - /usr/share/nailgun/static
+    volumes_from:
+      - volume_logs
+      - volume_repos
+      - volume_ssh_keys
+      - volume_fuel_configs
+
+
+  - id: astute
+    supervisor_config: True
+    from_image: astute
+    volumes_from:
+      - volume_logs
+      - volume_repos
+      - volume_ssh_keys
+      - volume_fuel_configs
+
+
+  - id: cobbler
+    supervisor_config: True
+    from_image: cobbler
+    privileged: true
+    port_bindings:
+      '53/udp':
+        - '0.0.0.0'
+        - 53
+      '69/udp':
+        - '0.0.0.0'
+        - 69
+      80:
+        - '0.0.0.0'
+        - 80
+      443:
+        - '0.0.0.0'
+        - 443
+    ports:
+      - [53, 'udp']
+      - [53, 'tcp']
+      - 67
+      - [69, 'udp']
+      - [69, 'tcp']
+      - 80
+      - 443
+    volumes_from:
+      - volume_logs
+      - volume_repos
+      - volume_ssh_keys
+      - volume_fuel_configs
+
+
+  - id: mcollective
+    supervisor_config: True
+    from_image: mcollective
+    privileged: true
+    volumes_from:
+      - volume_logs
+      # Required for /var/www/nailgun/dump directory
+      - volume_repos
+      - volume_ssh_keys
+      - volume_fuel_configs
+      - volume_dump
+
+
+  - id: rsync
+    supervisor_config: True
+    from_image: rsync
+    port_bindings:
+      873:
+        - '0.0.0.0'
+        - 873
+    ports:
+      - 873
+    volumes_from:
+      - volume_logs
+      - volume_repos
+      - volume_fuel_configs
+      - volume_puppet_manifests
+
+
+  - id: rsyslog
+    supervisor_config: True
+    from_image: rsyslog
+    port_bindings:
+      514:
+        - '0.0.0.0'
+        - 514
+      '514/udp':
+        - '0.0.0.0'
+        - 514
+    ports:
+      - [514, 'udp']
+      - 514
+    volumes_from:
+      - volume_logs
+      - volume_repos
+      - volume_fuel_configs
+
+
+  - id: nginx
+    supervisor_config: True
+    from_image: nginx
+    port_bindings:
+      8000:
+        - '0.0.0.0'
+        - 8000
+      8080:
+        - '0.0.0.0'
+        - 8080
+    ports:
+      - 8000
+      - 8080
+    links:
+      - id: nailgun
+        alias: nailgun
+      - id: ostf
+        alias: ostf
+    volumes_from:
+      - volume_repos
+      # Required for static files
+      - nailgun
+      - volume_logs
+      - volume_repos
+      - volume_fuel_configs
+      - volume_dump
+
+
+  - id: rabbitmq
+    supervisor_config: True
+    from_image: rabbitmq
+    port_bindings:
+      5672:
+        - '0.0.0.0'
+        - 5672
+      4369:
+        - '0.0.0.0'
+        - 4369
+      15672:
+        - '0.0.0.0'
+        - 15672
+      61613:
+        - '0.0.0.0'
+        - 61613
+    ports:
+      - 5672
+      - 4369
+      - 15672
+      - 61613
+    volumes_from:
+      - volume_logs
+      - volume_repos
+      - volume_fuel_configs
+
+
+  - id: ostf
+    supervisor_config: True
+    from_image: ostf
+    post_build_command: 'puppet apply -v /etc/puppet/modules/nailgun/examples/ostf-only.pp'
+    port_bindings:
+      8777:
+        - '0.0.0.0'
+        - 8777
+    ports:
+      - 8777
+    links:
+      - id: postgresql
+        alias: db
+      - id: rabbitmq
+        alias: rabbitmq
+    volumes_from:
+      - volume_logs
+      - volume_repos
+      - volume_fuel_configs
+      - volume_ssh_keys
+
 
   - id: postgresql
-    port: 5432
+    supervisor_config: True
+    from_image: postgres
+    port_bindings:
+      5432:
+        - '0.0.0.0'
+        - 5432
+    ports:
+      - 5432
+    volumes_from:
+      - volume_db
+      - volume_logs
+      - volume_repos
+      - volume_fuel_configs
 
-  - id: data
+
+  - id: volume_db
+    supervisor_config: False
+    from_image: busybox
     post_build_command: 'true'
     volumes:
-      - /var/lib/postgresql
+      - /var/lib/pgsql
+    binds:
+      '/var/lib/pgsql':
+        bind: '/var/lib/pgsql'
+        ro: False
+
+
+  - id: volume_repos
+    supervisor_config: False
+    from_image: busybox
+    post_build_command: 'true'
+    volumes:
+      - /var/www/nailgun
+    binds:
+      '/var/www/nailgun':
+        bind: '/var/www/nailgun'
+        ro: False
+
+
+  - id: volume_logs
+    supervisor_config: False
+    from_image: busybox
+    post_build_command: 'true'
+    volumes:
+      - /var/log/docker-log
+    binds:
+      '/var/log/docker-log':
+        bind: '/var/log'
+        ro: False
+
+
+  - id: volume_ssh_keys
+    supervisor_config: False
+    from_image: busybox
+    post_build_command: 'true'
+    volumes:
+      - /root/.ssh
+    binds:
+      '/root/.ssh':
+        bind: '/root/.ssh'
+        ro: False
+
+
+  - id: volume_dump
+    supervisor_config: False
+    from_image: busybox
+    post_build_command: 'true'
+    volumes:
+      - /dump
+    binds:
+      '/dump':
+        bind: '/var/www/nailgun/dump'
+        ro: False
+
+
+  - id: volume_fuel_configs
+    supervisor_config: False
+    from_image: busybox
+    post_build_command: 'true'
+    volumes:
+      - /etc/fuel
+    binds:
+      '/etc/fuel':
+        bind: '/etc/fuel'
+        ro: False
+
+  - id: volume_puppet_manifests
+    supervisor_config: False
+    from_image: busybox
+    post_build_command: 'true'
+    volumes:
+      - /etc/puppet
+    binds:
+      '/etc/puppet':
+        bind: '/etc/puppet'
+        ro: True

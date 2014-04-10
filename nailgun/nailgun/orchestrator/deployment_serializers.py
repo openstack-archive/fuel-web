@@ -156,16 +156,16 @@ class DeploymentMultinodeSerializer(object):
     @classmethod
     def set_deployment_priorities(cls, nodes):
         """Set priorities of deployment."""
-        prior = Priority()
+        priority = Priority()
         for n in cls.by_role(nodes, 'mongo'):
-            n['priority'] = prior.next
+            n['priority'] = priority.next
 
         for n in cls.by_role(nodes, 'controller'):
-            n['priority'] = prior.next
+            n['priority'] = priority.next
 
-        other_nodes_prior = prior.next
+        other_nodes_priority = priority.next
         for n in cls.not_roles(nodes, ['controller', 'mongo']):
-            n['priority'] = other_nodes_prior
+            n['priority'] = other_nodes_priority
 
     @classmethod
     def serialize_nodes(cls, nodes):
@@ -337,35 +337,35 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
     @classmethod
     def set_deployment_priorities(cls, nodes):
         """Set priorities of deployment for HA mode."""
-        prior = Priority()
+        priority = Priority()
 
         for n in cls.by_role(nodes, 'mongo'):
-            n['priority'] = prior.next
+            n['priority'] = priority.next
 
         for n in cls.by_role(nodes, 'primary-mongo'):
-            n['priority'] = prior.next
+            n['priority'] = priority.next
 
-        primary_swift_proxy_piror = prior.next
+        primary_swift_proxy_priority = priority.next
         for n in cls.by_role(nodes, 'primary-swift-proxy'):
-            n['priority'] = primary_swift_proxy_piror
+            n['priority'] = primary_swift_proxy_priority
 
-        swift_proxy_prior = prior.next
+        swift_proxy_priority = priority.next
         for n in cls.by_role(nodes, 'swift-proxy'):
-            n['priority'] = swift_proxy_prior
+            n['priority'] = swift_proxy_priority
 
-        storage_prior = prior.next
+        storage_priority = priority.next
         for n in cls.by_role(nodes, 'storage'):
-            n['priority'] = storage_prior
+            n['priority'] = storage_priority
 
         # Deploy primary-controller
         for n in cls.by_role(nodes, 'primary-controller'):
-            n['priority'] = prior.next
+            n['priority'] = priority.next
 
         # Then deploy other controllers one by one
         for n in cls.by_role(nodes, 'controller'):
-            n['priority'] = prior.next
+            n['priority'] = priority.next
 
-        other_nodes_prior = prior.next
+        other_nodes_priority = priority.next
         for n in cls.not_roles(nodes, ['primary-swift-proxy',
                                        'swift-proxy',
                                        'storage',
@@ -374,7 +374,7 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                                        'quantum',
                                        'mongo',
                                        'primary-mongo']):
-            n['priority'] = other_nodes_prior
+            n['priority'] = other_nodes_priority
 
 
 class NetworkDeploymentSerializer(object):

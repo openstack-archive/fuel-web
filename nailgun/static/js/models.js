@@ -425,11 +425,12 @@ define(['utils', 'deepModel'], function(utils) {
                 return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
             });
         },
-        validate: function() {
+        validate: function(networkingParameters) {
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork'));
             var untaggedNetworks = networks.filter(function(network) {
-                return !network.get('vlan_start');
+                var vlanTag = network.get('meta').ext_vlan_tag;
+                return _.isNull(network.get('vlan_start')) && (!vlanTag || _.isNull(networkingParameters.get(vlanTag[0])));
             });
             var maxUntaggedNetworksCount = 1;
             // public and floating networks are allowed to be assigned to the same interface

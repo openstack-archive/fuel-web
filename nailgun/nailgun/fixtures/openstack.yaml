@@ -33,6 +33,7 @@
         description: "Storage - MongoDB for Ceilometer"
         conflicts:
           - compute
+          - ceph-osd
         depends:
           condition:
             "settings:additional_components.ceilometer.value": true
@@ -334,6 +335,8 @@
       ceph-osd:
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
+        conflicts:
+          - mongo
     networks_metadata:
       neutron:
         networks:

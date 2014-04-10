@@ -145,11 +145,6 @@ LOGS:
     <<: *local_log_type
     <<: *python_log_format
     path: "/var/log/ostf.log"
-  - id: puppet
-    name: "Releases"
-    <<: *local_log_type
-    <<: *remote_syslog_log_format
-    path: "/var/log/puppet/agent.log"
 # Fake target logs.
   - id: 'fake-target-mcollective'
     name: "mcollective"

@@ -68,7 +68,7 @@
             render_type: null
             render_addr_mask: null
             map_priority: 2
-            ext_vlan_tag: "fixed_networks_vlan_start"
+            ext_vlan_tag: ["fixed_networks_vlan_start", "fixed_networks_amount"]
             configurable: false
             assign_vip: false
         config:

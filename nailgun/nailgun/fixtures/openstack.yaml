@@ -29,14 +29,15 @@
         name: "Storage - Cinder LVM"
         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
       mongo:
-        name: "MongoDB"
-        description: "Storage - MongoDB for Ceilometer"
+        name: "Telemetry - MongoDB"
+        description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
         conflicts:
           - compute
+          - ceph-osd
         depends:
-          condition:
-            "settings:additional_components.ceilometer.value": true
-          warning: "Ceilometer should be enabled"
+          - condition:
+              "settings:additional_components.ceilometer.value": true
+            warning: "Ceilometer should be enabled"
     networks_metadata:
       nova_network:
         networks:
@@ -334,6 +335,8 @@
       ceph-osd:
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
+        conflicts:
+          - mongo
     networks_metadata:
       neutron:
         networks:

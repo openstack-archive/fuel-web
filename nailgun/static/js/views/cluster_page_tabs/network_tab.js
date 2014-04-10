@@ -345,14 +345,14 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             };
             return bindings;
         },
-        composeRangeFieldBindings: function(observe, index) {
+        composeRangeFieldBindings: function(observe, index, convertToNumber) {
             var bindings = {};
             bindings['.' + observe + '-row input[name=range' + index + ']'] = {
                 observe: observe,
                 onGet: function(value) { return value[index]; },
                 getVal: _.bind(function($el) {
                     var range = _.clone(this.parameters.get(observe));
-                    range[this.$('.' + observe + '-row .range').index($el)] = $el.val();
+                    range[this.$('.' + observe + '-row .range').index($el)] = convertToNumber ? Number($el.val()) : $el.val();
                     return range;
                 }, this)
             };
@@ -434,7 +434,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             if (segmentation) {
                 var idRangeAttr = segmentation == 'gre' ? 'gre_id_range' : 'vlan_range';
                 _.each(this.parameters.get(idRangeAttr), function(id, index) {
-                    _.merge(this.bindings, this.composeRangeFieldBindings(idRangeAttr, index));
+                    _.merge(this.bindings, this.composeRangeFieldBindings(idRangeAttr, index, true));
                 }, this);
             }
             _.each(this.parameters.get('dns_nameservers'), function(nameserver, index) {

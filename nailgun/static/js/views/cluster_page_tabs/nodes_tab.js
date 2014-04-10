@@ -1547,7 +1547,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 }
             }, this));
             // if any errors found disable apply button
-            _.each(this.interfaces.invoke('validate'), _.bind(function(interfaceValidationResult) {
+            _.each(this.interfaces.invoke('validate', this.networkConfiguration.get('networking_parameters')), _.bind(function(interfaceValidationResult) {
                 if (!_.isEmpty(interfaceValidationResult)) {
                     this.applyChangesButton.set('disabled', true);
                 }
@@ -1631,9 +1631,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             _.defaults(this, options);
             this.model.get('assigned_networks').on('add remove', this.checkIfEmpty, this);
             this.model.get('assigned_networks').on('add remove', this.screen.checkForChanges, this.screen);
+            this.networkingParameters = this.screen.networkConfiguration.get('networking_parameters');
         },
         handleValidationErrors: function() {
-            var validationResult = this.model.validate();
+            var validationResult = this.model.validate(this.networkingParameters);
             if (validationResult.length) {
                 this.screen.applyChangesButton.set('disabled', true);
                 _.each(validationResult, _.bind(function(error) {
@@ -1645,6 +1646,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         render: function() {
             this.$el.html(this.template(_.extend({
+                networkingParameters: this.networkingParameters,
                 ifc: this.model,
                 locked: this.screen.isLocked(),
                 bondingAvailable: this.screen.bondingAvailable()

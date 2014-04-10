@@ -315,10 +315,18 @@
       - compute
       - cinder
       - ceph-osd
+      - mongo
     roles_metadata:
       ceph-osd:
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
+        conflicts:
+          - mongo
+      mongo:
+        name: "MongoDB"
+        description: "Document-oriented database system"
+        conflicts:
+          - ceph-osd
     networks_metadata:
       neutron:
         networks:
@@ -395,9 +403,18 @@
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "cephjournal"}
           - {allocate_size: "full-disk", id: "ceph"}
+        mongo:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "full-disk", id: "mongo"}
         controller-ceph-image:
           - {allocate_size: 'all', id: 'os'}
       volumes:
+        - id: "mongo"
+          type: "vg"
+          min_size: {generator: "calc_min_mongo_size"}
+          label: "Mongo"
+          name: "mongo"
+          volumes: []
         - id: "ceph"
           type: "partition"
           min_size: {generator: "calc_min_ceph_size"}

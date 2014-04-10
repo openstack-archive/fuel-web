@@ -594,7 +594,7 @@
         cobbler:
           profile:
             generator_arg: "centos-x86_64"
-- pk: 3
+- pk: 2
   extend: *full_release
   fields:
     name: "Havana on Ubuntu 12.04"

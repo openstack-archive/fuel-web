@@ -77,15 +77,18 @@
           <div class="logical-network-item" data-name="<%- networkName %>">
             <div class="name"><%- $.t('network.' + networkName, {defaultValue: networkName}) %></div>
             <div class="id">
-            <% if (network.get('vlan_start')) { %>
-              <% if (network.get('amount') == 1) { %>
-                VLAN ID: <%- network.get('vlan_start') %>
-              <% } else { %>
-                VLAN IDs: <%- network.get('vlan_start') %>-<%- network.get('vlan_start') + network.get('amount') - 1 %>
-              <% } %>
-            <% } else if (network.get('meta').neutron_vlan_range) { %>
-              <%- $.t('cluster_page.nodes_tab.configure_interfaces.neutron_vlan_range') %>
-            <% } %>
+              <%
+                var vlans;
+                if (network.get('meta').neutron_vlan_range) {
+                  vlans = _.uniq(networkingParameters.get('vlan_range'));
+                } else {
+                  var extNetworkData = network.get('meta').ext_net_data;
+                  var vlanStart = extNetworkData ? networkingParameters.get(extNetworkData[0]) : network.get('vlan_start');
+                  var vlanEnd = extNetworkData && !_.isNull(vlanStart) ? vlanStart + networkingParameters.get(extNetworkData[1]) - 1 : vlanStart;
+                  vlans = _.uniq([vlanStart, vlanEnd]);
+                }
+              %>
+              <%- _.compact(vlans).length ? $.t('cluster_page.nodes_tab.configure_interfaces.vlan_id', {count: vlans.length}) + ': ' + vlans.join('-') : '' %>
             </div>
           </div>
         <% }) %>

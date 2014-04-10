@@ -451,7 +451,7 @@ class NetworkManager(object):
                     dedicated = ng.meta.get('dedicated_nic')
                     untagged = (ng.vlan_start is None) \
                         and not ng.meta.get('neutron_vlan_range') \
-                        and not ng.meta.get('ext_vlan_tag')
+                        and not ng.meta.get('ext_net_data')
                     if dedicated:
                         if not assigned_ids:
                             assigned_ids.add(ng_id)
@@ -617,8 +617,8 @@ class NetworkManager(object):
 
     @classmethod
     def get_network_vlan(cls, net_db, cl_db):
-        return net_db.vlan_start if not net_db.meta.get('ext_vlan_tag') \
-            else getattr(cl_db.network_config, net_db.meta['ext_vlan_tag'])
+        return net_db.vlan_start if not net_db.meta.get('ext_net_data') \
+            else getattr(cl_db.network_config, net_db.meta['ext_net_data'][0])
 
     @classmethod
     def get_node_networks_optimized(cls, node_db, ips_db, networks):

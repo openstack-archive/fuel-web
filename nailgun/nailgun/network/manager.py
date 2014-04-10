@@ -570,7 +570,7 @@ class NetworkManager(object):
     @classmethod
     def get_network_vlan(cls, net_db, cl_db):
         return net_db.vlan_start if not net_db.meta.get('ext_vlan_tag') \
-            else getattr(cl_db.network_config, net_db.meta['ext_vlan_tag'])
+            else getattr(cl_db.network_config, net_db.meta['ext_vlan_tag'][0])
 
     @classmethod
     def get_node_networks_optimized(cls, node_db, ips_db, networks):

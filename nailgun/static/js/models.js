@@ -425,21 +425,17 @@ define(['utils', 'deepModel'], function(utils) {
                 return _.contains(slaveInterfaceNames, slaveInterface.get('name'));
             });
         },
-        validate: function() {
+        validate: function(networkingParameters) {
             var errors = [];
             var networks = new models.Networks(this.get('assigned_networks').invoke('getFullNetwork'));
             var untaggedNetworks = networks.filter(function(network) {
-                return !network.get('vlan_start');
+                var vlanTag = network.get('meta').ext_vlan_tag;
+                var vlan = vlanTag ? networkingParameters.get(vlanTag[0]) : network.get('vlan_start');
+                var hasVlanRange = network.get('meta').neutron_vlan_range;
+                return _.isNull(vlan) && !hasVlanRange;
             });
-            var maxUntaggedNetworksCount = 1;
             // public and floating networks are allowed to be assigned to the same interface
-            if (networks.where({name: 'public'}).length && networks.where({name: 'floating'}).length) {
-                maxUntaggedNetworksCount += 1;
-            }
-            // networks with flag "neutron_vlan_range" behave like tagged and allow to have one more untagged network
-            maxUntaggedNetworksCount += networks.filter(function(network) {
-                return network.get('meta').neutron_vlan_range;
-            }).length;
+            var maxUntaggedNetworksCount = networks.where({name: 'public'}).length && networks.where({name: 'floating'}).length ? 2 : 1;
             if (untaggedNetworks.length > maxUntaggedNetworksCount) {
                 errors.push($.t('cluster_page.nodes_tab.configure_interfaces.validation.too_many_untagged_networks'));
             }

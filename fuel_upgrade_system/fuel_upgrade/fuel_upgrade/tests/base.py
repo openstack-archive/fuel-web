@@ -20,6 +20,10 @@ except ImportError:
     # Required for python 2.6
     from unittest2.case import TestCase
 
+from copy import deepcopy
+
+from fuel_upgrade import config
+
 
 class BaseTestCase(TestCase):
     """Base class for test cases
@@ -39,3 +43,17 @@ class BaseTestCase(TestCase):
         """Checks that mocked method was called `count` times
         """
         self.assertEqual(method.call_count, count)
+
+    @property
+    def fake_config(self):
+        conf = config.Config(config.make_config_path('config.yaml'))
+        conf.config['new_version'] = config.read_yaml_config(
+            config.make_config_path('version.yaml'))
+
+        conf.config['current_version'] = deepcopy(
+            conf.config['new_version'])
+
+        conf.new_version['VERSION']['release'] = '9999'
+        conf.current_version['VERSION']['release'] = '0'
+
+        return conf

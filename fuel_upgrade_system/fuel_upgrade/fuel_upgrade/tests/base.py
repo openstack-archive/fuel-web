@@ -54,4 +54,5 @@ class BaseTestCase(TestCase):
         conf.new_version['VERSION']['release'] = '9999'
         conf.current_version['VERSION']['release'] = '0'
 
+        conf.openstack['releases'] = 'releases.json'
         return conf

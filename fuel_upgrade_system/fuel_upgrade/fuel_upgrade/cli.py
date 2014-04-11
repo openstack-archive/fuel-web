@@ -23,9 +23,20 @@ logger = configure_logger('/var/log/fuel_upgrade.log')
 
 from fuel_upgrade.config import build_config
 from fuel_upgrade import errors
-from fuel_upgrade.upgrade import DockerInitializer
-from fuel_upgrade.upgrade import DockerUpgrader
-from fuel_upgrade.upgrade import Upgrade
+from fuel_upgrade.upgrade import UpgradeManager
+
+from fuel_upgrade.engines.docker import DockerInitializer
+from fuel_upgrade.engines.docker import DockerUpgrader
+from fuel_upgrade.engines.openstack import OpenStackUpgrader
+
+
+#: A dict with supported systems.
+#: The key is used for system option in CLI.
+SUPPORTED_SYSTEMS = {
+    'docker-init': DockerInitializer,
+    'docker': DockerUpgrader,
+    'openstack': OpenStackUpgrader,
+}
 
 
 def handle_exception(exc):
@@ -40,27 +51,20 @@ def handle_exception(exc):
 def parse_args():
     """Parse arguments and return them
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description='fuel-upgrade is an upgrade system for fuel-master node')
 
     parser.add_argument(
-        '--src',
-        help='path to update file',
-        required=True)
-
+        'systems', choices=SUPPORTED_SYSTEMS.keys(), nargs='+',
+        help='systems to upgrade')
     parser.add_argument(
-        '--disable_rollback',
-        help='disable rollabck in case of errors',
-        action='store_true')
-
+        '--src', required=True, help='path to update file')
     parser.add_argument(
-        '--disable_checker',
-        help='disable before upgrade checker',
-        action='store_true')
-
+        '--no-checker', action='store_true',
+        help='do not check before upgrade')
     parser.add_argument(
-        '--docker_initialize',
-        help='disable rollabck in case of errors',
-        action='store_true')
+        '--no-rollback', action='store_true',
+        help='do not rollback in case of errors')
 
     return parser.parse_args()
 
@@ -68,20 +72,18 @@ def parse_args():
 def run_upgrade(args):
     """Run upgrade on master node
     """
-    config = build_config()
-    if args.docker_initialize:
-        engine = DockerInitializer(args.src, config)
-    else:
-        engine = DockerUpgrader(args.src, config)
+    upgraders_to_use = [
+        SUPPORTED_SYSTEMS[system] for system in args.systems
+    ]
 
-    upgrader = Upgrade(
+    upgrade_manager = UpgradeManager(
         args.src,
-        config,
-        engine,
-        disable_rollback=args.disable_rollback,
-        disable_checker=args.disable_checker)
-
-    upgrader.run()
+        build_config(),
+        upgraders_to_use,
+        args.no_rollback,
+        args.no_checker,
+    )
+    upgrade_manager.run()
 
 
 def main():

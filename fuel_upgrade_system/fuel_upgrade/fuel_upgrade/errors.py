@@ -43,3 +43,7 @@ class CannotFindContainerError(FuelUpgradeException):
 
 class TimeoutError(FuelUpgradeException):
     pass
+
+
+class FailedApiCall(FuelUpgradeException):
+    pass

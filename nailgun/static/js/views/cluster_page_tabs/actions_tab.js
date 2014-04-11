@@ -29,7 +29,8 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             'click .apply-name-btn': 'applyNewClusterName',
             'keydown .rename-cluster-form input': 'onClusterNameInputKeydown',
             'click .delete-cluster-btn': 'deleteCluster',
-            'click .reset-environment-btn': 'resetEnvironment'
+            'click .reset-environment-btn': 'resetEnvironment',
+            'click .upgrade-btn': 'upgradeEnvironment'
         },
         applyNewClusterName: function() {
             var name = $.trim(this.$('.rename-cluster-form input').val());
@@ -70,8 +71,26 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
         onNewTask: function(task) {
             return this.bindTaskEvents(task) && this.render();
         },
+        upgradeEnvironment: function(task) {
+            this.model.set({pending_release_id : this.$('select[name=upgrade_release]').val()});
+            this.registerSubView(new dialogViews.UpgradeEnvironmentDialog({model: this.model})).render();
+        },
+        renderReleases: function(e) {
+            var input = this.$('select[name=upgrade_release]');
+            var currentOs = this.releases.get(this.model.get('release')).get('operating_system');
+            var currentOsVersion = this.releases.get(this.model.get('release')).get('openstack_version');
+            input.html('');
+            this.releases.each(function(release) {
+                if (_.contains(release.get('can_update_openstack_versions'), currentOsVersion) && release.get('operating_system') == currentOs ) {
+                    input.append($('<option/>').attr('value', release.id).text(release.get('name') + ' (' + release.get('openstack_version') + ')'));
+                }
+            });
+        },
         initialize: function(options) {
             _.defaults(this, options);
+            this.releases = new models.Releases();
+            this.releases.fetch();
+            this.releases.on('sync', this.renderReleases, this);
             this.model.on('change:name change:status', this.render, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);

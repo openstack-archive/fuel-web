@@ -98,6 +98,5 @@ class AttributesValidator(BasicValidator):
         be any error during generating then we assume data is
         logically valid.
         """
-        d = cls.validate_json(data)
-        if "generated" in d:
-            cls.traverse(d["generated"])
+        #if "generated" in data:
+        #    cls.traverse(data["generated"])

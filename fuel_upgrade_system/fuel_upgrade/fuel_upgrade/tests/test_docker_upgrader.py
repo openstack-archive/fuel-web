@@ -16,12 +16,13 @@
 
 import mock
 
+from fuel_upgrade.engines.docker import DockerUpgrader
 from fuel_upgrade import errors
+
 from fuel_upgrade.tests.base import BaseTestCase
-from fuel_upgrade.upgrade import DockerUpgrader
 
 
-@mock.patch('fuel_upgrade.upgrade.utils.exec_cmd')
+@mock.patch('fuel_upgrade.engines.docker.utils.exec_cmd')
 class TestDockerUpgrader(BaseTestCase):
 
     def setUp(self):
@@ -29,27 +30,27 @@ class TestDockerUpgrader(BaseTestCase):
         # when we try to patch docker client with
         # class decorator, it's the reason why
         # we have to do it explicitly
-        self.docker_patcher = mock.patch('fuel_upgrade.upgrade.docker.Client')
+        self.docker_patcher = mock.patch(
+            'fuel_upgrade.engines.docker.docker.Client')
         self.docker_mock_class = self.docker_patcher.start()
         self.docker_mock = mock.MagicMock()
         self.docker_mock_class.return_value = self.docker_mock
 
         self.supervisor_patcher = mock.patch(
-            'fuel_upgrade.upgrade.SupervisorClient')
+            'fuel_upgrade.engines.docker.SupervisorClient')
         self.supervisor_class = self.supervisor_patcher.start()
         self.supervisor_mock = mock.MagicMock()
         self.supervisor_class.return_value = self.supervisor_mock
 
         self.update_path = '/tmp/new_update'
         with mock.patch('os.makedirs'):
-            self.upgrader = DockerUpgrader(
-                self.update_path, self.fake_config)
+            self.upgrader = DockerUpgrader(self.update_path, self.fake_config)
 
     def tearDown(self):
         self.docker_patcher.stop()
         self.supervisor_patcher.stop()
 
-    @mock.patch('fuel_upgrade.upgrade.time.sleep')
+    @mock.patch('fuel_upgrade.engines.docker.time.sleep')
     def test_run_with_retries(self, sleep, _):
         image_name = 'test_image'
         retries_count = 3
@@ -123,7 +124,8 @@ class TestDockerUpgrader(BaseTestCase):
         self.assertEquals(
             self.docker_mock.stop.call_args_list, [((3, 10),), ((4, 10),)])
 
-    @mock.patch('fuel_upgrade.upgrade.os.path.exists', return_value=True)
+    @mock.patch(
+        'fuel_upgrade.engines.docker.os.path.exists', return_value=True)
     def test_upload_images(self, _, exec_mock):
         self.upgrader.new_release_images = [
             {'docker_image': 'image1'},

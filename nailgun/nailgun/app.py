@@ -27,7 +27,9 @@ from nailgun.db import engine
 from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger
 from nailgun.settings import settings
-from nailgun.static import StaticMiddleware
+from nailgun.middleware.http_method_override import \
+    HTTPMethodOverrideMiddleware
+from nailgun.middleware.static import StaticMiddleware
 from nailgun.urls import urls
 
 
@@ -44,7 +46,8 @@ def build_app(db_driver=None):
 def build_middleware(app):
 
     middleware_list = [
-        HTTPLoggerMiddleware
+        HTTPLoggerMiddleware,
+        HTTPMethodOverrideMiddleware,
     ]
 
     if settings.DEVELOPMENT:

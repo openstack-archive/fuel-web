@@ -16,9 +16,10 @@
 
 import mock
 
-from fuel_upgrade import errors
-from fuel_upgrade.tests.base import BaseTestCase
 from fuel_upgrade.upgrade import DockerUpgrader
+from fuel_upgrade import errors
+
+from fuel_upgrade.tests.base import BaseTestCase
 
 
 @mock.patch('fuel_upgrade.upgrade.utils.exec_cmd')
@@ -29,7 +30,8 @@ class TestDockerUpgrader(BaseTestCase):
         # when we try to patch docker client with
         # class decorator, it's the reason why
         # we have to do it explicitly
-        self.docker_patcher = mock.patch('fuel_upgrade.upgrade.docker.Client')
+        self.docker_patcher = mock.patch(
+            'fuel_upgrade.upgrade.docker.Client')
         self.docker_mock_class = self.docker_patcher.start()
         self.docker_mock = mock.MagicMock()
         self.docker_mock_class.return_value = self.docker_mock
@@ -42,8 +44,7 @@ class TestDockerUpgrader(BaseTestCase):
 
         self.update_path = '/tmp/new_update'
         with mock.patch('os.makedirs'):
-            self.upgrader = DockerUpgrader(
-                self.update_path, self.fake_config)
+            self.upgrader = DockerUpgrader(self.update_path, self.fake_config)
 
     def tearDown(self):
         self.docker_patcher.stop()

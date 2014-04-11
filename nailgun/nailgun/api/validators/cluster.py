@@ -26,7 +26,7 @@ class ClusterValidator(BasicValidator):
         d = cls.validate_json(data)
         if d.get("name"):
             if ClusterCollection.filter_by(
-                query=None,
+                None,
                 name=d["name"]
             ).first():
                 raise errors.AlreadyExists(

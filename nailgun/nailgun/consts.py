@@ -152,5 +152,6 @@ NOTIFICATION_TOPICS = Enum(
     'discover',
     'done',
     'error',
-    'warning'
+    'warning',
+    'release',
 )

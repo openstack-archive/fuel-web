@@ -24,6 +24,8 @@ from fuel_upgrade import errors
 from fuel_upgrade.tests.base import BaseTestCase
 from fuel_upgrade.utils import exec_cmd
 from fuel_upgrade.utils import get_request
+from fuel_upgrade.utils import post_request
+from fuel_upgrade.utils import delete_request
 
 
 class TestUtils(BaseTestCase):
@@ -74,3 +76,60 @@ class TestUtils(BaseTestCase):
             self.assertEquals({'key': 'value'}, json_resp)
 
         urlopen.assert_called_once_with(url)
+
+    def test_post_request(self):
+
+        with patch('urllib2.urlopen') as urlopen:
+            # test normal behavior
+            urlopen.return_value.read.return_value = '{"id": "42"}'
+            urlopen.return_value.getcode.return_value = 201
+
+            response, status_code = post_request(
+                'http://test.com',
+                {
+                    'name': 'test'
+                }
+            )
+
+            self.assertEqual(response, {"id": "42"})
+            self.assertEqual(status_code, 201)
+
+            # test exceptional behaviour
+            def http_conflict(*args, **kwargs):
+                raise urllib2.HTTPError(
+                    'http://test.com', 409, 'Conflict', {}, None
+                )
+            urlopen.side_effect = http_conflict
+
+            response, status_code = post_request(
+                'http://test.com',
+                {
+                    'name': 'test'
+                }
+            )
+            self.assertEqual(status_code, 409)
+
+    def test_delete_request(self):
+        with patch('urllib2.urlopen') as urlopen:
+            # test normal behavior
+            urlopen.return_value.read.return_value = 'No Content'
+            urlopen.return_value.getcode.return_value = 204
+
+            response, status_code = delete_request(
+                'http://test.com/42/'
+            )
+
+            self.assertEqual(response, 'No Content')
+            self.assertEqual(status_code, 204)
+
+            # test exceptional behaviour
+            def http_conflict(*args, **kwargs):
+                raise urllib2.HTTPError(
+                    'http://test.com', 404, 'Not Found', {}, None
+                )
+            urlopen.side_effect = http_conflict
+
+            response, status_code = delete_request(
+                'http://test.com/42/'
+            )
+            self.assertEqual(status_code, 404)

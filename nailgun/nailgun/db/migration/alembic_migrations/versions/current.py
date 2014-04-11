@@ -73,6 +73,18 @@ new_network_group_name = (
     'private'
 )
 
+old_notification_topics = (
+    'discover',
+    'done',
+    'error',
+    'warning',
+)
+new_notification_topics = (
+    old_notification_topics + (
+        'release',
+    )
+)
+
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
     old_type = sa.Enum(*old_options, name=enum_name)
@@ -262,6 +274,15 @@ def upgrade():
         new_network_group_name       # new options
     )
 
+    # NOTIFICATION TOPICS ENUM UPGRADE
+    upgrade_enum(
+        "notifications",             # table
+        "topic",                     # column
+        "notif_topic",               # ENUM name
+        old_notification_topics,     # old options
+        new_notification_topics      # new options
+    )
+
     op.add_column('nodes', sa.Column(
         'uuid', sa.String(length=36), nullable=False
     ))
@@ -424,6 +445,15 @@ def downgrade():
         "network_group_name",        # ENUM name
         new_network_group_name,      # old options
         old_network_group_name       # new options
+    )
+
+    # NOTIFICATION TOPICS ENUM DOWNGRADE
+    upgrade_enum(
+        "notifications",             # table
+        "topic",                     # column
+        "notif_topic",               # ENUM name
+        new_notification_topics,     # new options
+        old_notification_topics      # old options
     )
 
     op.drop_column(

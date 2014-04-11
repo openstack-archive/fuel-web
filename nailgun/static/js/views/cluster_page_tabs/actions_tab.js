@@ -29,7 +29,36 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             'click .apply-name-btn': 'applyNewClusterName',
             'keydown .rename-cluster-form input': 'onClusterNameInputKeydown',
             'click .delete-cluster-btn': 'deleteCluster',
-            'click .reset-environment-btn': 'resetEnvironment'
+            'click .reset-environment-btn': 'resetEnvironment',
+            'click .update-btn': 'updateEnvironment',
+            'click .rollback-btn': 'rollbackEnvironment'
+        },
+        bindings: {
+            'select[name=update_release]': {
+                observe: 'pending_release_id',
+                selectOptions: {
+                    collection:function() {
+                        return this.releases.map(function(release) {
+                            return {value: release.id, label: release.get('name') + ' (' + release.get('openstack_version') + ')'};
+                        });
+                    },
+                    defaultOption: {
+                        label: $.t('cluster_page.actions_tab.choose_release'),
+                        value: null
+                    }
+                },
+                attributes: [{
+                    name: 'disabled',
+                    onGet: function() {return this.model.task({group: 'deployment', status: 'running'});}
+                }]
+            },
+            '.update-btn': {
+                attributes: [{
+                    name: 'disabled',
+                    observe: 'pending_release_id',
+                    onGet: function(value) {return _.isNull(value) || this.model.task({group: 'deployment', status: 'running'});}
+                }]
+            }
         },
         applyNewClusterName: function() {
             var name = $.trim(this.$('.rename-cluster-form input').val());
@@ -70,18 +99,37 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
         onNewTask: function(task) {
             return this.bindTaskEvents(task) && this.render();
         },
+        rollbackEnvironment: function(task) {
+            this.model.set({pending_release_id: this.model.get('release_id')});
+            this.registerSubView(new dialogViews.RollbackEnvironmentDialog({model: this.model})).render();
+        },
+        updateEnvironment: function(task) {
+            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model})).render();
+        },
         initialize: function(options) {
             _.defaults(this, options);
-            this.model.on('change:name change:status', this.render, this);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
-            this.model.on('invalid', this.showValidationError, this);
+            this.releases = new models.Releases();
+            var cluster = this.model;
+            var operatingSystem = cluster.get('release').get('operating_system');
+            var openstackVersion = cluster.get('release').get('openstack_version');
+            this.releases.parse = function(response) {
+                return _.filter(response, function(release) {
+                    return _.contains(release.can_update_openstack_versions, openstackVersion) && release.operating_system == operatingSystem;
+                });
+            };
+            this.releases.fetch().done(_.bind(this.render, this));
+            cluster.on('change:name change:status', this.render, this);
+            cluster.get('tasks').each(this.bindTaskEvents, this);
+            cluster.get('tasks').on('add', this.onNewTask, this);
+            cluster.on('invalid', this.showValidationError, this);
         },
         render: function() {
             this.$el.html(this.template({
                 cluster: this.model,
+                releases: this.releases,
                 isResetDisabled: this.model.get('status') == 'new' || this.model.task({group: 'deployment', status: 'running'})
             })).i18n();
+            this.stickit();
             return this;
         }
     });

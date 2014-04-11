@@ -19,7 +19,7 @@
 <div class="cluster-status">
   <% if (deploymentTask) { %>
     <div class="cluster-status-progress <%- deploymentTask.get('name') %>">
-      <div class="progress progress-<%= _.contains(['stop_deployment', 'reset_environment'], deploymentTask.get('name')) ? 'warning' : 'success' %> progress-striped active">
+      <div class="progress progress-<%= _.contains(['update', 'stop_deployment', 'reset_environment'], deploymentTask.get('name')) ? 'warning' : 'success' %> progress-striped active">
         <div class="bar"></div>
       </div>
     </div>

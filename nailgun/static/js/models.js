@@ -314,9 +314,13 @@ define(['utils', 'deepModel'], function(utils) {
         toJSON: function(options) {
             var result = this.constructor.__super__.toJSON.call(this, options);
             _.each(result, function(group, groupName) {
+                result[groupName].metadata = _.omit(group.metadata, 'disabled');
                 _.each(group, function(setting, settingName) {
                     group[settingName] = _.omit(setting, 'disabled');
-                }, this);
+                    _.each(setting.values, function(option, index) {
+                        setting.values[index] = _.omit(option, 'disabled');
+                    });
+                });
             }, this);
             return {editable: result};
         },

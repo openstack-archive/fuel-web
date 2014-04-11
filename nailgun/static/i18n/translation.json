@@ -377,7 +377,8 @@
                         "alert": "Neutron is not supported in __releaseName__",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron with GRE segmentation",
-                        "neutr_vlan": "Neutron with VLAN segmentation"
+                        "neutr_vlan": "Neutron with VLAN segmentation",
+                        "neutr_nsx": "Neutron with Nicira NSX plugin"
                     },
                     "storage": {
                         "title": "Storage Backends",
@@ -922,7 +923,8 @@
                         "alert": "__releaseName__不支持Neutron",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron GRE",
-                        "neutr_vlan": "Neutron VLAN"
+                        "neutr_vlan": "Neutron VLAN",
+                        "neutr_nsx": "Neutron with Nicira NSX plugin"
                     },
                     "storage": {
                         "title": "后端存储",

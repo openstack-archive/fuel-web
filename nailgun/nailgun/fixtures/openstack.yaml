@@ -165,6 +165,57 @@
             description: "Password for Administrator"
             weight: 20
             type: "password"
+        nsx_plugin:
+          metadata:
+            weight: 20
+          nicira:
+            value: false
+            label: "Connect to NSX"
+            description: "If selected, Neutron Nicira NSX plugin will be installed"
+            weight: 10
+            type: "checkbox"
+          nsx_username:
+            value: "admin"
+            label: "Nicira username"
+            description: "Nicira NSX administrator's username"
+            weight: 20
+            type: "text"
+          nsx_password:
+            value: ""
+            label: "Nicira password"
+            description: "Password for Administrator"
+            weight: 30
+            type: "password"
+          transport_zone_uuid:
+            value: ""
+            label: "Transport zone UUID"
+            description: "UUID of the pre-existing default NVP Transport zone."
+            weight: 40
+            type: "text"
+          l3_gw_service_uuid:
+            value: ""
+            label: "L3 service UUID"
+            description: "UUID for the default l3 gateway service to use with this cluster."
+            weight: 50
+            type: "text"
+          connector_type:
+            value: "stt"
+            label: "Nicira connector type"
+            description: "The default network transport type to use (stt, gre, bridge, ipsec_gre, or ipsec_stt)."
+            weight: 60,
+            type: "text"
+          nvp_controllers:
+            value: "10.30.30.2"
+            label: "Nicira controller endpoint"
+            description: "IP address of Nicira controller node"
+            weight: 70
+            type: "text"
+          packages_url:
+            value: "http://10.20.0.2:8080/"
+            label: "URL to NSX bits"
+            description: "Specify URL to NSX specific packages"
+            weight: 80
+            type: "text"
         common:
           metadata:
             weight: 30

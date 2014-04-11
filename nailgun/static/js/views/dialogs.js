@@ -416,7 +416,14 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             }
             return $.Deferred().resolve();
         },
-        beforeClusterCreation: function(cluster) {
+        beforeSettingsSaving: function(settings) {
+            if (this.manager == 'neutron-nsx') {
+                var nsxSettings = settings.attributes.nsx_plugin;
+                nsxSettings.nicira.value = true;
+            }
+            return $.Deferred().resolve();
+        },
+        beforeClusterCreation: functien(cluster) {
             if (this.manager == 'nova-network') {
                 cluster.set({net_provider: 'nova_network'});
             } else {
@@ -425,6 +432,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                     cluster.set({net_segment_type: 'gre'});
                 } else if (this.manager == 'neutron-vlan') {
                     cluster.set({net_segment_type: 'vlan'});
+                }
+                if (this.manager == 'neutron-nsx') {
+                    cluster.set({net_segment_type: 'gre'});
                 }
             }
             return $.Deferred().resolve();

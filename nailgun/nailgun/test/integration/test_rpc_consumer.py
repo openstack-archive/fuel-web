@@ -16,6 +16,7 @@
 
 import json
 from mock import patch
+import random
 import uuid
 
 from nailgun.db.sqlalchemy.models import Attributes
@@ -26,6 +27,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.rpc import receiver as rcvr
+from nailgun.task import helpers
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -744,6 +746,103 @@ class TestConsumer(BaseIntegrationTest):
         self.db.refresh(task)
         self.assertEqual(task.progress, 20)
         self.assertEqual(task.status, "running")
+
+    def test_node_deletion_subtask_progress(self):
+        supertask = Task(
+            uuid=str(uuid.uuid4()),
+            name="super",
+            status="running"
+        )
+
+        self.db.add(supertask)
+        self.db.commit()
+
+        task_deletion = supertask.create_subtask("node_deletion")
+        task_provision = supertask.create_subtask("provision", weight=0.4)
+
+        subtask_progress = random.randint(1, 20)
+
+        deletion_kwargs = {'task_uuid': task_deletion.uuid,
+                           'progress': subtask_progress}
+        provision_kwargs = {'task_uuid': task_provision.uuid,
+                            'progress': subtask_progress}
+
+        def progress_difference():
+            self.receiver.provision_resp(**provision_kwargs)
+
+            self.db.refresh(task_provision)
+            self.assertEqual(task_provision.progress, subtask_progress)
+
+            self.db.refresh(supertask)
+            progress_before_delete_subtask = supertask.progress
+
+            self.receiver.remove_nodes_resp(**deletion_kwargs)
+
+            self.db.refresh(task_deletion)
+            self.assertEqual(task_deletion.progress, subtask_progress)
+
+            self.db.refresh(supertask)
+            progress_after_delete_subtask = supertask.progress
+
+            return abs(progress_after_delete_subtask -
+                       progress_before_delete_subtask)
+
+        without_coeff = progress_difference()
+
+        task_deletion.progress = 0
+        task_deletion.weight = 0.5
+        self.db.merge(task_deletion)
+
+        task_provision.progress = 0
+        self.db.merge(task_provision)
+
+        supertask.progress = 0
+        self.db.merge(supertask)
+
+        self.db.commit()
+
+        with_coeff = progress_difference()
+
+        # some freaking magic is here but haven't found
+        # better way to test what is already working
+        self.assertTrue((without_coeff / with_coeff) < 2)
+
+    def test_proper_progress_calculation(self):
+        supertask = Task(
+            uuid=str(uuid.uuid4()),
+            name="super",
+            status="running"
+        )
+
+        self.db.add(supertask)
+        self.db.commit()
+
+        subtask_weight = 0.4
+        task_deletion = supertask.create_subtask("node_deletion",
+                                                 weight=subtask_weight)
+        task_provision = supertask.create_subtask("provision",
+                                                  weight=subtask_weight)
+
+        subtask_progress = random.randint(1, 20)
+
+        deletion_kwargs = {'task_uuid': task_deletion.uuid,
+                           'progress': subtask_progress}
+        provision_kwargs = {'task_uuid': task_provision.uuid,
+                            'progress': subtask_progress}
+
+        self.receiver.provision_resp(**provision_kwargs)
+        self.receiver.remove_nodes_resp(**deletion_kwargs)
+
+        self.db.refresh(task_deletion)
+        self.db.refresh(task_provision)
+        self.db.refresh(supertask)
+
+        calculated_progress = helpers.\
+            TaskHelper._calculate_parent_task_progress(
+                [task_deletion, task_provision]
+            )
+
+        self.assertEqual(supertask.progress, calculated_progress)
 
     def test_error_node_progress(self):
         self.env.create(

@@ -225,20 +225,26 @@ class TaskHelper(object):
                     subtasks
                 )
                 if subtasks_with_progress:
-                    task.progress = int(
-                        round(
-                            sum(
-                                [s.weight * s.progress for s
-                                 in subtasks_with_progress]
-                            ) /
-                            sum(
-                                [s.weight for s
-                                 in subtasks_with_progress]
-                            ), 0)
+                    task.progress = cls._calculate_parent_task_progress(
+                        subtasks_with_progress
                     )
                 else:
                     task.progress = 0
                 db().commit()
+
+    @classmethod
+    def _calculate_parent_task_progress(cls, subtasks_list):
+        return int(
+            round(
+                sum(
+                    [s.weight * s.progress for s
+                     in subtasks_list]
+                ) /
+                sum(
+                    [s.weight for s
+                     in subtasks_list]
+                ), 0)
+        )
 
     @classmethod
     def update_cluster_status(cls, uuid):

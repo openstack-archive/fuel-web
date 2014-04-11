@@ -29,7 +29,9 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             'click .apply-name-btn': 'applyNewClusterName',
             'keydown .rename-cluster-form input': 'onClusterNameInputKeydown',
             'click .delete-cluster-btn': 'deleteCluster',
-            'click .reset-environment-btn': 'resetEnvironment'
+            'click .reset-environment-btn': 'resetEnvironment',
+            'click .update-btn': 'updateEnvironment',
+            'click .rollback-btn': 'rollbackEnvironment'
         },
         applyNewClusterName: function() {
             var name = $.trim(this.$('.rename-cluster-form input').val());
@@ -70,9 +72,62 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
         onNewTask: function(task) {
             return this.bindTaskEvents(task) && this.render();
         },
+        rollbackEnvironment: function(task) {
+            this.model.set({pending_release_id: this.model.get('release_id')});
+            this.registerSubView(new dialogViews.RollbackEnvironmentDialog({model: this.model})).render();
+        },
+        updateEnvironment: function(task) {
+            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model})).render();
+        },
+        releasesForUpgrade: function() {
+            this.releases = new models.Releases();
+            this.releases.fetch().done(_.bind(function() {
+                var operatingSystem = this.model.get('release').get('operating_system');
+                var openstackVersion = this.model.get('release').get('openstack_version');
+                var releasesToUpgrade = this.releases.filter(function(release) {
+                    return _.contains(release.get('can_update_openstack_versions'), openstackVersion) && release.get('operating_system') == operatingSystem;
+                });
+                var bindings = {};
+                if (releasesToUpgrade.length > 0) {
+                    bindings = {
+                        'select[name=update_release]': {
+                            observe: 'pending_release_id',
+                            selectOptions: {
+                                collection:function() {
+                                    return _.map(releasesToUpgrade, function(release) {
+                                        return {value: release.id, label: release.get('name') + ' (' + release.get('openstack_version') + ')'};
+                                    });
+                                },
+                                defaultOption: {
+                                    label: $.t('cluster_page.actions_tab.choose_release'),
+                                    value: null
+                                }
+                            }
+                        },
+                        '.update-btn': {
+                            attributes: [{
+                                name: 'disabled',
+                                observe: 'pending_release_id',
+                                onGet: function(value) {return _.isNull(value);}
+                            }]
+                        },
+                        '.latest-release-installed': { visible: false }
+                    };
+                } else {
+                    bindings = {
+                        '.update-form-controls': { visible: false }
+                    };
+                }
+                this.stickit(this.model, bindings);
+            }, this));
+        },
         initialize: function(options) {
             _.defaults(this, options);
-            this.model.on('change:name change:status', this.render, this);
+            this.releasesForUpgrade();
+            this.model.on('change:name change:status', function() {
+                this.releasesForUpgrade();
+                this.render();
+            }, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
             this.model.on('invalid', this.showValidationError, this);
@@ -80,6 +135,8 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
         render: function() {
             this.$el.html(this.template({
                 cluster: this.model,
+                clusterStatusError: this.model.get('status') == 'error',
+                isUpgradeDisabled: this.model.task({group: 'deployment', status: 'running'}),
                 isResetDisabled: this.model.get('status') == 'new' || this.model.task({group: 'deployment', status: 'running'})
             })).i18n();
             return this;

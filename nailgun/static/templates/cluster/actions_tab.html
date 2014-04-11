@@ -34,4 +34,22 @@
       </form>
     </div>
   </div>
+  <div class="row-fluid">
+    <div class="span12 action-item-placeholder">
+      <form onsubmit="return false" class="update-cluster-form">
+        <h4 data-i18n="cluster_page.actions_tab.update_cluster"></h4>
+        <div class="action-item-controls">
+          <% if (clusterStatusError) { %>
+            <button class="btn btn-success rollback-btn rollback-form-controls" data-i18n="common.rollback_button"></button>
+            <div class="text-error rollback-form-controls" data-i18n="cluster_page.actions_tab.rollback_message"></div>
+          <% } else if (!isUpgradeDisabled) { %>
+          <select name="update_release" class="update-form-controls"></select>
+          <button class="btn btn-success update-btn update-form-controls" disabled data-i18n="common.update_button"></button>
+          <p class="update-form-controls" data-i18n="cluster_page.actions_tab.update_release_message"></p>
+          <div class="text-info latest-release-installed" data-i18n="cluster_page.actions_tab.no_releases_to_update_message"></div>
+          <% } %>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>

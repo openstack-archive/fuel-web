@@ -2,7 +2,7 @@
   <%- release.get('name') %>
   <div class="error release-error enable-selection"></div>
 </td>
-<td class="release-version"><%- release.get('version') %></td>
+<td class="release-version"><%- release.get('openstack_version') %></td>
 <td class="release-status">
   <% if (release.get('state') == 'downloading') { %>
     <div class="download_progress">

@@ -14,7 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
+import abc
+import json
 import logging
+import io
 import os
 import time
 import traceback
@@ -23,20 +28,58 @@ from copy import deepcopy
 
 from docker import Client
 
+import six
+
 from fuel_upgrade.config import config
 from fuel_upgrade import errors
+from fuel_upgrade import pynailgun
 from fuel_upgrade.utils import exec_cmd
 from fuel_upgrade.utils import get_request
+
 
 logger = logging.getLogger(__name__)
 
 
-class DockerUpgrader(object):
+@six.add_metaclass(abc.ABCMeta)
+class BaseUpgrader(object):
+    """Base class for all upgraders.
+
+    The main purpose of this class is to declare interface, which must be
+    respected by all upgraders.
+    """
+    def __init__(self, source_path, conf, *args, **kwargs):
+        """Extract some base parameters and save it internally.
+        """
+        self.update_path = source_path
+        self.conf = conf
+
+        if not hasattr(self, 'name'):
+            self.name = kwargs.get('name', self.__class__.__name__)
+
+    @abc.abstractmethod
+    def upgrade(self):
+        """Run upgrade process.
+        """
+
+    @abc.abstractmethod
+    def rollback(self):
+        """Rollback all the changes, generally used in case of failed upgrade.
+        """
+
+    @abc.abstractmethod
+    def backup(self):
+        """Backup is a pre process to :meth:`upgrade`. Each upgrader must
+        backup the data as much as possible.
+        """
+
+
+class DockerUpgrader(BaseUpgrader):
     """Docker management system for upgrades
     """
 
-    def __init__(self, update_path):
-        self.update_path = update_path
+    def __init__(self, *args, **kwargs):
+        super(DockerUpgrader, self).__init__(*args, **kwargs)
+
         self.working_directory = os.path.join(
             config.working_directory, config.version)
 
@@ -79,6 +122,10 @@ class DockerUpgrader(object):
                             'it failed {0}'.format(pg_dump_path))
                 os.remove(pg_dump_path)
             raise
+
+    def rollback(self):
+        # TODO(ikalnitsky): implement?
+        return NotImplemented
 
     def stop_fuel_containers(self):
         """Use docker API to shutdown containers
@@ -253,56 +300,155 @@ class DockerUpgrader(object):
             self.docker_client.remove_container(container['Id'])
 
 
-class Upgrade(object):
-    """Upgrade logic
+class OpenStackUpgrader(BaseUpgrader):
+    """OpenStack Upgrader.
+
+    The class was introduce to do the following tasks:
+
+    - add new releases to nailgun's database
+    - add notification about new releases
+    """
+    def __init__(self, *args, **kwargs):
+        super(OpenStackUpgrader, self).__init__(*args, **kwargs)
+
+        # load information about releases
+        releases = os.path.join(
+            self.update_path,
+            self.conf.openstack['releases']
+        )
+
+        with io.open(releases, 'r', encoding='utf-8') as f:
+            releases = json.loads(f.read())
+
+            # make sure we have an array
+            if isinstance(releases, dict):
+                releases = [releases]
+
+        #: an array with releases information
+        self.releases = releases
+
+        #: a pynailgun object - api wrapper
+        self.pynailgun = pynailgun.PyNailgun(
+            self.conf.endpoints['nailgun']['host'],
+            self.conf.endpoints['nailgun']['port'],
+        )
+
+        #: a list of ids that have to be removed in case of rollback
+        self._rollback_ids = {
+            'release': [],
+            'notification': [],
+        }
+
+    def upgrade(self):
+        for release in self.releases:
+            # register new release
+            logger.debug('Register a new release: %s (%s)',
+                         release['name'],
+                         release['version'])
+            response = self.pynailgun.create_release(release)
+            # save release id for futher possible rollback
+            self._rollback_ids['release'].append(response['id'])
+
+            # add notification abot successfull releases
+            logger.debug('Add notification about new release: %s (%s)',
+                         release['name'],
+                         release['version'])
+            response = self.pynailgun.create_notification({
+                'topic': 'release',
+                'message': 'New release avaialble: {0} ({1})'.format(
+                    response['name'],
+                    response['version'],
+                ),
+            })
+            # save notification id for futher possible rollback
+            self._rollback_ids['notification'].append(response['id'])
+
+    def rollback(self):
+        self._rollback_releases()
+        self._rollback_notifications()
+
+    def backup(self):
+        pass
+
+    def _rollback_releases(self):
+        """Remove all releases that are created by current session.
+        """
+        for release_id in self._rollback_ids['release']:
+            try:
+                logger.debug('Removing release with ID=%s', release_id)
+                self.pynailgun.remove_release(release_id)
+            except:
+                # try deletion as much as possible
+                pass
+
+    def _rollback_notifications(self):
+        """Remove all notifications that are created by current session.
+        """
+        for release_id in self._rollback_ids['notification']:
+            try:
+                logger.debug('Removing notification with ID=%s', release_id)
+                self.pynailgun.remove_notification(release_id)
+            except:
+                # try deletion as much as possible
+                pass
+
+
+class UpgradeManager(object):
+    """Upgrade manager is used to orchestrate upgrading process.
+
+    :param source_path: a path to folder with upgrade files
+    :param upgraders: a list with upgrader classes to use; each upgrader
+        must inherit the :class:`BaseUpgrader`
+    :param auto_rollback: call :meth:`BaseUpgrader.rollback` method
+        in case of exception during execution
     """
 
-    def __init__(self,
-                 update_path,
-                 upgrade_engine,
-                 disable_rollback=False):
-
-        logger.debug(
-            u'Create Upgrade object with update path "{0}", '
-            'upgrade engine "{1}", '
-            'disable rollback is "{2}"'.format(
-                update_path,
-                upgrade_engine.__class__.__name__,
-                disable_rollback))
-
-        self.update_path = update_path
-        self.upgrade_engine = upgrade_engine
-        self.disable_rollback = disable_rollback
+    def __init__(self, source_path, upgraders, auto_rollback=True):
+        self._source_path = source_path
+        self._upgraders = [
+            upgrader(source_path, config) for upgrader in upgraders
+        ]
+        self._auto_rollback = auto_rollback
 
     def run(self):
+        """Runs consequentially all registered upgraders.
+
+        .. note:: in case of exception the `rollback` method will be called
+        """
         self.before_upgrade()
 
-        try:
-            self.upgrade()
-            self.after_upgrade()
-        except Exception as exc:
-            logger.error(u'Upgrade failed: {0}'.format(exc))
-            logger.error(traceback.format_exc())
-            if not self.disable_rollback:
-                self.rollback()
+        for upgrader in self._upgraders:
+
+            try:
+                logger.debug('%s: upgrading...', upgrader.name)
+                upgrader.upgrade()
+
+                # run post upgrade actions in case of successfull
+                self.after_upgrade()
+            except Exception as exc:
+                logger.error(
+                    '%s: failed to upgrade: "%s"', upgrader.name, exc)
+                logger.error(traceback.format_exc())
+
+                if self._auto_rollback:
+                    logger.debug('%s: rollbacking...')
+                    self.rollback()
 
     def before_upgrade(self):
         logger.debug('Run before upgrade actions')
         self.check_upgrade_opportunity()
         self.make_backup()
 
-    def upgrade(self):
-        logger.debug('Run upgrade')
-        self.upgrade_engine.upgrade()
-
     def after_upgrade(self):
         logger.debug('Run after upgrade actions')
+
         self.run_services()
         self.check_health()
 
     def make_backup(self):
-        logger.debug('Run system backup')
-        self.upgrade_engine.backup()
+        for upgrader in self._upgraders:
+            logger.debug('%s: backuping data...', upgrader.name)
+            upgrader.backup()
 
     def check_upgrade_opportunity(self):
         """Sends request to nailgun
@@ -338,4 +484,6 @@ class Upgrade(object):
 
     def rollback(self):
         logger.debug('Run rollback')
-        self.upgrade_engine.rollback()
+
+        for upgrader in self._upgraders:
+            upgrader.rollback()

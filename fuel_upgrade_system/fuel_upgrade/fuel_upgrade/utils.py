@@ -68,3 +68,37 @@ def get_request(url):
         url, response_code, response_data))
 
     return json.loads(response_data)
+
+
+def post_request(url, data, headers=None):
+    """Makes an HTTP POST request to a given url.
+
+    :param url: a resource url post to, as a string
+    :param data: a data to be posted, as a dict
+    :param headers: HTTP headers goind with request, as a dict
+    :returns: a deserialized HTTP response and HTTP status code
+    """
+    request = urllib2.Request(
+        url,
+        json.dumps(data),
+        headers or {}
+    )
+
+    try:
+        response = urllib2.urlopen(request)
+    except urllib2.HTTPError as e:
+        return e.message, e.code
+
+    return json.loads(response.read()), response.getcode()
+
+
+def delete_request(url):
+    """Makes an HTTP DELETE request to a given url.
+
+    :param url: a resource url to be deleted, as a string
+    """
+    request = urllib2.Request(url)
+    request.get_method = lambda: 'DELETE'
+
+    response = urllib2.urlopen(request)
+    return response.read(), response.getcode()

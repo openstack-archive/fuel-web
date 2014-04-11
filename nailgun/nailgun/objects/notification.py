@@ -87,13 +87,14 @@ class Notification(NailgunObject):
                 ).first()
 
         if not exist:
-            super(Notification, cls).create(data)
+            notification = super(Notification, cls).create(data)
             logger.info(
                 u"Notification: topic: {0} message: {1}".format(
                     data.get("topic"),
                     data.get("message")
                 )
             )
+            return notification
 
     @classmethod
     def to_dict(cls, instance, fields=None):

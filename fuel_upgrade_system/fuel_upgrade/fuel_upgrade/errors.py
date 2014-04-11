@@ -27,3 +27,7 @@ class CannotRunUpgrade(FuelUpgradeException):
 
 class DockerExecutedErrorNonZeroExitCode(FuelUpgradeException):
     pass
+
+
+class CannotAddInfoToNailgun(FuelUpgradeException):
+    pass

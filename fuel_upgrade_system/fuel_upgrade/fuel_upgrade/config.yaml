@@ -27,3 +27,10 @@ containers:
     post_build_command: 'true'
     volumes:
       - /var/lib/postgresql
+
+
+# This node contains settings of OpenStack upgrader.
+# So please keep all related settings there.
+openstack:
+  # a path to file with releases info (relative to the path directory)
+  releases: releases.json

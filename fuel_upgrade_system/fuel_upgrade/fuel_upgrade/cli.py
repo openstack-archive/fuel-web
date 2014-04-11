@@ -23,8 +23,18 @@ from fuel_upgrade.logger import configure_logger
 logger = configure_logger(config.log_path)
 
 from fuel_upgrade import errors
+
 from fuel_upgrade.upgrade import DockerUpgrader
-from fuel_upgrade.upgrade import Upgrade
+from fuel_upgrade.upgrade import OpenStackUpgrader
+from fuel_upgrade.upgrade import UpgradeManager
+
+
+#: A dict with supported systems.
+#: The key is used for system option in CLI.
+SUPPORTED_SYSTEMS = {
+    'docker': DockerUpgrader,
+    'openstack': OpenStackUpgrader,
+}
 
 
 def handle_exception(exc):
@@ -39,17 +49,21 @@ def handle_exception(exc):
 def parse_args():
     """Parse arguments and return them
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description='fuel-upgrade is an upgrade system for fuel-master node')
 
     parser.add_argument(
-        '--src',
-        help='path to update file',
-        required=True)
+        'systems', choices=SUPPORTED_SYSTEMS.keys(), nargs='+',
+        help='systems to upgrade')
 
     parser.add_argument(
-        '--disable_rollback',
-        help='disable rollabck in case of errors',
-        action='store_false')
+        '--source', required=True,
+        help='path to folder with update files')
+
+    parser.add_argument(
+        '--no-rollback',
+        help='do not rollback in case of errors',
+        action='store_true')
 
     return parser.parse_args()
 
@@ -57,12 +71,18 @@ def parse_args():
 def run_upgrade(args):
     """Run upgrade on master node
     """
-    upgrader = Upgrade(
-        args.src,
-        DockerUpgrader(args.src),
-        disable_rollback=args.disable_rollback)
+    # create a list of upgraders to be use
+    upgraders = [
+        SUPPORTED_SYSTEMS[system] for system in args.systems
+    ]
 
-    upgrader.run()
+    upgrade_manager = UpgradeManager(
+        args.source,
+        upgraders,
+        not args.no_rollback
+    )
+
+    upgrade_manager.run()
 
 
 def main():

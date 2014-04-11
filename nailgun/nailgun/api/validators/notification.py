@@ -72,3 +72,7 @@ class NotificationValidator(BasicValidator):
             valid_nd["status"] = nd["status"]
             valid_d.append(valid_nd)
         return valid_d
+
+    @classmethod
+    def validate_delete(cls, instance):
+        pass

@@ -38,7 +38,7 @@ class TestDockerUpgrader(BaseTestCase):
 
         self.update_path = '/tmp/new_update'
         with mock.patch('os.makedirs'):
-            self.upgrader = DockerUpgrader(self.update_path)
+            self.upgrader = DockerUpgrader(self.update_path, None)
 
         self.pg_dump_path = os.path.join(
             self.upgrader.working_directory, 'pg_dump_all.sql')

@@ -13,36 +13,36 @@
 #    under the License.
 
 import os
-import os.path
 
 from setuptools import find_packages
 from setuptools import setup
 
 
 def find_requires():
-    dir_path = os.path.dirname(os.path.realpath(__file__))
+    root = os.path.dirname(os.path.abspath(__file__))
+    requirements_file = os.path.join(root, 'requirements.txt')
+
     requirements = []
-    with open(u'{0}/requirements.txt'.format(dir_path), 'r') as reqs:
+    with open(requirements_file, 'r') as reqs:
         requirements = reqs.readlines()
     return requirements
 
 
-if __name__ == "__main__":
-    setup(name='fuel_upgrade',
-          version='0.1.0',
-          description='Upgrade system for Fuel-master node',
-          long_description="""Upgrade system for Fuel-master node""",
-          classifiers=[
-              "Programming Language :: Python",
-              "Topic :: System :: Software Distribution"],
-          author='Mirantis Inc.',
-          author_email='product@mirantis.com',
-          url='http://mirantis.com',
-          keywords='fuel upgrade mirantis',
-          packages=find_packages(),
-          zip_safe=False,
-          install_requires=find_requires(),
-          include_package_data=True,
-          entry_points={
-              'console_scripts': [
-                  'fuel-upgrade = fuel_upgrade.cli:main']})
+setup(name='fuel_upgrade',
+      version='0.1.0',
+      description='Upgrade system for Fuel-master node',
+      long_description="""Upgrade system for Fuel-master node""",
+      classifiers=[
+          "Programming Language :: Python",
+          "Topic :: System :: Software Distribution"],
+      author='Mirantis Inc.',
+      author_email='product@mirantis.com',
+      url='http://mirantis.com',
+      keywords='fuel upgrade mirantis',
+      packages=find_packages(),
+      zip_safe=False,
+      install_requires=find_requires(),
+      include_package_data=True,
+      entry_points={
+          'console_scripts': [
+              'fuel-upgrade = fuel_upgrade.cli:main']})

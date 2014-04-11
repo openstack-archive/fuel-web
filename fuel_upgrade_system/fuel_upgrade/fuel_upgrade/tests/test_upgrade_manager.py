@@ -18,25 +18,25 @@ import mock
 
 from fuel_upgrade import errors
 from fuel_upgrade.tests.base import BaseTestCase
-from fuel_upgrade.upgrade import Upgrade
+from fuel_upgrade.upgrade import UpgradeManager
 
 
 @mock.patch('fuel_upgrade.upgrade.get_request', return_value=[])
-class TestUpgrade(BaseTestCase):
+class TestUpgradeManager(BaseTestCase):
 
     def default_args(self, **kwargs):
         default = {
-            'update_path': '/tmp/src_file',
-            'upgrade_engine': mock.Mock(),
-            'disable_rollback': False}
+            'source_path': '/tmp/src_file',
+            'upgraders': [mock.Mock()],
+            'auto_rollback': True}
 
         default.update(kwargs)
         return default
 
     def test_run_rollback_in_case_of_errors(self, _):
-        engine_mock = mock.Mock()
+        upgrader = UpgradeManager(**self.default_args())
+        engine_mock = upgrader._upgraders[0]
         engine_mock.upgrade.side_effect = Exception('Upgrade failed')
-        upgrader = Upgrade(**self.default_args(upgrade_engine=engine_mock))
         upgrader.run()
 
         engine_mock.backup.assert_called_once_with()
@@ -44,11 +44,9 @@ class TestUpgrade(BaseTestCase):
         engine_mock.rollback.assert_called_once_with()
 
     def test_does_not_run_rollback_if_disabled(self, _):
-        engine_mock = mock.Mock()
+        upgrader = UpgradeManager(**self.default_args(auto_rollback=False))
+        engine_mock = upgrader._upgraders[0]
         engine_mock.upgrade.side_effect = Exception('Upgrade failed')
-        upgrader = Upgrade(**self.default_args(
-            upgrade_engine=engine_mock,
-            disable_rollback=True))
         upgrader.run()
 
         engine_mock.backup.assert_called_once_with()
@@ -56,8 +54,8 @@ class TestUpgrade(BaseTestCase):
         self.method_was_not_called(engine_mock.rollback)
 
     def test_upgrade_succed(self, _):
-        engine_mock = mock.Mock()
-        upgrader = Upgrade(**self.default_args(upgrade_engine=engine_mock))
+        upgrader = UpgradeManager(**self.default_args())
+        engine_mock = upgrader._upgraders[0]
         upgrader.run()
 
         engine_mock.backup.assert_called_once_with()
@@ -77,7 +75,9 @@ class TestUpgrade(BaseTestCase):
                 'fuel_upgrade.upgrade.get_request',
                 return_value=tasks) as get_method_mock:
 
-            upgrader = Upgrade(**self.default_args(upgrade_engine=engine_mock))
+            upgrader = UpgradeManager(
+                **self.default_args(upgraders=[engine_mock])
+            )
 
             self.assertRaisesRegexp(
                 errors.CannotRunUpgrade,
@@ -100,7 +100,9 @@ class TestUpgrade(BaseTestCase):
         with mock.patch(
                 'fuel_upgrade.upgrade.get_request',
                 return_value=tasks) as get_method_mock:
-            upgrader = Upgrade(**self.default_args(upgrade_engine=engine_mock))
+            upgrader = UpgradeManager(
+                **self.default_args(upgraders=[engine_mock])
+            )
             upgrader.check_upgrade_opportunity()
 
         get_method_mock.assert_called_once_with(

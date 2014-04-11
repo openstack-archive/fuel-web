@@ -14,6 +14,7 @@
                 "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
                 "cancel_button": "Cancel",
+                "upgrade_button": "Update",
                 "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
                 "size": {
@@ -227,7 +228,11 @@
                     "reset_environment_warning": "This action will reset all existing nodes to their pre-deployment state, deleting your existing environment.",
                     "reset_disabled_for_new_cluster": "Reset Environment is not available for an environment not yet deployed.",
                     "repeated_reset_disabled": "The current environment is already being reset.",
-                    "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed. Use Stop Deployment to stop the deployment process."
+                    "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed. Use Stop Deployment to stop the deployment process.",
+                    "upgrade_cluster": "Update Environment",
+                    "choose_release": "Choose Release",
+                    "no_releases_to_upgrade_message": "You already have the latest release installed"
+
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -482,6 +487,10 @@
                 "reset_environment": {
                     "title": "Reset Environment",
                     "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state."
+                },
+                "upgrade_environment": {
+                    "title": "Update Environment",
+                    "text": "Are you sure you want to update the environment?"
                 },
                 "error_occured": {
                     "alert_text": "A server error has occured. Please contact the administrators."

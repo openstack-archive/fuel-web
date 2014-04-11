@@ -40,8 +40,8 @@ class TestAssignmentValidator(BaseUnitTest):
         roles = ['test']
         roles_metadata = {'test':
                          {'depends':
-                         {'condition': {'setting:parent.child.value': 1},
-                          'warning': 'error'}}}
+                          [{'condition': {'setting:parent.child.value': 1},
+                           'warning': 'error'}]}}
         try:
             NodeAssignmentValidator.check_roles_requirement(roles,
                                                             roles_metadata,
@@ -56,8 +56,8 @@ class TestAssignmentValidator(BaseUnitTest):
         with self.assertRaises(errors.InvalidData):
             roles_metadata = {'test':
                               {'depends':
-                               {'condition': {'setting:parent.child.value': 0},
-                               'warning': 'error'}}}
+                              [{'condition': {'setting:parent.child.value': 0},
+                                'warning': 'error'}]}}
             NodeAssignmentValidator.check_roles_requirement(roles,
                                                             roles_metadata,
                                                             self.settings)
@@ -65,8 +65,8 @@ class TestAssignmentValidator(BaseUnitTest):
         with self.assertRaises(errors.InvalidData):
             roles_metadata = {'test':
                               {'depends':
-                               {'condition': {'parent.child.value': 0},
-                               'warning': 'error'}}}
+                               [{'condition': {'parent.child.value': 0},
+                               'warning': 'error'}]}}
             NodeAssignmentValidator.check_roles_requirement(roles,
                                                             roles_metadata,
                                                             self.settings)

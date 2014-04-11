@@ -112,17 +112,16 @@ class NodeAssignmentValidator(AssignmentValidator):
     def check_roles_requirement(cls, roles, roles_metadata, settings):
         for role in roles:
             if "depends" in roles_metadata[role]:
-                depends = roles_metadata[role]["depends"]
-                condition = depends["condition"]
-                # We support only one depended setting
-                search_key = condition.keys()[0]
-                if not search_key.startswith('settings:'):
-                    errors.InvalidData('Incorrect settings path')
-                setting_path = search_key[search_key.find(':') + 1:]
-                setting = cls._search_in_settings(settings,
-                                                  setting_path)
-                if setting != condition.values()[0]:
-                    raise errors.InvalidData(depends["warning"])
+                depends = roles_metadata[role]['depends']
+                for condition in depends:
+                    search_key = condition['condition'].keys()[0]
+                    if not search_key.startswith('settings:'):
+                        errors.InvalidData('Incorrect settings path')
+                    setting_path = search_key[search_key.find(':') + 1:]
+                    setting = cls._search_in_settings(settings,
+                                                      setting_path)
+                    if setting != condition['condition'].values()[0]:
+                        raise errors.InvalidData(condition['warning'])
 
     @classmethod
     def _search_in_settings(cls, settings, pattern):

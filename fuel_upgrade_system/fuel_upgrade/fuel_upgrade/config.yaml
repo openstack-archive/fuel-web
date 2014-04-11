@@ -329,3 +329,11 @@ containers:
       '/etc/puppet':
         bind: '/etc/puppet'
         ro: True
+
+
+# This node contains settings of OpenStack upgrader.
+# So please keep all related settings there.
+openstack:
+  # a path to file with releases info (relative to the source directory
+  # that's passed as a command line argument)
+  releases: releases.json

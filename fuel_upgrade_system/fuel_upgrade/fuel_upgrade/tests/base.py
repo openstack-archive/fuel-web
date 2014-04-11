@@ -20,9 +20,27 @@ except ImportError:
     # Required for python 2.6
     from unittest2.case import TestCase
 
+import mock
+
 from copy import deepcopy
+from StringIO import StringIO
 
 from fuel_upgrade import config
+
+
+class FakeFile(StringIO):
+    """It's a fake file which returns StringIO
+    when file opens with 'with' statement.
+
+    NOTE(eli): We cannot use mock_open from mock library
+    here, because it hangs when we use 'with' statement,
+    and when we want to read file by chunks.
+    """
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
 
 
 class BaseTestCase(TestCase):
@@ -54,4 +72,19 @@ class BaseTestCase(TestCase):
         conf.new_version['VERSION']['release'] = '9999'
         conf.current_version['VERSION']['release'] = '0'
 
+        conf.openstack['releases'] = 'releases.json'
         return conf
+
+    def mock_open(self, text):
+        """Mocks builtin open function.
+
+        Usage example:
+
+            with mock.patch(
+                '__builtin__.open',
+                self.mock_open('file content')
+            ):
+                # call some methods that are used open() to read some
+                # stuff internally
+        """
+        return mock.MagicMock(return_value=FakeFile(text))

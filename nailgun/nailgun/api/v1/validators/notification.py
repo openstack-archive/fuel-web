@@ -72,3 +72,10 @@ class NotificationValidator(BasicValidator):
             valid_nd["status"] = nd["status"]
             valid_d.append(valid_nd)
         return valid_d
+
+    @classmethod
+    def validate_delete(cls, instance):
+        """There's nothing to do right now. We just have to remove a given
+        instance from database, without any validations.
+        """
+        pass

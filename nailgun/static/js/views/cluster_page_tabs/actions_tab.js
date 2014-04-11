@@ -29,7 +29,8 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             'click .apply-name-btn': 'applyNewClusterName',
             'keydown .rename-cluster-form input': 'onClusterNameInputKeydown',
             'click .delete-cluster-btn': 'deleteCluster',
-            'click .reset-environment-btn': 'resetEnvironment'
+            'click .reset-environment-btn': 'resetEnvironment',
+            'click .upgrade-btn': 'upgradeEnvironment'
         },
         applyNewClusterName: function() {
             var name = $.trim(this.$('.rename-cluster-form input').val());
@@ -70,8 +71,41 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
         onNewTask: function(task) {
             return this.bindTaskEvents(task) && this.render();
         },
+        upgradeEnvironment: function(task) {
+            this.model.set({pending_release_id : this.$('select[name=upgrade_release]').val()});
+            this.registerSubView(new dialogViews.UpgradeEnvironmentDialog({model: this.model})).render();
+        },
+        releasesForUpgrade: function() {
+            var operatingSystem = this.releases.get(this.model.get('release')).get('operating_system');
+            var openstackVersion = this.releases.get(this.model.get('release')).get('openstack_version');
+            var releasesToUpgrade = _.compact(this.releases.map(function(release) {
+                if (_.contains(release.get('can_update_openstack_versions'), openstackVersion) && release.get('operating_system') == operatingSystem) {
+                    return {value: release.id, label: release.get('name') + ' (' + release.get('openstack_version') + ')'};
+                }
+            }));
+            if (releasesToUpgrade.length > 0) {
+                var bindings = {
+                    'select[name=upgrade_release]': {
+                        observe: 'fake', // fake attribute for Stickit
+                        selectOptions: {
+                            collection:function() {
+                                return releasesToUpgrade;
+                            }
+                        }
+                    },
+                    '.latest-release-info': { visible: false }
+                };
+            } else {
+                var bindings = {
+                    '.upgrade-form-controls': { visible: false }
+                }
+            }
+            this.stickit(new Backbone.Model, bindings);
+        },
         initialize: function(options) {
             _.defaults(this, options);
+            this.releases = new models.Releases();
+            this.releases.fetch().done(_.bind(this.releasesForUpgrade, this));
             this.model.on('change:name change:status', this.render, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);

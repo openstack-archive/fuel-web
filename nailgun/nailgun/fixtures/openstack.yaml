@@ -415,8 +415,6 @@
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "min", id: "cephjournal"}
           - {allocate_size: "full-disk", id: "ceph"}
-        controller-ceph-image:
-          - {allocate_size: 'all', id: 'os'}
         mongo:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "mongo"}

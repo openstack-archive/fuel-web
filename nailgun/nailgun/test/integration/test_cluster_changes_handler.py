@@ -1049,6 +1049,18 @@ class TestHandlers(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_error(supertask)
 
+    def test_empty_cluster_deploy_error(self):
+        self.env.create(nodes_kwargs=[])
+        resp = self.app.put(
+            reverse(
+                'ClusterChangesHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}
+            ),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 400)
+
     def datadiff(self, node1, node2, path=None):
         if path is None:
             path = []

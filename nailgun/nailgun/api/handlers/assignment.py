@@ -50,10 +50,14 @@ class NodeAssignmentHandler(BaseHandler):
         )
         nodes = self.get_objects_list_or_404(Node, data.keys())
         cluster = self.get_object_or_404(objects.Cluster.model, cluster_id)
+        release = cluster.release
+        roles_metadata = release.roles_metadata
         for node in nodes:
             node.cluster = cluster
             node.pending_roles = data[node.id]
             node.pending_addition = True
+            self.validator.check_roles_for_conflicts(
+                node.pending_roles, roles_metadata)
             try:
                 node.attributes.volumes = \
                     node.volume_manager.gen_volumes_info()

@@ -70,3 +70,22 @@ class TestAssignmentValidator(BaseUnitTest):
             NodeAssignmentValidator.check_roles_requirement(roles,
                                                             roles_metadata,
                                                             self.settings)
+
+    def test_check_roles_for_conflicts(self):
+        roles_metadata = {
+            'role_1': {'conflicts': []},
+            'role_2': {'conflicts': ['role_1', 'role_3']}
+        }
+        NodeAssignmentValidator.check_roles_for_conflicts(
+            [], roles_metadata)
+        NodeAssignmentValidator.check_roles_for_conflicts(
+            ['unknown_role'], roles_metadata)
+        NodeAssignmentValidator.check_roles_for_conflicts(
+            ['role_1'], roles_metadata)
+        NodeAssignmentValidator.check_roles_for_conflicts(
+            ['role_3'], roles_metadata)
+        self.assertRaises(
+            errors.InvalidData,
+            NodeAssignmentValidator.check_roles_for_conflicts,
+            ['role_1', 'role_2'], roles_metadata
+        )

@@ -118,10 +118,11 @@ class TestFiles(BaseTestCase):
             "--env-id=1 node set --node 2,3 --role=compute"
         ))
         for action in ("network", "settings"):
-            self.check_if_files_created(
-                "--env 1 {0} --download".format(action),
-                ("{0}_1.yaml".format(action),)
-            )
+            for format_ in ("yaml", "json"):
+                self.check_if_files_created(
+                    "--env 1 {0} --download --{1}".format(action, format_),
+                    ("{0}_1.{1}".format(action, format_),)
+                )
         deployment_provision_files = {
             "--env 1 deployment --default": (
                 "deployment_1",
@@ -135,6 +136,17 @@ class TestFiles(BaseTestCase):
                 "provisioning_1/node-1.yaml",
                 "provisioning_1/node-2.yaml",
                 "provisioning_1/node-3.yaml"
+            ),
+            "--env 1 deployment --default --json": (
+                "deployment_1/primary-controller_1.json",
+                "deployment_1/compute_2.json",
+                "deployment_1/compute_3.json"
+            ),
+            "--env 1 provisioning --default --json": (
+                "provisioning_1/engine.json",
+                "provisioning_1/node-1.json",
+                "provisioning_1/node-2.json",
+                "provisioning_1/node-3.json"
             )
         }
         for command, files in deployment_provision_files.iteritems():
@@ -147,6 +159,14 @@ class TestFiles(BaseTestCase):
             (
                 "node --node 1 --network --default",
                 ("node_1", "node_1/interfaces.yaml")
+            ),
+            (
+                "node --node 1 --disk --default --json",
+                ("node_1/disks.json",)
+            ),
+            (
+                "node --node 1 --network --default --json",
+                ("node_1/interfaces.json",)
             )
         )
         for command, files in node_configs:

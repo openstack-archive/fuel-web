@@ -234,7 +234,6 @@ class NodeAction(Action):
             node_collection.data,
             format_table(
                 node_collection.data,
-                acceptable_keys=self.acceptable_keys,
-                column_to_join=("roles", "pending_roles")
+                acceptable_keys=self.acceptable_keys
             )
         )

@@ -147,6 +147,9 @@
             description: "Username for Administrator"
             weight: 10
             type: "text"
+            regex:
+              source: &user_tenant_blacklist '^(?!services$)(?!nova$)(?!glance$)(?!keystone$)(?!neutron$)(?!cinder$)(?!swift$)(?!ceph$)(?![Gg]uest$).*'
+              error: "Invalid username"
           email:
             value: "admin@example.org"
             label: "email"
@@ -159,6 +162,9 @@
             description: "Tenant (project) name for Administrator"
             weight: 30
             type: "text"
+            regex:
+              source: *user_tenant_blacklist
+              error: "Invalid tenant name"
           password:
             value: "admin"
             label: "password"

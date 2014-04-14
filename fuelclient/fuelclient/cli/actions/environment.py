@@ -145,6 +145,7 @@ class EnvironmentAction(Action):
             data,
             format_table(
                 data,
-                acceptable_keys=acceptable_keys
+                acceptable_keys=acceptable_keys,
+                subdict_keys=[("release_id", u"id")]
             )
         )

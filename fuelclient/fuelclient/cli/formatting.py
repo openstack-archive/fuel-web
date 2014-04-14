@@ -26,20 +26,32 @@ from fuelclient.cli.error import DeployProgressError
 from fuelclient.cli.error import exit_with_error
 
 
-def format_table(data, acceptable_keys=None, column_to_join=None):
+def recur_get(multi_level_dict, key_chain):
+    """Method accesses some field in nested dictionaries
+
+    :returns: value for last key in key_chain in last dictionary
+    """
+    if not isinstance(multi_level_dict[key_chain[0]], dict):
+        return multi_level_dict[key_chain[0]]
+    else:
+        return recur_get(multi_level_dict[key_chain[0]], key_chain[1:])
+
+
+def format_table(data, acceptable_keys=None, subdict_keys=None):
     """Format list of dicts to ascii table
 
     :acceptable_keys list(str): list of keys for which to create table
                                 also specifies their order
+    :subdict_keys list(tuple(str)): list of key chains (tuples of key strings)
+                                    which are applied to dictionaries
+                                    to extract values
     """
-    if column_to_join is not None:
-        for data_dict in data:
-            for column_name in column_to_join:
-                data_dict[column_name] = u", ".join(
-                    sorted(data_dict[column_name])
-                )
-    if acceptable_keys is not None:
-        rows = [tuple(value[key] for key in acceptable_keys)
+    if subdict_keys:
+        for key_chain in subdict_keys:
+            for data_dict in data:
+                data_dict[key_chain[0]] = recur_get(data_dict, key_chain)
+    if acceptable_keys:
+        rows = [tuple([value[key] for key in acceptable_keys])
                 for value in data]
         header = tuple(acceptable_keys)
     else:
@@ -52,6 +64,7 @@ def format_table(data, acceptable_keys=None, column_to_join=None):
             (len(str(x)) for x in header)
         )
     )
+
     for row in rows:
         column_widths.update(
             (index, max(column_widths[index], len(str(element))))
@@ -65,7 +78,7 @@ def format_table(data, acceptable_keys=None, column_to_join=None):
         (row_template.format(*header),
          '-|-'.join(column_widths[column_index] * '-'
                     for column_index in range(number_of_columns)),
-         '\n'.join(row_template.format(*map(str, x)) for x in rows))
+         '\n'.join(row_template.format(*x) for x in rows))
     )
 
 

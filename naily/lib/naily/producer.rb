@@ -23,11 +23,13 @@ module Naily
                          :content_type => 'application/json'}
       options = default_options.merge(options)
 
-      begin
-        @exchange.publish(message.to_json, options)
-      rescue
-        Naily.logger.error "Error publishing message: #{$!}"
-      end
+      EM.next_tick {
+        begin
+          @exchange.publish(message.to_json, options)
+        rescue
+          Naily.logger.error "Error publishing message: #{$!}"
+        end
+      }
     end
   end
 end

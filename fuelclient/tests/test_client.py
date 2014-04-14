@@ -118,38 +118,76 @@ class TestFiles(BaseTestCase):
             "--env-id=1 node set --node 2,3 --role=compute"
         ))
         for action in ("network", "settings"):
-            self.check_if_files_created(
-                "--env 1 {0} --download".format(action),
-                ("{0}_1.yaml".format(action),)
-            )
-        deployment_provision_files = {
-            "--env 1 deployment --default": (
-                "deployment_1",
-                "deployment_1/primary-controller_1.yaml",
-                "deployment_1/compute_2.yaml",
-                "deployment_1/compute_3.yaml"
+            for format_ in ("yaml", "json"):
+                self.check_if_files_created(
+                    "--env 1 {0} --download --{1}".format(action, format_),
+                    ("{0}_1.{1}".format(action, format_),)
+                )
+        command_to_files_map = (
+            (
+                "--env 1 deployment --default",
+                (
+                    "deployment_1",
+                    "deployment_1/primary-controller_1.yaml",
+                    "deployment_1/compute_2.yaml",
+                    "deployment_1/compute_3.yaml"
+                )
             ),
-            "--env 1 provisioning --default": (
-                "provisioning_1",
-                "provisioning_1/engine.yaml",
-                "provisioning_1/node-1.yaml",
-                "provisioning_1/node-2.yaml",
-                "provisioning_1/node-3.yaml"
-            )
-        }
-        for command, files in deployment_provision_files.iteritems():
-            self.check_if_files_created(command, files)
-        node_configs = (
+            (
+                "--env 1 provisioning --default",
+                (
+                    "provisioning_1",
+                    "provisioning_1/engine.yaml",
+                    "provisioning_1/node-1.yaml",
+                    "provisioning_1/node-2.yaml",
+                    "provisioning_1/node-3.yaml"
+                )
+            ),
+            (
+                "--env 1 deployment --default --json",
+                (
+                    "deployment_1/primary-controller_1.json",
+                    "deployment_1/compute_2.json",
+                    "deployment_1/compute_3.json"
+                )
+            ),
+            (
+                "--env 1 provisioning --default --json",
+                (
+                    "provisioning_1/engine.json",
+                    "provisioning_1/node-1.json",
+                    "provisioning_1/node-2.json",
+                    "provisioning_1/node-3.json"
+                )
+            ),
             (
                 "node --node 1 --disk --default",
-                ("node_1", "node_1/disks.yaml")
+                (
+                    "node_1",
+                    "node_1/disks.yaml"
+                )
             ),
             (
                 "node --node 1 --network --default",
-                ("node_1", "node_1/interfaces.yaml")
+                (
+                    "node_1",
+                    "node_1/interfaces.yaml"
+                )
+            ),
+            (
+                "node --node 1 --disk --default --json",
+                (
+                    "node_1/disks.json",
+                )
+            ),
+            (
+                "node --node 1 --network --default --json",
+                (
+                    "node_1/interfaces.json",
+                )
             )
         )
-        for command, files in node_configs:
+        for command, files in command_to_files_map:
             self.check_if_files_created(command, files)
 
     def check_if_files_created(self, command, paths):

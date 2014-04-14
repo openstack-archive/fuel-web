@@ -87,7 +87,8 @@ class Node(BaseObject):
             attributes
         )
 
-    def write_attribute(self, attribute_type, attributes, directory):
+    def write_attribute(self, attribute_type, attributes,
+                        directory, serializer=None):
         attributes_directory = self.get_attributes_path(directory)
         if not os.path.exists(attributes_directory):
             os.mkdir(attributes_directory)
@@ -97,19 +98,19 @@ class Node(BaseObject):
         )
         if os.path.exists(attribute_path):
             os.remove(attribute_path)
-        self.serializer.write_to_file(
+        return (serializer or self.serializer).write_to_file(
             attribute_path,
             attributes
         )
 
-    def read_attribute(self, attributes_type, directory):
+    def read_attribute(self, attributes_type, directory, serializer=None):
         attributes_directory = self.get_attributes_path(directory)
         if not os.path.exists(attributes_directory):
             exit_with_error(
                 "Folder {0} doesn't contain node folder '{1}'"
                 .format(directory, "node_{0}".format(self.id))
             )
-        return self.serializer.read_from_file(
+        return (serializer or self.serializer).read_from_file(
             os.path.join(
                 attributes_directory,
                 attributes_type

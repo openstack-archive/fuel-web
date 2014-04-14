@@ -23,7 +23,6 @@ from fuelclient.cli.arguments import group
 from fuelclient.cli.error import ActionException
 from fuelclient.cli.error import ArgumentException
 from fuelclient.cli.formatting import format_table
-from fuelclient.cli.formatting import quote_and_join
 from fuelclient.objects.environment import Environment
 from fuelclient.objects.node import Node
 from fuelclient.objects.node import NodeCollection
@@ -159,15 +158,20 @@ class NodeAction(Action):
                 file_path = node.write_attribute(
                     attribute_type,
                     default_attribute,
-                    params.dir
+                    params.dir,
+                    serializer=self.serializer
                 )
                 files.append(file_path)
                 attributes.append(default_attribute)
             message = "Default node attributes for {0} were written" \
-                      " to {1}".format(attribute_type, quote_and_join(files))
+                      " to:\n{1}".format(attribute_type, "\n".join(files))
         elif params.upload:
             for node in nodes:
-                attribute = node.read_attribute(attribute_type, params.dir)
+                attribute = node.read_attribute(
+                    attribute_type,
+                    params.dir,
+                    serializer=self.serializer
+                )
                 node.upload_node_attribute(
                     attribute_type,
                     attribute
@@ -181,16 +185,14 @@ class NodeAction(Action):
                 file_path = node.write_attribute(
                     attribute_type,
                     downloaded_attribute,
-                    params.dir
+                    params.dir,
+                    serializer=self.serializer
                 )
                 attributes.append(downloaded_attribute)
                 files.append(file_path)
             message = "Node attributes for {0} were written" \
-                      " to {1}".format(attribute_type, quote_and_join(files))
-        self.serializer.print_to_output(
-            attributes,
-            message
-        )
+                      " to:\n{1}".format(attribute_type, "\n".join(files))
+        print(message)
 
     @check_all("env", "node")
     def start(self, params):

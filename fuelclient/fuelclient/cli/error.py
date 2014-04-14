@@ -26,6 +26,10 @@ class FuelClientException(Exception):
     pass
 
 
+class ServerDataException(FuelClientException):
+    pass
+
+
 class DeployProgressError(FuelClientException):
     pass
 

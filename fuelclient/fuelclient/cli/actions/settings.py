@@ -30,7 +30,8 @@ class SettingsAction(Action):
             group(
                 Args.get_download_arg("Modify current configuration."),
                 Args.get_default_arg("Open default configuration."),
-                Args.get_upload_arg("Save current changes in configuration.")
+                Args.get_upload_arg("Save current changes in configuration."),
+                required=True
             ),
             Args.get_dir_arg("Directory with configuration data.")
         )
@@ -45,12 +46,12 @@ class SettingsAction(Action):
                 fuel --env 1 settings --upload --dir path/to/derectory
         """
         env = Environment(params.env)
-        network_data = env.read_settings_data(directory=params.dir)
-        response = env.set_settings_data(network_data)
-        self.serializer.print_to_output(
-            response,
-            "Settings configuration uploaded."
+        settings_data = env.read_settings_data(
+            directory=params.dir,
+            serializer=self.serializer
         )
+        env.set_settings_data(settings_data)
+        print("Settings configuration uploaded.")
 
     def default(self, params):
         """To download default settings for some environment in some directory:
@@ -60,9 +61,9 @@ class SettingsAction(Action):
         default_data = env.get_default_settings_data()
         settings_file_path = env.write_settings_data(
             default_data,
-            directory=params.dir)
-        self.serializer.print_to_output(
-            default_data,
+            directory=params.dir,
+            serializer=self.serializer)
+        print(
             "Default settings configuration downloaded to {0}."
             .format(settings_file_path)
         )
@@ -75,9 +76,9 @@ class SettingsAction(Action):
         settings_data = env.get_settings_data()
         settings_file_path = env.write_settings_data(
             settings_data,
-            directory=params.dir)
-        self.serializer.print_to_output(
-            settings_data,
+            directory=params.dir,
+            serializer=self.serializer)
+        print(
             "Settings configuration for environment with id={0}"
             " downloaded to {1}"
             .format(env.id, settings_file_path)

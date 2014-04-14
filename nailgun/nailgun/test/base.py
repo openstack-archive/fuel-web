@@ -126,7 +126,8 @@ class Environment(object):
             'roles': self.get_default_roles(),
             'networks_metadata': self.get_default_networks_metadata(),
             'attributes_metadata': self.get_default_attributes_metadata(),
-            'volumes_metadata': self.get_default_volumes_metadata()
+            'volumes_metadata': self.get_default_volumes_metadata(),
+            'roles_metadata': self.get_default_roles_metadata()
         }
         if kwargs:
             release_data.update(kwargs)
@@ -418,6 +419,10 @@ class Environment(object):
 
     def get_default_roles(self):
         return ['controller', 'compute', 'cinder', 'ceph-osd', 'mongo']
+
+    def get_default_roles_metadata(self):
+        return self.read_fixtures(
+            ('openstack',))[0]['fields']['roles_metadata']
 
     def get_default_volumes_metadata(self):
         return self.read_fixtures(

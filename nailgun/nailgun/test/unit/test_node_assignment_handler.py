@@ -16,6 +16,7 @@
 
 import json
 
+from nailgun import consts
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -139,3 +140,59 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(node.pending_deletion, True)
+
+    def _assign_node(self, cluster, data, expected_status=200):
+        resp = self.app.post(
+            reverse(
+                'NodeAssignmentHandler',
+                kwargs={'cluster_id': cluster.id}
+            ),
+            json.dumps(data),
+            headers=self.default_headers,
+            expect_errors=(expected_status != 200)
+        )
+        self.assertEquals(expected_status, resp.status_code)
+
+    def _unassign_node(self, cluster, data, expected_status=200):
+        resp = self.app.post(
+            reverse(
+                'NodeUnassignmentHandler',
+                kwargs={'cluster_id': cluster.id}
+            ),
+            json.dumps([{'id': d['id']} for d in data]),
+            headers=self.default_headers,
+            expect_errors=(expected_status != 200)
+        )
+        self.assertEquals(expected_status, resp.status_code)
+
+    def test_roles_assignment(self):
+        self.env.create_release(roles='')
+        self.env.create_node(api=True)
+        self.env.create_node(api=True)
+        self.env.create(
+            cluster_kwargs={'api': True},
+            nodes_kwargs=[{'cluster_id': None}]
+        )
+        cluster = self.env.clusters[0]
+        node_0 = self.env.nodes[0]
+        node_1 = self.env.nodes[1]
+        data_sets = [
+            ([{'id': node_0.id,
+               'roles': [consts.ROLE_CONTROLLER]}], 200),
+            ([{'id': node_0.id,
+               'roles': [consts.ROLE_CONTROLLER]},
+              {'id': node_1.id,
+               'roles': [consts.ROLE_COMPUTE]}], 200),
+            ([{'id': node_0.id,
+               'roles': [consts.ROLE_COMPUTE, consts.ROLE_CINDER]}], 200),
+            ([{'id': node_0.id,
+               'roles': [consts.ROLE_CONTROLLER, consts.ROLE_COMPUTE]}], 400)
+        ]
+
+        nodes_idx = dict([(node.id, node) for node in self.env.nodes])
+        for data, exp_status in data_sets:
+            self._assign_node(cluster, data, expected_status=exp_status)
+            for node_data in data:
+                node = nodes_idx[node_data['id']]
+                self.datadiff(node.pending_roles, node_data['roles'])
+            self._unassign_node(cluster, data, expected_status=exp_status)

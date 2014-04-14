@@ -154,3 +154,9 @@ NOTIFICATION_TOPICS = Enum(
     'error',
     'warning'
 )
+
+ROLE_CONTROLLER = 'controller'
+ROLE_COMPUTE = 'compute'
+ROLE_CINDER = 'cinder'
+ROLE_CEPH_OSD = 'ceph-osd'
+ROLE_MONGO = 'mongo'

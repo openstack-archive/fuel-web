@@ -257,9 +257,10 @@ class NetworkCheck(object):
             (n['name'], [int(n['vlan_start']), 0])
             for n in self.networks
             if n['vlan_start'] is not None)
-        tagged_nets['fixed'] = [
-            self.network_config['fixed_networks_vlan_start'],
-            self.network_config['fixed_networks_amount'] - 1]
+        if self.network_config['fixed_networks_vlan_start']:
+            tagged_nets['fixed'] = [
+                self.network_config['fixed_networks_vlan_start'],
+                self.network_config['fixed_networks_amount'] - 1]
         for name, vlan_range in tagged_nets.iteritems():
             # check VLAN ID range against [2-4094]
             if vlan_range[0] < 2 or vlan_range[0] + vlan_range[1] > 4094:

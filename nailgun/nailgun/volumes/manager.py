@@ -88,14 +88,10 @@ def exclude_glance_partition(role_mapping, node):
         images_ceph = (node.cluster.attributes['editable']['storage']
                        ['images_ceph']['value'])
         if images_ceph:
-            if node.all_roles == set(['controller']):
-                role_mapping['controller'] = \
-                    role_mapping['controller-ceph-image']
-            else:
-                # just filter out image volume
-                role_mapping['controller'] = \
-                    filter(lambda space: space['id'] != 'image',
-                           role_mapping['controller'])
+            # just filter out image volume
+            role_mapping['controller'] = \
+                filter(lambda space: space['id'] != 'image',
+                    role_mapping['controller'])
     return
 
 

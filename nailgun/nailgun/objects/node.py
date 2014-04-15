@@ -14,6 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"""
+Node-related objects and collections
+"""
+
 import traceback
 
 from datetime import datetime
@@ -34,10 +38,16 @@ from nailgun.objects import Notification
 
 
 class Node(NailgunObject):
+    """Node object
+    """
 
+    #: SQLAlchemy model for Node
     model = models.Node
+
+    #: Serializer for Node
     serializer = NodeSerializer
 
+    #: Node JSON schema
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "title": "Node",
@@ -75,6 +85,12 @@ class Node(NailgunObject):
 
     @classmethod
     def get_by_mac_or_uid(cls, mac=None, node_uid=None):
+        """Get Node instance by MAC or ID.
+
+        :param mac: MAC address as string
+        :param node_uid: Node ID
+        :returns: Node instance
+        """
         node = None
         if not mac and not node_uid:
             return node
@@ -88,6 +104,11 @@ class Node(NailgunObject):
 
     @classmethod
     def search_by_interfaces(cls, interfaces):
+        """Search for instance using MACs on interfaces
+
+        :param interfaces: dict of Node interfaces
+        :returns: Node instance
+        """
         return db().query(cls.model).join(
             models.NodeNICInterface,
             cls.model.nic_interfaces
@@ -99,6 +120,23 @@ class Node(NailgunObject):
 
     @classmethod
     def create(cls, data):
+        """Create Node instance with specified parameters in DB.
+        This includes:
+
+        * generating it's name by MAC (if name is not specified in data)
+        * adding node to Cluster (if cluster_id is not None in data) \
+        (see :func:`add_into_cluster`) with specified roles \
+        (see :func:`update_roles` and :func:`update_pending_roles`)
+        * creating interfaces for Node in DB (see :func:`update_interfaces`)
+        * creating default Node attributes (see :func:`create_attributes`)
+        * creating default volumes allocation for Node \
+        (see :func:`update_volumes`)
+        * creating Notification about newly discovered Node \
+        (see :func:`create_discover_notification`)
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: Node instance
+        """
         if "name" not in data:
             data["name"] = "Untitled ({0})".format(
                 data['mac'][-5:].lower()
@@ -143,6 +181,11 @@ class Node(NailgunObject):
 
     @classmethod
     def create_attributes(cls, instance):
+        """Create attributes for Node instance
+
+        :param instance: Node instance
+        :returns: NodeAttributes instance
+        """
         new_attributes = models.NodeAttributes()
         instance.attributes = new_attributes
         db().add(new_attributes)
@@ -152,12 +195,24 @@ class Node(NailgunObject):
 
     @classmethod
     def update_interfaces(cls, instance):
+        """Updates interfaces for Node instance using Cluster
+        network manager (see :func:`get_network_manager`)
+
+        :param instance: Node instance
+        :returns: None
+        """
         Cluster.get_network_manager(
             instance.cluster
         ).update_interfaces_info(instance)
 
     @classmethod
     def update_volumes(cls, instance):
+        """Updates volumes for Node instance.
+        Adds pending "disks" changes for Cluster which Node belongs to
+
+        :param instance: Node instance
+        :returns: None
+        """
         attrs = instance.attributes
         if not attrs:
             attrs = cls.create_attributes(instance)
@@ -191,6 +246,11 @@ class Node(NailgunObject):
 
     @classmethod
     def create_discover_notification(cls, instance):
+        """Creates notification about discovering new Node
+
+        :param instance: Node instance
+        :returns: None
+        """
         try:
             # we use multiplier of 1024 because there are no problems here
             # with unfair size calculation
@@ -233,6 +293,23 @@ class Node(NailgunObject):
 
     @classmethod
     def update(cls, instance, data):
+        """Update Node instance with specified parameters in DB.
+        This includes:
+
+        * adding node to Cluster (if cluster_id is not None in data) \
+        (see :func:`add_into_cluster`)
+        * updating roles for Node if it belongs to Cluster \
+        (see :func:`update_roles` and :func:`update_pending_roles`)
+        * removing node from Cluster (if cluster_id is None in data) \
+        (see :func:`remove_from_cluster`)
+        * updating interfaces for Node in DB (see :func:`update_interfaces`)
+        * creating default Node attributes (see :func:`create_attributes`)
+        * updating volumes allocation for Node using Cluster's Release metadata\
+        (see :func:`update_volumes`)
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: Node instance
+        """
         data.pop("id", None)
 
         roles = data.pop("roles", None)
@@ -300,6 +377,13 @@ class Node(NailgunObject):
 
     @classmethod
     def update_roles(cls, instance, new_roles):
+        """Update roles for Node instance.
+        Logs an error if node doesn't belong to Cluster
+
+        :param instance: Node instance
+        :param new_roles: list of new role names
+        :returns: None
+        """
         if not instance.cluster_id:
             logger.warning(
                 u"Attempting to assign roles to node "
@@ -319,6 +403,13 @@ class Node(NailgunObject):
 
     @classmethod
     def update_pending_roles(cls, instance, new_pending_roles):
+        """Update pending_roles for Node instance.
+        Logs an error if node doesn't belong to Cluster
+
+        :param instance: Node instance
+        :param new_pending_roles: list of new pending role names
+        :returns: None
+        """
         if not instance.cluster_id:
             logger.warning(
                 u"Attempting to assign pending roles to node "
@@ -354,6 +445,13 @@ class Node(NailgunObject):
 
     @classmethod
     def add_into_cluster(cls, instance, cluster_id):
+        """Adds Node to Cluster by it's ID.
+        Also assigns networks by default for Node.
+
+        :param instance: Node instance
+        :param cluster_id: Cluster ID
+        :returns: None
+        """
         instance.cluster_id = cluster_id
         db().flush()
         db().refresh(instance)
@@ -362,6 +460,13 @@ class Node(NailgunObject):
 
     @classmethod
     def get_network_manager(cls, instance=None):
+        """Get network manager for Node instance.
+        If instance is None - default NetworkManager is returned
+
+        :param instance: Node instance
+        :param cluster_id: Cluster ID
+        :returns: None
+        """
         if not instance.cluster:
             from nailgun.network.manager import NetworkManager
             return NetworkManager
@@ -370,6 +475,14 @@ class Node(NailgunObject):
 
     @classmethod
     def remove_from_cluster(cls, instance):
+        """Remove Node from Cluster.
+        Also drops networks assignment for Node and clears both
+        roles and pending roles
+
+        :param instance: Node instance
+        :param cluster_id: Cluster ID
+        :returns: None
+        """
         Cluster.clear_pending_changes(
             instance.cluster,
             node_id=instance.id
@@ -385,6 +498,13 @@ class Node(NailgunObject):
 
     @classmethod
     def to_dict(cls, instance, fields=None):
+        """Serialize Node instance to Python dict.
+        Adds "network_data" field which includes all network data for Node
+
+        :param instance: Node instance
+        :param fields: exact fields to serialize
+        :returns: serialized Node as dictionary
+        """
         node_dict = super(Node, cls).to_dict(instance, fields=fields)
         net_manager = Cluster.get_network_manager(instance.cluster)
         ips_mapped = net_manager.get_grouped_ips_by_node()
@@ -399,5 +519,8 @@ class Node(NailgunObject):
 
 
 class NodeCollection(NailgunCollection):
+    """Node collection
+    """
 
+    #: Single Node object class
     single = Node

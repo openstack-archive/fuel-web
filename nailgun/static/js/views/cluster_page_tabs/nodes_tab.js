@@ -276,6 +276,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
+            this.model.get('tasks').on('remove', this.render, this);
             this.constructor.__super__.initialize.apply(this, arguments);
             this.nodes.deferred = this.nodes.fetch().done(_.bind(this.render, this));
         },

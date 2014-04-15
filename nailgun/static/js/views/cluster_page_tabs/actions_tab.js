@@ -75,6 +75,7 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             this.model.on('change:name change:status', this.render, this);
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
+            this.model.get('tasks').on('remove', this.render, this);
             this.model.on('invalid', this.showValidationError, this);
         },
         render: function() {

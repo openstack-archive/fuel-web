@@ -708,7 +708,35 @@
 - pk: 2
   extend: *full_release
   fields:
-    name: "Icehouse on Ubuntu 12.04.4"
+    name: "Icehouse0 on Ubuntu 12.04.4"
+    version: "2014.3"
+    can_update_versions: ["2014.1", "2014.2"]
+    operating_system: "Ubuntu"
+    description: "This option will install the OpenStack Icehouse packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      generated:
+        cobbler:
+          profile:
+            generator_arg: "ubuntu_1204_x86_64"
+
+- pk: 3
+  extend: *full_release
+  fields:
+    name: "Icehouse1 on Ubuntu 12.04.4"
+    version: "2014.2"
+    can_update_versions: ["2014.1"]
+    operating_system: "Ubuntu"
+    description: "This option will install the OpenStack Icehouse packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      generated:
+        cobbler:
+          profile:
+            generator_arg: "ubuntu_1204_x86_64"
+
+- pk: 4
+  extend: *full_release
+  fields:
+    name: "Icehouse2 on Ubuntu 12.04.4"
     version: "2014.1"
     can_update_versions: []
     operating_system: "Ubuntu"

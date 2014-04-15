@@ -1,6 +1,6 @@
 <% if (task) {
   var taskName = task.get('name');
-  var infiniteProgressTasks = ['stop_deployment', 'reset_environment'];
+  var infiniteProgressTasks = ['update', 'stop_deployment', 'reset_environment'];
  %>
   <li class="pull-right deployment-progress-box <%= taskName %>">
     <% if (!_.contains(infiniteProgressTasks, taskName)) { %>

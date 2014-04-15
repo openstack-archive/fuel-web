@@ -1527,6 +1527,15 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                         models.InterfaceNetwork.prototype.getFullNetwork = function() {
                             return networks.findWhere({name: this.get('name')});
                         };
+                        var networkingParameters = this.networkConfiguration.get('networking_parameters');
+                        models.Network.prototype.getVlanRange = function() {
+                            if (!this.get('meta').neutron_vlan_range) {
+                                var externalNetworkData = this.get('meta').ext_net_data;
+                                var vlanStart = externalNetworkData ? networkingParameters.get(externalNetworkData[0]) : this.get('vlan_start');
+                                return _.isNull(vlanStart) ? vlanStart : [vlanStart, externalNetworkData ? vlanStart + networkingParameters.get(externalNetworkData[1]) - 1 : vlanStart];
+                            }
+                            return networkingParameters.get('vlan_range');
+                        };
                         this.render();
                     }, this))
                     .fail(_.bind(this.goToNodeList, this));
@@ -1534,6 +1543,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.goToNodeList();
             }
             this.initButtons();
+        },
+        beforeTearDown: function() {
+            delete models.InterfaceNetwork.prototype.getFullNetwork;
+            delete models.Network.prototype.getVlanRange;
         },
         renderInterfaces: function() {
             this.tearDownRegisteredSubViews();

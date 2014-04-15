@@ -76,17 +76,12 @@
           <% } %>
           <div class="logical-network-item" data-name="<%- networkName %>">
             <div class="name"><%- $.t('network.' + networkName, {defaultValue: networkName}) %></div>
-            <div class="id">
-            <% if (network.get('vlan_start')) { %>
-              <% if (network.get('amount') == 1) { %>
-                VLAN ID: <%- network.get('vlan_start') %>
-              <% } else { %>
-                VLAN IDs: <%- network.get('vlan_start') %>-<%- network.get('vlan_start') + network.get('amount') - 1 %>
-              <% } %>
-            <% } else if (network.get('meta').neutron_vlan_range) { %>
-              <%- $.t('cluster_page.nodes_tab.configure_interfaces.neutron_vlan_range') %>
+            <% var vlanRange = network.getVlanRange() %>
+            <% if (!_.isNull(vlanRange)) { %>
+              <div class="id">
+                <%- $.t('cluster_page.nodes_tab.configure_interfaces.vlan_id', {count: _.uniq(vlanRange).length}) + ': ' + _.uniq(vlanRange).join('-') %>
+              </div>
             <% } %>
-            </div>
           </div>
         <% }) %>
       </div>

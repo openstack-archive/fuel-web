@@ -41,7 +41,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         defaultButtonsState: function() {
             var locked = this.isLocked();
             var errors = !!this.networkConfiguration.validationError;
-            this.$('.btn.verify-networks-btn').attr('disabled', errors || locked);
+            this.$('.btn.verify-networks-btn').attr('disabled', errors || this.model.task({group: ['deployment', 'network'], status: 'running'}));
             this.$('.btn.btn-revert-changes').attr('disabled', !(this.hasChanges || errors) || locked);
             this.$('.btn.apply-btn').attr('disabled', !this.hasChanges || errors || locked);
         },

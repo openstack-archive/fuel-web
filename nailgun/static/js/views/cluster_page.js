@@ -149,6 +149,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).done(_.bind(function() {
                 this.rebindEventsAfterDeployment();
                 app.navbar.refresh();
+                this.tab.render();
             }, this));
         },
         setupFinished: function(task) {

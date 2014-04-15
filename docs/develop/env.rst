@@ -180,8 +180,15 @@ Astute
 #. Install Ruby dependencies::
 
     sudo apt-get install git curl
-    \curl -L https://get.rvm.io | bash -s stable
-    rvm install 1.9.3
+    \curl -sSL https://get.rvm.io | bash -s stable
+    rvm install 2.1
+    rvm use 2.1
+    git clone https://github.com/nulayer/raemon.git
+    cd raemon
+    gem build raemon.gemspec
+    gem install raemon-0.3.0.gem
+    cd ..
+    rm -Rf raemon
 
 #. Install or update dependencies and run unit tests::
 

@@ -28,6 +28,8 @@ function usage {
   echo "  -C, --no-cli                Don't run FUELCLIENT tests"
   echo "  -u, --upgrade               Run tests for UPGRADE system"
   echo "  -U, --no-upgrade            Don't run tests for UPGRADE system"
+  echo "  -s, --shotgun               Run SHOTGUN tests"
+  echo "  -S, --no-shotgun            Don't run SHOTGUN tests"
   echo "  -p, --flake8                Run FLAKE8 and HACKING compliance check"
   echo "  -P, --no-flake8             Don't run static code checks"
   echo "  -j, --jslint                Run JSLINT compliance checks"
@@ -53,6 +55,8 @@ function process_options {
       -C|--no-cli) no_cli_tests=1;;
       -u|--upgrade) upgrade_system=1;;
       -U|--no-upgrade) no_upgrade_system=1;;
+      -s|--shotgun) shotgun_tests=1;;
+      -S|--no-shotgun) no_shotgun_tests=1;;
       -p|--flake8) flake8_checks=1;;
       -P|--no-flake8) no_flake8_checks=1;;
       -j|--jslint) jslint_checks=1;;
@@ -76,6 +80,12 @@ JSLINT="grunt jslint"
 testrargs=
 testropts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
 
+# nosetest xunit options
+NAILGUN_XUNIT=${NAILGUN_XUNIT:-'nailgun.xml'}
+FUELCLIENT_XUNIT=${FUELCLIENT_XUNIT:-'fuelclient.xml'}
+FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-'fuelupgrade.xml'}
+FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-'fuelupgradedownloader.xml'}
+SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-'shotgun.xml'}
 
 # disabled/enabled flags that are setted from the cli.
 # used for manipulating run logic.
@@ -87,6 +97,8 @@ cli_tests=0
 no_cli_tests=0
 upgrade_system=0
 no_upgrade_system=0
+shotgun_tests=0
+no_shotgun_tests=0
 flake8_checks=0
 no_flake8_checks=0
 jslint_checks=0
@@ -115,6 +127,7 @@ function run_tests {
       $webui_tests -eq 0 && \
       $cli_tests -eq 0 && \
       $upgrade_system -eq 0 && \
+      $shotgun_tests -eq 0 && \
       $flake8_checks -eq 0 && \
       $jslint_checks -eq 0 ]]; then
 
@@ -122,6 +135,7 @@ function run_tests {
     if [ $no_webui_tests -ne 1 ];    then webui_tests=1;    fi
     if [ $no_cli_tests -ne 1 ];      then cli_tests=1;      fi
     if [ $no_upgrade_system -ne 1 ]; then upgrade_system=1; fi
+    if [ $no_shotgun_tests -ne 1 ];  then shotgun_tests=1;  fi
     if [ $no_flake8_checks -ne 1 ];  then flake8_checks=1;  fi
     if [ $no_jslint_checks -ne 1 ];  then jslint_checks=1;  fi
   fi
@@ -145,6 +159,11 @@ function run_tests {
   if [ $upgrade_system -eq 1 ]; then
     echo "Starting upgrade system tests..."
     run_upgrade_system_tests || errors+=" upgrade_system_tests"
+  fi
+
+  if [ $shotgun_tests -eq 1 ]; then
+    echo "Starting Shotgun tests..."
+    run_shotgun_tests || errors+=" shotgun_tests"
   fi
 
   if [ $flake8_checks -eq 1 ]; then
@@ -184,7 +203,7 @@ function run_nailgun_tests {
   syncdb
 
   # run tests
-  $TESTRTESTS -vv $testropts $TESTS
+  $TESTRTESTS -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT
 }
 
 
@@ -275,7 +294,7 @@ function run_cli_tests {
     dropdb
     syncdb true
 
-    ${TESTRTESTS} -vv $testropts $TESTS
+    $TESTRTESTS -vv $testropts $TESTS --xunit-file ../$FUELCLIENT_XUNIT
     result=$?
 
     kill $pid
@@ -301,15 +320,40 @@ function run_upgrade_system_tests {
   local UPGRADE_TESTS="$ROOT/fuel_upgrade_system/fuel_upgrade/fuel_upgrade/tests/"
   local DOWNLOADER_TESTS="$ROOT/fuel_upgrade_system/fuel_update_downloader/fuel_update_downloader/tests/"
 
+  local result=0
+
+  if [ $# -ne 0 ]; then
+    # run selected tests
+    TESTS="$@"
+    $TESTRTESTS -vv $testropts $TESTS || result=1
+  else
+    # run all tests
+    $TESTRTESTS -vv $testropts $UPGRADE_TESTS --xunit-file $FUELUPGRADE_XUNIT \
+        || result=1
+    $TESTRTESTS -vv $testropts $DOWNLOADER_TESTS --xunit-file $FUELUPGRADEDOWNLOADER_XUNIT \
+        || result=1
+  fi
+
+  return $result
+}
+
+
+# Run shotgun tests
+#
+# Arguments:
+#
+#   $@ -- tests to be run; with no arguments all tests will be run
+function run_shotgun_tests {
+  local TESTS="$ROOT/shotgun/shotgun/test/"
+
+  local result=0
+
   if [ $# -ne 0 ]; then
     TESTS="$@"
   fi
 
-  local result=0
-
-  # Run tests
-  $TESTRTESTS -vv $testropts $UPGRADE_TESTS || result=1
-  $TESTRTESTS -vv $testropts $DOWNLOADER_TESTS || result=1
+  # run tests
+  $TESTRTESTS -vv $testropts $TESTS --xunit-file $SHOTGUN_XUNIT || result=1
 
   return $result
 }
@@ -463,6 +507,10 @@ function guess_test_run {
     run_webui_tests $1 || echo "ERROR: $1"
   elif [[ $1 == *fuelclient* ]]; then
     run_cli_tests $1 || echo "ERROR: $1"
+  elif [[ $1 == *fuel_upgrade_system* ]]; then
+    run_upgrade_system_tests $1 || echo "ERROR: $1"
+  elif [[ $1 == *shotgun* ]]; then
+    run_shotgun_tests $1 || echo "ERROR: $1"
   else
     run_nailgun_tests $1 || echo "ERROR: $1"
   fi

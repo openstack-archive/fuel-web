@@ -221,7 +221,7 @@ class TestSubs(TestCase):
                 execute_calls.append(call("mktemp"))
                 sed_calls.append(call(fullfilename, tempfilename))
                 execute_calls.append(
-                    call("mv %s %s" % (tempfilename, fullfilename)))
+                    call("mv -f %s %s" % (tempfilename, fullfilename)))
 
         assert msed.mock_calls == sed_calls
         assert mexecute.mock_calls == execute_calls

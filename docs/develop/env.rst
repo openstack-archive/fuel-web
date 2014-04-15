@@ -38,8 +38,16 @@ Astute
 #. Install Ruby dependencies::
 
     sudo apt-get install git curl
-    \curl -L https://get.rvm.io | bash -s stable
-    rvm install 1.9.3
+    \curl -sSL https://get.rvm.io | bash -s stable
+    rvm install 2.1
+    rvm use 2.1
+    git clone https://github.com/nulayer/raemon.git
+    cd raemon
+    git checkout b78eaae57c8e836b8018386dd96527b8d9971acc
+    gem build raemon.gemspec
+    gem install raemon-0.3.0.gem
+    cd ..
+    rm -Rf raemon
 
 #. Install or update dependencies and run unit tests::
 
@@ -57,9 +65,15 @@ Astute
 Building the Fuel ISO
 ---------------------
 
-#. Following software is required to build the Fuel ISO images on Ubuntu
-   12.10 or newer::
+Following software is required to build the Fuel ISO images on Ubuntu
+12.10 or newer::
 
+#. Setup Docker repository using this instruction::
+   http://docs.docker.io/installation/ubuntulinux/
+
+#. Following software is required to build the Fuel ISO images::
+
+    sudo apt-get update
     sudo apt-get remove nodejs nodejs-legacy
     sudo apt-get install software-properties-common
     sudo add-apt-repository ppa:chris-lea/node.js

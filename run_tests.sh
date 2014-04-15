@@ -76,6 +76,9 @@ JSLINT="grunt jslint"
 testrargs=
 testropts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
 
+# nosetest xunit options
+NAILGUN_XUNIT=${NAILGUN_XUNIT:-'nailgun.xml'}
+FUELCLIENT_XUNIT=${FUELCLIENT_XUNIT:-'fuelclient.xml'}
 
 # disabled/enabled flags that are setted from the cli.
 # used for manipulating run logic.
@@ -184,7 +187,7 @@ function run_nailgun_tests {
   syncdb
 
   # run tests
-  $TESTRTESTS -vv $testropts $TESTS
+  $TESTRTESTS -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT
 }
 
 
@@ -275,7 +278,7 @@ function run_cli_tests {
     dropdb
     syncdb true
 
-    ${TESTRTESTS} -vv $testropts $TESTS
+    ${TESTRTESTS} -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT
     result=$?
 
     kill $pid

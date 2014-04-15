@@ -247,38 +247,8 @@ Building the Fuel ISO
 Running the FuelWeb Integration Test
 ------------------------------------
 
-#. Install libvirt and Devops library dependencies::
-
-    sudo apt-get install libvirt-bin python-libvirt python-ipaddr python-paramiko
-    sudo pip install xmlbuilder django==1.4.3
-
-#. Configure permissions for libvirt and relogin or restart your X for
-   the group changes to take effect (consult /etc/libvirt/libvirtd.conf
-   for the group name)::
-
-    GROUP=`grep unix_sock_group /etc/libvirt/libvirtd.conf|cut -d'"' -f2`
-    sudo useradd `whoami` kvm
-    sudo useradd `whoami` $GROUP
-    chgrp $GROUP /var/lib/libvirt/images
-    chmod g+w /var/lib/libvirt/images
-
-#. Clone the Mirantis Devops virtual environment manipulation library
-   from GitHub and install it where FuelWeb Integration Test can find
-   it::
-
-    git clone git@github.com:Mirantis/devops.git
-    cd devops
-    python setup.py build
-    sudo python setup.py install
-
-#. Configure and populate the Devops DB::
-
-    SETTINGS=/usr/local/lib/python2.7/dist-packages/devops-2.0-py2.7.egg/devops/settings.py
-    sed -i "s/'postgres'/'devops'/" $SETTINGS
-    echo "SECRET_KEY = 'secret'" >> $SETTINGS
-    sudo -u postgres createdb devops
-    sudo -u postgres createuser -SDR devops
-    django-admin.py syncdb --settings=devops.settings
+For fuel-devops configuration info please refer to [Devops
+Guide](http://docs.mirantis.com/fuel-dev/devops.html) article.
 
 #. Run the integration test::
 
@@ -291,10 +261,11 @@ Running the FuelWeb Integration Test
    connected to 3 virtual networks)::
 
     cd fuel-main
+    export PYTHONPATH=$(pwd)
     export ENV_NAME=fuelweb
     export PUBLIC_FORWARD=nat
     export ISO_PATH=`pwd`/build/iso/fuelweb-centos-6.5-x86_64.iso
-    nosetests -w fuelweb_test -s fuelweb_test.integration.test_admin_node:TestAdminNode.test_cobbler_alive
+    ./fuelweb_tests/run_tests.py --group=test_cobbler_alive
 
 #. The test harness creates a snapshot of all nodes called 'empty'
    before starting the tests, and creates a new snapshot if a test

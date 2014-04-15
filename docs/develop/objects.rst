@@ -8,4 +8,21 @@ Base Objects
 ------------
 
 .. automodule:: nailgun.objects.base
-	:special-members: _check_field
+
+
+Release-related Objects
+-----------------------
+
+.. automodule:: nailgun.objects.release
+
+
+Cluster-related Objects
+-----------------------
+
+.. automodule:: nailgun.objects.cluster
+
+
+Node-related Objects
+--------------------
+
+.. automodule:: nailgun.objects.node

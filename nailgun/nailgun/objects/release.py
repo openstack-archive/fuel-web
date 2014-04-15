@@ -14,6 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"""
+Release object and collection
+"""
+
 from sqlalchemy import not_
 
 from nailgun import consts
@@ -30,10 +34,16 @@ from nailgun.objects import NailgunObject
 
 
 class Release(NailgunObject):
+    """Release object
+    """
 
+    #: SQLAlchemy model for Release
     model = DBRelease
+
+    #: Serializer for Release
     serializer = ReleaseSerializer
 
+    #: Release JSON schema
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "title": "Release",
@@ -65,6 +75,13 @@ class Release(NailgunObject):
 
     @classmethod
     def create(cls, data):
+        """Create Release instance with specified parameters in DB.
+        Corresponding roles are created in DB using names specified
+        in "roles" field. See :func:`update_roles`
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: Release instance
+        """
         roles = data.pop("roles", None)
         new_obj = super(Release, cls).create(data)
         if roles:
@@ -73,6 +90,14 @@ class Release(NailgunObject):
 
     @classmethod
     def update(cls, instance, data):
+        """Update existing Release instance with specified parameters.
+        Corresponding roles are updated in DB using names specified
+        in "roles" field. See :func:`update_roles`
+
+        :param instance: Release instance
+        :param data: dictionary of key-value pairs as object fields
+        :returns: Release instance
+        """
         roles = data.pop("roles", None)
         super(Release, cls).update(instance, data)
         if roles is not None:
@@ -81,6 +106,16 @@ class Release(NailgunObject):
 
     @classmethod
     def update_roles(cls, instance, roles):
+        """Update existing Release instance with specified roles.
+        Previous ones are deleted.
+
+        IMPORTANT NOTE: attempting to remove roles that are already
+        assigned to nodes will lead to an Exception.
+
+        :param instance: Release instance
+        :param roles: list of new roles names
+        :returns: None
+        """
         db().query(DBRole).filter(
             not_(DBRole.name.in_(roles))
         ).filter(
@@ -101,5 +136,8 @@ class Release(NailgunObject):
 
 
 class ReleaseCollection(NailgunCollection):
+    """Release collection
+    """
 
+    #: Single Release object class
     single = Release

@@ -33,12 +33,14 @@ define(
     'text!templates/dialogs/remove_cluster.html',
     'text!templates/dialogs/stop_deployment.html',
     'text!templates/dialogs/reset_environment.html',
+    'text!templates/dialogs/update_environment.html',
+    'text!templates/dialogs/rollback_environment.html',
     'text!templates/dialogs/error_message.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
     'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, rollbackEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
 
     var views = {};
@@ -67,6 +69,16 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             if (options.message) {
                 this.$('.text-error').text(options.message);
             }
+        },
+        runDevelopmentTask: function(controlName, taskName) {
+            this.$('.' + controlName + 'environment-btn').attr('disabled', true);
+            var task = new models.Task();
+            task.save({}, {url: _.result(this.model, 'url') + '/' + taskName, type: 'PUT'})
+                .done(_.bind(function() {
+                    this.$el.modal('hide');
+                    app.page.deploymentTaskStarted();
+                }, this))
+                .fail(_.bind(this.displayError, this));
         },
         initialize: function(options) {
             _.defaults(this, options);
@@ -317,7 +329,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var input = this.$('select[name=release]');
             input.html('');
             this.releases.each(function(release) {
-                input.append($('<option/>').attr('value', release.id).text(release.get('name') + ' (' + release.get('version') + ')'));
+                input.append($('<option/>').attr('value', release.id).text(release.get('name') + ' (' + release.get('openstack_version') + ')'));
             });
             this.updateReleaseParameters();
         },
@@ -696,14 +708,27 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             'click .reset-environment-btn:not(:disabled)': 'resetEnvironment'
         },
         resetEnvironment: function() {
-            this.$('.reset-environment-btn').attr('disabled', true);
-            var task = new models.Task();
-            task.save({}, {url: _.result(this.model, 'url') + '/reset', type: 'PUT'})
-                .done(_.bind(function() {
-                    this.$el.modal('hide');
-                    app.page.deploymentTaskStarted();
-                }, this))
-                .fail(_.bind(this.displayError, this));
+            this.runDevelopmentTask('reset', 'reset');
+        }
+    });
+
+    views.UpdateEnvironmentDialog = views.Dialog.extend({
+        template: _.template(updateEnvironmentDialogTemplate),
+        events: {
+            'click .update-environment-btn:not(:disabled)': 'updateEnvironment'
+        },
+        updateEnvironment: function() {
+            this.runDevelopmentTask('update', 'update');
+        }
+    });
+
+    views.RollbackEnvironmentDialog = views.Dialog.extend({
+        template: _.template(rollbackEnvironmentDialogTemplate),
+        events: {
+            'click .rollback-environment-btn:not(:disabled)': 'rollbackEnvironment'
+        },
+        rollbackEnvironment: function() {
+            this.runDevelopmentTask('rollback', 'update');
         }
     });
 

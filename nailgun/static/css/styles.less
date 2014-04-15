@@ -2013,7 +2013,7 @@ label.error {
   }
 }
 
-.stop_deployment, .reset_environment {
+.stop_deployment, .reset_environment, .update {
   .progress .bar { width: 100% !important; }
 }
 
@@ -2215,11 +2215,13 @@ input.error:focus {
       overflow: hidden;
       .indent-mixin(10px 20px 0px 20px);
       position: relative;
-      input[type=text] {
+      input[type=text], select {
         width: 250px;
         margin-top: 4px;
         margin-left: 2px;
       }
+      select {width: 290px;}
+      .update-btn {margin-top: -5px;}
       .action-item-description {
         display: block;
         max-height: 100px;

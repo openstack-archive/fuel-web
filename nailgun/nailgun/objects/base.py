@@ -35,16 +35,16 @@ class NailgunObject(object):
     """Base class for objects
     """
 
+    #: Serializer class for object
     serializer = BasicSerializer
-    """Serializer class for object"""
 
+    #: SQLAlchemy model for object
     model = None
-    """SQLAlchemy model for object"""
 
+    #: JSON schema for object
     schema = {
         "properties": {}
     }
-    """JSON schema for object"""
 
     @classmethod
     def check_field(cls, field):
@@ -135,8 +135,8 @@ class NailgunCollection(object):
     """Base class for object collections
     """
 
+    #: Single object class
     single = NailgunObject
-    """Single object class"""
 
     @classmethod
     def _is_iterable(cls, obj):

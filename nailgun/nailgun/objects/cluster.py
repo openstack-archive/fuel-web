@@ -14,6 +14,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"""
+Cluster-related objects and collections
+"""
+
 from nailgun import consts
 
 from nailgun.api.serializers.cluster import ClusterSerializer
@@ -33,11 +37,20 @@ from nailgun.utils import traverse
 
 
 class Attributes(NailgunObject):
+    """Cluster attributes object
+    """
 
+    #: SQLAlchemy model for Cluster attributes
     model = models.Attributes
 
     @classmethod
     def generate_fields(cls, instance):
+        """Generate field values for Clsuter attributes using
+        generators.
+
+        :param instance: Attributes instance
+        :returns: None
+        """
         instance.generated = traverse(
             instance.generated,
             AttributesGenerator
@@ -47,6 +60,13 @@ class Attributes(NailgunObject):
 
     @classmethod
     def merged_attrs(cls, instance):
+        """Generates merged dict which includes generated Cluster
+        attributes recursively updated by new values from editable
+        attributes.
+
+        :param instance: Attributes instance
+        :returns: dict of merged attributes
+        """
         return dict_merge(
             instance.generated,
             instance.editable
@@ -54,6 +74,12 @@ class Attributes(NailgunObject):
 
     @classmethod
     def merged_attrs_values(cls, instance):
+        """Transforms raw dict of attributes returned by :func:`merged_attrs`
+        into dict of facts for sending to orchestrator.
+
+        :param instance: Attributes instance
+        :returns: dict of merged attributes
+        """
         attrs = cls.merged_attrs(instance)
         for group_attrs in attrs.itervalues():
             for attr, value in group_attrs.iteritems():
@@ -73,10 +99,16 @@ class Attributes(NailgunObject):
 
 
 class Cluster(NailgunObject):
+    """Cluster object
+    """
 
+    #: SQLAlchemy model for Cluster
     model = models.Cluster
+
+    #: Serializer for Cluster
     serializer = ClusterSerializer
 
+    #: Cluster JSON schema
     schema = {
         "$schema": "http://json-schema.org/draft-04/schema#",
         "title": "Cluster",
@@ -110,6 +142,20 @@ class Cluster(NailgunObject):
 
     @classmethod
     def create(cls, data):
+        """Create Cluster instance with specified parameters in DB.
+        This includes:
+
+        * creating of Cluster attributes and generating default values \
+        (see :func:`create_attributes`)
+        * creating of NetworkGroups for Cluster
+        * adding default pending changes (see :func:`add_pending_changes`)
+        * if "nodes" are specified in data - they are added to Cluster \
+        (see :func:`update_nodes`)
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: Cluster instance
+        """
+
         #TODO(enchantner): fix this temporary hack in clients
         if "release_id" not in data:
             release_id = data.pop("release", None)
@@ -146,6 +192,13 @@ class Cluster(NailgunObject):
 
     @classmethod
     def create_attributes(cls, instance):
+        """Create attributes for current Cluster instance and
+        generate default values for them
+        (see :func:`Attributes.generate_fields`)
+
+        :param instance: Cluster instance
+        :returns: None
+        """
         attributes = Attributes.create(
             {
                 "editable": instance.release.attributes_metadata.get(
@@ -161,12 +214,23 @@ class Cluster(NailgunObject):
 
     @classmethod
     def get_attributes(cls, instance):
+        """Get attributes for current Cluster instance
+
+        :param instance: Cluster instance
+        :returns: Attributes instance
+        """
         return db().query(models.Attributes).filter(
             models.Attributes.cluster_id == instance.id
         ).first()
 
     @classmethod
     def get_network_manager(cls, instance=None):
+        """Get network manager for Cluster instance.
+        If instance is None - default NetworkManager is returned
+
+        :param instance: Cluster instance
+        :returns: NetworkManager/NovaNetworkManager/NeutronManager
+        """
         if not instance:
             from nailgun.network.manager import NetworkManager
             return NetworkManager
@@ -180,6 +244,16 @@ class Cluster(NailgunObject):
 
     @classmethod
     def add_pending_changes(cls, instance, changes_type, node_id=None):
+        """Add pending changes for current Cluster.
+        If node_id is specified - links created changes with node.
+
+        :param instance: Cluster instance
+        :param changes_type: name of changes to add
+        :param node_id: node id for changes
+        :returns: None
+        """
+
+        #TODO(enchantner): check if node belongs to cluster
         ex_chs = db().query(models.ClusterChanges).filter_by(
             cluster=instance,
             name=changes_type
@@ -202,6 +276,13 @@ class Cluster(NailgunObject):
 
     @classmethod
     def clear_pending_changes(cls, instance, node_id=None):
+        """Clear pending changes for current Cluster.
+        If node_id is specified - only clears changes connected to this node.
+
+        :param instance: Cluster instance
+        :param node_id: node id for changes
+        :returns: None
+        """
         chs = db().query(models.ClusterChanges).filter_by(
             cluster_id=instance.id
         )
@@ -212,6 +293,14 @@ class Cluster(NailgunObject):
 
     @classmethod
     def update(cls, instance, data):
+        """Update Cluster object instance with specified parameters in DB.
+        If "nodes" are specified in data - they will replace existing ones
+        (see :func:`update_nodes`)
+
+        :param instance: Cluster instance
+        :param data: dictionary of key-value pairs as object fields
+        :returns: Cluster instance
+        """
         nodes = data.pop("nodes", None)
         super(Cluster, cls).update(instance, data)
         if nodes is not None:
@@ -220,6 +309,14 @@ class Cluster(NailgunObject):
 
     @classmethod
     def update_nodes(cls, instance, nodes_ids):
+        """Update Cluster nodes by specified node IDs.
+        Nodes with specified IDs will replace existing ones in Cluster
+
+        :param instance: Cluster instance
+        :param nodes_ids: list of nodes ids
+        :returns: None
+        """
+
         # TODO(NAME): sepatate nodes
         #for deletion and addition by set().
         new_nodes = []
@@ -256,5 +353,8 @@ class Cluster(NailgunObject):
 
 
 class ClusterCollection(NailgunCollection):
+    """Cluster collection
+    """
 
+    #: Single Cluster object class
     single = Cluster

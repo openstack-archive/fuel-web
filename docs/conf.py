@@ -15,7 +15,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.abspath('.'), "..", "nailgun"))
-autodoc_default_flags = ['members', 'inherited-members']
+autodoc_default_flags = ['members', 'show-inheritance']
 autodoc_member_order = 'bysource'
 
 # If extensions (or modules to document with autodoc) are in another directory,

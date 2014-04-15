@@ -30,7 +30,7 @@ class SampleGenerator(object):
 
     @classmethod
     def gen_sample_data(cls):
-        def process(app, what_, name, obj, options, lines):
+        def process(app, what, name, obj, options, lines):
             if cls._ishandler(obj):
                 lines.insert(0, cls.generate_handler_url_doc(obj))
                 lines.insert(1, "")

@@ -555,10 +555,8 @@ class NetworkCheck(object):
         """
         for node in self.cluster.nodes:
             for bond in node.bond_interfaces:
-                slaves_speed = set()
-                for slave in bond.slaves:
-                    speed = slave.current_speed
-                    slaves_speed.add(speed)
+                slaves_speed = set(
+                    [slave.current_speed for slave in bond.slaves])
                 if len(slaves_speed) != 1 or slaves_speed.pop() is None:
                     warn_msg = u"Node '{0}': interface '{1}' slave NICs " \
                         u"have different or unrecognized speeds". \

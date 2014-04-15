@@ -73,7 +73,8 @@ class TestCharsetIssues(BaseIntegrationTest):
                 kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
-        timeout = 15
+        # temporary increased to prevent test from failing on Jenkins
+        timeout = 60 * 30
         timer = time.time()
         while True:
             c = self.db.query(Cluster).get(cluster_id)

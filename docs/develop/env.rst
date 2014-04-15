@@ -206,10 +206,10 @@ Building the Fuel ISO
     sudo apt-get install software-properties-common
     sudo add-apt-repository ppa:chris-lea/node.js
     sudo apt-get update
-    sudo apt-get install build-essential make git ruby ruby-dev rubygems debootstrap
+    sudo apt-get install build-essential make git ruby ruby-dev rubygems debootstrap createrepo
     sudo apt-get install python-setuptools yum yum-utils libmysqlclient-dev isomd5sum
     sudo apt-get install python-nose libvirt-bin python-ipaddr python-paramiko python-yaml
-    sudo apt-get install python-pip kpartx extlinux unzip genisoimage nodejs
+    sudo apt-get install python-pip kpartx extlinux unzip genisoimage nodejs multistrap
     sudo gem install bundler -v 1.2.1
     sudo gem install builder
     sudo pip install xmlbuilder jinja2

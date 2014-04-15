@@ -244,14 +244,15 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         events: {
             'click .footer-lang li a': 'setLocale'
         },
-        locales: [
-            {name: 'EN', locale: 'en-US'},
-            {name: 'CN', locale: 'zh-CN'}
-        ],
         setLocale: function(e) {
             var newLocale = _.find(this.locales, {locale: $(e.currentTarget).data('locale')});
             $.i18n.setLng(newLocale.locale, {});
             window.location.reload();
+        },
+        getAvailableLocales: function() {
+            return _.map(_.keys($.i18n.options.resStore).sort(), function(locale) {
+                return {locale: locale, name: $.t('language', {lng: locale})};
+            }, this);
         },
         getCurrentLocale: function() {
             return _.find(this.locales, {locale: $.i18n.lng()});
@@ -263,6 +264,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             }
         },
         initialize: function(options) {
+            this.locales = this.getAvailableLocales();
             this.setDefaultLocale();
             $.ajax({url: '/api/version'}).done(_.bind(function(data) {
                 this.version = data.release;

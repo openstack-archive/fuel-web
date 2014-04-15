@@ -2,6 +2,7 @@
 {
     "en-US": {
         "translation": {
+            "language": "EN",
             "common": {
                 "title": "Fuel Dashboard",
                 "select_all_button": "Select All",
@@ -491,6 +492,7 @@
     },
     "zh-CN": {
         "translation": {
+            "language": "CN",
             "common": {
                 "title": "Fuel Dashboard",
                 "select_all_button": "选择全部",

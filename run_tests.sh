@@ -76,6 +76,11 @@ JSLINT="grunt jslint"
 testrargs=
 testropts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
 
+# nosetest xunit options
+NAILGUN_XUNIT=${NAILGUN_XUNIT:-'nailgun.xml'}
+FUELCLIENT_XUNIT=${FUELCLIENT_XUNIT:-'fuelclient.xml'}
+FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-'fuelupgrade.xml'}
+FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-'fuelupgradedownloader.xml'}
 
 # disabled/enabled flags that are setted from the cli.
 # used for manipulating run logic.
@@ -184,7 +189,7 @@ function run_nailgun_tests {
   syncdb
 
   # run tests
-  $TESTRTESTS -vv $testropts $TESTS
+  $TESTRTESTS -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT
 }
 
 
@@ -275,7 +280,7 @@ function run_cli_tests {
     dropdb
     syncdb true
 
-    ${TESTRTESTS} -vv $testropts $TESTS
+    ${TESTRTESTS} -vv $testropts $TESTS --xunit-file ../$FUELCLIENT_XUNIT
     result=$?
 
     kill $pid
@@ -301,15 +306,19 @@ function run_upgrade_system_tests {
   local UPGRADE_TESTS="$ROOT/fuel_upgrade_system/fuel_upgrade/fuel_upgrade/tests/"
   local DOWNLOADER_TESTS="$ROOT/fuel_upgrade_system/fuel_update_downloader/fuel_update_downloader/tests/"
 
-  if [ $# -ne 0 ]; then
-    TESTS="$@"
-  fi
-
   local result=0
 
-  # Run tests
-  $TESTRTESTS -vv $testropts $UPGRADE_TESTS || result=1
-  $TESTRTESTS -vv $testropts $DOWNLOADER_TESTS || result=1
+  if [ $# -ne 0 ]; then
+    # run selected tests
+    TESTS="$@"
+    ${TESTRTESTS} -vv $testropts $TESTS || result=1
+  else
+    # run all tests
+    $TESTRTESTS -vv $testropts $UPGRADE_TESTS --xunit-file $FUELUPGRADE_XUNIT \
+        || result=1
+    $TESTRTESTS -vv $testropts $DOWNLOADER_TESTS --xunit-file $FUELUPGRADEDOWNLOADER_XUNIT \
+        || result=1
+  fi
 
   return $result
 }
@@ -463,6 +472,8 @@ function guess_test_run {
     run_webui_tests $1 || echo "ERROR: $1"
   elif [[ $1 == *fuelclient* ]]; then
     run_cli_tests $1 || echo "ERROR: $1"
+  elif [[ $1 == *fuel_upgrade_system* ]]; then
+    run_upgrade_system_tests $1 || echo "ERROR: $1"
   else
     run_nailgun_tests $1 || echo "ERROR: $1"
   fi

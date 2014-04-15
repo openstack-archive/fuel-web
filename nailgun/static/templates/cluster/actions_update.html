@@ -1,0 +1,10 @@
+<% if (actionName == 'rollback') { %>
+  <p class="text-error" data-i18n="cluster_page.actions_tab.rollback_message"></p>
+<% } else { %>
+  <select class="actions_controls" name="update_release"></select>
+  <% if (releases.length == 0 && cluster.get('status') != 'new') { %>
+    <div class="text-info" data-i18n="cluster_page.actions_tab.no_releases_to_update_message"></div>
+  <% } else { %>
+    <p data-i18n="cluster_page.actions_tab.update_release_message"></p>
+  <% } %>
+<% } %>

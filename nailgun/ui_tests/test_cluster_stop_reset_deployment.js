@@ -158,7 +158,7 @@ casper.then(function() {
     this.click('.action-item-controls .reset-environment-btn'); // "Reset" button click
     this.test.assertSelectorAppears('.modal', 'Reset dialog opens');
     this.then(function() {
-        this.click('.modal .reset-environment-btn'); // "Reset environment" button click
+        this.click('.modal .environment-action-btn'); // "Reset environment" button click
     });
     this.test.assertSelectorDisappears('.modal', 'Reset dialog closes after clicking Reset button');
     this.test.assertSelectorDisappears('.deployment-control .deploy-btn', 'Deploy changes button disappears');

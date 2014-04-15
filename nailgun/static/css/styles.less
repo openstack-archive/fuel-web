@@ -2037,7 +2037,7 @@ label.error {
   }
 }
 
-.stop_deployment, .reset_environment {
+.stop_deployment, .reset_environment, .update {
   .progress .bar { width: 100% !important; }
 }
 
@@ -2230,6 +2230,11 @@ input.error:focus {
     .box-sizing-mixin;
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
     overflow: hidden;
+    &.action-update {
+      margin-left: 0;
+      margin-top: 22px;
+      height: auto !important;
+    }
     h4 {
       display: block;
       height: 24px;
@@ -2241,11 +2246,12 @@ input.error:focus {
       overflow: hidden;
       .indent-mixin(10px 20px 0px 20px);
       position: relative;
-      input[type=text] {
+      input[type=text], select {
         width: 250px;
         margin-top: 4px;
         margin-left: 2px;
       }
+      select {width: 290px;}
       .action-item-description {
         display: block;
         max-height: 100px;

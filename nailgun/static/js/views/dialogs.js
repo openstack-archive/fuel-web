@@ -32,13 +32,13 @@ define(
     'text!templates/dialogs/display_changes.html',
     'text!templates/dialogs/remove_cluster.html',
     'text!templates/dialogs/stop_deployment.html',
-    'text!templates/dialogs/reset_environment.html',
+    'text!templates/dialogs/deployment_task.html',
     'text!templates/dialogs/error_message.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
     'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, deploymentTaskDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
 
     var views = {};
@@ -317,7 +317,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             var input = this.$('select[name=release]');
             input.html('');
             this.releases.each(function(release) {
-                input.append($('<option/>').attr('value', release.id).text(release.get('name') + ' (' + release.get('version') + ')'));
+                input.append($('<option/>').attr('value', release.id).text(release.get('name') + ' (' + release.get('openstack_version') + ')'));
             });
             this.updateReleaseParameters();
         },
@@ -690,20 +690,29 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         }
     });
 
-    views.ResetEnvironmentDialog = views.Dialog.extend({
-        template: _.template(resetEnvironmentDialogTemplate),
+    views.DeploymentTaskDialog = views.Dialog.extend({
+        template: _.template(deploymentTaskDialogTemplate),
         events: {
-            'click .reset-environment-btn:not(:disabled)': 'resetEnvironment'
+            'click .environment-action-btn:not(:disabled)': 'createDeploymentTask'
         },
-        resetEnvironment: function() {
-            this.$('.reset-environment-btn').attr('disabled', true);
+        createDeploymentTask: function() {
+            this.$('.' + this.action + 'environment-btn').attr('disabled', true);
+            var tasksUrls = {
+                reset: 'reset',
+                update: 'update',
+                rollback: 'update'
+            };
             var task = new models.Task();
-            task.save({}, {url: _.result(this.model, 'url') + '/reset', type: 'PUT'})
+            task.save({}, {url: _.result(this.model, 'url') + '/' + tasksUrls[this.action], type: 'PUT'})
                 .done(_.bind(function() {
                     this.$el.modal('hide');
                     app.page.deploymentTaskStarted();
                 }, this))
                 .fail(_.bind(this.displayError, this));
+        },
+        render: function() {
+            this.constructor.__super__.render.call(this, {action: this.action});
+            return this;
         }
     });
 

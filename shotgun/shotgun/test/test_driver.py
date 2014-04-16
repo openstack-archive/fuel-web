@@ -74,7 +74,8 @@ class TestDriver(TestCase):
         shotgun.driver.fabric.api.run.assert_called_with(command, pty=True)
         self.assertEquals(result, out)
         shotgun.driver.fabric.api.settings.assert_called_with(
-            host_string="remote_host", timeout=2, warn_only=True)
+            host_string="remote_host", timeout=2, command_timeout=10,
+            warn_only=True)
 
         driver = shotgun.driver.Driver({}, None)
         result = driver.command(command)
@@ -221,7 +222,7 @@ class TestSubs(TestCase):
                 execute_calls.append(call("mktemp"))
                 sed_calls.append(call(fullfilename, tempfilename))
                 execute_calls.append(
-                    call("mv %s %s" % (tempfilename, fullfilename)))
+                    call("mv -f %s %s" % (tempfilename, fullfilename)))
 
         assert msed.mock_calls == sed_calls
         assert mexecute.mock_calls == execute_calls

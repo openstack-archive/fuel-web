@@ -329,8 +329,9 @@ casper.then(function() {
 casper.then(function() {
     this.test.comment('Testing cluster networks: verification');
     this.click('.verify-networks-btn:not(:disabled)');
-    this.test.assertSelectorAppears('.connect-3-error',
-        'There should be atleast 1 node for dhcp check. And 2 nodes for connectivity check', 10000);
+	// FIXME: disabling this assert due to bug/1297232
+    //this.test.assertSelectorAppears('.connect-3-error',
+    //    'There should be atleast 1 node for dhcp check. And 2 nodes for connectivity check', 10000);
 
 });
 

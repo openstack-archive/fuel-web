@@ -280,7 +280,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         controller_nodes = cls.filter_by_roles(
             sorted_nodes, ['controller', 'primary-controller'])
-        return {'last_controller': controller_nodes[-1]['name']}
+
+        last_controller = None
+        if len(controller_nodes) > 0:
+            last_controller = controller_nodes[-1]['name']
+
+        return {'last_controller': last_controller}
 
     @classmethod
     def node_list(cls, nodes):
@@ -316,12 +321,8 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
             {'point': '1', 'weight': '1'},
             {'point': '2', 'weight': '2'}]
 
-        sorted_nodes = sorted(
-            common_attrs['nodes'], key=lambda node: int(node['uid']))
-
-        controller_nodes = cls.filter_by_roles(
-            sorted_nodes, ['controller', 'primary-controller'])
-        common_attrs['last_controller'] = controller_nodes[-1]['name']
+        last_controller = cls.get_last_controller(common_attrs['nodes'])
+        common_attrs.update(last_controller)
 
         # Assign primary controller in nodes list
         cls.set_primary_controller(common_attrs['nodes'])

@@ -158,6 +158,20 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
             lambda: self.cluster.replaced_deployment_info
         )
 
+    def test_deployment_with_one_compute_node(self):
+        cluster = self.env.create(
+            nodes_kwargs=[
+                {'roles': ['compute']}
+            ]
+        )
+
+        response = self.app.get(
+            reverse('DefaultDeploymentInfo',
+                    kwargs={'cluster_id': cluster['id']}),
+            headers=self.default_headers
+        )
+        self.assertEqual(response.status_code, 200)
+
 
 class TestSelectedNodesAction(BaseIntegrationTest):
 

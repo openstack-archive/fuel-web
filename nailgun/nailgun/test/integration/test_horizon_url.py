@@ -41,8 +41,7 @@ class TestHorizonURL(BaseIntegrationTest):
         self.env.wait_ready(supertask, 60)
 
         network = self.db.query(NetworkGroup).\
-            filter(NetworkGroup.group_id ==
-                   self.env.clusters[0].default_group).\
+            filter(NetworkGroup.cluster_id == self.env.clusters[0].id).\
             filter_by(name="public").first()
         lost_ips = self.db.query(IPAddr).filter_by(
             network=network.id,

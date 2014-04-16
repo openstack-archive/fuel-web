@@ -28,6 +28,7 @@ db_str = "{engine}://{user}:{passwd}@{host}:{port}/{name}".format(
 
 engine = create_engine(db_str, client_encoding='utf8')
 
+
 class NoCacheQuery(Query):
     """Override for common Query class.
     Needed for automatic refreshing objects

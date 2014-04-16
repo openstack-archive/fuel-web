@@ -58,7 +58,7 @@ class TestNodeDeletion(BaseIntegrationTest):
         self.assertEquals(node_try, None)
 
         management_net = self.db.query(NetworkGroup).\
-            filter(NetworkGroup.group_id == cluster.default_group).filter_by(
+            filter(NetworkGroup.cluster_id == cluster.id).filter_by(
                 name='management').first()
 
         ipaddrs = self.db.query(IPAddr).\

@@ -41,7 +41,7 @@ class NeutronManager(NetworkManager):
             NetworkGroup.cidr,
             NetworkGroup.gateway
         ).filter_by(
-            group_id=cluster.default_group,
+            cluster_id=cluster.id,
             name='public'
         ).first()
         join_range = lambda r: (":".join(map(str, r)) if r else None)

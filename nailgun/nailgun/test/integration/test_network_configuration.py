@@ -45,7 +45,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
             keys = [
                 'name',
-                'group_id',
+                'cluster_id',
                 'vlan_start',
                 'cidr',
                 'id']
@@ -268,7 +268,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
             keys = [
                 'name',
-                'group_id',
+                'cluster_id',
                 'vlan_start',
                 'cidr',
                 'id']

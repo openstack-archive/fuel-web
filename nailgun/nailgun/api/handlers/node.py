@@ -21,9 +21,6 @@ Handlers dealing with nodes
 from datetime import datetime
 import traceback
 
-from netaddr import IPAddress
-from netaddr import IPNetwork
-
 import web
 
 from nailgun.api.handlers.base import BaseHandler
@@ -47,6 +44,7 @@ from nailgun import notifier
 
 
 class NodeHandler(SingleHandler):
+
     single = objects.Node
     validator = NodeValidator
 
@@ -58,7 +56,7 @@ class NodeCollectionHandler(CollectionHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster', 'group_id', 'uuid')
+              'error_type', 'online', 'cluster', 'uuid')
 
     validator = NodeValidator
     collection = objects.NodeCollection
@@ -164,39 +162,6 @@ class NodeAgentHandler(BaseHandler):
             raise self.http(404)
 
         node.timestamp = datetime.now()
-
-        if node.group_id is None:
-            admin_ngs = db().query(NetworkGroup).filter_by(
-                name="fuelweb_admin")
-            ip = IPAddress(node.ip)
-            for ng in admin_ngs:
-                if ip in IPNetwork(ng.cidr):
-                    node.group_id = ng.group_id
-                    if node.error_type == 'discover':
-                        node.error_type = None
-                        node.error_msg = None
-                        notifier.notify(
-                            "discover",
-                            (
-                                u"Node '{0}' rejoined with group_id '{1}'"
-                            ).format(
-                                node.name or node.mac, node.group_id
-                            ),
-                            node_id=node.id
-                        )
-                        node.status = 'rollback'
-                    break
-            if node.group_id is None and node.error_type is None:
-                msg = (
-                    u"Failed to match node '{0}' with group_id. Add "
-                    "fuelweb_admin NetworkGroup to match '{1}'"
-                ).format(
-                    node.name or node.mac,
-                    node.ip
-                )
-                logger.warning(msg)
-                notifier.notify("error", msg, node_id=node.id)
-
         if not node.online:
             node.online = True
             msg = u"Node '{0}' is back online".format(node.human_readable_name)

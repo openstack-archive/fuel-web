@@ -28,7 +28,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models.base import Base
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.node import Node
-from nailgun.db.sqlalchemy.models.node import NodeGroup
 
 
 class ClusterChanges(Base):
@@ -90,10 +89,11 @@ class Cluster(Base):
     # During cluster deletion sqlalchemy engine will set null
     # into cluster foreign key column of notification entity
     notifications = relationship("Notification", backref="cluster")
-    node_groups = relationship(
-        "NodeGroup",
+    network_groups = relationship(
+        "NetworkGroup",
         backref="cluster",
-        cascade="delete"
+        cascade="delete",
+        order_by="NetworkGroup.id"
     )
     replaced_deployment_info = Column(JSON, default={})
     replaced_provisioning_info = Column(JSON, default={})
@@ -108,11 +108,6 @@ class Cluster(Base):
         self.replaced_deployment_info = data
         self.is_customized = True
         return self.replaced_deployment_info
-
-    def create_default_group(self):
-        ng = NodeGroup(cluster_id=self.id, name="default")
-        db().add(ng)
-        db().commit()
 
     @property
     def changes(self):
@@ -142,20 +137,6 @@ class Cluster(Base):
                 ).count():
             return False
         return True
-
-    @property
-    def default_group(self):
-        if not self.node_groups:
-            self.create_default_group()
-        return [g.id for g in self.node_groups if g.name == "default"][0]
-
-    @property
-    def network_groups(self):
-        net_list = []
-        for ng in self.node_groups:
-            for n in ng.networks:
-                net_list.append(n)
-        return net_list
 
 
 class Attributes(Base):

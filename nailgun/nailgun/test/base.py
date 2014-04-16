@@ -195,7 +195,6 @@ class Environment(object):
             )
         else:
             cluster = Cluster.create(cluster_data)
-            cluster.create_default_group()
             db().commit()
             self.clusters.append(cluster)
 
@@ -224,7 +223,6 @@ class Environment(object):
         node_data = {
             'mac': mac,
             'status': 'discover',
-            'ip': '10.20.0.130',
             'meta': default_metadata
         }
         if kwargs:

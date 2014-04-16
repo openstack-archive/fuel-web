@@ -59,7 +59,7 @@ class TestNetworkManager(BaseIntegrationTest):
 
         management_net = self.db.query(NetworkGroup).\
             filter(
-                NetworkGroup.group_id == self.env.clusters[0].default_group
+                NetworkGroup.cluster_id == self.env.clusters[0].id
             ).filter_by(
                 name='management'
             ).first()
@@ -199,7 +199,7 @@ class TestNetworkManager(BaseIntegrationTest):
 
         ips_mapped = self.env.network_manager.get_grouped_ips_by_node()
         networks_grouped = self.env.network_manager.\
-            get_networks_grouped_by_node_group()
+            get_networks_grouped_by_cluster()
         full_results = []
         for node in nodes:
             result = self.env.network_manager.get_node_networks_optimized(
@@ -212,14 +212,13 @@ class TestNetworkManager(BaseIntegrationTest):
         """Verifies that for cluster created would be returned all networks,
         except fuel_admin
         """
-        cluster = self.env.create_cluster(api=False)
+        cluster = self.env.create_cluster(api=True)
         self.env.create_node(api=True)
-        networks = self.env.network_manager.\
-            get_networks_grouped_by_node_group()
+        networks = self.env.network_manager.get_networks_grouped_by_cluster()
         self.assertTrue(isinstance(networks, dict))
-        self.assertIn(cluster.default_group, networks)
-        self.assertEqual(len(networks[cluster.default_group]), 4)
-        networks_keys = (n.name for n in networks[cluster.default_group])
+        self.assertIn(cluster['id'], networks)
+        self.assertEqual(len(networks[cluster['id']]), 4)
+        networks_keys = (n.name for n in networks[cluster['id']])
         # NetworkGroup.names[1:6] - all except fuel_admin and private
         # private is not used with NovaNetwork
         self.assertEqual(sorted(networks_keys),

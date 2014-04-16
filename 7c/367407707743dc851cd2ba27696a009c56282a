@@ -1,0 +1,24 @@
+Verified+2: Jenkins
+Approved+1: Mike Scherbakov <mscherbakov@mirantis.com>
+Code-Review+2: Mike Scherbakov <mscherbakov@mirantis.com>
+Code-Review+1: tatyana-leontovich <tleontovich@mirantis.com>
+Code-Review+1: Alexander Ignatov <aignatov@mirantis.com>
+Code-Review+1: Vadim Rovachev <vrovachev@mirantis.com>
+Code-Review+1: Matthew Mosesohn <mmosesohn@mirantis.com>
+Code-Review+1: Yaroslav Lobankov <ylobankov@mirantis.com>
+Code-Review+1: Sergey Vasilenko <svasilenko@mirantis.com>
+Code-Review+1: Sergey Kolekonov <skolekonov@mirantis.com>
+Code-Review+1: Nikolay Mahotkin <nmakhotkin@mirantis.com>
+Code-Review+1: Denis Egorenko <degorenko@mirantis.com>
+Code-Review+1: Aleksey Kasatkin <akasatkin@mirantis.com>
+Code-Review+1: Evgeniy L <eli@mirantis.com>
+Code-Review+1: Vladimir Kuklin <vkuklin@mirantis.com>
+Code-Review+1: Nastya Urlapova <aurlapova@mirantis.com>
+Code-Review+1: Igor Shishkin <ishishkin@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Alexander Charykov <acharykov@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 16 Apr 2014 14:21:16 +0000
+Reviewed-on: https://review.openstack.org/87966
+Project: stackforge/fuel-web
+Branch: refs/heads/master

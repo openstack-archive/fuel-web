@@ -3,7 +3,7 @@
 module.exports = function(grunt) {
     var _ = require('lodash-node');
 
-    grunt.registerTask('i18n-vk', 'Search for missing keys from different locales in translation.json', function(task, param) {
+    grunt.registerTask('i18n', 'Search for missing keys from different locales in translation.json', function(task, param) {
         if (task == 'validate') {
             startValidationTask(param);
         }

@@ -244,9 +244,19 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     input.parent().siblings('.parameter-description').toggle();
                 }, this);
             }, this);
-            this.configModels = {settings: this.settings, cluster: this.model, default: this.settings};
-            (this.loading = this.settings.fetch({cache: true})).done(_.bind(function() {
+            var networkDeferred = $.Deferred().resolve();
+            if (!this.model.get('networkConfiguration')) {
+                this.model.set({networkConfiguration: new models.NetworkConfiguration()});
+                networkDeferred = this.model.get('networkConfiguration').fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')});
+            }
+            (this.loading = $.when(this.settings.fetch({cache: true}), networkDeferred)).done(_.bind(function() {
                 this.updateInitialSettings();
+                this.configModels = {
+                    cluster: this.model,
+                    settings: this.settings,
+                    networking_parameters: this.model.get('networkConfiguration').get('networking_parameters'),
+                    default: this.settings
+                };
                 _.each(this.settings.attributes, function(group, groupName) {
                     _.each(group, function(setting, settingName) {
                         this.calculateSettingDisabledState(groupName, settingName, true);

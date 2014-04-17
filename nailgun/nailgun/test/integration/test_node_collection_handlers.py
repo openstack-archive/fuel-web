@@ -464,7 +464,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(node.id, response[0]['id'])
         self.assertEquals(node.name, default_name)
         self.assertEquals(node.cluster, None)
-        self.assertEquals(node.pending_roles, [])
+        self.assertEquals(node.pending_role_list, [])
 
     def test_discovered_node_unified_name(self):
         node_mac = self.env.generate_random_mac()

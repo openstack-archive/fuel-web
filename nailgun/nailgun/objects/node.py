@@ -480,18 +480,18 @@ class Node(NailgunObject):
         roles and pending roles
 
         :param instance: Node instance
-        :param cluster_id: Cluster ID
         :returns: None
         """
-        Cluster.clear_pending_changes(
-            instance.cluster,
-            node_id=instance.id
-        )
-        Cluster.get_network_manager(
-            instance.cluster
-        ).clear_assigned_networks(instance)
+        if instance.cluster:
+            Cluster.clear_pending_changes(
+                instance.cluster,
+                node_id=instance.id
+            )
+            Cluster.get_network_manager(
+                instance.cluster
+            ).clear_assigned_networks(instance)
+        instance.roles_list = instance.pending_role_list = []
         instance.cluster_id = None
-        instance.roles = instance.pending_roles = []
         instance.reset_name_to_default()
         db().flush()
         db().refresh(instance)

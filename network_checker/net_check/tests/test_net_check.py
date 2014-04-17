@@ -17,8 +17,9 @@ import multiprocessing
 import os
 import signal
 import socket
-import time
 import unittest
+
+import mock
 
 import pcap
 from scapy import all as scapy
@@ -138,15 +139,19 @@ class TestNetCheckSender(unittest.TestCase):
 
     def setUp(self):
         self.iface = os.environ.get('NET_CHECK_IFACE_1', 'eth1')
+        self.vlans_range = range(1010, 1030)
+        vlans = ','.join([str(vlan) for vlan in self.vlans_range])
         self.config = {
             "src": "1.0.0.0", "ready_port": 31338,
             "ready_address": "localhost", "dst": "1.0.0.0",
-            "interfaces": {self.iface: "0,100,101,102,106,107,108"},
+            "interfaces": {self.iface: vlans},
             "action": "listen",
             "cookie": "Nailgun:", "dport": 31337, "sport": 31337,
             "src_mac": None,
             "dump_file": "/var/tmp/net-probe-dump",
-            "uid": "2"
+            "uid": "2",
+            "packets": 4,
+            "sleep": 2
         }
 
     def start_pcap_listener(self):
@@ -158,8 +163,7 @@ class TestNetCheckSender(unittest.TestCase):
 
     def start_sender(self):
         sender = api.Sender(self.config)
-        self.sender = multiprocessing.Process(target=sender.run)
-        self.sender.start()
+        sender.run()
 
     @property
     def pcap_packets(self):
@@ -180,11 +184,25 @@ class TestNetCheckSender(unittest.TestCase):
             results.update([vlan])
         return results
 
-    def test_sender(self):
+    @mock.patch('net_check.api.scapy.sendp')
+    def test_001_round_robin_order(self, sendp_mock):
+        self.start_sender()
+        vlan_len = len(self.vlans_range)
+        # count should be equal to vlans_range * config["packets"]
+        self.assertEqual(sendp_mock.call_count,
+                         vlan_len * self.config['packets'])
+
+        calls = sendp_mock.call_args_list
+        packets = []
+        for args, kwargs in calls:
+            packets.append(args[0])
+        vlans = [p.vlan for p in packets]
+        # [1,2]*2 == [1,2,1,2]
+        self.assertEqual(vlans, self.vlans_range * 4)
+
+    def test_002_sender(self):
         self.start_pcap_listener()
         self.start_sender()
-        time.sleep(3)
-        self.sender.join()
 
         expected_vlans = set(self.config['interfaces'][self.iface].split(','))
         self.assertEqual(expected_vlans, self.received_vlans)

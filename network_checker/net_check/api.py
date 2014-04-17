@@ -71,6 +71,8 @@ class Actor(object):
             'sport': 31337,
             'dport': 31337,
             'cookie': "Nailgun:",
+            'packets': 5,
+            'sleep': 1
         }
         if config:
             self.config.update(config)
@@ -351,7 +353,8 @@ class Sender(Actor):
         with open(path, 'r') as address:
             return address.read().strip('\n')
 
-    def _run(self):
+    def _get_send_packets(self):
+        packets = []
         for iface, vlan in self._iface_vlan_iterator():
             self._ensure_iface_up(iface)
             data = str(''.join((self.config['cookie'], iface, ' ',
@@ -366,14 +369,22 @@ class Sender(Actor):
             p = p / scapy.IP(src=self.config['src'], dst=self.config['dst'])
             p = p / scapy.UDP(sport=self.config['sport'],
                               dport=self.config['dport']) / data
+            self.logger.debug("Sending packet: iface=%s data=%s",
+                              iface, data)
+            packets.append((iface, p))
+        return packets
 
-            try:
-                for i in xrange(5):
-                    self.logger.debug("Sending packet: iface=%s data=%s",
-                                      iface, data)
+    def _run(self):
+        packets = self._get_send_packets()
+        try:
+            # send packets in round robin fashion to ensure fair
+            # balancing for different ifaces
+            for i in xrange(self.config['packets']):
+                for iface, p in packets:
                     scapy.sendp(p, iface=iface)
-            except socket.error as e:
-                self.logger.error("Socket error: %s, %s", e, iface)
+                time.sleep(self.config['sleep'])
+        except socket.error as e:
+            self.logger.error("Socket error: %s, %s", e, iface)
 
         self._log_ifaces("Interfaces just after sending probing packages")
         for iface in self._iface_iterator():
@@ -611,6 +622,14 @@ def define_subparsers(parser):
     generate_parser.add_argument(
         '-u', '--uid', dest='uid', action='store', type=str,
         help='uid to insert into probe packets payload', default='1'
+    )
+    generate_parser.add_argument(
+        '--packets', dest='packets', action='store', type=int,
+        help='Number of sending packets iteration', default=5
+    )
+    generate_parser.add_argument(
+        '--sleep', dest='sleep', action='store', type=int,
+        help='Seconds of sleep after successfull sending packets', default=1
     )
 
 

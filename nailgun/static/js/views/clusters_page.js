@@ -21,11 +21,13 @@ define(
     'views/dialogs',
     'text!templates/clusters/page.html',
     'text!templates/clusters/cluster.html',
-    'text!templates/clusters/new.html'
+    'text!templates/clusters/new.html',
+    'text!templates/common/register_trial.html'
+
 ],
-function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterTemplate, newClusterTemplate) {
+function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterTemplate, newClusterTemplate, registerTrial) {
     'use strict';
-    var ClustersPage, ClusterList, Cluster;
+    var ClustersPage, ClusterList, Cluster, RegisterTrial;
 
     ClustersPage = commonViews.Page.extend({
         navbarActiveElement: 'clusters',
@@ -39,6 +41,14 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
             var clustersView = new ClusterList({collection: this.collection});
             this.registerSubView(clustersView);
             this.$('.cluster-list').html(clustersView.render().el);
+            var isMirantis = false;
+             $.ajax({url: '/api/version'}).done(_.bind(function(data) {
+                isMirantis = data.mirantis == "yes";
+                if (!this.collection.length && isMirantis && !localStorage.trialRemoved) {
+                    $('.breadcrumb').after(new RegisterTrial().render().el);
+                }
+            }, this));
+
             return this;
         }
     });
@@ -137,5 +147,19 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
         }
     });
 
+    RegisterTrial = Backbone.View.extend({
+        template: _.template(registerTrial),
+        events: {
+            'click .registerTrial .close': 'closeTrialWarning'
+        },
+        closeTrialWarning: function() {
+            $('.registerTrial').remove();
+            localStorage.setItem('trialRemoved', 'true');
+        },
+        render: function() {
+            this.$el.html(this.template());
+            return this;
+        }
+    });
     return ClustersPage;
 });

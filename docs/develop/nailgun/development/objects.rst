@@ -1,8 +1,9 @@
+.. _objects-reference:
+
 Objects Reference
 =================
 
 .. contents:: :local:
-
 
 Base Objects
 ------------

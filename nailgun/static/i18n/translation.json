@@ -96,7 +96,7 @@
                 "irc_text": "If you have any questions, you can also reach out to developers on the IRC channel",
                 "log_text": "If you have encountered some bugs or errors, you may also need to provide the support team with deployment and operational logs. You can download them all at once by clicking the button below.",
                 "contact_support": "Contact Support",
-                "register_fuel_title": "Register Fuel",
+                "register_fuel_title": "Register product",
                 "register_fuel_content": "Registering will ensure that you receive important notifications about issues and new versions of Mirantis products. In addition, you will receive complementary access to our basic support services for the next 30 days!",
                 "download_diagnostic_snapshot_text": "Download Diagnostic Snapshot",
                 "gen_logs_snapshot_text": "Generating logs snapshot...",
@@ -128,7 +128,10 @@
                 "cluster_hardware_nodes": "Nodes",
                 "cluster_hardware_cpu": "CPU (cores)",
                 "cluster_hardware_hdd": "HDD",
-                "cluster_hardware_ram": "RAM"
+                "cluster_hardware_ram": "RAM",
+                "register_trial_message_click": "Master node installation completed successfully. If you want to register your installation and sign up for trial support, please click ",
+                "register_trial_link_label": "here",
+                "register_trial_message_close": ". Otherwise you can close this panel."
             },
             "cluster_page": {
                 "tabs": {

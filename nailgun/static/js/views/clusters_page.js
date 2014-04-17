@@ -21,11 +21,12 @@ define(
     'views/dialogs',
     'text!templates/clusters/page.html',
     'text!templates/clusters/cluster.html',
-    'text!templates/clusters/new.html'
+    'text!templates/clusters/new.html',
+    'text!templates/clusters/register_trial.html'
 ],
-function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterTemplate, newClusterTemplate) {
+function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterTemplate, newClusterTemplate, registerTrialTemplate) {
     'use strict';
-    var ClustersPage, ClusterList, Cluster;
+    var ClustersPage, ClusterList, Cluster, RegisterTrial;
 
     ClustersPage = commonViews.Page.extend({
         navbarActiveElement: 'clusters',
@@ -39,6 +40,9 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
             var clustersView = new ClusterList({collection: this.collection});
             this.registerSubView(clustersView);
             this.$('.cluster-list').html(clustersView.render().el);
+            var registerTrialView = new RegisterTrial();
+            this.registerSubView(registerTrialView);
+            this.$('.page-title').before(registerTrialView.render().el);
             return this;
         }
     });
@@ -137,5 +141,38 @@ function(models, utils, commonViews, dialogViews, clustersPageTemplate, clusterT
         }
     });
 
+    RegisterTrial = Backbone.View.extend({
+        template: _.template(registerTrialTemplate),
+        events: {
+            'click .register-trial .close': 'closeTrialWarning'
+        },
+        bindings: {
+            '.registration-link': {
+                attributes: [{
+                    name: 'href',
+                    observe: 'key',
+                    onGet: function(value) {
+                        return !_.isUndefined(value) ? 'http://fuel.mirantis.com/create-subscriber/?key=' + value : '/';
+                    }
+                }]
+            }
+        },
+        initialize: function() {
+            this.fuelKey = new models.FuelKey();
+            this.fuelKey.fetch();
+            app.version.on('sync', this.render, this);
+        },
+        closeTrialWarning: function() {
+            localStorage.setItem('trialRemoved', 'true');
+            this.remove();
+        },
+        render: function() {
+            if (app.version.get('mirantis') == 'yes' && !localStorage.trialRemoved) {
+                this.$el.html(this.template()).i18n();
+                this.stickit(this.fuelKey);
+            }
+            return this;
+        }
+    });
     return ClustersPage;
 });

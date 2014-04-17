@@ -205,16 +205,16 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.model.get('tasks').each(this.bindTaskEvents, this);
             this.model.get('tasks').on('add', this.onNewTask, this);
             this.model.get('tasks').on('remove', this.renderVerificationControl, this);
+            this.settings = this.model.get('settings');
+            var networkDeferred = $.Deferred().resolve();
             if (!this.model.get('networkConfiguration')) {
                 this.model.set({networkConfiguration: new models.NetworkConfiguration()});
-                this.loading = this.model.get('networkConfiguration').fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')})
-                    .done(_.bind(function() {
-                        this.setInitialData();
-                        this.render();
-                    }, this));
-            } else {
-                this.setInitialData();
+                networkDeferred = this.model.get('networkConfiguration').fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')});
             }
+            (this.loading = $.when(this.settings.fetch({cache: true}), networkDeferred)).done(_.bind(function() {
+                this.setInitialData();
+                this.render();
+            }, this));
         },
         showVerificationErrors: function() {
             var task = this.model.task({group: 'network', status: 'error'});
@@ -262,6 +262,9 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             })).i18n();
             if (this.networkingParameters) {
                 this.stickit(this.networkingParameters, {'input[name=net-manager]': 'net_manager'});
+                // FIXME: quick hack for vCenter feature support.
+                // Reverse dependensies on OpenStack settings should be implemented.
+                this.$('input[name=net-manager]').attr('disabled', this.settings.get('common.libvirt_type.value') == 'vcenter' || this.isLocked());
                 this.renderNetworks();
                 this.renderNetworkingParameters();
             }

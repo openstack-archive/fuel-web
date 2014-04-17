@@ -174,11 +174,14 @@ class Node(Base):
                 )
             )
             return
-        self.role_list = db().query(Role).filter_by(
-            release_id=self.cluster.release_id,
-        ).filter(
-            Role.name.in_(new_roles)
-        ).all()
+        if new_roles:
+            self.role_list = db().query(Role).filter_by(
+                release_id=self.cluster.release_id,
+            ).filter(
+                Role.name.in_(new_roles)
+            ).all()
+        else:
+            self.role_list = []
 
     @property
     def pending_roles(self):

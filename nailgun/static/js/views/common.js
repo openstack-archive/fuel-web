@@ -266,16 +266,13 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         initialize: function(options) {
             this.locales = this.getAvailableLocales();
             this.setDefaultLocale();
-            $.ajax({url: '/api/version'}).done(_.bind(function(data) {
-                this.version = data.release;
-                this.isMirantis = data.mirantis == "yes";
-                this.render();
-            }, this));
+            this.app = options.app;
+            this.render();
         },
         render: function() {
             this.$el.html(this.template({
-                version: this.version,
-                isMirantis: this.isMirantis,
+                version: this.app.version,
+                isMirantis: this.app.isMirantis,
                 locales: this.locales,
                 currentLocale: this.getCurrentLocale()
             })).i18n();

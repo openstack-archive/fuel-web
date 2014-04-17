@@ -51,9 +51,13 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             this.content.before(this.navbar.render().el);
             this.breadcrumbs = new commonViews.Breadcrumbs();
             this.content.before(this.breadcrumbs.render().el);
-            this.footer = new commonViews.Footer();
+            this.footer = new commonViews.Footer({app: this});
             $('#footer').html(this.footer.render().el);
             this.content.find('.loading').addClass('layout-loaded');
+            $.ajax({url: '/api/version'}).done(_.bind(function(data) {
+                this.version = data.release;
+                this.isMirantis = data.mirantis == "yes";
+            }, this));
         },
         setPage: function(NewPage, options) {
             if (this.page) {

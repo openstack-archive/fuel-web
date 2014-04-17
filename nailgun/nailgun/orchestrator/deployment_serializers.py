@@ -179,6 +179,7 @@ class DeploymentMultinodeSerializer(object):
         for node in nodes:
             for role in node.all_roles:
                 serialized_nodes.append(cls.serialize_node(node, role))
+        cls.set_primary_mongo(serialized_nodes)
         return serialized_nodes
 
     @classmethod
@@ -220,21 +221,6 @@ class DeploymentMultinodeSerializer(object):
         else:
             return NeutronNetworkDeploymentSerializer
 
-
-class DeploymentHASerializer(DeploymentMultinodeSerializer):
-    """Serializer for ha mode."""
-
-    @classmethod
-    def serialize_nodes(cls, nodes):
-        """Serialize nodes and set primary-controller
-        """
-        serialized_nodes = super(
-            DeploymentHASerializer, cls).serialize_nodes(nodes)
-        cls.set_primary_controller(serialized_nodes)
-        cls.set_primary_mongo(serialized_nodes)
-
-        return serialized_nodes
-
     @classmethod
     def set_primary_node(cls, nodes, role, primary_node_index):
         """Set primary node for role if it not set yet.
@@ -255,18 +241,36 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
             result_nodes[primary_node_index]['role'] = primary_role
 
     @classmethod
+    def set_primary_mongo(cls, nodes):
+        """Set primary mongo for the last mongo node
+        node if it not set yet
+        """
+        cls.set_primary_node(nodes, 'mongo', 0)
+
+    @classmethod
+    def filter_by_roles(cls, nodes, roles):
+        return filter(
+            lambda node: node['role'] in roles, nodes)
+
+
+class DeploymentHASerializer(DeploymentMultinodeSerializer):
+    """Serializer for ha mode."""
+
+    @classmethod
+    def serialize_nodes(cls, nodes):
+        """Serialize nodes and set primary-controller
+        """
+        serialized_nodes = super(
+            DeploymentHASerializer, cls).serialize_nodes(nodes)
+        cls.set_primary_controller(serialized_nodes)
+        return serialized_nodes
+
+    @classmethod
     def set_primary_controller(cls, nodes):
         """Set primary controller for the first controller
         node if it not set yet
         """
         cls.set_primary_node(nodes, 'controller', 0)
-
-    @classmethod
-    def set_primary_mongo(cls, nodes):
-        """Set primary mongo for the last mongo node
-        node if it not set yet
-        """
-        cls.set_primary_node(nodes, 'mongo', -1)
 
     @classmethod
     def get_last_controller(cls, nodes):
@@ -323,11 +327,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         cls.set_primary_mongo(common_attrs['nodes'])
 
         return common_attrs
-
-    @classmethod
-    def filter_by_roles(cls, nodes, roles):
-        return filter(
-            lambda node: node['role'] in roles, nodes)
 
     @classmethod
     def set_deployment_priorities(cls, nodes):

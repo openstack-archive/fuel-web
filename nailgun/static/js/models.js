@@ -728,6 +728,11 @@ define(['utils', 'deepModel'], function(utils) {
         urlRoot: '/api/registration/key'
     });
 
+    models.FuelVersion = Backbone.Model.extend({
+        constructorName: 'FuelVersion',
+        urlRoot: '/api/version'
+    });
+
     models.LogsPackage = Backbone.Model.extend({
         constructorName: 'LogsPackage',
         urlRoot: '/api/logs/package'

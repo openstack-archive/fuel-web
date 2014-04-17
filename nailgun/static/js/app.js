@@ -51,9 +51,12 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             this.content.before(this.navbar.render().el);
             this.breadcrumbs = new commonViews.Breadcrumbs();
             this.content.before(this.breadcrumbs.render().el);
-            this.footer = new commonViews.Footer();
-            $('#footer').html(this.footer.render().el);
             this.content.find('.loading').addClass('layout-loaded');
+            this.version = new Backbone.Model();
+            this.version.url = '/api/version';
+            this.version.fetch();
+            this.footer = new commonViews.Footer({version: this.version});
+            $('#footer').html(this.footer.render().el);
         },
         setPage: function(NewPage, options) {
             if (this.page) {

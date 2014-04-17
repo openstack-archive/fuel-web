@@ -64,3 +64,45 @@ class TestObjects(BaseIntegrationTest):
         for r in iterable_filtered:
             self.assertEqual(r.name, "A")
             self.assertEqual(r.operating_system, "CentOS")
+
+
+class TestNodeObject(BaseIntegrationTest):
+
+    def test_removing_from_cluster(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"role": "controller"}
+            ]
+        )
+        node_db = self.env.nodes[0]
+        node2_db = self.env.create_node()
+        objects.Node.remove_from_cluster(node_db)
+        objects.Node.save(node_db)
+        self.assertEqual(node_db.cluster_id, None)
+        self.assertEqual(node_db.roles, [])
+        self.assertEqual(node_db.pending_roles, [])
+
+        try:
+            objects.Node.remove_from_cluster(node_db)
+        except Exception as exc:
+            self.fail("Node removing is not idempotent: {0}!".format(exc))
+
+        objects.Node.save(node_db)
+
+        exclude_fields = [
+            "id",
+            "mac",
+            "meta",
+            "name",
+            "agent_checksum"
+        ]
+        fields = set(
+            objects.Node.schema["properties"].keys()
+        ) ^ set(exclude_fields)
+
+        for f in fields:
+            self.assertEqual(
+                getattr(node_db, f),
+                getattr(node2_db, f)
+            )

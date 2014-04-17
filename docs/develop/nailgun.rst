@@ -1,11 +1,7 @@
 .. _nailgun:
 
-Nailgun Development and Customization Instructions
-==================================================
+Nailgun
+=======
 
 .. toctree::
-
-   nailgun/partitions
-   nailgun/settings
-   nailgun/roles
-   nailgun/reliability
+    nailgun/tree

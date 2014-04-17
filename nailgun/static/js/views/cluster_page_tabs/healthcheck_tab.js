@@ -148,12 +148,6 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 }
             }, this);
         },
-        bindTaskEvents: function(task) {
-            return task.match({group: 'deployment'}) ? task.on('change:status', this.render, this) : null;
-        },
-        onNewTask: function(task) {
-            return this.bindTaskEvents(task) && this.render();
-        },
         initialize: function(options) {
             _.defaults(this, options);
              this.runTestsButton = new Backbone.Model({
@@ -169,8 +163,9 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 disabled: false
             });
             this.model.on('change:status', this.render, this);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
+            this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
+                task.on('change:status', this.render, this);
+            });
             this.selectAllCheckbox.on('change:disabled', _.bind(function(model, value) {
                 _.each(this.subViews, function(testSetView) {
                     testSetView.selectAllCheckbox.set({disabled: value});

@@ -147,6 +147,21 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             }, this);
             return disabled;
         },
+        checkDependentRoles: function(settingPath) {
+            var disabled = false;
+            var rolesData = this.model.get('release').get('roles_metadata');
+            _.each(this.model.get('release').get('roles'), function(role) {
+                if (!disabled) {
+                    var satisfiedDependencies = _.filter(rolesData[role].depends, function(dependency) {
+                        var dependencyValue = dependency.condition['settings:' + settingPath + '.value'];
+                        return !_.isUndefined(dependencyValue) && dependencyValue == this.settings.get(settingPath + '.value');
+                    }, this);
+                    var assignedNodes = this.model.get('nodes').filter(function(node) { return node.hasRole(role); });
+                    disabled = satisfiedDependencies.length && assignedNodes.length;
+                } else { return false; }
+            }, this);
+            return disabled;
+        },
         calculateSettingDisabledState: function(groupName, settingName, composeListeners) {
             var settingPath = groupName + '.' + settingName;
             var isSettingDisabled = false;
@@ -163,19 +178,18 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             _.each(this.settings.get(settingPath + '.depends'), function(dependency) {
                 if (!isSettingDisabled) {
                     isSettingDisabled = handleCondition(dependency, isSettingDisabled, false);
-                } else {
-                    return false;
-                }
+                } else { return false; }
             });
             if (!isSettingDisabled) {
                 isSettingDisabled = this.checkDependentSettings(settingPath, callback, composeListeners);
             }
+            if (!isSettingDisabled) {
+                isSettingDisabled = this.checkDependentRoles(settingPath);
+            }
             _.each(this.settings.get(settingPath + '.conflicts'), function(conflict) {
                 if (!isSettingDisabled) {
                     isSettingDisabled = handleCondition(conflict, isSettingDisabled, true);
-                } else {
-                    return false;
-                }
+                } else { return false; }
             });
             this.settings.set(settingPath + '.disabled', isSettingDisabled);
             _.each(this.settings.get(settingPath + '.values'), function(value, index) {
@@ -183,16 +197,12 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 _.each(value.depends, function(dependency) {
                     if (!isOptionDisabled) {
                         isOptionDisabled = handleCondition(dependency, isOptionDisabled, false);
-                    } else {
-                        return false;
-                    }
+                    } else { return false; }
                 });
                 _.each(value.conflicts, function(conflict) {
                     if (!isOptionDisabled) {
                         isOptionDisabled = handleCondition(conflict, isOptionDisabled, true);
-                    } else {
-                        return false;
-                    }
+                    } else { return false; }
                 });
                 var settingValues = _.cloneDeep(this.settings.get(settingPath + '.values'));
                 settingValues[index].disabled = isOptionDisabled;

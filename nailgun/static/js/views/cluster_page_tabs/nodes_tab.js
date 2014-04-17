@@ -274,16 +274,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             };
             this.nodes.on('change:checked', this.updateBatchActionsButtons, this);
             this.model.on('change:status', this.render, this);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
+            this.model.get('tasks').bindToView(this, [{group: ['deployment', 'network']}], function(task) {
+                task.on('change:status', this.render, this);
+            });
             this.constructor.__super__.initialize.apply(this, arguments);
             this.nodes.deferred = this.nodes.fetch().done(_.bind(this.render, this));
-        },
-        bindTaskEvents: function(task) {
-            return task.match({group: ['deployment', 'network']}) ? task.on('change:status', this.render, this) : null;
-        },
-        onNewTask: function(task) {
-            return this.bindTaskEvents(task) && this.render();
         }
     });
 

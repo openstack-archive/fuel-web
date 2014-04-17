@@ -102,23 +102,14 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.page.tasks.each(this.bindTaskEvents, this);
-            this.page.tasks.on('add', this.onNewTask, this);
-            this.release.on('change', this.render, this);
-        },
-        bindTaskEvents: function(task) {
-            if (task.match({group: 'release_setup', status: 'running', release: this.release.id})) {
+            this.model.get('tasks').bindToView(this, [{group: 'release_setup', status: 'running', release: this.release.id}], function(task) {
                 task.on('change:status', this.checkForSetupCompletion, this);
                 task.on('change:progress', this.updateProgress, this);
-                return task;
-            }
-            return null;
-        },
-        onNewTask: function(task) {
-            if (this.bindTaskEvents(task)) {
+            }, function() {
                 this.checkForSetupCompletion();
                 this.updateProgress();
-            }
+            });
+            this.release.on('change', this.render, this);
         },
         render: function() {
             this.tearDownRegisteredSubViews();

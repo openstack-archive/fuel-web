@@ -64,18 +64,13 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
         resetEnvironment: function() {
             this.registerSubView(new dialogViews.ResetEnvironmentDialog({model: this.model})).render();
         },
-        bindTaskEvents: function(task) {
-            return task.match({group: 'deployment'}) ? task.on('change:status', this.render, this) : null;
-        },
-        onNewTask: function(task) {
-            return this.bindTaskEvents(task) && this.render();
-        },
         initialize: function(options) {
             _.defaults(this, options);
             this.model.on('change:name change:status', this.render, this);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
             this.model.on('invalid', this.showValidationError, this);
+            this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
+                task.on('change:status', this.render, this);
+            });
         },
         render: function() {
             this.$el.html(this.template({

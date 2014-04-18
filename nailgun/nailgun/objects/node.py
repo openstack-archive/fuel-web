@@ -17,7 +17,7 @@
 """
 Node-related objects and collections
 """
-
+import operator
 import traceback
 
 from datetime import datetime
@@ -326,6 +326,15 @@ class Node(NailgunObject):
         pending_roles = data.pop("pending_roles", None)
         new_meta = data.pop("meta", None)
 
+        disks_changed = None
+        if new_meta and "disks" in new_meta and "disks" in instance.meta:
+            key = operator.itemgetter("name")
+
+            new_disks = sorted(new_meta["disks"], key=key)
+            old_disks = sorted(instance.meta["disks"], key=key)
+
+            disks_changed = (new_disks != old_disks)
+
         #TODO(enchantner): fix this temporary hack in clients
         if "cluster_id" not in data and "cluster" in data:
             cluster_id = data.pop("cluster", None)
@@ -376,7 +385,8 @@ class Node(NailgunObject):
         if any((
             roles_changed,
             pending_roles_changed,
-            cluster_changed
+            cluster_changed,
+            disks_changed,
         )) and instance.status not in (
             consts.NODE_STATUSES.provisioning,
             consts.NODE_STATUSES.deploying
@@ -384,6 +394,43 @@ class Node(NailgunObject):
             cls.update_volumes(instance)
 
         return instance
+
+    @classmethod
+    def update_by_agent(cls, instance, data):
+        """Update Node instance with some specific cases for agent.
+
+        * don't update provisioning or error state back to discover
+        * don't update volume information if disks arrays is empty
+
+        :param data: dictionary of key-value pairs as object fields
+        :returns: Node instance
+        """
+        # don't update provisioning and error back to discover
+        if instance.status in ('provisioning', 'error'):
+            if data.get('status', 'discover') == 'discover':
+                logger.debug(
+                    u"Node {0} has provisioning or error status - "
+                    u"status not updated by agent".format(
+                        instance.human_readable_name
+                    )
+                )
+
+                data['status'] = instance.status
+
+        # don't update volume information, if agent has sent an empty array
+        meta = data.get('meta', {})
+        if meta and len(meta.get('disks', [])) == 0 \
+                and instance.meta.get('disks'):
+
+            logger.warning(
+                u'Node {0} has received an empty disks array - '
+                u'volume information will not be updated'.format(
+                    instance.human_readable_name
+                )
+            )
+            meta['disks'] = instance.meta['disks']
+
+        return cls.update(instance, data)
 
     @classmethod
     def update_roles(cls, instance, new_roles):

@@ -1,0 +1,20 @@
+"""{message}
+
+Revision ID: {revision}
+Revises: {down_revision}
+Create Date: {datetime}
+
+"""
+
+# revision identifiers, used by Alembic.
+revision = '{revision}'
+down_revision = {down_revision}
+
+from alembic import op
+import sqlalchemy as sa
+
+from nailgun.db.migration.helpers import drop_enum
+from nailgun.db.migration.helpers import upgrade_enum
+
+from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.db.sqlalchemy.models.fields import LowercaseString

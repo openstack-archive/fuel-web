@@ -18,21 +18,10 @@ import shutil
 
 from fuelclient.cli.error import ActionException
 from fuelclient.cli.error import ArgumentException
+from fuelclient.cli.error import ServerDataException
 from fuelclient.cli.serializers import listdir_without_extensions
 from fuelclient.objects.base import BaseObject
 from fuelclient.objects.task import DeployTask
-from functools import wraps
-
-
-def memorize_one(func):
-    func.cache = None
-
-    @wraps(func)
-    def nested(*args, **kwargs):
-        if func.cache is None:
-            func.cache = func(*args, **kwargs)
-        return func.cache
-    return nested
 
 
 class Environment(BaseObject):
@@ -129,25 +118,30 @@ class Environment(BaseObject):
             "settings_{0}".format(self.id)
         )
 
-    def write_network_data(self, network_data, directory=os.curdir):
-        return self.serializer.write_to_file(
+    def write_network_data(self, network_data, directory=os.curdir,
+                           serializer=None):
+        return (serializer or self.serializer).write_to_file(
             self.get_network_data_path(directory),
             network_data
         )
 
-    def write_settings_data(self, settings_data, directory=os.curdir):
-        return self.serializer.write_to_file(
+    def write_settings_data(self, settings_data, directory=os.curdir,
+                            serializer=None):
+        return (serializer or self.serializer).write_to_file(
             self.get_settings_data_path(directory),
             settings_data
         )
 
-    def read_network_data(self, directory=os.curdir):
+    def read_network_data(self, directory=os.curdir,
+                          serializer=None):
         network_file_path = self.get_network_data_path(directory)
-        return self.serializer.read_from_file(network_file_path)
+        return (serializer or self.serializer).read_from_file(
+            network_file_path)
 
-    def read_settings_data(self, directory=os.curdir):
+    def read_settings_data(self, directory=os.curdir, serializer=None):
         settings_file_path = self.get_settings_data_path(directory)
-        return self.serializer.read_from_file(settings_file_path)
+        return (serializer or self.serializer).read_from_file(
+            settings_file_path)
 
     @property
     def settings_url(self):
@@ -158,7 +152,6 @@ class Environment(BaseObject):
         return self.settings_url + "/defaults"
 
     @property
-    @memorize_one
     def network_url(self):
         return "clusters/{id}/network_configuration/{net_provider}".format(
             **self.data
@@ -213,12 +206,24 @@ class Environment(BaseObject):
         return fact_url
 
     def get_default_facts(self, fact_type, nodes=None):
-        return self.connection.get_request(
+        facts = self.connection.get_request(
             self._get_fact_default_url(fact_type, nodes=nodes))
+        if not facts:
+            raise ServerDataException(
+                "There is no {0} info for this "
+                "environment!".format(fact_type)
+            )
+        return facts
 
     def get_facts(self, fact_type, nodes=None):
-        return self.connection.get_request(
+        facts = self.connection.get_request(
             self._get_fact_url(fact_type, nodes=nodes))
+        if not facts:
+            raise ServerDataException(
+                "There is no {0} info for this "
+                "environment!".format(fact_type)
+            )
+        return facts
 
     def upload_facts(self, fact_type, facts):
         self.connection.put_request(self._get_fact_url(fact_type), facts)
@@ -226,20 +231,21 @@ class Environment(BaseObject):
     def delete_facts(self, fact_type):
         self.connection.delete_request(self._get_fact_url(fact_type))
 
-    def read_fact_info(self, fact_type):
-        if fact_type == "deployment":
-            return self.read_deployment_info(fact_type)
-        elif fact_type == "provisioning":
-            return self.read_provisioning_info(fact_type)
+    def read_fact_info(self, fact_type, directory, serializer=None):
+        return getattr(
+            self, "read_{0}_info".format(fact_type)
+        )(fact_type, directory=directory, serializer=serializer)
 
-    def write_facts_to_dir(self, fact_type, facts, directory=os.path.curdir):
+    def write_facts_to_dir(self, fact_type, facts,
+                           directory=os.path.curdir, serializer=None):
         dir_name = self._get_fact_dir_name(fact_type, directory=directory)
         if os.path.exists(dir_name):
             shutil.rmtree(dir_name)
         os.makedirs(dir_name)
         if isinstance(facts, dict):
             engine_file_path = os.path.join(dir_name, "engine")
-            self.serializer.write_to_file(engine_file_path, facts["engine"])
+            (serializer or self.serializer).write_to_file(
+                engine_file_path, facts["engine"])
             facts = facts["nodes"]
             name_template = "{name}"
         else:
@@ -249,25 +255,28 @@ class Environment(BaseObject):
                 dir_name,
                 name_template.format(**_fact)
             )
-            self.serializer.write_to_file(fact_path, _fact)
+            (serializer or self.serializer).write_to_file(fact_path, _fact)
+        return dir_name
 
-    def read_deployment_info(self, fact_type, directory=os.path.curdir):
+    def read_deployment_info(self, fact_type,
+                             directory=os.path.curdir, serializer=None):
         dir_name = self._get_fact_dir_name(fact_type, directory=directory)
         return map(
-            lambda f: self.serializer.read_from_file(f),
+            lambda f: (serializer or self.serializer).read_from_file(f),
             [os.path.join(dir_name, json_file)
              for json_file in listdir_without_extensions(dir_name)]
         )
 
-    def read_provisioning_info(self, fact_type, directory=os.path.curdir):
+    def read_provisioning_info(self, fact_type,
+                               directory=os.path.curdir, serializer=None):
         dir_name = self._get_fact_dir_name(fact_type, directory=directory)
         node_facts = map(
-            lambda f: self.serializer.read_from_file(f),
+            lambda f: (serializer or self.serializer).read_from_file(f),
             [os.path.join(dir_name, fact_file)
              for fact_file in listdir_without_extensions(dir_name)
              if "engine" != fact_file]
         )
-        engine = self.serializer.read_from_file(
+        engine = (serializer or self.serializer).read_from_file(
             os.path.join(dir_name, "engine"))
         return {
             "engine": engine,

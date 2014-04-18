@@ -50,10 +50,12 @@ class NetworkAction(Action):
                 fuel --env 1 network --upload --dir path/to/derectory
         """
         env = Environment(params.env)
-        network_data = env.read_network_data(directory=params.dir)
-        response = env.set_network_data(network_data)
-        self.serializer.print_to_output(
-            response,
+        network_data = env.read_network_data(
+            directory=params.dir,
+            serializer=self.serializer
+        )
+        env.set_network_data(network_data)
+        print(
             "Network configuration uploaded."
         )
 
@@ -64,8 +66,7 @@ class NetworkAction(Action):
         """
         env = Environment(params.env)
         response = env.verify_network()
-        self.serializer.print_to_output(
-            response,
+        print(
             "Verification status is '{status}'. message: {message}"
             .format(**response)
         )
@@ -79,9 +80,9 @@ class NetworkAction(Action):
         network_data = env.get_network_data()
         network_file_path = env.write_network_data(
             network_data,
-            directory=params.dir)
-        self.serializer.print_to_output(
-            network_data,
+            directory=params.dir,
+            serializer=self.serializer)
+        print(
             "Network configuration for environment with id={0}"
             " downloaded to {1}"
             .format(env.id, network_file_path)

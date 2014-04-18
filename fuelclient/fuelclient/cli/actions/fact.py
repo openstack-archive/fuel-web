@@ -19,6 +19,9 @@ from fuelclient.objects.environment import Environment
 
 
 class FactAction(Action):
+
+    action_name = None
+
     def __init__(self):
         super(FactAction, self).__init__()
         self.args = [
@@ -61,10 +64,17 @@ class FactAction(Action):
                 fuel --env 1 {action_name} --default --node 1,2,3
         """
         env = Environment(params.env)
-        env.write_facts_to_dir(
+        dir_name = env.write_facts_to_dir(
             self.action_name,
             env.get_default_facts(self.action_name, nodes=params.node),
-            directory=params.dir
+            directory=params.dir,
+            serializer=self.serializer
+        )
+        print(
+            "Default {0} info was downloaded to {1}".format(
+                self.action_name,
+                dir_name
+            )
         )
 
     def upload(self, params):
@@ -72,15 +82,13 @@ class FactAction(Action):
                 fuel --env 1 {action_name} --upload
         """
         env = Environment(params.env)
-        facts = getattr(env, self.read_method_name)(
+        facts = env.read_fact_info(
             self.action_name,
-            directory=params.dir
+            directory=params.dir,
+            serializer=self.serializer
         )
         env.upload_facts(self.action_name, facts)
-        self.serializer.print_to_output(
-            facts,
-            "{0} facts uploaded.".format(self.action_name)
-        )
+        print("{0} facts were uploaded.".format(self.action_name))
 
     def delete(self, params):
         """Also {action_name} information can be left or
@@ -90,25 +98,25 @@ class FactAction(Action):
         """
         env = Environment(params.env)
         env.delete_facts(self.action_name)
-        self.serializer.print_to_output(
-            {},
-            "{0} facts deleted.".format(self.action_name)
-        )
+        print("{0} facts deleted.".format(self.action_name))
 
     def download(self, params):
         """To download {action_name} information for some environment:
                 fuel --env 1 {action_name} --download
         """
         env = Environment(params.env)
-        env.write_facts_to_dir(
+        dir_name = env.write_facts_to_dir(
             self.action_name,
             env.get_facts(self.action_name, nodes=params.node),
-            directory=params.dir
+            directory=params.dir,
+            serializer=self.serializer
         )
-
-    @property
-    def read_method_name(self):
-        return "read_{0}_info".format(self.action_name)
+        print(
+            "Current {0} info was downloaded to {1}".format(
+                self.action_name,
+                dir_name
+            )
+        )
 
 
 class DeploymentAction(FactAction):

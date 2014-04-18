@@ -19,7 +19,6 @@ Handlers dealing with nodes
 """
 
 from datetime import datetime
-import traceback
 
 import web
 
@@ -36,7 +35,6 @@ from nailgun import objects
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 
 from nailgun.logger import logger
@@ -134,6 +132,7 @@ class NodeCollectionHandler(CollectionHandler):
 
 class NodeAgentHandler(BaseHandler):
 
+    collection = objects.NodeCollection
     validator = NodeValidator
 
     @content_json
@@ -149,14 +148,10 @@ class NodeAgentHandler(BaseHandler):
             data=u'[{0}]'.format(web.data())
         )[0]
 
-        q = db().query(Node)
-        if nd.get("mac"):
-            node = (
-                q.filter_by(mac=nd["mac"]).first()
-                or self.validator.validate_existent_node_mac_update(nd)
-            )
-        else:
-            node = q.get(nd["id"])
+        node = self.collection.single.get_by_mac_or_uid(
+            mac=nd.get("mac"),
+            node_uid=nd.get("id")
+        )
 
         if not node:
             raise self.http(404)
@@ -174,65 +169,7 @@ class NodeAgentHandler(BaseHandler):
         ):
             return {'id': node.id, 'cached': True}
 
-        for key, value in nd.iteritems():
-            if (
-                (key, value) == ("status", "discover")
-                and node.status in ('provisioning', 'error')
-            ):
-                # We don't update provisioning and error back to discover
-                logger.debug(
-                    u"Node {0} has provisioning or error status - "
-                    u"status not updated by agent".format(
-                        node.human_readable_name
-                    )
-                )
-                continue
-            if key == "meta":
-                node.update_meta(value)
-            # don't update node ID
-            elif key != "id":
-                setattr(node, key, value)
-        db().flush()
-        if not node.attributes:
-            node.attributes = NodeAttributes()
-            db().flush()
-        if not node.attributes.volumes:
-            node.attributes.volumes = node.volume_manager.gen_volumes_info()
-            db().flush()
-        if node.status not in ('provisioning', 'deploying'):
-            variants = (
-                "disks" in node.meta and len(node.meta["disks"]) != len(
-                    filter(
-                        lambda d: d["type"] == "disk",
-                        node.attributes.volumes
-                    )
-                ),
-            )
-            if any(variants):
-                try:
-                    node.attributes.volumes = (
-                        node.volume_manager.gen_volumes_info()
-                    )
-                    if node.cluster:
-                        objects.Cluster.add_pending_changes(
-                            node.cluster,
-                            "disks",
-                            node_id=node.id
-                        )
-                except Exception as exc:
-                    msg = (
-                        "Failed to generate volumes info for node '{0}': '{1}'"
-                    ).format(
-                        node.human_readable_name,
-                        str(exc) or "see logs for details"
-                    )
-                    logger.warning(traceback.format_exc())
-                    notifier.notify("error", msg, node_id=node.id)
-
-            db().flush()
-
-        objects.Node.update_interfaces(node)
-
+        self.collection.single.update_by_agent(node, nd)
         return {"id": node.id}
 
 

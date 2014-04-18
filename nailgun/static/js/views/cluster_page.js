@@ -141,13 +141,13 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         deploymentTaskStarted: function() {
             $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).done(_.bind(function() {
-                this.unbindEventsWhileDeploying();
+                // FIXME: hack to prevent "Deploy" button flashing after deployment is finished
+                this.model.set({changes: []}, {silent: true});
                 this.scheduleUpdate();
             }, this));
         },
         deploymentTaskFinished: function() {
             $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).done(_.bind(function() {
-                this.rebindEventsAfterDeployment();
                 app.navbar.refresh();
             }, this));
         },
@@ -157,18 +157,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             if (task.match({status: 'ready'})) {
                 task.destroy();
             }
-        },
-        unbindEventsWhileDeploying: function() {
-            // unbind some events while deploying to make progress bar movement smooth
-            var task = this.model.task({group: 'deployment', status: 'running'});
-            if (task) {
-                task.off('change:status', this.deploymentResult.render, this.deploymentResult);
-                task.off('change:status', this.deploymentControl.render, this.deploymentControl);
-            }
-        },
-        rebindEventsAfterDeployment: function() {
-            // rebind temporarily unbound events
-            _([this.deploymentResult, this.deploymentControl]).invoke('onNewTask', this.model.task({group: 'deployment'}));
         },
         beforeTearDown: function() {
             $(window).off('beforeunload.' + this.eventNamespace);
@@ -205,7 +193,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.deploymentControl = new DeploymentControl(options);
             this.registerSubView(this.deploymentControl);
             this.$('.deployment-control').html(this.deploymentControl.render().el);
-            this.unbindEventsWhileDeploying();
 
             var tabs = {
                 'nodes': NodesTab,
@@ -241,17 +228,9 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         templateHelpers: _.pick(utils, 'urlify', 'linebreaks', 'serializeTabOptions'),
         initialize: function(options) {
             _.defaults(this, options);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
-            this.model.get('tasks').on('remove', this.render, this);
-            this.page.tasks.each(this.bindTaskEvents, this);
-            this.page.tasks.on('add', this.onNewTask, this);
-        },
-        bindTaskEvents: function(task) {
-            return task.match({group: 'deployment'}) || task.match({group: 'release_setup', release: this.model.get('release').id}) ? task.on('change:status', this.render, this) : null;
-        },
-        onNewTask: function(task) {
-            return this.bindTaskEvents(task) && this.render();
+            _.invoke([this.model.get('tasks'), this.page.tasks], 'bindToView', this, [{group: 'deployment'}, {group: 'release_setup', release: this.model.get('release').id}], function(task) {
+                task.on('change:status', this.render, this);
+            });
         },
         render: function() {
             this.$el.html(this.template(_.extend({
@@ -274,27 +253,16 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             _.defaults(this, options);
             this.model.on('change:changes', this.render, this);
             this.model.get('release').on('change:state', this.render, this);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
+            _.invoke([this.model.get('tasks'), this.page.tasks], 'bindToView', this, [{group: 'deployment'}, {group: 'release_setup', release: this.model.get('release').id}], function(task) {
+                task.on('change:status', this.render, this);
+                task.on('change:progress', this.updateProgress, this);
+            });
             this.model.get('nodes').each(this.bindNodeEvents, this);
             this.model.get('nodes').on('resize', this.render, this);
             this.model.get('nodes').on('add', this.onNewNode, this);
-            this.page.tasks.each(this.bindTaskEvents, this);
-            this.page.tasks.on('add', this.onNewTask, this);
-        },
-        bindTaskEvents: function(task) {
-            if (task.match({group: 'deployment'}) || task.match({group: 'release_setup', release: this.model.get('release').id})) {
-                task.on('change:status', this.render, this);
-                task.on('change:progress', this.updateProgress, this);
-                return task;
-            }
-            return null;
         },
         bindNodeEvents: function(node) {
             return node.on('change:pending_addition change:pending_deletion', this.render, this);
-        },
-        onNewTask: function(task) {
-            return this.bindTaskEvents(task) && this.render();
         },
         onNewNode: function(node) {
             return this.bindNodeEvents(node) && this.render();

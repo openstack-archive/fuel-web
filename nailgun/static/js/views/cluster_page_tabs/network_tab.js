@@ -134,12 +134,6 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 this.registerDeferred(task.fetch().always(_.bind(this.scheduleUpdate, this)));
             }
         },
-        bindTaskEvents: function(task) {
-            return task.match({group: ['deployment', 'network']}) ? task.on('change:status', this.render, this) : null;
-        },
-        onNewTask: function(task) {
-            return this.bindTaskEvents(task) && this.render();
-        },
         displayValidationError: function($el, error) {
             $el.addClass('error').parents('.network-attribute').find('.error .help-inline').text(error);
         },
@@ -202,8 +196,10 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             _.defaults(this, options);
             this.networkConfiguration = new models.NetworkConfiguration();
             this.model.on('change:status', this.render, this);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
+            this.model.get('tasks').bindToView(this, [{group: ['deployment', 'network']}], function(task) {
+                task.on('change:status', this.render, this);
+            });
+            // FIXME: we don't need to listen to every task removal
             this.model.get('tasks').on('remove', this.renderVerificationControl, this);
             this.settings = this.model.get('settings');
             var networkDeferred = $.Deferred().resolve();

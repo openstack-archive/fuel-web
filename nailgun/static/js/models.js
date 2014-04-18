@@ -284,6 +284,34 @@ define(['utils', 'deepModel'], function(utils) {
         },
         findTask: function(filters) {
             return this.filterTasks(filters)[0];
+        },
+        bindToView: function(view, filters, bindCallback, addRemoveCallback) {
+            if (!addRemoveCallback) {
+                addRemoveCallback = view.render;
+            }
+            bindCallback = _.bind(bindCallback, view);
+            addRemoveCallback = _.bind(addRemoveCallback, view);
+            function taskMatchesFilters(task) {
+                return _.any(filters, task.match, task);
+            }
+            function onTaskAdd(task) {
+                if (taskMatchesFilters(task)) {
+                    bindCallback(task);
+                    addRemoveCallback();
+                }
+            }
+            function onTaskRemove(task) {
+                if (taskMatchesFilters(task)) {
+                    addRemoveCallback();
+                }
+            }
+            this.each(function(task) {
+                if (taskMatchesFilters(task)) {
+                    bindCallback(task);
+                }
+            });
+            this.on('add', onTaskAdd, view);
+            this.on('remove', onTaskRemove, view);
         }
     });
 
@@ -609,7 +637,6 @@ define(['utils', 'deepModel'], function(utils) {
             if (_.compact(nameserverErrors).length) {
                 networkingParametersErrors.dns_nameservers = nameserverErrors;
             }
-            
             if (!_.isEmpty(networkingParametersErrors)) {
                 errors.networking_parameters = networkingParametersErrors;
             }

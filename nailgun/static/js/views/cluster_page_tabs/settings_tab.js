@@ -236,16 +236,11 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             }
             return this;
         },
-        bindTaskEvents: function(task) {
-            return task.match({group: 'deployment'}) ? task.on('change:status', this.render, this) : null;
-        },
-        onNewTask: function(task) {
-            return this.bindTaskEvents(task) && this.render();
-        },
         initialize: function(options) {
             this.model.on('change:status', this.render, this);
-            this.model.get('tasks').each(this.bindTaskEvents, this);
-            this.model.get('tasks').on('add', this.onNewTask, this);
+            this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
+                task.on('change:status', this.render, this);
+            });
             this.initialSettings = new models.Settings();
             this.settings = this.model.get('settings');
             this.settings.on('invalid', function(model, errors) {

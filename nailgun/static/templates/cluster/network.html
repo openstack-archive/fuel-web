@@ -1,8 +1,9 @@
 <% var disabled = locked ? 'disabled' : '' %>
+<% var networkConfig = network.get('meta') %>
+
 <legend class="networks" data-i18n="network.<%- network.get('name') %>"></legend>
 <div class="<%- network.get('name') %>" data-network-id="<%- network.id %>">
 
-  
   <% if (networkConfig.notation == 'ip_ranges') { %>
     <div class="network-attribute ip-ranges">
       <div class="range-row-header">

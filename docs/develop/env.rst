@@ -244,11 +244,11 @@ Building the Fuel ISO
    https://review.openstack.org/#/c/63732/8 (id:63732, patch:8) set
    FUELLIB_GERRIT_COMMIT?=refs/changes/32/63732/8
 
-Running the FuelWeb Integration Test
-------------------------------------
+Running the Fuel System Tests
+-----------------------------
 
-For fuel-devops configuration info please refer to [Devops
-Guide](http://docs.mirantis.com/fuel-dev/devops.html) article.
+For fuel-devops configuration info please refer to
+`Devops Guide <fuel-dev/devops.html>`_ article.
 
 #. Run the integration test::
 

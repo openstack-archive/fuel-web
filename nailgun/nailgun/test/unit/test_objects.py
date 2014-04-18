@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 from itertools import cycle
 from itertools import ifilter
 
@@ -113,3 +114,24 @@ class TestNodeObject(BaseIntegrationTest):
             objects.Node.remove_from_cluster(node_db)
         except Exception as exc:
             self.fail("Node removing is not idempotent: {0}!".format(exc))
+
+    def test_update_by_agent(self):
+        node_db = self.env.create_node()
+        data = {
+            "status": node_db.status,
+            "meta": copy.deepcopy(node_db.meta),
+            "mac": node_db.mac,
+        }
+
+        # test empty disks handling
+        data["meta"]["disks"] = []
+        objects.Node.update_by_agent(node_db, copy.deepcopy(data))
+        self.assertNotEqual(node_db.meta["disks"], data["meta"]["disks"])
+
+        # test status handling
+        for status in ('provisioning', 'error'):
+            node_db.status = status
+            data["status"] = "discover"
+            objects.Node.update_by_agent(node_db, copy.deepcopy(data))
+
+            self.assertEqual(node_db.status, status)

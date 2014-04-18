@@ -326,6 +326,12 @@ class Node(NailgunObject):
         pending_roles = data.pop("pending_roles", None)
         new_meta = data.pop("meta", None)
 
+        disks_changed = None
+        if new_meta is not None and "disks" in new_meta:
+            new_disks = new_meta["disks"]
+            old_disks = instance.meta["disks"]
+            disks_changed = sorted(new_disks) != sorted(old_disks)
+
         #TODO(enchantner): fix this temporary hack in clients
         if "cluster_id" not in data and "cluster" in data:
             cluster_id = data.pop("cluster", None)
@@ -376,7 +382,8 @@ class Node(NailgunObject):
         if any((
             roles_changed,
             pending_roles_changed,
-            cluster_changed
+            cluster_changed,
+            disks_changed,
         )) and instance.status not in (
             consts.NODE_STATUSES.provisioning,
             consts.NODE_STATUSES.deploying

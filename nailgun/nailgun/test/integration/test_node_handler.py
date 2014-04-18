@@ -20,6 +20,8 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
+from nailgun import objects
+
 
 class TestHandlers(BaseIntegrationTest):
 
@@ -128,3 +130,44 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
+
+    def test_do_not_create_notification_if_disks_meta_is_empty(self):
+        def get_notifications_count(**kwargs):
+            return objects.NotificationCollection.count(
+                objects.NotificationCollection.filter_by(None, **kwargs)
+            )
+
+        # add node to environment: this makes us possible to reach
+        # buggy code
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+            ]
+        )
+
+        # prepare data to put
+        node = self.env.nodes[0]
+        node.meta['disks'] = []
+
+        node = {
+            'id': node.id,
+            'meta': node.meta,
+            'mac': node.mac,
+            'status': node.status
+        }
+
+        # get node info
+        before_count = get_notifications_count(node_id=node['id'])
+
+        # put new info
+        for i in range(5):
+            response = self.app.put(
+                reverse('NodeAgentHandler'),
+                json.dumps(node),
+                headers=self.default_headers,
+            )
+            self.assertEquals(response.status_code, 200)
+
+        # check there's not create notification
+        after_count = get_notifications_count(node_id=node['id'])
+        self.assertEqual(before_count, after_count)

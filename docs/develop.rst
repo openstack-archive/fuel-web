@@ -18,6 +18,6 @@ Development Documentation
    develop/fuel_settings
    develop/puppet_tips
    develop/pxe_deployment
-   develop/i18n
+   develop/internationalization_and_localization
    develop/ostf_contributors_guide
    develop/bonding_in_ui

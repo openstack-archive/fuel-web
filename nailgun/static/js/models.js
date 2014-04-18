@@ -515,6 +515,7 @@ define(['utils', 'deepModel'], function(utils) {
 
     models.NetworkConfiguration = Backbone.Model.extend({
         constructorName: 'NetworkConfiguration',
+        cacheFor: 60 * 1000,
         parse: function(response) {
             response.networks = new models.Networks(response.networks);
             response.networking_parameters = new models.NetworkingParameters(response.networking_parameters);
@@ -643,6 +644,7 @@ define(['utils', 'deepModel'], function(utils) {
             return _.isEmpty(errors) ? null : errors;
         }
     });
+    _.extend(models.NetworkConfiguration.prototype, cacheMixin);
 
     models.LogSource = Backbone.Model.extend({
         constructorName: 'LogSource',

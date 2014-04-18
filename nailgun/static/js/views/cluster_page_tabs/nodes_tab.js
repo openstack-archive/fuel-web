@@ -1504,13 +1504,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     this.render();
                     this.checkForChanges();
                 }, this);
-                this.networkConfiguration = new models.NetworkConfiguration();
-                this.networkConfiguration.url = _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider');
+                this.networkConfiguration = this.model.get('networkConfiguration');
                 this.loading = $.when.apply($, this.nodes.map(function(node) {
                     node.interfaces = new models.Interfaces();
                     node.interfaces.url = _.result(node, 'url') + '/interfaces';
                     return node.interfaces.fetch();
-                }, this).concat(this.networkConfiguration.fetch()))
+                }, this).concat(this.networkConfiguration.fetch({cache: true})))
                     .done(_.bind(function() {
                         this.interfaces = new models.Interfaces(this.nodes.at(0).interfaces.toJSON(), {parse: true});
                         this.interfaces.on('reset add remove change:slaves', this.render, this);

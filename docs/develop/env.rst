@@ -247,8 +247,8 @@ Building the Fuel ISO
 Running the FuelWeb Integration Test
 ------------------------------------
 
-For fuel-devops configuration info please refer to [Devops
-Guide](http://docs.mirantis.com/fuel-dev/devops.html) article.
+For fuel-devops configuration info please refer to
+`Devops Guide <http://docs.mirantis.com/fuel-dev/devops.html>`_ article.
 
 #. Run the integration test::
 

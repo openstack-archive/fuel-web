@@ -101,6 +101,10 @@ def load_alembic_parsers(migrate_parser):
         parser.add_argument('--sql', action='store_true')
         parser.add_argument('revision', nargs='?')
 
+    parser = alembic_parser.add_parser('squash')
+    parser.add_argument('name', help='a name for squashed migration file')
+    parser.add_argument('--drop-original', action='store_true')
+
     parser = alembic_parser.add_parser('stamp')
     parser.add_argument('--sql', action='store_true')
     parser.add_argument('revision')

@@ -206,12 +206,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.model.get('tasks').on('add', this.onNewTask, this);
             this.model.get('tasks').on('remove', this.renderVerificationControl, this);
             this.settings = this.model.get('settings');
-            var networkDeferred = $.Deferred().resolve();
-            if (!this.model.get('networkConfiguration')) {
-                this.model.set({networkConfiguration: new models.NetworkConfiguration()});
-                networkDeferred = this.model.get('networkConfiguration').fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')});
-            }
-            (this.loading = $.when(this.settings.fetch({cache: true}), networkDeferred)).done(_.bind(function() {
+            (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {
                 this.setInitialData();
                 this.render();
             }, this));

@@ -13,6 +13,7 @@
 #    under the License.
 
 import fnmatch
+import logging
 import os
 import re
 import stat
@@ -20,9 +21,11 @@ import tempfile
 
 import fabric.api
 
-from shotgun.logger import logger
 from shotgun.utils import execute
 from shotgun.utils import is_local
+
+
+logger = logging.getLogger(__name__)
 
 
 class CommandOut(object):
@@ -229,8 +232,10 @@ class Postgres(Driver):
                          file=temp, dbname=self.dbname))
         execute("mkdir -p %s" % self.target_path)
         dump_basename = "%s_%s.sql" % (self.dbhost, self.dbname)
-        execute("mv -f %s %s" %
-                (temp, os.path.join(self.target_path, dump_basename)))
+
+        execute('mv -f {0} {1}'.format(
+            temp,
+            os.path.join(self.target_path, dump_basename)))
 
 
 class Command(Driver):

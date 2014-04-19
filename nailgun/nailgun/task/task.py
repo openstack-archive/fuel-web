@@ -651,13 +651,13 @@ class DumpTask(object):
 
     @classmethod
     def execute(cls, task):
-        logger.debug("DumpTask: task=%s" % task.uuid)
+        logger.debug("DumpTask: task={0}".format(task.uuid))
         message = {
             'method': 'dump_environment',
             'respond_to': 'dump_environment_resp',
             'args': {
                 'task_uuid': task.uuid,
-                'lastdump': settings.DUMP["lastdump"]
+                'settings': cls.conf()
             }
         }
         task.cache = message
@@ -714,13 +714,3 @@ class GenerateCapacityLogTask(object):
         task.progress = '100'
         db().add(task)
         db().commit()
-
-
-def dump():
-    """Entry point dump script."""
-    from shotgun.config import Config as ShotgunConfig
-    from shotgun.manager import Manager as ShotgunManager
-    logger.debug("Starting snapshot procedure")
-    conf = ShotgunConfig(DumpTask.conf())
-    manager = ShotgunManager(conf)
-    print(manager.snapshot())

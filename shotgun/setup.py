@@ -44,7 +44,7 @@ if __name__ == "__main__":
         name=name,
         version=version,
         description='Shotgun package',
-        long_description="""Shotgun package""",
+        long_description="""Shotgun is diagnostic snapshot generator""",
         classifiers=[
             "Development Status :: 4 - Beta",
             "Programming Language :: Python",
@@ -57,4 +57,6 @@ if __name__ == "__main__":
         zip_safe=False,
         install_requires=requires,
         include_package_data=True,
-    )
+        entry_points={
+            'console_scripts': [
+                'shotgun = shotgun.cli:main']})

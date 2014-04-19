@@ -12,11 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import os
 
 from shotgun.driver import Driver
-from shotgun.logger import logger
 from shotgun.utils import execute
+
+
+logger = logging.getLogger(__name__)
 
 
 class Manager(object):

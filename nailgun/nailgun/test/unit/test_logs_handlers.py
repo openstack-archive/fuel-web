@@ -292,7 +292,7 @@ class TestLogs(BaseIntegrationTest):
             'respond_to': 'dump_environment_resp',
             'args': {
                 'task_uuid': task.uuid,
-                'lastdump': 'LASTDUMP'
+                'settings': DumpTask.conf()
             }
         }
         args, kwargs = nailgun.task.task.rpc.cast.call_args

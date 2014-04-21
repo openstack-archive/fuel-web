@@ -1,4 +1,3 @@
-
 {
     "en-US": {
         "translation": {
@@ -1039,6 +1038,986 @@
                     "title": "删除环境",
                     "incomplete_actions_text": "有动作未完成，删除环境可能失败，并导致状态不混乱。",
                     "node_returned_text": "每个节点都将被删除并放回未非配节点池。"
+                }
+            }
+        }
+    },
+    "ja-JP": {
+        "translation": {
+            "language": "JA",
+            "common": {
+                "title": "Fuel ダッシュボード",
+                "select_all_button": "全部選択",
+                "load_defaults_button": "ディフォルトロード",
+                "cancel_changes_button": "変更取り消し",
+                "apply_button": "適用",
+                "rename_button": "リネーム",
+                "delete_button": "削除",
+                "stop_button": "停止",
+                "reset_button": "リセット",
+                "save_settings_button": "設定保存",
+                "cancel_button": "取り消し",
+                "apply_changes_button": "変更適用",
+                "not_available": "N/A",
+                "size": {
+                    "byte": "byte",
+                    "byte_plural": "bytes",
+                    "kb": "KB",
+                    "mb": "MB",
+                    "gb": "GB",
+                    "tb": "TB"
+                },
+                "node":"__count__ ノード",
+                "node_plural":"__count__ ノード",
+                "important": "大切",
+                "success": "成功",
+                "error": "エラー",
+                "see_logs": "ログを参照してください",
+                "copyright": "著作権 © 2013-2014 Mirantis. 無断複写·転載禁じ"
+            },
+            "node_details": {
+                "cpu": "CPU",
+                "hdd": "HDD",
+                "ram": "RAM",
+                "system": "システム",
+                "memory": "メモリ",
+                "disks": "ディスク",
+                "interfaces": "インターフェース"
+            },
+            "cluster": {
+                "status": {
+                    "new": "新しい",
+                    "deployment": "デプロイしています",
+                    "operational": "使用可能",
+                    "error": "エラー",
+                    "remove": "削除しています",
+                    "stopped": "停止"
+                },
+                "mode": {
+                    "ha_compact": "高可用性を備えた複数ノード",
+                    "multinode": "複数ノード"
+                }
+            },
+            "network": {
+                "fuelweb_admin": "管理 (PXE)",
+                "fixed": "バーチャルマシン (固定)",
+                "public": "パブリック",
+                "floating": "フローティング",
+                "management": "運営",
+                "storage": "ストレージ"
+            },
+            "navbar": {
+                "environments": "環境",
+                "releases": "リリース",
+                "support": "サポート",
+                "stats": {
+                    "total": ["トータル", "ノード"],
+                    "total_plural": ["トータル", "複数ノード"],
+                    "unallocated": ["未割り当て", "ノード"],
+                    "unallocated_plural": ["未割り当て", "複数ノード"]
+                }
+            },
+            "breadcrumbs": {
+                "home": "ホーム",
+                "environments": "環境",
+                "releases": "リリース",
+                "support": "サポート",
+                "notifications": "通知",
+                "capacity": "容量"
+            },
+            "notifications_page": {
+                "title": "通知"
+            },
+            "notifications_popover": {
+                "view_all_button": "全部表示",
+                "no_notifications_text": "表示する通知はありません。"
+            },
+            "support_page": {
+                "title": "サポート",
+                "contact_text": "問題を報告するか、単に改善を提案する必要がある場合は、下のボタンをクリックします.できるだけ早くご連絡いたします。",
+                "irc_text": "ご質問がある場合は、IRCチャネルで、開発者に尋ねることができます。",
+                "log_text": "いくつかのバグやエラーが発生した場合は、導入と操作ログとサポートチームを提供する必要があります。下のボタンをクリックすることにより、一度にすべてをダウンロードすることができます。",
+                "contact_support": "お問い合わせ·サポート",
+                "register_fuel_title": "Fuelに登録",
+                "register_fuel_content": "登録すると、問題やMirantis製品の新しいバージョンに関する重要な通知を受け取ることが保証されます。さらに、次の30日間、基本的なサポート·サービスを得えます！",
+                "download_diagnostic_snapshot_text": "診断スナップショットをダウンロード",
+                "gen_logs_snapshot_text": "ログスナップショットを生成しています...",
+                "loading": "ロード中...",
+                "gen_diagnostic_snapshot_text": "診断スナップショットを生成します",
+                "diagnostic_snapshot": "診断スナップショット",
+                "capacity_audit": "容量監査",
+                "capacity_audit_text": "良いリソースを管理するため、とのOpenStackの役割が展開されているかを調べるためには、このレポートを実行することができます。",
+                "view_capacity_audit": "容量監査を見る"
+            },
+            "release_page": {
+                "title": "リリース",
+                "release_name": "OpenStack リリース",
+                "release_version": "バージョン",
+                "release_status": "ステータス",
+                "release_actions": "アクション",
+                "no_releases_message": "利用可能なリリースはありません。",
+                "release": {
+                    "configure_button": "設定",
+                    "active": "アクティブ",
+                    "error": "エラー",
+                    "not_available": "利用不可",
+                    "download_progress": "ダウンロード中"
+                }
+            },
+            "clusters_page": {
+                "title": "OpenStack環境",
+                "create_cluster_text": "新OpenStack環境生成",
+                "cluster_hardware_nodes": "ノード",
+                "cluster_hardware_cpu": "CPU (cores)",
+                "cluster_hardware_hdd": "HDD",
+                "cluster_hardware_ram": "RAM"
+            },
+            "cluster_page": {
+                "tabs": {
+                    "nodes": "ノード",
+                    "network": "ネットワーク",
+                    "settings": "設定",
+                    "logs": "ログ",
+                    "healthcheck": "ヘルスチェック",
+                    "actions": "アクション"
+                },
+                "nodes_tab": {
+                    "roles": "役割",
+                    "hardware_info": "ハードウェア情報",
+                    "roles_and_hardware_info": "役割とハードウェア情報",
+                    "assign_roles": "役割割り当て",
+                    "configure_interfaces": {
+                        "title": "__name__上インターフェイス設定",
+                        "title_plural": "__count__ nodes上インターフェイス設定",
+                        "bond_button": "ボンドインターフェイス",
+                        "unbond_button": "ボンドインターフェイス取り消し",
+                        "bond_speed_warning": "異なる速度のボンドインターフェイスを生成することはお勧めしません。",
+                        "speed": "スピード",
+                        "bonding_mode": "モード",
+                        "bonding_modes": {
+                            "active-backup": "アクティブなバックアップ",
+                            "balance-slb": "バランス SLB",
+                            "lacp-balance-tcp": "LACP バランス TCP"
+                        },
+                        "drag_and_drop_description": "論理ネットワーク間のインタフェースをドラッグアンドドロップすることができます。",
+                        "validation": {
+                            "too_many_untagged_networks": "タグなしのネットワークが同じインターフェイスに割り当てることはできません。"
+                        }
+                    },
+                    "configure_disks": {
+                        "title": "__name__上ディスク設定",
+                        "title_plural": "__count__ nodes上ディスク設定",
+                        "disk_information": "ディスク情報",
+                        "volume_groups": "ボリュームグループ",
+                        "total_space": "総容量",
+                        "unallocated": "未割当量",
+                        "use_all_allowed_space": "全許可量を使用"
+                    },
+                    "node_management_panel": {
+                        "group_by": "グループ毎に",
+                        "filter_by": "フィルタ毎に",
+                        "filter_placeholder": "ノード名/mac",
+                        "edit_roles_button": "役割変更",
+                        "add_nodes_button": "ノードの追加",
+                        "cant_configure_disks": "ディスク設定ができません。",
+                        "cant_configure_interfaces": "インターフェイス設定ができません。",
+                        "disks_configuration_warning": "同一のディスク容量を持つノードのみ同じアクションで一緒に設定することができます。",
+                        "interfaces_configuration_warning": "同一のネットワークインターフェース数を持つ未展開ノードのみ同じアクションで一緒に設定することができます。"
+                    },
+                    "node": {
+                        "status": {
+                            "discovered": "発見状",
+                            "offline": "オフライン状",
+                            "error": "エラー",
+                            "view_logs": "ログを見る",
+                            "pending_addition": "追加待ち",
+                            "pending_deletion": "削除待ち",
+                            "ready": "使用可能",
+                            "installing_os": "__os__ インストール中",
+                            "os_is_installed": "__os__ インストール終了",
+                            "installing_openstack": "OpenStack インストール中",
+                            "discard_addition": "追加取消",
+                            "discard_deletion": "削除取消",
+                            "discard_role_changes": "役割変更取消"
+                        },
+                        "edit_name": "名変更",
+                        "unallocated": "割り当てられていない"
+                    },
+                    "back_to_nodes_button": "ノードリストに戻る",
+                    "unallocated_nodes": "割り当てられてないノード",
+                    "no_selected_nodes": "変更必要選択されたノードはありません。",
+                    "disk_configuration_reset_warning": "ディスク設定は、役割変更後のデフォルトにリセットされます。",
+                    "no_nodes_in_environment": "ノードを追加するには、[追加]ノードのオプションを選択し、割り当てたいノードを選択し、役割を割り当てます。",
+                    "no_nodes_in_fuel": "この操作は一つ以上の未割り当てのノードのプールが必要とします。プールに追加するには、ネットワーク（別名PXEブート）から起動するようにノードを設定します。Fuelは自動的にノードをプロビジョニングし見つけます。",
+                    "one_controller_restriction": "HAがないマルチノードには唯一つのコントローラを与えます。",
+                    "incompatible_roles_warning" : "この役割は、すでに選択された他の役割と組み合わせることはできません。",
+                    "new_controllers_in_ha_mode_restriction": "新しいコントローラは運用中の環境に追加できません。",
+                    "no_filtered_nodes_warning": "フィルタ値に一致するノードはありません。",
+                    "filtered_nodes_count":"__count__ nodeの__filteredNodesCount__",
+                    "filtered_nodes_count_plural": "__count__ nodesの__filteredNodesCount__"
+                },
+                "settings_tab": {
+                    "title": "OpenStack 設定"
+                },
+                "actions_tab": {
+                    "title": "アクション",
+                    "rename_environment": "環境の名前の変更",
+                    "delete_environment": "環境の削除",
+                    "alert_delete": "各ノードをクリーンアップし、未割り当てノードのプールに戻します。",
+                    "reset_environment": "環境のしなおし",
+                    "reset_environment_description": "環境の設定を変更して再デプロイすることができます。",
+                    "reset_environment_warning": "この操作は、既存の環境を削除、すべての既存のノードをデプロイ前の状態に戻します。",
+                    "reset_disabled_for_new_cluster": "まだデプロイされていない環境はリセットできません。",
+                    "repeated_reset_disabled": "現環境はすでにリセット中です。",
+                    "reset_disabled_for_deploying_cluster": "デプロイ中の環境はリセットできません。デプロイプロセスを停止するには[デプロイ停止]を使ってください。"
+                },
+                "network_tab": {
+                    "title": "ネットワーク 設定",
+                    "flatdhcp_manager": "FlatDHCP Manager",
+                    "vlan_manager": "VLAN Manager",
+                    "verify_networks_button": "ネットワーク確認",
+                    "network_verification": "ネットワーク確認",
+                    "neutron_segmentation": "__segment_type__ 分割によるNeutron",
+                    "untagged": "タグなし",
+                    "range_start": "始め",
+                    "range_end": "終わり",
+                    "verify_networks": {
+                        "step_0": "ネットワーク検証は4段階で行われます。",
+                        "step_1": "1. すべてのノードはテストフレーム待ちを始めます。",
+                        "step_2": "2. すべてのノードが802.1Qタグ付きUDPフレームを送信します。",
+                        "step_3": "3. ノードリスナーは、他のノードからのテストフレームを登録します。",
+                        "step_4": "4. すべてのポートにDHCP discover messagesを送信します。",
+                        "success_alert": "検証が成功しました。ネットワークは正しく設定されてします。",
+                        "fail_alert": "検証が失敗しました。",
+                        "node_name": "ノード名",
+                        "node_mac_address": "ノードのMACアドレス",
+                        "node_interface": "ノードインタフェース",
+                        "expected_vlan": "期待されているVLAN（受信されていない）"
+                    },
+                    "network_parameters": {
+                        "ip_range": "IP Range",
+                        "gateway": "Gateway",
+                        "cidr": "CIDR",
+                        "use_vlan_tagging": "タグ付きVLAN使用"
+                    },
+                    "networking_parameters": {
+                        "fixed_cidr": "固定ネットワークCIDR",
+                        "fixed_size": "固定ネットワークのサイズ",
+                        "fixed_amount": "固定ネットワークの数",
+                        "fixed_vlan_range": "固定VLAN ID範囲",
+                        "use_vlan_tagging_fixed": "固定ネットワークにタグ付きVLAN使用",
+                        "nova_configuration": "Nova-network 設定",
+                        "dns_servers": "DNSサーバー",
+                        "l2_configuration": "Neutron L2 設定",
+                        "l3_configuration": "Neutron L3 設定",
+                        "gre_id_range": "Tunnel ID 範囲",
+                        "vlan_range": "VLAN ID 範囲",
+                        "base_mac": "ベースMACアドレス",
+                        "internal_cidr": "内部ネットワークCIDR",
+                        "internal_gateway": "内部ネットワークゲートウェイ",
+                        "floating_ranges": "フローティングIP範囲"
+                    },
+                    "validation": {
+                        "large_network": "ネットワークが大きすぎます。",
+                        "small_network": "ネットワークが小さすぎます。",
+                        "invalid_cidr": "CIDRが不当です。",
+                        "invalid_ip_start": "IP範囲始めが不当です。",
+                        "invalid_ip_end": "IP範囲末端が不当です。",
+                        "invalid_ip_range": "IP範囲の始めがIP範囲端よりも大きです。",
+                        "empty_ip_range": "少なくとも1つのIP範囲を指定してください。",
+                        "invalid_vlan": "VLAN IDが不当です。",
+                        "forbidden_vlan": "このVLAN IDは、他のネットワークによって使われています。別のIDを選択してください。",
+                        "invalid_netmask": "ネットマスクが不当です。",
+                        "invalid_gateway": "ゲートウェイが不当です。",
+                        "invalid_amount": "ネットワーク量が不当です。",
+                        "gateway_is_out_of_ip_range": "ゲートウェイアドレスはIPアドレスの範囲外にあります。",
+                        "gateway_is_out_of_internal_ip_range": "ゲートウェイアドレスは、内部ネットワークのIPアドレスの範囲外にあります。",
+                        "need_more_vlan": "定義されたネットワークの数は、利用可能なよりも多くのVLAN IDを必要とします。 VLAN IDの範囲フィールドを確認してください。",
+                        "invalid_nameserver": "ネームサーバが不当です。",
+                        "invalid_id_start": "ID範囲始めが不当です。",
+                        "invalid_id_end": "ID範囲端が不当です。",
+                        "invalid_id_range": "ID範囲の始めがID範囲端よりも大きです。",
+                        "vlan_intersection": "他のネットワークのVLANのIDとの交点があります。別のIDの範囲を設定してください。",
+                        "invalid_mac": "MACアドレスが無効です。",
+                        "ip_start_is_out_of_ip_range": "始まるIPはIP範囲外にあります。",
+                        "ip_end_is_out_of_ip_range": "終わるIPはIP範囲外にあります。"
+                    }
+                },
+                "logs_tab": {
+                    "title": "ログ",
+                    "logs": "ログ",
+                    "node": "ノード",
+                    "source": "ソース",
+                    "min_level": "最小レベル",
+                    "show": "表示",
+                    "log_alert": "ログを取得することができません。",
+                    "source_alert": "ログソースを取得することができません。",
+                    "date": "日付",
+                    "message": "メッセージ",
+                    "bottom_text": "以前のいくつかの行がスキップされました。多くの行を表示します。",
+                    "all_logs": "すべて",
+                    "no_log_text": "現在のフィルタに一致するログエントリがありません。"
+                },
+                "healthcheck_tab": {
+                    "title": "OpenStack ヘルスチェック",
+                    "run_tests_button": "テスト実行",
+                    "stop_tests_button": "テスト停止",
+                    "deploy_alert": "テストを実行する前に、OpenStackの環境をデプロイしてください。",
+                    "not_available_alert": "OSTFサーバが利用できません。",
+                    "expected_duration": "期待時間",
+                    "actual_duration": "実際期間",
+                    "status": "ステータス"
+                },
+                "discard_changes": "変更取消",
+                "deploy_changes": "変更デプロイ",
+                "redhat_setup": "ダウンロード中",
+                "reset_environment": "リセット中",
+                "stop_deployment": "停止中",
+                "stop_deployment_button": "デプロイ停止",
+                "deployment_mode": "環境デプロイモード:",
+                "openstack_release": "OpenStack リリース:",
+                "environment_status": "環境の状況:",
+                "cluster_was_modified_from_cli" : "この環境のいくつかのデプロイパラメータは、FuleCLIから変更されてます。FuleCLIからの変更は、ブラウザから行われた設定よりも優先されます。注意して行ってください。",
+                "reconfigure_redhat_account": "You can __opt1__ reconfigure your Red Hat account __opt2__ or "
+            },
+            "capacity_page": {
+                "title": "容量監査",
+                "license_usage": "ライセンス使用状況レポート",
+                "fuel_version": "Fuel バージョン",
+                "fuel_uuid": "Fuel UUID",
+                "env_name": "環境名",
+                "node_count": "ノード数",
+                "total_number_alloc_nodes": "割り当てられたノードの総数",
+                "total_number_unalloc_nodes": "未割り当てノードの総数",
+                "node_role": "ノードの役割(s)",
+                "nodes_with_config": "設定されたノードの数",
+                "download_report": "レポートをダウンロード",
+                "loading": "読み込んでいます..."
+            },
+            "dialog": {
+                "create_cluster_wizard": {
+                    "title": "新しいOpenStackの環境を作成します。",
+                    "prev": "前に",
+                    "next": "次に",
+                    "create": "作成",
+                    "name_release": {
+                        "title": "名前とリリース",
+                        "name": "名前",
+                        "release_label": "OpenStack リリース",
+                        "red_hat_info": "RedHatのOpenStackをデプロイするには、FuelマスターノードでキャッシュされるためまずRHOSとRHELの両方をダウンロードする必要があります。もしリリースページからこれを行うか、単にサブスクリプションの種類を選択し、以下の証明情報を入力することができます。 RHELとRHOSは自動的にダウンロードして、環境を作成した後にキャッシュされます。"
+                    },
+                    "mode": {
+                        "title": "デプロイモード"
+                    },
+                    "compute": {
+                        "title": "Compute",
+                        "kvm_description": "ハードウェア上でのOpenStack実行する場合、ハイパーバイザとして、このタイプを選択してください。",
+                        "qemu_description": "仮想ホスト上でのOpenStack実行する場合、ハイパーバイザとして、このタイプを選択してください。"
+                    },
+                    "network": {
+                        "title": "ネットワーク",
+                        "alert": "Neutronは__releaseName__ではサポートされていません。",
+                        "nova_network": "Nova-Network",
+                        "neutr_gre": "GREセグメンテーションを伴うNeutron",
+                        "neutr_vlan": "VLANセグメンテーションを伴うNeutron"
+                    },
+                    "storage": {
+                        "title": "ストレージバックエンド",
+                        "alert": "Cephは__releaseName__ではサポートされていません。",
+                        "default": "デフォルト",
+                        "ceph": "Ceph",
+                        "cinder": "Cinder",
+                        "cinder_help": "デフォルトで、Cinderブロック·ストレージは、iSCSI経由で共有されるLVMボリュームを使用しています。 Cephバックエンドは2つ以上のCeph-OSDノードとKVMハイパーバイザーを必要とします。",
+                        "glance": "Glance",
+                        "glance_help": "デフォルトで、Glanceイメージサービスは、HAデプロイモードではSwiftオブジェクトストレージを使用し、HAがないマルチノードモードではコントローラーノード上のローカルストレージを使用しています。 Cephバックエンドは2つ以上のCeph-OSDノードを必要とします。"
+                    },
+                    "additional": {
+                        "title": "追加サービス",
+                        "release_alert": "追加サービスは __releaseName__ではサポートされていません。",
+                        "network_mode_alert": "Muranoは現在のネットワークモードではサポートされていません。 Neutronネットワークを選択してください。",
+                        "install_sahara": "Saharaインストール",
+                        "install_sahara_description": "Saharaは、様々なベンダーのディストリビューションを活用するOpenStack上Hadoopクラスターのオンデマンドプロビジョニングをできるようにします。",
+                        "install_murano": "Muranoインストール",
+                        "install_murano_description": "Active Directory、IIS、ApacheやMicrosoftのSQLとASP.NETなどのWindowsまたはLinuxベースのデータセンター·サービスをOpenStack上で可能にします。",
+                        "install_ceilometer": "Ceilometerインストール(OpenStack Telemetry)",
+                        "install_ceilometer_description": "CeilometerはOpenStackのクラウドの計量と監視を提供します。"
+                    },
+                    "ready": {
+                        "title": "終了",
+                        "env_select_deploy": "ご環境は今デプロイの準備ができている！[作成]ボタンをクリックした後、Fuel中で追加設定を選択するか、",
+                        "or_make_config_choice": "または追加設定を決めることができます。",
+                        "console": "コンソール.",
+                        "deploy": "変更をデプロイする",
+                        "env": "環境"
+                    }
+                },
+                "dismiss_settings": {
+                    "title": "確認",
+                    "important": "重要",
+                    "stay_button": "ページに留まリます。",
+                    "leave_button": "変更を破棄してページを去リます。",
+                    "default_message": "設定が変更されたが保存されませんでした。変更を破棄し、ページを去リたいですか？",
+                    "verify_message": "ネットワーク検証が進行中です。変更を保存またはタブに留まる必要があります。"
+                },
+                "display_changes": {
+                    "title": "変更をデプロイする",
+                    "added_node": "__nodesCount__ノードを追加しました。",
+                    "added_node_plural": "__nodesCount__複数ノードを追加しました。",
+                    "deleted_node": "__nodesCount__ノードを削除しました。",
+                    "deleted_node_plural":  "__nodesCount__複数ノードを削除しました。",
+                    "reconfigured_node": "__nodesCount__ノードの役割を再設定しました。",
+                    "reconfigured_node_plural": "__nodesCount__複数ノードの役割を再設定しました。",
+                    "settings_changes": {
+                        "attrs": "OpenStack 設定",
+                        "networks": "ネットワーク 設定",
+                        "disks": "以下のノードのディスク設定："
+                    },
+                    "warnings": {
+                        "controller": "環境は、__nodeSize__コントローラノードを持っている必要があります。",
+                        "controller_plural": "環境は、__nodeSize__複数コントローラノードを持っている必要があります。",
+                        "compute": "Computeノードは、デプロイのために進まれています。"
+                    },
+                    "changed_task_name": "__item__を変更しました。",
+                    "changed": "変更しました。",
+                    "deleted": "削除しました。",
+                    "deploy": "デプロイしました。",
+                    "redeployment_needed": "一部のノードは、デプロイ後のエラーになりました。再デプロイが必要です。"
+                },
+                "show_node": {
+                    "manufacturer_label": "メーカー",
+                    "mac_address_label": "MACアドレス",
+                    "fqdn_label": "FQDN",
+                    "ssh_console": "SSHコンソール",
+                    "network_configuration_button": "インターフェイス設定",
+                    "disk_configuration_button": "ディスク設定",
+                    "close_button": "終了",
+                    "total": "合計",
+                    "bytes": "バイト",
+                    "drive": "ドライブ",
+                    "drive_plural": "複数ドライブ"
+                },
+                "rhel_license": {
+                    "title": "Red Hat Enterprise Linux アカウントの設定",
+                    "description": "RedHatのOpenStackをデプロイするには、FuelマスターノードでキャッシュされるためまずRHOSとRHELの両方をダウンロードする必要があります。もしリリースページからこれを行うか、単にサブスクリプションの種類を選択し、以下の証明情報を入力することができます。 RHELとRHOSは自動的にダウンロードして、環境を作成した後にキャッシュされます。",
+                    "rhn_sattelite": "RHN サテライト",
+                    "redhat_username": "Red Hat ユーザ名",
+                    "redhat_password": "Red Hat パスワード",
+                    "satellite_server_hostname": "サテライトサーバーのホスト名",
+                    "activation_key": "アクティベーションキー"
+                },
+                "discard_changes": {
+                    "title": "変更取消",
+                    "discard_button": "破棄",
+                    "alert_text": "これらの変更を破棄してもよろしいですか？",
+                    "cant_discard": "ノードの変更を破棄することはできません。"
+                },
+                "remove_cluster": {
+                    "title": "環境の削除",
+                    "incomplete_actions_text": "未完了のアクションがあります。環境を削除しても、失敗して、不整合な状態につながる可能性があります。",
+                    "node_returned_text": "各ノードは、クリーンアップされて未割り当てノードのプールに戻されます。"
+                },
+                "stop_deployment": {
+                    "title": "デプロイ停止",
+                    "text": "デプロイを停止してもよろしいですか？ノードのデプロイ進行状況が失われ、それらのノードは、デプロイ前の状態にリセットされます。",
+                    "provisioning_warning": "デプロイを停止してもよろしいですか？まだプロビジョニングされていないノード上の任意の進行状況が失われ、それらのノードは、デプロイ前の状態にリセットされます。"
+                },
+                "reset_environment": {
+                    "title": "環境を元に戻す",
+                    "text": "この環境をリセットしてもよろしいですか？環境内のすべてのノードが削除され、デプロイ前の状態に戻ります。"
+                },
+                "error_occured": {
+                    "alert_text": "サーバーエラーが発生しました。管理者に連絡してください。"
+                }
+            }
+        }
+    },
+    "ko-KR": {
+        "translation": {
+            "language": "KO",
+            "common": {
+                "title": "Fuel 대시보드",
+                "select_all_button": "모두선택",
+                "load_defaults_button": "초기설정로드",
+                "cancel_changes_button": "변경취소",
+                "apply_button": "적용",
+                "rename_button": "개명",
+                "delete_button": "삭제",
+                "stop_button": "중지",
+                "reset_button": "재설정",
+                "save_settings_button": "설정저장",
+                "cancel_button": "취소",
+                "apply_changes_button": "변경적용",
+                "not_available": "N/A",
+                "size": {
+                    "byte": "byte",
+                    "byte_plural": "bytes",
+                    "kb": "KB",
+                    "mb": "MB",
+                    "gb": "GB",
+                    "tb": "TB"
+                },
+                "node":"__count__ 노드",
+                "node_plural":"__count__ 노드",
+                "important": "중요",
+                "success": "성공",
+                "error": "오류",
+                "see_logs": "로그를 참조하십시오",
+                "copyright": "저작권 © 2013-2014 Mirantis. 판권소유"
+            },
+            "node_details": {
+                "cpu": "CPU",
+                "hdd": "HDD",
+                "ram": "RAM",
+                "system": "시스템",
+                "memory": "메모리",
+                "disks": "디스크",
+                "interfaces": "인터페이스"
+            },
+            "cluster": {
+                "status": {
+                    "new": "새로운",
+                    "deployment": "배치중",
+                    "operational": "동작중",
+                    "error": "오류",
+                    "remove": "삭제중",
+                    "stopped": "중지"
+                },
+                "mode": {
+                    "ha_compact": "고가용성(HA) 다중노드",
+                    "multinode": "다중노드"
+                }
+            },
+            "network": {
+                "fuelweb_admin": "관리 Admin (PXE)",
+                "fixed": "VM (고정)",
+                "public": "공공",
+                "floating": "부동",
+                "management": "운영",
+                "storage": "저장"
+            },
+            "navbar": {
+                "environments": "환경",
+                "releases": "출시",
+                "support": "지원",
+                "stats": {
+                    "total": ["총", "노드"],
+                    "total_plural": ["총", "다수노드"],
+                    "unallocated": ["할당되지 않은", "노드"],
+                    "unallocated_plural": ["할당되지 않은", "다수노드"]
+                }
+            },
+            "breadcrumbs": {
+                "home": "홈",
+                "environments": "환경",
+                "releases": "출시",
+                "support": "지원",
+                "notifications": "알림",
+                "capacity": "용량"
+            },
+            "notifications_page": {
+                "title": "알림"
+            },
+            "notifications_popover": {
+                "view_all_button": "전체 보기",
+                "no_notifications_text": "표시할 알림​​이 없습니다"
+            },
+            "support_page": {
+                "title": "지원",
+                "contact_text": "문제를 보고하거나 개선을 제안할 필요가 있는 경우, 아래 버튼을 클릭하십시오. 가능한 빨리 응답할것입니다.",
+                "irc_text": "질문이있는 경우,IRC채널에서 개발자들과 이야기할수있습니다",
+                "log_text": "버그나 오류가 발생한 경우, 배치와운영로그를 지원팀에 제공할수있습니다. 아래버튼을 클릭함으로서 한번에 모두를 다운로드할수있습니다.",
+                "contact_support": "지원 문의",
+                "register_fuel_title": "Fuel 등록",
+                "register_fuel_content": "등록은 문제와 Mirantis 제품의 새로운 버전에 대한 중요한 알림을 받을 수 있도록합니다. 또한, 다음 30일동안 기본적인 지원 서비스를 받을기회를 얻을 수 있습니다!",
+                "download_diagnostic_snapshot_text": "진단 스냅샷을 다운로드",
+                "gen_logs_snapshot_text": "로그 스냅샷 생성중...",
+                "loading": "로딩...",
+                "gen_diagnostic_snapshot_text": "진단 스냅샷을 생성",
+                "diagnostic_snapshot": "진단 스냅샷",
+                "capacity_audit": "용량 감사",
+                "capacity_audit_text": "자원을 더 잘 관리하기위해, 전반적인 환경에서 어떠한 OpenStack 역할이 알맞게 사용되어져왔는가를 알아내기위해  이 보고서를 실행할 수 있습니다.",
+                "view_capacity_audit": "용량 감사 보기"
+            },
+            "release_page": {
+                "title": "출시",
+                "release_name": "OpenStack 출시",
+                "release_version": "버젼",
+                "release_status": "상태",
+                "release_actions": "작업",
+                "no_releases_message": "사용 가능한 출시가 없습니다.",
+                "release": {
+                    "configure_button": "설정",
+                    "active": "유효한",
+                    "error": "오류",
+                    "not_available": "사용할 수 없음",
+                    "download_progress": "다운로드중"
+                }
+            },
+            "clusters_page": {
+                "title": "OpenStack 환경",
+                "create_cluster_text": "새로운 OpenStack 환경",
+                "cluster_hardware_nodes": "노드",
+                "cluster_hardware_cpu": "CPU (cores)",
+                "cluster_hardware_hdd": "HDD",
+                "cluster_hardware_ram": "RAM"
+            },
+            "cluster_page": {
+                "tabs": {
+                    "nodes": "노드",
+                    "network": "네트워크",
+                    "settings": "설정",
+                    "logs": "로그",
+                    "healthcheck": "건강체크",
+                    "actions": "작업"
+                },
+                "nodes_tab": {
+                    "roles": "역할",
+                    "hardware_info": "하드웨워 정보",
+                    "roles_and_hardware_info": "역할 및 하드웨어 정보",
+                    "assign_roles": "역할 지정",
+                    "configure_interfaces": {
+                        "title": "__name__ 에 인터페이스 설정",
+                        "title_plural": "__count__ nodes 에 인터페이스 설정",
+                        "bond_button": "인터페이스를 묶음",
+                        "unbond_button": "묶인인터페이스를 풀음",
+                        "bond_speed_warning": "서로 다른 속도의 인터페이스를 묶지않는 것이 좋습니다",
+                        "speed": "속도",
+                        "bonding_mode": "결합방식",
+                        "bonding_modes": {
+                            "active-backup": "활성 백업",
+                            "balance-slb": "균형 SLB",
+                            "lacp-balance-tcp": "LACP 균형 TCP"
+                        },
+                        "drag_and_drop_description": "인터페이스 사이에 논리네트워크를 드래그하고 드랍할 수 있습니다",
+                        "validation": {
+                            "too_many_untagged_networks": "태그없는 네트워크는 동일한 인터페이스에 할당될 수 없습니다"
+                        }
+                    },
+                    "configure_disks": {
+                        "title": "__name__에 디스크 설정",
+                        "title_plural": "__count__ nodes 에 디스크 설정",
+                        "disk_information": "디스크 정보",
+                        "volume_groups": "볼륨 그룹",
+                        "total_space": "전체 공간",
+                        "unallocated": "할당되지 않은",
+                        "use_all_allowed_space": "모두 허용된 공간 사용"
+                    },
+                    "node_management_panel": {
+                        "group_by": "그룹으로",
+                        "filter_by": "필터로",
+                        "filter_placeholder": "노드 이름/MAC",
+                        "edit_roles_button": "역할 편집",
+                        "add_nodes_button": "노드 추가하기",
+                        "cant_configure_disks": "디스크를 설정할 수 없습니다",
+                        "cant_configure_interfaces": "인터페이스를 설정할 수 없습니다",
+                        "disks_configuration_warning": "동일한 디스크 용량을 가진 노드만 동일한 동작에서 설정할 수 있습니다",
+                        "interfaces_configuration_warning": "동일한 네트워크 인터페이스 개수를 가진 아직 배치되지않은 노드들만 동일한 동작에서 설정할 수 있습니다"
+                    },
+                    "node": {
+                        "status": {
+                            "discovered": "발견",
+                            "offline": "오프라인",
+                            "error": "에러",
+                            "view_logs": "로그 보기",
+                            "pending_addition": "추가 보류중",
+                            "pending_deletion": "삭제 보류중",
+                            "ready": "준비상태",
+                            "installing_os": "__os__설치중",
+                            "os_is_installed": "__os__설치완료",
+                            "installing_openstack": "OpenStack 설치중",
+                            "discard_addition": "추가를 취소",
+                            "discard_deletion": "삭제를 취소",
+                            "discard_role_changes": "역할 변경 내용을 취소"
+                        },
+                        "edit_name": "이름 바꿈",
+                        "unallocated": "할당되지 않음"
+                    },
+                    "back_to_nodes_button": "노드 목록으로",
+                    "unallocated_nodes": "할당되지 않은 노드",
+                    "no_selected_nodes": "바꾸기위한 노드가 선택되지 않았읍니다",
+                    "disk_configuration_reset_warning": "디스크는 역할 변경후 기본값으로 재설정됩니다",
+                    "no_nodes_in_environment": "환경에 노드를 추가하기 위해서는, 노드추가 옵션을 선택한다음에, 배치하기를 원하는 노드를 선택하고 각각의 역할을 할당합니다",
+                    "no_nodes_in_fuel": "배치되지 않은 노드 풀은 이 작업을 위해 필요합니다. 풀에 노드를 추가하려면 네트워크(일명 PXE 부팅)로부터 부팅하도록 노드를 설정합니다. 그러면, Fuel가 자동적으로 노드를 찾아낼 수 있습니다.",
+                    "one_controller_restriction": "HA가아닌 다중노드배치모드에는 오직 하나의 컨트롤러만을  할당할 수 있습니다.",
+                    "incompatible_roles_warning" : "이 역할은 이미 선택된 다른 역할과 섞을 수 없습니다.",
+                    "new_controllers_in_ha_mode_restriction": "새로운 컨트롤러는 동작중인 환경에는 추가될 수 없습니다.",
+                    "no_filtered_nodes_warning": "필터값과 일치하는 노드가 없습니다.",
+                    "filtered_nodes_count":"__count__ node의__filteredNodesCount__ ",
+                    "filtered_nodes_count_plural": "__count__ nodes의__filteredNodesCount__"
+                },
+                "settings_tab": {
+                    "title": "OpenStack 설정",
+                    "access": {
+                        "group_name": "액세스",
+                        "user": {
+                            "label": "사용자",
+                            "description": "서술"
+                        },
+                        "email": {
+                            "label": "이메일",
+                            "description": "서술"
+                        },
+                        "tenant": {
+                            "label": "소유자",
+                            "description": "서술"
+                        },
+                        "password": {
+                            "label": "비밀 번호",
+                            "description": "서술"
+                        }
+                    }
+                },
+                "actions_tab": {
+                    "title": "작업",
+                    "rename_environment": "환경이름 바꾸기",
+                    "delete_environment": "환경 지우기",
+                    "alert_delete": "각 노드를 정리하고 할당되지 않은 노드 풀에 반환합니다.",
+                    "reset_environment": "환경 재설정",
+                    "reset_environment_description": "환경 설정을 수정하고 다시 배치할 수 있게 합니다.",
+                    "reset_environment_warning": "이 작업은 기존의 모든 노드를 배치전 상태로 바꾸고 기존의 환경을 삭제합니다.",
+                    "reset_disabled_for_new_cluster": "아직 배치되지 않은 환경에서 환경재설정은 할수없습니다.",
+                    "repeated_reset_disabled": "현재의 환경은 이미 재설정되고 있읍니다.",
+                    "reset_disabled_for_deploying_cluster": "배치되고있는 환경에서 환경재설정은 할수 없습니다.배치 프로세스를 중지하려면 [배치중지]를 사용합니다."
+                },
+                "network_tab": {
+                    "title": "네트워크 설정",
+                    "flatdhcp_manager": "FlatDHCP Manager",
+                    "vlan_manager": "VLAN Manager",
+                    "verify_networks_button": "네트워크를 검증",
+                    "network_verification": "네트워크 검증",
+                    "neutron_segmentation": "__segment_type__세분화 Neutron",
+                    "untagged": "태그없이",
+                    "range_start": "시작",
+                    "range_end": "끝",
+                    "verify_networks": {
+                        "step_0": "네트워크 검증은 4단계로 수행됩니다",
+                        "step_1": "1. 모든 노드는 테스트 프레임을 수신 시작",
+                        "step_2": "2. 모든 노드에서 802.1Q태그와 함께 UDP 프레임을 발송",
+                        "step_3": "3. 노드 리스너는 다른 노드에서 오는 테스트 프레임을 등록",
+                        "step_4": "4. 사용가능한 모든 포트에 DHCP발견메시지를 보냄",
+                        "success_alert": "검증에 성공했습니다. 네트워크가 제대로 설정되어 있습니다.",
+                        "fail_alert": "검증에 실패했습니다.",
+                        "node_name": "노드 이름",
+                        "node_mac_address": "노드 MAC 어드레스",
+                        "node_interface": "노드 인터페이스",
+                        "expected_vlan": "기대하는 VLAN (수신되지않음)"
+                    },
+                    "network_parameters": {
+                        "ip_range": "IP 범위",
+                        "gateway": "게이트웨이",
+                        "cidr": "CIDR",
+                        "use_vlan_tagging": "VLAN 태그를 사용"
+                    },
+                    "networking_parameters": {
+                        "fixed_cidr": "고정 네트워크 CIDR",
+                        "fixed_size": "고정 네트워크 크기",
+                        "fixed_amount": "고정 네트워크의 수",
+                        "fixed_vlan_range": "고정 VLAN ID 범위",
+                        "use_vlan_tagging_fixed": "고정 네트워크를위한 VLAN 태그를 사용",
+                        "nova_configuration": "Nova-network 설정",
+                        "dns_servers": "DNS 서버",
+                        "l2_configuration": "Neutron L2 설정",
+                        "l3_configuration": "Neutron L3 설정",
+                        "gre_id_range": "터널 ID 범위",
+                        "vlan_range": "VLAN ID 범위",
+                        "base_mac": "기본 MAC 주소",
+                        "internal_cidr": "내부 네트워크 CIDR",
+                        "internal_gateway": "내부 네트워크 게이트웨이",
+                        "floating_ranges": "부동 IP 범위"
+                    },
+                    "validation": {
+                        "large_network": "네트워크가 너무 큽니다",
+                        "small_network": "네트워크가 너무 작습니다",
+                        "invalid_cidr": "잘못된 CIDR",
+                        "invalid_ip_start": "잘못된 IP 범위시작",
+                        "invalid_ip_end": "잘못된 IP 범위끝",
+                        "invalid_ip_range": "IP 범위의 시작이 IP 범위의 끝보다 큽니다",
+                        "empty_ip_range": "적어도 하나의 IP 범위를 지정하십시오",
+                        "invalid_vlan": "잘못된 VLAN ID",
+                        "forbidden_vlan": "이 VLAN의 ID는 다른 네트워크에 의해 사용되고있읍니다. 다른 VLAN ID를 선택하십시오",
+                        "invalid_netmask": "잘못된 netmask",
+                        "invalid_gateway": "잘못된 게이트웨이",
+                        "invalid_amount": "잘못된 네트워크",
+                        "gateway_is_out_of_ip_range": "게이트웨이 주소는 IP의 범위를 벗어납니다",
+                        "gateway_is_out_of_internal_ip_range": "게이트웨이 주소는 내부 네트워크의 IP 범위를 벗어납니다",
+                        "need_more_vlan": "정의 된 네트워크들의 수는 더 많은 VLAN ID를 필요로합니다. VLAN ID 범위필드를 확인하십시요.",
+                        "invalid_nameserver": "잘못된 네임서버",
+                        "invalid_id_start": "잘못된 ID 범위시작",
+                        "invalid_id_end": "잘못된 ID 범위끝",
+                        "invalid_id_range": "ID 범위의 시작이 ID 범위의 끝보다 큽니다",
+                        "vlan_intersection": "다른 네트워크의 VLAN ID를 가진 교차점있읍니다. 다른 ID 범위를 설정하십시오",
+                        "invalid_mac": "잘못된 MAC 주소",
+                        "ip_start_is_out_of_ip_range": "IP의 시작은 IP의 범위를 벗어납니다",
+                        "ip_end_is_out_of_ip_range": "IP의 끝은 IP의 범위를 벗어납니다"
+                    }
+                },
+                "logs_tab": {
+                    "title": "로그",
+                    "logs": "로그",
+                    "node": "노드",
+                    "source": "출처",
+                    "min_level": "최소 수준",
+                    "show": "표시",
+                    "log_alert": "로그를 가져올 수 없습니다.",
+                    "source_alert": "로그 출처를 가져올 수 없습니다.",
+                    "date": "날짜",
+                    "message": "메시지",
+                    "bottom_text": "이전의 행은 생략되었습니다. 더많은행보기",
+                    "all_logs": "모두",
+                    "no_log_text": "현재 필터값과 일치하는 로그는 없읍니다"
+                },
+                "healthcheck_tab": {
+                    "title": "OpenStack 건강 검진",
+                    "run_tests_button": "테스트 실행",
+                    "stop_tests_button": "테스트 중지",
+                    "deploy_alert": "테스트를 실행하기 전에 OpenStack 환경이 배치되어야 합니다",
+                    "not_available_alert": "OSTF 서버를 사용할 수 없습니다.",
+                    "expected_duration": "예상 소요시간",
+                    "actual_duration": "실제 기간",
+                    "status": "상태"
+                },
+                "discard_changes": "변경내용 취소",
+                "deploy_changes": "변경내용 배치",
+                "redhat_setup": "다운로드",
+                "reset_environment": "재설정",
+                "stop_deployment": "중지",
+                "stop_deployment_button": "배치중지",
+                "deployment_mode": "환경배치 모드:",
+                "openstack_release": "OpenStack 출시:",
+                "environment_status": "환경 상태:",
+                "cluster_was_modified_from_cli" : "이 환경에 대한 몇 가지 배치 매개 변수는 Fuel CLI에서 수정되었습니다. Fuel CLI의 변경은 브라우저에서의 설정보다 우선합니다. 주의해서 진행하십시요.",
+                "reconfigure_redhat_account": "You can __opt1__ reconfigure your Red Hat account __opt2__ or "
+            },
+            "capacity_page": {
+                "title": "용량 감사",
+                "license_usage": "라이센스 사용 보고서",
+                "fuel_version": "Fuel 버전",
+                "fuel_uuid": "Fuel UUID",
+                "env_name": "환경 이름",
+                "node_count": "노드 개수",
+                "total_number_alloc_nodes": "할당된 노드의 총수",
+                "total_number_unalloc_nodes": "할당되지않은 노드의 총수",
+                "node_role": "노드역할 (들)",
+                "nodes_with_config": "이 설정을 가진 노드의수",
+                "download_report": "보고서 다운로드",
+                "loading": "로딩..."
+            },
+            "dialog": {
+                "create_cluster_wizard": {
+                    "title": "새로운 OpenStack 환경을 만듭니다",
+                    "prev": "이전",
+                    "next": "다음",
+                    "create": "생성",
+                    "name_release": {
+                        "title": "이름 및 출시",
+                        "name": "이름",
+                        "release_label": "OpenStack 출시",
+                        "red_hat_info": "레드햇 OpenStack을 배치하려면, Fuel 마스터 노드에 캐시하기위해 먼저 RHOS와 RHEL를 다운로드해야합니다. 출시페이지에서이 작업을 수행하거나 가입신청 유형을 선택하고 아래에 비밀정보를 입력합니다. 환경을 만든 후 RHEL 및 RHOS가 자동적으로 다운로드되고 캐시됩니다."
+                    },
+                    "mode": {
+                        "title": "배치 모드"
+                    },
+                    "compute": {
+                        "title": "Compute",
+                        "kvm_description": "하드웨어상에서 OpenStack은 실행하려면 이 하이퍼바이저의 유형을 선택",
+                        "qemu_description": "가상 호스트상에서 OpenStack은 실행하려면 이 하이퍼바이저의 유형을 선택"
+                    },
+                    "network": {
+                        "title": "네트워크",
+                        "alert": "Neutron와 __releaseName__에서는 지원되지 않습니다.",
+                        "nova_network": "Nova-Network",
+                        "neutr_gre": "GRE를 사용하는 Neutron",
+                        "neutr_vlan": "VLAN을 사용하는 Neutron"
+                    },
+                    "storage": {
+                        "title": "저장소 백엔드",
+                        "alert": "Ceph와 __releaseName__에서는 지원되지 않습니다.",
+                        "default": "초기설정",
+                        "ceph": "Ceph",
+                        "cinder": "Cinder",
+                        "cinder_help": "기본적으로, Cinder 블록 스토리지는 iSCSI를 통해 공유되는 LVM 볼륨을 사용합니다. Ceph 백엔드는 두 개 이상의 Ceph-OSD 노드와 KVM 하이퍼바이저가 필요합니다.",
+                        "glance": "Glance",
+                        "glance_help": "기본적으로, Glance 이미지 서비스는 HA 배치모드의 경우에는 스위프트 객체 저장을사용하고, 간단한 다중노드모드의 경우에는 컨트롤러 노드에 있는 로컬 저장소를 사용합니다. Ceph 백엔드는 두 개 이상의 Ceph-OSD 노드가 필요합니다."
+                    },
+                    "additional": {
+                        "title": "추가 서비스",
+                        "release_alert": "추가 서비스는 __releaseName__에서는 지원되지 않습니다.",
+                        "network_mode_alert": "Murano는 현재의 네트워크 모드에서는 지원되지 않습니다.  Murano를 사용하기위해서는 Neutron 네트워크를 선택하십시오.",
+                        "install_sahara": "Sahara 설치",
+                        "install_sahara_description": "Sahara 공급 업체의 다양한 분포를 활용하는 OpenStack에서 배치하는 하둡 클러스터의 on demand 프로비저닝을 가능하게 합니다.",
+                        "install_murano": "Murano 설치",
+                        "install_murano_description": "Murano는 액티브 디렉토리, IIS, 아파치, 마이크로 소프트 SQL 및 ASP.NET와 같은 윈도우나 리눅스 기반의 데이터센터 서비스를 OpenStack에서 배치할 수 있게 합니다.",
+                        "install_ceilometer": "Ceilometer (OpenStack Telemetry) 설치",
+                        "install_ceilometer_description": "Ceilometer는 OpenStack Cloud의 계량 및 모니터링 기능을 제공합니다."
+                    },
+                    "ready": {
+                        "title": "끝마침",
+                        "env_select_deploy": "환경은 이제 배치 할 준비가 되었습니다! [만들기] 버튼을 클릭한후, Fuel 콘솔에서 선택하거나",
+                        "or_make_config_choice": "추가설정을 할 수 있습니다",
+                        "console": ".",
+                        "deploy": "변경내용 배치",
+                        "env": "환경"
+                    }
+                },
+                "dismiss_settings": {
+                    "title": "확인",
+                    "important": "중요",
+                    "stay_button": "페이지에 머무르기",
+                    "leave_button": "변경사항을 취소하고 페이지를 떠나가기",
+                    "default_message": "설정이 수정되었지만 저장되지 않았습니다.변경 사항을 취소하고 페이지를 떠나겠습니까?",
+                    "verify_message": "네트워크 검증이 진행 중입니다. 변경사항을 저장하거나 탭에 머무르십시요."
+                },
+                "display_changes": {
+                    "title": "변경내용 배치",
+                    "added_node": "__nodesCount__ 노드를 추가",
+                    "added_node_plural": "__nodesCount__ 노드들을 추가",
+                    "deleted_node": "__nodesCount__ 노드를 삭제",
+                    "deleted_node_plural":  "__nodesCount__ 노드들을 삭제",
+                    "reconfigured_node": "__nodesCount__ 노드의 역할을 다시 설정합니다",
+                    "reconfigured_node_plural": "__nodesCount__ 노드들의 역할을 다시 설정합니다",
+                    "settings_changes": {
+                        "attrs": "OpenStack 설정",
+                        "networks": "네트워크 설정",
+                        "disks": "다음 노드들의 디스크 설정:"
+                    },
+                    "warnings": {
+                        "controller": "환경은 __nodeSize__ 컨트롤러 노드가 있어야합니다",
+                        "controller_plural": "환경은 __nodeSize__ 컨트롤러 노드들이 있어야합니다",
+                        "compute": "Compute 노드가 배치를 위해 권장됩니다"
+                    },
+                    "changed_task_name": "__item__가 변경되었읍니다",
+                    "changed": "변경되었읍니다",
+                    "deleted": "삭제되었읍니다",
+                    "deploy": "배치되었읍니다",
+                    "redeployment_needed": "일부 노드는 배치후 오류상태가 있습니다. 재배치가 필요합니다."
+                },
+                "show_node": {
+                    "manufacturer_label": "제조업자",
+                    "mac_address_label": "MAC 주소",
+                    "fqdn_label": "FQDN",
+                    "ssh_console": "SSH console",
+                    "network_configuration_button": "인터페이스 설정",
+                    "disk_configuration_button": "디스크 설정",
+                    "close_button": "닫음",
+                    "total": "합계",
+                    "bytes": "bytes",
+                    "drive": "드라이브",
+                    "drive_plural": "드라이브"
+                },
+                "rhel_license": {
+                    "title": "레드햇 엔터프라이즈 리눅스 계정 설정",
+                    "description": "레드햇 OpenStack을 배치하려면, Fuel 마스터 노드에 캐시하기위해 먼저 RHOS와 RHEL를 다운로드해야합니다. 출시페이지에서이 작업을 수행하거나 가입신청 유형을 선택하고 아래에 비밀정보를 입력합니다. 환경을 만든 후 RHEL 및 RHOS가 자동적으로 다운로드되고 캐시됩니다.",
+                    "rhn_sattelite": "RHN 위성",
+                    "redhat_username": "Red Hat 이름",
+                    "redhat_password": "Red Hat 암호",
+                    "satellite_server_hostname": "위성 서버의 호스트이름",
+                    "activation_key": "Activation Key"
+                },
+                "discard_changes": {
+                    "title": "변경내용 취소",
+                    "discard_button": "취소",
+                    "alert_text": "변경사항을 취소하시겠습니까?",
+                    "cant_discard": "노드의 변경 사항을 취소할 수 없읍니다"
                 }
             }
         }

@@ -376,11 +376,13 @@
                     "compute": {
                         "title": "Compute",
                         "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
-                        "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts"
+                        "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts",
+                        "vcenter_description": "Choose this type of hypervisor if you run OpenStack in a vCenter environment"
                     },
                     "network": {
                         "title": "Network",
-                        "alert": "Neutron is not supported in __releaseName__",
+                        "release_alert": "Neutron is not supported in __releaseName__",
+                        "hypervisor_alert": "Neutron is not supported with __hypervisor__",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron with GRE segmentation",
                         "neutr_vlan": "Neutron with VLAN segmentation"
@@ -677,7 +679,7 @@
                 "settings_tab": {
                     "title": "OpenStack设置",
                     "access": {
-                        "group_name": "访问",
+                        "label": "访问",
                         "user": {
                             "label": "用户名",
                             "description": "管理员用户名"
@@ -696,7 +698,7 @@
                         }
                     },
                     "additional_components": {
-                        "group_name": "额外组件",
+                        "label": "额外组件",
                         "sahara": {
                             "label": "安装Sahara",
                             "description": "如果选择，Sahara组件将被安装。"
@@ -711,7 +713,7 @@
                         }
                     },
                     "syslog": {
-                        "group_name": "系统日志",
+                        "label": "系统日志",
                         "syslog_transport": {
                             "label": "系统日志传输协议",
                             "values": {
@@ -733,7 +735,7 @@
                         }
                     },
                     "storage": {
-                        "group_name": "存储",
+                        "label": "存储",
                         "volumes_lvm": {
                             "label": "基于iSCSI的Cinder LVM卷",
                             "description": "需要至少一个Cinder节点"
@@ -756,7 +758,7 @@
                         }
                     },
                     "common": {
-                        "group_name": "通用",
+                        "label": "通用",
                         "debug": {
                             "label": "OpenStack调试日志",
                             "description": "调试模式能够提供更多信息，但也需要更多磁盘空间。"
@@ -926,7 +928,7 @@
                     },
                     "network": {
                         "title": "网络",
-                        "alert": "__releaseName__不支持Neutron",
+                        "release_alert": "__releaseName__不支持Neutron",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron GRE",
                         "neutr_vlan": "Neutron VLAN"

@@ -195,6 +195,17 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.settings.set(settingPath + '.disabled', isSettingDisabled);
             _.each(this.settings.get(settingPath + '.values'), function(value, index) {
                 var isOptionDisabled = false;
+                // FIXME(vk): hack for vCenter
+                // vCenter has too many restrictions which we cannot handle,
+                // so we disabling ability to swtich hypervisor to/from vCenter
+                // after cluster creation
+                if (settingPath == 'common.libvirt_type') {
+                    var currentValue = this.settings.get('common.libvirt_type.value');
+                    if ((currentValue == 'vcenter' && value.data != 'vcenter') || (currentValue != 'vcenter' && value.data == 'vcenter')) {
+                        isOptionDisabled = true;
+                    }
+                }
+
                 _.each(value.depends, function(dependency) {
                     if (!isOptionDisabled) {
                         isOptionDisabled = handleCondition(dependency, isOptionDisabled, false);

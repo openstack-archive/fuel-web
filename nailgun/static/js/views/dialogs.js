@@ -489,7 +489,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            var disabled = !release || !_.contains(release.get('roles'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
+            var disabled = !release || !_.contains(release.get('roles').pluck('name'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
             this.$el.html(this.template({disabled: disabled, release: release})).i18n();
             if (disabled) {
                 this.$('input[value=ceph]').prop('disabled', true);
@@ -651,10 +651,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 .fail(_.bind(this.displayError, this));
         },
         render: function() {
-            this.constructor.__super__.render.call(this, {
-                cluster: this.model,
-                size: 1
-            });
+            this.constructor.__super__.render.call(this, {cluster: this.model});
             return this;
         }
     });

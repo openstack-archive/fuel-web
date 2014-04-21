@@ -442,6 +442,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var allocatedController = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
             return role.get('name') != 'controller' || this.cluster.get('mode') != 'multinode' || ((this.isControllerRoleSelected() || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedController.length);
         },
+        isMongoSelectable: function(role) {
+            var deployedNodes = this.cluster.get('nodes').filter(function(node) {
+                return node.hasRole('mongo', true) && !node.get('pending_deletion');
+            });
+            return role.get('name') != 'mongo' || !deployedNodes.length;
+        },
         getListOfIncompatibleRoles: function(roles) {
             var forbiddenRoles = [];
             var release = this.cluster.get('release');
@@ -472,6 +478,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 if (!disabled && !this.isControllerSelectable(role)) {
                     disabled = true;
                     conflict = $.t('cluster_page.nodes_tab.one_controller_restriction');
+                }
+                // checking mongo role restriction
+                if (!disabled && !this.isMongoSelectable(role)) {
+                    disabled = true;
+                    conflict = $.t('cluster_page.nodes_tab.mongo_restriction');
                 }
                 role.set({disabled: disabled, conflict: conflict});
             }, this);

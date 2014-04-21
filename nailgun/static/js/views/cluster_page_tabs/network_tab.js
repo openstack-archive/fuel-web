@@ -201,8 +201,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             });
             // FIXME: we don't need to listen to every task removal
             this.model.get('tasks').on('remove', this.renderVerificationControl, this);
-            this.settings = this.model.get('settings');
-            (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {
+            (this.loading = this.model.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
                 this.setInitialData();
                 this.render();
             }, this));
@@ -255,7 +254,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 this.stickit(this.networkingParameters, {'input[name=net-manager]': 'net_manager'});
                 // FIXME: quick hack for vCenter feature support.
                 // Reverse dependensies on OpenStack settings should be implemented.
-                this.$('input[name=net-manager]').attr('disabled', this.settings.get('common.libvirt_type.value') == 'vcenter' || this.isLocked());
+                this.$('input[name=net-manager]').attr('disabled', this.model.get('settings').get('common.libvirt_type.value') == 'vcenter' || this.isLocked());
                 this.renderNetworks();
                 this.renderNetworkingParameters();
             }

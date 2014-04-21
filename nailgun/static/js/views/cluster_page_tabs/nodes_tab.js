@@ -127,9 +127,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         update: function() {
             this.nodes.fetch().always(_.bind(this.scheduleUpdate, this));
         },
-        calculateApplyButtonState: function() {
-            this.applyChangesButton.set('disabled', !this.hasChanges());
-        },
         updateBatchActionsButtons: function() {
             var nodes = new models.Nodes(this.nodes.where({checked: true}));
             var deployedNodes = nodes.where({'status': 'ready'});
@@ -204,7 +201,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.nodeList.filterNodes(this.nodeFilter.get('value'));
             }, this);
             if (this instanceof AddNodesScreen || this instanceof EditNodesScreen) {
-                this.nodes.on('change:pending_roles', this.actualizePendingRoles, this);
+                this.nodes.on('change:pending_roles', function(node, roles, options) {
+                    this.actualizePendingRoles(node, roles, options);
+                    this.applyChangesButton.set('disabled', !this.hasChanges());
+                }, this);
                 this.model.on('change:status', _.bind(function() {app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});}, this));
             }
             this.nodes.on('change', this.actualizeFilteredNode, this);
@@ -236,9 +236,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.registerSubView(managementPanel);
             this.$el.append(managementPanel.render().el);
             if (this instanceof AddNodesScreen || this instanceof EditNodesScreen) {
-                this.roles = new AssignRolesPanel(options);
-                this.registerSubView(this.roles);
-                this.$el.append(this.roles.render().el);
+                this.rolePanel = new AssignRolesPanel(options);
+                this.registerSubView(this.rolePanel);
+                this.$el.append(this.rolePanel.render().el);
             }
             this.nodeList = new NodeList(options);
             this.registerSubView(this.nodeList);
@@ -421,141 +421,115 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
     AssignRolesPanel = Backbone.View.extend({
         template: _.template(assignRolesPanelTemplate),
         className: 'roles-panel',
-        handleChanges: function() {
-            this.nodes = new models.Nodes(this.screen.nodes.where({checked: true}));
-            this.assignRoles();
-            this.checkForConflicts();
-            this.screen.calculateApplyButtonState();
-        },
         assignRoles: function() {
-            _.each(this.collection.where({indeterminate: false}), function(role) {
-                _.each(this.nodes.filter(function(node) {return !node.hasRole(role.get('name'), true);}), function(node) {
-                    var pending_roles = role.get('checked') ? _.uniq(_.union(node.get('pending_roles'), role.get('name'))) : _.difference(node.get('pending_roles'), role.get('name'));
+            _.each(this.roles.where({indeterminate: false}), function(role) {
+                var roleName = role.get('name');
+                var nodes = this.nodes.filter(function(node) { return node.get('checked') && !node.hasDeployedRole(roleName); });
+                _.each(nodes, function(node) {
+                    var pending_roles = role.get('checked') ? _.uniq(_.union(node.get('pending_roles'), roleName)) : _.difference(node.get('pending_roles'), roleName);
                     node.set({pending_roles: pending_roles}, {assign: true});
                 });
             }, this);
         },
-        isControllerRoleSelected: function() {
-            return this.collection.filter(function(role) {return role.get('name') == 'controller' && (role.get('checked') || role.get('indeterminate'));}).length;
-        },
-        isControllerSelectable: function(role) {
-            var allocatedController = this.cluster.get('nodes').filter(function(node) {return !node.get('pending_deletion') && node.hasRole('controller') && !_.contains(this.nodes.pluck('id'), node.id);}, this);
-            return role.get('name') != 'controller' || this.cluster.get('mode') != 'multinode' || ((this.isControllerRoleSelected() || this.screen.nodes.where({checked: true}).length <= 1) && !allocatedController.length);
-        },
-        isMongoSelectable: function(role) {
-            var deployedNodes = this.cluster.get('nodes').filter(function(node) {
-                return node.hasRole('mongo', true) && !node.get('pending_deletion');
-            });
-            return role.get('name') != 'mongo' || !deployedNodes.length;
-        },
-        getListOfIncompatibleRoles: function(roles) {
-            var forbiddenRoles = [];
-            var release = this.cluster.get('release');
-            _.each(roles, function(role) {
-                forbiddenRoles = _.union(forbiddenRoles, release.get('roles_metadata')[role.get('name')].conflicts);
-            });
-            return _.uniq(forbiddenRoles);
-        },
-        checkForConflicts: function(e) {
-            this.collection.each(function(role) {
-                var conflict = '';
-                var disabled = !this.screen.nodes.length || this.loading.state() == 'pending';
+        checkRolesConflicts: function(e) {
+            this.roles.each(function(role) {
+                var disabled = !this.nodes.length, populated = false, conflict;
                 // checking if role is unavailable
                 if (!disabled && role.get('unavailable')) {
                     disabled = true;
                     conflict = role.get('unavailabityReason');
                 }
+                // checking role maximum amount restrictions
+                var roleMaximumAmount = role.getLimit('max');
+                if (!disabled && roleMaximumAmount) {
+                    var availableNodesAmount = roleMaximumAmount - this.cluster.getNodesByRole(role.get('name')).length - this.nodes.where({checked: true}).length;
+                    if (availableNodesAmount == 0 && role.isSelected()) {
+                        populated = true;
+                        conflict = $.t('cluster_page.nodes_tab.role_max_amount_reached');
+                    }
+                    if (availableNodesAmount < 0 && !role.isSelected()) {
+                        disabled = true;
+                        conflict = $.t('cluster_page.nodes_tab.role_max_amount_restriction', {count: roleMaximumAmount, role: role.get('label')});
+                    }
+                }
                 // checking if role conflict with another role
                 if (!disabled) {
-                    var selectedRoles = this.collection.filter(function(role) {return role.get('checked') || role.get('indeterminate');});
-                    var roleConflictsWithAnotherRole = _.contains(this.getListOfIncompatibleRoles(selectedRoles), role.get('name'));
-                    if (roleConflictsWithAnotherRole) {
+                    var forbiddenRoles = this.roles.map(function(role) { return role.isSelected() ? role.get('conflicts') : []; });
+                    if (_.contains(_.flatten(forbiddenRoles), role.get('name'))) {
                         disabled = true;
                         conflict = $.t('cluster_page.nodes_tab.incompatible_roles_warning');
                     }
                 }
-                // checking controller role conditions
-                if (!disabled && !this.isControllerSelectable(role)) {
-                    disabled = true;
-                    conflict = $.t('cluster_page.nodes_tab.one_controller_restriction');
-                }
-                // checking mongo role restriction
-                if (!disabled && !this.isMongoSelectable(role)) {
-                    disabled = true;
-                    conflict = $.t('cluster_page.nodes_tab.mongo_restriction');
-                }
-                role.set({disabled: disabled, conflict: conflict});
+                role.set({disabled: disabled, conflict: conflict, populated: populated});
             }, this);
-            if (this.cluster.get('mode') == 'multinode' && this.screen.nodeList) {
-                var controllerNode = this.nodes.filter(function(node) {return node.hasRole('controller');})[0];
-                _.each(this.screen.nodes.where({checked: false}), function(node) {
-                    var disabled = (this.isControllerRoleSelected() && controllerNode && controllerNode.id != node.id) || !node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked();
-                    node.set('disabled', disabled);
-                    var filteredNode = this.screen.nodeList.filteredNodes.get(node.id);
-                    if (filteredNode) {
-                        filteredNode.set('disabled', disabled);
-                    }
-                }, this);
-                this.screen.nodeList.calculateSelectAllDisabledState();
-                _.invoke(this.screen.nodeList.subViews, 'calculateSelectAllDisabledState', this);
-            }
-        },
-        getRoleData: function(role) {
-            return this.cluster.get('release').get('roles_metadata')[role];
         },
         checkRolesAvailability: function() {
-            this.collection.each(function(role) {
-                var unavailable = false;
-                var unavailabityReasons = [];
-                var dependencies = this.getRoleData(role.get('name')).depends;
-                if (dependencies) {
-                    var configModels = {settings: this.settings, cluster: this.cluster, default: this.settings};
-                    _.each(dependencies, function(dependency) {
-                        var path = _.keys(dependency.condition)[0];
-                        var value = dependency.condition[path];
-                        if (utils.parseModelPath(path, configModels).get() != value) {
+            this.roles.each(function(role) {
+                var unavailable = false, unavailabityReasons = [];
+                var configModels = {settings: this.cluster.get('settings'), cluster: this.cluster, default: this.cluster.get('settings')};
+                if (role.get('cant_be_added_to_deployed_env')) {
+                    unavailable = true;
+                    unavailabityReasons.push($.t('cluster_page.nodes_tab.deployed_nodes_warning'));
+                } else {
+                    var roleMaximumAmount = role.getLimit('max');
+                    if (roleMaximumAmount) {
+                        if (role.get('max') == 0) {
                             unavailable = true;
-                            unavailabityReasons.push(dependency.warning);
+                            unavailabityReasons.push(role.get('warning'));
                         }
-                    });
-                }
-                // FIXME(vk): hack for vCenter, do not allow ceph and controllers
-                // has to be removed when we describe it in role metadata
-                if (this.settings.get('common.libvirt_type.value') == 'vcenter') {
-                    if (role.get('name') == 'compute') {
-                        unavailable = true;
-                        unavailabityReasons.push('Computes cannot be used with vCenter');
-                    } else if (role.get('name') == 'ceph-osd') {
-                        unavailable = true;
-                        unavailabityReasons.push('Ceph cannot be used with vCenter');
+                        _.each(_.where(role.get('overrides'), {max: 0}), function(rule) {
+                            if (utils.evaluateExpression(rule.condition, configModels).value) {
+                                unavailable = true;
+                                unavailabityReasons.push(rule.warning);
+                            }
+                        });
+                    } else {
+                        var availableNodesAmount = roleMaximumAmount - this.cluster.getNodesByRole(role.get('name')).length;
+                        if (availableNodesAmount == 0) {
+                            unavailable = true;
+                            unavailabityReasons.push($.t('cluster_page.nodes_tab.role_max_amount_reached'));
+                        }
                     }
                 }
-
                 if (unavailable) {
-                    role.set({unavailable: true, unavailabityReason: unavailabityReasons.join(' ')});
+                    role.set({unavailable: true, unavailabityReason: _.compact(unavailabityReasons).join(' ')});
                 }
             }, this);
+        },
+        canSelectNodeGroup: function(availableNodesLength, checkedNodesLength) {
+            var canSelectNodeGroup = true;
+            _.each(this.roles.where({checked: true}), function(role) {
+                var roleMaximumAmount = role.getMaximumAmount();
+                if (!_.isNull(roleMaximumAmount)) {
+                    var availableNodesAmount = roleMaximumAmount - this.cluster.getNodesByRole(role.get('name')).length - checkedNodesLength;
+                    canSelectNodeGroup = availableNodesAmount && (availableNodesAmount >= availableNodesLength);
+                }
+                return canSelectNodeGroup;
+            }, this);
+            return canSelectNodeGroup;
         },
         initialize: function(options) {
             _.defaults(this, options);
             this.cluster = this.screen.tab.model;
-            this.collection = new Backbone.Collection(_.map(this.cluster.get('release').get('roles'), function(role) {
-                var roleData = this.getRoleData(role);
+            this.roles = this.cluster.get('release').get('roles');
+            this.roles.each(function(role) {
                 var nodesWithRole = this.nodes.filter(function(node) {return node.hasRole(role);});
-                return {
-                    name: role,
-                    label: roleData.name,
-                    description: roleData.description,
+                role.set({
                     disabled: false,
                     unavailable: false,
+                    populated: false,
                     conflict: '',
                     checked: !!nodesWithRole.length && nodesWithRole.length == this.nodes.length,
                     indeterminate: !!nodesWithRole.length && nodesWithRole.length != this.nodes.length
-                };
-            }, this));
-            this.collection.on('change:checked', this.handleChanges, this);
-            this.settings = this.cluster.get('settings');
-            (this.loading = this.settings.fetch({cache: true})).done(_.bind(this.checkRolesAvailability, this));
+                });
+            }, this);
+            this.roles.on('change:checked', this.handleChanges, this);
+            this.nodes.on('change:checked', this.handleChanges, this);
+            this.checkRolesAvailability();
+        },
+        handleChanges: function() {
+            this.assignRoles();
+            this.checkRolesConflicts();
         },
         stickitRole: function (role) {
             var bindings = {};
@@ -565,21 +539,18 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     role.set('indeterminate', false);
                     return value;
                 },
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled'
-                },{
-                    name: 'indeterminate',
-                    observe: 'indeterminate'
-                }]
+                attributes: [
+                    {name: 'disabled', observe: 'disabled'},
+                    {name: 'indeterminate', observe: 'indeterminate'}
+                ]
             };
             bindings['.role-conflict.' + role.get('name')] = 'conflict';
             return this.stickit(role, bindings);
         },
         render: function() {
-            this.$el.html(this.template({roles: this.collection})).i18n();
-            this.collection.each(this.stickitRole, this);
-            this.checkForConflicts();
+            this.$el.html(this.template({roles: this.roles})).i18n();
+            this.roles.each(this.stickitRole, this);
+            this.handleChanges();
             return this;
         }
     });
@@ -622,18 +593,21 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.selectAllCheckbox.set('checked', availableNodes.length && this.filteredNodes.where({checked: true}).length == availableNodes.length);
         },
         calculateSelectAllDisabledState: function() {
-            var availableNodes = this.filteredNodes.filter(function(node) {return node.isSelectable();});
-            var disabled = !this.filteredNodes.where({disabled: false}).length || (this.screen.roles && this.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.screen instanceof EditNodesScreen;
-            this.selectAllCheckbox.set('disabled', disabled);
+            var disabled = !this.filteredNodes.where({disabled: false}).length;
+            if (!disabled && this.screen instanceof AddNodesScreen) {
+                var availableNodes = this.filteredNodes.filter(function(node) {return node.isSelectable();});
+                disabled = !this.screen.rolePanel.canSelectNodeGroup(availableNodes.length, this.filteredNodes.where({checked: true}).length);
+            }
+            this.selectAllCheckbox.set('disabled', disabled || this.screen instanceof EditNodesScreen);
         },
         groupNodes: function(grouping) {
             if (_.isUndefined(grouping)) {
-                grouping = this.screen instanceof AddNodesScreen ? 'hardware' : this.screen.tab.model.get('grouping');
+                grouping = this.screen instanceof AddNodesScreen ? 'hardware' : this.cluster.get('grouping');
             }
             var nodeGroups = _.pairs(this.filteredNodes.groupByAttribute(grouping));
             // sort node groups
             if (grouping != 'hardware') {
-                var preferredOrder = this.screen.tab.model.get('release').get('roles');
+                var preferredOrder = this.cluster.get('release').get('roles').pluck('name');
                 nodeGroups.sort(function(firstGroup, secondGroup) {
                     var firstGroupRoles = firstGroup[1][0].sortedRoles();
                     var secondGroupRoles = secondGroup[1][0].sortedRoles();
@@ -656,6 +630,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         initialize: function(options) {
             _.defaults(this, options);
+            this.cluster = this.screen.tab.model;
             this.screen.initialNodes = new models.Nodes(this.nodes.invoke('clone'));
             this.filteredNodes = new models.Nodes(this.nodes.invoke('clone'));
             this.filteredNodes.cluster = this.screen.nodes.cluster;
@@ -724,12 +699,16 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.selectAllCheckbox.set('checked', availableNodes.length && this.nodes.where({checked: true}).length == availableNodes.length);
         },
         calculateSelectAllDisabledState: function() {
-            var availableNodes = this.nodes.where({disabled: false});
-            var disabled = !availableNodes.length || (this.nodeList.screen.roles && this.nodeList.screen.roles.isControllerRoleSelected() && availableNodes.length > 1) || this.nodeList.screen instanceof EditNodesScreen;
-            this.selectAllCheckbox.set('disabled', disabled);
+            var disabled = !this.nodes.where({disabled: false}).length;
+            if (!disabled && this.screen instanceof AddNodesScreen) {
+                var availableNodes = this.nodes.filter(function(node) {return node.isSelectable();});
+                disabled = !this.screen.rolePanel.canSelectNodeGroup(availableNodes.length, this.nodes.where({checked: true}).length);
+            }
+            this.selectAllCheckbox.set('disabled', disabled || this.screen instanceof EditNodesScreen);
         },
         initialize: function(options) {
             _.defaults(this, options);
+            this.screen = this.nodeList.screen;
             this.selectAllCheckbox = new Backbone.Model({
                 checked: false,
                 disabled: false
@@ -740,7 +719,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         renderNode: function(node) {
             var nodeView = new Node({
                 node: node,
-                renameable: !this.nodeList.screen.isLocked(),
+                renameable: !this.screen.isLocked(),
                 group: this
             });
             this.registerSubView(nodeView);
@@ -795,10 +774,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             },
             '.node-checkbox input': {
                 observe: 'checked',
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled'
-                }]
+                attributes: [{name: 'disabled', observe: 'disabled'}]
             },
             '.node-status-label': {
                 observe: ['status', 'online', 'pending_addition', 'pending_deletion'],
@@ -871,7 +847,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         sortRoles: function(roles) {
             roles = roles || [];
-            var preferredOrder = this.screen.tab.model.get('release').get('roles');
+            var preferredOrder = this.screen.tab.model.get('release').get('roles').pluck('name');
             return roles.sort(function(a, b) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
@@ -943,7 +919,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return this.hasChanges() && !(this.screen instanceof EditNodesScreen) ? 'icon-back-in-time' : 'icon-logs';
         },
         calculateNodeState: function() {
-            this.node.set('disabled', !this.node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked());
+            var someRolePopulated = this.screen.rolePanel && !!this.screen.rolePanel.roles.where({populated: true}).length;
+            this.node.set('disabled', (!this.node.get('checked') && someRolePopulated) || !this.node.isSelectable() || this.screen instanceof EditNodesScreen || this.screen.isLocked());
             if (this.screen.isLocked()) {
                 this.node.set('checked', false);
             }
@@ -1043,8 +1020,8 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.node.set('checked', this.screen instanceof EditNodesScreen || this.screen.nodes.get(this.node.id).get('checked') || false);
             this.node.on('change:status', this.calculateNodeState, this);
             this.node.on('change:disabled', this.group.calculateSelectAllDisabledState, this.group);
-            if (!(this.screen instanceof ClusterNodesScreen)) {
-                this.node.on('change:checked', this.screen.roles.handleChanges, this.screen.roles);
+            if (this.screen.rolePanel) {
+                this.screen.rolePanel.roles.on('change:populated', this.calculateNodeState, this);
             }
         },
         render: function() {

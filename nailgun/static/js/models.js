@@ -80,36 +80,10 @@ define(['utils', 'deepModel'], function(utils) {
             return this.get('tasks') && this.get('tasks').filterTasks(filters);
         },
         hasChanges: function() {
-            return this.get('nodes').hasChanges() || (this.get('changes').length && this.get('nodes').currentNodes().length);
+            return this.get('nodes').hasChanges() || (this.get('changes').length && this.get('nodes').where({pending_addition: false}).length);
         },
         needsRedeployment: function() {
             return this.get('nodes').where({pending_addition: false, status: 'error'}).length;
-        },
-        canChangeMode: function(newMode) {
-            var nodes = this.get('nodes');
-            return !(nodes.currentNodes().length || nodes.where({role: 'controller'}).length > 1 || (newMode && newMode == 'singlenode' && (nodes.length > 1 || (nodes.length == 1 && !nodes.where({role: 'controller'}).length))));
-        },
-        canAddNodes: function(role) {
-            // forbid adding when tasks are running
-            if (this.task({group: ['deployment', 'network'], status: 'running'})) {
-                return false;
-            }
-            // forbid add more than 1 controller in simple mode
-            if (role == 'controller' && this.get('mode') != 'ha_compact' && _.filter(this.get('nodes').nodesAfterDeployment(), function(node) {return node.get('role') == role;}).length >= 1) {
-                return false;
-            }
-            return true;
-        },
-        canDeleteNodes: function(role) {
-            // forbid deleting when tasks are running
-            if (this.task({group: ['deployment', 'network'], status: 'running'})) {
-                return false;
-            }
-            // forbid deleting when there is nothing to delete
-            if (!_.filter(this.get('nodes').nodesAfterDeployment(), function(node) {return node.get('role') == role;}).length) {
-                return false;
-            }
-            return true;
         },
         availableModes: function() {
             return ['ha_compact', 'multinode'];
@@ -119,6 +93,9 @@ define(['utils', 'deepModel'], function(utils) {
         },
         isAvailableForSettingsChanges: function() {
             return this.get('status') == 'new' || (this.get('status') == 'stopped' && !this.get('nodes').where({status: 'ready'}).length);
+        },
+        getNodesByRole: function(roleName) {
+            return this.get('nodes').filter(function(node) { return node.hasRole(roleName) && !node.get('pending_deletion'); });
         }
     });
 
@@ -160,9 +137,6 @@ define(['utils', 'deepModel'], function(utils) {
                 return _.indexOf(preferredOrder, a) - _.indexOf(preferredOrder, b);
             });
         },
-        canDiscardDeletion: function() {
-            return this.get('pending_deletion') && !(_.contains(this.get('roles'), 'controller') && this.collection.cluster.get('mode') == 'multinode' && this.collection.cluster.get('nodes').filter(function(node) {return _.contains(node.get('pending_roles'), 'controller');}).length);
-        },
         toJSON: function(options) {
             var result = this.constructor.__super__.toJSON.call(this, options);
             return _.omit(result, 'checked');
@@ -170,13 +144,12 @@ define(['utils', 'deepModel'], function(utils) {
         isSelectable: function() {
             return this.get('status') != 'error' || this.get('cluster');
         },
+        hasDeployedRole: function(role) {
+            return this.hasRole(role, true);
+        },
         hasRole: function(role, onlyDeployedRoles) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
-        },
-        getRolesSummary: function() {
-            var rolesMetaData = this.collection.cluster.get('release').get('roles_metadata');
-            return _.map(this.sortedRoles(), function(role) {return rolesMetaData[role].name;}).join(', ');
         },
         getHardwareSummary: function() {
             return $.t('node_details.hdd') + ': ' + utils.showDiskSize(this.resource('hdd')) + ' \u00A0 ' + $.t('node_details.ram') + ': ' + utils.showMemorySize(this.resource('ram'));
@@ -195,15 +168,6 @@ define(['utils', 'deepModel'], function(utils) {
                 return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;
             }).length;
         },
-        currentNodes: function() {
-            return this.filter(function(node) {return !node.get('pending_addition');});
-        },
-        nodesAfterDeployment: function() {
-            return this.filter(function(node) {return node.get('pending_addition') || !node.get('pending_deletion');});
-        },
-        nodesAfterDeploymentWithRole: function(role) {
-            return _.filter(this.nodesAfterDeployment(), function(node) {return _.contains(_.union(node.get('roles'), node.get('pending_roles')), role);}).length;
-        },
         resources: function(resourceName) {
             var resources = this.map(function(node) {return node.resource(resourceName);});
             return _.reduce(resources, function(sum, n) {return sum + n;}, 0);
@@ -213,13 +177,48 @@ define(['utils', 'deepModel'], function(utils) {
         },
         groupByAttribute: function(attr) {
             if (attr == 'roles') {
-                return this.groupBy(function(node) {return node.getRolesSummary();});
+                return this.groupBy(function(node) {return node.sortedRoles().join(', ');});
             }
             if (attr == 'hardware') {
                 return this.groupBy(function(node) {return node.getHardwareSummary();});
             }
-            return this.groupBy(function(node) {return node.getRolesSummary() + '; \u00A0' + node.getHardwareSummary();});
+            return this.groupBy(function(node) {return node.sortedRoles().join(', ') + '; \u00A0' + node.getHardwareSummary();});
         }
+    });
+
+    models.Role = Backbone.Model.extend({
+        constructorName: 'Role',
+        isSelected: function() {
+            return this.get('checked') || this.get('indeterminate');
+        },
+        // FIXME: role minimum/maximum amount resctrictions should be
+        // described declaratively in the openstack.yaml file
+        getMinimalAmount: function() {
+            var cluster = this.collection.cluster;
+            var minAmounts = {
+                'controller': cluster.get('mode') == 'multinode' ? 1 : 3,
+                'compute': cluster.get('settings').get('common.libvirt_type.value') == 'vcenter' ? null : 1,
+                'ceph-osd': cluster.get('settings').get('storage.osd_pool_size.value')
+            };
+            return Number(minAmounts[this.get('name')]) || null;
+        },
+        getMaximumAmount: function() {
+            var cluster = this.collection.cluster;
+            var maxAmounts = {
+                'controller': cluster.get('mode') == 'multinode' ? 1 : null,
+                'compute': cluster.get('settings').get('common.libvirt_type.value') == 'vcenter' ? 0 : null,
+                'ceph-osd': cluster.get('settings').get('common.libvirt_type.value') == 'vcenter' || !cluster.get('settings').get('storage.osd_pool_size.value') ? 0 : null,
+                'zabbix-server': 1,
+                'mongo': cluster.get('nodes').filter(function(node) { return node.hasRole('mongo', true) && !node.get('pending_deletion'); }).length ? 0 : null
+            };
+            var maxAmount = maxAmounts[this.get('name')];
+            return _.isUndefined(maxAmount) ? null : maxAmount;
+        }
+    });
+
+    models.Roles = Backbone.Collection.extend({
+        constructorName: 'Roles',
+        model: models.Role
     });
 
     models.NodesStatistics = Backbone.Model.extend({

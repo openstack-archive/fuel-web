@@ -174,6 +174,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.eventNamespace = 'unsavedchanges' + this.activeTab;
             $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
             $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
+            this.model.get('settings').fetch({cache: true});
         },
         render: function() {
             this.tearDownRegisteredSubViews();

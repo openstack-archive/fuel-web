@@ -202,7 +202,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             // FIXME: we don't need to listen to every task removal
             this.model.get('tasks').on('remove', this.renderVerificationControl, this);
             this.settings = this.model.get('settings');
-            (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {
+            (this.loading = this.model.get('networkConfiguration').fetch({cache: true})).done(_.bind(function() {
                 this.setInitialData();
                 this.render();
             }, this));

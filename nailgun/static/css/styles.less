@@ -660,6 +660,27 @@ label {cursor: default;}
   -webkit-font-smoothing: @font-aliasing;
   float: left;
   width:300px;
+  .name {
+    display: block;
+    overflow: hidden;
+    height: 22px;
+    margin: 3px 0px 0px;
+    input {
+      font-size: @font-size-small-2;
+      .indent-mixin(0px, 0px 6px 0px 6px);
+      height: 18px;
+    }
+    p {
+      display: inline;
+      .font-layout-mixin(@font-size-big-1, @color-nodes-node-names, normal, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25));
+      border-bottom: 1px dotted @fuel-light-1;
+      &.node-renameable:hover {
+        border-bottom: 1px dotted #0178b3;
+        color: #0178b3;
+        cursor: pointer;
+      }
+    }
+  }
 }
 
 label.error {
@@ -730,18 +751,6 @@ label.error {
     -o-animation: spin 2s infinite linear;
     -webkit-animation: spin 2s infinite linear;
     animation: spin 2s infinite linear;
-  }
-}
-
-.node-name-roles > .name {
-  display: block;
-  overflow: hidden;
-  height: 22px;
-  margin: 3px 0px 0px 0px;
-  input {
-    font-size: @font-size-small-2;
-    .indent-mixin(0px, 0px 6px 0px 6px);
-    height: 18px;
   }
 }
 
@@ -840,17 +849,6 @@ label.error {
     .indent-mixin;
     .font-layout-mixin(@font-size-big-2,  @color-nodes-rule-list, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35));
     margin-bottom: 10px;
-  }
-}
-
-.node-name-roles > .name > p {
-  display: inline;
-  .font-layout-mixin(@font-size-big-1, @color-nodes-node-names, normal, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25));
-  border-bottom: 1px dotted @fuel-light-1;
-  &.node-renameable:hover {
-    border-bottom: 1px dotted #0178b3;
-    color: #0178b3;
-    cursor: pointer;
   }
 }
 

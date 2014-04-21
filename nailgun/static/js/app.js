@@ -118,9 +118,22 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                         networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
                         cluster.set({
                             networkConfiguration: networkConfiguration,
-                            release: new models.Release({id: cluster.get('release_id')})
+                            release: new models.Release({id: cluster.get('release_id')}) 
                         });
-                        return cluster.fetchRelated('release');
+                        return cluster.fetchRelated('release').done(_.bind(function() {
+                            var roles = new models.Roles(_.map(cluster.get('release').get('roles'), function(role) {
+                                var roleData = cluster.get('release').get('roles_metadata')[role];
+                                return {
+                                    name: role,
+                                    label: roleData.name,
+                                    description: roleData.description,
+                                    depends: roleData.depends,
+                                    conflicts: roleData.conflicts
+                                };
+                            }, this));
+                            roles.cluster = cluster;
+                            cluster.set({roleCollection: roles});
+                        }), this);
                     }, this))
                     .done(_.bind(render, this))
                     .fail(_.bind(this.listClusters, this));

@@ -15,4 +15,17 @@
 import logging
 
 
-logger = logging.getLogger("nailgun.shotgun")
+def configure_logger():
+    """Configures shotgun logger
+    """
+    logger = logging.getLogger('shotgun')
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        '%(asctime)s %(levelname)s %(process)d (%(module)s) %(message)s',
+        "%Y-%m-%d %H:%M:%S")
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.DEBUG)
+    stream_handler.setFormatter(formatter)
+
+    logger.addHandler(stream_handler)

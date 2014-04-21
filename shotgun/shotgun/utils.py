@@ -12,13 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
 import os
 import re
 import shlex
 import socket
 import subprocess
 
-from shotgun.logger import logger
+
+logger = logging.getLogger(__name__)
 
 
 def hostname():

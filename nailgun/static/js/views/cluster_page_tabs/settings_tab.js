@@ -250,12 +250,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     input.parent().siblings('.parameter-description').toggle();
                 }, this);
             }, this);
-            var networkDeferred = $.Deferred().resolve();
-            if (!this.model.get('networkConfiguration')) {
-                this.model.set({networkConfiguration: new models.NetworkConfiguration()});
-                networkDeferred = this.model.get('networkConfiguration').fetch({url: _.result(this.model, 'url') + '/network_configuration/' + this.model.get('net_provider')});
-            }
-            (this.loading = $.when(this.settings.fetch({cache: true}), networkDeferred)).done(_.bind(function() {
+            (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {
                 this.updateInitialSettings();
                 this.configModels = {
                     cluster: this.model,

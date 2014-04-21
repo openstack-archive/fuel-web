@@ -114,7 +114,12 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                 };
                 $.when(cluster.fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'), tasks.fetch())
                     .then(_.bind(function(){
-                        cluster.set('release', new models.Release({id: cluster.get('release_id')}));
+                        var networkConfiguration = new models.NetworkConfiguration();
+                        networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
+                        cluster.set({
+                            networkConfiguration: networkConfiguration,
+                            release: new models.Release({id: cluster.get('release_id')})
+                        });
                         return cluster.fetchRelated('release');
                     }, this))
                     .done(_.bind(render, this))

@@ -149,16 +149,14 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         checkDependentRoles: function(settingPath) {
             var disabled = false;
-            var rolesData = this.model.get('release').get('roles_metadata');
-            _.each(this.model.get('release').get('roles'), function(role) {
-                if (!disabled) {
-                    var satisfiedDependencies = _.filter(rolesData[role].depends, function(dependency) {
-                        var dependencyValue = dependency.condition['settings:' + settingPath + '.value'];
-                        return !_.isUndefined(dependencyValue) && dependencyValue == this.settings.get(settingPath + '.value');
-                    }, this);
-                    var assignedNodes = this.model.get('nodes').filter(function(node) { return node.hasRole(role); });
-                    disabled = satisfiedDependencies.length && assignedNodes.length;
-                } else { return false; }
+            this.model.get('release').get('roles').each(function(role) {
+                var satisfiedDependencies = _.filter(role.get('depends'), function(dependency) {
+                    var dependencyValue = dependency.condition['settings:' + settingPath + '.value'];
+                    return !_.isUndefined(dependencyValue) && dependencyValue == this.settings.get(settingPath + '.value');
+                }, this);
+                var assignedNodes = this.model.get('nodes').filter(function(node) { return node.hasRole(role.get('name')); });
+                disabled = satisfiedDependencies.length && assignedNodes.length;
+                return !disabled;
             }, this);
             return disabled;
         },

@@ -120,7 +120,20 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                             networkConfiguration: networkConfiguration,
                             release: new models.Release({id: cluster.get('release_id')})
                         });
-                        return cluster.fetchRelated('release');
+                        return cluster.fetchRelated('release').done(_.bind(function(release) {
+                            var roles = new models.Roles(_.map(release.roles, function(role) {
+                                var roleData = release.roles_metadata[role];
+                                return {
+                                    name: role,
+                                    label: roleData.name,
+                                    description: roleData.description,
+                                    depends: roleData.depends,
+                                    conflicts: roleData.conflicts
+                                };
+                            }, this));
+                            roles.cluster = cluster;
+                            cluster.set({roles: roles});
+                        }), this);
                     }, this))
                     .done(_.bind(render, this))
                     .fail(_.bind(this.listClusters, this));

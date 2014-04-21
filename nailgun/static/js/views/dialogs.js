@@ -651,10 +651,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 .fail(_.bind(this.displayError, this));
         },
         render: function() {
-            this.constructor.__super__.render.call(this, {
-                cluster: this.model,
-                size: 1
-            });
+            this.constructor.__super__.render.call(this, {cluster: this.model});
             return this;
         }
     });

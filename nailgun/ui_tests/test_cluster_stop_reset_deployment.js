@@ -14,7 +14,7 @@
  * under the License.
  **/
 casper.start();
-casper.createCluster({name: 'Test Cluster'});
+casper.createCluster({name: 'Test Cluster', mode: 'multinode'});
 var nodes = [
     {status: 'discover', manufacturer: 'Dell', mac: 'C0:8D:DF:52:76:F1'}
 ];

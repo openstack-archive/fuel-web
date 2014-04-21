@@ -24,8 +24,10 @@ from nailgun.consts import OVS_BOND_MODES
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
-from nailgun.orchestrator.deployment_serializers \
-    import DeploymentHASerializer
+from nailgun.orchestrator.deployment_serializers import\
+    DeploymentHASerializer
+from nailgun.orchestrator.deployment_serializers import\
+    DeploymentMultinodeSerializer
 from nailgun.settings import settings
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
@@ -887,3 +889,28 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
             {'roles': ['compute', 'ceph-osd']}])
         data = self.serialize(cluster)
         self.assertEqual(data[0]['storage']['pg_num'], 512)
+
+
+class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
+
+    def create_env(self):
+        cluster = self.env.create(
+            cluster_kwargs={
+                'mode': 'ha_compact',
+                'network_manager': 'FlatDHCPManager'
+            },
+            nodes_kwargs=[
+                {'roles': ['mongo'], 'pending_addition': True},
+                {'roles': ['mongo'], 'pending_addition': True},
+                {'roles': ['mongo'], 'pending_addition': True}
+            ]
+        )
+        cluster = self.db.query(Cluster).get(cluster['id'])
+        TaskHelper.prepare_for_deployment(cluster.nodes)
+        return cluster
+
+    def test_mongo_roles_equals_in_defferent_modes(self):
+        cluster = self.create_env()
+        multinode_nodes = DeploymentHASerializer.serialize_nodes(cluster.nodes)
+        ha_nodes = DeploymentMultinodeSerializer.serialize_nodes(cluster.nodes)
+        self.assertEquals(multinode_nodes, ha_nodes)

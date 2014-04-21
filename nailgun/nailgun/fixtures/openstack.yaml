@@ -18,12 +18,27 @@
         description: "The controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well."
         conflicts:
           - compute
+        limits:
+          max: ~
+          min: 1
+          recommended: 1
+          overrides:
+            - condition: "cluster:mode == 'ha'"
+              recommended: 3
+              warning: "At least 3 controller nodes are recommended for HA deployment."
       compute:
         name: "Compute"
         description: "A compute node creates, manages and terminates virtual machine instances."
         conflicts:
           - controller
           - mongo
+        limits:
+          max: ~
+          min: ~
+          overrides:
+            - condition: "settings:common.libvirt_type.value == 'vcenter'"
+              max: 0
+              warning: "Computes can not be added to environment with vCenter hypervisor."
       cinder:
         name: "Storage - Cinder LVM"
         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
@@ -384,16 +399,29 @@
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
         conflicts:
           - mongo
+        limits:
+          max: ~
+          min: ~
+          overrides:
+            - condition: "settings:storage.volumes_ceph.value == true or settings:storage.images_ceph.value == true"
+              min: "settings:storage.osd_pool_size.value"
+            - condition: "settings:common.libvirt_type.value == 'vcenter'"
+              max: 0
+              warning: "Ceph cannot be used with vCenter"
       mongo:
         name: "Telemetry - MongoDB"
         description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
         conflicts:
           - compute
           - ceph-osd
-        depends:
-          - condition:
-              "settings:additional_components.ceilometer.value": true
-            warning: "Ceilometer should be enabled"
+        cant_be_added_to_deployed_env: true,
+        limits:
+          max: ~
+          min: ~
+          overrides:
+            - condition: "settings:additional_components.ceilometer.value == true"
+              max: 0
+              warning: "Ceilometer should be enabled"
     networks_metadata:
       neutron:
         networks:

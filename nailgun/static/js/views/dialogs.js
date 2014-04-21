@@ -489,7 +489,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            var cephDisabledDueToRelease = !release || !_.contains(release.get('roles'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
+            var cephDisabledDueToRelease = !release || !_.contains(release.get('roles').pluck('name'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
             var hypervisor = this.wizard.findPane(clusterWizardPanes.ClusterComputePane).hypervisor;
             var cephDisableDueToHypervisorType = hypervisor == 'vcenter';
             this.$el.html(this.template({
@@ -657,10 +657,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 .fail(_.bind(this.displayError, this));
         },
         render: function() {
-            this.constructor.__super__.render.call(this, {
-                cluster: this.model,
-                size: 1
-            });
+            this.constructor.__super__.render.call(this, {cluster: this.model});
             return this;
         }
     });

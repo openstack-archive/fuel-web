@@ -640,7 +640,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             'click .start-deployment-btn:not(.disabled)': 'deployCluster'
         },
         deployCluster: function() {
-            this.$('.start-deployment-btn').addClass('disabled');
+            this.$('.btn').addClass('disabled');
             var task = new models.Task();
             task.save({}, {url: _.result(this.model, 'url') + '/changes', type: 'PUT'})
                 .done(_.bind(function() {

@@ -743,7 +743,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                         value = utils.showBandwidth(value);
                     }
                 } catch (ignore) {}
-                return value;
+                return _.isNull(value) ? '&nbsp;' : value;
             },
             showSummary: function(meta, group) {
                 var summary = '';

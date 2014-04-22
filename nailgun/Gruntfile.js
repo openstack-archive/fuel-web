@@ -115,12 +115,24 @@ module.exports = function(grunt) {
                 files: false,
                 force: true
             }
+        },
+        jison: {
+            src: ['static/**/*.jison'],
+            target : {
+                options: {
+                    moduleType: 'commonjs'
+                },
+                files: {
+                    'static/parser.js': 'static/syntax.jison'
+                }
+            }
         }
     });
 
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-jison');
     grunt.loadNpmTasks('grunt-cleanempty');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');

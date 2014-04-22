@@ -115,12 +115,22 @@ module.exports = function(grunt) {
                 files: false,
                 force: true
             }
+        },
+        jison: {
+            target : {
+                src: 'static/syntax.jison',
+                dest: 'static/js/expression_parser.js',
+                options: {
+                    moduleType: 'js'
+                }
+            }
         }
     });
 
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-jison');
     grunt.loadNpmTasks('grunt-cleanempty');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');

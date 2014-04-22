@@ -135,6 +135,11 @@ LOGS:
     <<: *local_log_type
     <<: *python_log_format
     path: *api_log
+  - id: receiverd
+    name: "RPC consumer"
+    <<: *local_log_type
+    <<: *python_log_format
+    path: '/var/log/nailgun/receiverd.log'
   - id: astute
     name: "Orchestrator"
     <<: *local_log_type

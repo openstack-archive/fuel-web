@@ -56,8 +56,13 @@ def execute(command, to_filename=None):
     process = []
     for c in commands:
         try:
+            # NOTE(eli): Python's shlex implementation doesn't like unicode.
+            # We have to convert to ascii before shlex'ing the command.
+            # http://bugs.python.org/issue6988
+            encoded_command = c.encode('ascii')
+
             process.append(subprocess.Popen(
-                shlex.split(c),
+                shlex.split(encoded_command),
                 env=env,
                 stdin=(process[-1].stdout if process else None),
                 stdout=(to_file
@@ -66,7 +71,7 @@ def execute(command, to_filename=None):
                 stderr=(subprocess.PIPE)
             ))
         except OSError as e:
-            return (1, "", "%s\n" % str(e))
+            return (1, "", "{0}\n".format(e))
 
         if len(process) >= 2:
             process[-2].stdout.close()

@@ -19,6 +19,7 @@ try:
 except ImportError:
     # Runing unit-tests in production environment
     from unittest2.case import TestCase
+
 from mock import call
 from mock import MagicMock
 from mock import patch
@@ -92,7 +93,7 @@ class TestDriver(TestCase):
 
         driver = shotgun.driver.Driver({"host": "remote_host"}, None)
         driver.get(remote_path, target_path)
-        mexecute.assert_called_with("mkdir -p %s" % target_path)
+        mexecute.assert_called_with('mkdir -p "{0}"'.format(target_path))
         mfabget.assert_called_with(remote_path, target_path)
         mfabset.assert_called_with(
             host_string="remote_host", timeout=2, warn_only=True)
@@ -100,10 +101,9 @@ class TestDriver(TestCase):
         mexecute.reset_mock()
         driver = shotgun.driver.Driver({}, None)
         driver.get(remote_path, target_path)
-        assert mexecute.mock_calls == [
-            call("mkdir -p %s" % target_path),
-            call("cp -r %s %s" % (remote_path, target_path))
-        ]
+        self.assertEqual(mexecute.mock_calls, [
+            call('mkdir -p "{0}"'.format(target_path)),
+            call('cp -r "{0}" "{1}"'.format(remote_path, target_path))])
 
 
 class TestFile(TestCase):
@@ -153,9 +153,9 @@ class TestSubs(TestCase):
 
         subs_driver = shotgun.driver.Subs(self.data, self.conf)
         subs_driver.sed("from_file", "to_file")
-        assert self.sedscript.write.mock_calls == [
-            call("s/%s/%s/g\n" % (old, new))
-            for old, new in self.data["subs"].iteritems()]
+        self.assertEqual(self.sedscript.write.mock_calls, [
+            call("s/{0}/{1}/g\n".format(old, new))
+            for old, new in self.data["subs"].iteritems()])
         shotgun.driver.execute.assert_called_with(
             "cat from_file | sed -f SEDSCRIPT", to_filename="to_file")
 
@@ -222,7 +222,8 @@ class TestSubs(TestCase):
                 execute_calls.append(call("mktemp"))
                 sed_calls.append(call(fullfilename, tempfilename))
                 execute_calls.append(
-                    call("mv -f %s %s" % (tempfilename, fullfilename)))
+                    call('mv -f "{0}" "{1}"'.format(
+                        tempfilename, fullfilename)))
 
-        assert msed.mock_calls == sed_calls
-        assert mexecute.mock_calls == execute_calls
+        self.assertEqual(msed.mock_calls, sed_calls)
+        self.assertEqual(mexecute.mock_calls, execute_calls)

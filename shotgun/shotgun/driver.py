@@ -96,13 +96,13 @@ class Driver(object):
                                          timeout=2, warn_only=True):
                     logger.debug("Getting remote file: %s %s",
                                  path, target_path)
-                    execute("mkdir -p %s" % target_path)
+                    execute('mkdir -p "{0}"'.format(target_path))
                     return fabric.api.get(path, target_path)
             else:
                 logger.debug("Getting local file: cp -r %s %s",
                              path, target_path)
-                execute("mkdir -p %s" % target_path)
-                return execute("cp -r %s %s" % (path, target_path))
+                execute('mkdir -p "{0}"'.format(target_path))
+                return execute('cp -r "{0}" "{1}"'.format(path, target_path))
         except Exception as e:
             logger.error("Error occured: %s", str(e))
 
@@ -154,12 +154,12 @@ class Subs(File):
         logger.debug("Sed script: %s", sedscript.name)
         for orig, new in self.subs.iteritems():
             logger.debug("Sed script: s/%s/%s/g", orig, new)
-            sedscript.write("s/%s/%s/g\n" % (orig, new))
+            sedscript.write("s/{0}/{1}/g\n".format(orig, new))
             sedscript.flush()
         command = " | ".join(filter(lambda x: x != "", [
-            "cat %s" % from_filename,
+            "cat {0}".format(from_filename),
             self.decompress(from_filename),
-            "sed -f %s" % sedscript.name,
+            "sed -f {0}".format(sedscript.name),
             self.compress(from_filename),
         ]))
         execute(command, to_filename=to_filename)
@@ -197,7 +197,7 @@ class Subs(File):
                     continue
                 tempfilename = execute("mktemp")[1].strip()
                 self.sed(fullfilename, tempfilename)
-                execute("mv -f %s %s" % (tempfilename, fullfilename))
+                execute('mv -f "{0}" "{1}"'.format(tempfilename, fullfilename))
 
 
 class Postgres(Driver):
@@ -219,7 +219,7 @@ class Postgres(Driver):
                 fo.seek(0)
                 auth = False
                 for line in fo:
-                    if re.search(ur"^%s$" % authline, line):
+                    if re.search(ur"^{0}$".format(authline), line):
                         auth = True
                         break
                 if not auth:
@@ -232,10 +232,10 @@ class Postgres(Driver):
                      "-f {file} {dbname}".format(
                          dbhost=self.dbhost, username=self.username,
                          file=temp, dbname=self.dbname))
-        execute("mkdir -p %s" % self.target_path)
-        dump_basename = "%s_%s.sql" % (self.dbhost, self.dbname)
+        execute('mkdir -p "{0}"'.format(self.target_path))
+        dump_basename = "{0}_{1}.sql".format(self.dbhost, self.dbname)
 
-        execute('mv -f {0} {1}'.format(
+        execute('mv -f "{0}" "{1}"'.format(
             temp,
             os.path.join(self.target_path, dump_basename)))
 
@@ -250,7 +250,7 @@ class Command(Driver):
 
     def snapshot(self):
         out = self.command(self.cmdname)
-        execute("mkdir -p {0}".format(os.path.dirname(self.target_path)))
+        execute('mkdir -p "{0}"'.format(os.path.dirname(self.target_path)))
         with open(self.target_path, "w") as f:
             f.write("===== COMMAND =====: {0}\n".format(self.cmdname))
             f.write("===== RETURN CODE =====: {0}\n".format(

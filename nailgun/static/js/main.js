@@ -24,6 +24,7 @@ requirejs.config({
         'jquery-ui': 'js/libs/custom/jquery-ui-1.10.2.custom',
         'jquery-autoNumeric': 'js/libs/bower/autoNumeric/js/autoNumeric',
         utils: 'js/utils',
+        expression_parser: 'js/expression_parser',
         lodash: 'js/libs/bower/lodash/js/lodash',
         backbone: 'js/libs/custom/backbone',
         stickit: 'js/libs/bower/backbone.stickit/js/index',
@@ -48,6 +49,9 @@ requirejs.config({
         backbone: {
             deps: ['underscore', 'jquery'],
             exports: 'Backbone'
+        },
+        expression_parser: {
+            exports: 'parser'
         },
         stickit: {
             deps: ['backbone']

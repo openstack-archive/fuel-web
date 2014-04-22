@@ -11,6 +11,8 @@
     "requirejs": "~2.1.9",
     "uglifyjs": "~2.3.6",
     "less": "~1.5.1",
+    "jison": "~0.4.13",
+    "grunt-jison": "~1.2.1",
     "grunt-jslint": "~1.1.1",
     "grunt-contrib-requirejs": "~0.4.1",
     "grunt-contrib-less": "~0.8.2",

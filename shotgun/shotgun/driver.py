@@ -68,8 +68,10 @@ class Driver(object):
         out = CommandOut()
         try:
             if not self.local:
-                with fabric.api.settings(host_string=self.host,
-                                         timeout=2, warn_only=True):
+                # timeout -- a network connection timeout
+                # command_timeout -- timeout for command execution
+                with fabric.api.settings(host_string=self.host, timeout=2,
+                                         command_timeout=10, warn_only=True):
                     logger.debug("Running remote command: "
                                  "host: %s command: %s", self.host, command)
                     output = fabric.api.run(command, pty=True)

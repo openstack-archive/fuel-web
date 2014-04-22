@@ -536,13 +536,18 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
+    def _make_data_copy(self, data_to_copy):
+        '''Sqalchemy doesn't track change on composite attribute
+        so we need to create fresh copy of it which will take all
+        needed modifications and will be assigned as new value
+        for that attribute
+        '''
+        return copy.deepcopy(data_to_copy)
+
     def test_vlan_splinters_disabled(self):
         cluster = self._create_cluster_for_vlan_splinters()
         cluster_id = cluster.id
-
-        # sqlalchemy doesn't track change on composite attribute
-        # so we need to do this workaround
-        editable_attrs = copy.deepcopy(cluster.attributes.editable)
+        editable_attrs = self._make_data_copy(cluster.attributes.editable)
 
         # Remove 'vlan_splinters' attribute and check results.
 
@@ -564,8 +569,9 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         # Set 'vlan_splinters' to 'some_text' and check results.
 
-        editable_attrs = copy.deepcopy(cluster.attributes.editable)
+        editable_attrs = self._make_data_copy(cluster.attributes.editable)
         editable_attrs['vlan_splinters'] = {'vswitch': {'value': 'some_text'}}
+        editable_attrs['vlan_splinters']['metadata'] = {'enabled': True}
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
@@ -584,14 +590,16 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         # Set 'vlan_splinters' to 'disabled' and check results.
 
-        editable_attrs['vlan_splinters']['vswitch']['value'] = 'disabled'
+        editable_attrs['vlan_splinters']['metadata']['enabled'] = False
         cluster.attributes.editable = editable_attrs
         self.db.commit()
 
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable
-        self.assertEquals(editable_attrs['vlan_splinters']['vswitch']['value'],
-                          'disabled')
+        self.assertEquals(
+            editable_attrs['vlan_splinters']['metadata']['enabled'],
+            False
+        )
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
         interfaces = node['network_scheme']['interfaces']
@@ -605,12 +613,10 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_kernel_lt_vlan_splinters(self):
         cluster = self._create_cluster_for_vlan_splinters()
         cluster_id = cluster.id
-
-        # sqlalchemy doesn't track change on composite attribute
-        # so we need to do this workaround
-        editable_attrs = copy.deepcopy(cluster.attributes.editable)
+        editable_attrs = self._make_data_copy(cluster.attributes.editable)
 
         #value of kernel-ml should end up with vlan_splinters = off
+        editable_attrs['vlan_splinters']['metadata']['enabled'] = True
         editable_attrs['vlan_splinters']['vswitch']['value'] = 'kernel_lt'
         cluster.attributes.editable = editable_attrs
         self.db.commit()
@@ -631,10 +637,9 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def test_hard_vlan_splinters_in_gre(self):
         cluster = self._create_cluster_for_vlan_splinters('gre')
+        editable_attrs = self._make_data_copy(cluster.attributes.editable)
 
-        # sqlalchemy doesn't track change on composite attribute
-        # so we need to do this workaround
-        editable_attrs = copy.deepcopy(cluster.attributes.editable)
+        editable_attrs['vlan_splinters']['metadata']['enabled'] = True
         editable_attrs['vlan_splinters']['vswitch']['value'] = 'hard'
         cluster.attributes.editable = editable_attrs
         self.db.commit()
@@ -659,10 +664,9 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def test_hard_vlan_splinters_in_vlan(self):
         cluster = self._create_cluster_for_vlan_splinters('vlan')
+        editable_attrs = self._make_data_copy(cluster.attributes.editable)
 
-        # sqlalchemy doesn't track change on composite attribute
-        # so we need to do this workaround
-        editable_attrs = copy.deepcopy(cluster.attributes.editable)
+        editable_attrs['vlan_splinters']['metadata']['enabled'] = True
         editable_attrs['vlan_splinters']['vswitch']['value'] = 'hard'
         cluster.attributes.editable = editable_attrs
         self.db.commit()
@@ -691,10 +695,9 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def test_soft_vlan_splinters_in_vlan(self):
         cluster = self._create_cluster_for_vlan_splinters('vlan')
+        editable_attrs = self._make_data_copy(cluster.attributes.editable)
 
-        # sqlalchemy doesn't track change on composite attribute
-        # so we need to do this workaround
-        editable_attrs = copy.deepcopy(cluster.attributes.editable)
+        editable_attrs['vlan_splinters']['metadata']['enabled'] = True
         editable_attrs['vlan_splinters']['vswitch']['value'] = 'soft'
         cluster.attributes.editable = editable_attrs
         self.db.commit()

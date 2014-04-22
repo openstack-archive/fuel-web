@@ -106,7 +106,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                             }, this));
                         } else {
                             this.hasChanges = false;
-                            this.model.set({networkConfiguration: new models.NetworkConfiguration(this.networkConfiguration.toJSON(), {parse: true})});
+                            var fakeModel = new models.NetworkConfiguration(this.networkConfiguration.toJSON(), {parse: true});
+                            this.model.get('networkConfiguration').set(fakeModel.attributes);
                             this.model.fetch();
                             this.model.fetchRelated('tasks');
                         }

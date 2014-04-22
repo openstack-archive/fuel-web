@@ -247,7 +247,7 @@
                 label: "QEMU"
                 description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
               - data: "vcenter"
-                label: "VCENTER"
+                label: "vCenter"
                 description: "Choose this type of hypervisor if you run OpenStack in a vCenter environment."
                 conflicts:
                   - "cluster:net_provider": "neutron"

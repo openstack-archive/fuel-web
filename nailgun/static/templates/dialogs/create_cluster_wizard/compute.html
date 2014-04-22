@@ -2,11 +2,6 @@
   <fieldset>
     <div class="control-group">
       <% var hypervisors = ['kvm', 'qemu', 'vcenter'] %>
-      <% var descriptions = {
-        kvm: $.t('dialog.create_cluster_wizard.compute.kvm_description'),
-        qemu: $.t('dialog.create_cluster_wizard.compute.qemu_description'),
-        vcenter: $.t('dialog.create_cluster_wizard.compute.vcenter_description')
-      } %>
       <% _.each(hypervisors, function(hypervisor) { %>
         <label class="parameter-box clearfix">
           <div class="parameter-control">
@@ -15,9 +10,9 @@
               <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
           </div>
-          <div class="parameter-name"><%- hypervisor %></div>
+          <div class="parameter-name"><%- $.t('dialog.create_cluster_wizard.compute.' + hypervisor) %></div>
         </label>
-        <div class="modal-parameter-description"><%- descriptions[hypervisor] %></div>
+        <div class="modal-parameter-description"><%- $.t('dialog.create_cluster_wizard.compute.' + hypervisor + '_description') %></div>
       <% }) %>
     </div>
   </fieldset>

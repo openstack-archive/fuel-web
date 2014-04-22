@@ -193,6 +193,7 @@ class NodeAgent
       },
       :disks => [],
       :memory => (_dmi_memory or _ohai_memory),
+      :raid => raid_detect,
     }
 
     begin
@@ -471,6 +472,51 @@ class NodeAgent
     {}
   end
 
+  def raid_detect
+    case
+    when check_raid =~ /LSI/
+      lsi_raid
+    end
+  end
+
+  def check_raid
+    # TODO: ruby >= 1.9 remove tr("\t", '  ')
+    @check_raid ||= `lspci -vmm`.split(/^$/).map{|v| v = YAML.load(v.tr("\t", '  ')) }.select do |v|
+      return v['Vendor'] if v && v['Device'] =~ /RAID/
+      return v['Vendor'] if v && v['Device'] =~ /Flash SSD/
+    end
+  end
+
+  def lsi_raid
+
+    parsed_info = {:controllers => []}
+
+    JSON.parse(`curl -X GET http://localhost:8080/v0.5/controllers/all`)['data'].each do |controller|
+
+    structure = {
+      :vendor => :lsi, :model => nil, :controller_id => nil, :pci_address => nil,
+      :max_cachecade_size => nil, :enclosure => [], :physical_drives => [], :virtual_drives => []
+    }
+
+      structure[:model] = controller['model']
+      structure[:controller_id] = controller['controller_id']
+      structure[:pci_address] = controller['pci_address']
+      structure[:enclosure] = controller['enclosures']
+      structure[:max_cachecade_size] = controller['capabilities']['max_cachecade_size']
+
+      controller['physical_drives'].each do |pd|
+        structure[:physical_drives] << HardDisk.new(pd).to_report
+      end
+
+      controller['virtual_drives'].each do |vd|
+        structure[:virtual_drives] << VirtDisk.new(vd).to_report
+      end
+
+      parsed_info[:controllers] << structure
+    end
+    parsed_info
+  end
+
   def _data
     res = {
       :mac => (@os[:macaddress] rescue nil),
@@ -504,6 +550,39 @@ class NodeAgent
       system_type = fl.readline.rstrip
       @node_state = "discover" if system_type == "bootstrap"
     end
+  end
+end
+
+
+class HardDisk
+
+  KEYS = ['slot', 'state', 'enclosure', 'drive_group', 'size', 'interface', 'medium', 'sector_size', 'model']
+
+  def initialize(hash)
+    @disks = {}
+    hash.select{|k,v| KEYS.include? k }.map{|v|  Hash[*v]}.each{|v| @disks.merge! v}
+    # TODO: ruby <= 1.9 remove all in initialize and uncomment next line
+    #@disks = hash.select{|k,v| KEYS.include? k }
+  end
+
+  def to_report
+    @disks
+  end
+end
+
+class VirtDisk
+
+  KEYS = ['virtual_drive', 'drive_group', 'raid_level', 'state', 'access', 'consistent', 'write_cache', 'size', 'ssd_caching_active']
+
+  def initialize(hash)
+    @disks = {}
+    hash.select{|k,v| KEYS.include? k }.map{|v|  Hash[*v]}.each{|v| @disks.merge! v}
+    # TODO: ruby >= 1.9 remove all in initialize and uncomment next line
+    #@disks = hash.select{|k,v| KEYS.include? k }
+  end
+
+  def to_report
+    @disks
   end
 end
 
@@ -548,7 +627,7 @@ end
 
 sleep_time = rand(30)
 logger.debug("Sleep for #{sleep_time} seconds before sending request")
-sleep(sleep_time)
+sleep(sleep_time) unless ARGV.include? 'sleep-off'
 
 agent = NodeAgent.new(logger, url)
 agent.update_state

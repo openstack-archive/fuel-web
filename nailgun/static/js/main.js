@@ -49,6 +49,9 @@ requirejs.config({
             deps: ['underscore', 'jquery'],
             exports: 'Backbone'
         },
+        expression_parser: {
+            exports: 'parser'
+        },
         stickit: {
             deps: ['backbone']
         },

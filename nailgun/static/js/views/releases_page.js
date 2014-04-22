@@ -102,7 +102,7 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.model.get('tasks').bindToView(this, [{group: 'release_setup', status: 'running', release: this.release.id}], function(task) {
+            this.page.tasks.bindToView(this, [{group: 'release_setup', status: 'running', release: this.release.id}], function(task) {
                 task.on('change:status', this.checkForSetupCompletion, this);
                 task.on('change:progress', this.updateProgress, this);
             }, function() {

@@ -128,9 +128,12 @@
                 "cluster_hardware_cpu": "CPU (cores)",
                 "cluster_hardware_hdd": "HDD",
                 "cluster_hardware_ram": "RAM",
-                "register_trial_message_click": "Master node installation completed successfully. If you want to register your installation and sign up for trial support, please click ",
-                "register_trial_link_label": "here",
-                "register_trial_message_close": ". Otherwise you can close this panel."
+                "register_trial_message": {
+                    "part1": "Master node installation completed successfully.",
+                    "part2": "If you want to register your installation and sign up for trial support, please click ",
+                    "part3": "here",
+                    "part4": ". Otherwise you can close this panel."
+                }
             },
             "cluster_page": {
                 "tabs": {

@@ -379,12 +379,13 @@
                         "vcenter": "vCenter",
                         "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
                         "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts",
-                        "vcenter_description": "Choose this type of hypervisor if you run OpenStack in a vCenter environment"
+                        "vcenter_description": "Choose this option if you have a vCenter environment with ESXi servers to be used as hypervisors",
+                        "vcenter_warning": "Please remember to enter vCenter environment information in the Settings tab before deploying"
                     },
                     "network": {
                         "title": "Network",
                         "release_alert": "Neutron is not supported in __releaseName__",
-                        "hypervisor_alert": "Neutron is not supported with __hypervisor__",
+                        "hypervisor_alert": "Neutron is not available with __hypervisor__ as a compute option.",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron with GRE segmentation",
                         "neutr_vlan": "Neutron with VLAN segmentation"
@@ -402,7 +403,7 @@
                     "additional": {
                         "title": "Additional Services",
                         "release_alert": "Additional services are not available in __releaseName__",
-                        "network_mode_alert": "Murano is not available for current network mode. Please choose Neutron networking to enable.",
+                        "network_mode_alert": "Murano requires Neutron as a network option.",
                         "install_sahara": "Install Sahara",
                         "install_sahara_description": "Sahara enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
                         "install_murano": "Install Murano",

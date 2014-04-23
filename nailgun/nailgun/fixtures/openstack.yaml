@@ -186,30 +186,30 @@
           host_ip:
             value: ""
             label: "vCenter IP"
-            description: ""
+            description: "IP Address of vCenter"
             weight: 10
             type: "text"
             depends:
               - "settings:common.libvirt_type.value": "vcenter"
           vc_user:
             value: ""
-            label: "username"
-            description: "vCenter Username"
+            label: "Username"
+            description: "vCenter admin username"
             weight: 30
             type: "text"
             depends:
               - "settings:common.libvirt_type.value": "vcenter"
           vc_password:
             value: ""
-            label: "password"
-            description: "vCenter Password"
+            label: "Password"
+            description: "vCenter admin password"
             weight: 30
             type: "password"
             depends:
               - "settings:common.libvirt_type.value": "vcenter"
           cluster:
             value: ""
-            label: "cluster"
+            label: "Cluster"
             description: "vCenter cluster name"
             weight: 40
             type: "text"

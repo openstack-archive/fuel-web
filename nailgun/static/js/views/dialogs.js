@@ -396,6 +396,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         onHypervisorChange: function() {
             this.hypervisor = this.$('input[name=hypervisor]:checked').val();
+            this.$('.alert').toggle(this.hypervisor == 'vcenter');
             this.wizard.updateMaxAvaialblePaneIndex();
         },
         processPaneData: function() {
@@ -450,7 +451,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 disabledDueToRelease: disabledDueToRelease,
                 disableDueToHypervisorType: disableDueToHypervisorType,
                 release: release,
-                hypervisor: hypervisor
+                hypervisor: $.t('dialog.create_cluster_wizard.compute.' + hypervisor)
             })).i18n();
             if (disabledDueToRelease || disableDueToHypervisorType) {
                 this.$('input[value^=neutron]').prop('disabled', true);

@@ -17,6 +17,7 @@
 from itertools import chain
 from itertools import repeat
 from random import randrange
+import re
 import threading
 import time
 
@@ -30,8 +31,35 @@ from nailgun import objects
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.logger import logger
 from nailgun.rpc.receiver import NailgunReceiver
 from nailgun.settings import settings
+
+from sqlalchemy.exc import DBAPIError
+
+_DEADLOCK_RE_DB = re.compile(r"^.*deadlock detected.*")
+_HINT_RE_DB = re.compile(r"HINT.*", flags=re.DOTALL)
+
+
+def handling_db_errors(func, retries=3, **kwargs):
+    try:
+        func(**kwargs)
+    except DBAPIError as e:
+        # Retry only for deadlock error
+        dbl_re = _DEADLOCK_RE_DB
+        dbl_m = dbl_re.match(str(e))
+        if dbl_m and retries:
+            time.sleep(0.01)
+            retries -= 1
+            db_hint = _HINT_RE_DB.search(str(e)).group()
+            logger.debug(
+                "Retries %s. Deadlock error occurred. Additional info: %s",
+                func.__name__,
+                db_hint
+            )
+            handling_db_errors(func, retries=retries, **kwargs)
+        else:
+            raise
 
 
 class FSMNodeFlow(Fysom):
@@ -355,7 +383,7 @@ class FakeDeletionThread(FakeThread):
         }
         nodes_to_restore = self.data['args'].get('nodes_to_restore', [])
         resp_method = getattr(receiver, self.respond_to)
-        resp_method(**kwargs)
+        handling_db_errors(resp_method, **kwargs)
 
         recover_nodes = self.params.get("recover_nodes", True)
 

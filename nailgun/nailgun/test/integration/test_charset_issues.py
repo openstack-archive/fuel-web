@@ -55,7 +55,6 @@ class TestCharsetIssues(BaseIntegrationTest):
         self.env.wait_for_nodes_status(self.env.nodes, 'provisioning')
         self.env.wait_ready(supertask, 60)
 
-    @unittest.skip("Temporary disabled - causes deadlocks")
     @fake_tasks()
     def test_deletion_during_deployment(self):
         self.env.create(
@@ -88,6 +87,6 @@ class TestCharsetIssues(BaseIntegrationTest):
             if (time.time() - timer) > timeout:
                 raise Exception("Cluster deletion timeout")
             time.sleep(0.24)
-
+ 
         cluster_db = self.db.query(Cluster).get(cluster_id)
         self.assertIsNone(cluster_db)

@@ -96,6 +96,7 @@ class DeploymentMultinodeSerializer(object):
                 attrs['use_cinder'] = True
 
         cls.set_storage_parameters(cluster, attrs)
+        cls.set_primary_mongo(attrs['nodes'])
 
         attrs = dict_merge(
             attrs,
@@ -158,14 +159,18 @@ class DeploymentMultinodeSerializer(object):
     def set_deployment_priorities(cls, nodes):
         """Set priorities of deployment."""
         prior = Priority()
-        for n in cls.by_role(nodes, 'mongo'):
-            n['priority'] = prior.next
-
         for n in cls.by_role(nodes, 'controller'):
             n['priority'] = prior.next
 
+        for n in cls.by_role(nodes, 'primary-mongo'):
+            n['priority'] = prior.next
+
+        for n in cls.by_role(nodes, 'mongo'):
+            n['priority'] = prior.next
+
         other_nodes_prior = prior.next
-        for n in cls.not_roles(nodes, ['controller', 'mongo']):
+        for n in cls.not_roles(nodes,
+                               ['controller', 'mongo', 'primary-mongo']):
             n['priority'] = other_nodes_prior
 
     @classmethod
@@ -374,12 +379,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         """Set priorities of deployment for HA mode."""
         prior = Priority()
 
-        for n in cls.by_role(nodes, 'mongo'):
-            n['priority'] = prior.next
-
-        for n in cls.by_role(nodes, 'primary-mongo'):
-            n['priority'] = prior.next
-
         primary_swift_proxy_piror = prior.next
         for n in cls.by_role(nodes, 'primary-swift-proxy'):
             n['priority'] = primary_swift_proxy_piror
@@ -398,6 +397,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         # Then deploy other controllers one by one
         for n in cls.by_role(nodes, 'controller'):
+            n['priority'] = prior.next
+
+        for n in cls.by_role(nodes, 'primary-mongo'):
+            n['priority'] = prior.next
+
+        for n in cls.by_role(nodes, 'mongo'):
             n['priority'] = prior.next
 
         other_nodes_prior = prior.next

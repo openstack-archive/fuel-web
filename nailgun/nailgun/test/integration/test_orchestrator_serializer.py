@@ -246,6 +246,27 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         }
         self.datadiff(expected_interfaces, interfaces)
 
+    def test_set_deployment_priorities(self):
+        nodes = [
+            {'role': 'primary-mongo'},
+            {'role': 'mongo'},
+            {'role': 'mongo'},
+            {'role': 'controller'},
+            {'role': 'ceph-osd'},
+            {'role': 'other'}
+        ]
+        serializer = DeploymentMultinodeSerializer()
+        serializer.set_deployment_priorities(nodes)
+        expected_priorities = [
+            {'role': 'primary-mongo', 'priority': 100},
+            {'role': 'mongo', 'priority': 200},
+            {'role': 'mongo', 'priority': 300},
+            {'role': 'controller', 'priority': 400},
+            {'role': 'ceph-osd', 'priority': 500},
+            {'role': 'other', 'priority': 500}
+        ]
+        self.assertEquals(expected_priorities, nodes)
+
 
 class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
@@ -277,11 +298,11 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
     def test_set_deployment_priorities(self):
         nodes = [
-            {'role': 'mongo'},
-            {'role': 'primary-mongo'},
             {'role': 'primary-swift-proxy'},
             {'role': 'swift-proxy'},
             {'role': 'storage'},
+            {'role': 'primary-mongo'},
+            {'role': 'mongo'},
             {'role': 'primary-controller'},
             {'role': 'controller'},
             {'role': 'controller'},
@@ -290,11 +311,11 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         ]
         self.serializer.set_deployment_priorities(nodes)
         expected_priorities = [
-            {'role': 'mongo', 'priority': 100},
-            {'role': 'primary-mongo', 'priority': 200},
-            {'role': 'primary-swift-proxy', 'priority': 300},
-            {'role': 'swift-proxy', 'priority': 400},
-            {'role': 'storage', 'priority': 500},
+            {'role': 'primary-swift-proxy', 'priority': 100},
+            {'role': 'swift-proxy', 'priority': 200},
+            {'role': 'storage', 'priority': 300},
+            {'role': 'primary-mongo', 'priority': 400},
+            {'role': 'mongo', 'priority': 500},
             {'role': 'primary-controller', 'priority': 600},
             {'role': 'controller', 'priority': 700},
             {'role': 'controller', 'priority': 800},
@@ -908,6 +929,17 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
 
     def test_mongo_roles_equals_in_defferent_modes(self):
         cluster = self.create_env()
-        multinode_nodes = DeploymentHASerializer.serialize_nodes(cluster.nodes)
-        ha_nodes = DeploymentMultinodeSerializer.serialize_nodes(cluster.nodes)
-        self.assertEquals(multinode_nodes, ha_nodes)
+        ha_nodes = DeploymentHASerializer.serialize_nodes(cluster.nodes)
+        mn_nodes = DeploymentMultinodeSerializer.serialize_nodes(cluster.nodes)
+        self.assertEquals(mn_nodes, ha_nodes)
+
+    def test_primary_node_selected(self):
+        cluster = self.create_env()
+        ha_nodes = DeploymentHASerializer.serialize_nodes(cluster.nodes)
+        mn_nodes = DeploymentMultinodeSerializer.serialize_nodes(cluster.nodes)
+
+        def primary_nodes_count(nodes):
+            return len(filter(lambda x: x['role'] == 'primary-mongo', nodes))
+
+        self.assertEquals(1, primary_nodes_count(ha_nodes))
+        self.assertEquals(1, primary_nodes_count(mn_nodes))

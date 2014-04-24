@@ -655,16 +655,26 @@
     description: "This option will install the OpenStack Icehouse packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
       editable:
+        kernel_params:
+          metadata:
+            label: "Kernel parameters"
+            weight: 40
+          kernel:
+            value: "console=ttyS0,9600 console=tty0 biosdevname=0 crashkernel=none rootdelay=90 nomodeset"
+            label: "Initial parameters"
+            description: "Default kernel parameters"
+            weight: 45
+            type: "text"
         vlan_splinters:
           metadata:
             toggleable: true
             enabled: false
             label: "VLAN Splinters"
-            weight: 40
+            weight: 50
           vswitch:
             value: "disabled"
             label: "Open VSwitch VLAN Splinters feature (Neutron only)"
-            weight: 45
+            weight: 55
             type: "radio"
             values:
               - data: "soft"
@@ -688,6 +698,17 @@
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Icehouse packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
+      editable:
+        kernel_params:
+          metadata:
+            label: "Kernel parameters"
+            weight: 40
+          kernel:
+            value: "console=ttyS0,9600 console=tty0 rootdelay=90 nomodeset"
+            label: "Initial parameters"
+            description: "Default kernel parameters"
+            weight: 45
+            type: "text"
       generated:
         cobbler:
           profile:

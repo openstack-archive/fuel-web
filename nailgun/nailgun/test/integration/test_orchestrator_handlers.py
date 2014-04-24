@@ -184,6 +184,8 @@ class TestSelectedNodesAction(BaseIntegrationTest):
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['cinder'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True},
+                {'roles': ['mongo'], 'pending_addition': True},
+                {'roles': ['mongo'], 'pending_addition': True},
                 {'roles': ['cinder'], 'pending_addition': True}])
 
         self.cluster = self.env.clusters[0]

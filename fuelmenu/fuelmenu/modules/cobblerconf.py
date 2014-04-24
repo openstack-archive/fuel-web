@@ -36,6 +36,7 @@ facter_translate = {
     "ADMIN_NETWORK/interface": "internal_interface",
     "ADMIN_NETWORK/ipaddress": "internal_ipaddress",
     "ADMIN_NETWORK/netmask": "internal_netmask",
+    "ADMIN_NETWORK/mac": "mac",
     "ADMIN_NETWORK/dhcp_pool_start": "dhcp_pool_start",
     "ADMIN_NETWORK/dhcp_pool_end": "dhcp_pool_end",
     "ADMIN_NETWORK/static_pool_start": "static_pool_start",
@@ -127,6 +128,8 @@ installed nodes",
         responses["ADMIN_NETWORK/interface"] = self.activeiface
         responses["ADMIN_NETWORK/netmask"] = self.netsettings[
             self.activeiface]["netmask"]
+        responses["ADMIN_NETWORK/mac"] = self.netsettings[
+            self.activeiface]["mac"]
         responses["ADMIN_NETWORK/ipaddress"] = self.netsettings[
             self.activeiface]["addr"]
 

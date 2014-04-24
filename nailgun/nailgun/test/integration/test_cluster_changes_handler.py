@@ -245,6 +245,7 @@ class TestHandlers(BaseIntegrationTest):
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
                 'netboot_enabled': '1',
                 'ks_meta': {
+                    'bootloader_params': n.kernel_params,
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_version': settings.PUPPET_VERSION,
@@ -625,6 +626,7 @@ class TestHandlers(BaseIntegrationTest):
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
                 'netboot_enabled': '1',
                 'ks_meta': {
+                    'bootloader_params': n.kernel_params,
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_version': settings.PUPPET_VERSION,

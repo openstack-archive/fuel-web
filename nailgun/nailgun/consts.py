@@ -30,6 +30,15 @@ RELEASE_STATES = Enum(
     'available'
 )
 
+RELEASE_OS = Enum(
+    'Ubuntu',
+    'CentOS',
+    names=(
+        'ubuntu',
+        'centos'
+    )
+)
+
 CLUSTER_MODES = Enum(
     'multinode',
     'ha_full',

@@ -313,6 +313,7 @@ def save_only(iface):
             "ADMIN_NETWORK/interface": "internal_interface",
             "ADMIN_NETWORK/ipaddress": "internal_ipaddress",
             "ADMIN_NETWORK/netmask": "internal_netmask",
+            "ADMIN_NETWORK/mac": "internal_mac",
             "ADMIN_NETWORK/dhcp_pool_start": "dhcp_pool_start",
             "ADMIN_NETWORK/dhcp_pool_end": "dhcp_pool_end",
             "ADMIN_NETWORK/static_pool_start": "static_pool_start",
@@ -323,8 +324,9 @@ def save_only(iface):
     try:
         ip = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]['addr']
         netmask = netifaces.ifaddresses(iface)[netifaces.AF_INET][0]['netmask']
+        mac = netifaces.ifaddresses(iface)[netifaces.AF_LINK][0]['addr']
     except Exception:
-        print("Interface %s does is missing either IP address or netmask"
+        print("Interface %s is missing either IP address or netmask"
               % (iface))
         sys.exit(1)
     net_ip_list = network.getNetwork(ip, netmask)
@@ -345,6 +347,7 @@ def save_only(iface):
             "ADMIN_NETWORK/interface": iface,
             "ADMIN_NETWORK/ipaddress": ip,
             "ADMIN_NETWORK/netmask": netmask,
+            "ADMIN_NETWORK/mac": mac,
             "ADMIN_NETWORK/dhcp_pool_start": dynamic_start,
             "ADMIN_NETWORK/dhcp_pool_end": dynamic_end,
             "ADMIN_NETWORK/static_pool_start": static_start,

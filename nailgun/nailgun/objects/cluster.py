@@ -18,9 +18,9 @@
 Cluster-related objects and collections
 """
 
-from nailgun import consts
-
 from nailgun.api.serializers.cluster import ClusterSerializer
+
+from nailgun import consts
 
 from nailgun.db import db
 
@@ -193,6 +193,12 @@ class Cluster(NailgunObject):
         db().flush()
 
         return new_cluster
+
+    @classmethod
+    def get_default_kernel_params(cls, instance):
+        kernel_params = instance.attributes.editable.get("kernel_params")
+        if kernel_params and kernel_params.get("kernel"):
+            return kernel_params.get("kernel").get("value")
 
     @classmethod
     def create_attributes(cls, instance):

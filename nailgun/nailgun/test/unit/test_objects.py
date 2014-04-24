@@ -19,6 +19,8 @@ from itertools import ifilter
 
 from nailgun.test.base import BaseIntegrationTest
 
+from nailgun import consts
+
 from nailgun.db import NoCacheQuery
 
 from nailgun import objects
@@ -67,6 +69,64 @@ class TestObjects(BaseIntegrationTest):
 
 
 class TestNodeObject(BaseIntegrationTest):
+
+    def test_adding_to_cluster_kernel_params_centos(self):
+        self.env.create(
+            release_kwargs={
+                "operating_system": consts.RELEASE_OS.centos
+            },
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"role": "controller"}
+            ]
+        )
+        node_db = self.env.nodes[0]
+        self.assertEqual(
+            node_db.kernel_params,
+            (
+                'console=ttyS0,9600 '
+                'console=tty0 '
+                'biosdevname=0 '
+                'crashkernel=none '
+                'rootdelay=90 '
+                'nomodeset'
+            )
+        )
+
+    def test_adding_to_cluster_kernel_params_ubuntu(self):
+        self.env.create(
+            release_kwargs={
+                "operating_system": consts.RELEASE_OS.ubuntu,
+                "attributes_metadata": {
+                    "editable": {
+                        "kernel_params": {
+                            "kernel": {
+                                "value": (
+                                    "console=ttyS0,9600 "
+                                    "console=tty0 "
+                                    "rootdelay=90 "
+                                    "nomodeset"
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"role": "controller"}
+            ]
+        )
+        node_db = self.env.nodes[0]
+        self.assertEqual(
+            node_db.kernel_params,
+            (
+                'console=ttyS0,9600 '
+                'console=tty0 '
+                'rootdelay=90 '
+                'nomodeset'
+            )
+        )
 
     def test_removing_from_cluster(self):
         self.env.create(

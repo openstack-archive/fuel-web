@@ -96,6 +96,7 @@ class DeploymentMultinodeSerializer(object):
                 attrs['use_cinder'] = True
 
         cls.set_storage_parameters(cluster, attrs)
+        cls.set_primary_mongo(attrs['nodes'])
 
         attrs = dict_merge(
             attrs,
@@ -161,11 +162,14 @@ class DeploymentMultinodeSerializer(object):
         for n in cls.by_role(nodes, 'mongo'):
             n['priority'] = prior.next
 
+        for n in cls.by_role(nodes, 'primary-mongo'):
+            n['priority'] = prior.next
+
         for n in cls.by_role(nodes, 'controller'):
             n['priority'] = prior.next
 
         other_nodes_prior = prior.next
-        for n in cls.not_roles(nodes, ['controller', 'mongo']):
+        for n in cls.not_roles(nodes, ['controller', 'mongo', 'primary-mongo']):
             n['priority'] = other_nodes_prior
 
     @classmethod

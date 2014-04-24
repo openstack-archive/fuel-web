@@ -291,6 +291,10 @@ def upgrade():
         sa.ForeignKeyConstraint(['release_id'], ['releases.id'], ),
         sa.PrimaryKeyConstraint('id')
     )
+    op.add_column(
+        'nodes',
+        sa.Column('kernel_params', sa.Text(), nullable=True)
+    )
     ### end Alembic commands ###
 
 
@@ -299,7 +303,7 @@ def downgrade():
     # Fuel upgrade required changes
     op.drop_table('release_orchestrator_data')
     op.drop_column('clusters', 'fuel_version')
-
+    op.drop_column('nodes', 'kernel_params')
     op.alter_column(
         'network_groups',
         'netmask',

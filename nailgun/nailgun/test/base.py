@@ -100,8 +100,12 @@ class Environment(object):
         self.network_manager = NetworkManager
 
     def create(self, **kwargs):
+        release_data = kwargs.pop('release_kwargs', {"api": False})
+        cluster_data = kwargs.pop('cluster_kwargs', {})
+        if 'release_id' not in cluster_data:
+            cluster_data['release_id'] = self.create_release(**release_data).id
         cluster = self.create_cluster(
-            **kwargs.pop('cluster_kwargs', {})
+            **cluster_data
         )
         for node_kwargs in kwargs.pop('nodes_kwargs', []):
             if "cluster_id" not in node_kwargs:

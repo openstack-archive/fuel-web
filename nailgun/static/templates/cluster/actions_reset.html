@@ -1,0 +1,4 @@
+<div class="action-item-description <%= isResetDisabled ? 'unavailable' : '' %>" data-i18n="cluster_page.actions_tab.<%- descriptionKey %>"></div>
+<% if (!isResetDisabled) { %>
+  <div class="action-item-description important" data-i18n="cluster_page.actions_tab.reset_environment_warning"></div>
+<% } %>

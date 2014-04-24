@@ -71,7 +71,17 @@ msg_levels = {'ruby': {'regex': '(?P<level>[DIWEF]), \[[0-9-]{10}T',
                                       'ERROR': logging.ERROR,
                                       'CRITICAL': logging.CRITICAL
                                       }
+                           },
+              'netprobe': {'regex': ('[0-9-]{10} [0-9:]{8},[0-9]+ (?P<level>'
+                                     'DEBUG|INFO|WARNING|ERROR|CRITICAL)'),
+                           'levels': {'DEBUG': logging.DEBUG,
+                                      'INFO': logging.INFO,
+                                      'WARNING': logging.WARNING,
+                                      'ERROR': logging.ERROR,
+                                      'CRITICAL': logging.CRITICAL
+                                      }
                            }
+
               }
 relevel_errors = {
     'anaconda': [

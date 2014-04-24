@@ -22,6 +22,8 @@ from nailgun import consts
 
 from nailgun.api.serializers.cluster import ClusterSerializer
 
+from nailgun import consts
+
 from nailgun.db import db
 
 from nailgun.db.sqlalchemy import models
@@ -189,6 +191,26 @@ class Cluster(NailgunObject):
         db().flush()
 
         return new_cluster
+
+    @classmethod
+    def get_default_kernel_params(cls, instance):
+        if instance.release.operating_system == consts.RELEASE_OS.centos:
+            return (
+                'console=ttyS0,9600 '
+                'console=tty0 '
+                'biosdevname=0 '
+                'crashkernel=none '
+                'rootdelay=90 '
+                'nomodeset '
+            )
+        elif instance.release.operating_system == consts.RELEASE_OS.ubuntu:
+            return (
+                'console=ttyS0,9600 '
+                'console=tty0 '
+                'rootdelay=90 '
+                'nomodeset '
+            )
+
 
     @classmethod
     def create_attributes(cls, instance):

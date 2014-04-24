@@ -23,6 +23,7 @@ from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
 from sqlalchemy import String
+from sqlalchemy import Text
 from sqlalchemy import Unicode
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm import relationship, backref
@@ -84,6 +85,7 @@ class Node(Base):
     fqdn = Column(String(255))
     manufacturer = Column(Unicode(50))
     platform_name = Column(String(150))
+    kernel_params = Column(Text)
     progress = Column(Integer, default=0)
     os_platform = Column(String(150))
     pending_addition = Column(Boolean, default=False)

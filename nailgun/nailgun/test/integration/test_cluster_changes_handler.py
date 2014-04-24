@@ -266,7 +266,10 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_password': settings.MCO_PASSWORD,
                     'mco_connector': settings.MCO_CONNECTOR,
                     'mco_enable': 1,
-                    'ks_spaces': n.attributes.volumes,
+                    'pm_data': {
+                        'ks_spaces': n.attributes.volumes,
+                        'bootloader_params': n.kernel_params,
+                    },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                 }
             }
@@ -660,7 +663,10 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_password': settings.MCO_PASSWORD,
                     'mco_connector': settings.MCO_CONNECTOR,
                     'mco_enable': 1,
-                    'ks_spaces': n.attributes.volumes,
+                    'pm_data': {
+                        'ks_spaces': n.attributes.volumes,
+                        'bootloader_params': n.kernel_params,
+                    },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                 }
             }

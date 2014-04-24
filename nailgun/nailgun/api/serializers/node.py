@@ -26,6 +26,7 @@ class NodeSerializer(BasicSerializer):
         'name',
         'meta',
         'progress',
+        'kernel_params',
         'roles',
         'pending_roles',
         'status',

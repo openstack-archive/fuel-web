@@ -109,6 +109,19 @@ class NailgunObject(object):
         db().flush()
 
     @classmethod
+    def save(cls, instance=None):
+        """Save current changes for instance in DB.
+        Current transaction will be commited
+        (in case of SQLAlchemy).
+
+        :param instance: object (model) instance
+        :returns: None
+        """
+        if instance:
+            db().add(instance)
+        db().commit()
+
+    @classmethod
     def to_dict(cls, instance, fields=None):
         """Serialize instance to Python dict
 

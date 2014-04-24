@@ -63,7 +63,6 @@ class Node(NailgunObject):
             },
             "meta": {"type": "object"},
             "mac": {"type": "string"},
-            "api": {"type": "string"},
             "fqdn": {"type": "string"},
             "manufacturer": {"type": "string"},
             "platform_name": {"type": "string"},
@@ -403,11 +402,14 @@ class Node(NailgunObject):
             )
             return
 
-        instance.role_list = db().query(models.Role).filter_by(
-            release_id=instance.cluster.release_id,
-        ).filter(
-            models.Role.name.in_(new_roles)
-        ).all()
+        if new_roles:
+            instance.role_list = db().query(models.Role).filter_by(
+                release_id=instance.cluster.release_id,
+            ).filter(
+                models.Role.name.in_(new_roles)
+            ).all()
+        else:
+            instance.role_list = []
         db().flush()
         db().refresh(instance)
 
@@ -490,18 +492,19 @@ class Node(NailgunObject):
         roles and pending roles
 
         :param instance: Node instance
-        :param cluster_id: Cluster ID
         :returns: None
         """
-        Cluster.clear_pending_changes(
-            instance.cluster,
-            node_id=instance.id
-        )
-        Cluster.get_network_manager(
-            instance.cluster
-        ).clear_assigned_networks(instance)
+        if instance.cluster:
+            Cluster.clear_pending_changes(
+                instance.cluster,
+                node_id=instance.id
+            )
+            Cluster.get_network_manager(
+                instance.cluster
+            ).clear_assigned_networks(instance)
+        cls.update_roles(instance, [])
+        cls.update_pending_roles(instance, [])
         instance.cluster_id = None
-        instance.roles = instance.pending_roles = []
         instance.reset_name_to_default()
         db().flush()
         db().refresh(instance)

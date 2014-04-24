@@ -254,6 +254,7 @@ class TestHandlers(BaseIntegrationTest):
                 'netboot_enabled': '1',
                 'ks_meta': {
                     'fuel_version': cluster_db.fuel_version,
+                    'bootloader_params': n.kernel_params,
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_enable': 0,
@@ -648,6 +649,7 @@ class TestHandlers(BaseIntegrationTest):
                 'netboot_enabled': '1',
                 'ks_meta': {
                     'fuel_version': cluster_db.fuel_version,
+                    'bootloader_params': n.kernel_params,
                     'puppet_auto_setup': 1,
                     'puppet_master': settings.PUPPET_MASTER_HOST,
                     'puppet_enable': 0,

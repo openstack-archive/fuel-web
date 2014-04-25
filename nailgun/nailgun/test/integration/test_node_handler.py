@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 import json
 
 from nailgun.db.sqlalchemy.models import Node
@@ -171,3 +172,29 @@ class TestHandlers(BaseIntegrationTest):
         # check there's not create notification
         after_count = get_notifications_count(node_id=node['id'])
         self.assertEqual(before_count, after_count)
+
+    def test_do_not_update_interfaces_if_ip_absent_meta(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}
+            ]
+        )
+
+        node = self.env.nodes[0]
+        prev_node_meta = node.meta
+        node_meta_to_dump = copy.deepcopy(prev_node_meta)
+        for iface in node_meta_to_dump.get('interfaces', []):
+            iface.pop('ip', None)
+
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            json.dumps({'meta': node_meta_to_dump, 'id': node.id}),
+            headers=self.default_headers
+        )
+
+        node_from_db = self.db.query(Node)\
+            .filter_by(id=node.id)\
+            .first()
+
+        self.assertEqual(prev_node_meta['interfaces'],
+                         node_from_db.meta['interfaces'])

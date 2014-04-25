@@ -128,6 +128,18 @@ class TestNodeObject(BaseIntegrationTest):
         objects.Node.update_by_agent(node_db, copy.deepcopy(data))
         self.assertNotEqual(node_db.meta["disks"], data["meta"]["disks"])
 
+        # test interface ip absence handling
+        for iface in data['meta']['interfaces']:
+            if iface.get('ip'):
+                iface.pop('ip')
+
+        objects.Node.update_by_agent(node_db, copy.deepcopy(data))
+        self.assertTrue(
+            any(
+                [bool(iface.get('ip')) for iface in node_db.meta['interfaces']]
+            )
+        )
+
         # test status handling
         for status in ('provisioning', 'error'):
             node_db.status = status

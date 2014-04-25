@@ -172,6 +172,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.model.on('change:name', this.onNameChange, this);
             this.scheduleUpdate();
             this.eventNamespace = 'unsavedchanges' + this.activeTab;
+            this.model.get('settings').fetch({cache: true});
             $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
             $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
         },

@@ -16,7 +16,6 @@ iso8601==0.1.9
 jsonschema==2.3.0
 kombu==2.5.14
 netaddr==0.7.10
-netifaces==0.8
 oslo.config==1.2.1
 psycopg2==2.5.1
 pycrypto==2.6.1

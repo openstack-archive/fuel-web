@@ -17,7 +17,6 @@
 import collections
 import itertools
 import json
-import netifaces
 import os
 import traceback
 
@@ -25,6 +24,7 @@ from sqlalchemy import or_
 
 from nailgun import notifier
 from nailgun import objects
+from nailgun.settings import settings
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -726,18 +726,6 @@ class NailgunReceiver(object):
                                               error_msg, result)
 
     @classmethod
-    def _master_networks_gen(cls, ifaces):
-        for iface in ifaces:
-            iface_data = netifaces.ifaddresses(iface)
-            if netifaces.AF_LINK in iface_data:
-                yield netifaces.ifaddresses(iface)[netifaces.AF_LINK]
-
-    @classmethod
-    def _get_master_macs(cls):
-        return itertools.chain(*cls._master_networks_gen(
-            netifaces.interfaces()))
-
-    @classmethod
     def check_dhcp_resp(cls, **kwargs):
         """Receiver method for check_dhcp task
         For example of kwargs check FakeCheckingDhcpThread
@@ -763,13 +751,13 @@ class NailgunReceiver(object):
         nodes_db = db().query(Node).filter(Node.id.in_(nodes_uids)).all()
         nodes_map = dict((str(node.id), node) for node in nodes_db)
 
-        macs = [item['addr'] for item in cls._get_master_macs()]
-        logger.debug('Mac addr on master node %s', macs)
+        master_network_mac = settings.ADMIN_NETWORK['mac']
+        logger.debug('Mac addr on master node %s', master_network_mac)
 
         for node in nodes:
             if node['status'] == 'ready':
                 for row in node.get('data', []):
-                    if row['mac'] not in macs:
+                    if row['mac'] != master_network_mac:
                         node_db = nodes_map.get(node['uid'])
                         if node_db:
                             row['node_name'] = node_db.name

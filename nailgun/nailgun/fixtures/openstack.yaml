@@ -189,32 +189,32 @@
             description: ""
             weight: 10
             type: "text"
-            depends:
-              - "settings:common.libvirt_type.value": "vcenter"
+            restrictions:
+              - "not settings:common.libvirt_type.value == 'vcenter'"
           vc_user:
             value: ""
             label: "username"
             description: "vCenter Username"
             weight: 30
             type: "text"
-            depends:
-              - "settings:common.libvirt_type.value": "vcenter"
+            restrictions:
+              - "not settings:common.libvirt_type.value == 'vcenter'"
           vc_password:
             value: ""
             label: "password"
             description: "vCenter Password"
             weight: 30
             type: "password"
-            depends:
-              - "settings:common.libvirt_type.value": "vcenter"
+            restrictions:
+              - "not settings:common.libvirt_type.value == 'vcenter'"
           cluster:
             value: ""
             label: "cluster"
             description: "vCenter cluster name"
             weight: 40
             type: "text"
-            depends:
-              - "settings:common.libvirt_type.value": "vcenter"
+            restrictions:
+              - "not settings:common.libvirt_type.value == 'vcenter'"
         common:
           metadata:
             label: "Common"
@@ -243,14 +243,18 @@
               - data: "kvm"
                 label: "KVM"
                 description: "Choose this type of hypervisor if you run OpenStack on hardware"
+                restrictions:
+                  - "settings:common.libvirt_type.value == 'vcenter'"
               - data: "qemu"
                 label: "QEMU"
                 description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
+                restrictions:
+                  - "settings:common.libvirt_type.value == 'vcenter'"
               - data: "vcenter"
                 label: "VCENTER"
                 description: "Choose this type of hypervisor if you run OpenStack in a vCenter environment."
-                conflicts:
-                  - "cluster:net_provider": "neutron"
+                restrictions:
+                  - "not settings:common.libvirt_type.value == 'vcenter'"
             label: "Hypervisor type"
             weight: 30
             type: "radio"
@@ -322,8 +326,8 @@
             description: "Requires at least one Storage - Cinder LVM node."
             weight: 10
             type: "checkbox"
-            conflicts:
-              - "settings:storage.volumes_ceph.value": true
+            restrictions:
+              - "settings:storage.volumes_ceph.value == true"
       generated:
         mysql:
           root_password:
@@ -560,8 +564,8 @@
             description: "If selected, Murano component will be installed"
             weight: 20
             type: "checkbox"
-            depends:
-              - "cluster:net_provider": "neutron"
+            restrictions:
+              - "not cluster:net_provider == 'neutron'"
           heat:
             value: true
             label: ""
@@ -581,8 +585,8 @@
             description: "Configures Cinder to store volumes in Ceph RBD images."
             weight: 20
             type: "checkbox"
-            conflicts:
-              - "settings:storage.volumes_lvm.value": true
+            restrictions:
+              - "settings:storage.volumes_lvm.value == true"
           images_ceph:
             value: false
             label: "Ceph RBD for images (Glance)"
@@ -601,8 +605,8 @@
             description: "Configures RadosGW front end for Ceph RBD. This exposes S3 and Swift API Interfaces. If enabled, this option will prevent Swift from installing."
             weight: 40
             type: "checkbox"
-            depends:
-              - "settings:storage.images_ceph.value": true
+            restrictions:
+              - "not settings:storage.images_ceph.value == true"
           osd_pool_size:
             value: "2"
             label: "Ceph object replication factor"

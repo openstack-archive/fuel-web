@@ -399,6 +399,9 @@ class Node(NailgunObject):
 
         * don't update provisioning or error state back to discover
         * don't update volume information if disks arrays is empty
+        * don't update network interfaces info if incomming data has ip address
+          field absent for particular NIC but network has been assigned (i.e.
+          corresponding fields in instance.meta are present)
 
         :param data: dictionary of key-value pairs as object fields
         :returns: Node instance
@@ -427,6 +430,36 @@ class Node(NailgunObject):
                 )
             )
             meta['disks'] = instance.meta['disks']
+
+        # if we get into situation when agent sends meta for node
+        # interface with no ip but db instance has such data for
+        # corresponding interface then interfaces meta shouldn't be updated
+        old_ifaces_by_names = dict(
+            [(iface['name'], iface)
+             for
+             iface in instance.meta.get('interfaces', [])]
+        )
+
+        new_ifaces_data = [
+            iface for iface in meta.get('interfaces', [])
+            if iface.get('name') in old_ifaces_by_names.keys()
+        ]
+
+        for iface in new_ifaces_data:
+            if old_ifaces_by_names.get(iface['name'], {}).get('ip') \
+                    and not iface.get('ip'):
+
+                logger.warning(
+                    u'Node {0} has received no ip addresses for '
+                    u'NIC with name {1} - network interfaces '
+                    u'will not be updated'.format(
+                        instance.human_readable_name,
+                        iface['name']
+                    )
+
+                )
+                meta['interfaces'] = instance.meta['interfaces']
+                break
 
         return cls.update(instance, data)
 

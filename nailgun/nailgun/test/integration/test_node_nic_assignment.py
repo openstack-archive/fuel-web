@@ -438,7 +438,7 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
                 interface['ip'] = admin_ip
 
         resp = self.app.put(
-            reverse('NodeAgentHandler'),
+            reverse('NodeHandler', kwargs={'obj_id': node_db.id}),
             json.dumps({'id': node_db.id,
                         'meta': meta}),
             headers=self.default_headers

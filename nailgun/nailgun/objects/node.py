@@ -400,6 +400,8 @@ class Node(NailgunObject):
 
         * don't update provisioning or error state back to discover
         * don't update volume information if disks arrays is empty
+        * don't update network interfaces info if all of them had not ip
+        address collected
 
         :param data: dictionary of key-value pairs as object fields
         :returns: Node instance
@@ -428,6 +430,20 @@ class Node(NailgunObject):
                 )
             )
             meta['disks'] = instance.meta['disks']
+
+        # if agent couldn't have collected ip addresses for all NIC of node
+        # doesn't update interfaces info
+        if not any(
+            [bool(nic.get('ip')) for nic in meta.get('interfaces', [])]
+        ):
+            logger.warning(
+                u'Node {0} has received no ip addresses for all its NICs - '
+                u'network interfaces will not be updated'.format(
+                    instance.human_readable_name
+                )
+
+            )
+            meta['interfaces'] = instance.meta['interfaces']
 
         return cls.update(instance, data)
 

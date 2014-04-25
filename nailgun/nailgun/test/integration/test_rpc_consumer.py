@@ -15,7 +15,6 @@
 #    under the License.
 
 import json
-from mock import patch
 import random
 import uuid
 
@@ -27,6 +26,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.rpc import receiver as rcvr
+from nailgun.settings import settings
 from nailgun.task import helpers
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -606,23 +606,20 @@ class TestDhcpCheckTask(BaseIntegrationTest):
             'status': 'ready',
             'nodes': [{'uid': self.node1.id,
                       'status': 'ready',
-                      'data': [{'mac': 'bc:ae:c5:e0:f5:85',
+                      'data': [{'mac': settings.ADMIN_NETWORK['mac'],
                                'server_id': '10.20.0.157',
                                'yiaddr': '10.20.0.133',
                                'iface': 'eth0'}]},
                       {'uid': self.node2.id,
                        'status': 'ready',
-                       'data': [{'mac': 'bc:ae:c5:e0:f5:85',
+                       'data': [{'mac': settings.ADMIN_NETWORK['mac'],
                                 'server_id': '10.20.0.20',
                                 'yiaddr': '10.20.0.131',
                                 'iface': 'eth0'}]}]
         }
 
-        with patch('nailgun.rpc.receiver.NailgunReceiver._get_master_macs') \
-                as master_macs:
-            master_macs.return_value = [{'addr': 'bc:ae:c5:e0:f5:85'}]
-            self.receiver.check_dhcp_resp(**kwargs)
-            self.db.refresh(self.task)
+        self.receiver.check_dhcp_resp(**kwargs)
+        self.db.refresh(self.task)
         self.assertEqual(self.task.status, "ready")
         self.assertEqual(self.task.result, {})
 
@@ -638,15 +635,13 @@ class TestDhcpCheckTask(BaseIntegrationTest):
                                'iface': 'eth0'}]},
                       {'uid': str(self.node2.id),
                        'status': 'ready',
-                       'data': [{'mac': 'bc:ae:c5:e0:f5:85',
+                       'data': [{'mac': settings.ADMIN_NETWORK['mac'],
                                 'server_id': '10.20.0.20',
                                 'yiaddr': '10.20.0.131',
                                 'iface': 'eth0'}]}]
         }
-        with patch.object(self.receiver, '_get_master_macs') as master_macs:
-            master_macs.return_value = [{'addr': 'bc:ae:c5:e0:f5:85'}]
-            self.receiver.check_dhcp_resp(**kwargs)
-            self.db.refresh(self.task)
+        self.receiver.check_dhcp_resp(**kwargs)
+        self.db.refresh(self.task)
         self.assertEqual(self.task.status, "error")
 
     def test_check_dhcp_resp_empty_nodes(self):
@@ -654,10 +649,8 @@ class TestDhcpCheckTask(BaseIntegrationTest):
             'task_uuid': self.task.uuid,
             'status': 'ready'
         }
-        with patch.object(self.receiver, '_get_master_macs') as master_macs:
-            master_macs.return_value = [{'addr': 'bc:ae:c5:e0:f5:85'}]
-            self.receiver.check_dhcp_resp(**kwargs)
-            self.db.refresh(self.task)
+        self.receiver.check_dhcp_resp(**kwargs)
+        self.db.refresh(self.task)
         self.assertEqual(self.task.status, "ready")
         self.assertEqual(self.task.result, {})
 
@@ -666,9 +659,8 @@ class TestDhcpCheckTask(BaseIntegrationTest):
             'task_uuid': self.task.uuid,
             'status': 'error'
         }
-        with patch.object(self.receiver, '_get_master_macs'):
-            self.receiver.check_dhcp_resp(**kwargs)
-            self.db.refresh(self.task)
+        self.receiver.check_dhcp_resp(**kwargs)
+        self.db.refresh(self.task)
         self.assertEqual(self.task.status, 'error')
         self.assertEqual(self.task.result, {})
 

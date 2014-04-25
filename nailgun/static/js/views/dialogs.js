@@ -653,6 +653,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             this.constructor.__super__.render.call(this, {
                 cluster: this.model,
+                settings: this.settings,
                 size: 1
             });
             return this;

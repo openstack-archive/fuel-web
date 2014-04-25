@@ -76,7 +76,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.registerSubView(new dialogViews.DiscardChangesDialog({model: this.model})).render();
         },
         displayChanges: function() {
-            this.registerSubView(new dialogViews.DisplayChangesDialog({model: this.model})).render();
+            this.registerSubView(new dialogViews.DisplayChangesDialog({model: this.model, settings: this.settings})).render();
         },
         discardSettingsChanges: function(options) {
             this.registerSubView(new dialogViews.DiscardSettingsChangesDialog(options)).render();
@@ -172,6 +172,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.model.on('change:name', this.onNameChange, this);
             this.scheduleUpdate();
             this.eventNamespace = 'unsavedchanges' + this.activeTab;
+            this.settings = this.model.get('settings').fetch({cache: true});
             $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));
             $('body').on('click.' + this.eventNamespace, 'a[href^=#]:not(.no-leave-check)', _.bind(this.onTabLeave, this));
         },

@@ -130,19 +130,24 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             var disabled = false;
             _.each(this.settings.attributes, function(group, groupName) {
                 _.each(group, function(setting, settingName) {
-                    // setting is disabled if it's dependent setting is chosen
-                    var isActiveDependentSetting = false;
-                    var isDependentSetting = !!_.filter(setting.depends, function(dep) {return dep['settings:' + settingPath + '.value'];}).length;
-                    isActiveDependentSetting = isActiveDependentSetting || (setting.value === true && isDependentSetting);
-                    _.each(setting.values, function(option) {
-                        var isDependentOption = !!_.filter(option.depends, function(dep) {return dep['settings:' + settingPath + '.value'];}).length;
-                        isDependentSetting = isDependentSetting || isDependentOption;
-                        isActiveDependentSetting = isActiveDependentSetting || (setting.value == option.data && isDependentOption);
-                    });
-                    if (isDependentSetting && composeListeners) {
-                        this.settings.on('change:' + groupName + '.' + settingName + '.value', callback);
+                    if (settingPath != groupName + '.' + settingName) {
+                        // setting is disabled if it's dependent setting is chosen
+                        var isDependentSetting = !!_.filter(setting.restrictions, function(restriction) {
+                            return _.contains(restriction, 'settings:' + settingPath + '.value');
+                        }).length;
+                        var isActiveDependentSetting = setting.value === true && isDependentSetting;
+                        _.each(setting.values, function(option) {
+                            var isDependentOption = !!_.filter(option.restrictions, function(restriction) {
+                                return _.contains(restriction, 'settings:' + settingPath + '.value');
+                            }).length;
+                            isDependentSetting = isDependentSetting || isDependentOption;
+                            isActiveDependentSetting = isActiveDependentSetting || (setting.value == option.data && isDependentOption);
+                        });
+                        if (isDependentSetting && composeListeners) {
+                            this.settings.on('change:' + groupName + '.' + settingName + '.value', callback);
+                        }
+                        disabled = disabled || isActiveDependentSetting;
                     }
-                    disabled = disabled || isActiveDependentSetting;
                 }, this);
             }, this);
             return disabled;
@@ -166,55 +171,27 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             var settingPath = groupName + '.' + settingName;
             var isSettingDisabled = false;
             var callback = _.bind(this.calculateSettingDisabledState, this, groupName, settingName, false);
-            var handleCondition = _.bind(function(condition, isDisabled, isConflict) {
-                var path = _.keys(condition)[0];
-                var checkedValue = utils.parseModelPath(path, this.configModels).get();
-                var isEqual = checkedValue == condition[path];
-                isDisabled = isDisabled || (!_.isUndefined(checkedValue) && (isConflict ? isEqual : !isEqual));
+            var handleRestriction = _.bind(function(restriction, isDisabled, isConflict) {
+                var evaluatedRestriction = utils.evaluateExpression(restriction, this.configModels);
+                isDisabled = isDisabled || evaluatedRestriction.value;
                 if (composeListeners) {
-                    utils.parseModelPath(path, this.configModels).change(callback);
+                    _.invoke(evaluatedRestriction.modelPaths, 'change', callback);
                 }
                 return isDisabled;
             }, this);
-            _.each(this.settings.get(settingPath + '.depends'), function(dependency) {
-                if (!isSettingDisabled) {
-                    isSettingDisabled = handleCondition(dependency, isSettingDisabled, false);
-                } else { return false; }
+            _.each(this.settings.get(settingPath + '.restrictions'), function(restriction) {
+                isSettingDisabled = handleRestriction(restriction, isSettingDisabled, false);
+                return !isSettingDisabled;
             });
             if (!isSettingDisabled) {
-                isSettingDisabled = this.checkDependentSettings(settingPath, callback, composeListeners);
+                isSettingDisabled = this.checkDependentRoles(settingPath) || this.checkDependentSettings(settingPath, callback, composeListeners);
             }
-            if (!isSettingDisabled) {
-                isSettingDisabled = this.checkDependentRoles(settingPath);
-            }
-            _.each(this.settings.get(settingPath + '.conflicts'), function(conflict) {
-                if (!isSettingDisabled) {
-                    isSettingDisabled = handleCondition(conflict, isSettingDisabled, true);
-                } else { return false; }
-            });
             this.settings.set(settingPath + '.disabled', isSettingDisabled);
             _.each(this.settings.get(settingPath + '.values'), function(value, index) {
                 var isOptionDisabled = false;
-                // FIXME(vk): hack for vCenter
-                // vCenter has too many restrictions which we cannot handle,
-                // so we disabling ability to swtich hypervisor to/from vCenter
-                // after cluster creation
-                if (settingPath == 'common.libvirt_type') {
-                    var currentValue = this.settings.get('common.libvirt_type.value');
-                    if ((currentValue == 'vcenter' && value.data != 'vcenter') || (currentValue != 'vcenter' && value.data == 'vcenter')) {
-                        isOptionDisabled = true;
-                    }
-                }
-
-                _.each(value.depends, function(dependency) {
-                    if (!isOptionDisabled) {
-                        isOptionDisabled = handleCondition(dependency, isOptionDisabled, false);
-                    } else { return false; }
-                });
-                _.each(value.conflicts, function(conflict) {
-                    if (!isOptionDisabled) {
-                        isOptionDisabled = handleCondition(conflict, isOptionDisabled, true);
-                    } else { return false; }
+                _.each(value.restrictions, function(restriction) {
+                    isOptionDisabled = handleRestriction(restriction, isOptionDisabled, false);
+                    return !isOptionDisabled;
                 });
                 var settingValues = _.cloneDeep(this.settings.get(settingPath + '.values'));
                 settingValues[index].disabled = isOptionDisabled;

@@ -53,6 +53,6 @@ class TestHorizonURL(BaseIntegrationTest):
             u"Deployment of environment '{0}' is done. "
             "Access the OpenStack dashboard (Horizon) at http://{1}/"
         ).format(
-            self.env.clusters[0].name,
+            self.env.clusters[0].id,
             lost_ips[0].ip_addr
         ))

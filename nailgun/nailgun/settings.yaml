@@ -391,20 +391,14 @@ DUMP:
   lastdump: "/var/www/nailgun/dump/last"
   timestamp: True
   dump_roles:
-    master:
-      - localhost
+    # master/slave data will be rendered by nailgun
+    master: []
     slave: []
+    local:
+      - localhost
   dump_objects:
-    master:
-      - type: postgres
-        dbhost: localhost
-        dbname: nailgun
-        username: nailgun
-        password: nailgun
-      - type: dir
-        path: /etc/nailgun
-      - type: dir
-        path: /etc/astute
+    local:
+      # nailgun will inject here a postgres data to dump database
       - type: dir
         path: /var/log/nailgun
       - type: dir
@@ -420,6 +414,11 @@ DUMP:
         path: /var/log/ostf.log
       - type: file
         path: /var/log/ostf-stdout.log
+    master:
+      - type: dir
+        path: /etc/nailgun
+      - type: dir
+        path: /etc/astute
       - type: command
         command: df -h
         to_file: df.txt

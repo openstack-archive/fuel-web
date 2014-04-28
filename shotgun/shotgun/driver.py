@@ -213,7 +213,7 @@ class Postgres(Driver):
     def snapshot(self):
         if self.password:
             authline = "{host}:{port}:{dbname}:{username}:{password}".format(
-                host=self.host, port="5432", dbname=self.dbname,
+                host=self.dbhost, port="5432", dbname=self.dbname,
                 username=self.username, password=self.password)
             with open(os.path.expanduser("~/.pgpass"), "a+") as fo:
                 fo.seek(0)

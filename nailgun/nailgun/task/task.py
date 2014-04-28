@@ -650,9 +650,19 @@ class DumpTask(object):
         logger.debug("Dump slave nodes: %s",
                      ", ".join(dump_conf['dump_roles']['slave']))
 
-        """
-        here we try to filter out sensitive data from logs
-        """
+        # render postgres connection data in dump settings
+        dump_conf['dump_objects']['local'].append({
+            'type': 'postgres',
+            'dbhost': settings.DATABASE['host'],
+            'dbname': settings.DATABASE['name'],
+            'username': settings.DATABASE['user'],
+            'password': settings.DATABASE['passwd'],
+        })
+
+        # inject master ip
+        dump_conf['dump_roles']['master'] = [settings.MASTER_IP]
+
+        # here we try to filter out sensitive data from logs
         rh_accounts = db().query(RedHatAccount).all()
         for num, obj in enumerate(dump_conf['dump_objects']['master']):
             if obj['type'] == 'subs' and obj['path'] == '/var/log/remote':

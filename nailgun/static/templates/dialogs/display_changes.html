@@ -43,6 +43,7 @@
   <%
     var warnings = {
      'controller': $.t("dialog.display_changes.warnings.controller", {nodeSize: size}),
+     'mongo': $.t("dialog.display_changes.warnings.mongo"),
      'compute': $.t("dialog.display_changes.warnings.compute")
     };
     var warning = null, canDeploy = true;
@@ -58,6 +59,9 @@
     if (cluster.get('nodes').nodesAfterDeploymentWithRole('controller') < size) {
       canDeploy = false;
       warning = 'controller';
+    } else if (cluster.get('settings').get('additional_components.ceilometer.value') == true && cluster.get('nodes').nodesAfterDeploymentWithRole('mongo') < size) {
+      canDeploy = false;
+      warning = 'mongo';
     } else if (!cluster.get('nodes').nodesAfterDeploymentWithRole('compute') && cluster.get('settings').get('common').libvirt_type.value !== 'vcenter') {
       warning = 'compute';
     }

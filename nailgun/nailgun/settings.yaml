@@ -391,35 +391,32 @@ DUMP:
   lastdump: "/var/www/nailgun/dump/last"
   timestamp: True
   dump_roles:
-    master:
-      - localhost
+    # host addresses is filled by nailgun's dump task
+    master: []
     slave: []
+    postgres:
+      - localhost
   dump_objects:
     master:
-      - type: postgres
-        dbhost: localhost
-        dbname: nailgun
-        username: nailgun
-        password: nailgun
       - type: dir
         path: /etc/nailgun
       - type: dir
         path: /etc/astute
       - type: dir
-        path: /var/log/nailgun
+        path: /var/log/docker-logs/nailgun
       - type: dir
-        path: /var/log/astute
+        path: /var/log/docker-logs/astute
       - type: dir
-        path: /var/log/cobbler
+        path: /var/log/docker-logs/cobbler
       - type: dir
-        path: /var/log/puppet
+        path: /var/log/docker-logs/puppet
       - type: subs
-        path: /var/log/remote
+        path: /var/log/docker-logs/remote
         subs: {}
       - type: file
-        path: /var/log/ostf.log
+        path: /var/log/docker-logs/ostf.log
       - type: file
-        path: /var/log/ostf-stdout.log
+        path: /var/log/docker-logs/ostf-stdout.log
       - type: command
         command: df -h
         to_file: df.txt
@@ -475,6 +472,12 @@ DUMP:
         path: /etc/cobbler*
       - type: file
         path: /var/log/fuelmenu.log
+    postgres:
+      - type: postgres
+        dbhost: localhost
+        dbname: nailgun
+        username: nailgun
+        password: nailgun
     slave:
       - type: file
         path: /etc/astute.yaml

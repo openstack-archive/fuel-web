@@ -109,6 +109,8 @@ Running Nailgun in Fake Mode
 
     grunt build --static-dir=static_compressed
 
+Note: Diagnostic Snapshot is not available in a Fake mode.
+
 Running the Fuel System Tests
 -----------------------------
 

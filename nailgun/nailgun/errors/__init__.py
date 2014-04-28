@@ -65,6 +65,10 @@ default_messages = {
 
     # RPC errors
     "CannotFindTask": "Cannot find task",
+    
+    # expression parser errors
+    "LexError": "Illegal character",
+    "ParseError": "Synxtax error",
 
     # unknown
     "UnknownError": "Unknown error"

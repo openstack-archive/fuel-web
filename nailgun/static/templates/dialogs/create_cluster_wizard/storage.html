@@ -1,5 +1,8 @@
-<% if (disabled && release) { %>
+<% if (cephDisabledDueToRelease && release) { %>
   <div class="alert" style="margin:0"><%- $.t("dialog.create_cluster_wizard.storage.alert", { releaseName: release.get('name')} ) %> </div>
+<% } %>
+<% if (cephDisableDueToHypervisorType) { %>
+  <div class="alert" style="margin:0" data-i18n="dialog.create_cluster_wizard.storage.vcenter_alert"></div>
 <% } %>
 <form class="form-horizontal" style="margin:0" onsubmit="return false">
   <fieldset>

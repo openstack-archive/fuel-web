@@ -463,7 +463,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
 
     clusterWizardPanes.ClusterStoragePane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.storage.title',
-        deps: [clusterWizardPanes.ClusterNameAndReleasePane],
+        deps: [clusterWizardPanes.ClusterNameAndReleasePane, clusterWizardPanes.ClusterComputePane],
         template: _.template(clusterStoragePaneTemplate),
         beforeSettingsSaving: function(settings) {
             try {
@@ -489,9 +489,15 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            var disabled = !release || !_.contains(release.get('roles'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
-            this.$el.html(this.template({disabled: disabled, release: release})).i18n();
-            if (disabled) {
+            var cephDisabledDueToRelease = !release || !_.contains(release.get('roles'), 'ceph-osd'); //FIXME: we should probably check for presence of actual settings instead
+            var hypervisor = this.wizard.findPane(clusterWizardPanes.ClusterComputePane).hypervisor;
+            var cephDisableDueToHypervisorType = hypervisor == 'vcenter';
+            this.$el.html(this.template({
+                cephDisabledDueToRelease: cephDisabledDueToRelease,
+                cephDisableDueToHypervisorType: cephDisableDueToHypervisorType,
+                release: release
+            })).i18n();
+            if (cephDisabledDueToRelease || cephDisableDueToHypervisorType) {
                 this.$('input[value=ceph]').prop('disabled', true);
             }
             this.$('input[name=cinder]:first, input[name=glance]:first').prop('checked', true);

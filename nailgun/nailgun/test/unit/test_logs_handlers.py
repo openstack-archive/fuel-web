@@ -235,20 +235,24 @@ class TestLogs(BaseIntegrationTest):
 
     @patch.dict('nailgun.task.task.settings.DUMP',
                 {
-                    'dump_roles': {
-                        'master': [],
-                        'slave': []
-                    },
-                    'dump_objects': {
-                        'master': [
-                            {
+                    'dump': {
+                        'local': {
+                            'hosts': [],
+                            'objects': [],
+                        },
+                        'master': {
+                            'hosts': [],
+                            'objects': [{
                                 'type': 'subs',
                                 'path': '/var/log/remote',
                                 'subs': {}
-                            }
-                        ],
-                        'slave': []
-                    }
+                            }],
+                        },
+                        'slave': {
+                            'hosts': [],
+                            'objects': [],
+                        }
+                    },
                 })
     def test_snapshot_conf(self):
         self.env.create_node(
@@ -261,23 +265,30 @@ class TestLogs(BaseIntegrationTest):
             password='RHPASS'
         )
         conf = {
-            'dump_roles': {
-                'master': [],
-                'slave': ['node1.domain.tld']
-            },
-            'dump_objects': {
-                'master': [
-                    {
+            'dump': {
+                'local': {
+                    'hosts': [],
+                    'objects': [],
+                },
+                'master': {
+                    'hosts': [],
+                    'objects': [{
                         'type': 'subs',
                         'path': '/var/log/remote',
                         'subs': {
                             'RHUSER': 'substituted_username',
                             'RHPASS': 'substituted_password'
                         }
-                    }
-                ],
-                'slave': []
-            }
+                    }],
+                },
+                'slave': {
+                    'hosts': [{
+                        'address': 'node1.domain.tld',
+                        'ssh-key': '/root/.ssh/id_rsa',
+                    }],
+                    'objects': [],
+                },
+            },
         }
         self.datadiff(DumpTask.conf(), conf)
 

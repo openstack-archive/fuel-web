@@ -57,7 +57,8 @@ class Driver(object):
         logger.debug("Initializing driver %s: host=%s",
                      self.__class__.__name__, data.get("host"))
         self.data = data
-        self.host = self.data.get("host", "localhost")
+        self.host = self.data.get("host", {}).get("address", "localhost")
+        self.ssh_key = self.data.get("host", {}).get("ssh-key")
         self.local = is_local(self.host)
         self.conf = conf
 
@@ -68,10 +69,13 @@ class Driver(object):
         out = CommandOut()
         try:
             if not self.local:
-                # timeout -- a network connection timeout
-                # command_timeout -- timeout for command execution
-                with fabric.api.settings(host_string=self.host, timeout=2,
-                                         command_timeout=10, warn_only=True):
+                with fabric.api.settings(
+                    host_string=self.host,      # destination host
+                    key_filename=self.ssh_key,  # a path to ssh key
+                    timeout=2,                  # a network connection timeout
+                    command_timeout=10,         # a command execution timeout
+                    warn_only=True,             # don't exit on error
+                ):
                     logger.debug("Running remote command: "
                                  "host: %s command: %s", self.host, command)
                     output = fabric.api.run(command, pty=True)
@@ -92,8 +96,12 @@ class Driver(object):
         """
         try:
             if not self.local:
-                with fabric.api.settings(host_string=self.host,
-                                         timeout=2, warn_only=True):
+                with fabric.api.settings(
+                    host_string=self.host,      # destination host
+                    key_filename=self.ssh_key,  # a path to ssh key
+                    timeout=2,                  # a network connection timeout
+                    warn_only=True,             # don't exit on error
+                ):
                     logger.debug("Getting remote file: %s %s",
                                  path, target_path)
                     execute('mkdir -p "{0}"'.format(target_path))
@@ -213,7 +221,7 @@ class Postgres(Driver):
     def snapshot(self):
         if self.password:
             authline = "{host}:{port}:{dbname}:{username}:{password}".format(
-                host=self.host, port="5432", dbname=self.dbname,
+                host=self.dbhost, port="5432", dbname=self.dbname,
                 username=self.username, password=self.password)
             with open(os.path.expanduser("~/.pgpass"), "a+") as fo:
                 fo.seek(0)

@@ -41,8 +41,8 @@ class Config(object):
 
     @property
     def objects(self):
-        for role, hosts in self.data["dump_roles"].iteritems():
-            for host in hosts:
-                for obj in self.data["dump_objects"].get(role, []):
-                    obj["host"] = host
-                    yield obj
+        for role, properties in self.data["dump"].iteritems():
+            for host in properties.get("hosts", []):
+                for object_ in properties.get("objects", []):
+                    object_["host"] = host
+                    yield object_

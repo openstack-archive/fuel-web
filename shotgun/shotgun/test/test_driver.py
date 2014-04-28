@@ -70,13 +70,14 @@ class TestDriver(TestCase):
         mexecute.return_value = ("RETURN_CODE", "STDOUT", "STDERR")
         command = "COMMAND"
 
-        driver = shotgun.driver.Driver({"host": "remote_host"}, None)
+        driver = shotgun.driver.Driver(
+            {"host": {"address": "remote_host"}}, None)
         result = driver.command(command)
         shotgun.driver.fabric.api.run.assert_called_with(command, pty=True)
         self.assertEquals(result, out)
         shotgun.driver.fabric.api.settings.assert_called_with(
             host_string="remote_host", timeout=2, command_timeout=10,
-            warn_only=True)
+            warn_only=True, key_filename=None)
 
         driver = shotgun.driver.Driver({}, None)
         result = driver.command(command)
@@ -91,12 +92,18 @@ class TestDriver(TestCase):
         remote_path = "/remote_dir/remote_file"
         target_path = "/target_dir"
 
-        driver = shotgun.driver.Driver({"host": "remote_host"}, None)
+        driver = shotgun.driver.Driver({
+            "host": {
+                "address": "remote_host",
+                "ssh-key": "path_to_key",
+            }
+        }, None)
         driver.get(remote_path, target_path)
         mexecute.assert_called_with('mkdir -p "{0}"'.format(target_path))
         mfabget.assert_called_with(remote_path, target_path)
         mfabset.assert_called_with(
-            host_string="remote_host", timeout=2, warn_only=True)
+            host_string="remote_host", key_filename="path_to_key",
+            timeout=2, warn_only=True)
 
         mexecute.reset_mock()
         driver = shotgun.driver.Driver({}, None)
@@ -113,7 +120,9 @@ class TestFile(TestCase):
         data = {
             "type": "file",
             "path": "/remote_dir/remote_file",
-            "host": "remote_host"
+            "host": {
+                "address": "remote_host",
+            },
         }
         conf = MagicMock()
         conf.target = "/target"
@@ -130,7 +139,9 @@ class TestSubs(TestCase):
         self.data = {
             "type": "subs",
             "path": "/remote_dir/remote_file",
-            "host": "remote_host",
+            "host": {
+                "address": "remote_host",
+            },
             "subs": {
                 "line0": "LINE0",
                 "line1": "LINE1"
@@ -212,7 +223,8 @@ class TestSubs(TestCase):
             for filename in files:
                 fullfilename = os.path.join(root, filename)
                 # /target/remote_host
-                tgt_host = os.path.join(self.conf.target, self.data["host"])
+                tgt_host = os.path.join(
+                    self.conf.target, self.data["host"]["address"])
                 rel_tgt_host = os.path.relpath(fullfilename, tgt_host)
                 # /remote_dir/remote_file
                 match_orig_path = os.path.join("/", rel_tgt_host)

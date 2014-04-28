@@ -383,7 +383,8 @@
                         "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
                         "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts",
                         "vcenter_description": "Choose this option if you have a vCenter environment with ESXi servers to be used as hypervisors",
-                        "vcenter_warning": "Please remember to enter vCenter environment information in the Settings tab before deploying"
+                        "vcenter_warning": "Please remember to enter vCenter environment information in the Settings tab before deploying",
+                        "disabled_vcenter_alert": "Choose Multi-node deployment mode to enable vCenter."
                     },
                     "network": {
                         "title": "Network",

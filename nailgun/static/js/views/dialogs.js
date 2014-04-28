@@ -141,7 +141,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         activePane: function() {
             return this.panes[this.activePaneIndex];
         },
-        updateMaxAvaialblePaneIndex: function() {
+        updateMaxAvailablePaneIndex: function() {
             var newIndex = this.maxAvaialblePaneIndex;
             _.each(this.activePane().dependentPanes(), function(pane) {
                 newIndex = _.min([newIndex, _.indexOf(this.panesConstructors, pane.constructor) - 1]);
@@ -302,7 +302,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         onReleaseChange: function() {
             this.updateReleaseParameters();
-            this.wizard.updateMaxAvaialblePaneIndex();
+            this.wizard.updateMaxAvailablePaneIndex();
         },
         updateReleaseParameters: function() {
             if (this.releases.length) {
@@ -359,14 +359,22 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         events: {
             'change input[name=mode]': 'toggleTypes'
         },
-        toggleTypes: function() {
-            var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
-            var mode = this.$('input[name=mode]:checked').val();
+        displayModeDescription: function() {
             var description = '';
+            var release = this.wizard.findPane(clusterWizardPanes.ClusterNameAndReleasePane).release;
             try {
-                description = release.get('modes_metadata')[mode].description;
+                description = release.get('modes_metadata')[this.mode].description;
             } catch (ignore) {}
             this.$('.mode-description').text(description);
+        },
+        toggleTypes: function() {
+            this.mode = this.$('input[name=mode]:checked').val();
+            this.displayModeDescription();
+            this.wizard.updateMaxAvailablePaneIndex();
+        },
+        processPaneData: function() {
+            _.invoke(this.dependentPanes(), 'render');
+            return $.Deferred().resolve();
         },
         beforeClusterCreation: function(cluster) {
             cluster.set({mode: this.$('input[name=mode]:checked').val()});
@@ -375,13 +383,16 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         render: function() {
             var availableModes = models.Cluster.prototype.availableModes();
             this.$el.html(this.template({availableModes: availableModes}));
-            this.$('input[name=mode]:first').prop('checked', true).trigger('change');
+            this.$('input[name=mode][value=ha_compact]').prop('checked', true);
+            this.mode = 'ha_compact';
+            this.displayModeDescription();
             return this;
         }
     });
 
     clusterWizardPanes.ClusterComputePane = views.WizardPane.extend({
         title: 'dialog.create_cluster_wizard.compute.title',
+        deps: [clusterWizardPanes.ClusterModePane],
         template: _.template(clusterComputePaneTemplate),
         events: {
             'change input[name=hypervisor]': 'onHypervisorChange'
@@ -396,15 +407,20 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         onHypervisorChange: function() {
             this.hypervisor = this.$('input[name=hypervisor]:checked').val();
-            this.$('.alert').toggle(this.hypervisor == 'vcenter');
-            this.wizard.updateMaxAvaialblePaneIndex();
+            this.$('.vcenter-alert').toggle(this.hypervisor == 'vcenter');
+            this.wizard.updateMaxAvailablePaneIndex();
         },
         processPaneData: function() {
             _.invoke(this.dependentPanes(), 'render');
             return $.Deferred().resolve();
         },
         render: function() {
-            this.$el.html(this.template());
+            var mode = this.wizard.findPane(clusterWizardPanes.ClusterModePane).mode;
+            var vCenterDisabledDueToClusterMode = mode != 'multinode';
+            this.$el.html(this.template({vCenterDisabledDueToClusterMode: vCenterDisabledDueToClusterMode}));
+            if (vCenterDisabledDueToClusterMode) {
+                this.$('input[name=hypervisor][value=vcenter]').prop('disabled', true);
+            }
             this.$('input[name=hypervisor][value=qemu]').prop('checked', true);
             this.hypervisor = 'qemu';
             return this;
@@ -419,7 +435,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
             'change input[name=manager]': 'onManagerChange'
         },
         onManagerChange: function() {
-            this.wizard.updateMaxAvaialblePaneIndex();
+            this.wizard.updateMaxAvailablePaneIndex();
         },
         processPaneData: function() {
             this.manager = this.$('input[name=manager]:checked').val();

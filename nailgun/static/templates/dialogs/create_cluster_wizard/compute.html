@@ -1,4 +1,9 @@
-<div class="alert hide" style="margin:0">
+<% if (vCenterDisabledDueToClusterMode) { %>
+  <div class="alert" style="margin:0">
+    <%- $.t("dialog.create_cluster_wizard.compute.disabled_vcenter_alert") %>
+  </div>
+<% } %>
+<div class="alert vcenter-alert hide" style="margin:0">
   <%- $.t("dialog.create_cluster_wizard.compute.vcenter_warning") %>
 </div>
 <form class="form-horizontal compute-step" onsubmit="return false">

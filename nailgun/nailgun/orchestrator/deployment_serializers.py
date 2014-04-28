@@ -280,9 +280,24 @@ class DeploymentMultinodeSerializer(object):
             nodes, key=lambda node: int(node['uid']))
 
         primary_role = 'primary-{0}'.format(role)
+
         primary_node = cls.filter_by_roles(
             sorted_nodes, [primary_role])
-        if primary_node:
+
+        #Check existence of primary role for nodes cluster
+        nodes_cluster_id = None
+        if nodes:
+            nodes_cluster_id = nodes[0].get('cluster_id')
+        exist_primary_node_q = db().query(Node). \
+            filter(or_(
+                Node.role_list.any(name=primary_role),
+                Node.pending_role_list.any(name=primary_role)))
+        if nodes_cluster_id:
+            exist_primary_node_q = exist_primary_node_q. \
+                filter_by(cluster_id=nodes_cluster_id)
+        exist_primary_node = exist_primary_node_q.all()
+
+        if primary_node or exist_primary_node:
             return
 
         result_nodes = cls.filter_by_roles(

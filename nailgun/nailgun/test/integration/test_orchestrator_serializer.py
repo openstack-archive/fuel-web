@@ -17,11 +17,13 @@
 import copy
 from operator import attrgetter
 from operator import itemgetter
+from sqlalchemy import or_
 
 import json
 from netaddr import IPRange
 
 from nailgun.consts import OVS_BOND_MODES
+from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
@@ -741,6 +743,27 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
     def serializer(self):
         return DeploymentHASerializer
 
+    def test_set_primary_controller(self):
+        #Set one primary-controller node
+        controller = db().query(Node). \
+            filter(or_(
+                Node.role_list.any(name='controller'),
+                Node.pending_role_list.any(name='controller'))).all()
+        controller[0].roles = ['primary-controller']
+        db().flush()
+        db().refresh(controller[0])
+
+        nodes = [
+            dict(uid=1, role='controller'),
+            dict(uid=2, role='controller')
+        ]
+        self.serializer.set_primary_controller(nodes)
+        expected_priorities = [
+            dict(uid=1, role='controller'),
+            dict(uid=2, role='controller')
+        ]
+        self.assertEquals(expected_priorities, nodes)
+
     def test_node_list(self):
         serialized_nodes = self.serializer.node_list(self.cluster.nodes)
 
@@ -932,6 +955,28 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
         ha_nodes = DeploymentHASerializer.serialize_nodes(cluster.nodes)
         mn_nodes = DeploymentMultinodeSerializer.serialize_nodes(cluster.nodes)
         self.assertEquals(mn_nodes, ha_nodes)
+
+    def test_set_primary_mongo(self):
+        self.create_env()
+        #Set one primary-mongo node
+        mongo_node = db().query(Node). \
+            filter(or_(
+                Node.role_list.any(name='mongo'),
+                Node.pending_role_list.any(name='mongo'))).all()
+        mongo_node[0].roles = ['primary-mongo']
+        db().flush()
+        db().refresh(mongo_node[0])
+
+        nodes = [
+            dict(uid=1, role='mongo'),
+            dict(uid=2, role='mongo')
+        ]
+        self.serializer.set_primary_controller(nodes)
+        expected_priorities = [
+            dict(uid=1, role='mongo'),
+            dict(uid=2, role='mongo')
+        ]
+        self.assertEquals(expected_priorities, nodes)
 
     def test_primary_node_selected(self):
         cluster = self.create_env()

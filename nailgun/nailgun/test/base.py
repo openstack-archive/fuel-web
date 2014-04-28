@@ -116,14 +116,14 @@ class Environment(object):
             )
         return cluster
 
-    def create_release(self, api=False, **kwargs):
+    def create_release(self, api=False, mode=None, **kwargs):
         version = str(randint(0, 100000000))
         release_data = {
             'name': u"release_name_" + version,
             'version': version,
             'description': u"release_desc" + version,
             'operating_system': 'CentOS',
-            'roles': self.get_default_roles(),
+            'roles': self.get_default_roles(mode),
             'networks_metadata': self.get_default_networks_metadata(),
             'attributes_metadata': self.get_default_attributes_metadata(),
             'volumes_metadata': self.get_default_volumes_metadata()
@@ -173,7 +173,8 @@ class Environment(object):
             cluster_data.update(kwargs)
 
         if 'release_id' not in cluster_data:
-            cluster_data['release_id'] = self.create_release(api=False).id
+            cluster_data['release_id'] = self.create_release(
+                api=False, mode=cluster_data.get('mode', None)).id
 
         if exclude and isinstance(exclude, list):
             for ex in exclude:
@@ -416,8 +417,12 @@ class Environment(object):
         self.set_admin_ip_for_for_single_interface(meta['interfaces'])
         return meta['interfaces']
 
-    def get_default_roles(self):
-        return ['controller', 'compute', 'cinder', 'ceph-osd', 'mongo']
+    def get_default_roles(self, mode):
+        base = ['controller', 'compute', 'cinder', 'ceph-osd', 'mongo',
+                'primary-mongo']
+        if mode != 'multinode':
+            base.append('primary-controller')
+        return base
 
     def get_default_volumes_metadata(self):
         return self.read_fixtures(

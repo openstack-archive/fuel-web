@@ -70,6 +70,10 @@ from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 
+from nailgun.api.v1.handlers.raid import NodeDefaultsRaidHandler
+from nailgun.api.v1.handlers.raid import NodeRaidApplyHandler
+from nailgun.api.v1.handlers.raid import NodeRaidHandler
+
 from nailgun.api.v1.handlers.registration import FuelKeyHandler
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler
@@ -156,6 +160,12 @@ urls = (
     NodeNICsHandler,
     r'/nodes/(?P<node_id>\d+)/interfaces/default_assignment/?$',
     NodeNICsDefaultHandler,
+    r'/nodes/(?P<node_id>\d+)/raid/?$',
+    NodeRaidHandler,
+    r'/nodes/(?P<node_id>\d+)/raid/defaults/?$',
+    NodeDefaultsRaidHandler,
+    r'/nodes/(?P<node_id>\d+)/raid/apply/?$',
+    NodeRaidApplyHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
     r'/tasks/?$',

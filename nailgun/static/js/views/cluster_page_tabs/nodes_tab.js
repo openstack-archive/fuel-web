@@ -26,14 +26,15 @@ define(
     'text!templates/cluster/node.html',
     'text!templates/cluster/node_roles.html',
     'text!templates/cluster/edit_node_disks.html',
+    'text!templates/cluster/edit_node_controllers.html',
     'text!templates/cluster/node_disk.html',
     'text!templates/cluster/volume_style.html',
     'text!templates/cluster/edit_node_interfaces.html',
     'text!templates/cluster/node_interface.html'
 ],
-function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, assignRolesPanelTemplate, nodeListTemplate, nodeGroupTemplate, nodeTemplate, nodeRoleTemplate, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate, editNodeInterfacesScreenTemplate, nodeInterfaceTemplate) {
+function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, assignRolesPanelTemplate, nodeListTemplate, nodeGroupTemplate, nodeTemplate, nodeRoleTemplate, editNodeDisksScreenTemplate, EditNodeControllersScreenTemplate, nodeDisksTemplate, volumeStylesTemplate, editNodeInterfacesScreenTemplate, nodeInterfaceTemplate) {
     'use strict';
-    var NodesTab, Screen, NodeListScreen, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, NodesManagementPanel, AssignRolesPanel, NodeList, NodeGroup, Node, EditNodeScreen, EditNodeDisksScreen, NodeDisk, EditNodeInterfacesScreen, NodeInterface;
+    var NodesTab, Screen, NodeListScreen, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, NodesManagementPanel, AssignRolesPanel, NodeList, NodeGroup, Node, EditNodeScreen, EditNodeDisksScreen, EditNodeControllersScreen, NodeDisk, EditNodeInterfacesScreen, NodeInterface;
 
     NodesTab = commonViews.Tab.extend({
         className: 'wrapper',
@@ -78,6 +79,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 'add': AddNodesScreen,
                 'edit': EditNodesScreen,
                 'disks': EditNodeDisksScreen,
+                'controllers': EditNodeControllersScreen,
                 'interfaces': EditNodeInterfacesScreen
             };
             this.changeScreen(screens[options[0]] || screens.list, options.slice(1));
@@ -1087,6 +1089,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         constructorName: 'EditNodeDisksScreen',
         template: _.template(editNodeDisksScreenTemplate),
         events: {
+            'click .btn-configure-controllers' : 'goToConfigurationScreen',
             'click .btn-defaults': 'loadDefaults',
             'click .btn-revert-changes': 'revertChanges',
             'click .btn-apply:not(:disabled)': 'applyChanges',
@@ -1097,6 +1100,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !this.nodes.reduce(function(result, node) {
                 return result && _.isEqual(disks, node.disks.toJSON());
             }, true);
+        },
+        goToConfigurationScreen: function(e) {
+            var selectedNodesIds = _.pluck(this.nodes.where({checked: true}), 'id').join(',');
+            var controllers = this.controllers;
+            var controllerIds = parseInt($(e.currentTarget).data('id'), 10);
+            controllers[controllerIds].checked = true;
+            app.navigate('#cluster/' + this.nodes.at(0).get('cluster') + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
         },
         hasValidationErrors: function() {
             var result = false;
@@ -1163,6 +1173,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
+                try {
+                    this.controllers = this.nodes.at(0).get('meta').raid.controllers;
+                } catch(e) {
+                    this.controllers = [];
+                }
                 this.model.on('change:status', this.revertChanges, this);
                 this.volumes = new models.Volumes([], {url: _.result(this.nodes.at(0), 'url') + '/volumes'});
                 this.loading = $.when.apply($, this.nodes.map(function(node) {
@@ -1220,12 +1235,212 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         render: function() {
             this.$el.html(this.template({
                 nodes: this.nodes,
+                controllers: this.controllers,
                 locked: this.isLocked()
             })).i18n();
             if (this.loading && this.loading.state() != 'pending') {
                 this.renderDisks();
                 this.checkForChanges();
             }
+            this.setupButtonsBindings();
+            return this;
+        }
+    });
+
+    EditNodeControllersScreen = EditNodeScreen.extend({
+        className: 'edit-node-controllers-screen',
+        constructorName: 'EditNodeControllersScreen',
+        screen: null,
+        template: _.template(EditNodeControllersScreenTemplate),
+        templateHelpers: {
+            showDiskSize: utils.showDiskSize
+        },
+        events: {
+            'click [type="checkbox"]:checked': 'checkOnTypeDisk',
+            'click [type="checkbox"]:not(:checked)': 'checkOffTypeDisk',
+            'click .btn-create-raid:not(:disabled)' : 'createVirtualDrive',
+            'click .btn-configure-disks' : 'goToConfigurationScreen',
+            'click .btn-configure-controllers' : 'goToOtherController',
+            'click .btn-defaults': 'loadDefaults',
+            'click .btn-revert-changes': 'revertChanges',
+            'click .btn-apply:not(:disabled)': 'applyChanges',
+            'click .btn-return:not(:disabled)': 'returnToNodeList',
+            'click .btn-load-defaults': 'loadDefaults'
+        },
+        loadDefaults: function(e) {
+            //
+        },
+
+        returnToNodeList: function() {
+            if (this.controller.tasks.length) {
+                this.tab.page.discardSettingsChanges({cb: _.bind(this.goToNodeList, this)});
+            } else {
+                this.goToNodeList();
+            }
+        },
+        updateInfo: function(e) {
+            if (this.controller.tasks.length) {
+                var task = this.controller.tasks[this.controller.tasks.length-1];
+                _.each(this.controller.physical_drives, function(pd) {
+                    if (pd.enclosure == task.eid) {
+                        _.each(task.phys_devices, function(slot) {
+                            if (pd.slot == slot) {
+                                if (pd.drive_group != null) {
+                                    //
+                                } else {
+                                    pd.drive_group = task.raid_idx;
+                                }
+                            }
+                        });
+                    }
+                });
+                var vd = {
+                    "access": "rw",
+                    "consistent": "N/A",
+                    "drive_group": task.raid_idx,
+                    "raid_level": task.raid_lvl,
+                    "size": "N/A",
+                    "state": "new",
+                    "virtual_drive": task.raid_idx,
+                    "write_cache": task.options.write_cache
+                };
+                this.controller.virtual_drives.push(vd);
+            }
+
+            this.render();
+        },
+        revertChanges: function(e) {
+            if (this.controller.tasks.length) {
+                var controller = this.controller;
+                _.each(controller.tasks, function(task) {
+                    _.each(controller.physical_drives, function(pd) {
+                        if (pd.enclosure == task.eid) {
+                            _.each(task.phys_devices, function(slot) {
+                                if (pd.slot == slot) {
+                                    if (pd.drive_group != null) {
+                                        pd.drive_group = null;
+                                    } else {
+                                        //
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    controller.virtual_drives.pop();
+                });
+                controller.tasks = [];
+                this.controller = controller;
+            }
+            this.render();
+        },
+        checkOnTypeDisk: function(e) {
+            var currentType = $(e.target).data('id');
+            this.Raid.type = currentType;
+            this.Raid.drive.push({enclosure: $(e.target).data('enclosure'), slot: $(e.target).data('slot')});
+            var allCheckBox = document.getElementsByTagName('input');
+            this.$('.btn-create-raid').attr('disabled', false);
+            for(var i=0; i<allCheckBox.length; i++) {
+                if (currentType != $(allCheckBox[i]).data('id')) {
+                    allCheckBox[i].disabled = true;
+                };
+            };
+        },
+        parseModelController: function(model) {
+            model = model.toLowerCase();
+            var result = ''
+            if (model.indexOf('nytro megaraid') + 1) {
+                result = 'nmr';
+            } else if (model.indexOf('megaraid') + 1) {
+                result = 'lmr';
+            } else if (model.indexOf('nytro warpdrive') + 1) {
+                result = 'nwd';
+            } else {
+                result = 'lsh'
+            }
+            return result;
+        },
+        checkOffTypeDisk: function(e) {
+            var eid = $(e.target).data('enclosure');
+            var slot = $(e.target).data('slot');
+            var currentType = $(e.target).data('id');
+            var allCheckBox = document.getElementsByTagName('input');
+            var count = 0;
+            for (var d=0; d<this.Raid.drive.length; d++) {
+                if (this.Raid.drive[d].enclosure == eid && this.Raid.drive[d].slot == slot) {
+                    this.Raid.drive.splice(d, 1);
+                    break;
+                }
+            }
+            for(var i=0; i<allCheckBox.length; i++) {
+                if (currentType == $(allCheckBox[i]).data('id') && allCheckBox[i].checked) {
+                    count++;
+                };
+            };
+            if (count == 0) {
+                this.$('.btn-create-raid').attr('disabled', true);
+                this.Raid.type = '';
+                for(var i=0; i<allCheckBox.length; i++) {
+                    allCheckBox[i].disabled = false;
+                };
+            };
+        },
+        createVirtualDrive: function() {
+            this.Raid.model = this.parseModelController(this.controller.model);
+            var dialogCreateRaid = new dialogViews.CreateRaidDialog({raid: this.Raid, controller: this.controller, dis: this.dispatcher});
+            this.registerSubView(dialogCreateRaid).render();
+        },
+        goToOtherController: function(e) {
+            var selectedNodesIds = _.pluck(this.nodes.where({checked: true}), 'id').join(',');
+            var controllerIds = parseInt($(e.target).data('id'), 10);
+            if (controllerIds >= 0) {
+                this.controllers[controllerIds].checked = true;
+            };
+            this.updateController();
+            this.render();
+            app.navigate('#cluster/' + this.nodes.at(0).get('cluster') + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
+        },
+        goToConfigurationScreen: function(e) {
+            var selectedNodesIds = _.pluck(this.nodes.where({checked: true}), 'id').join(',');
+            app.navigate('#cluster/' + this.nodes.at(0).get('cluster') + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
+        },
+        updateController: function() {
+            var controller = 0;
+            var active = 0;
+            var num = 0;
+            _.each(this.controllers, function(ctr){
+                if (ctr.checked) {
+                    ctr.checked = false;
+                    active = num;
+                    controller = ctr;
+                };
+                num = num + 1;
+            });
+            this.controller = controller;
+            this.controller.tasks = [];
+            this.active = active;
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+            this.dispatcher = _.clone(Backbone.Events)
+            this.nodes = this.model.get('nodes');
+            this.Raid = {
+                drive: [],
+                type: '',
+                model: ''
+            };
+            this.dispatcher.on('CloseView', this.updateInfo, this);
+            this.active = 0;
+            this.controllers = this.nodes.at(0).get('meta').raid.controllers;
+            this.updateController();
+        },
+        render: function() {
+            this.$el.html(this.template(_.extend({
+                nodes: this.nodes,
+                controllers: this.controllers,
+                controller: this.controller,
+                active: this.active
+            }, this.templateHelpers))).i18n();
+            this.$('.btn-create-raid').attr('disabled', true);
             this.setupButtonsBindings();
             return this;
         }

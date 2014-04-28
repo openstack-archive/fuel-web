@@ -69,18 +69,23 @@ class TaskCollectionHandler(CollectionHandler):
 
     @content_json
     def GET(self):
-        """May receive cluster_id parameter to filter list
+        """May receive cluster_id or node_id parameter to filter list
         of tasks
 
         :returns: Collection of JSONized Task objects.
         :http: * 200 (OK)
                * 404 (task not found in db)
         """
-        cluster_id = web.input(cluster_id=None).cluster_id
 
-        if cluster_id is not None:
+        user_data = web.input(cluster_id=None, node_id=None)
+
+        if user_data.node_id is not None:
             return self.collection.to_json(
-                self.collection.get_by_cluster_id(cluster_id)
+                self.collection.get_by_node_id(user_data.node_id)
+            )
+        elif user_data.cluster_id is not None:
+            return self.collection.to_json(
+                self.collection.get_by_cluster_id(user_data.cluster_id)
             )
         else:
             return self.collection.to_json()

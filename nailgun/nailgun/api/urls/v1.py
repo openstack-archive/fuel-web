@@ -69,6 +69,10 @@ from nailgun.api.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.handlers.orchestrator import ProvisionSelectedNodes
 
+from nailgun.api.handlers.raid import NodeDefaultsRaidHandler
+from nailgun.api.handlers.raid import NodeRaidApplyHandler
+from nailgun.api.handlers.raid import NodeRaidHandler
+
 from nailgun.api.handlers.redhat import RedHatAccountHandler
 from nailgun.api.handlers.redhat import RedHatSetupHandler
 from nailgun.api.handlers.registration import FuelKeyHandler
@@ -155,6 +159,12 @@ urls = (
     NodeNICsHandler,
     r'/nodes/(?P<node_id>\d+)/interfaces/default_assignment/?$',
     NodeNICsDefaultHandler,
+    r'/nodes/(?P<node_id>\d+)/raid/?$',
+    NodeRaidHandler,
+    r'/nodes/(?P<node_id>\d+)/raid/defaults/?$',
+    NodeDefaultsRaidHandler,
+    r'/nodes/(?P<node_id>\d+)/raid/apply/?$',
+    NodeRaidApplyHandler,
     r'/nodes/allocation/stats/?$',
     NodesAllocationStatsHandler,
     r'/tasks/?$',

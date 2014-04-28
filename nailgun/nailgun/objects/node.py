@@ -174,6 +174,7 @@ class Node(NailgunObject):
         # creating attributes
         cls.create_attributes(new_node)
         cls.update_volumes(new_node)
+        cls.create_raids(new_node)
 
         cls.create_discover_notification(new_node)
         return new_node
@@ -191,6 +192,20 @@ class Node(NailgunObject):
         db().add(instance)
         db().flush()
         return new_attributes
+
+    @classmethod
+    def create_raids(cls, instance):
+        """Create raids info for Node instance
+
+        :param instance: Node instance
+        :returns: NodeRaidConfiguration instance
+        """
+        raid_config = models.NodeRaidConfiguration()
+        instance.raids = raid_config
+        db().add(raid_config)
+        db().add(instance)
+        db().flush()
+        return raid_config
 
     @classmethod
     def update_interfaces(cls, instance):

@@ -1,4 +1,14 @@
 <div class="edit-node-disks">
+  <div class="wrapper">
+
+    <ul class="nav nav-pills">
+  		<li class="active"><a class="btn-configure-disks" data-action="disks">Disks</a></li>
+        <% _.each(controllers, function(controller) { %>
+            <li><a data-id="<%= controller.controller_id %>" class="btn-configure-controllers" data-action="controllers">Controller <%= controller.controller_id+1 %></a></li>
+        <% }); %>
+
+	</ul>
+
   <h3>
     <%- $.t('cluster_page.nodes_tab.configure_disks.title', {count: nodes.length, name: nodes.length && nodes.at(0).get('name')}) %>
   </h3>
@@ -21,4 +31,5 @@
         <button data-i18n="common.apply_button" class="btn btn-success btn-apply"></button>
       </div>
     </div>
+  </div>
   </div>

@@ -51,7 +51,8 @@ old_task_names_options = (
 new_task_names_options = sorted(
     old_task_names_options + (
         'stop_deployment',
-        'reset_environment'
+        'reset_environment',
+        'raid'
     )
 )
 

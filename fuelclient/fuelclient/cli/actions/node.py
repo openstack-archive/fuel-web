@@ -45,6 +45,7 @@ class NodeAction(Action):
                 Args.get_delete_arg("Delete specific node from environment."),
                 Args.get_network_arg("Node network configuration."),
                 Args.get_disk_arg("Node disk configuration."),
+                Args.get_raid_arg("Node RAID configuration."),
                 Args.get_deploy_arg("Deploy specific nodes."),
                 Args.get_provision_arg("Provision specific nodes.")
             ),
@@ -54,7 +55,9 @@ class NodeAction(Action):
                 Args.get_download_arg(
                     "Download configuration of specific node"),
                 Args.get_upload_arg(
-                    "Upload configuration to specific node")
+                    "Upload configuration to specific node"),
+                Args.get_apply_arg(
+                    "Apply configuration of specific node"),
             ),
             Args.get_dir_arg(
                 "Select directory to which download node attributes"),
@@ -69,6 +72,7 @@ class NodeAction(Action):
             ("delete", self.delete),
             ("network", self.attributes),
             ("disk", self.attributes),
+            ("raid", self.attributes),
             ("deploy", self.start),
             ("provision", self.start),
             (None, self.list)
@@ -136,7 +140,7 @@ class NodeAction(Action):
                 )
 
     @check_all("node")
-    @check_any("default", "download", "upload")
+    @check_any("default", "download", "upload", "apply")
     def attributes(self, params):
         """Download current or default disk, network,
            configuration for some node:
@@ -149,7 +153,12 @@ class NodeAction(Action):
                 fuel node --node-id 2 --disk --upload --dir path/to/directory
         """
         nodes = Node.get_by_ids(params.node)
-        attribute_type = "interfaces" if params.network else "disks"
+        if params.network:
+            attribute_type = "interfaces"
+        elif params.disk:
+            attribute_type = "disks"
+        else:
+            attribute_type = "raid"
         attributes = []
         files = []
         if params.default:
@@ -179,7 +188,7 @@ class NodeAction(Action):
                 attributes.append(attribute)
             message = "Node attributes for {0} were uploaded" \
                       " from {1}".format(attribute_type, params.dir)
-        else:
+        elif params.download:
             for node in nodes:
                 downloaded_attribute = node.get_attribute(attribute_type)
                 file_path = node.write_attribute(
@@ -192,6 +201,10 @@ class NodeAction(Action):
                 files.append(file_path)
             message = "Node attributes for {0} were written" \
                       " to:\n{1}".format(attribute_type, "\n".join(files))
+        else:  # apply
+            for node in nodes:
+                node.attribute_action(attribute_type, "apply")
+            message = "Node configuration applied"
         print(message)
 
     @check_all("env", "node")

@@ -25,12 +25,13 @@ define(
     'views/cluster_page_tabs/logs_tab',
     'views/cluster_page_tabs/actions_tab',
     'views/cluster_page_tabs/healthcheck_tab',
+    'views/cluster_page_tabs/raid_tab',
     'text!templates/cluster/page.html',
     'text!templates/cluster/customization_message.html',
     'text!templates/cluster/deployment_result.html',
     'text!templates/cluster/deployment_control.html'
 ],
-function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
+function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, RaidTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
     'use strict';
     var ClusterPage, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
 
@@ -42,7 +43,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         title: function() {
             return this.model.get('name');
         },
-        tabs: ['nodes', 'network', 'settings', 'logs', 'healthcheck', 'actions'],
+        tabs: ['nodes', 'network', 'settings', 'logs', 'healthcheck', 'actions', 'raid'],
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),
         events: {
@@ -53,7 +54,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         getReleaseSetupTask: function(status) {
             return this.tasks.findTask({group: 'release_setup', status: status || 'running', release: this.model.get('release').id});
         },
-        removeFinishedTasks: function(tasks, removeSilently) {
+        removeFinishedNetworkTasks: function(tasks, removeSilently) {
             tasks = tasks || this.model.tasks({group: 'network'});
             var requests = [];
             _.each(tasks, function(task) {
@@ -200,7 +201,8 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 'settings': SettingsTab,
                 'actions': ActionsTab,
                 'logs': LogsTab,
-                'healthcheck': HealthCheckTab
+                'healthcheck': HealthCheckTab,
+                'raid': RaidTab
             };
             if (_.has(tabs, this.activeTab)) {
                 this.tab = new tabs[this.activeTab]({model: this.model, tabOptions: this.tabOptions, page: this});

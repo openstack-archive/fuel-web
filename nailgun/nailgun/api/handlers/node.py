@@ -38,6 +38,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
+from nailgun.db.sqlalchemy.models import NodeRaidConfiguration
 
 from nailgun.logger import logger
 from nailgun import notifier
@@ -198,6 +199,11 @@ class NodeAgentHandler(BaseHandler):
             db().flush()
         if not node.attributes.volumes:
             node.attributes.volumes = node.volume_manager.gen_volumes_info()
+            db().flush()
+        if not node.raids:
+            raid_config = NodeRaidConfiguration()
+            node.raids = raid_config
+            db().add(raid_config)
             db().flush()
         if node.status not in ('provisioning', 'deploying'):
             variants = (

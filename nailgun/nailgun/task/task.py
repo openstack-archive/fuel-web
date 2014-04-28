@@ -729,3 +729,58 @@ class GenerateCapacityLogTask(object):
         task.progress = '100'
         db().add(task)
         db().commit()
+
+
+class ApplyNodeRAIDConfigurationTask(object):
+
+    @classmethod
+    def _build_raid_cmds(cls, node):
+        raid_config = node.raids.config
+        if raid_config == {}:
+            raise errors.RAIDConfigNotFound(
+                "RAID configuration for node {0} "
+                "not found in database".format(node.full_name))
+
+        cmds = []
+        cleanup_cmd = {'action': 'clear_all',
+                       'controller_id': "0",
+                       'phys_devices': [],
+                       'eid': '',
+                       'options': ''}
+
+        cmds.append(cleanup_cmd)
+
+        optional_fields = ("phys_devices",)
+
+        for raid in raid_config["raids"]:
+            cmd = {}
+            cmd["action"] = raid.get("action", "create")
+            cmd["raid_lvl"] = raid.get("raid_lvl", "")
+            cmd["raid_name"] = raid.get("raid_name", "")
+            for field in optional_fields:
+                if field in raid:
+                    cmd[field] = raid[field]
+            cmd["controller_id"] = raid["ctrl_id"]
+            cmd["options"] = raid.get("options", {})
+            cmd["eid"] = raid["eid"]
+
+            cmds.append(cmd)
+
+        return cmds
+
+    @classmethod
+    def message(cls, task, node):
+        return make_astute_message(
+            'raid',
+            'raid_resp', {
+                'task_uuid': task.uuid,
+                'nodes': [
+                    {'uid': node.uid}
+                ],
+            'vendor': 'lsi',  # TODO(rbogorodskiy): remove hardcode
+            'interface': 'api',
+            'cmds': cls._build_raid_cmds(node)})
+
+    @classmethod
+    def execute(cls, task, node):
+        rpc.cast('naily', cls.message(task, node))

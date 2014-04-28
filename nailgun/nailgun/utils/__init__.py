@@ -19,6 +19,7 @@ from random import choice
 
 from nailgun.logger import logger
 from nailgun.settings import settings
+from nailgun.utils.expression_parser import parser
 
 
 def dict_merge(a, b):
@@ -57,6 +58,10 @@ def traverse(cdict, generator_class):
             else:
                 new_dict[i] = traverse(val, generator_class)
     return new_dict
+
+
+def evaluate_expression(expression, models=None):
+    return parser.parse(expression)
 
 
 class AttributesGenerator(object):

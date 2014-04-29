@@ -27,7 +27,8 @@ class Node(BaseObject):
 
     attributes_urls = {
         "interfaces": ("interfaces", "default_assignment"),
-        "disks": ("disks", "defaults")
+        "disks": ("disks", "defaults"),
+        "raid": ("raid", "defaults"),
     }
 
     @property
@@ -64,6 +65,10 @@ class Node(BaseObject):
     def get_attribute_url(self, attributes_type):
         url_path, _ = self.attributes_urls[attributes_type]
         return "nodes/{0}/{1}/".format(self.id, url_path)
+
+    def get_attribute_action_url(self, attributes_type, action):
+        return "{0}{1}/".format(self.get_attribute_url(attributes_type),
+                                action)
 
     def get_default_attribute(self, attributes_type):
         return self.connection.get_request(
@@ -115,6 +120,13 @@ class Node(BaseObject):
                 attributes_directory,
                 attributes_type
             )
+        )
+
+    def attribute_action(self, attribute_type, action):
+        url = self.get_attribute_action_url(attribute_type, action)
+        return self.connection.put_request(
+            url,
+            {}
         )
 
     def deploy(self):

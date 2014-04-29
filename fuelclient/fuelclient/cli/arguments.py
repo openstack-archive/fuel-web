@@ -251,6 +251,10 @@ def get_disk_arg(help_msg):
     return get_boolean_arg("disk", help=help_msg)
 
 
+def get_raid_arg(help_msg):
+    return get_boolean_arg("raid", help=help_msg)
+
+
 def get_deploy_arg(help_msg):
     return get_boolean_arg("deploy", help=help_msg)
 
@@ -327,6 +331,10 @@ def get_verify_arg(help_msg):
 
 def get_upload_arg(help_msg):
     return get_boolean_arg("upload", flags=("-u",), help=help_msg)
+
+
+def get_apply_arg(help_msg):
+    return get_boolean_arg("apply", flags=("-a",), help=help_msg)
 
 
 def get_default_arg(help_msg):

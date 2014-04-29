@@ -51,8 +51,8 @@ db = scoped_session(
 
 
 def syncdb():
-    from nailgun.db.sqlalchemy.models.base import Base
-    Base.metadata.create_all(engine)
+    from nailgun.db.migration import do_upgrade_head
+    do_upgrade_head()
 
 
 def dropdb():

@@ -100,6 +100,32 @@ class TestHandlers(BaseTestCase):
         for action in actions:
             self.check_all_in_msg("{0} -h".format(action), ("Examples",))
 
+    def test_task_action_urls(self):
+        self.check_all_in_msg(
+            "task --task-id 1 --debug",
+            [
+                "GET http://127.0.0.1",
+                "/api/v1/tasks/1/"
+            ],
+            check_errors=True
+        )
+        self.check_all_in_msg(
+            "task --task-id 1 --delete --debug",
+            [
+                "DELETE http://127.0.0.1",
+                "/api/v1/tasks/1/?force=0"
+            ],
+            check_errors=True
+        )
+        self.check_all_in_msg(
+            "task --task-id 1 --delete --force --debug",
+            [
+                "DELETE http://127.0.0.1",
+                "/api/v1/tasks/1/?force=1"
+            ],
+            check_errors=True
+        )
+
 
 class TestFiles(BaseTestCase):
 

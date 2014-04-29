@@ -44,6 +44,15 @@ def group(*args, **kwargs):
     return (required, ) + args
 
 
+class TaskAction(argparse.Action):
+    """Custom argparse.Action subclass to store task ids
+
+    :returns: list of ids
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, map(int, chain(*values)))
+
+
 class NodeAction(argparse.Action):
     """Custom argparse.Action subclass to store node identity
 
@@ -100,20 +109,6 @@ class SetAction(argparse.Action):
             getattr(namespace, self.dest).update(values)
         except AttributeError:
             setattr(namespace, self.dest, set(values))
-
-
-def parse_ids(x):
-    """Parse arguments with commas and spaces
-
-    :returns: list of lists with numbers
-    """
-    filtered = [y for y in x.split(",") if y.strip() != '']
-    if len(filtered) > 1:
-        return map(int, filtered)
-    elif len(filtered) == 1:
-        return [int(filtered[0])]
-    else:
-        return None
 
 
 def get_serializer_arg(serialization_method):
@@ -212,17 +207,6 @@ def get_int_arg(name, **kwargs):
     default_kwargs = {
         "action": "store",
         "type": int,
-        "default": None
-    }
-    default_kwargs.update(kwargs)
-    return get_arg(name, **default_kwargs)
-
-
-def get_multinum_arg(name, **kwargs):
-    default_kwargs = {
-        "action": "store",
-        "type": parse_ids,
-        "nargs": '+',
         "default": None
     }
     default_kwargs.update(kwargs)
@@ -362,10 +346,15 @@ def get_node_arg(help_msg):
 
 
 def get_task_arg(help_msg):
-    return get_multinum_arg(
-        "task",
-        flags=("--tid", "--task-id"),
-        help=help_msg)
+    default_kwargs = {
+        "action": TaskAction,
+        "flags": ("--tid", "--task-id"),
+        "nargs": '+',
+        "type": lambda v: v.split(","),
+        "default": None,
+        "help": help_msg
+    }
+    return get_arg("task", **default_kwargs)
 
 
 def get_config_arg(help_msg):

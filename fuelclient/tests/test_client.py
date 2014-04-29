@@ -58,7 +58,7 @@ class TestHandlers(BaseTestCase):
     def test_node_action(self):
         help_msg = ["fuel node [-h] [--env ENV]",
                     "[--list | --set | --delete | --network | --disk |"
-                    " --deploy | --provision]", "-h", "--help", " -s",
+                    " --raid | --deploy | --provision]", "-h", "--help", " -s",
                     "--default", " -d", "--download", " -u", "--upload",
                     "--dir", "--node", "--node-id", " -r", "--role", "--net"]
         self.check_all_in_msg("node --help", help_msg)

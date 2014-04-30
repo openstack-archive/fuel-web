@@ -268,7 +268,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
     NetworkTabSubview = Backbone.View.extend({
         rangeTemplate: _.template(rangeTemplate),
         events: {
-            'click .ip-ranges-control button:not([disabled])': 'changeIPRanges'
+            'click .ip-ranges-control button:not([disabled])': 'changeIPRanges',
+            'focus input[name=range1]': 'autoCompleteIPRanges'
         },
         changeIPRanges: function(e) {
             var config = this.ipRangesConfig;
@@ -280,6 +281,22 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 ipRanges.splice(rowIndex, 1);
             }
             config.model.set(config.attribute, ipRanges);
+        },
+        autoCompleteIPRanges: function(e) {
+            var config = this.ipRangesConfig;
+            var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index($(e.currentTarget).parents('.range-row'));
+            var ipRanges = _.cloneDeep(config.model.get(config.attribute));
+            var startIPRange = ipRanges[rowIndex][0];
+            if (!ipRanges[rowIndex][1] && startIPRange) {
+                ipRanges[rowIndex][1] = startIPRange;
+                config.model.set(config.attribute, ipRanges);
+                var input = this.$(e.currentTarget);
+                var startPos = startIPRange.length - _.last(startIPRange.split('.')).length;
+                var endPos = startIPRange.length;
+                // setTimeout is used here for change event order:
+                // when we set some timeout (even zero), we place selection function after end of focus event.
+                setTimeout(function() { input[0].setSelectionRange(startPos, endPos); }, 0);
+            }
         },
         stickitIpRanges: function(config) {
             _.each(config.model.get(config.attribute), function(range, rangeIndex) {

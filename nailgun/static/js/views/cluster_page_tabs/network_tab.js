@@ -261,11 +261,12 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
     NetworkTabSubview = Backbone.View.extend({
         rangeTemplate: _.template(rangeTemplate),
         events: {
-            'click .ip-ranges-control button:not([disabled])': 'changeIPRanges'
+            'click .ip-ranges-control button:not([disabled])': 'changeIPRanges',
+            'focus input[name=range1]': 'autoCompleteIPRanges'
         },
         changeIPRanges: function(e) {
             var config = this.ipRangesConfig;
-            var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index($(e.currentTarget).parents('.range-row'));
+            var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index(this.$(e.currentTarget).parents('.range-row'));
             var ipRanges = _.cloneDeep(config.model.get(config.attribute));
             if (this.$(e.currentTarget).hasClass('ip-ranges-add')) {
                 ipRanges.splice(rowIndex + 1, 0, ['','']);
@@ -273,6 +274,22 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 ipRanges.splice(rowIndex, 1);
             }
             config.model.set(config.attribute, ipRanges);
+        },
+        autoCompleteIPRanges: function(e) {
+            var config = this.ipRangesConfig;
+            var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index(this.$(e.currentTarget).parents('.range-row'));
+            var ipRanges = _.cloneDeep(config.model.get(config.attribute));
+            var startIP = ipRanges[rowIndex][0];
+            if (!ipRanges[rowIndex][1] && !utils.validateIP(startIP)) {
+                ipRanges[rowIndex][1] = startIP;
+                config.model.set(config.attribute, ipRanges);
+                var input = this.$(e.currentTarget)[0];
+                var startPos = _.lastIndexOf(startIP, '.') + 1;
+                var endPos = startIP.length;
+                // setTimeout is used here for change event order:
+                // when we set some timeout (even zero), we place selection function after end of focus event.
+                setTimeout(function() { input.setSelectionRange(startPos, endPos); }, 0);
+            }
         },
         composeIpRangesBindings: function() {
             var config = this.ipRangesConfig;

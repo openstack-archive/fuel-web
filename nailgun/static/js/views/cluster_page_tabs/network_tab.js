@@ -261,7 +261,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
     NetworkTabSubview = Backbone.View.extend({
         rangeTemplate: _.template(rangeTemplate),
         events: {
-            'click .ip-ranges-control button:not([disabled])': 'changeIPRanges'
+            'click .ip-ranges-control button:not([disabled])': 'changeIPRanges',
+            'focus input[name=range1]': 'autoCompleteIPRanges'
         },
         changeIPRanges: function(e) {
             var config = this.ipRangesConfig;
@@ -273,6 +274,22 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 ipRanges.splice(rowIndex, 1);
             }
             config.model.set(config.attribute, ipRanges);
+        },
+        autoCompleteIPRanges: function(e) {
+            var config = this.ipRangesConfig;
+            var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index(this.$(e.currentTarget).parents('.range-row'));
+            var ipRanges = _.cloneDeep(config.model.get(config.attribute));
+            var startIP = ipRanges[rowIndex][0];
+            if (!ipRanges[rowIndex][1] && !utils.validateIP(startIP)) {
+                ipRanges[rowIndex][1] = startIP;
+                config.model.set(config.attribute, ipRanges);
+                var input = this.$(e.currentTarget)[0];
+                if (input.setSelectionRange) {
+                    var startPos = _.lastIndexOf(startIP, '.') + 1;
+                    var endPos = startIP.length;
+                    _.defer(function() { input.setSelectionRange(startPos, endPos); });
+                }
+            }
         },
         composeIpRangesBindings: function() {
             var config = this.ipRangesConfig;

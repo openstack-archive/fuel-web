@@ -460,9 +460,6 @@ DUMP:
         command: ip r
         to_file: ip_r.txt
       - type: command
-        command: cobbler system report
-        to_file: cobbler_report.txt
-      - type: command
         command: netstat -anp
         to_file: netstat.txt
       - type: command

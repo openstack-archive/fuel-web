@@ -582,6 +582,7 @@
             weight: 20
             type: "checkbox"
             conflicts:
+              - "settings:common.libvirt_type.value": "vcenter"
               - "settings:storage.volumes_lvm.value": true
           images_ceph:
             value: false
@@ -589,12 +590,16 @@
             description: "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing."
             weight: 30
             type: "checkbox"
+            conflicts:
+              - "settings:common.libvirt_type.value": "vcenter"
           ephemeral_ceph:
             value: false
             label: "Ceph RBD for ephemeral volumes (Nova)"
             description: "Configures Nova to store ephemeral volumes in RBD. This works best if Ceph is enabled for volumes and images, too. Enables live migration of all types of Ceph backed VMs (without this option, live migration will only work with VMs launched from Cinder volumes)."
             weight: 35
             type: "checkbox"
+            conflicts:
+              - "settings:common.libvirt_type.value": "vcenter"
           objects_ceph:
             value: false
             label: "Ceph RadosGW for objects (Swift API)"
@@ -603,12 +608,16 @@
             type: "checkbox"
             depends:
               - "settings:storage.images_ceph.value": true
+            conflicts:
+              - "settings:common.libvirt_type.value": "vcenter"
           osd_pool_size:
             value: "2"
             label: "Ceph object replication factor"
             description: "Configures the default number of object replicas in Ceph. This number must be equal to or lower than the number of deployed 'Storage - Ceph OSD' nodes."
             weight: 70
             type: "text"
+            conflicts:
+              - "settings:common.libvirt_type.value": "vcenter"
       generated:
         sahara:
           user_password:

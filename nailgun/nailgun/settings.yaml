@@ -391,21 +391,14 @@ DUMP:
   target: "/var/www/nailgun/dump/fuel-snapshot"
   lastdump: "/var/www/nailgun/dump/last"
   timestamp: True
-  dump_roles:
-    master:
-      - localhost
-    slave: []
-  dump_objects:
-    master:
-      - type: postgres
-        dbhost: localhost
-        dbname: nailgun
-        username: nailgun
-        password: nailgun
-      - type: dir
-        path: /etc/nailgun
-      - type: dir
-        path: /etc/astute
+
+  dump:
+    local:
+      hosts:
+      - address: localhost
+        ssh-key: /root/.ssh/id_rsa
+
+      objects:
       - type: dir
         path: /var/log/nailgun
       - type: dir
@@ -421,6 +414,15 @@ DUMP:
         path: /var/log/ostf.log
       - type: file
         path: /var/log/ostf-stdout.log
+
+    master:
+      hosts: []
+
+      objects:
+      - type: dir
+        path: /etc/nailgun
+      - type: dir
+        path: /etc/astute
       - type: command
         command: df -h
         to_file: df.txt
@@ -476,7 +478,11 @@ DUMP:
         path: /etc/cobbler*
       - type: file
         path: /var/log/fuelmenu.log
+
     slave:
+      hosts: []
+
+      objects:
       - type: file
         path: /etc/astute.yaml
       - type: file

@@ -646,21 +646,38 @@ class DumpTask(object):
         ).all()
 
         dump_conf = settings.DUMP
-        dump_conf['dump_roles']['slave'] = [n.fqdn for n in nodes]
-        logger.debug("Dump slave nodes: %s",
-                     ", ".join(dump_conf['dump_roles']['slave']))
+        dump_conf['dump']['slave']['hosts'] = [
+            {
+                'address': n.fqdn,
+                'ssh-key': '/root/.ssh/id_rsa',
+            } for n in nodes
+        ]
 
-        """
-        here we try to filter out sensitive data from logs
-        """
+        # render postgres connection data in dump settings
+        dump_conf['dump']['local']['objects'].append({
+            'type': 'postgres',
+            'dbhost': settings.DATABASE['host'],
+            'dbname': settings.DATABASE['name'],
+            'username': settings.DATABASE['user'],
+            'password': settings.DATABASE['passwd'],
+        })
+
+        # inject master host
+        dump_conf['dump']['master']['hosts'] = [{
+            'address': settings.MASTER_IP,
+            'ssh-key': '/root/.ssh/id_rsa',
+        }]
+
+        # here we try to filter out sensitive data from logs
         rh_accounts = db().query(RedHatAccount).all()
-        for num, obj in enumerate(dump_conf['dump_objects']['master']):
+        for num, obj in enumerate(dump_conf['dump']['local']['objects']):
             if obj['type'] == 'subs' and obj['path'] == '/var/log/remote':
                 for fieldname in ("username", "password"):
                     for fieldvalue in [getattr(acc, fieldname)
                                        for acc in rh_accounts]:
                         obj['subs'][fieldvalue] = ('substituted_{0}'
                                                    ''.format(fieldname))
+
         logger.debug("Dump conf: %s", str(dump_conf))
         return dump_conf
 

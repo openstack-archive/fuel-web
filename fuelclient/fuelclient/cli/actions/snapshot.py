@@ -46,6 +46,6 @@ class SnapshotAction(Action):
         )
         snapshot_task.wait()
         download_snapshot_with_progress_bar(
-            snapshot_task.connection.api_root + snapshot_task.data["message"],
+            snapshot_task.connection.root + snapshot_task.data["message"],
             directory=params.dir
         )

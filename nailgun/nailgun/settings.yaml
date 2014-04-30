@@ -387,6 +387,8 @@ RHEL_VALIDATION_TIMEOUT: 10
 
 MAX_ITEMS_PER_PAGE: 500
 
+SHOTGUN_SSH_KEY: "/root/.ssh/id_rsa"
+
 DUMP:
   target: "/var/www/nailgun/dump/fuel-snapshot"
   lastdump: "/var/www/nailgun/dump/last"

@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+1: Matthew Mosesohn <mmosesohn@mirantis.com>
+Code-Review+2: Dmitry Pyzhov <dpyzhov+gerrit@mirantis.com>
+Workflow+1: Dmitry Pyzhov <dpyzhov+gerrit@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 30 Apr 2014 16:03:49 +0000
+Reviewed-on: https://review.openstack.org/91360
+Project: stackforge/fuel-web
+Branch: refs/heads/master

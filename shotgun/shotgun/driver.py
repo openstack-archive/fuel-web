@@ -15,9 +15,11 @@
 import fnmatch
 import logging
 import os
+import pprint
 import re
 import stat
 import tempfile
+import xmlrpclib
 
 import fabric.api
 
@@ -50,6 +52,7 @@ class Driver(object):
             "dir": Dir,
             "subs": Subs,
             "postgres": Postgres,
+            "xmlrpc": XmlRpc,
             "command": Command,
         }.get(driver_type, cls)(data, conf)
 
@@ -246,6 +249,32 @@ class Postgres(Driver):
         execute('mv -f "{0}" "{1}"'.format(
             temp,
             os.path.join(self.target_path, dump_basename)))
+
+
+class XmlRpc(Driver):
+    def __init__(self, data, conf):
+        super(XmlRpc, self).__init__(data, conf)
+
+        self.server = self.data.get("server", "localhost")
+        self.methods = self.data.get("methods", [])
+        self.to_file = self.data.get("to_file")
+
+        self.target_path = os.path.join(
+            self.conf.target, self.host, "xmlrpc", self.to_file)
+
+    def snapshot(self):
+        execute('mkdir -p "{0}"'.format(os.path.dirname(self.target_path)))
+
+        server = xmlrpclib.Server(self.server)
+        with open(self.target_path, "w") as f:
+            for method in self.methods:
+                if hasattr(server, method):
+                    response = getattr(server, method)()
+                    response = pprint.pformat(response, indent=2)
+                else:
+                    response = "no such method on remote server"
+
+                f.write("===== {0} =====\n{1}\n\n".format(method, response))
 
 
 class Command(Driver):

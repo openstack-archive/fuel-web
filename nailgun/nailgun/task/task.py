@@ -662,6 +662,19 @@ class DumpTask(object):
             'password': settings.DATABASE['passwd'],
         })
 
+        # render cobbler coonection data in dump settings
+        # NOTE: we no need user/password for cobbler
+        dump_conf['dump']['local']['objects'].append({
+            'type': 'xmlrpc',
+            'server': settings.COBBLER_URL,
+            'methods': [
+                'get_distros',
+                'get_profiles',
+                'get_systems',
+            ],
+            'to_file': 'cobbler.txt',
+        })
+
         # inject master host
         dump_conf['dump']['master']['hosts'] = [{
             'address': settings.MASTER_IP,

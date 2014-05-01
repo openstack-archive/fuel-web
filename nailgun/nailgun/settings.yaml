@@ -475,6 +475,10 @@ DUMP:
         path: /etc/cobbler*
       - type: file
         path: /var/log/fuelmenu.log
+      - type: dir
+        path: /var/log/docker-logs
+      - type: file
+        path: /var/log/docker-*.log
 
     slave:
       hosts: []

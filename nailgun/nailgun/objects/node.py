@@ -102,6 +102,25 @@ class Node(NailgunObject):
         return node
 
     @classmethod
+    def get_by_meta(cls, meta):
+        """Search for instance using mac, node id or interfaces
+
+        :param meta: dict with nodes metadata
+        :returns: Node instance
+        """
+        node = cls.get_by_mac_or_uid(
+            mac=meta.get('mac'), node_uid=meta.get('id'))
+
+        if not node:
+            can_search_by_ifaces = all([
+                meta.get('meta'), meta['meta'].get('interfaces')])
+
+            if can_search_by_ifaces:
+                node = cls.search_by_interfaces(meta['meta']['interfaces'])
+
+        return node
+
+    @classmethod
     def search_by_interfaces(cls, interfaces):
         """Search for instance using MACs on interfaces
 

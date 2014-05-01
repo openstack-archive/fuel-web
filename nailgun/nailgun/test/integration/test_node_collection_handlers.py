@@ -321,6 +321,21 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 200)
         self.assertTrue('cached' in response and response['cached'])
 
+    def test_agent_updates_node_by_interfaces(self):
+        node = self.env.create_node(api=False)
+        interface = node.meta['interfaces'][0]
+
+        resp = self.app.put(
+            reverse('NodeAgentHandler'),
+            json.dumps({
+                'mac': 'invalid_mac',
+                'meta': {
+                    'interfaces': [interface]},
+            }),
+            headers=self.default_headers)
+
+        self.assertEquals(resp.status_code, 200)
+
     def test_node_create_ip_not_in_admin_range(self):
         node = self.env.create_node(api=False)
 

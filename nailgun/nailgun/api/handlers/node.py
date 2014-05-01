@@ -98,26 +98,10 @@ class NodeCollectionHandler(CollectionHandler):
 
         nodes_updated = []
         for nd in data:
-            node = self.collection.single.get_by_mac_or_uid(
-                mac=nd.get("mac"),
-                node_uid=nd.get("id")
-            )
-            if not node:
-                can_search_by_ifaces = all([
-                    nd.get("mac"),
-                    nd.get("meta"),
-                    nd["meta"].get("interfaces")
-                ])
-                if can_search_by_ifaces:
-                    node = self.collection.single.search_by_interfaces(
-                        nd["meta"]["interfaces"]
-                    )
+            node = self.collection.single.get_by_meta(nd)
 
             if not node:
-                raise self.http(
-                    404,
-                    "Can't find node: {0}".format(nd)
-                )
+                raise self.http(404, "Can't find node: {0}".format(nd))
 
             self.collection.single.update(node, nd)
             nodes_updated.append(node.id)
@@ -145,16 +129,12 @@ class NodeAgentHandler(BaseHandler):
         """
         nd = self.checked_data(
             self.validator.validate_collection_update,
-            data=u'[{0}]'.format(web.data())
-        )[0]
+            data=u'[{0}]'.format(web.data()))[0]
 
-        node = self.collection.single.get_by_mac_or_uid(
-            mac=nd.get("mac"),
-            node_uid=nd.get("id")
-        )
+        node = self.collection.single.get_by_meta(nd)
 
         if not node:
-            raise self.http(404)
+            raise self.http(404, "Can't find node: {0}".format(nd))
 
         node.timestamp = datetime.now()
         if not node.online:

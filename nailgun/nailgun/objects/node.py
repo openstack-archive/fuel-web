@@ -66,6 +66,7 @@ class Node(NailgunObject):
             "fqdn": {"type": "string"},
             "manufacturer": {"type": "string"},
             "platform_name": {"type": "string"},
+            "kernel_params": {"type": "string"},
             "progress": {"type": "number"},
             "os_platform": {"type": "string"},
             "pending_addition": {"type": "boolean"},
@@ -532,6 +533,10 @@ class Node(NailgunObject):
         instance.cluster_id = cluster_id
         db().flush()
         db().refresh(instance)
+        instance.kernel_params = Cluster.get_default_kernel_params(
+            instance.cluster
+        )
+        db().flush()
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
 
@@ -570,6 +575,7 @@ class Node(NailgunObject):
         cls.update_roles(instance, [])
         cls.update_pending_roles(instance, [])
         instance.cluster_id = None
+        instance.kernel_params = None
         instance.reset_name_to_default()
         db().flush()
         db().refresh(instance)

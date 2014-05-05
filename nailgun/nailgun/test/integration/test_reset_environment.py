@@ -14,10 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.openstack.common import jsonutils
+
 from nailgun.db.sqlalchemy.models import Notification
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
+from nailgun.test.base import reverse
 
 
 class TestResetEnvironment(BaseIntegrationTest):
@@ -79,3 +82,42 @@ class TestResetEnvironment(BaseIntegrationTest):
             ).count(),
             1
         )
+
+    @fake_tasks(
+        godmode=True,
+        recover_nodes=False,
+        ia_nodes_count=1
+    )
+    def test_reset_node_pending_statuses(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"pending_addition": True},
+            ]
+        )
+        cluster_db = self.env.clusters[0]
+        node_db = self.env.nodes[0]
+
+        # deploy environment
+        deploy_task = self.env.launch_deployment()
+        self.env.wait_ready(deploy_task, 60)
+
+        # mark node as pending_deletion
+        self.app.put(
+            reverse('NodeCollectionHandler'),
+            jsonutils.dumps([{
+                'id': node_db.id,
+                'cluster_id': cluster_db.id,
+                'pending_deletion': True,
+            }]),
+            headers=self.default_headers
+        )
+
+        # reset environment
+        reset_task = self.env.reset_environment()
+        self.env.wait_ready(reset_task, 60)
+
+        # check node statuses
+        self.env.refresh_nodes()
+        self.assertEqual(node_db.pending_addition, True)
+        self.assertEqual(node_db.pending_deletion, False)

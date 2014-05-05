@@ -540,7 +540,8 @@ class NailgunReceiver(object):
                 {
                     "online": False,
                     "status": "discover",
-                    "pending_addition": True
+                    "pending_addition": True,
+                    "pending_deletion": False,
                 },
                 synchronize_session='fetch'
             )

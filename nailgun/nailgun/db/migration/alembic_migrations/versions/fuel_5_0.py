@@ -84,7 +84,7 @@ def upgrade():
                         nullable=True),
                     sa.Column('is_customized', sa.Boolean(), nullable=True),
                     sa.Column(
-                        'fuel_version', sa.String(length=30), nullable=False),
+                        'fuel_version', sa.Text, nullable=False),
                     sa.ForeignKeyConstraint(['release_id'], ['releases.id'], ),
                     sa.PrimaryKeyConstraint('id'),
                     sa.UniqueConstraint('name')

@@ -435,7 +435,7 @@
                 },
                 "display_changes": {
                     "title": "Deploy Changes",
-                    "added_node": "Added __nodesCount__ node.",
+                    "added_node": "Added __nodesCount__ node(s).",
                     "added_node_plural": "Added __nodesCount__ nodes.",
                     "deleted_node": "Deleted __nodesCount__ node.",
                     "deleted_node_plural":  "Deleted __nodesCount__ nodes.",

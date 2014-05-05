@@ -8,15 +8,15 @@
   <% var nodes = cluster.get('nodes') %>
   <% var addedNodes = nodes.where({pending_addition: true}) %>
   <% if (addedNodes.length) { %>
-    <div class="deploy-task-name"><%- $.t("dialog.display_changes.added_node", {nodesCount: addedNodes.length }) %></div>
+    <div class="deploy-task-name"><%- $.t("dialog.display_changes.added_node", {count: addedNodes.length }) %></div>
   <% } %>
   <% var deletedNodes = nodes.where({pending_deletion: true}) %>
   <% if (deletedNodes.length) { %>
-    <div class="deploy-task-name"><%- $.t("dialog.display_changes.deleted_node", {nodesCount: deletedNodes.length }) %></div>
+    <div class="deploy-task-name"><%- $.t("dialog.display_changes.deleted_node", {count: deletedNodes.length }) %></div>
   <% } %>
   <% var reconfiguredNodes = nodes.filter(function(node) {return !node.get('pending_addition') && !node.get('pending_deletion') && !_.isEmpty(node.get('pending_roles'));}) %>
   <% if (reconfiguredNodes.length) { %>
-    <div class="deploy-task-name"><%- $.t("dialog.display_changes.reconfigured_node", {nodesCount: reconfiguredNodes.length }) %></div>
+    <div class="deploy-task-name"><%- $.t("dialog.display_changes.reconfigured_node", {count: reconfiguredNodes.length }) %></div>
   <% } %>
 
   <% var settingsChangesDescriptions = {

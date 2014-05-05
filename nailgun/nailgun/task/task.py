@@ -649,7 +649,7 @@ class DumpTask(object):
         dump_conf['dump']['slave']['hosts'] = [
             {
                 'address': n.fqdn,
-                'ssh-key': '/root/.ssh/id_rsa',
+                'ssh-key': settings.SHOTGUN_SSH_KEY,
             } for n in nodes
         ]
 
@@ -678,7 +678,7 @@ class DumpTask(object):
         # inject master host
         dump_conf['dump']['master']['hosts'] = [{
             'address': settings.MASTER_IP,
-            'ssh-key': '/root/.ssh/id_rsa',
+            'ssh-key': settings.SHOTGUN_SSH_KEY,
         }]
 
         # here we try to filter out sensitive data from logs

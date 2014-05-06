@@ -719,7 +719,7 @@ class NetworkManager(object):
         try:
             cls.check_interfaces_correctness(node)
         except errors.InvalidInterfacesInfo as e:
-            logger.warn("Cannot update interfaces: %s", e.message)
+            logger.debug("Cannot update interfaces: %s", e.message)
             return
 
         for interface in node.meta["interfaces"]:

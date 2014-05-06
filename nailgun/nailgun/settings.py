@@ -29,11 +29,19 @@ class NailgunSettings(object):
         project_path = os.path.dirname(__file__)
         project_settings_file = os.path.join(project_path, 'settings.yaml')
         settings_files.append(project_settings_file)
-
         settings_files.append('/etc/nailgun/settings.yaml')
-        settings_files.append('/etc/nailgun/version.yaml')
-        self.config = {}
 
+        version_paths = ["/etc/fuel/version.yaml",
+                         "/etc/fuel/nailgun/version.yaml",
+                         "/etc/nailgun/version.yaml"]
+        for path in version_paths:
+            if os.access(path, os.R_OK):
+                settings_files.append(path)
+                break
+        else:
+            logger.debug("'version.yaml' config file is not found")
+
+        self.config = {}
         for sf in settings_files:
             try:
                 logger.debug("Trying to read config file %s" % sf)

@@ -435,12 +435,12 @@
                 },
                 "display_changes": {
                     "title": "Deploy Changes",
-                    "added_node": "Added __nodesCount__ node.",
-                    "added_node_plural": "Added __nodesCount__ nodes.",
-                    "deleted_node": "Deleted __nodesCount__ node.",
-                    "deleted_node_plural":  "Deleted __nodesCount__ nodes.",
-                    "reconfigured_node": "Reconfigured roles of  __nodesCount__ node.",
-                    "reconfigured_node_plural": "Reconfigured roles of  __nodesCount__ nodes.",
+                    "added_node": "Added __count__ node.",
+                    "added_node_plural": "Added __count__ nodes.",
+                    "deleted_node": "Deleted __count__ node.",
+                    "deleted_node_plural":  "Deleted __count__ nodes.",
+                    "reconfigured_node": "Reconfigured roles of  __count__ node.",
+                    "reconfigured_node_plural": "Reconfigured roles of  __count__ nodes.",
                     "settings_changes": {
                         "attrs": "OpenStack settings.",
                         "networks": "network settings.",

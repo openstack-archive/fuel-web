@@ -153,6 +153,7 @@ class TestHandlers(BaseIntegrationTest):
             'img_name': 'TestVM',
             'img_path': '/opt/vm/cirros-x86_64-disk.img',
             'os_name': 'cirros',
+            'min_ram': 64,
             'glance_properties': (
                 """--property murano_image_info="""
                 """'{"title": "Murano Demo", "type": "cirros.demo"}'"""
@@ -493,6 +494,7 @@ class TestHandlers(BaseIntegrationTest):
             'img_name': 'TestVM',
             'img_path': '/opt/vm/cirros-x86_64-disk.img',
             'os_name': 'cirros',
+            'min_ram': 64,
             'glance_properties': (
                 """--property murano_image_info="""
                 """'{"title": "Murano Demo", "type": "cirros.demo"}'"""

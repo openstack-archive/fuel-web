@@ -235,6 +235,7 @@ class DeploymentMultinodeSerializer(object):
             'img_name': 'TestVM',
             'img_path': '',
             'os_name': 'cirros',
+            'min_ram': 64,
             'glance_properties': '',
         }
         # Generate a right path to image.

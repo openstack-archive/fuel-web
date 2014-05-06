@@ -18,8 +18,12 @@
 Handlers dealing with RAIDs
 """
 
+from nailgun.raid.manager import RaidManager
+
 from nailgun.api.handlers.base import BaseHandler
 from nailgun.api.handlers.base import content_json
+
+from nailgun.db.sqlalchemy.models import Node
 
 
 class NodeRaidHandler(BaseHandler):
@@ -45,8 +49,12 @@ class NodeDefaultsRaidHandler(BaseHandler):
     def GET(self, node_id):
         """:returns: JSONized RAID configuration.
         """
+        node = self.get_object_or_404(Node, node_id)
+        default_raid_conf = self.get_default(node)
+        return default_raid_conf
 
-        return {'ok': 'fake'}
+    def get_default(self, node):
+        return RaidManager.get_default_raid_configuration(node)
 
 
 class NodeRaidApplyHandler(BaseHandler):

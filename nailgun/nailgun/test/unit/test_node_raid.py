@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -30,9 +32,54 @@ class TestRaidHandlers(BaseIntegrationTest):
 
 class TestDefaultsRaidHandlers(BaseIntegrationTest):
 
-    def test_get_handler(self):
+    def get(self, node_id):
         resp = self.app.get(reverse('NodeDefaultsRaidHandler',
-                                    kwargs={'node_id': 1}),
+                                    kwargs={'node_id': node_id}),
                             expect_errors=True,
                             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
+        return json.loads(resp.body)
+
+    def test_get_handler(self):
+        cluster = self.env.create_cluster(api=True)
+        self.env.create_node(
+            api=True,
+            pending_roles=['controller'],
+            cluster_id=cluster['id'])
+
+        node_db = self.env.nodes[0]
+
+        new_meta = node_db.meta.copy()
+
+        raid_meta = {"controllers":
+                     [{"product_name": "LSI MegaRAID SAS 9260-4i",
+                       "controller_id": "0",
+                       "vendor": "lsi"}]}
+        raid_meta["controllers"][0]["physical_drives"] = [
+            {"sector_size": "512B",
+             "medium": "HDD",
+             "enclosure": "252",
+             "slot": "0",
+             "model": "ST1000NM0011",
+             "interface": "SATA"},
+            {"sector_size": "512B",
+             "medium": "HDD",
+             "enclosure": "251",
+             "slot": "1",
+             "model": "ST1000NM0011",
+             "interface": "SATA"},
+        ]
+
+        new_meta['raid'] = raid_meta
+
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            json.dumps({
+                "mac": node_db.mac,
+                "meta": new_meta}),
+            headers=self.default_headers)
+
+        self.env.refresh_nodes()
+
+        response = self.get(node_db.id)
+        self.assertTrue(len(response["raids"]) > 0)

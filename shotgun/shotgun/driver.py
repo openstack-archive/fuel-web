@@ -16,6 +16,7 @@ import fnmatch
 import logging
 import os
 import pprint
+import pwd
 import re
 import stat
 import tempfile
@@ -226,7 +227,9 @@ class Postgres(Driver):
             authline = "{host}:{port}:{dbname}:{username}:{password}".format(
                 host=self.dbhost, port="5432", dbname=self.dbname,
                 username=self.username, password=self.password)
-            with open(os.path.expanduser("~/.pgpass"), "a+") as fo:
+            home_dir = pwd.getpwuid(os.getuid()).pw_dir
+            pgpass = os.path.join(home_dir, ".pgpass")
+            with open(pgpass, "a+") as fo:
                 fo.seek(0)
                 auth = False
                 for line in fo:
@@ -236,8 +239,7 @@ class Postgres(Driver):
                 if not auth:
                     fo.seek(0, 2)
                     fo.write("{0}\n".format(authline))
-            os.chmod(os.path.expanduser("~/.pgpass"),
-                     stat.S_IRUSR + stat.S_IWUSR)
+            os.chmod(pgpass, stat.S_IRUSR + stat.S_IWUSR)
         temp = self.command("mktemp").stdout.strip()
         self.command("pg_dump -h {dbhost} -U {username} -w "
                      "-f {file} {dbname}".format(

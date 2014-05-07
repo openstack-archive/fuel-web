@@ -257,6 +257,7 @@ class DeletionTask(object):
                     'url': settings.COBBLER_URL,
                     'username': settings.COBBLER_USER,
                     'password': settings.COBBLER_PASSWORD,
+                    "master_ip": settings.ADMIN_NETWORK['ipaddress'],
                 }
             }
         )
@@ -294,6 +295,7 @@ class StopDeploymentTask(object):
                     "url": settings.COBBLER_URL,
                     "username": settings.COBBLER_USER,
                     "password": settings.COBBLER_PASSWORD,
+                    "master_ip": settings.ADMIN_NETWORK['ipaddress'],
                 }
             }
         )
@@ -337,6 +339,7 @@ class ResetEnvironmentTask(object):
                     "url": settings.COBBLER_URL,
                     "username": settings.COBBLER_USER,
                     "password": settings.COBBLER_PASSWORD,
+                    "master_ip": settings.ADMIN_NETWORK['ipaddress'],
                 }
             }
         )

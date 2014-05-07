@@ -253,6 +253,7 @@ class DeletionTask(object):
             {
                 'task_uuid': task.uuid,
                 'nodes': nodes_to_delete,
+                'master_ip': settings.ADMIN_NETWORK['ipaddress'],
                 'engine': {
                     'url': settings.COBBLER_URL,
                     'username': settings.COBBLER_USER,
@@ -333,6 +334,7 @@ class ResetEnvironmentTask(object):
                         'slave_name': TaskHelper.make_slave_name(n.id)
                     } for n in nodes_to_reset
                 ],
+                'master_ip': settings.ADMIN_NETWORK['ipaddress'],
                 "engine": {
                     "url": settings.COBBLER_URL,
                     "username": settings.COBBLER_USER,

@@ -40,7 +40,9 @@ class ProvisioningSerializer(object):
             'engine': {
                 'url': settings.COBBLER_URL,
                 'username': settings.COBBLER_USER,
-                'password': settings.COBBLER_PASSWORD},
+                'password': settings.COBBLER_PASSWORD,
+                'master_ip': settings.MASTER_IP,
+            },
             'nodes': serialized_nodes}
 
     @classmethod

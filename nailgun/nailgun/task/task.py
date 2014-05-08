@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from copy import deepcopy
+
 import netaddr
 
 from sqlalchemy import func
@@ -645,7 +647,7 @@ class DumpTask(object):
             Node.status.in_(['ready', 'provisioned', 'deploying', 'error'])
         ).all()
 
-        dump_conf = settings.DUMP
+        dump_conf = deepcopy(settings.DUMP)
         dump_conf['dump']['slave']['hosts'] = [
             {
                 'address': n.fqdn,

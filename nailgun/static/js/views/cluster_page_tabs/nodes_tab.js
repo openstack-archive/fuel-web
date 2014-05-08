@@ -972,7 +972,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var name = $.trim(this.$('.name input').val());
             if (name && name != this.node.get('name')) {
                 this.$('.name input').attr('disabled', true);
-                this.node.save({name: name}, {patch: true, wait: true}).always(_.bind(this.endNodeRenaming, this));
+                this.screen.nodes.get(this.node.id).save({name: name}, {patch: true, wait: true}).always(_.bind(this.endNodeRenaming, this));
             } else {
                 this.endNodeRenaming();
             }

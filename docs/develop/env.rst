@@ -67,9 +67,9 @@ Building the Fuel ISO
 ---------------------
 
 The following steps are required to build the Fuel ISO images on Ubuntu
-12.10 or newer (excluding newest 14.04)::
+12.10 or newer (excluding newest 14.04):
 
-#. Setup Docker repository using these instruction:: http://docs.docker.io/installation/ubuntulinux/
+#. Setup Docker repository using these instruction http://docs.docker.io/installation/ubuntulinux/
 
 #. Install software::
 

@@ -555,7 +555,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }, this));
             this.collection.on('change:checked', this.handleChanges, this);
             this.settings = this.cluster.get('settings');
-            (this.loading = this.settings.fetch({cache: true})).done(_.bind(this.checkRolesAvailability, this));
+            (this.loading = this.settings.fetch({cache: true})).done(_.bind(function() {
+                    this.checkRolesAvailability();
+                    this.checkForConflicts();
+            }, this));
         },
         stickitRole: function (role) {
             var bindings = {};

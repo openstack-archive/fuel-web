@@ -969,7 +969,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var name = $.trim(this.$('.name input').val());
             if (name && name != this.node.get('name')) {
                 this.$('.name input').attr('disabled', true);
-                this.node.save({name: name}, {patch: true, wait: true}).always(_.bind(this.endNodeRenaming, this));
+                var previousRoles = this.node.previous('pending_roles');
+                this.node.save({name: name}, {patch: true, wait: true}).always(_.bind(function() {
+                    this.endNodeRenaming();
+                    this.node.set({pending_roles: previousRoles}, {assign: true});
+                }, this));
             } else {
                 this.endNodeRenaming();
             }

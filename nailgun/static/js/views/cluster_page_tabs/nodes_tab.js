@@ -954,6 +954,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         startNodeRenaming: function() {
             if (!this.renameable || this.renaming) {return;}
             $('html').off(this.eventNamespace);
+            var actualName = this.$('.node-renameable').text();
+            //FIXME: this strange bugs needs further investigation
+            if (actualName != this.node.get('name')) {
+                this.node.set('name', actualName);
+            }
             $('html').on(this.eventNamespace, _.after(2, _.bind(function(e) {
                 if (!$(e.target).closest(this.$('.name input')).length) {
                     this.endNodeRenaming();
@@ -972,7 +977,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var name = $.trim(this.$('.name input').val());
             if (name && name != this.node.get('name')) {
                 this.$('.name input').attr('disabled', true);
-                this.node.save({name: name}, {patch: true, wait: true}).always(_.bind(this.endNodeRenaming, this));
+                var previousRoles = this.node.previous('pending_roles');
+                this.node.save({name: name}, {patch: true, wait: true}).always(_.bind(function() {
+                    this.endNodeRenaming();
+                    this.node.set({pending_roles: previousRoles}, {assign: true});
+                }, this));
             } else {
                 this.endNodeRenaming();
             }

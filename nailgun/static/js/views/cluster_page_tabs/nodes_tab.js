@@ -189,7 +189,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         actualizePendingRoles: function(node, roles, options) {
             if (!options.assign) {
-                node.set({pending_roles: node.previous('pending_roles')}, {assign: true});
+                node.set({pending_roles: (!node.previous('pending_roles').length) ? roles : node.previous('pending_roles')}, {assign: true});
             }
         },
         actualizeFilteredNode: function(node, options) {
@@ -969,7 +969,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var name = $.trim(this.$('.name input').val());
             if (name && name != this.node.get('name')) {
                 this.$('.name input').attr('disabled', true);
-                this.node.save({name: name}, {patch: true, wait: true}).always(_.bind(this.endNodeRenaming, this));
+                var previousRoles = this.node.previous('pending_roles');
+                this.node.save({name: name}, {patch: true, wait: true}).always(_.bind(function() {
+                    this.endNodeRenaming();
+                    this.screen.actualizePendingRoles(this.node, previousRoles, {assign: false});
+                }, this));
             } else {
                 this.endNodeRenaming();
             }

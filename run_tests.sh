@@ -239,28 +239,30 @@ function run_webui_tests {
   local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
   local result=0
 
-  run_server $SERVER_PORT $server_log $COMPRESSED_STATIC_DIR/settings.yaml
-  local pid=$!
+  for testcase in $TESTS; do
 
-  if [ $pid -ne 0 ]; then
-    # run test files
-    for testcase in $TESTS; do
-      dropdb
-      syncdb true
+    dropdb
+    syncdb true
+
+    run_server $SERVER_PORT $server_log $COMPRESSED_STATIC_DIR/settings.yaml
+    local pid=$!
+
+    if [ $pid -ne 0 ]; then
 
       ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
       if [ $? -ne 0 ]; then
         result=1
         break
       fi
-    done
 
-    kill $pid
-    wait $pid 2> /dev/null
-  else
-    cat $server_log
-    result=1
-  fi
+      kill $pid
+      wait $pid 2> /dev/null
+    else
+      cat $server_log
+      result=1
+    fi
+
+  done
 
   rm $server_log
   popd >> /dev/null
@@ -287,12 +289,13 @@ function run_cli_tests {
   local server_log=`mktemp /tmp/test_nailgun_cli_server.XXXX`
   local result=0
 
+  dropdb
+  syncdb true
+
   run_server $SERVER_PORT $server_log ""
   local pid=$!
 
   if [ $pid -ne 0 ]; then
-    dropdb
-    syncdb true
 
     $TESTRTESTS -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT
     result=$?

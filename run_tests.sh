@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-set -eu
+set -eux
 
 function usage {
   echo "Usage: $0 [OPTION]..."

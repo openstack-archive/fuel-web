@@ -125,7 +125,14 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
         },
         update: function() {
-            this.nodes.fetch().always(_.bind(this.scheduleUpdate, this));
+            this.nodes.fetch()
+                .always(_.bind(this.scheduleUpdate, this))
+                .done(_.bind(function() {
+                    var assignRolesView = _.find(this.subViews, function(view) {return view instanceof AssignRolesPanel;});
+                    if (assignRolesView) {
+                        assignRolesView.checkForConflicts();
+                    }
+                }, this));
         },
         calculateApplyButtonState: function() {
             this.applyChangesButton.set('disabled', !this.hasChanges());

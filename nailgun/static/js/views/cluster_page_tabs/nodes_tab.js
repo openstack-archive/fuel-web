@@ -459,7 +459,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         checkForConflicts: function(e) {
             this.collection.each(function(role) {
                 var conflict = '';
-                var disabled = !this.screen.nodes.length || this.loading.state() == 'pending';
+                var disabled = !this.screen.nodes.length;
+                if (this.loading.state() == 'pending') {
+                    this.checkRolesAvailability();
+                }
                 // checking if role is unavailable
                 if (!disabled && role.get('unavailable')) {
                     disabled = true;
@@ -484,7 +487,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     disabled = true;
                     conflict = $.t('cluster_page.nodes_tab.mongo_restriction');
                 }
-                role.set({disabled: disabled, conflict: conflict});
+                if (conflict) {
+                    role.set({disabled: disabled, conflict: conflict});
+                }
             }, this);
             if (this.cluster.get('mode') == 'multinode' && this.screen.nodeList) {
                 var controllerNode = this.nodes.filter(function(node) {return node.hasRole('controller');})[0];
@@ -567,7 +572,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 },
                 attributes: [{
                     name: 'disabled',
-                    observe: 'disabled'
+                    observe: 'disabled',
+                    onGet: function(value, options) {
+                        return value;
+                    }
                 },{
                     name: 'indeterminate',
                     observe: 'indeterminate'

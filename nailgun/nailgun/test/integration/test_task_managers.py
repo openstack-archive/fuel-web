@@ -293,23 +293,22 @@ class TestTaskManagers(BaseIntegrationTest):
         timeout = 120
         timer = time.time()
         while True:
-            task_deploy = self.db.query(Task).filter_by(
-                uuid=deploy_uuid
-            ).first()
-            task_delete = self.db.query(Task).filter_by(
-                cluster_id=cluster_id,
-                name="cluster_deletion"
-            ).first()
-            if not task_delete:
+            c = self.db.query(Cluster).get(cluster_id)
+            if not c:
                 break
-            self.db.expire(task_deploy)
-            self.db.expire(task_delete)
             if (time.time() - timer) > timeout:
-                break
+                raise Exception("Cluster deletion timeout")
             time.sleep(0.24)
 
-        cluster_db = self.db.query(Cluster).get(cluster_id)
-        self.assertIsNone(cluster_db)
+        task_deploy = self.db.query(Task).filter_by(
+            uuid=deploy_uuid
+        ).first()
+        task_delete = self.db.query(Task).filter_by(
+            cluster_id=cluster_id,
+            name="cluster_deletion"
+        ).first()
+        self.assertIsNone(task_deploy)
+        self.assertIsNone(task_delete)
 
     @fake_tasks(godmode=True)
     def test_deletion_cluster_ha_3x3(self):

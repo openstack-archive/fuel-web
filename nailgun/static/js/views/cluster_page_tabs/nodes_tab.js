@@ -954,6 +954,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         startNodeRenaming: function() {
             if (!this.renameable || this.renaming) {return;}
             $('html').off(this.eventNamespace);
+            var actualName = this.$('.node-renameable').text();
+            //FIXME: this strange bugs needs further investigation
+            if (actualName != this.node.get('name')) {
+                this.node.set('name', actualName);
+            }
             $('html').on(this.eventNamespace, _.after(2, _.bind(function(e) {
                 if (!$(e.target).closest(this.$('.name input')).length) {
                     this.endNodeRenaming();
@@ -972,7 +977,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             var name = $.trim(this.$('.name input').val());
             if (name && name != this.node.get('name')) {
                 this.$('.name input').attr('disabled', true);
-                this.node.save({name: name}, {patch: true, wait: true}).always(_.bind(this.endNodeRenaming, this));
+                var actualRoles = this.node.get('pending_roles');
+                this.node.save({name: name}, {patch: true, wait: true}).always(_.bind(function() {
+                    this.endNodeRenaming();
+                    this.node.set({pending_roles: actualRoles}, {assign: true});
+                }, this));
             } else {
                 this.endNodeRenaming();
             }
@@ -1042,6 +1051,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.eventNamespace = 'click.editnodename' + this.node.id;
             this.node.on('change:checked', function(node, checked, options) {
                 this.screen.nodes.get(node.id).set('checked', checked);
+            }, this);
+            this.node.on('change:name', function(node) {
+                this.screen.nodes.get(node.id).set('name', node.get('name'));
             }, this);
             this.node.set('checked', this.screen instanceof EditNodesScreen || this.screen.nodes.get(this.node.id).get('checked') || false);
             this.node.on('change:status', this.calculateNodeState, this);

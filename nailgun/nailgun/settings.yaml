@@ -414,6 +414,8 @@ DUMP:
         path: /var/log/ostf.log
       - type: file
         path: /var/log/ostf-stdout.log
+      - type: file
+        path: /var/log/docker
 
     master:
       hosts: []
@@ -448,6 +450,12 @@ DUMP:
         command: pvdisplay
         to_file: lvm_pvdisplay.txt
       - type: command
+        command: docker images
+        to_file: docker_images.txt
+      - type: command
+        command: docker ps
+        to_file: docker_ps.txt
+      - type: command
         command: vgdisplay
         to_file: lvm_vgdisplay.txt
       - type: command
@@ -479,6 +487,8 @@ DUMP:
         path: /var/log/docker-logs
       - type: file
         path: /var/log/docker-*.log
+      - type: file
+        path: /var/log/puppet/bootstrap_admin_node.log
 
     slave:
       hosts: []

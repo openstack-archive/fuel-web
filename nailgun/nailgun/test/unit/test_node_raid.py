@@ -16,7 +16,10 @@
 
 import json
 
+from nailgun.db.sqlalchemy.models import Task
+
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 
 
@@ -121,3 +124,113 @@ class TestDefaultsRaidHandlers(BaseIntegrationTest):
 
         response = self.get(node_db.id)
         self.assertTrue(len(response["raids"]) > 0)
+
+
+class TestNodeApplyHandler(BaseIntegrationTest):
+
+    def _create_raid_config(self, node):
+        raid_config = {"raids": [{"ctrl_id": "0",
+                                 "mount_point": "/",
+                                 "phys_devices": [],
+                                 "eid": "252",
+                                 "raid_lvl": 1}]}
+        self.env.create(
+            nodes_kwargs=[
+                {"status": "ready",
+                 "online": True}])
+
+        self.app.put(
+            reverse('NodeRaidHandler',
+                    kwargs={'node_id': node.id}),
+            json.dumps(raid_config),
+            headers=self.default_headers)
+
+    def test_success_get_handler(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"status": "ready",
+                 "online": True}])
+
+        self._create_raid_config(self.env.nodes[0])
+
+        resp = self.app.get(reverse('NodeRaidApplyHandler',
+                                    kwargs={'node_id': self.env.nodes[0].id}),
+                            expect_errors=True,
+                            headers=self.default_headers)
+        task = json.loads(resp.body)
+        self.assertEqual(len(task["args"]["cmds"]), 2)
+        self.assertEqual(task["args"]["cmds"][0]["action"], "clear_all")
+        self.assertEqual(task["args"]["cmds"][1]["action"], "create")
+        self.assertEqual(resp.status_code, 200)
+
+    @fake_tasks()
+    def test_success_put_handler(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'status': 'ready',
+                 'online': True}])
+
+        self._create_raid_config(self.env.nodes[0])
+
+        resp = self.app.put(reverse('NodeRaidApplyHandler',
+                                    kwargs={'node_id': self.env.nodes[0].id}),
+                            expect_errors=True,
+                            headers=self.default_headers)
+        self.assertEquals(resp.status_code, 202)
+        task = self.db.query(Task).filter(
+            Task.name == 'raid',
+            Task.node_id == self.env.nodes[0].id).first()
+        self.assertIn(task.status, ('running', 'ready'))
+        data = json.loads(resp.body)
+        self.assertEquals(data['uuid'], task.uuid)
+
+    @fake_tasks()
+    def test_put_handler_without_existing_node(self):
+        resp = self.app.put(reverse('NodeRaidApplyHandler',
+                                    kwargs={'node_id': 1}),
+                            expect_errors=True,
+                            headers=self.default_headers)
+        self.assertEquals(resp.status_code, 404)
+
+    @fake_tasks()
+    def test_put_handler_with_existing_node(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'status': 'ready',
+                 'online': True}])
+
+        self._create_raid_config(self.env.nodes[0])
+
+        self.env.create_task(
+            name='raid',
+            node_id=self.env.nodes[0].id,
+            status='running'
+        )
+
+        resp = self.app.put(reverse('NodeRaidApplyHandler',
+                                    kwargs={'node_id': self.env.nodes[0].id}),
+                            expect_errors=True,
+                            headers=self.default_headers)
+        tasks = self.db.query(Task).filter(
+            Task.name == 'raid',
+            Task.node_id == self.env.nodes[0].id).all()
+
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(len(tasks), 1)
+
+    @fake_tasks()
+    def test_put_handler_without_raid_config(self):
+        self.env.create(
+            nodes_kwargs=[
+                {'status': 'ready',
+                 'online': True}])
+        resp = self.app.put(reverse('NodeRaidApplyHandler',
+                                    kwargs={'node_id': self.env.nodes[0].id}),
+                            expect_errors=True,
+                            headers=self.default_headers)
+        tasks = self.db.query(Task).filter(
+            Task.name == 'raid',
+            Task.node_id == self.env.nodes[0].id).all()
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(len(tasks), 1)
+        self.assertEquals(tasks[0].status, 'error')

@@ -35,6 +35,7 @@ class Task(Base):
     __tablename__ = 'tasks'
     id = Column(Integer, primary_key=True)
     cluster_id = Column(Integer, ForeignKey('clusters.id'))
+    node_id = Column(Integer, ForeignKey('nodes.id'))
     uuid = Column(String(36), nullable=False,
                   default=lambda: str(uuid.uuid4()))
     name = Column(
@@ -67,10 +68,11 @@ class Task(Base):
     weight = Column(Float, default=1.0)
 
     def __repr__(self):
-        return "<Task '{0}' {1} ({2}) {3}>".format(
+        return "<Task '{0}' {1} ({2} {3}) {4}>".format(
             self.name,
             self.uuid,
             self.cluster_id,
+            self.node_id,
             self.status
         )
 

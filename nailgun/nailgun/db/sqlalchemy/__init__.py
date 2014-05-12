@@ -56,28 +56,10 @@ def syncdb():
 
 
 def dropdb():
-    tables = [name for (name,) in db().execute(
-        "SELECT tablename FROM pg_tables WHERE schemaname = 'public'")]
-    for table in tables:
-        db().execute("DROP TABLE IF EXISTS %s CASCADE" % table)
-
-    # sql query to list all types, equivalent to psql's \dT+
-    types = [name for (name,) in db().execute("""
-        SELECT t.typname as type FROM pg_type t
-        LEFT JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
-        WHERE (t.typrelid = 0 OR (
-            SELECT c.relkind = 'c' FROM pg_catalog.pg_class c
-            WHERE c.oid = t.typrelid
-        ))
-        AND NOT EXISTS(
-            SELECT 1 FROM pg_catalog.pg_type el
-            WHERE el.oid = t.typelem AND el.typarray = t.oid
-        )
-        AND n.nspname = 'public'
-        """)]
-    for type_ in types:
-        db().execute("DROP TYPE IF EXISTS %s CASCADE" % type_)
-    db().commit()
+    from nailgun.db import migration
+    from nailgun.db.sqlalchemy.models.base import Base
+    Base.metadata.drop_all(bind=engine)
+    migration.drop_migration_meta(engine)
 
 
 def flush():

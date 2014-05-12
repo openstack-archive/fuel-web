@@ -266,6 +266,7 @@ def upgrade():
         'tasks',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('cluster_id', sa.Integer(), nullable=True),
+        sa.Column('node_id', sa.Integer(), nullable=True),
         sa.Column('uuid', sa.String(length=36), nullable=False),
         sa.Column(
             'name',
@@ -312,6 +313,7 @@ def upgrade():
         sa.Column('parent_id', sa.Integer(), nullable=True),
         sa.Column('weight', sa.Float(), nullable=True),
         sa.ForeignKeyConstraint(['cluster_id'], ['clusters.id'], ),
+        sa.ForeignKeyConstraint(['node_id'], ['nodes.id'], ),
         sa.ForeignKeyConstraint(['parent_id'], ['tasks.id'], ),
         sa.PrimaryKeyConstraint('id')
     )

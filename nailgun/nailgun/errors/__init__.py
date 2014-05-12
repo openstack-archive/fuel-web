@@ -66,6 +66,10 @@ default_messages = {
     # RPC errors
     "CannotFindTask": "Cannot find task",
 
+    # RAID errors
+
+    "RAIDConfigNotFound": "RAID configuration not found in database",
+
     # unknown
     "UnknownError": "Unknown error"
 }

@@ -17,6 +17,7 @@
 """
 Handlers dealing with RAIDs
 """
+import traceback
 
 from nailgun.raid.manager import RaidManager
 
@@ -26,6 +27,12 @@ from nailgun.api.handlers.base import content_json
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeRaidConfiguration
+from nailgun.db.sqlalchemy.models import Task as TaskModel
+
+from nailgun.logger import logger
+from nailgun.objects import Task
+from nailgun.task.manager import ApplyNodeRAIDConfigurationTaskManager
+from nailgun.task.task import ApplyNodeRAIDConfigurationTask
 
 
 class NodeRaidHandler(BaseHandler):
@@ -87,9 +94,26 @@ class NodeRaidApplyHandler(BaseHandler):
         """:returns: Current node's RAID configration in a way
         that it will be sent to Astute
         """
-        return {'ok': 'fake'}
+        node = self.get_object_or_404(Node, node_id)
+        task = TaskModel(uuid="dryrun")
+
+        return ApplyNodeRAIDConfigurationTask.message(task, node)
 
     @content_json
     def PUT(self, node_id):
-        """Trigger applying of the node's RAID configuration."""
-        return {'ok': 'fake'}
+        """Trigger applying of the node's RAID configuration.
+        :returns: JSONized Task object.
+        :http: * 202 (accepted)
+               * 400 (applying task failed)
+               * 404 (node not found in db)
+        """
+        node = self.get_object_or_404(Node, node_id)
+        task_manager = ApplyNodeRAIDConfigurationTaskManager()
+        try:
+            task = task_manager.execute(node)
+        except Exception as exc:
+            logger.warn(u'Cannot execute {0} task nodes: {1}'.format(
+                task_manager.__class__.__name__, traceback.format_exc()))
+            raise self.http(400, message=str(exc))
+
+        raise self.http(202, Task.to_json(task))

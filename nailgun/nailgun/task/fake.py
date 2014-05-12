@@ -660,6 +660,16 @@ class FakeCapacityLog(FakeAmpqThread):
         }]
 
 
+class FakeApplyNodeRAID(FakeAmpqThread):
+    def message_gen(self):
+        self.sleep(self.tick_interval)
+        return [{
+            'task_uuid': self.task_uuid,
+            'status': 'ready',
+            'progress': 100,
+        }]
+
+
 FAKE_THREADS = {
     'provision': FakeProvisionThread,
     'deploy': FakeDeploymentThread,
@@ -673,5 +683,6 @@ FAKE_THREADS = {
     'check_redhat_licenses': FakeRedHatLicenses,
     'redhat_update_cobbler_profile': FakeRedHatUpdateCobbler,
     'dump_environment': FakeDumpEnvironment,
-    'generate_capacity_log': FakeCapacityLog
+    'generate_capacity_log': FakeCapacityLog,
+    'raid': FakeApplyNodeRAID
 }

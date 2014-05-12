@@ -93,3 +93,7 @@ def action_migrate_alembic(params):
     }
 
     actions[params.alembic_command](params.alembic_command)
+
+
+def drop_migration_meta(engine):
+    engine.execute("DROP TABLE IF EXISTS alembic_version")

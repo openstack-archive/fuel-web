@@ -807,7 +807,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             '.node-box': {
                 attributes: [{
                     name: 'class',
-                    observe: ['status', 'online', 'pending_addition', 'pending_deletion'],
+                    observe: ['status', 'online', 'pending_addition', 'pending_deletion', 'disabled'],
                     onGet: 'formatNodePanelClass'
                 }]
             },
@@ -881,7 +881,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         formatNodePanelClass: function(value, options) {
             var nodeClass = this.node.get('pending_deletion') ? 'node-delete' : this.node.get('pending_addition') ? 'node-new' : this.node.get('online') ? this.node.get('status') : 'node-offline';
-            return 'node-box ' + nodeClass;
+            return 'node-box ' + nodeClass + (this.node.get('disabled') ? ' disabled' : '');
         },
         formatStatusIconClass: function(value, options) {
             var icons = {

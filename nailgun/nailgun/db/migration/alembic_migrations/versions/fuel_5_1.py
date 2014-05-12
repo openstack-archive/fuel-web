@@ -45,6 +45,14 @@ def upgrade():
         ),
         sa.PrimaryKeyConstraint('id')
     )
+    op.add_column(
+        'tasks',
+        sa.Column(
+            'node_id',
+            sa.Integer(),
+            sa.ForeignKey('nodes.id')
+        )
+    )
     ### end Alembic commands ###
 
 
@@ -58,4 +66,6 @@ def downgrade():
         cluster_changes_old,        # old options
     )
     op.drop_table('node_raid_configuration')
+
+    op.drop_column('tasks', 'node_id')
     ### end Alembic commands ###

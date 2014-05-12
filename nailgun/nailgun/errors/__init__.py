@@ -74,6 +74,9 @@ default_messages = {
     "ParseError": "Synxtax error",
     "UnknownModel": "Unknown model",
 
+    # RAID errors
+    "RAIDConfigNotFound": "RAID configuration not found in database",
+
     # unknown
     "UnknownError": "Unknown error"
 }

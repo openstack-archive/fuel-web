@@ -1012,3 +1012,25 @@ class NailgunReceiver(object):
             TaskHelper.update_task_status(
                 task_uuid, status, progress,
                 '/dump/{0}'.format(dumpfile))
+
+    @classmethod
+    def raid_resp(cls, **kwargs):
+        logger.info(
+            "RPC method raid_resp received: %s",
+            jsonutils.dumps(kwargs)
+        )
+        task_uuid = kwargs.get('task_uuid')
+        status = kwargs.get('status')
+        progress = kwargs.get('progress')
+        error = kwargs.get('error')
+        if status == 'error':
+            notifier.notify('error', error)
+            TaskHelper.update_task_status(task_uuid, status, 100, error)
+        elif status == 'ready':
+            notifier.notify('done',
+                            'All configuration for RAID is up to date.')
+            TaskHelper.update_task_status(
+                task_uuid,
+                status,
+                progress,
+                error)

@@ -628,7 +628,6 @@ label {cursor: default;}
 
 // Node Block
 // -------------------------
-
 .node {
   display: block;
   padding: 2px;
@@ -636,125 +635,200 @@ label {cursor: default;}
   overflow: hidden;
   .width-height-mixin(auto, 56px);
   .box-sizing-mixin;
-  &.checked {
-    background-color: #dedede;
-  }
-}
-
-.node-container {
-  display: block;
-  border: 1px solid @color-nodes-border;
-  cursor: pointer;
-  .width-height-mixin(100%, 52px);
-  .box-sizing-mixin;
-  .css-linear-gradient-mixin-filter(#edeeef, #dfe2e4);
-  &:hover {
-    box-shadow: 0 0 6px rgba(0,0,0,.2);
-    .css-linear-gradient-mixin-filter(#e5e6e8, #d1d5d8);
-  }
-}
-
-.node-content {
-  display: block;
-  height: 50px;
-  border: 1px solid #f8f9f9;
-  .box-sizing-mixin;
-}
-
-.unallocated {
-  overflow: hidden;
-  .css-linear-gradient-mixin-filter(@fuel-light-1, @fuel-light-4);
-  color: @font-color-base;
-}
-
-.node-name-roles {
-  -webkit-font-smoothing: @font-aliasing;
-  float: left;
-  width:300px;
-}
-
-label.error {
-  cursor: default;
-}
-
-.role-list {
-  display: block;
-  height: 18px;
-  overflow: hidden;
-  .indent-mixin;
-  margin-top: -2px;
-  .font-layout-mixin(@font-size-base - 4, @color-nodes-rule-list);
-  text-transform: uppercase;
-  > ul {
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
-    .indent-mixin;
-    margin-top: 1px;
-    float: left;
-    -webkit-font-smoothing: @font-aliasing;
-    > li {
-      display: inline-block;
-      float: left;
-      margin-right: 3px;
-      &:after {
-        margin-left: 3px;
-        font-weight: bold;
-        content: '·';
+  &.checked { background-color: #dedede; }
+  .node-box {
+    display: block;
+    border: 1px solid @color-nodes-border;
+    cursor: pointer;
+    .width-height-mixin(100%, 52px);
+    .box-sizing-mixin;
+    .css-linear-gradient-mixin-filter(#edeeef, #dfe2e4);
+    &:hover {
+      box-shadow: 0 0 6px rgba(0,0,0,.2);
+      .css-linear-gradient-mixin-filter(#e5e6e8, #d1d5d8);
+    }
+    &.error {
+      cursor: default;
+      border-size: 2px;
+      border-color: #ae2917;
+      .node-content {
+        background: #eedddd;
+        .css-linear-gradient-mixin-filter(#eedddd, #e3c9c9);
       }
-      &:last-child:after { content: ''; }
+    }
+    &.node-new { border-color: #61a466; }
+    &.node-offline, &.node-offline .name  { opacity: 0.7; }
+    &.node-delete { border-color: #a46161; }
+    &.node-delete .node-content .node-name-roles .name > p {
+      text-decoration: line-through !important;
+      cursor: default;
+      border-bottom: none;
+      &:hover {
+        border-bottom: none;
+        color: @color-nodes-node-names;
+      }
+    }
+    &.disabled { cursor: default; }
+  }
+  .node-content {
+    display: block;
+    height: 50px;
+    border: 1px solid #f8f9f9;
+    .box-sizing-mixin;
+    .node-name-roles {
+      -webkit-font-smoothing: @font-aliasing;
+      float: left;
+      width:300px;
+      .name {
+        display: block;
+        overflow: hidden;
+        height: 22px;
+        margin: 3px 0px 0px 0px;
+        input {
+          font-size: @font-size-small-2;
+          .indent-mixin(0px, 0px 6px 0px 6px);
+          height: 18px;
+        }
+        .node-renameable {
+          display: inline;
+          cursor: pointer;
+          display: inline;
+          .font-layout-mixin(@font-size-small-2, @font-color-dark, normal, null, 16px);
+          border-bottom: 1px dotted @fuel-light-2;
+        }
+        p {
+          display: inline;
+          .font-layout-mixin(@font-size-big-1, @color-nodes-node-names, normal, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25));
+          border-bottom: 1px dotted @fuel-light-1;
+          &.node-renameable:hover {
+            border-bottom: 1px dotted #0178b3;
+            color: #0178b3;
+            cursor: pointer;
+          }
+        }
+      }
+      .role-list {
+        display: block;
+        height: 18px;
+        overflow: hidden;
+        .indent-mixin;
+        margin-top: -2px;
+        .font-layout-mixin(@font-size-base - 4, @color-nodes-rule-list);
+        text-transform: uppercase;
+        > ul {
+          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+          .indent-mixin;
+          margin-top: 1px;
+          float: left;
+          -webkit-font-smoothing: @font-aliasing;
+          > li {
+            display: inline-block;
+            float: left;
+            margin-right: 3px;
+            &:after {
+              margin-left: 3px;
+              font-weight: bold;
+              content: '·';
+            }
+            &:last-child:after { content: ''; }
+          }
+        }
+        > .pending-roles li { color: #468847; }
+      }
+    }
+    .node-button {
+      float: left;
+      height: 100%;
+      line-height: 42px;
+    }
+    .node-hardware {
+      width: 240px;
+      float: right;
+      .indent-mixin;
+      text-transform: uppercase;
+      margin-top: 14px;
+      -webkit-font-smoothing: @font-aliasing;
+      .font-layout-mixin(@font-size-small-3, @color-nodes-rule-list, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25));
+      span {
+        display: inline-block;
+        overflow: hidden;
+        float: left;
+        padding: 0 0 0 15px;
+      }
+    }
+    .node-details {
+      .float-mixin(right);
+      .width-height-mixin(@node-details-size, @node-details-size);
+      overflow: hidden;
+      background: url(/static/img/icons.png) 0px 0px no-repeat;
+      margin: 13px 13px 0px 14px;
+      cursor: pointer;
+      position: relative;
+      &:hover {
+        background: url(/static/img/icons.png) 0px -22px no-repeat;
+        -moz-animation: spin 2s infinite linear;
+        -o-animation: spin 2s infinite linear;
+        -webkit-animation: spin 2s infinite linear;
+        animation: spin 2s infinite linear;
+      }
+    }
+    .node-logo {
+      border-left: 1px dotted @color-nodes-border;
+      .float-mixin;
+      .width-height-mixin(58px, 48px);
+      padding: 0;
+      speak: none;
+      display: inline-block;
+      text-decoration: inherit;
+      text-align: center;
+      font-variant: normal;
+      text-transform: none;
+      padding-top: 14px;
+      .font-layout-mixin(@font-size-base + 19, #aeaeae, normal, normal, null, 0 1px 0 rgba(255, 255, 255, 0.3), @font-family-fontello);
+      -webkit-font-smoothing: @font-subpixel;
+      .box-sizing-mixin;
+    }
+    .node-status {
+      .float-mixin;
+      .width-height-mixin(auto, 100%);
+      font-size: @font-size-base - 4.5;
+      text-transform: uppercase;
+      overflow: hidden;
+      margin: 0;
+      i { font-size: @font-size-small-3; }
+      .node-status-container { line-height: 44px; }
+      .progress {
+        background-color: #b9bdbf;
+        background-image: none;
+        .width-height-mixin(150px, 15px);
+        .border-radius-mixin(3px);
+        margin-top: 15px;
+        position: absolute;
+      }
+      .bar {
+        .border-radius-mixin(3px);
+        height: 13px;
+        margin: 1px;
+      }
+      span { position: relative; }
+      &.provisioning span, &.deploying span {
+        .font-layout-mixin(@font-size-base - 4, @fuel-white-color, null, null, 20px, none);
+        letter-spacing: 0px;
+        text-align: left;
+        margin-left: 5px;
+      }
+      &.msg-ok {color: @color-msg-ok;}
+      &.msg-info {color: @color-msg-info;}
+      &.msg-error {color: @color-msg-error;}
+      &.msg-warning {color: @color-msg-warning;}
+      &.msg-unimportant {color: @color-msg-unimportant;}
+      &.msg-provisioned {color: @color-msg-provisioned;}
     }
   }
-  > .pending-roles li { color: #468847; }
 }
 
-.node-button {
-  float: left;
-  height: 100%;
-  line-height: 42px;
-}
-.node-hardware {
-  width: 240px;
-  float: right;
-  .indent-mixin;
-  text-transform: uppercase;
-  margin-top: 14px;
-  -webkit-font-smoothing: @font-aliasing;
-  .font-layout-mixin(@font-size-small-3, @color-nodes-rule-list, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25));
-  span {
-    display: inline-block;
-    overflow: hidden;
-    float: left;
-    padding: 0 0 0 15px;
-  }
-}
-
-.node-details {
-  .float-mixin(right);
-  .width-height-mixin(@node-details-size, @node-details-size);
-  overflow: hidden;
-  background: url(/static/img/icons.png) 0px 0px no-repeat;
-  margin: 13px 13px 0px 14px;
-  cursor: pointer;
-  position: relative;
-  &:hover {
-    background: url(/static/img/icons.png) 0px -22px no-repeat;
-    -moz-animation: spin 2s infinite linear;
-    -o-animation: spin 2s infinite linear;
-    -webkit-animation: spin 2s infinite linear;
-    animation: spin 2s infinite linear;
-  }
-}
-
-.node-name-roles > .name {
-  display: block;
-  overflow: hidden;
-  height: 22px;
-  margin: 3px 0px 0px 0px;
-  input {
-    font-size: @font-size-small-2;
-    .indent-mixin(0px, 0px 6px 0px 6px);
-    height: 18px;
-  }
-}
+// Node management panel
+// -------------------------
 
 .nodes-management-panel {
   .nodes-filter {
@@ -852,128 +926,6 @@ label.error {
     .font-layout-mixin(@font-size-big-2,  @color-nodes-rule-list, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35));
     margin-bottom: 10px;
   }
-}
-
-.node-name-roles > .name > p {
-  display: inline;
-  .font-layout-mixin(@font-size-big-1, @color-nodes-node-names, normal, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25));
-  border-bottom: 1px dotted @fuel-light-1;
-  &.node-renameable:hover {
-    border-bottom: 1px dotted #0178b3;
-    color: #0178b3;
-    cursor: pointer;
-  }
-}
-
-.node-new {
-  border-color: #61a466;
-}
-.node-delete {
-  border-color: #a46161;
-}
-.node-offline *, .node-offline .name:hover  {
-  opacity: 0.7;
-  cursor: default;
-}
-
-.node-box.error {
-  border-size: 2px;
-  border-color: #ae2917;
-  > .node-content {
-    background: #eedddd;
-    .css-linear-gradient-mixin-filter(#eedddd, #e3c9c9);
-  }
-}
-
-.node-delete > .node-content {
-  > .node-name-roles > .name > p {
-    text-decoration: line-through !important;
-    cursor: default;
-    border-bottom: none;
-    &:hover {
-      border-bottom: none;
-      color: @color-nodes-node-names;
-    }
-  }
-  > .node-settings {
-    visibility: hidden;
-  }
-}
-
-.unallocated .node-content .node-settings {
-  visibility: hidden;
-}
-
-.node-logo {
-  border-left: 1px dotted @color-nodes-border;
-  .float-mixin;
-  height: 48px;
-  padding: 0;
-  width: 58px;
-  speak: none;
-  display: inline-block;
-  text-decoration: inherit;
-  text-align: center;
-  font-variant: normal;
-  text-transform: none;
-  padding-top: 14px;
-  .font-layout-mixin(@font-size-base + 19, #aeaeae, normal, normal, null, 0 1px 0 rgba(255, 255, 255, 0.3), @font-family-fontello);
-  -webkit-font-smoothing: @font-subpixel;
-  .box-sizing-mixin;
-}
-
-.node-renameable {
-  display: inline;
-  cursor: pointer;
-  display: inline;
-  .font-layout-mixin(@font-size-small-2, @font-color-dark, normal, null, 16px);
-  border-bottom: 1px dotted @fuel-light-2;
-}
-
-.node-status-container {
-  line-height: 44px;
-}
-
-.node-status {
-  .float-mixin;
-  height: 100%;
-  font-size: @font-size-base - 4.5;
-  text-transform: uppercase;
-  width: auto;
-  overflow: hidden;
-  margin: 0;
-  i {
-    font-size: @font-size-small-3;
-  }
-  .progress {
-    background-color: #b9bdbf;
-    background-image: none;
-    border-radius: 3px 3px 3px 3px;
-    height: 15px;
-    margin-top: 15px;
-    position: absolute;
-    width: 150px;
-  }
-  .bar {
-    border-radius: 3px 3px 3px 3px;
-    height: 13px;
-    margin: 1px;
-  }
-  span {
-    position: relative;
-  }
-  &.provisioning span, &.deploying span {
-    .font-layout-mixin(@font-size-base - 4, @fuel-white-color, null, null, 20px, none);
-    letter-spacing: 0px;
-    text-align: left;
-    margin-left: 5px;
-  }
-  &.msg-ok {color: @color-msg-ok;}
-  &.msg-info {color: @color-msg-info;}
-  &.msg-error {color: @color-msg-error;}
-  &.msg-warning {color: @color-msg-warning;}
-  &.msg-unimportant {color: @color-msg-unimportant;}
-  &.msg-provisioned {color: @color-msg-provisioned;}
 }
 
 // Manufacturer
@@ -2283,7 +2235,7 @@ input.error:focus {
 // Custom checkbox & radio
 // -------------------------
 
-.node-container .custom-tumbler {
+.node-box .custom-tumbler {
   float: left;
   margin: 12px;
   .width-height-mixin(24px, 24px);

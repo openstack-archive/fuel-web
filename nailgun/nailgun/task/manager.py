@@ -59,9 +59,11 @@ class TaskManager(object):
                     'message': err}
             objects.Task.update(task, data)
 
-    def check_running_task(self, task_name):
+    def check_running_task(self, task_name, **kwargs):
+        node_id = kwargs.get('node_id')
         current_tasks = db().query(Task).filter_by(
-            name=task_name
+            name=task_name,
+            node_id=node_id
         )
         for task in current_tasks:
             if task.status == "running":
@@ -680,4 +682,29 @@ class GenerateCapacityLogTaskManager(TaskManager):
         self._call_silently(
             task,
             tasks.GenerateCapacityLogTask)
+        return task
+
+
+class ApplyNodeRAIDConfigurationTaskManager(TaskManager):
+
+    def execute(self, node):
+        node_id = node.id
+        logger.info("Trying to start raid task")
+        check_kwargs = {'node_id': node_id}
+        self.check_running_task('raid', **check_kwargs)
+
+        task = Task(
+            name='raid',
+            node_id=node_id)
+        db().add(task)
+        db().commit()
+        self._call_silently(
+            task,
+            tasks.ApplyNodeRAIDConfigurationTask,
+            node
+        )
+
+        if task.status == 'error':
+            raise Exception(task.message)
+
         return task

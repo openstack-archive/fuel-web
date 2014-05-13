@@ -39,11 +39,14 @@ def format_table(data, acceptable_keys=None, column_to_join=None):
                     sorted(data_dict[column_name])
                 )
     if acceptable_keys is not None:
-        rows = [tuple(value[key] for key in acceptable_keys)
+        rows = [tuple(
+                value[key].encode('utf8') if isinstance(value[key], unicode)
+                else value[key] for key in acceptable_keys)
                 for value in data]
         header = tuple(acceptable_keys)
     else:
-        rows = [tuple(x.values()) for x in data]
+        rows = [tuple(v.encode('utf8') if isinstance(v, unicode)
+                else v for v in x.values()) for x in data]
         header = tuple(data[0].keys())
     number_of_columns = len(header)
     column_widths = dict(

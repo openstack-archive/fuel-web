@@ -88,6 +88,8 @@ class EnvironmentAction(Action):
             data = env.set(mode=params.mode)
         else:
             data = env.get_fresh_data()
+
+        data['name'] = data.get('name', u'').encode('utf-8')
         self.serializer.print_to_output(
             data,
             "Environment '{name}' with id={id}, mode={mode}"

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 #    Copyright 2013-2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -125,6 +127,17 @@ class TestHandlers(BaseTestCase):
             ],
             check_errors=True
         )
+
+
+class TestCharset(BaseTestCase):
+
+    def test_charset_problem(self):
+        self.load_data_to_nailgun_server()
+        self.run_cli_commands((
+            "env create --name=привет --release=1",
+            "--env-id=1 node set --node 1 --role=controller"
+        ))
+        self.run_cli_command("env")
 
 
 class TestFiles(BaseTestCase):

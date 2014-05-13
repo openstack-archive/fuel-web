@@ -54,18 +54,24 @@ def format_table(data, acceptable_keys=None, column_to_join=None):
     )
     for row in rows:
         column_widths.update(
-            (index, max(column_widths[index], len(str(element))))
+            (index, max(column_widths[index], len(unicode(element))))
             for index, element in enumerate(row)
         )
     row_template = ' | '.join(
         "{{{0}:{1}}}".format(idx, width)
         for idx, width in column_widths.iteritems()
     )
+
+    def convert_to_unicode(v):
+        converted = unicode(v).encode('utf8')
+        return converted
+
     return '\n'.join(
         (row_template.format(*header),
          '-|-'.join(column_widths[column_index] * '-'
                     for column_index in range(number_of_columns)),
-         '\n'.join(row_template.format(*map(str, x)) for x in rows))
+         '\n'.join(row_template.format(*map(convert_to_unicode, x))
+                   for x in rows))
     )
 
 

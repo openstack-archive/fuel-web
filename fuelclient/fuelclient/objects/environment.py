@@ -247,7 +247,7 @@ class Environment(BaseObject):
             (serializer or self.serializer).write_to_file(
                 engine_file_path, facts["engine"])
             facts = facts["nodes"]
-            name_template = "{name}"
+            name_template = u"{name}"
         else:
             name_template = "{role}_{uid}"
         for _fact in facts:

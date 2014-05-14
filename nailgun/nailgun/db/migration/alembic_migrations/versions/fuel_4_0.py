@@ -423,6 +423,17 @@ def upgrade():
         sa.PrimaryKeyConstraint('id')
     )
     op.create_table(
+        'node_raid_configuration',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer, nullable=True),
+        sa.Column('config', JSON(), nullable=True),
+        sa.ForeignKeyConstraint(
+            ['node_id'],
+            ['nodes.id'],
+        ),
+        sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table(
         'ip_addr_ranges',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('network_group_id', sa.Integer(), nullable=True),
@@ -550,6 +561,7 @@ def downgrade():
     op.drop_table('notifications')
     op.drop_table('ip_addr_ranges')
     op.drop_table('node_attributes')
+    op.drop_table('node_raid_configuration')
     op.drop_table('node_roles')
     op.drop_table('ip_addrs')
     op.drop_table('pending_node_roles')

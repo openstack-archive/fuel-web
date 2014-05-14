@@ -181,6 +181,7 @@ def upload_fixture(fileobj, loader=None):
             objects.Node.create_attributes(new_obj)
             objects.Node.update_volumes(new_obj)
             objects.Node.update_interfaces(new_obj)
+            objects.Node.create_raids(new_obj)
             db().commit()
 
 

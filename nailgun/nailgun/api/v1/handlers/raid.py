@@ -23,22 +23,43 @@ from nailgun.api.v1.handlers.base import content_json
 
 from nailgun.raid.manager import RaidManager
 
+from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeRaidConfiguration
 
 
 class NodeRaidHandler(BaseHandler):
     """Node RAID configuration handler
     """
+    model = NodeRaidConfiguration
 
     @content_json
     def GET(self, node_id):
-        """:returns: Current node's RAID configuration."""
-        return {'ok': 'fake'}
+        """:returns: Current node's RAID configuration.
+        :http: * 200 (OK)
+               * 404 (node or its raid config not found in db)
+        """
+        node = self.get_object_or_404(Node, node_id)
+        if not node.raids:
+            raise self.http(404)
+
+        return node.raids.config
 
     @content_json
     def PUT(self, node_id):
-        """Update node RAID configuration."""
-        return {'ok': 'fake'}
+        """Update node RAID configuration.
+        :http: * 200 (OK)
+               * 404 (node not found in db)
+        """
+        node = self.get_object_or_404(Node, node_id)
+        data = self.checked_data()
+
+        db().query(NodeRaidConfiguration).filter_by(node_id=node_id).update(
+            {'config': data})
+        db().flush()
+        db().refresh(node)
+
+        return node.raids.config
 
 
 class NodeDefaultsRaidHandler(BaseHandler):

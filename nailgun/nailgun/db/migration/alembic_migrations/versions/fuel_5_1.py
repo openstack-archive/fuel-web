@@ -10,7 +10,11 @@ Create Date: 2014-06-09 13:25:25.773543
 revision = '52924111f7d8'
 down_revision = '1398619bdf8c'
 
+from alembic import op
+import sqlalchemy as sa
+
 from nailgun import consts
+from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.utils.migration import upgrade_enum
 
 cluster_changes_old = (
@@ -30,6 +34,17 @@ def upgrade():
         cluster_changes_old,        # old options
         cluster_changes_new         # new options
     )
+    op.create_table(
+        'node_raid_configuration',
+        sa.Column('id', sa.Integer(), nullable=False),
+        sa.Column('node_id', sa.Integer, nullable=True),
+        sa.Column('config', JSON(), nullable=True),
+        sa.ForeignKeyConstraint(
+            ['node_id'],
+            ['nodes.id'],
+        ),
+        sa.PrimaryKeyConstraint('id')
+    )
     ### end Alembic commands ###
 
 
@@ -42,4 +57,5 @@ def downgrade():
         cluster_changes_new,        # new options
         cluster_changes_old,        # old options
     )
+    op.drop_table('node_raid_configuration')
     ### end Alembic commands ###

@@ -230,6 +230,7 @@ class FakeAmpqThread(FakeThread):
             resp_method = getattr(receiver, self.respond_to)
             for msg in self.message_gen():
                 resp_method(**msg)
+                db().commit()
 
 
 class FakeDeploymentThread(FakeAmpqThread):

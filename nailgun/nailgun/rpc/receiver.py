@@ -125,10 +125,10 @@ class NailgunReceiver(object):
                 IPAddr.network.in_([n.id for n in cluster.network_groups])
             )
             map(db().delete, ips)
-            db().commit()
+            db().flush()
 
             db().delete(cluster)
-            db().commit()
+            db().flush()
 
             notifier.notify(
                 "done",
@@ -140,7 +140,7 @@ class NailgunReceiver(object):
         elif task.status in ('error',):
             cluster.status = 'error'
             db().add(cluster)
-            db().commit()
+            db().flush()
             if not task.message:
                 task.message = "Failed to delete nodes:\n{0}".format(
                     cls._generate_error_message(
@@ -166,21 +166,34 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = TaskHelper.get_task_by_uuid(task_uuid)
-        if not task:
-            # No task found - nothing to do here, returning
-            logger.warning(
-                u"No task with uuid '{0}'' found - nothing changed".format(
-                    task_uuid
-                )
-            )
-            return
+        task = objects.Task.get_by_uuid(
+            task_uuid,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
+        # lock cluster for updating so it can't be deleted
+        objects.Cluster.get_by_uid(
+            task.cluster_id,
+            lock_for_update=True
+        )
+
         if not status:
             status = task.status
 
+        # lock nodes for updating so they can't be deleted
+        list(
+            objects.NodeCollection.lock_for_update(
+                objects.NodeCollection.get_by_id_list(
+                    None,
+                    [n['uid'] for n in nodes]
+                )
+            )
+        )
+
         # First of all, let's update nodes in database
         for node in nodes:
-            node_db = db().query(Node).get(node['uid'])
+            node_db = objects.Node.get_by_uid(node['uid'])
 
             if not node_db:
                 logger.warning(
@@ -230,10 +243,7 @@ class NailgunReceiver(object):
                         )
 
             db().add(node_db)
-            db().commit()
-
-        # We should calculate task progress by nodes info
-        task = TaskHelper.get_task_by_uuid(task_uuid)
+        db().flush()
 
         if nodes and not progress:
             progress = TaskHelper.recalculate_deployment_task_progress(task)

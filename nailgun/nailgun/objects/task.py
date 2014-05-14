@@ -71,9 +71,19 @@ class Task(NailgunObject):
         })
 
     @classmethod
-    def get_by_uuid(cls, uuid):
+    def get_by_uuid(cls, uuid, fail_if_not_found=False, lock_for_update=False):
         # maybe consider using uuid as pk?
-        return db().query(cls.model).filter_by(uuid=uuid).first()
+        q = db().query(cls.model).filter_by(uuid=uuid)
+        if not lock_for_update:
+            res = q.first()
+        else:
+            res = q.with_lockmode('update').first()
+
+        if not res and fail_if_not_found:
+            raise errors.ObjectNotFound(
+                "Task with UUID={0} is not found in DB".format(uuid)
+            )
+        return res
 
 
 class TaskCollection(NailgunCollection):

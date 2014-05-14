@@ -672,12 +672,19 @@ class TestConsumer(BaseIntegrationTest):
         self.receiver = rcvr.NailgunReceiver()
 
     def test_node_deploy_resp(self):
-        node = self.env.create_node(api=False)
-        node2 = self.env.create_node(api=False)
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {"api": False},
+                {"api": False}]
+        )
+
+        node, node2 = self.env.nodes
 
         task = Task(
             uuid=str(uuid.uuid4()),
-            name="deploy"
+            name="deploy",
+            cluster_id=self.env.clusters[0].id
         )
         self.db.add(task)
         self.db.commit()
@@ -725,11 +732,13 @@ class TestConsumer(BaseIntegrationTest):
         self.assertEqual(task.progress, 50)
 
     def test_task_progress(self):
+        cluster = self.env.create_cluster()
 
         task = Task(
             uuid=str(uuid.uuid4()),
             name="super",
-            status="running"
+            status="running",
+            cluster_id=self.env.clusters[0].id
         )
         self.db.add(task)
         self.db.commit()
@@ -846,7 +855,8 @@ class TestConsumer(BaseIntegrationTest):
         task = Task(
             uuid=str(uuid.uuid4()),
             name="super",
-            status="running"
+            status="running",
+            cluster_id=self.env.clusters[0].id
         )
         self.db.add(task)
         self.db.commit()

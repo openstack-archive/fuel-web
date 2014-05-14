@@ -115,6 +115,10 @@ class Node(Base):
     bond_interfaces = relationship("NodeBondInterface", backref="node",
                                    cascade="delete",
                                    order_by="NodeBondInterface.name")
+    raids = relationship("NodeRaidConfiguration",
+                         backref="node",
+                         uselist=False,
+                         cascade="delete")
     # hash function from raw node agent request data - for caching purposes
     agent_checksum = Column(String(40), nullable=True)
 
@@ -368,3 +372,10 @@ class NodeBondInterface(Base):
     @assigned_networks.setter
     def assigned_networks(self, value):
         self.assigned_networks_list = value
+
+
+class NodeRaidConfiguration(Base):
+    __tablename__ = 'node_raid_configuration'
+    id = Column(Integer, primary_key=True)
+    node_id = Column(Integer, ForeignKey('nodes.id'))
+    config = Column(JSON, default={})

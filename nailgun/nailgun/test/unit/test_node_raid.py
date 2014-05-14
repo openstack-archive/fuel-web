@@ -22,12 +22,50 @@ from nailgun.test.base import reverse
 
 class TestRaidHandlers(BaseIntegrationTest):
 
+    def get(self, node_id):
+        resp = self.app.get(
+            reverse('NodeRaidHandler', kwargs={'node_id': node_id}),
+            headers=self.default_headers)
+
+        self.assertEquals(200, resp.status_code)
+        return json.loads(resp.body)
+
+    def put(self, node_id, data, expect_errors=False):
+        resp = self.app.put(
+            reverse('NodeRaidHandler', kwargs={'node_id': node_id}),
+            json.dumps(data),
+            headers=self.default_headers,
+            expect_errors=expect_errors)
+
+        if not expect_errors:
+            self.assertEquals(200, resp.status_code)
+            return json.loads(resp.body)
+        else:
+            return resp
+
+    def test_get_handler_with_wrong_nodeid(self):
+        resp = self.app.get(
+            reverse('NodeRaidHandler', kwargs={'node_id': 1}),
+            expect_errors=True,
+            headers=self.default_headers)
+        self.assertEqual(resp.status_code, 404)
+
     def test_get_handler(self):
-        resp = self.app.get(reverse('NodeRaidHandler',
-                                    kwargs={'node_id': 1}),
-                            expect_errors=True,
-                            headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        node = self.env.create_node(api=True)
+
+        resp = self.get(node["id"])
+
+        self.assertEqual(resp, {})
+
+    def test_put_handler(self):
+        raid_config = {"raids": {"controllers": [{"name": "test"}]}}
+        node_db = self.env.create_node()
+
+        self.put(node_db.id, raid_config)
+
+        resp = self.get(node_db.id)
+        self.assertEqual(resp["raids"]["controllers"][0]["name"],
+                         "test")
 
 
 class TestDefaultsRaidHandlers(BaseIntegrationTest):

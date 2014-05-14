@@ -63,13 +63,26 @@ class NailgunObject(object):
             )
 
     @classmethod
-    def get_by_uid(cls, uid):
+    def get_by_uid(cls, uid, fail_if_not_found=False, lock_for_update=False):
         """Get instance by it's uid (PK in case of SQLAlchemy)
 
         :param uid: uid of object
+        :param fail_if_not_found: raise an exception if object is not found
+        :param lock_for_update: lock returned object for update (DB mutex)
         :returns: instance of an object (model)
         """
-        return db().query(cls.model).get(uid)
+        q = db().query(cls.model)
+        if lock_for_update:
+            q = q.with_lockmode('update')
+        res = q.get(uid)
+        if not res and fail_if_not_found:
+            raise errors.ObjectNotFound(
+                "Object '{0}' with UID={1} is not found in DB".format(
+                    cls.__name__,
+                    uid
+                )
+            )
+        return res
 
     @classmethod
     def create(cls, data):
@@ -196,6 +209,23 @@ class NailgunCollection(object):
                 ),
                 use_iterable
             )
+        else:
+            raise TypeError("First argument should be iterable")
+
+    @classmethod
+    def lock_for_update(cls, iterable, yield_per=100):
+        """Use SELECT FOR UPDATE on a given iterable (query).
+        In case if iterable=None returns all object instances
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param yield_per: SQLAlchemy's yield_per() clause
+        :returns: filtered iterable (SQLAlchemy query)
+        """
+        use_iterable = iterable or cls.all(yield_per=yield_per)
+        if cls._is_query(use_iterable):
+            return use_iterable.with_lockmode('update')
+        elif cls._is_iterable(use_iterable):
+            return use_iterable
         else:
             raise TypeError("First argument should be iterable")
 

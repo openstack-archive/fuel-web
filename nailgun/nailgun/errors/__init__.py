@@ -27,6 +27,7 @@ default_messages = {
     "CannotCreate": "Can't create object",
     "NotAllowed": "Action is not allowed",
     "InvalidField": "Invalid field specified for object",
+    "ObjectNotFound": "Object not found in DB",
 
     # node discovering errors
     "InvalidInterfacesInfo": "Invalid interfaces info",

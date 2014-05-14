@@ -237,6 +237,8 @@
             description: "If selected, OpenStack will automatically assign a floating IP to a new instance"
             weight: 40
             type: "checkbox"
+            conflicts:
+              - "cluster:net_provider": "neutron"
           libvirt_type:
             value: "qemu"
             values:

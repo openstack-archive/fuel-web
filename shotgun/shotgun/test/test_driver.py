@@ -74,7 +74,7 @@ class TestDriver(TestCase):
             {"host": {"address": "remote_host"}}, None)
         result = driver.command(command)
         shotgun.driver.fabric.api.run.assert_called_with(command, pty=True)
-        self.assertEquals(result, out)
+        self.assertEqual(result, out)
         shotgun.driver.fabric.api.settings.assert_called_with(
             host_string="remote_host", timeout=2, command_timeout=10,
             warn_only=True, key_filename=None)
@@ -82,7 +82,7 @@ class TestDriver(TestCase):
         driver = shotgun.driver.Driver({}, None)
         result = driver.command(command)
         shotgun.driver.execute.assert_called_with(command)
-        self.assertEquals(result, out)
+        self.assertEqual(result, out)
 
     @patch('shotgun.driver.execute')
     @patch('shotgun.driver.fabric.api.settings')

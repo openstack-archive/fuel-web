@@ -72,10 +72,10 @@ class TestNetworkModels(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp_nova_net.status_code, 403)
+        self.assertEqual(resp_nova_net.status_code, 403)
         # it's 400 because we used Nova network
-        self.assertEquals(resp_neutron_net.status_code, 400)
-        self.assertEquals(resp_cluster.status_code, 403)
+        self.assertEqual(resp_neutron_net.status_code, 400)
+        self.assertEqual(resp_cluster.status_code, 403)
 
     def test_nova_net_networking_parameters(self):
         cluster = self.env.create_cluster(api=False)
@@ -99,7 +99,7 @@ class TestNetworkModels(BaseIntegrationTest):
             serialize_network_params(cluster)
 
         kw.pop("cluster_id")
-        self.assertEquals(nw_params, kw)
+        self.assertEqual(nw_params, kw)
 
     def test_neutron_networking_parameters(self):
         cluster = self.env.create_cluster(api=False,
@@ -126,4 +126,4 @@ class TestNetworkModels(BaseIntegrationTest):
             serialize_network_params(cluster)
 
         kw.pop("cluster_id")
-        self.assertEquals(nw_params, kw)
+        self.assertEqual(nw_params, kw)

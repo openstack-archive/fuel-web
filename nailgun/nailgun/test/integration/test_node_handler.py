@@ -30,22 +30,22 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             headers=self.default_headers)
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(node.id, response['id'])
-        self.assertEquals(node.name, response['name'])
-        self.assertEquals(node.mac, response['mac'])
-        self.assertEquals(
+        self.assertEqual(node.id, response['id'])
+        self.assertEqual(node.name, response['name'])
+        self.assertEqual(node.mac, response['mac'])
+        self.assertEqual(
             node.pending_addition, response['pending_addition'])
-        self.assertEquals(
+        self.assertEqual(
             node.pending_deletion, response['pending_deletion'])
-        self.assertEquals(node.status, response['status'])
-        self.assertEquals(
+        self.assertEqual(node.status, response['status'])
+        self.assertEqual(
             node.meta['cpu']['total'],
             response['meta']['cpu']['total']
         )
-        self.assertEquals(node.meta['disks'], response['meta']['disks'])
-        self.assertEquals(node.meta['memory'], response['meta']['memory'])
+        self.assertEqual(node.meta['disks'], response['meta']['disks'])
+        self.assertEqual(node.meta['memory'], response['meta']['memory'])
 
     def test_node_creation_with_id(self):
         node_id = '080000000003'
@@ -57,7 +57,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True)
         # we now just ignore 'id' if present
-        self.assertEquals(201, resp.status_code)
+        self.assertEqual(201, resp.status_code)
 
     def test_node_deletion(self):
         node = self.env.create_node(api=False)
@@ -67,7 +67,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status_code, 204)
+        self.assertEqual(resp.status_code, 204)
 
     def test_node_valid_metadata_gets_updated(self):
         new_metadata = self.env.default_metadata()
@@ -76,14 +76,14 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             json.dumps({'meta': new_metadata}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         self.db.refresh(node)
 
         nodes = self.db.query(Node).filter(
             Node.id == node.id
         ).all()
-        self.assertEquals(len(nodes), 1)
-        self.assertEquals(nodes[0].meta, new_metadata)
+        self.assertEqual(len(nodes), 1)
+        self.assertEqual(nodes[0].meta, new_metadata)
 
     def test_node_valid_status_gets_updated(self):
         node = self.env.create_node(api=False)
@@ -92,7 +92,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             json.dumps(params),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
     def test_node_action_flags_are_set(self):
         flags = ['pending_addition', 'pending_deletion']
@@ -103,14 +103,14 @@ class TestHandlers(BaseIntegrationTest):
                 json.dumps({flag: True}),
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
         self.db.refresh(node)
 
         node_from_db = self.db.query(Node).filter(
             Node.id == node.id
         ).first()
         for flag in flags:
-            self.assertEquals(getattr(node_from_db, flag), True)
+            self.assertEqual(getattr(node_from_db, flag), True)
 
     def test_put_returns_400_if_no_body(self):
         node = self.env.create_node(api=False)
@@ -119,7 +119,7 @@ class TestHandlers(BaseIntegrationTest):
             "",
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
 
     def test_put_returns_400_if_wrong_status(self):
         node = self.env.create_node(api=False)
@@ -129,7 +129,7 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps(params),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
 
     def test_do_not_create_notification_if_disks_meta_is_empty(self):
         def get_notifications_count(**kwargs):
@@ -166,7 +166,7 @@ class TestHandlers(BaseIntegrationTest):
                 json.dumps(node),
                 headers=self.default_headers,
             )
-            self.assertEquals(response.status_code, 200)
+            self.assertEqual(response.status_code, 200)
 
         # check there's not create notification
         after_count = get_notifications_count(node_id=node['id'])

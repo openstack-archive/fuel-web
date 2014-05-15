@@ -34,13 +34,13 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
                 {'roles': ['cinder']}])
 
     def node_should_be_error_with_type(self, node, error_type):
-        self.assertEquals(node.status, 'error')
-        self.assertEquals(node.error_type, error_type)
-        self.assertEquals(node.progress, 0)
+        self.assertEqual(node.status, 'error')
+        self.assertEqual(node.error_type, error_type)
+        self.assertEqual(node.progress, 0)
 
     def nodes_should_not_be_error(self, nodes):
         for node in nodes:
-            self.assertEquals(node.status, 'discover')
+            self.assertEqual(node.status, 'discover')
 
     @property
     def cluster(self):
@@ -55,7 +55,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
         TaskHelper.update_cluster_status(task.uuid)
 
-        self.assertEquals(self.cluster.status, 'error')
+        self.assertEqual(self.cluster.status, 'error')
         self.node_should_be_error_with_type(self.cluster.nodes[0], 'deploy')
         self.nodes_should_not_be_error(self.cluster.nodes[1:])
 
@@ -66,7 +66,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
         TaskHelper.update_cluster_status(task.uuid)
 
-        self.assertEquals(self.cluster.status, 'error')
+        self.assertEqual(self.cluster.status, 'error')
 
     def test_update_nodes_to_error_if_provision_task_failed(self):
         self.cluster.nodes[0].status = 'provisioning'
@@ -77,7 +77,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
         TaskHelper.update_cluster_status(task.uuid)
 
-        self.assertEquals(self.cluster.status, 'error')
+        self.assertEqual(self.cluster.status, 'error')
         self.node_should_be_error_with_type(self.cluster.nodes[0], 'provision')
         self.nodes_should_not_be_error(self.cluster.nodes[1:])
 
@@ -88,7 +88,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
         TaskHelper.update_cluster_status(task.uuid)
 
-        self.assertEquals(self.cluster.status, 'operational')
+        self.assertEqual(self.cluster.status, 'operational')
 
     def test_update_if_parent_task_is_ready_all_nodes_should_be_ready(self):
         for node in self.cluster.nodes:
@@ -104,11 +104,11 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
         TaskHelper.update_cluster_status(task.uuid)
 
-        self.assertEquals(self.cluster.status, 'operational')
+        self.assertEqual(self.cluster.status, 'operational')
 
         for node in self.cluster.nodes:
-            self.assertEquals(node.status, 'ready')
-            self.assertEquals(node.progress, 100)
+            self.assertEqual(node.status, 'ready')
+            self.assertEqual(node.progress, 100)
 
     def test_update_cluster_status_if_task_was_already_in_error_status(self):
         for node in self.cluster.nodes:
@@ -121,12 +121,12 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
 
         TaskHelper.update_task_status(task.uuid, 'error', 100)
 
-        self.assertEquals(self.cluster.status, 'error')
-        self.assertEquals(task.status, 'error')
+        self.assertEqual(self.cluster.status, 'error')
+        self.assertEqual(task.status, 'error')
 
         for node in self.cluster.nodes:
-            self.assertEquals(node.status, 'error')
-            self.assertEquals(node.progress, 0)
+            self.assertEqual(node.status, 'error')
+            self.assertEqual(node.progress, 0)
 
     def test_do_not_set_cluster_to_error_if_validation_failed(self):
         for task_name in ['check_before_deployment', 'check_networks']:
@@ -145,7 +145,7 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
             self.db.commit()
 
             TaskHelper.update_cluster_status(supertask.uuid)
-            self.assertEquals(self.cluster.status, 'new')
+            self.assertEqual(self.cluster.status, 'new')
 
 
 class TestCheckBeforeDeploymentTask(BaseTestCase):
@@ -165,12 +165,12 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
     def set_node_status(self, status):
         self.node.status = status
         self.env.db.commit()
-        self.assertEquals(self.node.status, status)
+        self.assertEqual(self.node.status, status)
 
     def set_node_error_type(self, error_type):
         self.node.error_type = error_type
         self.env.db.commit()
-        self.assertEquals(self.node.error_type, error_type)
+        self.assertEqual(self.node.error_type, error_type)
 
     def is_checking_required(self):
         return CheckBeforeDeploymentTask._is_disk_checking_required(self.node)
@@ -216,14 +216,14 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
                 'check_disk_space_for_deployment') as check_mock:
             CheckBeforeDeploymentTask._check_disks(self.task)
 
-            self.assertEquals(check_mock.call_count, 1)
+            self.assertEqual(check_mock.call_count, 1)
 
         with patch.object(
                 VolumeManager,
                 'check_volume_sizes_for_deployment') as check_mock:
             CheckBeforeDeploymentTask._check_volumes(self.task)
 
-            self.assertEquals(check_mock.call_count, 1)
+            self.assertEqual(check_mock.call_count, 1)
 
     def test_check_nodes_online_raises_exception(self):
         self.node.online = False

@@ -44,8 +44,8 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
             json.dumps(orchestrator_data),
             headers=self.default_headers)
 
-        self.assertEquals(put_resp.status_code, 200)
-        self.assertEquals(get_info(), orchestrator_data)
+        self.assertEqual(put_resp.status_code, 200)
+        self.assertEqual(get_info(), orchestrator_data)
 
         # getting provisioning info
         get_resp = self.app.get(
@@ -53,7 +53,7 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
                     kwargs={'cluster_id': self.cluster.id}),
             headers=self.default_headers)
 
-        self.assertEquals(get_resp.status_code, 200)
+        self.assertEqual(get_resp.status_code, 200)
         self.datadiff(orchestrator_data, json.loads(get_resp.body))
 
         # deleting provisioning info
@@ -62,7 +62,7 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
                     kwargs={'cluster_id': self.cluster.id}),
             headers=self.default_headers)
 
-        self.assertEquals(delete_resp.status_code, 202)
+        self.assertEqual(delete_resp.status_code, 202)
         self.assertEqual(get_info(), {})
 
     def test_cluster_provisioning_info(self):

@@ -50,10 +50,10 @@ class TestTaskHelpers(BaseTestCase):
             {'roles': ['cinder']}])
 
         nodes = TaskHelper.nodes_to_deploy(cluster)
-        self.assertEquals(len(nodes), 3)
+        self.assertEqual(len(nodes), 3)
 
         controllers = self.filter_by_role(nodes, 'controller')
-        self.assertEquals(len(controllers), 3)
+        self.assertEqual(len(controllers), 3)
 
     def test_redeploy_only_compute_cinder(self):
         cluster = self.create_env([
@@ -65,13 +65,13 @@ class TestTaskHelpers(BaseTestCase):
             {'roles': ['cinder'], 'status': 'error'}])
 
         nodes = TaskHelper.nodes_to_deploy(cluster)
-        self.assertEquals(len(nodes), 2)
+        self.assertEqual(len(nodes), 2)
 
         cinders = self.filter_by_role(nodes, 'cinder')
-        self.assertEquals(len(cinders), 1)
+        self.assertEqual(len(cinders), 1)
 
         computes = self.filter_by_role(nodes, 'compute')
-        self.assertEquals(len(computes), 1)
+        self.assertEqual(len(computes), 1)
 
     def test_redeploy_all_controller_and_compute_cinder(self):
         cluster = self.create_env([
@@ -83,16 +83,16 @@ class TestTaskHelpers(BaseTestCase):
             {'roles': ['cinder'], 'status': 'error'}])
 
         nodes = TaskHelper.nodes_to_deploy(cluster)
-        self.assertEquals(len(nodes), 5)
+        self.assertEqual(len(nodes), 5)
 
         controllers = self.filter_by_role(nodes, 'controller')
-        self.assertEquals(len(controllers), 3)
+        self.assertEqual(len(controllers), 3)
 
         cinders = self.filter_by_role(nodes, 'cinder')
-        self.assertEquals(len(cinders), 2)
+        self.assertEqual(len(cinders), 2)
 
         computes = self.filter_by_role(nodes, 'compute')
-        self.assertEquals(len(computes), 1)
+        self.assertEqual(len(computes), 1)
 
     def test_recalculate_deployment_task_progress(self):
         cluster = self.create_env([
@@ -114,7 +114,7 @@ class TestTaskHelpers(BaseTestCase):
         self.db.commit()
 
         progress = TaskHelper.recalculate_deployment_task_progress(task)
-        self.assertEquals(progress, 25)
+        self.assertEqual(progress, 25)
 
     def test_recalculate_provisioning_task_progress(self):
         cluster = self.create_env([
@@ -130,4 +130,4 @@ class TestTaskHelpers(BaseTestCase):
         self.db.commit()
 
         progress = TaskHelper.recalculate_provisioning_task_progress(task)
-        self.assertEquals(progress, 50)
+        self.assertEqual(progress, 50)

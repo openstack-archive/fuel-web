@@ -70,8 +70,8 @@ class TestNetworkManager(BaseIntegrationTest):
                 filter_by(node=node.id).\
                 filter_by(network=management_net.id).all()
 
-            self.assertEquals(1, len(ips))
-            self.assertEquals(
+            self.assertEqual(1, len(ips))
+            self.assertEqual(
                 True,
                 self.env.network_manager.check_ip_belongs_to_net(
                     ips[0].ip_addr,
@@ -81,15 +81,15 @@ class TestNetworkManager(BaseIntegrationTest):
             assigned_ips.append(ips[0].ip_addr)
 
         # check for uniqueness of IPs:
-        self.assertEquals(len(assigned_ips), len(list(set(assigned_ips))))
+        self.assertEqual(len(assigned_ips), len(list(set(assigned_ips))))
 
         # check it doesn't contain broadcast and other special IPs
         net_ip = IPNetwork(management_net.cidr)[0]
         gateway = management_net.gateway
         broadcast = IPNetwork(management_net.cidr)[-1]
-        self.assertEquals(False, net_ip in assigned_ips)
-        self.assertEquals(False, gateway in assigned_ips)
-        self.assertEquals(False, broadcast in assigned_ips)
+        self.assertEqual(False, net_ip in assigned_ips)
+        self.assertEqual(False, gateway in assigned_ips)
+        self.assertEqual(False, broadcast in assigned_ips)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -118,7 +118,7 @@ class TestNetworkManager(BaseIntegrationTest):
 
         self.db.refresh(node_db)
 
-        self.assertEquals(
+        self.assertEqual(
             len(
                 filter(
                     lambda n: n['name'] == 'management',
@@ -140,7 +140,7 @@ class TestNetworkManager(BaseIntegrationTest):
             cluster['id'],
             "management"
         )
-        self.assertEquals(vip, vip2)
+        self.assertEqual(vip, vip2)
 
     def test_get_node_networks_for_vlan_manager(self):
         cluster = self.env.create(
@@ -153,14 +153,14 @@ class TestNetworkManager(BaseIntegrationTest):
             {'networking_parameters': {'net_manager': 'VlanManager'}}
         resp = self.env.nova_networks_put(cluster['id'], networks_data)
         task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
         network_data = self.env.network_manager.get_node_networks(
             self.env.nodes[0].id
         )
 
-        self.assertEquals(len(network_data), 4)
+        self.assertEqual(len(network_data), 4)
         fixed_nets = filter(lambda net: net['name'] == 'fixed', network_data)
-        self.assertEquals(fixed_nets, [])
+        self.assertEqual(fixed_nets, [])
 
     def test_ipaddr_joinedload_relations(self):
         self.env.create(
@@ -241,7 +241,7 @@ class TestNetworkManager(BaseIntegrationTest):
     def test_nets_empty_list_if_node_does_not_belong_to_cluster(self):
         node = self.env.create_node(api=False)
         network_data = self.env.network_manager.get_node_networks(node.id)
-        self.assertEquals(network_data, [])
+        self.assertEqual(network_data, [])
 
     def test_assign_admin_ips(self):
         node = self.env.create_node()
@@ -253,7 +253,7 @@ class TestNetworkManager(BaseIntegrationTest):
         admin_ips = self.db.query(IPAddr).\
             filter_by(node=node.id).\
             filter_by(network=admin_ng_id).all()
-        self.assertEquals(len(admin_ips), 2)
+        self.assertEqual(len(admin_ips), 2)
         map(
             lambda x: self.assertIn(
                 IPAddress(x.ip_addr),
@@ -288,7 +288,7 @@ class TestNetworkManager(BaseIntegrationTest):
             n, c = x
             l = len(self.db.query(IPAddr).filter_by(network=admin_ng_id).
                     filter_by(node=n).all())
-            self.assertEquals(l, c)
+            self.assertEqual(l, c)
         map(asserter, nc)
 
     def test_assign_admin_ips_idempotent(self):
@@ -302,7 +302,7 @@ class TestNetworkManager(BaseIntegrationTest):
         admin_ips2 = set([i.ip_addr for i in self.db.query(IPAddr).
                           filter_by(node=node.id).
                           filter_by(network=admin_net_id).all()])
-        self.assertEquals(admin_ips, admin_ips2)
+        self.assertEqual(admin_ips, admin_ips2)
 
     def test_assign_admin_ips_only_one(self):
         map(self.db.delete, self.db.query(IPAddrRange).all())
@@ -323,8 +323,8 @@ class TestNetworkManager(BaseIntegrationTest):
         admin_ips = self.db.query(IPAddr).\
             filter_by(node=node.id).\
             filter_by(network=admin_net_id).all()
-        self.assertEquals(len(admin_ips), 1)
-        self.assertEquals(admin_ips[0].ip_addr, '10.0.0.1')
+        self.assertEqual(len(admin_ips), 1)
+        self.assertEqual(admin_ips[0].ip_addr, '10.0.0.1')
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -412,12 +412,12 @@ class TestNovaNetworkManager(BaseIntegrationTest):
         def_admin_nic = [n for n in nics if n['id'] == admin_nic_id]
         def_other_nic = [n for n in nics if n['id'] == other_nic.id]
 
-        self.assertEquals(len(def_admin_nic), 1)
-        self.assertEquals(len(def_other_nic), 1)
-        self.assertEquals(
+        self.assertEqual(len(def_admin_nic), 1)
+        self.assertEqual(len(def_other_nic), 1)
+        self.assertEqual(
             set(admin_nets),
             set([n['name'] for n in def_admin_nic[0]['assigned_networks']]))
-        self.assertEquals(
+        self.assertEqual(
             set(other_nets),
             set([n['name'] for n in def_other_nic[0]['assigned_networks']]))
 

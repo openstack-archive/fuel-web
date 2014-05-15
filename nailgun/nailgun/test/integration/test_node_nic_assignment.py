@@ -42,7 +42,7 @@ class TestClusterHandlers(BaseIntegrationTest):
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
 
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         response = json.loads(resp.body)
 
@@ -69,15 +69,15 @@ class TestClusterHandlers(BaseIntegrationTest):
             json.dumps({'nodes': []}),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         for resp_nic in response:
-            self.assertEquals(resp_nic['assigned_networks'], [])
+            self.assertEqual(resp_nic['assigned_networks'], [])
 
     def test_assignment_is_removed_when_delete_cluster(self):
         mac = self.env.generate_random_mac()
@@ -93,7 +93,7 @@ class TestClusterHandlers(BaseIntegrationTest):
         self.db.commit()
 
         net_assignment = self.db.query(NetworkNICAssignment).all()
-        self.assertEquals(len(net_assignment), 0)
+        self.assertEqual(len(net_assignment), 0)
 
 
 class TestNodeHandlers(BaseIntegrationTest):
@@ -111,7 +111,7 @@ class TestNodeHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         for resp_nic in response:
             net_names = [net['name'] for net in resp_nic['assigned_networks']]
@@ -135,12 +135,12 @@ class TestNodeHandlers(BaseIntegrationTest):
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         for resp_nic in response:
             net_names = [net['name'] for net in resp_nic['assigned_networks']]
@@ -159,9 +159,9 @@ class TestNodeHandlers(BaseIntegrationTest):
             if net['name'] == 'management':
                 net['vlan_start'] = None
         resp = self.env.nova_networks_put(cluster['id'], nets)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -176,12 +176,12 @@ class TestNodeHandlers(BaseIntegrationTest):
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         net_name_per_nic = [['fuelweb_admin', 'storage', 'fixed'],
                             ['public'],
@@ -196,9 +196,9 @@ class TestNodeHandlers(BaseIntegrationTest):
             if net['name'] == 'management':
                 net['vlan_start'] = 112
         resp = self.env.nova_networks_put(cluster['id'], nets)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -213,12 +213,12 @@ class TestNodeHandlers(BaseIntegrationTest):
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         net_name_per_nic = [['fuelweb_admin', 'storage', 'fixed',
                              'public', 'management'],
@@ -237,9 +237,9 @@ class TestNodeHandlers(BaseIntegrationTest):
             if net['name'] == 'management':
                 net['vlan_start'] = None
         resp = self.env.neutron_networks_put(cluster['id'], nets)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -254,12 +254,12 @@ class TestNodeHandlers(BaseIntegrationTest):
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         net_name_per_nic = [['fuelweb_admin', 'storage', 'private'],
                             ['public'],
@@ -274,9 +274,9 @@ class TestNodeHandlers(BaseIntegrationTest):
             if net['name'] == 'management':
                 net['vlan_start'] = 112
         resp = self.env.neutron_networks_put(cluster['id'], nets)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
@@ -291,12 +291,12 @@ class TestNodeHandlers(BaseIntegrationTest):
             json.dumps([{'id': node['id'], 'cluster_id': cluster['id']}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         net_name_per_nic = [['fuelweb_admin', 'storage', 'public',
                              'management', 'private'],
@@ -320,15 +320,15 @@ class TestNodeHandlers(BaseIntegrationTest):
             json.dumps([{'id': node['id'], 'cluster_id': None}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         for resp_nic in response:
-            self.assertEquals(resp_nic['assigned_networks'], [])
+            self.assertEqual(resp_nic['assigned_networks'], [])
 
     def test_getting_default_nic_information_for_node(self):
         cluster = self.env.create_cluster(api=True)
@@ -349,7 +349,7 @@ class TestNodeHandlers(BaseIntegrationTest):
             lambda interface: interface["mac"],
             json.loads(resp.body)
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         self.assertItemsEqual(macs, resp_macs)
 
     def test_try_add_node_with_same_mac(self):
@@ -425,8 +425,8 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         self.env.create_node(api=True, meta=meta, mac=mac1,
                              cluster_id=cluster['id'])
         node_db = self.env.nodes[0]
-        self.assertEquals(node_db.admin_interface.mac, mac2)
-        self.assertEquals(node_db.admin_interface.ip_addr, admin_ip)
+        self.assertEqual(node_db.admin_interface.mac, mac2)
+        self.assertEqual(node_db.admin_interface.ip_addr, admin_ip)
 
         meta = deepcopy(node_db.meta)
         for interface in meta['interfaces']:
@@ -443,11 +443,11 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
                         'meta': meta}),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         self.db.refresh(node_db)
-        self.assertEquals(node_db.admin_interface.mac, mac2)
-        self.assertEquals(node_db.admin_interface.ip_addr, None)
+        self.assertEqual(node_db.admin_interface.mac, mac2)
+        self.assertEqual(node_db.admin_interface.ip_addr, None)
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -455,11 +455,11 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
                          'cluster_id': None}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         self.db.refresh(node_db)
-        self.assertEquals(node_db.admin_interface.mac, mac1)
-        self.assertEquals(node_db.admin_interface.ip_addr, admin_ip)
+        self.assertEqual(node_db.admin_interface.mac, mac1)
+        self.assertEqual(node_db.admin_interface.ip_addr, admin_ip)
 
 
 class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
@@ -481,7 +481,7 @@ class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         data = json.loads(resp.body)
         eth1 = [nic for nic in data if nic['name'] == 'eth1']
         self.assertEqual(len(eth1), 1)
@@ -524,7 +524,7 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0]["id"]}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         self.data = json.loads(resp.body)
         self.nics_w_nets = filter(lambda nic: nic.get("assigned_networks"),
                                   self.data)
@@ -543,8 +543,8 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
     def node_nics_put_check_error(self, message):
         for put_func in (self.put_single, self.put_collection):
             resp = put_func()
-            self.assertEquals(resp.status_code, 400)
-            self.assertEquals(resp.body, message)
+            self.assertEqual(resp.status_code, 400)
+            self.assertEqual(resp.body, message)
 
     def test_assignment_change_failed_assigned_network_wo_id(self):
         self.nics_w_nets[0]["assigned_networks"] = [{}]

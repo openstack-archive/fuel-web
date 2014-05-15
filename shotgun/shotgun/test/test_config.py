@@ -33,7 +33,7 @@ class TestConfig(TestCase):
             MockedTime.strftime.side_effect = time.strftime
             conf = Config({})
             stamped = conf._timestamp("sample")
-        self.assertEquals(
+        self.assertEqual(
             stamped,
             "sample-{0}".format(time.strftime('%Y-%m-%d_%H-%M-%S', t))
         )

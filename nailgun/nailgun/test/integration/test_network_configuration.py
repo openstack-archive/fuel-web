@@ -37,8 +37,8 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data = jsonutils.loads(response.body)
         cluster = self.db.query(Cluster).get(self.cluster.id)
 
-        self.assertEquals(data['networking_parameters']['net_manager'],
-                          self.cluster.network_config.net_manager)
+        self.assertEqual(data['networking_parameters']['net_manager'],
+                         self.cluster.network_config.net_manager)
         for network_group in cluster.network_groups:
             network = [i for i in data['networks']
                        if i['id'] == network_group.id][0]
@@ -51,16 +51,16 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                 'id']
 
             for key in keys:
-                self.assertEquals(network[key], getattr(network_group, key))
+                self.assertEqual(network[key], getattr(network_group, key))
 
     def test_not_found_cluster(self):
         resp = self.env.nova_networks_get(self.cluster.id + 999,
                                           expect_errors=True)
-        self.assertEquals(404, resp.status_code)
+        self.assertEqual(404, resp.status_code)
 
     def test_change_net_manager(self):
-        self.assertEquals(self.cluster.network_config.net_manager,
-                          'FlatDHCPManager')
+        self.assertEqual(self.cluster.network_config.net_manager,
+                         'FlatDHCPManager')
 
         new_net_manager = {
             'networking_parameters': {'net_manager': 'VlanManager'}
@@ -68,7 +68,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.env.nova_networks_put(self.cluster.id, new_net_manager)
 
         self.db.refresh(self.cluster)
-        self.assertEquals(
+        self.assertEqual(
             self.cluster.network_config.net_manager,
             new_net_manager['networking_parameters']['net_manager'])
 
@@ -84,7 +84,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         self.env.nova_networks_put(self.cluster.id, new_dns_nameservers)
 
         self.db.refresh(self.cluster)
-        self.assertEquals(
+        self.assertEqual(
             self.cluster.network_config.dns_nameservers,
             new_dns_nameservers['networking_parameters']['dns_nameservers']
         )
@@ -99,14 +99,14 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt['cidr'] = cidr
 
         resp = self.env.nova_networks_put(self.cluster.id, data)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         self.db.refresh(self.cluster)
         mgmt_ng = [ng for ng in self.cluster.network_groups
                    if ng.name == 'management'][0]
-        self.assertEquals(mgmt_ng.cidr, cidr)
+        self.assertEqual(mgmt_ng.cidr, cidr)
 
     def test_wrong_net_provider(self):
         resp = self.app.put(
@@ -117,8 +117,8 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
             resp.body,
             u"Wrong net provider - environment uses 'nova_network'"
         )
@@ -132,7 +132,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                    expect_errors=True)
 
         self.db.refresh(self.cluster)
-        self.assertNotEquals(
+        self.assertNotEqual(
             self.cluster.network_config.net_manager,
             new_net_manager['networking_parameters']['net_manager'])
 
@@ -146,9 +146,9 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                   'vlan_start': new_vlan_id}]}
 
         resp = self.env.nova_networks_put(self.cluster.id, new_nets)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         self.db.refresh(network)
-        self.assertEquals(network.vlan_start, 500)
+        self.assertEqual(network.vlan_start, 500)
 
     def test_update_networks_and_net_manager(self):
         network = self.db.query(NetworkGroup).filter(
@@ -161,10 +161,10 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         self.db.refresh(self.cluster)
         self.db.refresh(network)
-        self.assertEquals(
+        self.assertEqual(
             self.cluster.network_config.net_manager,
             new_net['networking_parameters']['net_manager'])
-        self.assertEquals(network.vlan_start, new_vlan_id)
+        self.assertEqual(network.vlan_start, new_vlan_id)
 
     def test_networks_update_fails_with_wrong_net_id(self):
         new_nets = {'networks': [{'id': 500,
@@ -172,10 +172,10 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(self.cluster.id, new_nets,
                                           expect_errors=True)
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(
+        self.assertEqual(task['status'], 'error')
+        self.assertEqual(
             task['message'],
             'Invalid network ID: 500'
         )
@@ -191,7 +191,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_mgmt_storage_networks_have_no_gateway(self):
         resp = self.env.nova_networks_get(self.cluster.id)
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         data = jsonutils.loads(resp.body)
         for net in data['networks']:
             if net['name'] in ['management', 'storage']:
@@ -217,7 +217,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data = jsonutils.loads(resp.body)
         mgmt = filter(lambda n: n['name'] == 'management',
                       data['networks'])[0]
-        self.assertEquals(mgmt['gateway'], '192.168.0.1')
+        self.assertEqual(mgmt['gateway'], '192.168.0.1')
         strg = filter(lambda n: n['name'] == 'storage',
                       data['networks'])[0]
         self.assertIsNone(strg['gateway'])
@@ -227,7 +227,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt = filter(lambda n: n['name'] == 'management',
                       net_meta['nova_network']['networks'])[0]
         mgmt['gateway'] = '192.168.0.1'
-        self.assertEquals(mgmt['use_gateway'], False)
+        self.assertEqual(mgmt['use_gateway'], False)
 
         def get_new_networks_metadata():
             return net_meta
@@ -260,8 +260,8 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data = jsonutils.loads(response.body)
         cluster = self.db.query(Cluster).get(self.cluster.id)
 
-        self.assertEquals(data['networking_parameters']['segmentation_type'],
-                          self.cluster.network_config.segmentation_type)
+        self.assertEqual(data['networking_parameters']['segmentation_type'],
+                         self.cluster.network_config.segmentation_type)
         for network_group in cluster.network_groups:
             network = [i for i in data['networks']
                        if i['id'] == network_group.id][0]
@@ -274,7 +274,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                 'id']
 
             for key in keys:
-                self.assertEquals(network[key], getattr(network_group, key))
+                self.assertEqual(network[key], getattr(network_group, key))
 
     def test_get_request_should_return_vips(self):
         response = self.env.neutron_networks_get(self.cluster.id)
@@ -286,7 +286,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def test_not_found_cluster(self):
         resp = self.env.neutron_networks_get(self.cluster.id + 999,
                                              expect_errors=True)
-        self.assertEquals(404, resp.status_code)
+        self.assertEqual(404, resp.status_code)
 
     def test_refresh_mask_on_cidr_change(self):
         response = self.env.neutron_networks_get(self.cluster.id)
@@ -298,14 +298,14 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt['cidr'] = cidr
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         self.db.refresh(self.cluster)
         mgmt_ng = [ng for ng in self.cluster.network_groups
                    if ng.name == 'management'][0]
-        self.assertEquals(mgmt_ng.cidr, cidr)
+        self.assertEqual(mgmt_ng.cidr, cidr)
 
     def test_do_not_update_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
@@ -314,10 +314,10 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(
+        self.assertEqual(task['status'], 'error')
+        self.assertEqual(
             task['message'],
             "Change of 'segmentation_type' is prohibited"
         )
@@ -331,10 +331,10 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data['networks'][0]['vlan_start'] = 500  # non-used vlan id
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
 
         self.db.refresh(network)
-        self.assertEquals(network.vlan_start, 500)
+        self.assertEqual(network.vlan_start, 500)
 
     def test_update_networks_fails_if_change_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
@@ -347,10 +347,10 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(
+        self.assertEqual(task['status'], 'error')
+        self.assertEqual(
             task['message'],
             "Change of 'segmentation_type' is prohibited"
         )
@@ -362,10 +362,10 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(
+        self.assertEqual(task['status'], 'error')
+        self.assertEqual(
             task['message'],
             'Invalid network ID: 500'
         )
@@ -374,7 +374,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data = jsonutils.loads(self.env.neutron_networks_get(
             self.cluster.id).body)
         publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
-        self.assertEquals(publ['cidr'], '172.16.0.0/24')
+        self.assertEqual(publ['cidr'], '172.16.0.0/24')
 
         publ['cidr'] = '199.61.0.0/24'
         publ['gateway'] = '199.61.0.1'
@@ -384,14 +384,14 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             [['199.61.0.111', '199.61.0.122']]
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         self.db.refresh(self.cluster)
         publ_ng = filter(lambda ng: ng.name == 'public',
                          self.cluster.network_groups)[0]
-        self.assertEquals(publ_ng.cidr, '199.61.0.0/24')
+        self.assertEqual(publ_ng.cidr, '199.61.0.0/24')
 
     def test_admin_public_untagged_others_tagged(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
@@ -404,7 +404,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_mgmt_storage_networks_have_no_gateway(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         data = jsonutils.loads(resp.body)
         for net in data['networks']:
             if net['name'] in ['management', 'storage']:
@@ -430,7 +430,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         data = jsonutils.loads(resp.body)
         mgmt = filter(lambda n: n['name'] == 'management',
                       data['networks'])[0]
-        self.assertEquals(mgmt['gateway'], '192.168.0.1')
+        self.assertEqual(mgmt['gateway'], '192.168.0.1')
         strg = filter(lambda n: n['name'] == 'storage',
                       data['networks'])[0]
         self.assertIsNone(strg['gateway'])
@@ -447,11 +447,11 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
         resp = jsonutils.loads(
             self.env.nova_networks_get(self.cluster.id).body)
 
-        self.assertEquals(
+        self.assertEqual(
             resp['management_vip'],
             self.net_manager.assign_vip(self.cluster.id, 'management'))
 
-        self.assertEquals(
+        self.assertEqual(
             resp['public_vip'],
             self.net_manager.assign_vip(self.cluster.id, 'public'))
 
@@ -480,11 +480,11 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
         nets = jsonutils.loads(resp.body)
         resp = self.env.nova_networks_put(self.cluster['id'], nets,
                                           expect_errors=True)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['progress'], 100)
+        self.assertEqual(task['name'], 'check_networks')
         self.assertIn("Address space intersection between networks:\n"
                       "admin (PXE), management.",
                       task['message'])
@@ -492,11 +492,11 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
     def test_deploy_error_when_admin_cidr_match_other_network_cidr(self):
         resp = self.env.cluster_changes_put(self.cluster['id'],
                                             expect_errors=True)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'deploy')
+        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['progress'], 100)
+        self.assertEqual(task['name'], 'deploy')
         self.assertIn("Address space intersection between networks:\n"
                       "admin (PXE), management.",
                       task['message'])

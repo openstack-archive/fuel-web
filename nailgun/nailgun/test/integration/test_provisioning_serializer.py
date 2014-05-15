@@ -41,6 +41,6 @@ class TestProvisioningSerializer(BaseIntegrationTest):
             node_db = self.db.query(Node).filter_by(
                 fqdn=node['hostname']
             ).first()
-            self.assertEquals(
+            self.assertEqual(
                 node['kernel_options']['netcfg/choose_interface'],
                 node_db.admin_interface.mac)

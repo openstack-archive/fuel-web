@@ -53,8 +53,8 @@ class TestHandlers(BaseIntegrationTest):
             'check_redhat_licenses',
             'download_release'
         )):
-            self.assertEquals(rpc_message[i]['method'], name)
-            self.assertEquals(
+            self.assertEqual(rpc_message[i]['method'], name)
+            self.assertEqual(
                 rpc_message[i]['args']['release_info'],
                 test_release_data
             )
@@ -67,7 +67,7 @@ class TestHandlers(BaseIntegrationTest):
                              'password': 'password'}),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
 
     @fake_tasks()
     def test_redhat_account_validation_success(self):
@@ -84,7 +84,7 @@ class TestHandlers(BaseIntegrationTest):
                                      'password': 'password',
                                      'release_id': self.release.id}),
                     headers=self.default_headers)
-                self.assertEquals(resp.status_code, 202)
+                self.assertEqual(resp.status_code, 202)
 
     @fake_tasks()
     def test_redhat_account_validation_failure(self):
@@ -96,7 +96,7 @@ class TestHandlers(BaseIntegrationTest):
                              'release_id': self.release.id}),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
 
         supertask = self.db.query(Task).filter_by(
             name="redhat_check_credentials"
@@ -108,7 +108,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('RedHatAccountHandler'),
             expect_errors=True)
-        self.assertEquals(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 404)
 
         resp = self.app.post(
             reverse('RedHatAccountHandler'),
@@ -117,12 +117,12 @@ class TestHandlers(BaseIntegrationTest):
                              'password': 'password',
                              'release_id': self.release.id}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('RedHatAccountHandler'),
             expect_errors=True)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         response = jsonutils.loads(resp.body)
 
@@ -139,7 +139,7 @@ class TestHandlers(BaseIntegrationTest):
                                  'password': 'password',
                                  'release_id': self.release.id}),
                 headers=self.default_headers)
-            self.assertEquals(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
             query = self.env.db.query(RedHatAccount)
-            self.assertEquals(query.count(), 1)
-        self.assertEquals(query.filter_by(username='rheltest').count(), 1)
+            self.assertEqual(query.count(), 1)
+        self.assertEqual(query.filter_by(username='rheltest').count(), 1)

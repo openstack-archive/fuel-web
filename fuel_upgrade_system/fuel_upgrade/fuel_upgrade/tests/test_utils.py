@@ -74,7 +74,7 @@ class TestUtils(BaseTestCase):
                 urllib2, 'urlopen', return_value=response) as urlopen:
 
             json_resp = get_request(url)
-            self.assertEquals({'key': 'value'}, json_resp)
+            self.assertEqual({'key': 'value'}, json_resp)
 
         urlopen.assert_called_once_with(url)
 
@@ -89,7 +89,7 @@ class TestUtils(BaseTestCase):
         }
 
         order = topological_sorting(graph)
-        self.assertEquals(order, ['A', 'C', 'B', 'G', 'D', 'E'])
+        self.assertEqual(order, ['A', 'C', 'B', 'G', 'D', 'E'])
 
     def test_topological_sorting_raises_cycle_dependencies_error(self):
         graph = {
@@ -129,7 +129,7 @@ class TestUtils(BaseTestCase):
             mock_makedirs.called_once(path)
 
     def test_wait_for_true_does_not_raise_errors(self):
-        self.assertEquals(wait_for_true(lambda: True, timeout=0), True)
+        self.assertEqual(wait_for_true(lambda: True, timeout=0), True)
 
     def test_wait_for_true_raises_timeout_error(self):
         self.assertRaisesRegexp(

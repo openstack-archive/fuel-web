@@ -47,9 +47,9 @@ class TestHorizonURL(BaseIntegrationTest):
             network=network.id,
             node=None
         ).all()
-        self.assertEquals(len(lost_ips), 1)
+        self.assertEqual(len(lost_ips), 1)
 
-        self.assertEquals(supertask.message, (
+        self.assertEqual(supertask.message, (
             u"Deployment of environment '{0}' is done. "
             "Access the OpenStack dashboard (Horizon) at http://{1}/"
         ).format(

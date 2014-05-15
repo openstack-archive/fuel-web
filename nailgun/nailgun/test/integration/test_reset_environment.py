@@ -50,19 +50,19 @@ class TestResetEnvironment(BaseIntegrationTest):
         self.env.wait_ready(supertask, 60)
 
         for n in cluster_db.nodes:
-            self.assertEquals(n.status, "ready")
-            self.assertEquals(n.pending_addition, False)
+            self.assertEqual(n.status, "ready")
+            self.assertEqual(n.pending_addition, False)
 
         reset_task = self.env.reset_environment()
         self.env.wait_ready(reset_task, 60)
 
-        self.assertEquals(cluster_db.status, "new")
+        self.assertEqual(cluster_db.status, "new")
 
         for n in cluster_db.nodes:
-            self.assertEquals(n.online, False)
-            self.assertEquals(n.status, "discover")
-            self.assertEquals(n.pending_addition, True)
-            self.assertEquals(n.roles, [])
+            self.assertEqual(n.online, False)
+            self.assertEqual(n.status, "discover")
+            self.assertEqual(n.pending_addition, True)
+            self.assertEqual(n.roles, [])
             self.assertNotEquals(n.pending_roles, [])
 
         msg = (
@@ -71,7 +71,7 @@ class TestResetEnvironment(BaseIntegrationTest):
             u"check may be needed."
         )
 
-        self.assertEquals(
+        self.assertEqual(
             self.db.query(Notification).filter(
                 Notification.topic == "warning"
             ).filter(

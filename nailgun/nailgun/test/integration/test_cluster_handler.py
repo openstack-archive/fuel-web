@@ -41,11 +41,11 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(cluster.id, response['id'])
-        self.assertEquals(cluster.name, response['name'])
-        self.assertEquals(cluster.release.id, response['release_id'])
+        self.assertEqual(cluster.id, response['id'])
+        self.assertEqual(cluster.name, response['name'])
+        self.assertEqual(cluster.release.id, response['release_id'])
 
     def test_cluster_creation(self):
         release = self.env.create_release(api=False)
@@ -58,10 +58,10 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(201, resp.status_code)
+        self.assertEqual(201, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(yet_another_cluster_name, response['name'])
-        self.assertEquals(release.id, response['release_id'])
+        self.assertEqual(yet_another_cluster_name, response['name'])
+        self.assertEqual(release.id, response['release_id'])
 
     def test_cluster_update(self):
         updated_name = u'Updated cluster'
@@ -75,27 +75,27 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.db.refresh(cluster)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         clusters = self.db.query(Cluster).filter(
             Cluster.name == updated_name
         ).all()
-        self.assertEquals(len(clusters), 1)
-        self.assertEquals(clusters[0].name, updated_name)
+        self.assertEqual(len(clusters), 1)
+        self.assertEqual(clusters[0].name, updated_name)
 
         clusters_after = len(self.db.query(Cluster).all())
-        self.assertEquals(clusters_before, clusters_after)
+        self.assertEqual(clusters_before, clusters_after)
 
     def test_cluster_update_fails_on_net_provider_change(self):
         cluster = self.env.create_cluster(api=False)
-        self.assertEquals(cluster.net_provider, "nova_network")
+        self.assertEqual(cluster.net_provider, "nova_network")
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'net_provider': 'neutron'}),
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
             resp.body,
             "Changing 'net_provider' for environment is prohibited"
         )
@@ -110,29 +110,29 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         nodes = self.db.query(Node).filter(Node.cluster == cluster).all()
-        self.assertEquals(1, len(nodes))
-        self.assertEquals(nodes[0].id, node1.id)
+        self.assertEqual(1, len(nodes))
+        self.assertEqual(nodes[0].id, node1.id)
 
         resp = self.app.put(
             reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
             json.dumps({'nodes': [node2.id]}),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         nodes = self.db.query(Node).filter(Node.cluster == cluster)
-        self.assertEquals(1, nodes.count())
+        self.assertEqual(1, nodes.count())
 
     def test_empty_cluster_deletion(self):
         cluster = self.env.create_cluster(api=True)
         resp = self.delete(cluster['id'])
 
-        self.assertEquals(resp.status_code, 202)
-        self.assertEquals(self.db.query(Node).count(), 0)
-        self.assertEquals(self.db.query(Cluster).count(), 0)
+        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(self.db.query(Node).count(), 0)
+        self.assertEqual(self.db.query(Cluster).count(), 0)
 
     @fake_tasks()
     def test_cluster_deletion(self):
@@ -143,7 +143,7 @@ class TestHandlers(BaseIntegrationTest):
                 {"status": "ready"}])
 
         resp = self.delete(self.env.clusters[0].id)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
 
         def cluster_is_empty():
             return self.db.query(Cluster).count() == 0
@@ -152,10 +152,10 @@ class TestHandlers(BaseIntegrationTest):
         self._wait_for_threads()
 
         # Nodes should be in discover status
-        self.assertEquals(self.db.query(Node).count(), 2)
+        self.assertEqual(self.db.query(Node).count(), 2)
         for node in self.db.query(Node):
-            self.assertEquals(node.status, 'discover')
-            self.assertEquals(node.cluster_id, None)
+            self.assertEqual(node.status, 'discover')
+            self.assertEqual(node.cluster_id, None)
 
     @fake_tasks()
     def test_cluster_deletion_with_offline_nodes(self):
@@ -166,7 +166,7 @@ class TestHandlers(BaseIntegrationTest):
                 {'online': False, 'status': 'ready'}])
 
         resp = self.delete(self.env.clusters[0].id)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
 
         def cluster_is_empty_and_in_db_one_node():
             return self.db.query(Cluster).count() == 0 and \
@@ -176,8 +176,8 @@ class TestHandlers(BaseIntegrationTest):
         self._wait_for_threads()
 
         node = self.db.query(Node).first()
-        self.assertEquals(node.status, 'discover')
-        self.assertEquals(node.cluster_id, None)
+        self.assertEqual(node.status, 'discover')
+        self.assertEqual(node.cluster_id, None)
 
     def test_cluster_deletion_delete_networks(self):
         cluster = self.env.create_cluster(api=True)
@@ -228,5 +228,5 @@ class TestHandlers(BaseIntegrationTest):
                     kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers
         )
-        self.assertEquals(get_resp.status_code, 200)
+        self.assertEqual(get_resp.status_code, 200)
         self.datadiff(json.loads(get_resp.body), cluster.attributes.generated)

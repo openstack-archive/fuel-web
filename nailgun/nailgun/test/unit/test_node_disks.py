@@ -49,7 +49,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             reverse('NodeDisksHandler', kwargs={'node_id': node_id}),
             headers=self.default_headers)
 
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         return json.loads(resp.body)
 
     def put(self, node_id, data, expect_errors=False):
@@ -60,7 +60,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             expect_errors=expect_errors)
 
         if not expect_errors:
-            self.assertEquals(200, resp.status_code)
+            self.assertEqual(200, resp.status_code)
             return json.loads(resp.body)
         else:
             return resp
@@ -95,7 +95,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                 reverse('NodeCollectionHandler'),
                 json.dumps([{'id': node_db.id, 'pending_roles': roles}]),
                 headers=self.default_headers)
-            self.assertEquals(200, resp.status_code)
+            self.assertEqual(200, resp.status_code)
 
         # adding role
         update_node_roles(['compute', 'cinder'])
@@ -122,8 +122,8 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         update_node_roles(['controller'])
         update_node_roles(['compute'])
         modified_roles_response = self.get(node_db.id)
-        self.assertEquals(get_vgs(original_roles_response),
-                          get_vgs(modified_roles_response))
+        self.assertEqual(get_vgs(original_roles_response),
+                         get_vgs(modified_roles_response))
 
     def test_disks_volumes_size_update(self):
         node_db = self.create_node()
@@ -135,10 +135,10 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         expect_disks = deepcopy(disks)
 
         response = self.put(node_db.id, disks)
-        self.assertEquals(response, expect_disks)
+        self.assertEqual(response, expect_disks)
 
         response = self.get(node_db.id)
-        self.assertEquals(response, expect_disks)
+        self.assertEqual(response, expect_disks)
 
     def test_recalculates_vg_sizes_when_disks_volumes_size_update(self):
         node_db = self.create_node()
@@ -171,7 +171,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             self.assertNotEquals(size_volumes_before, size_volumes_after)
 
             volume_group_size = new_volume_size * updated_disks_count
-            self.assertEquals(size_volumes_after, volume_group_size)
+            self.assertEqual(size_volumes_after, volume_group_size)
 
     def test_update_ceph_partition(self):
         node = self.create_node(roles=['ceph-osd'])
@@ -189,12 +189,12 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
             node.attributes.volumes)
 
         for partition_after in partitions_after_update:
-            self.assertEquals(partition_after['size'], new_volume_size)
+            self.assertEqual(partition_after['size'], new_volume_size)
 
     def test_validator_at_least_one_disk_exists(self):
         node = self.create_node()
         response = self.put(node.id, [], True)
-        self.assertEquals(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
         self.assertRegexpMatches(response.body,
                                  '^Node seems not to have disks')
 
@@ -208,7 +208,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                     volume['size'] = disk['size'] + 1
 
         response = self.put(node.id, disks, True)
-        self.assertEquals(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
         self.assertRegexpMatches(
             response.body, '^Not enough free space on disk: .+')
 
@@ -221,7 +221,7 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                 del volume['size']
 
         response = self.put(node.id, disks, True)
-        self.assertEquals(response.status_code, 400)
+        self.assertEqual(response.status_code, 400)
         self.assertRegexpMatches(
             response.body, "'size' is a required property")
 
@@ -233,7 +233,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
             reverse('NodeDefaultsDisksHandler', kwargs={'node_id': node_id}),
             headers=self.default_headers)
 
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         return json.loads(resp.body)
 
     def test_node_disk_amount_regenerates_volumes_info_if_new_disk_added(self):
@@ -244,7 +244,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
             cluster_id=cluster['id'])
         node_db = self.env.nodes[0]
         response = self.get(node_db.id)
-        self.assertEquals(len(response), 6)
+        self.assertEqual(len(response), 6)
 
         new_meta = node_db.meta.copy()
         new_meta['disks'].append({
@@ -263,12 +263,12 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
         self.env.refresh_nodes()
 
         response = self.get(node_db.id)
-        self.assertEquals(len(response), 7)
+        self.assertEqual(len(response), 7)
 
         # check all groups on all disks
         vgs = ['os', 'vm']
         for disk in response:
-            self.assertEquals(len(disk['volumes']), len(vgs))
+            self.assertEqual(len(disk['volumes']), len(vgs))
 
     def test_get_default_attrs(self):
         self.env.create_node(api=True)
@@ -278,7 +278,7 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
         default_volumes = node_db.volume_manager.gen_volumes_info()
         disks = only_disks(default_volumes)
 
-        self.assertEquals(len(disks), len(volumes_from_api))
+        self.assertEqual(len(disks), len(volumes_from_api))
 
 
 class TestNodeVolumesInformationHandler(BaseIntegrationTest):
@@ -289,7 +289,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
                     kwargs={'node_id': node_id}),
             headers=self.default_headers)
 
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         return json.loads(resp.body)
 
     def create_node(self, role):
@@ -299,7 +299,7 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
         return self.env.nodes[0]
 
     def check_volumes(self, volumes, volumes_ids):
-        self.assertEquals(len(volumes), len(volumes_ids))
+        self.assertEqual(len(volumes), len(volumes_ids))
         for volume_id in volumes_ids:
             # Volume has name
             volume = filter(
@@ -380,7 +380,7 @@ class TestVolumeManager(BaseIntegrationTest):
         return reserved_size
 
     def should_contain_os_with_minimal_size(self, volume_manager):
-        self.assertEquals(
+        self.assertEqual(
             self.os_size(volume_manager.volumes, with_lvm_meta=False),
             volume_manager.call_generator('calc_min_os_size'))
 
@@ -398,7 +398,7 @@ class TestVolumeManager(BaseIntegrationTest):
                     vg_size -= volume.get('lvm_meta_size', 0)
                     sum_lvm_meta += volume.get('lvm_meta_size', 0)
 
-        self.assertEquals(
+        self.assertEqual(
             vg_size, disk_sum_size - os_size - reserved_size - sum_lvm_meta)
 
     def all_free_space_except_os_disks_for_volume(self, volume_manager,
@@ -422,7 +422,7 @@ class TestVolumeManager(BaseIntegrationTest):
                     vg_size -= volume.get('lvm_meta_size', 0)
                     sum_lvm_meta += volume.get('lvm_meta_size', 0)
 
-        self.assertEquals(
+        self.assertEqual(
             vg_size, disk_sum_size - reserved_size - sum_lvm_meta)
 
     def logical_volume_sizes_should_equal_all_phisical_volumes(self, spaces):
@@ -450,14 +450,14 @@ class TestVolumeManager(BaseIntegrationTest):
                     pv_sizes[vg_name] += volume['size']
                     pv_sizes[vg_name] -= volume['lvm_meta_size']
 
-        self.assertEquals(vg_sizes, pv_sizes)
+        self.assertEqual(vg_sizes, pv_sizes)
 
     def check_disk_size_equal_sum_of_all_volumes(self, spaces):
         for disk in only_disks(spaces):
             volumes_size = sum(
                 [volume.get('size', 0) for volume in disk['volumes']])
 
-            self.assertEquals(volumes_size, disk['size'])
+            self.assertEqual(volumes_size, disk['size'])
 
     def test_volume_request_without_cluster(self):
         self.env.create_node(api=True)
@@ -468,7 +468,7 @@ class TestVolumeManager(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(404, resp.status_code)
+        self.assertEqual(404, resp.status_code)
 
     def test_allocates_all_free_space_for_os_for_controller_role(self):
         node = self.create_node('controller')
@@ -478,8 +478,8 @@ class TestVolumeManager(BaseIntegrationTest):
         glance_sum_size = self.glance_size(disks)
         reserved_size = self.reserved_size(disks)
 
-        self.assertEquals(disks_size_sum - reserved_size,
-                          os_sum_size + glance_sum_size)
+        self.assertEqual(disks_size_sum - reserved_size,
+                         os_sum_size + glance_sum_size)
         self.logical_volume_sizes_should_equal_all_phisical_volumes(
             node.attributes.volumes)
         self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
@@ -642,7 +642,7 @@ class TestVolumeManager(BaseIntegrationTest):
         for role, space_info in volumes_roles_mapping.iteritems():
             node = self.create_node(role)
             vm = node.volume_manager
-            self.assertEquals(
+            self.assertEqual(
                 vm._VolumeManager__calc_minimal_installation_size(),
                 self.__calc_minimal_installation_size(vm)
             )
@@ -680,7 +680,7 @@ class TestVolumeManager(BaseIntegrationTest):
         new_meta['memory']['total'] = (1024 ** 2) * size
         node.meta = new_meta
         self.env.db.commit()
-        self.assertEquals(node.volume_manager._calc_swap_size(), swap_size)
+        self.assertEqual(node.volume_manager._calc_swap_size(), swap_size)
 
     def test_root_size_calculation(self):
         node = self.create_node('controller')
@@ -714,12 +714,12 @@ class TestDisks(BaseIntegrationTest):
     def test_create_mbr_as_raid_if_disks_count_greater_than_zero(self):
         disk = self.create_disk(boot_is_raid=True)
         boot_partition = self.get_boot(disk.volumes)
-        self.assertEquals(boot_partition['type'], 'raid')
+        self.assertEqual(boot_partition['type'], 'raid')
 
     def test_create_mbr_as_partition_if_disks_count_less_than_zero(self):
         disk = self.create_disk()
         boot_partition = self.get_boot(disk.volumes)
-        self.assertEquals(boot_partition['type'], 'partition')
+        self.assertEqual(boot_partition['type'], 'partition')
 
     def test_remove_pv(self):
         disk = self.create_disk(possible_pvs_count=1)
@@ -727,13 +727,13 @@ class TestDisks(BaseIntegrationTest):
         disk.create_pv({'id': 'pv_name'}, 100)
         disk.remove_pv('pv_name')
 
-        self.assertEquals(disk_without_pv.render(), disk.render())
+        self.assertEqual(disk_without_pv.render(), disk.render())
 
     def test_boot_partition_has_file_system(self):
         disk = self.create_disk(possible_pvs_count=1)
         boot_record = filter(
             lambda volume: volume.get('mount') == '/boot', disk.volumes)[0]
-        self.assertEquals(boot_record['file_system'], 'ext2')
+        self.assertEqual(boot_record['file_system'], 'ext2')
 
 
 class TestFixtures(BaseIntegrationTest):

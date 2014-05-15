@@ -46,7 +46,7 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         return filter(lambda node: node['uid'] == uid, nodes)
 
     def assert_nodes_with_role(self, nodes, role, count):
-        self.assertEquals(len(self.filter_by_role(nodes, role)), count)
+        self.assertEqual(len(self.filter_by_role(nodes, role)), count)
 
     def get_controllers(self, cluster_id):
         return self.db.query(Node).\
@@ -90,7 +90,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         return cluster_db
 
     def assert_roles_flattened(self, nodes):
-        self.assertEquals(len(nodes), 7)
+        self.assertEqual(len(nodes), 7)
         self.assert_nodes_with_role(nodes, 'controller', 1)
         self.assert_nodes_with_role(nodes, 'compute', 2)
         self.assert_nodes_with_role(nodes, 'cinder', 3)
@@ -107,7 +107,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
             expected_node = self.serializer.serialize_node(
                 node_db, serialized_node['role'])
-            self.assertEquals(serialized_node, expected_node)
+            self.assertEqual(serialized_node, expected_node)
 
     def test_serialize_node(self):
         node = self.env.create_node(
@@ -117,13 +117,13 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         node_db = self.db.query(Node).get(node['id'])
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
 
-        self.assertEquals(serialized_data['role'], 'controller')
-        self.assertEquals(serialized_data['uid'], str(node_db.id))
-        self.assertEquals(serialized_data['status'], node_db.status)
-        self.assertEquals(serialized_data['online'], node_db.online)
-        self.assertEquals(serialized_data['fqdn'],
-                          'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
-        self.assertEquals(
+        self.assertEqual(serialized_data['role'], 'controller')
+        self.assertEqual(serialized_data['uid'], str(node_db.id))
+        self.assertEqual(serialized_data['status'], node_db.status)
+        self.assertEqual(serialized_data['online'], node_db.online)
+        self.assertEqual(serialized_data['fqdn'],
+                         'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
+        self.assertEqual(
             serialized_data['glance'],
             {'image_cache_max_size': manager.calc_glance_cache_size(
                 node_db.attributes.volumes)})
@@ -137,13 +137,13 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         # Check common attrs
         for node in node_list:
             node_db = self.db.query(Node).get(int(node['uid']))
-            self.assertEquals(node['public_netmask'], '255.255.255.0')
-            self.assertEquals(node['internal_netmask'], '255.255.255.0')
-            self.assertEquals(node['storage_netmask'], '255.255.255.0')
-            self.assertEquals(node['uid'], str(node_db.id))
-            self.assertEquals(node['name'], 'node-%d' % node_db.id)
-            self.assertEquals(node['fqdn'], 'node-%d.%s' %
-                              (node_db.id, settings.DNS_DOMAIN))
+            self.assertEqual(node['public_netmask'], '255.255.255.0')
+            self.assertEqual(node['internal_netmask'], '255.255.255.0')
+            self.assertEqual(node['storage_netmask'], '255.255.255.0')
+            self.assertEqual(node['uid'], str(node_db.id))
+            self.assertEqual(node['name'], 'node-%d' % node_db.id)
+            self.assertEqual(node['fqdn'], 'node-%d.%s' %
+                             (node_db.id, settings.DNS_DOMAIN))
 
         # Check uncommon attrs
         node_uids = sorted(set([n['uid'] for n in node_list]))
@@ -169,12 +169,12 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                 nodes = self.filter_by_role(node_list, role)
                 node = self.filter_by_uid(nodes, attrs['uid'])[0]
 
-                self.assertEquals(attrs['internal_address'],
-                                  node['internal_address'])
-                self.assertEquals(attrs['public_address'],
-                                  node['public_address'])
-                self.assertEquals(attrs['storage_address'],
-                                  node['storage_address'])
+                self.assertEqual(attrs['internal_address'],
+                                 node['internal_address'])
+                self.assertEqual(attrs['public_address'],
+                                 node['public_address'])
+                self.assertEqual(attrs['storage_address'],
+                                 node['storage_address'])
 
     def test_vlan_manager(self):
         cluster = self.create_env('ha_compact')
@@ -187,16 +187,16 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
-            self.assertEquals(fact['vlan_interface'], 'eth0')
-            self.assertEquals(fact['fixed_interface'], 'eth0')
-            self.assertEquals(
+            self.assertEqual(fact['vlan_interface'], 'eth0')
+            self.assertEqual(fact['fixed_interface'], 'eth0')
+            self.assertEqual(
                 fact['novanetwork_parameters']['network_manager'],
                 'VlanManager')
-            self.assertEquals(
+            self.assertEqual(
                 fact['novanetwork_parameters']['num_networks'], 1)
-            self.assertEquals(
+            self.assertEqual(
                 fact['novanetwork_parameters']['vlan_start'], 103)
-            self.assertEquals(
+            self.assertEqual(
                 fact['novanetwork_parameters']['network_size'], 256)
 
     def test_floating_ranges_generation(self):
@@ -210,7 +210,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         facts = self.serializer.serialize(self.cluster, self.cluster.nodes)
         for fact in facts:
-            self.assertEquals(
+            self.assertEqual(
                 fact['floating_network_range'],
                 ['172.16.0.2-172.16.0.4',
                  '172.16.0.3-172.16.0.5',
@@ -265,7 +265,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'role': 'ceph-osd', 'priority': 500},
             {'role': 'other', 'priority': 500}
         ]
-        self.assertEquals(expected_priorities, nodes)
+        self.assertEqual(expected_priorities, nodes)
 
 
 class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
@@ -322,7 +322,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'role': 'ceph-osd', 'priority': 900},
             {'role': 'other', 'priority': 900}
         ]
-        self.assertEquals(expected_priorities, nodes)
+        self.assertEqual(expected_priorities, nodes)
 
     def test_set_primary_controller_priority_not_depend_on_nodes_order(self):
         controllers = filter(lambda n: 'controller' in n.roles, self.env.nodes)
@@ -335,8 +335,8 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             self.cluster, reverse_sorted_controllers)
 
         high_priority = sorted(result_nodes, key=itemgetter('priority'))[0]
-        self.assertEquals(high_priority['role'], 'primary-controller')
-        self.assertEquals(
+        self.assertEqual(high_priority['role'], 'primary-controller')
+        self.assertEqual(
             int(high_priority['uid']),
             expected_primary_controller.id)
 
@@ -345,29 +345,29 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
         for node in serialized_nodes:
             # Each node has swift_zone
-            self.assertEquals(node['swift_zone'], node['uid'])
+            self.assertEqual(node['swift_zone'], node['uid'])
 
     def test_get_common_attrs(self):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
-        self.assertEquals(attrs['management_vip'], '192.168.0.8')
-        self.assertEquals(attrs['public_vip'], '172.16.0.9')
+        self.assertEqual(attrs['management_vip'], '192.168.0.8')
+        self.assertEqual(attrs['public_vip'], '172.16.0.9')
 
         # last_contrller
         controllers = self.get_controllers(self.cluster.id)
-        self.assertEquals(attrs['last_controller'],
-                          'node-%d' % controllers[-1].id)
+        self.assertEqual(attrs['last_controller'],
+                         'node-%d' % controllers[-1].id)
 
         # primary_controller
         controllers = self.filter_by_role(attrs['nodes'], 'primary-controller')
-        self.assertEquals(controllers[0]['role'], 'primary-controller')
+        self.assertEqual(controllers[0]['role'], 'primary-controller')
 
         # primary_mongo
         mongo_nodes = self.filter_by_role(attrs['nodes'], 'primary-mongo')
-        self.assertEquals(mongo_nodes[-1]['role'], 'primary-mongo')
+        self.assertEqual(mongo_nodes[-1]['role'], 'primary-mongo')
 
         # mountpoints and mp attrs
-        self.assertEquals(
+        self.assertEqual(
             attrs['mp'],
             [{'point': '1', 'weight': '1'},
              {'point': '2', 'weight': '2'}])
@@ -399,7 +399,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         return cluster_db
 
     def assert_roles_flattened(self, nodes):
-        self.assertEquals(len(nodes), 6)
+        self.assertEqual(len(nodes), 6)
         self.assert_nodes_with_role(nodes, 'controller', 1)
         self.assert_nodes_with_role(nodes, 'compute', 2)
         self.assert_nodes_with_role(nodes, 'cinder', 3)
@@ -415,7 +415,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
             expected_node = self.serializer.serialize_node(
                 node_db, serialized_node['role'])
-            self.assertEquals(serialized_node, expected_node)
+            self.assertEqual(serialized_node, expected_node)
 
     def test_serialize_node(self):
         node = self.env.create_node(
@@ -425,12 +425,12 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         node_db = self.db.query(Node).get(node['id'])
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
 
-        self.assertEquals(serialized_data['role'], 'controller')
-        self.assertEquals(serialized_data['uid'], str(node_db.id))
-        self.assertEquals(serialized_data['status'], node_db.status)
-        self.assertEquals(serialized_data['online'], node_db.online)
-        self.assertEquals(serialized_data['fqdn'],
-                          'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
+        self.assertEqual(serialized_data['role'], 'controller')
+        self.assertEqual(serialized_data['uid'], str(node_db.id))
+        self.assertEqual(serialized_data['status'], node_db.status)
+        self.assertEqual(serialized_data['online'], node_db.online)
+        self.assertEqual(serialized_data['fqdn'],
+                         'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
 
     def test_node_list(self):
         node_list = self.serializer.get_common_attrs(self.cluster)['nodes']
@@ -441,13 +441,13 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         # Check common attrs
         for node in node_list:
             node_db = self.db.query(Node).get(int(node['uid']))
-            self.assertEquals(node['public_netmask'], '255.255.255.0')
-            self.assertEquals(node['internal_netmask'], '255.255.255.0')
-            self.assertEquals(node['storage_netmask'], '255.255.255.0')
-            self.assertEquals(node['uid'], str(node_db.id))
-            self.assertEquals(node['name'], 'node-%d' % node_db.id)
-            self.assertEquals(node['fqdn'], 'node-%d.%s' %
-                                            (node_db.id, settings.DNS_DOMAIN))
+            self.assertEqual(node['public_netmask'], '255.255.255.0')
+            self.assertEqual(node['internal_netmask'], '255.255.255.0')
+            self.assertEqual(node['storage_netmask'], '255.255.255.0')
+            self.assertEqual(node['uid'], str(node_db.id))
+            self.assertEqual(node['name'], 'node-%d' % node_db.id)
+            self.assertEqual(node['fqdn'], 'node-%d.%s' %
+                                           (node_db.id, settings.DNS_DOMAIN))
 
         # Check uncommon attrs
         node_uids = sorted(set([n['uid'] for n in node_list]))
@@ -472,12 +472,12 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 nodes = self.filter_by_role(node_list, role)
                 node = self.filter_by_uid(nodes, attrs['uid'])[0]
 
-                self.assertEquals(attrs['internal_address'],
-                                  node['internal_address'])
-                self.assertEquals(attrs['public_address'],
-                                  node['public_address'])
-                self.assertEquals(attrs['storage_address'],
-                                  node['storage_address'])
+                self.assertEqual(attrs['internal_address'],
+                                 node['internal_address'])
+                self.assertEqual(attrs['public_address'],
+                                 node['public_address'])
+                self.assertEqual(attrs['storage_address'],
+                                 node['storage_address'])
 
     def test_neutron_l3_gateway(self):
         cluster = self.create_env('ha_compact', 'gre')
@@ -494,7 +494,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         pd_nets = facts[0]["quantum_settings"]["predefined_networks"]
-        self.assertEquals(
+        self.assertEqual(
             pd_nets["net04_ext"]["L3"]["gateway"],
             test_gateway
         )
@@ -504,11 +504,11 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         for fact in facts:
-            self.assertEquals(
+            self.assertEqual(
                 fact['quantum_settings']['L2']['segmentation_type'], 'gre')
-            self.assertEquals(
+            self.assertEqual(
                 'br-prv' in fact['network_scheme']['endpoints'], False)
-            self.assertEquals(
+            self.assertEqual(
                 'private' in (fact['network_scheme']['roles']), False)
 
     def _create_cluster_for_vlan_splinters(self, segment_type='gre'):
@@ -571,8 +571,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable
-        self.assertEquals(editable_attrs['vlan_splinters']['vswitch']['value'],
-                          'some_text')
+        self.assertEqual(editable_attrs['vlan_splinters']['vswitch']['value'],
+                         'some_text')
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
         interfaces = node['network_scheme']['interfaces']
@@ -590,8 +590,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable
-        self.assertEquals(editable_attrs['vlan_splinters']['vswitch']['value'],
-                          'disabled')
+        self.assertEqual(editable_attrs['vlan_splinters']['vswitch']['value'],
+                         'disabled')
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
         interfaces = node['network_scheme']['interfaces']
@@ -599,7 +599,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertIn('L2', iface_attrs)
             L2_attrs = iface_attrs['L2']
             self.assertIn('vlan_splinters', L2_attrs)
-            self.assertEquals(L2_attrs['vlan_splinters'], 'off')
+            self.assertEqual(L2_attrs['vlan_splinters'], 'off')
             self.assertNotIn('trunks', L2_attrs)
 
     def test_kernel_lt_vlan_splinters(self):
@@ -617,8 +617,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
         cluster = self.db.query(Cluster).get(cluster_id)
         editable_attrs = cluster.attributes.editable
-        self.assertEquals(editable_attrs['vlan_splinters']['vswitch']['value'],
-                          'kernel_lt')
+        self.assertEqual(editable_attrs['vlan_splinters']['vswitch']['value'],
+                         'kernel_lt')
 
         node = self.serializer.serialize(cluster, cluster.nodes)[0]
         interfaces = node['network_scheme']['interfaces']
@@ -626,7 +626,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertIn('L2', iface_attrs)
             L2_attrs = iface_attrs['L2']
             self.assertIn('vlan_splinters', L2_attrs)
-            self.assertEquals(L2_attrs['vlan_splinters'], 'off')
+            self.assertEqual(L2_attrs['vlan_splinters'], 'off')
             self.assertNotIn('trunks', L2_attrs)
 
     def test_hard_vlan_splinters_in_gre(self):
@@ -648,14 +648,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertIn('L2', iface_attrs)
             L2_attrs = iface_attrs['L2']
             self.assertIn('vlan_splinters', L2_attrs)
-            self.assertEquals(L2_attrs['vlan_splinters'], 'auto')
+            self.assertEqual(L2_attrs['vlan_splinters'], 'auto')
             self.assertIn('trunks', L2_attrs)
             self.assertIn(0, L2_attrs['trunks'])
             map(
                 lambda n: vlan_set.remove(n) if n else None,
                 L2_attrs['trunks']
             )
-        self.assertEquals(len(vlan_set), 0)
+        self.assertEqual(len(vlan_set), 0)
 
     def test_hard_vlan_splinters_in_vlan(self):
         cluster = self._create_cluster_for_vlan_splinters('vlan')
@@ -680,14 +680,14 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertIn('L2', iface_attrs)
             L2_attrs = iface_attrs['L2']
             self.assertIn('vlan_splinters', L2_attrs)
-            self.assertEquals(L2_attrs['vlan_splinters'], 'auto')
+            self.assertEqual(L2_attrs['vlan_splinters'], 'auto')
             self.assertIn('trunks', L2_attrs)
             self.assertIn(0, L2_attrs['trunks'])
             map(
                 lambda n: vlan_set.remove(n) if n else None,
                 L2_attrs['trunks']
             )
-        self.assertEquals(len(vlan_set), 0)
+        self.assertEqual(len(vlan_set), 0)
 
     def test_soft_vlan_splinters_in_vlan(self):
         cluster = self._create_cluster_for_vlan_splinters('vlan')
@@ -705,9 +705,9 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             self.assertIn('L2', iface_attrs)
             L2_attrs = iface_attrs['L2']
             self.assertIn('vlan_splinters', L2_attrs)
-            self.assertEquals(L2_attrs['vlan_splinters'], 'auto')
+            self.assertEqual(L2_attrs['vlan_splinters'], 'auto')
             self.assertIn('trunks', L2_attrs)
-            self.assertEquals(L2_attrs['trunks'], [0])
+            self.assertEqual(L2_attrs['trunks'], [0])
 
 
 class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
@@ -746,25 +746,25 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
         for node in serialized_nodes:
             # Each node has swift_zone
-            self.assertEquals(node['swift_zone'], node['uid'])
+            self.assertEqual(node['swift_zone'], node['uid'])
 
     def test_get_common_attrs(self):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
-        self.assertEquals(attrs['management_vip'], '192.168.0.7')
-        self.assertEquals(attrs['public_vip'], '172.16.0.8')
+        self.assertEqual(attrs['management_vip'], '192.168.0.7')
+        self.assertEqual(attrs['public_vip'], '172.16.0.8')
 
         # last_contrller
         controllers = self.get_controllers(self.cluster.id)
-        self.assertEquals(attrs['last_controller'],
-                          'node-%d' % controllers[-1].id)
+        self.assertEqual(attrs['last_controller'],
+                         'node-%d' % controllers[-1].id)
 
         # primary_controller
         controllers = self.filter_by_role(attrs['nodes'], 'primary-controller')
-        self.assertEquals(controllers[0]['role'], 'primary-controller')
+        self.assertEqual(controllers[0]['role'], 'primary-controller')
 
         # mountpoints and mp attrs
-        self.assertEquals(
+        self.assertEqual(
             attrs['mp'],
             [{'point': '1', 'weight': '1'},
              {'point': '2', 'weight': '2'}])
@@ -931,7 +931,7 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
         cluster = self.create_env()
         ha_nodes = DeploymentHASerializer.serialize_nodes(cluster.nodes)
         mn_nodes = DeploymentMultinodeSerializer.serialize_nodes(cluster.nodes)
-        self.assertEquals(mn_nodes, ha_nodes)
+        self.assertEqual(mn_nodes, ha_nodes)
 
     def test_primary_node_selected(self):
         cluster = self.create_env()
@@ -941,8 +941,8 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
         def primary_nodes_count(nodes):
             return len(filter(lambda x: x['role'] == 'primary-mongo', nodes))
 
-        self.assertEquals(1, primary_nodes_count(ha_nodes))
-        self.assertEquals(1, primary_nodes_count(mn_nodes))
+        self.assertEqual(1, primary_nodes_count(ha_nodes))
+        self.assertEqual(1, primary_nodes_count(mn_nodes))
 
 
 class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
@@ -970,7 +970,7 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
         cluster_id = self.env.create(
             cluster_kwargs={
@@ -985,20 +985,20 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
         TaskHelper.prepare_for_deployment(cluster.nodes)
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
-        self.assertEquals(1, len(facts))
+        self.assertEqual(1, len(facts))
         fact = facts[0]
-        self.assertEquals(
+        self.assertEqual(
             fact['repo_metadata'],
             {
                 'nailgun': 'http://10.20.0.2:8080'
                            '/centos-5.0/centos/fuelweb/x86_64/'
             }
         )
-        self.assertEquals(
+        self.assertEqual(
             fact['puppet_modules_source'],
             'rsync://10.20.0.2/puppet/release/5.0/modules'
         )
-        self.assertEquals(
+        self.assertEqual(
             fact['puppet_manifests_source'],
             'rsync://10.20.0.2/puppet/release/5.0/manifests'
         )

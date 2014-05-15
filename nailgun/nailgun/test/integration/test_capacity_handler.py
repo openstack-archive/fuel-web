@@ -31,7 +31,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.put(
             reverse('CapacityLogHandler'),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
 
         capacity_task = self.db.query(Task).filter_by(
             name="capacity_log"
@@ -62,15 +62,15 @@ class TestHandlers(BaseIntegrationTest):
         for field in report_fields:
             self.assertTrue(field in report)
 
-        self.assertEquals(report['allocation_stats']['allocated'], 0)
-        self.assertEquals(report['allocation_stats']['unallocated'], 1)
+        self.assertEqual(report['allocation_stats']['allocated'], 0)
+        self.assertEqual(report['allocation_stats']['unallocated'], 1)
 
     @patch('nailgun.api.handlers.version.settings.VERSION', {
         'release': '0.1b'})
     def test_capacity_csv_checksum(self):
         self._create_capacity_log()
         resp = self.app.get(reverse('CapacityLogCsvHandler'))
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
 
         response_stream = StringIO(resp.body)
         checksum = md5(''.join(response_stream.readlines()[:-2])).hexdigest()
@@ -114,19 +114,19 @@ class TestHandlers(BaseIntegrationTest):
         capacity_log = self._get_capacity_log_json()
         report = capacity_log['report']
 
-        self.assertEquals(report['allocation_stats']['allocated'], 6)
-        self.assertEquals(report['allocation_stats']['unallocated'], 0)
+        self.assertEqual(report['allocation_stats']['allocated'], 6)
+        self.assertEqual(report['allocation_stats']['unallocated'], 0)
 
-        self.assertEquals(report['roles_stat']['controller'], 2)
-        self.assertEquals(report['roles_stat']['cinder+controller'], 1)
-        self.assertEquals(report['roles_stat']['cinder+compute'], 1)
-        self.assertEquals(report['roles_stat']['compute'], 1)
-        self.assertEquals(report['roles_stat']['cinder'], 1)
+        self.assertEqual(report['roles_stat']['controller'], 2)
+        self.assertEqual(report['roles_stat']['cinder+controller'], 1)
+        self.assertEqual(report['roles_stat']['cinder+compute'], 1)
+        self.assertEqual(report['roles_stat']['compute'], 1)
+        self.assertEqual(report['roles_stat']['cinder'], 1)
 
-        self.assertEquals(len(report['environment_stats']), 1)
+        self.assertEqual(len(report['environment_stats']), 1)
         test_env = report['environment_stats'][0]
-        self.assertEquals(test_env['cluster'], 'test_name')
-        self.assertEquals(test_env['nodes'], 6)
+        self.assertEqual(test_env['cluster'], 'test_name')
+        self.assertEqual(test_env['nodes'], 6)
 
     @fake_tasks(godmode=True)
     def test_capacity_csv_log_with_unicode(self):
@@ -143,4 +143,4 @@ class TestHandlers(BaseIntegrationTest):
 
         self._create_capacity_log()
         resp = self.app.get(reverse('CapacityLogCsvHandler'))
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)

@@ -27,9 +27,9 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ReleaseCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals([], response)
+        self.assertEqual([], response)
 
     def test_release_creation(self):
         resp = self.app.post(
@@ -41,7 +41,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201)
 
     def test_release_create(self):
         release_name = "OpenStack"
@@ -85,7 +85,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201)
 
         resp = self.app.post(
             reverse('ReleaseCollectionHandler'),
@@ -115,14 +115,14 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status_code, 409)
+        self.assertEqual(resp.status_code, 409)
 
         release_from_db = self.db.query(Release).filter_by(
             name=release_name,
             version=release_version,
             description=release_description
         ).all()
-        self.assertEquals(len(release_from_db), 1)
+        self.assertEqual(len(release_from_db), 1)
 
     def test_release_create_already_exist(self):
         release_name = "OpenStack"
@@ -166,7 +166,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201)
 
         resp = self.app.post(
             reverse('ReleaseCollectionHandler'),
@@ -196,7 +196,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status_code, 409)
+        self.assertEqual(resp.status_code, 409)
 
     def test_release_w_orch_data_create(self):
         release_name = "OpenStack"
@@ -251,13 +251,13 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201)
 
         resp = self.app.get(
             reverse("ReleaseCollectionHandler"),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
-        self.assertEquals(orch_data, response[0]["orchestrator_data"])
+        self.assertEqual(1, len(response))
+        self.assertEqual(orch_data, response[0]["orchestrator_data"])

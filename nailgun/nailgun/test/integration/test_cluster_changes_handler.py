@@ -330,8 +330,8 @@ class TestHandlers(BaseIntegrationTest):
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args), 2)
-        self.assertEquals(len(args[1]), 2)
+        self.assertEqual(len(args), 2)
+        self.assertEqual(len(args[1]), 2)
 
         self.datadiff(args[1][0], provision_msg)
         self.datadiff(args[1][1], deployment_msg)
@@ -729,8 +729,8 @@ class TestHandlers(BaseIntegrationTest):
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args), 2)
-        self.assertEquals(len(args[1]), 2)
+        self.assertEqual(len(args), 2)
+        self.assertEqual(len(args[1]), 2)
 
         self.datadiff(args[1][0], provision_msg)
         self.datadiff(args[1][1], deployment_msg)
@@ -766,8 +766,8 @@ class TestHandlers(BaseIntegrationTest):
         # remove_nodes method call [0][0][1]
         n_rpc_remove = nailgun.task.task.rpc.cast. \
             call_args_list[0][0][1]['args']['nodes']
-        self.assertEquals(len(n_rpc_remove), 1)
-        self.assertEquals(n_rpc_remove[0]['uid'], self.env.nodes[1].id)
+        self.assertEqual(len(n_rpc_remove), 1)
+        self.assertEqual(n_rpc_remove[0]['uid'], self.env.nodes[1].id)
 
         # provision method call [1][0][1][0]
         n_rpc_provision = nailgun.task.manager.rpc.cast. \
@@ -778,8 +778,8 @@ class TestHandlers(BaseIntegrationTest):
         # 'status' = 'error' and 'error_type' = 'provision'
         # So, only one node from our list will be appended to
         # provision list.
-        self.assertEquals(len(n_rpc_provision), 1)
-        self.assertEquals(
+        self.assertEqual(len(n_rpc_provision), 1)
+        self.assertEqual(
             n_rpc_provision[0]['name'],
             TaskHelper.make_slave_name(self.env.nodes[0].id)
         )
@@ -787,8 +787,8 @@ class TestHandlers(BaseIntegrationTest):
         # deploy method call [1][0][1][1]
         n_rpc_deploy = nailgun.task.manager.rpc.cast.call_args_list[
             1][0][1][1]['args']['deployment_info']
-        self.assertEquals(len(n_rpc_deploy), 1)
-        self.assertEquals(n_rpc_deploy[0]['uid'], str(self.env.nodes[0].id))
+        self.assertEqual(len(n_rpc_deploy), 1)
+        self.assertEqual(n_rpc_deploy[0]['uid'], str(self.env.nodes[0].id))
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -812,23 +812,23 @@ class TestHandlers(BaseIntegrationTest):
                                   ['172.16.0.20', '172.16.0.22']]})
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         self.env.launch_deployment()
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args), 2)
-        self.assertEquals(len(args[1]), 2)
+        self.assertEqual(len(args), 2)
+        self.assertEqual(len(args[1]), 2)
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
-        self.assertEquals(len(n_rpc_deploy), 5)
+        self.assertEqual(len(n_rpc_deploy), 5)
         pub_ips = ['172.16.0.11', '172.16.0.12', '172.16.0.13',
                    '172.16.0.20', '172.16.0.21']
         for n in n_rpc_deploy:
             for i, n_common_args in enumerate(n['nodes']):
-                self.assertEquals(n_common_args['public_address'], pub_ips[i])
+                self.assertEqual(n_common_args['public_address'], pub_ips[i])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -852,24 +852,24 @@ class TestHandlers(BaseIntegrationTest):
                                   ['172.16.0.20', '172.16.0.22']]})
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         self.env.launch_deployment()
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args), 2)
-        self.assertEquals(len(args[1]), 2)
+        self.assertEqual(len(args), 2)
+        self.assertEqual(len(args[1]), 2)
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
-        self.assertEquals(len(n_rpc_deploy), 5)
+        self.assertEqual(len(n_rpc_deploy), 5)
         pub_ips = ['172.16.0.11', '172.16.0.12',
                    '172.16.0.20', '172.16.0.21', '172.16.0.22']
         for n in n_rpc_deploy:
-            self.assertEquals(n['public_vip'], '172.16.0.10')
+            self.assertEqual(n['public_vip'], '172.16.0.10')
             for i, n_common_args in enumerate(n['nodes']):
-                self.assertEquals(n_common_args['public_address'], pub_ips[i])
+                self.assertEqual(n_common_args['public_address'], pub_ips[i])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -892,22 +892,22 @@ class TestHandlers(BaseIntegrationTest):
             [['172.16.10.130', '172.16.10.254']]
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         self.env.launch_deployment()
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args), 2)
-        self.assertEquals(len(args[1]), 2)
+        self.assertEqual(len(args), 2)
+        self.assertEqual(len(args[1]), 2)
 
         n_rpc_deploy = args[1][1]['args']['deployment_info']
-        self.assertEquals(len(n_rpc_deploy), 2)
+        self.assertEqual(len(n_rpc_deploy), 2)
         pub_ips = ['172.16.10.11', '172.16.10.12']
         for n in n_rpc_deploy:
             for i, n_common_args in enumerate(n['nodes']):
-                self.assertEquals(n_common_args['public_address'], pub_ips[i])
+                self.assertEqual(n_common_args['public_address'], pub_ips[i])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -927,14 +927,14 @@ class TestHandlers(BaseIntegrationTest):
         pub.update({'ip_ranges': [['172.16.0.10', '172.16.0.11']]})
 
         resp = self.env.neutron_networks_put(self.env.clusters[0].id, net_data)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = json.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')
 
         task = self.env.launch_deployment()
 
-        self.assertEquals(task.status, 'error')
-        self.assertEquals(
+        self.assertEqual(task.status, 'error')
+        self.assertEqual(
             task.message,
             'Not enough IP addresses. Public network must have at least '
             '3 IP addresses for the current environment.')
@@ -971,8 +971,8 @@ class TestHandlers(BaseIntegrationTest):
 
         task = self.env.launch_deployment()
 
-        self.assertEquals(task.status, 'error')
-        self.assertEquals(
+        self.assertEqual(task.status, 'error')
+        self.assertEqual(
             task.message,
             'Not enough IP addresses. Public network must have at least '
             '3 IP addresses for the current environment.')
@@ -995,8 +995,8 @@ class TestHandlers(BaseIntegrationTest):
 
         task = self.env.launch_deployment()
 
-        self.assertEquals(task.status, 'error')
-        self.assertEquals(
+        self.assertEqual(task.status, 'error')
+        self.assertEqual(
             task.message,
             "Node '%s' has insufficient disk space" %
             node_db.human_readable_name)
@@ -1012,8 +1012,8 @@ class TestHandlers(BaseIntegrationTest):
 
         task = self.env.launch_deployment()
 
-        self.assertEquals(task.status, 'error')
-        self.assertEquals(
+        self.assertEqual(task.status, 'error')
+        self.assertEqual(
             task.message,
             "Not enough controllers, multinode mode requires at least 1 "
             "controller")
@@ -1025,8 +1025,8 @@ class TestHandlers(BaseIntegrationTest):
 
         task = self.env.launch_deployment()
 
-        self.assertEquals(task.status, 'error')
-        self.assertEquals(
+        self.assertEqual(task.status, 'error')
+        self.assertEqual(
             task.message,
             'Not enough controllers, ha_compact '
             'mode requires at least 1 controller')
@@ -1049,8 +1049,8 @@ class TestHandlers(BaseIntegrationTest):
 
         task = self.env.launch_deployment()
 
-        self.assertEquals(task.status, 'error')
-        self.assertEquals(
+        self.assertEqual(task.status, 'error')
+        self.assertEqual(
             task.message,
             'Number of OSD nodes (1) cannot be less than '
             'the Ceph object replication factor (3). '

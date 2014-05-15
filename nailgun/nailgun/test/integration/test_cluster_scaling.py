@@ -38,10 +38,10 @@ class TestClusterScaling(BaseIntegrationTest):
                 {'roles': ['controller'], 'pending_addition': True}])
 
         supertask = self.env.launch_deployment()
-        self.assertEquals(supertask.name, 'deploy')
+        self.assertEqual(supertask.name, 'deploy')
 
         self.env.wait_ready(supertask)
-        self.assertEquals(supertask.status, 'ready')
+        self.assertEqual(supertask.status, 'ready')
 
     @fake_tasks()
     def test_deploy_grow_controllers(self):
@@ -53,20 +53,20 @@ class TestClusterScaling(BaseIntegrationTest):
 
         # We have to build 2 new controllers
         n_nodes = TaskHelper.nodes_to_provision(cluster)
-        self.assertEquals(len(n_nodes), 2)
+        self.assertEqual(len(n_nodes), 2)
 
         # All controllers must re-deploy (run puppet)
         r_nodes = TaskHelper.nodes_to_deploy(cluster)
-        self.assertEquals(len(r_nodes), 3)
+        self.assertEqual(len(r_nodes), 3)
 
         supertask = self.env.launch_deployment()
-        self.assertEquals(supertask.name, 'deploy')
+        self.assertEqual(supertask.name, 'deploy')
 
         self.env.wait_ready(supertask)
-        self.assertEquals(supertask.status, 'ready')
+        self.assertEqual(supertask.status, 'ready')
 
         controllers = self.filter_by_role(cluster.nodes, 'controller')
-        self.assertEquals(len(controllers), 3)
+        self.assertEqual(len(controllers), 3)
 
     @fake_tasks()
     def test_deploy_shrink_controllers(self):
@@ -78,13 +78,13 @@ class TestClusterScaling(BaseIntegrationTest):
 
         # Check that we are deleting 2 controllers
         d_nodes = TaskHelper.nodes_to_delete(cluster)
-        self.assertEquals(len(d_nodes), 2)
+        self.assertEqual(len(d_nodes), 2)
 
         supertask = self.env.launch_deployment()
-        self.assertEquals(supertask.name, 'deploy')
+        self.assertEqual(supertask.name, 'deploy')
 
         self.env.wait_ready(supertask)
-        self.assertEquals(supertask.status, 'ready')
+        self.assertEqual(supertask.status, 'ready')
 
         controllers = self.filter_by_role(cluster.nodes, 'controller')
-        self.assertEquals(len(controllers), 1)
+        self.assertEqual(len(controllers), 1)

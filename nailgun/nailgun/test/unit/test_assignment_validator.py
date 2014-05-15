@@ -28,13 +28,13 @@ class TestAssignmentValidator(BaseUnitTest):
         pattern = 'parent.child.value'
         result = NodeAssignmentValidator._search_in_settings(self.settings,
                                                              pattern)
-        self.assertEquals(result, 1)
+        self.assertEqual(result, 1)
 
     def test_search_in_settings_non_exisxt(self):
         pattern = 'parent.fake.value'
         result = NodeAssignmentValidator._search_in_settings(self.settings,
                                                              pattern)
-        self.assertEquals(result, None)
+        self.assertEqual(result, None)
 
     def test_check_roles_requirement(self):
         roles = ['test']

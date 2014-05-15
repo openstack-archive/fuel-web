@@ -44,7 +44,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             json.dumps(assignment_data),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         self.assertEqual(node.cluster, cluster)
         self.datadiff(
             node.pending_roles,
@@ -60,7 +60,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(400, resp.status_code)
+        self.assertEqual(400, resp.status_code)
 
     def test_unassignment(self):
         cluster = self.env.create(

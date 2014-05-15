@@ -58,4 +58,4 @@ class TestDBRefresh(TestCase):
         self.db.query(Node).filter(
             Node.id == node.id
         ).first()
-        self.assertEquals(node.mac, u"12345678")
+        self.assertEqual(node.mac, u"12345678")

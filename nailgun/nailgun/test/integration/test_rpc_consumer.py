@@ -151,7 +151,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
             reverse('TaskHandler', kwargs={'obj_id': task.id}),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         task = json.loads(resp.body)
         self.assertEqual(task['status'], "error")
         error_nodes = [{'uid': node1.id, 'interface': 'eth0',
@@ -230,8 +230,8 @@ class TestVerifyNetworks(BaseIntegrationTest):
                             {'uid': node1.id, 'networks': nets_sent}]}
         self.receiver.verify_networks_resp(**kwargs)
         self.db.refresh(task)
-        self.assertEquals(task.status, "ready")
-        self.assertEquals(task.message, '')
+        self.assertEqual(task.status, "ready")
+        self.assertEqual(task.message, '')
 
     def test_verify_networks_with_dhcp_subtask(self):
         """Test verifies that when dhcp subtask is ready and
@@ -894,7 +894,7 @@ class TestConsumer(BaseIntegrationTest):
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
         nodes_db = self.db.query(Node).all()
-        self.assertEquals(len(nodes_db), 0)
+        self.assertEqual(len(nodes_db), 0)
 
     def test_remove_nodes_resp_failure(self):
         self.env.create(
@@ -928,8 +928,8 @@ class TestConsumer(BaseIntegrationTest):
         nodes_db = self.db.query(Node).all()
         error_node = self.db.query(Node).get(node1.id)
         self.db.refresh(error_node)
-        self.assertEquals(len(nodes_db), 2)
-        self.assertEquals(error_node.status, "error")
+        self.assertEqual(len(nodes_db), 2)
+        self.assertEqual(error_node.status, "error")
 
     def test_remove_cluster_resp(self):
         self.env.create(
@@ -972,27 +972,27 @@ class TestConsumer(BaseIntegrationTest):
 
         nodes_db = self.db.query(Node)\
             .filter_by(cluster_id=cluster_id).all()
-        self.assertEquals(len(nodes_db), 0)
+        self.assertEqual(len(nodes_db), 0)
 
         ip_db = self.db.query(IPAddr)\
             .filter(IPAddr.node.in_([node1_id, node2_id])).all()
-        self.assertEquals(len(ip_db), 0)
+        self.assertEqual(len(ip_db), 0)
 
         attrs_db = self.db.query(Attributes)\
             .filter_by(cluster_id=cluster_id).all()
-        self.assertEquals(len(attrs_db), 0)
+        self.assertEqual(len(attrs_db), 0)
 
         nots_db = self.db.query(Notification)\
             .filter_by(cluster_id=cluster_id).all()
-        self.assertEquals(len(nots_db), 0)
+        self.assertEqual(len(nots_db), 0)
 
         nets_db = self.db.query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster_id).all()
-        self.assertEquals(len(nets_db), 0)
+        self.assertEqual(len(nets_db), 0)
 
         task_db = self.db.query(Task)\
             .filter_by(cluster_id=cluster_id).all()
-        self.assertEquals(len(task_db), 0)
+        self.assertEqual(len(task_db), 0)
 
         cluster_db = self.db.query(Cluster).get(cluster_id)
         self.assertIsNone(cluster_db)

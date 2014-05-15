@@ -80,4 +80,4 @@ class TestTaskHandlers(BaseTestCase):
             ) + "?force=1",
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 204)
+        self.assertEqual(resp.status_code, 204)

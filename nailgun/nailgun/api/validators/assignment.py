@@ -69,6 +69,13 @@ class NodeAssignmentValidator(AssignmentValidator):
         cls.check_all_nodes(nodes, received_node_ids)
         cls.check_if_already_done(nodes)
         cluster = objects.Cluster.get_by_uid(cluster_id)
+
+        if not cluster:
+            raise errors.InvalidData(
+                u"Invalid cluster ID: {0}".format(cluster_id),
+                log_message=True
+            )
+
         for node_id in received_node_ids:
             cls.validate_roles(
                 cluster,

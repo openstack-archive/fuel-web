@@ -955,6 +955,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             if (!this.renameable || this.renaming) {return;}
             $('html').off(this.eventNamespace);
             $('html').on(this.eventNamespace, _.after(2, _.bind(function(e) {
+                 if (e.target.type == "text") {
+                     e.preventDefault();
+                 }
                 if (!$(e.target).closest(this.$('.name input')).length) {
                     this.endNodeRenaming();
                 }

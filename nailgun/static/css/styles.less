@@ -693,17 +693,19 @@ label {cursor: default;}
           display: inline;
           cursor: pointer;
           display: inline;
-          .font-layout-mixin(@font-size-small-2, @font-color-dark, normal, null, 16px);
+          .font-layout-mixin(@font-size-base, @font-color-dark, normal, null, 16px);
           border-bottom: 1px dotted @fuel-light-2;
         }
         p {
           display: inline;
           .font-layout-mixin(@font-size-big-1, @color-nodes-node-names, normal, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25));
           border-bottom: 1px dotted @fuel-light-1;
-          &.node-renameable:hover {
-            border-bottom: 1px dotted #0178b3;
-            color: #0178b3;
-            cursor: pointer;
+          &.node-renameable {
+            border-bottom: 1px dotted @fuel-light-1;
+            &:hover {
+              border-bottom-color: @fuel-dark-blue;
+              color: @fuel-dark-blue;
+            }
           }
         }
       }

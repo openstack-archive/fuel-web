@@ -50,12 +50,12 @@ class TestNodeDeletion(BaseIntegrationTest):
                 kwargs={'obj_id': node.id}),
             headers=self.default_headers
         )
-        self.assertEquals(204, resp.status_code)
+        self.assertEqual(204, resp.status_code)
 
         node_try = self.db.query(Node).filter_by(
             cluster_id=cluster.id
         ).first()
-        self.assertEquals(node_try, None)
+        self.assertEqual(node_try, None)
 
         management_net = self.db.query(NetworkGroup).\
             filter(NetworkGroup.cluster_id == cluster.id).filter_by(
@@ -64,5 +64,5 @@ class TestNodeDeletion(BaseIntegrationTest):
         ipaddrs = self.db.query(IPAddr).\
             filter_by(node=node.id).all()
 
-        self.assertEquals(list(management_net.nodes), [])
-        self.assertEquals(list(ipaddrs), [])
+        self.assertEqual(list(management_net.nodes), [])
+        self.assertEqual(list(ipaddrs), [])

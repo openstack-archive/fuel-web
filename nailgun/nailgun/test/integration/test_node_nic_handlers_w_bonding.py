@@ -48,7 +48,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             reverse("NodeNICsHandler",
                     kwargs={"node_id": self.env.nodes[0]["id"]}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         self.data = jsonutils.loads(resp.body)
         self.admin_nic, self.other_nic, self.empty_nic = None, None, None
         for nic in self.data:
@@ -74,8 +74,8 @@ class TestNodeNICsBonding(BaseIntegrationTest):
     def node_nics_put_check_error(self, message):
         for put_func in (self.put_single, self.put_collection):
             resp = put_func()
-            self.assertEquals(resp.status_code, 400)
-            self.assertEquals(resp.body, message)
+            self.assertEqual(resp.status_code, 400)
+            self.assertEqual(resp.body, message)
 
     def nics_bond_create(self, put_func):
         self.data.append({
@@ -90,20 +90,20 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.other_nic["assigned_networks"] = []
 
         resp = put_func()
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.env.node_nics_get(self.env.nodes[0]["id"])
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         data = jsonutils.loads(resp.body)
         bonds = filter(
             lambda iface: iface["type"] == NETWORK_INTERFACE_TYPES.bond,
             data)
-        self.assertEquals(len(bonds), 1)
+        self.assertEqual(len(bonds), 1)
         self.assertEqual(bonds[0]["name"], 'ovs-bond0')
 
     def nics_bond_remove(self, put_func):
         resp = self.env.node_nics_get(self.env.nodes[0]["id"])
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         self.data = jsonutils.loads(resp.body)
         for nic in self.data:
             if nic["type"] == NETWORK_INTERFACE_TYPES.bond:
@@ -120,7 +120,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
         self.data.remove(bond)
 
         resp = put_func()
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
     def test_nics_bond_delete(self):
         for put_func in (self.put_single, self.put_collection):
@@ -129,7 +129,7 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             self.nics_bond_remove(put_func)
 
             resp = self.env.node_nics_get(self.env.nodes[0]["id"])
-            self.assertEquals(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
             data = jsonutils.loads(resp.body)
             for nic in data:
                 self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)

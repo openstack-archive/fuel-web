@@ -28,8 +28,8 @@ class TestHandlers(BaseIntegrationTest):
     def test_allocation_stats_unallocated(self):
         self.env.create_node(api=False)
         stats = self._get_allocation_stats()
-        self.assertEquals(stats['total'], 1)
-        self.assertEquals(stats['unallocated'], 1)
+        self.assertEqual(stats['total'], 1)
+        self.assertEqual(stats['unallocated'], 1)
 
     def test_allocation_stats_total(self):
         self.env.create_node(api=False)
@@ -43,5 +43,5 @@ class TestHandlers(BaseIntegrationTest):
         )
 
         stats = self._get_allocation_stats()
-        self.assertEquals(stats['total'], 2)
-        self.assertEquals(stats['unallocated'], 1)
+        self.assertEqual(stats['total'], 2)
+        self.assertEqual(stats['unallocated'], 1)

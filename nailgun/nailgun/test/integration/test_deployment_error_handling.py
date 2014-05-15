@@ -56,7 +56,7 @@ class TestErrors(BaseIntegrationTest):
             sum(map(n_error, self.env.nodes)),
             1
         )
-        self.assertEquals(supertask.cluster.status, 'error')
+        self.assertEqual(supertask.cluster.status, 'error')
 
     @fake_tasks(error="provisioning", error_msg="Terrible error")
     def test_deployment_error_from_orchestrator(self):
@@ -94,7 +94,7 @@ class TestErrors(BaseIntegrationTest):
             sum(map(n_error, self.env.nodes)),
             [1, 2]
         )
-        self.assertEquals(supertask.cluster.status, 'error')
+        self.assertEqual(supertask.cluster.status, 'error')
 
     @fake_tasks(error="deployment")
     def test_deployment_error_during_deployment(self):
@@ -114,7 +114,7 @@ class TestErrors(BaseIntegrationTest):
         n_error = lambda n: (n.status, n.error_type) == ('error', 'deploy')
 
         self.assertEqual(len(map(n_error, self.env.nodes)), 2)
-        self.assertEquals(supertask.cluster.status, 'error')
+        self.assertEqual(supertask.cluster.status, 'error')
 
     @fake_tasks(error="deployment", task_ready=True)
     def test_task_ready_node_error(self):

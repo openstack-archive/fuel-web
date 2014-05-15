@@ -63,7 +63,7 @@ class TestDockerUpgrader(BaseTestCase):
                 retry_interval=1,
                 retries_count=retries_count)
 
-        self.assertEquals(sleep.call_count, retries_count)
+        self.assertEqual(sleep.call_count, retries_count)
         self.called_once(self.docker_mock.create_container)
 
     def test_run_without_errors(self, exec_cmd):
@@ -127,7 +127,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.upgrader.clean_docker_iptables_rules = mock.MagicMock()
         self.docker_mock.containers.return_value = all_images
         self.upgrader.stop_fuel_containers()
-        self.assertEquals(
+        self.assertEqual(
             self.docker_mock.stop.call_args_list, [((3, 10),), ((4, 10),)])
         self.upgrader.clean_docker_iptables_rules.assert_called_once_with(
             ports)
@@ -140,7 +140,7 @@ class TestDockerUpgrader(BaseTestCase):
             {'docker_image': 'image2'}]
 
         self.upgrader.upload_images()
-        self.assertEquals(
+        self.assertEqual(
             exec_mock.call_args_list,
             [(('docker load < "image1"',),),
              (('docker load < "image2"',),)])
@@ -182,10 +182,10 @@ class TestDockerUpgrader(BaseTestCase):
                           'binds': None, 'port_bindings': None,
                           'privileged': False, 'links': []})]
 
-        self.assertEquals(
+        self.assertEqual(
             self.upgrader.create_container.call_args_list,
             create_container_calls)
-        self.assertEquals(
+        self.assertEqual(
             self.upgrader.start_container.call_args_list,
             start_container_calls)
         self.called_once(self.upgrader.run_after_container_creation_command)
@@ -223,7 +223,7 @@ class TestDockerUpgrader(BaseTestCase):
             '2': [],
             '3': ['2']}
 
-        self.assertEquals(actual_graph, expected_graph)
+        self.assertEqual(actual_graph, expected_graph)
 
     def test_get_container_links(self, _):
         fake_containers = [
@@ -232,16 +232,16 @@ class TestDockerUpgrader(BaseTestCase):
             {'id': 'id2', 'container_name': 'container_name2'}]
         self.upgrader.new_release_containers = fake_containers
         links = self.upgrader.get_container_links(fake_containers[0])
-        self.assertEquals(links, [('container_name2', 'alias2')])
+        self.assertEqual(links, [('container_name2', 'alias2')])
 
     def test_get_port_bindings(self, _):
         port_bindings = {'port_bindings': {'53/udp': ['0.0.0.0', 53]}}
         bindings = self.upgrader.get_port_bindings(port_bindings)
-        self.assertEquals({'53/udp': ('0.0.0.0', 53)}, bindings)
+        self.assertEqual({'53/udp': ('0.0.0.0', 53)}, bindings)
 
     def test_get_ports(self, _):
         ports = self.upgrader.get_ports({'ports': [[53, 'udp'], 100]})
-        self.assertEquals([(53, 'udp'), 100], ports)
+        self.assertEqual([(53, 'udp'), 100], ports)
 
     def test_generate_configs(self, _):
         fake_containers = [

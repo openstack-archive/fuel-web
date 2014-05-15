@@ -1096,9 +1096,9 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
         hasChanges: function() {
-            var disks = this.disks.toJSON();
+            var volumes = _.pluck(this.disks.toJSON(), 'volumes');
             return !this.nodes.reduce(function(result, node) {
-                return result && _.isEqual(disks, node.disks.toJSON());
+                return result && _.isEqual(volumes, _.pluck(node.disks.toJSON(), 'volumes'));
             }, true);
         },
         hasValidationErrors: function() {
@@ -1131,14 +1131,13 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
             this.disableControls(true);
             return $.when.apply($, this.nodes.map(function(node) {
-                    return Backbone.sync('update', this.disks, {url: _.result(node, 'url') + '/disks'});
+                    node.disks.each(function(disk, index) {
+                        disk.set({volumes: new models.Volumes(this.disks.at(index).get('volumes').toJSON())});
+                    }, this);
+                    return Backbone.sync('update', node.disks, {url: _.result(node, 'url') + '/disks'});
                 }, this))
                 .done(_.bind(function() {
                     this.model.fetch();
-                    var disks = this.disks.toJSON();
-                    this.nodes.each(function(node) {
-                        node.disks = new models.Disks(_.cloneDeep(disks), {parse: true});
-                    }, this);
                     this.render();
                 }, this))
                 .fail(_.bind(function() {

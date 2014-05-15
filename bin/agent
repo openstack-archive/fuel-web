@@ -527,6 +527,17 @@ def write_data_to_file(logger, filename, data)
   end
 end
 
+def check_file_content(filename)
+  if File.exist?(filename)
+    File.open(filename, 'r') do |fo|
+      text = fo.read
+    end
+  else
+    text = ''
+  end
+  return text
+end
+
 logger = Logger.new(STDOUT)
 logger.level = Logger::DEBUG
 
@@ -551,21 +562,31 @@ agent = NodeAgent.new(logger, url)
 agent.update_state
 
 begin
-  put_res = agent.put
-  # nailgun returns 'Invalid MAC specified' for unregistered nodes
-  if [404, 400].include? put_res.status
+  prev_nailgun_id = check_file_content('/etc/nailgun_uid')
+  if prev_nailgun_id != ''
+    put_res = agent.put
+    if put_res.status == 200
+      new_id = JSON.parse(put_res.body)['id']
+    else
+      logger.error put_res.body
+      exit 1
+    end
+  else
     post_res = agent.post
     if post_res.status == 201
-      new_id = JSON.parse(post_res.body)[0]['id']
+      new_id = JSON.parse(post_res.body)['id']
+    elsif post_res.status == 409
+      put_res = agent.put
+      if put_res.status == 200
+        new_id = JSON.parse(put_res.body)['id']
+      else
+        logger.error put_res.body
+        exit 1
+      end
     else
       logger.error post_res.body
       exit 1
     end
-  elsif put_res.status == 200
-    new_id = JSON.parse(put_res.body)['id']
-  else
-    logger.error put_res.body
-    exit 1
   end
   mc_config = McollectiveConfig.new(logger)
   mc_config.replace_identity(new_id)

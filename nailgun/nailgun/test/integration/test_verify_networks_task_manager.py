@@ -59,7 +59,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         nets = jsonutils.loads(resp.body)
 
         nets['networks'][-1]["vlan_start"] = 500
@@ -76,7 +76,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         nets = jsonutils.loads(resp.body)
 
         admin_ng = self.env.network_manager.get_admin_network_group()
@@ -90,7 +90,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             task.message)
         self.assertIn("admin (PXE)", task.message)
         self.assertIn("fixed", task.message)
-        self.assertEquals(mocked_rpc.called, False)
+        self.assertEqual(mocked_rpc.called, False)
 
     @fake_tasks(fake_rpc=False)
     def test_network_verify_fails_if_untagged_intersection(self, mocked_rpc):
@@ -102,7 +102,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         nets = jsonutils.loads(resp.body)
 
         for net in nets['networks']:
@@ -119,7 +119,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         )
         for n in self.env.nodes:
             self.assertIn('"storage"', task.message)
-        self.assertEquals(mocked_rpc.called, False)
+        self.assertEqual(mocked_rpc.called, False)
 
     @fake_tasks()
     def test_verify_networks_less_than_2_nodes_error(self):
@@ -168,7 +168,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(400, resp.status_code)
+        self.assertEqual(400, resp.status_code)
 
 
 class TestVerifyNetworksDisabled(BaseIntegrationTest):
@@ -257,7 +257,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             reverse('NodeNICsHandler',
                     kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         data = jsonutils.loads(resp.body)
         admin_nic, other_nic, empty_nic = None, None, None
         for nic in data:
@@ -314,7 +314,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         data = jsonutils.loads(resp.body)
         self.assertEqual(
             data['result'],
@@ -365,7 +365,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         self.env.launch_deployment()
         stop_task = self.env.stop_deployment()
         self.env.wait_ready(stop_task, 60)
-        self.assertEquals(self.cluster.status, "stopped")
+        self.assertEqual(self.cluster.status, "stopped")
         verify_task = self.env.launch_verify_networks()
         self.env.wait_ready(verify_task, 60)
 
@@ -379,7 +379,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
         # get nodes NICs for private network
         resp = self.app.get(reverse('NodeCollectionHandler'),
                             headers=self.default_headers)
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         priv_nics = {}
         for node in jsonutils.loads(resp.body):
             for net in node['network_data']:

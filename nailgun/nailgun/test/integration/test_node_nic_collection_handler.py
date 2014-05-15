@@ -34,7 +34,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = jsonutils.loads(resp.body)
         a_nets = filter(lambda nic: nic['mac'] == mac,
                         response)[0]['assigned_networks']
@@ -50,6 +50,6 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeCollectionNICsHandler'),
             jsonutils.dumps(nodes_list),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         new_response = jsonutils.loads(resp.body)
-        self.assertEquals(new_response, nodes_list)
+        self.assertEqual(new_response, nodes_list)

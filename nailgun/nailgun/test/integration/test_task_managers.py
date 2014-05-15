@@ -52,17 +52,17 @@ class TestTaskManagers(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
-        self.assertEquals(supertask.name, 'deploy')
+        self.assertEqual(supertask.name, 'deploy')
         self.assertIn(supertask.status, ('running', 'ready'))
         # we have three subtasks here
         # deletion
         # provision
         # deployment
-        self.assertEquals(len(supertask.subtasks), 3)
+        self.assertEqual(len(supertask.subtasks), 3)
         # provisioning task has less weight then deployment
         provision_task = filter(
             lambda t: t.name == 'provision', supertask.subtasks)[0]
-        self.assertEquals(provision_task.weight, 0.4)
+        self.assertEqual(provision_task.weight, 0.4)
 
         self.env.wait_for_nodes_status([self.env.nodes[0]], 'provisioning')
         self.env.wait_ready(
@@ -78,8 +78,8 @@ class TestTaskManagers(BaseIntegrationTest):
             lambda n: n.cluster_id == self.env.clusters[0].id,
             self.env.nodes
         ):
-            self.assertEquals(n.status, 'ready')
-            self.assertEquals(n.progress, 100)
+            self.assertEqual(n.status, 'ready')
+            self.assertEqual(n.progress, 100)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -93,11 +93,11 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.launch_deployment()
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args[1]['args']['nodes']), 0)
+        self.assertEqual(len(args[1]['args']['nodes']), 0)
 
         self.env.refresh_nodes()
         for n in self.env.nodes:
-            self.assertEquals(len(self.env.nodes), 0)
+            self.assertEqual(len(self.env.nodes), 0)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -111,7 +111,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.launch_deployment()
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
-        self.assertEquals(len(args[1]['args']['nodes']), 1)
+        self.assertEqual(len(args[1]['args']['nodes']), 1)
 
     @fake_tasks()
     def test_do_not_redeploy_nodes_in_ready_status(self):
@@ -130,17 +130,17 @@ class TestTaskManagers(BaseIntegrationTest):
         objects.Cluster.clear_pending_changes(cluster_db)
 
         supertask = self.env.launch_deployment()
-        self.assertEquals(supertask.name, 'deploy')
+        self.assertEqual(supertask.name, 'deploy')
         self.assertIn(supertask.status, ('running', 'ready'))
 
-        self.assertEquals(self.env.nodes[0].status, 'ready')
+        self.assertEqual(self.env.nodes[0].status, 'ready')
         self.env.wait_for_nodes_status([self.env.nodes[1]], 'provisioning')
         self.env.wait_ready(supertask)
 
         self.env.refresh_nodes()
 
-        self.assertEquals(self.env.nodes[1].status, 'ready')
-        self.assertEquals(self.env.nodes[1].progress, 100)
+        self.assertEqual(self.env.nodes[1].status, 'ready')
+        self.assertEqual(self.env.nodes[1].progress, 100)
 
     @fake_tasks()
     def test_deployment_fails_if_node_offline(self):
@@ -195,8 +195,8 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.wait_ready(supertask, 60)
         self.env.refresh_nodes()
         for n in self.env.nodes:
-            self.assertEquals(n.status, 'ready')
-            self.assertEquals(n.progress, 100)
+            self.assertEqual(n.status, 'ready')
+            self.assertEqual(n.progress, 100)
 
     def test_deletion_empty_cluster_task_manager(self):
         cluster = self.env.create_cluster(api=True)
@@ -206,7 +206,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 kwargs={'obj_id': self.env.clusters[0].id}),
             headers=self.default_headers
         )
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
 
         timer = time.time()
         timeout = 15
@@ -246,7 +246,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
 
         timer = time.time()
         timeout = 15
@@ -329,7 +329,7 @@ class TestTaskManagers(BaseIntegrationTest):
                 kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
 
         timer = time.time()
         timeout = 15
@@ -364,7 +364,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.refresh_nodes()
         for node in self.env.nodes:
             fqdn = "node-%s.%s" % (node.id, settings.DNS_DOMAIN)
-            self.assertEquals(fqdn, node.fqdn)
+            self.assertEqual(fqdn, node.fqdn)
 
     @fake_tasks()
     def test_no_node_no_cry(self):
@@ -402,7 +402,7 @@ class TestTaskManagers(BaseIntegrationTest):
 
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
-        self.assertEquals(self.env.db.query(Node).count(), 1)
+        self.assertEqual(self.env.db.query(Node).count(), 1)
 
     @fake_tasks()
     def test_deletion_three_offline_nodes_and_one_online(self):
@@ -418,10 +418,10 @@ class TestTaskManagers(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
 
-        self.assertEquals(self.env.db.query(Node).count(), 1)
+        self.assertEqual(self.env.db.query(Node).count(), 1)
         node = self.db.query(Node).first()
-        self.assertEquals(node.status, 'discover')
-        self.assertEquals(node.cluster_id, None)
+        self.assertEqual(node.status, 'discover')
+        self.assertEqual(node.cluster_id, None)
 
     @fake_tasks()
     def test_deletion_offline_node_when_cluster_has_only_one_node(self):
@@ -437,4 +437,4 @@ class TestTaskManagers(BaseIntegrationTest):
 
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, timeout=5)
-        self.assertEquals(self.env.db.query(Node).count(), 0)
+        self.assertEqual(self.env.db.query(Node).count(), 0)

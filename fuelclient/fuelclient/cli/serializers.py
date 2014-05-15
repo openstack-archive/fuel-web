@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -61,7 +62,7 @@ class Serializer(object):
         if self.format_flags:
             self.print_formatted(formatted_data)
         else:
-            print_method(arg)
+            print_method(arg.encode('utf8'))
 
     def prepare_path(self, path):
         return "{0}.{1}".format(

@@ -39,13 +39,13 @@ class TestCharsetIssues(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
-        self.assertEquals(supertask.name, 'deploy')
+        self.assertEqual(supertask.name, 'deploy')
         self.assertIn(supertask.status, ('running', 'ready'))
         # we have three subtasks here
         # deletion
         # provision
         # deployment
-        self.assertEquals(len(supertask.subtasks), 3)
+        self.assertEqual(len(supertask.subtasks), 3)
 
         self.env.wait_for_nodes_status(self.env.nodes, 'provisioning')
         self.env.wait_ready(supertask, 60)

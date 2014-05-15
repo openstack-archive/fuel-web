@@ -53,52 +53,52 @@ class TestNetworkChecking(BaseIntegrationTest):
     def set_cluster_changes_w_error(self, cluster_id):
         resp = self.env.cluster_changes_put(cluster_id,
                                             expect_errors=True)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'deploy')
+        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['progress'], 100)
+        self.assertEqual(task['name'], 'deploy')
         self.check_result_format(task, cluster_id)
         return task
 
     def update_nova_networks_w_error(self, cluster_id, nets):
         resp = self.env.nova_networks_put(cluster_id, nets,
                                           expect_errors=True)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['progress'], 100)
+        self.assertEqual(task['name'], 'check_networks')
         self.check_result_format(task, cluster_id)
         return task
 
     def update_nova_networks_success(self, cluster_id, nets):
         resp = self.env.nova_networks_put(cluster_id, nets)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(task['progress'], 100)
+        self.assertEqual(task['name'], 'check_networks')
         return task
 
     def update_neutron_networks_w_error(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets,
                                              expect_errors=True)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'error')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEqual(task['status'], 'error')
+        self.assertEqual(task['progress'], 100)
+        self.assertEqual(task['name'], 'check_networks')
         self.check_result_format(task, cluster_id)
         return task
 
     def update_neutron_networks_success(self, cluster_id, nets):
         resp = self.env.neutron_networks_put(cluster_id, nets)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 202)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
-        self.assertEquals(task['progress'], 100)
-        self.assertEquals(task['name'], 'check_networks')
+        self.assertEqual(task['status'], 'ready')
+        self.assertEqual(task['progress'], 100)
+        self.assertEqual(task['name'], 'check_networks')
         return task
 
 
@@ -128,7 +128,7 @@ class TestNovaHandlers(TestNetworkChecking):
         ngs_created = self.db.query(NetworkGroup).filter(
             NetworkGroup.name.in_([n['name'] for n in self.nets['networks']])
         ).all()
-        self.assertEquals(len(ngs_created), len(self.nets['networks']))
+        self.assertEqual(len(ngs_created), len(self.nets['networks']))
 
     def test_network_checking_fails_if_admin_intersection(self):
         admin_ng = self.env.network_manager.get_admin_network_group()
@@ -151,7 +151,7 @@ class TestNovaHandlers(TestNetworkChecking):
             [[flt_r0, flt_r1]]
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             "Address space intersection between floating range '{0}-{1}' and "
             "'admin (PXE)' network.".format(flt_r0, flt_r1),
             task['message'])
@@ -214,7 +214,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["cidr"] = '192.18.17.0/24'
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Address space intersection between ranges of public network."
         )
@@ -227,7 +227,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["cidr"] = '192.18.18.0/24'
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Public gateway and public ranges are not in one CIDR."
         )
@@ -240,7 +240,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["cidr"] = '192.18.17.0/24'
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Address intersection between public gateway and IP range of "
             "public network."
@@ -251,7 +251,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["gateway"] = '192.18.17.55'
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Address intersection between public gateway and IP range of "
             "public network."
@@ -263,7 +263,7 @@ class TestNovaHandlers(TestNetworkChecking):
              ['192.18.17.133', '192.18.17.190']]
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Address space intersection between ranges of floating network."
         )
@@ -274,7 +274,7 @@ class TestNovaHandlers(TestNetworkChecking):
             "10.10.0.0/23"
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Network amount for 'fixed' is more than 1 "
             "while using FlatDHCP manager."
@@ -311,7 +311,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')["vlan_start"] = 5555
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "VLAN ID(s) is out of range for public network."
         )
@@ -327,7 +327,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.nets['networking_parameters']['fixed_network_size'] = \
             "512"
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Number of fixed networks (1) doesn't fit into "
             "fixed CIDR (10.10.0.0/24) and size of one fixed network (512)."
@@ -341,7 +341,7 @@ class TestNovaHandlers(TestNetworkChecking):
 
         self.nets['networking_parameters']['fixed_networks_amount'] = 32
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Number of fixed networks (32) doesn't fit into "
             "fixed CIDR (10.10.0.0/24) and size of one fixed network (32)."
@@ -350,7 +350,7 @@ class TestNovaHandlers(TestNetworkChecking):
     def test_network_fit_abc_classes_exclude_loopback(self):
         self.find_net_by_name('management')['cidr'] = '127.19.216.0/24'
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "management network address space is inside loopback range "
             "(127.0.0.0/8). It must have no intersection with "
@@ -359,7 +359,7 @@ class TestNovaHandlers(TestNetworkChecking):
 
         self.find_net_by_name('management')['cidr'] = '227.19.216.0/24'
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "management network address space does not belong to "
             "A, B, C network classes. It must belong to either "
@@ -369,7 +369,7 @@ class TestNovaHandlers(TestNetworkChecking):
     def test_network_gw_and_ranges_intersect_w_subnet_or_broadcast(self):
         self.find_net_by_name('public')['gateway'] = '172.16.0.0'
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "public network gateway address is equal to either subnet address "
             "or broadcast address of the network."
@@ -377,7 +377,7 @@ class TestNovaHandlers(TestNetworkChecking):
 
         self.find_net_by_name('public')['gateway'] = '172.16.0.255'
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "public network gateway address is equal to either subnet address "
             "or broadcast address of the network."
@@ -387,7 +387,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.0',
                                                          '172.16.0.122']]
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "public network IP range [172.16.0.0-172.16.0.122] intersect "
             "with either subnet address or broadcast address of the network."
@@ -396,7 +396,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.255',
                                                          '172.16.0.255']]
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "public network IP range [172.16.0.255-172.16.0.255] intersect "
             "with either subnet address or broadcast address of the network."
@@ -436,7 +436,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         ngs_created = self.db.query(NetworkGroup).filter(
             NetworkGroup.name.in_([n['name'] for n in self.nets['networks']])
         ).all()
-        self.assertEquals(len(ngs_created), len(self.nets['networks']))
+        self.assertEqual(len(ngs_created), len(self.nets['networks']))
 
     # TODO(adanin) Provide a positive test that it's allowed to move any
     #      network to the Admin interface.
@@ -477,7 +477,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
             [['172.16.10.130', '172.16.10.254']]
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Public gateway and public ranges are not in one CIDR."
         )
@@ -489,7 +489,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('public')["gateway"] = '172.16.0.77'
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Address intersection between public gateway and IP range of "
             "public network."
@@ -500,7 +500,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('public')["gateway"] = '172.16.0.55'
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Address intersection between public gateway and IP range of "
             "public network."
@@ -511,7 +511,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('public')['gateway'] = '172.16.10.1'
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Floating address range 172.16.0.130:172.16.0.254 is not in "
             "public address space 172.16.10.0/24."
@@ -532,7 +532,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('public')['gateway'] = '172.16.0.11'
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Address intersection between public gateway "
             "and IP range of public network."
@@ -544,7 +544,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
              ['172.16.0.55', '172.16.0.121']]
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Address space intersection between ranges "
             "of public network."
@@ -556,7 +556,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
              ['172.16.0.55', '172.16.0.222']]
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Address space intersection between ranges "
             "of public and external network."
@@ -573,8 +573,8 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.update_neutron_networks_success(self.cluster.id, self.nets)
         resp = self.env.neutron_networks_get(self.cluster.id)
         self.nets = jsonutils.loads(resp.body)
-        self.assertEquals(self.find_net_by_name('public')['cidr'],
-                          '172.16.0.0/25')
+        self.assertEqual(self.find_net_by_name('public')['cidr'],
+                         '172.16.0.0/25')
 
     def test_network_checking_fails_on_network_vlan_match(self):
         self.find_net_by_name('management')['vlan_start'] = '111'
@@ -593,7 +593,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.nets['networking_parameters']['internal_gateway'] = '172.16.10.1'
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Internal gateway 172.16.10.1 is not in "
             "internal address space 192.168.111.0/24."
@@ -604,7 +604,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.nets['networking_parameters']['internal_gateway'] = '172.16.0.129'
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Intersection between internal CIDR and floating range."
         )
@@ -612,7 +612,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
     def test_network_fit_abc_classes_exclude_loopback(self):
         self.find_net_by_name('management')['cidr'] = '127.19.216.0/24'
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "management network address space is inside loopback range "
             "(127.0.0.0/8). It must have no intersection with "
@@ -621,7 +621,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
         self.find_net_by_name('management')['cidr'] = '227.19.216.0/24'
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "management network address space does not belong to "
             "A, B, C network classes. It must belong to either "
@@ -631,7 +631,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
     def test_network_gw_and_ranges_intersect_w_subnet_or_broadcast(self):
         self.find_net_by_name('public')['gateway'] = '172.16.0.0'
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "public network gateway address is equal to either subnet address "
             "or broadcast address of the network."
@@ -639,7 +639,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
 
         self.find_net_by_name('public')['gateway'] = '172.16.0.255'
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "public network gateway address is equal to either subnet address "
             "or broadcast address of the network."
@@ -649,7 +649,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.0',
                                                          '172.16.0.122']]
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "public network IP range [172.16.0.0-172.16.0.122] intersect "
             "with either subnet address or broadcast address of the network."
@@ -658,7 +658,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.find_net_by_name('public')['ip_ranges'] = [['172.16.0.255',
                                                          '172.16.0.255']]
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "public network IP range [172.16.0.255-172.16.0.255] intersect "
             "with either subnet address or broadcast address of the network."
@@ -669,7 +669,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.nets['networking_parameters']['floating_ranges'] = \
             [['172.16.0.0', '172.16.0.33']]
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Neutron L3 external floating range [172.16.0.0-172.16.0.33] "
             "intersect with either subnet address or broadcast address "
@@ -679,7 +679,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.nets['networking_parameters']['floating_ranges'] = \
             [['172.16.0.155', '172.16.0.255']]
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Neutron L3 external floating range [172.16.0.155-172.16.0.255] "
             "intersect with either subnet address or broadcast address "
@@ -693,7 +693,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.nets['networking_parameters']['internal_gateway'] = \
             '192.168.111.0'
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Neutron L3 internal network gateway address is equal to "
             "either subnet address or broadcast address of the network."
@@ -702,7 +702,7 @@ class TestNeutronHandlersGre(TestNetworkChecking):
         self.nets['networking_parameters']['internal_gateway'] = \
             '192.168.111.255'
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "Neutron L3 internal network gateway address is equal to "
             "either subnet address or broadcast address of the network."
@@ -738,13 +738,13 @@ class TestNeutronHandlersVlan(TestNetworkChecking):
         ngs_created = self.db.query(NetworkGroup).filter(
             NetworkGroup.name.in_([n['name'] for n in self.nets['networks']])
         ).all()
-        self.assertEquals(len(ngs_created), len(self.nets['networks']))
+        self.assertEqual(len(ngs_created), len(self.nets['networks']))
 
     def test_network_checking_failed_if_networks_tags_in_neutron_range(self):
         self.find_net_by_name('storage')['vlan_start'] = 1000
 
         task = self.update_neutron_networks_w_error(self.cluster.id, self.nets)
-        self.assertEquals(
+        self.assertEqual(
             task['message'],
             "VLAN tags of storage network(s) intersect with "
             "VLAN ID range defined for Neutron L2. "

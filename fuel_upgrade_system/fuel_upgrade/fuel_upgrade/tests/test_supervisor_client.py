@@ -62,7 +62,7 @@ class TestSupervisorClient(BaseTestCase):
         self.supervisor.generate_config = mock.MagicMock()
         self.supervisor.generate_configs([1, 2, 3])
         args = self.supervisor.generate_config.call_args_list
-        self.assertEquals(args, [((1,),), ((2,),), ((3,),)])
+        self.assertEqual(args, [((1,),), ((2,),), ((3,),)])
 
     def test_generate_config(self, _):
         config_path = '/config/path'

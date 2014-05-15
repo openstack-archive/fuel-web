@@ -15,10 +15,15 @@
 #    under the License.
 
 import contextlib
-from sqlalchemy.orm import scoped_session, sessionmaker
+
 from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 
+from nailgun.db.deadlock_detector import clean_locks
+from nailgun.db.deadlock_detector import handle_lock
 from nailgun.settings import settings
 
 
@@ -39,13 +44,34 @@ class NoCacheQuery(Query):
         self._populate_existing = True
         super(NoCacheQuery, self).__init__(*args, **kwargs)
 
+    def with_lockmode(self, mode):
+        """with_lockmode function wrapper for deadlock detection
+        """
+        if settings.DEVELOPMENT:
+            for ent in self._entities:
+                handle_lock('{0}'.format(ent.selectable))
+        return super(NoCacheQuery, self).with_lockmode(mode)
+
+
+class DeadlockDetectingSession(Session):
+    def commit(self):
+        if settings.DEVELOPMENT:
+            clean_locks()
+        super(DeadlockDetectingSession, self).commit()
+
+    def rollback(self):
+        if settings.DEVELOPMENT:
+            clean_locks()
+        super(DeadlockDetectingSession, self).rollback()
+
 
 db = scoped_session(
     sessionmaker(
         autoflush=True,
         autocommit=False,
         bind=engine,
-        query_cls=NoCacheQuery
+        query_cls=NoCacheQuery,
+        class_=DeadlockDetectingSession
     )
 )
 

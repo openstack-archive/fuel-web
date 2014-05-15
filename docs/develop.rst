@@ -7,7 +7,6 @@ Development Documentation
    :maxdepth: 3
    :numbered:
 
-   develop/logical_arch
    develop/architecture
    develop/sequence
    develop/env

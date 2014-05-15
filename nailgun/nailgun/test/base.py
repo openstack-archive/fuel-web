@@ -140,7 +140,7 @@ class Environment(object):
                 params=json.dumps(release_data),
                 headers=self.default_headers
             )
-            self.tester.assertEquals(resp.status_code, 201)
+            self.tester.assertEqual(resp.status_code, 201)
             release = json.loads(resp.body)
             self.releases.append(
                 self.db.query(Release).get(release['id'])
@@ -164,7 +164,7 @@ class Environment(object):
             params=json.dumps(release_data),
             headers=self.default_headers
         )
-        self.tester.assertEquals(resp.status_code, 200)
+        self.tester.assertEqual(resp.status_code, 200)
         download_task = json.loads(resp.body)
         return self.db.query(Task).get(download_task['id'])
 
@@ -192,7 +192,7 @@ class Environment(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEquals(resp.status_code, 201)
+            self.tester.assertEqual(resp.status_code, 201)
             cluster = json.loads(resp.body)
             self.clusters.append(
                 Cluster.get_by_uid(cluster['id'])
@@ -248,12 +248,12 @@ class Environment(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEquals(resp.status_code, expect_http)
+            self.tester.assertEqual(resp.status_code, expect_http)
             if expect_message:
-                self.tester.assertEquals(resp.body, expect_message)
+                self.tester.assertEqual(resp.body, expect_message)
             if str(expect_http)[0] != "2":
                 return None
-            self.tester.assertEquals(resp.status_code, expect_http)
+            self.tester.assertEqual(resp.status_code, expect_http)
             node = json.loads(resp.body)
             node_db = Node.get_by_uid(node['id'])
             if 'interfaces' not in node_data['meta'] \
@@ -493,7 +493,7 @@ class Environment(object):
                 headers=self.default_headers,
                 expect_errors=True
             )
-            self.tester.assertEquals(202, resp.status_code)
+            self.tester.assertEqual(202, resp.status_code)
             response = json.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
@@ -511,7 +511,7 @@ class Environment(object):
                     kwargs={'cluster_id': self.clusters[0].id}),
                 headers=self.default_headers)
 
-            self.tester.assertEquals(202, resp.status_code)
+            self.tester.assertEqual(202, resp.status_code)
             response = json.loads(resp.body)
             return self.db.query(Task).filter_by(
                 uuid=response['uuid']
@@ -529,7 +529,7 @@ class Environment(object):
                     kwargs={'cluster_id': self.clusters[0].id}),
                 expect_errors=True,
                 headers=self.default_headers)
-            self.tester.assertEquals(expect_http, resp.status_code)
+            self.tester.assertEqual(expect_http, resp.status_code)
             if not str(expect_http).startswith("2"):
                 return resp.body
             response = json.loads(resp.body)
@@ -549,7 +549,7 @@ class Environment(object):
                     kwargs={'cluster_id': self.clusters[0].id}),
                 expect_errors=True,
                 headers=self.default_headers)
-            self.tester.assertEquals(resp.status_code, expect_http)
+            self.tester.assertEqual(resp.status_code, expect_http)
             if not str(expect_http).startswith("2"):
                 return resp.body
             response = json.loads(resp.body)
@@ -584,7 +584,7 @@ class Environment(object):
                     ),
                     headers=self.default_headers
                 )
-                self.tester.assertEquals(200, resp.status_code)
+                self.tester.assertEqual(200, resp.status_code)
                 nets = resp.body
 
             resp = self.app.put(
@@ -594,7 +594,7 @@ class Environment(object):
                 nets,
                 headers=self.default_headers
             )
-            self.tester.assertEquals(202, resp.status_code)
+            self.tester.assertEqual(202, resp.status_code)
             response = json.loads(resp.body)
             task_uuid = response['uuid']
             return self.db.query(Task).filter_by(uuid=task_uuid).first()
@@ -610,7 +610,7 @@ class Environment(object):
             reverse("NodeNICsHandler",
                     kwargs={"node_id": node_id}),
             headers=self.default_headers)
-        self.tester.assertEquals(resp.status_code, 200)
+        self.tester.assertEqual(resp.status_code, 200)
         data = json.loads(resp.body)
 
         nics = self.db.query(NodeNICInterface).filter(
@@ -618,7 +618,7 @@ class Environment(object):
         ).filter(
             NodeNICInterface.node_id == node_id
         )
-        self.tester.assertEquals(nics.count(), len(nic_names))
+        self.tester.assertEqual(nics.count(), len(nic_names))
 
         assigned_nets, slaves = [], []
         for nic in data:
@@ -634,7 +634,7 @@ class Environment(object):
             "assigned_networks": assigned_nets
         })
         resp = self.node_nics_put(node_id, data)
-        self.tester.assertEquals(resp.status_code, 200)
+        self.tester.assertEqual(resp.status_code, 200)
 
     def refresh_nodes(self):
         for n in self.nodes[:]:
@@ -662,19 +662,19 @@ class Environment(object):
                     )
                 )
             time.sleep(1)
-        self.tester.assertEquals(task.progress, 100)
+        self.tester.assertEqual(task.progress, 100)
         if isinstance(message, type(re.compile("regexp"))):
             self.tester.assertIsNotNone(re.match(message, task.message))
         elif isinstance(message, str):
-            self.tester.assertEquals(task.message, message)
+            self.tester.assertEqual(task.message, message)
 
     def wait_ready(self, task, timeout=60, message=None):
         self._wait_task(task, timeout, message)
-        self.tester.assertEquals(task.status, 'ready')
+        self.tester.assertEqual(task.status, 'ready')
 
     def wait_error(self, task, timeout=60, message=None):
         self._wait_task(task, timeout, message)
-        self.tester.assertEquals(task.status, 'error')
+        self.tester.assertEqual(task.status, 'error')
 
     def wait_for_nodes_status(self, nodes, status):
         def check_statuses():

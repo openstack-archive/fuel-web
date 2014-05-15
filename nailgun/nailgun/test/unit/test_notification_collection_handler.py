@@ -27,9 +27,9 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals([], response)
+        self.assertEqual([], response)
 
     def test_not_empty(self):
         c = self.env.create_cluster(api=False)
@@ -39,16 +39,16 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(len(response), 2)
+        self.assertEqual(len(response), 2)
         if response[0]['id'] == n0.id:
             rn0 = response[0]
             rn1 = response[1]
         else:
             rn0 = response[1]
             rn1 = response[0]
-        self.assertEquals(rn1['cluster'], n1.cluster_id)
+        self.assertEqual(rn1['cluster'], n1.cluster_id)
         self.assertIsNone(rn0.get('cluster', None))
 
     def test_update(self):
@@ -70,16 +70,16 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps(notification_update),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(len(response), 2)
+        self.assertEqual(len(response), 2)
         if response[0]['id'] == n0.id:
             rn0 = response[0]
             rn1 = response[1]
         else:
             rn0 = response[1]
             rn1 = response[0]
-        self.assertEquals(rn1['cluster'], n1.cluster_id)
-        self.assertEquals(rn1['status'], 'read')
+        self.assertEqual(rn1['cluster'], n1.cluster_id)
+        self.assertEqual(rn1['status'], 'read')
         self.assertIsNone(rn0.get('cluster', None))
-        self.assertEquals(rn0['status'], 'read')
+        self.assertEqual(rn0['status'], 'read')

@@ -76,9 +76,9 @@ class TestLogs(BaseIntegrationTest):
             reverse('LogSourceCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(response, settings.LOGS)
+        self.assertEqual(response, settings.LOGS)
 
     def test_log_source_by_node_collection_handler(self):
         node_ip = '40.30.20.10'
@@ -89,9 +89,9 @@ class TestLogs(BaseIntegrationTest):
                     kwargs={'node_id': node.id}),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(response, [])
+        self.assertEqual(response, [])
 
         log_entry = ['date111', 'level222', 'text333']
         self._create_logfile_for_node(settings.LOGS[1], [log_entry], node)
@@ -100,9 +100,9 @@ class TestLogs(BaseIntegrationTest):
                     kwargs={'node_id': node.id}),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(response, [settings.LOGS[1]])
+        self.assertEqual(response, [settings.LOGS[1]])
 
     def test_log_entry_collection_handler(self):
         node_ip = '10.20.30.40'
@@ -128,20 +128,20 @@ class TestLogs(BaseIntegrationTest):
             params={'source': settings.LOGS[0]['id']},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
         response['entries'].reverse()
-        self.assertEquals(response['entries'], log_entries)
+        self.assertEqual(response['entries'], log_entries)
 
         resp = self.app.get(
             reverse('LogEntryCollectionHandler'),
             params={'node': node.id, 'source': settings.LOGS[1]['id']},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
         response['entries'].reverse()
-        self.assertEquals(response['entries'], log_entries)
+        self.assertEqual(response['entries'], log_entries)
 
     def test_multiline_log_entry(self):
         settings.LOGS[0]['multiline'] = True
@@ -170,10 +170,10 @@ class TestLogs(BaseIntegrationTest):
             params={'source': settings.LOGS[0]['id']},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
         response['entries'].reverse()
-        self.assertEquals(response['entries'], log_entries)
+        self.assertEqual(response['entries'], log_entries)
         settings.LOGS[0]['multiline'] = False
 
     def test_backward_reader(self):
@@ -185,7 +185,7 @@ class TestLogs(BaseIntegrationTest):
         forward_lines = list(f)
         backward_lines = list(read_backwards(f))
         backward_lines.reverse()
-        self.assertEquals(forward_lines, backward_lines)
+        self.assertEqual(forward_lines, backward_lines)
 
         # filling file with content
         contents = [
@@ -209,7 +209,7 @@ class TestLogs(BaseIntegrationTest):
             forward_lines = list(f)
             backward_lines = list(read_backwards(f, bufsize))
             backward_lines.reverse()
-            self.assertEquals(forward_lines, backward_lines)
+            self.assertEqual(forward_lines, backward_lines)
 
             # test partial file reading from middle to beginning
             forward_lines = []
@@ -217,7 +217,7 @@ class TestLogs(BaseIntegrationTest):
                 forward_lines.append(f.readline())
             backward_lines = list(read_backwards(f, bufsize))
             backward_lines.reverse()
-            self.assertEquals(forward_lines, backward_lines)
+            self.assertEqual(forward_lines, backward_lines)
 
         f.close()
 
@@ -308,7 +308,7 @@ class TestLogs(BaseIntegrationTest):
             }
         }
         args, kwargs = nailgun.task.task.rpc.cast.call_args
-        self.assertEquals(len(args), 2)
+        self.assertEqual(len(args), 2)
         self.datadiff(args[1], message)
 
     def test_snapshot_task_manager(self):
@@ -344,8 +344,8 @@ class TestLogs(BaseIntegrationTest):
         )
         tm_patcher.stop()
         th_patcher.stop()
-        self.assertEquals(task, resp.body)
-        self.assertEquals(resp.status_code, 202)
+        self.assertEqual(task, resp.body)
+        self.assertEqual(resp.status_code, 202)
 
     def test_log_package_handler_failed(self):
         tm_patcher = patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
@@ -362,7 +362,7 @@ class TestLogs(BaseIntegrationTest):
             expect_errors=True
         )
         tm_patcher.stop()
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
 
     def test_log_entry_collection_handler_sensitive(self):
         account = RedHatAccount()
@@ -392,10 +392,10 @@ class TestLogs(BaseIntegrationTest):
             params={'source': settings.LOGS[0]['id']},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
         response['entries'].reverse()
-        self.assertEquals(response['entries'], response_log_entries)
+        self.assertEqual(response['entries'], response_log_entries)
 
     @patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
     def test_log_package_handler_with_dump_task_manager_error(self,

@@ -27,7 +27,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeNICsHandler', kwargs={'node_id': 1}),
             expect_errors=True,
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 404)
+        self.assertEqual(resp.status_code, 404)
 
     def test_get_handler_with_invalid_data(self):
         meta = self.env.default_metadata()
@@ -47,14 +47,14 @@ class TestHandlers(BaseIntegrationTest):
                 expect_errors=True,
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status_code, 400)
+            self.assertEqual(resp.status_code, 400)
             resp = self.app.get(
                 reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
             response = json.loads(resp.body)
-            self.assertEquals(response, [])
+            self.assertEqual(response, [])
 
     def test_get_handler_with_incompleted_iface_data(self):
         meta = self.env.default_metadata()
@@ -77,13 +77,13 @@ class TestHandlers(BaseIntegrationTest):
                 expect_errors=True,
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
             resp = self.app.get(
                 reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
                 headers=self.default_headers
             )
             ifaces = json.loads(resp.body)
-            self.assertEquals(ifaces, [])
+            self.assertEqual(ifaces, [])
 
     def test_get_handler_with_invalid_speed_data(self):
         meta = self.env.default_metadata()
@@ -114,13 +114,13 @@ class TestHandlers(BaseIntegrationTest):
                 expect_errors=True,
                 headers=self.default_headers
             )
-            self.assertEquals(resp.status_code, 200)
+            self.assertEqual(resp.status_code, 200)
             resp = self.app.get(
                 reverse('NodeHandler', kwargs={'obj_id': node['id']}),
                 headers=self.default_headers
             )
             ifaces = json.loads(resp.body)['meta']['interfaces']
-            self.assertEquals(
+            self.assertEqual(
                 ifaces,
                 [
                     {'name': 'eth0', 'mac': '00:00:00',
@@ -135,9 +135,9 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
-        self.assertEquals(response, [])
+        self.assertEqual(response, [])
 
     def test_get_handler_with_NICs(self):
         meta = self.env.default_metadata()
@@ -152,7 +152,7 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node_db.id}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
         self.assertItemsEqual(
             map(lambda i: i['id'], response),
@@ -164,11 +164,11 @@ class TestHandlers(BaseIntegrationTest):
                 response
             )
             resp_nic = filtered_nics[0]
-            self.assertEquals(resp_nic['mac'], nic['mac'])
-            self.assertEquals(resp_nic['current_speed'], nic['current_speed'])
-            self.assertEquals(resp_nic['max_speed'], nic['max_speed'])
+            self.assertEqual(resp_nic['mac'], nic['mac'])
+            self.assertEqual(resp_nic['current_speed'], nic['current_speed'])
+            self.assertEqual(resp_nic['max_speed'], nic['max_speed'])
             for conn in ('assigned_networks', ):
-                self.assertEquals(resp_nic[conn], [])
+                self.assertEqual(resp_nic[conn], [])
 
     def test_NIC_updates_by_agent(self):
         meta = self.env.default_metadata()
@@ -185,22 +185,22 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeAgentHandler'),
             json.dumps(node_data),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
-        self.assertEquals(len(response), 1)
+        self.assertEqual(len(response), 1)
         resp_nic = response[0]
         nic = new_meta['interfaces'][0]
-        self.assertEquals(resp_nic['mac'], nic['mac'])
-        self.assertEquals(resp_nic['current_speed'], nic['current_speed'])
-        self.assertEquals(resp_nic['max_speed'], nic['max_speed'])
-        self.assertEquals(resp_nic['state'], nic['state'])
+        self.assertEqual(resp_nic['mac'], nic['mac'])
+        self.assertEqual(resp_nic['current_speed'], nic['current_speed'])
+        self.assertEqual(resp_nic['max_speed'], nic['max_speed'])
+        self.assertEqual(resp_nic['state'], nic['state'])
         for conn in ('assigned_networks', ):
-            self.assertEquals(resp_nic[conn], [])
+            self.assertEqual(resp_nic[conn], [])
 
     def test_NIC_adds_by_agent(self):
         meta = self.env.default_metadata()
@@ -215,27 +215,27 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeAgentHandler'),
             json.dumps(node_data),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
-        self.assertEquals(len(response), len(meta['interfaces']))
+        self.assertEqual(len(response), len(meta['interfaces']))
         for nic in meta['interfaces']:
             filtered_nics = filter(
                 lambda i: i['mac'] == nic['mac'],
                 response
             )
             resp_nic = filtered_nics[0]
-            self.assertEquals(resp_nic['mac'], nic['mac'])
-            self.assertEquals(resp_nic['current_speed'],
-                              nic.get('current_speed'))
-            self.assertEquals(resp_nic['max_speed'], nic.get('max_speed'))
-            self.assertEquals(resp_nic['state'], nic.get('state'))
+            self.assertEqual(resp_nic['mac'], nic['mac'])
+            self.assertEqual(resp_nic['current_speed'],
+                             nic.get('current_speed'))
+            self.assertEqual(resp_nic['max_speed'], nic.get('max_speed'))
+            self.assertEqual(resp_nic['state'], nic.get('state'))
             for conn in ('assigned_networks', ):
-                self.assertEquals(resp_nic[conn], [])
+                self.assertEqual(resp_nic[conn], [])
 
     def test_ignore_NIC_id_in_meta(self):
         fake_id = 'some_data'
@@ -246,9 +246,9 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
-        self.assertNotEquals(response[0]['id'], fake_id)
+        self.assertNotEqual(response[0]['id'], fake_id)
 
     def test_mac_address_should_be_in_lower_case(self):
         meta = self.env.default_metadata()
@@ -259,9 +259,9 @@ class TestHandlers(BaseIntegrationTest):
         resp = self.app.get(
             reverse('NodeNICsHandler', kwargs={'node_id': node['id']}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         response = json.loads(resp.body)
-        self.assertNotEquals(response[0]['mac'], new_mac.lower())
+        self.assertNotEqual(response[0]['mac'], new_mac.lower())
 
     def test_remove_assigned_interface(self):
         def get_nodes():

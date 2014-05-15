@@ -36,13 +36,13 @@ class TestClusterChanges(BaseIntegrationTest):
         attributes_changes = self.db.query(ClusterChanges).filter_by(
             name="attributes"
         ).all()
-        self.assertEquals(len(attributes_changes), 1)
+        self.assertEqual(len(attributes_changes), 1)
         networks_changes = self.db.query(ClusterChanges).filter_by(
             name="networks"
         ).all()
-        self.assertEquals(len(networks_changes), 1)
+        self.assertEqual(len(networks_changes), 1)
         all_changes = self.db.query(ClusterChanges).all()
-        self.assertEquals(len(all_changes), 2)
+        self.assertEqual(len(all_changes), 2)
 
     def test_node_volumes_modification_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
@@ -55,7 +55,7 @@ class TestClusterChanges(BaseIntegrationTest):
             name="disks",
             node_id=node_db.id
         ).all()
-        self.assertEquals(len(node_disks_changes), 1)
+        self.assertEqual(len(node_disks_changes), 1)
         resp = self.app.get(
             reverse(
                 'ClusterHandler',
@@ -79,7 +79,7 @@ class TestClusterChanges(BaseIntegrationTest):
             name="disks",
             node_id=node_db.id
         ).all()
-        self.assertEquals(len(node_disks_changes), 1)
+        self.assertEqual(len(node_disks_changes), 1)
         self.app.put(
             reverse('NodeCollectionHandler'),
             json.dumps([{"id": node_db.id, "cluster_id": None}]),
@@ -90,14 +90,14 @@ class TestClusterChanges(BaseIntegrationTest):
             name="disks",
             node_id=node_db.id
         ).all()
-        self.assertEquals(len(node_disks_changes), 0)
+        self.assertEqual(len(node_disks_changes), 0)
 
     def test_attributes_changing_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         all_changes = self.db.query(ClusterChanges).all()
-        self.assertEquals(len(all_changes), 0)
+        self.assertEqual(len(all_changes), 0)
         self.app.put(
             reverse(
                 'ClusterAttributesHandler',
@@ -112,14 +112,14 @@ class TestClusterChanges(BaseIntegrationTest):
         pending_changes = self.db.query(ClusterChanges).filter_by(
             name="attributes"
         ).all()
-        self.assertEquals(len(pending_changes), 1)
+        self.assertEqual(len(pending_changes), 1)
 
     def test_default_attributes_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         all_changes = self.db.query(ClusterChanges).all()
-        self.assertEquals(len(all_changes), 0)
+        self.assertEqual(len(all_changes), 0)
         self.app.put(
             reverse(
                 'ClusterAttributesDefaultsHandler',
@@ -129,14 +129,14 @@ class TestClusterChanges(BaseIntegrationTest):
         pending_changes = self.db.query(ClusterChanges).filter_by(
             name="attributes"
         ).all()
-        self.assertEquals(len(pending_changes), 1)
+        self.assertEqual(len(pending_changes), 1)
 
     def test_network_changing_adds_pending_changes(self):
         cluster = self.env.create_cluster(api=True)
         cluster_db = self.env.clusters[0]
         objects.Cluster.clear_pending_changes(cluster_db)
         all_changes = self.db.query(ClusterChanges).all()
-        self.assertEquals(len(all_changes), 0)
+        self.assertEqual(len(all_changes), 0)
         resp = self.app.get(
             reverse(
                 'NovaNetworkConfigurationHandler',
@@ -156,7 +156,7 @@ class TestClusterChanges(BaseIntegrationTest):
         pending_changes = self.db.query(ClusterChanges).filter_by(
             name="networks"
         ).all()
-        self.assertEquals(len(pending_changes), 1)
+        self.assertEqual(len(pending_changes), 1)
 
     @fake_tasks(godmode=True)
     def test_successful_deployment_drops_all_changes(self):
@@ -170,7 +170,7 @@ class TestClusterChanges(BaseIntegrationTest):
         cluster_db = self.db.query(Cluster).get(
             self.env.clusters[0].id
         )
-        self.assertEquals(list(cluster_db.changes), [])
+        self.assertEqual(list(cluster_db.changes), [])
 
     @fake_tasks()
     def test_failed_deployment_does_nothing_with_changes(self):
@@ -185,17 +185,17 @@ class TestClusterChanges(BaseIntegrationTest):
         attributes_changes = self.db.query(ClusterChanges).filter_by(
             name="attributes"
         ).all()
-        self.assertEquals(len(attributes_changes), 1)
+        self.assertEqual(len(attributes_changes), 1)
         networks_changes = self.db.query(ClusterChanges).filter_by(
             name="networks"
         ).all()
-        self.assertEquals(len(networks_changes), 1)
+        self.assertEqual(len(networks_changes), 1)
         disks_changes = self.db.query(ClusterChanges).filter_by(
             name="disks"
         ).all()
-        self.assertEquals(len(disks_changes), 1)
+        self.assertEqual(len(disks_changes), 1)
         all_changes = self.db.query(ClusterChanges).all()
-        self.assertEquals(len(all_changes), 3)
+        self.assertEqual(len(all_changes), 3)
 
     @fake_tasks(godmode=True)
     def test_role_unassignment_drops_changes(self):
@@ -225,4 +225,4 @@ class TestClusterChanges(BaseIntegrationTest):
             cluster_id=self.env.clusters[0].id,
             node_id=new_node["id"]
         ).all()
-        self.assertEquals(all_changes, [])
+        self.assertEqual(all_changes, [])

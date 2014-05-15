@@ -32,13 +32,13 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
         release_from_db = self.db.query(Release).one()
         self.db.refresh(release_from_db)
-        self.assertEquals('5.1', release_from_db.version)
-        self.assertEquals('5.1', response['version'])
-        self.assertEquals('modified release', response['name'])
+        self.assertEqual('5.1', release_from_db.version)
+        self.assertEqual('5.1', response['version'])
+        self.assertEqual('modified release', response['name'])
 
     def test_release_put_returns_400_if_no_body(self):
         release = self.env.create_release(api=False)
@@ -47,7 +47,7 @@ class TestHandlers(BaseIntegrationTest):
             "",
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 400)
 
     def test_release_delete_returns_400_if_clusters(self):
         cluster = self.env.create_cluster(api=False)
@@ -57,8 +57,8 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers,
             expect_errors=True
         )
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(
             resp.body,
             "Can't delete release with "
             "clusters assigned"

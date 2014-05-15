@@ -46,15 +46,15 @@ class FakeFile(StringIO):
 class TestUtils(BaseTestCase):
 
     def test_byte_to_megabyte(self):
-        self.assertEquals(byte_to_megabyte(0), 0)
-        self.assertEquals(byte_to_megabyte(1048576), 1)
+        self.assertEqual(byte_to_megabyte(0), 0)
+        self.assertEqual(byte_to_megabyte(1048576), 1)
 
     def test_calculate_free_space(self):
         dev_info = mock.Mock()
         dev_info.f_bsize = 1048576
         dev_info.f_bavail = 2
         with patch.object(os, 'statvfs', return_value=dev_info) as st_mock:
-            self.assertEquals(calculate_free_space('/tmp/dir/file'), 2)
+            self.assertEqual(calculate_free_space('/tmp/dir/file'), 2)
 
         st_mock.assert_called_once_with('/tmp/dir')
 
@@ -63,7 +63,7 @@ class TestUtils(BaseTestCase):
         file_path = '/tmp/file'
 
         with mock.patch('__builtin__.open', open_mock):
-            self.assertEquals(
+            self.assertEqual(
                 calculate_md5sum(file_path),
                 '199df6f47108545693b5c9cb5344bf13')
 
@@ -84,4 +84,4 @@ class TestUtils(BaseTestCase):
 
         file_mock.assert_called_once_with(dst_path, 'wb')
         url_fake.assert_called_once_with(src_path)
-        self.assertEquals(fake_file.getvalue(), content)
+        self.assertEqual(fake_file.getvalue(), content)

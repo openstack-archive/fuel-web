@@ -28,9 +28,9 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals([], response)
+        self.assertEqual([], response)
 
     def test_notification_node_id(self):
         node = self.env.create_node(
@@ -61,10 +61,10 @@ class TestHandlers(BaseIntegrationTest):
             params={'cluster_id': cluster.id},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
-        self.assertEquals(
+        self.assertEqual(1, len(response))
+        self.assertEqual(
             self.env.nodes[1].id,
             response[0]['id']
         )
@@ -83,10 +83,10 @@ class TestHandlers(BaseIntegrationTest):
             params={'cluster_id': ''},
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
-        self.assertEquals(self.env.nodes[0].id, response[0]['id'])
+        self.assertEqual(1, len(response))
+        self.assertEqual(self.env.nodes[0].id, response[0]['id'])
 
     def test_node_get_without_cluster_specification(self):
         self.env.create(
@@ -101,9 +101,9 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(2, len(response))
+        self.assertEqual(2, len(response))
 
     def test_node_get_with_cluster_and_assigned_ip_addrs(self):
         self.env.create(
@@ -124,9 +124,9 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
 
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(2, len(response))
+        self.assertEqual(2, len(response))
 
     def test_node_creation(self):
         resp = self.app.post(
@@ -135,9 +135,9 @@ class TestHandlers(BaseIntegrationTest):
                         'meta': self.env.default_metadata(),
                         'status': 'discover'}),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 201)
+        self.assertEqual(resp.status_code, 201)
         response = json.loads(resp.body)
-        self.assertEquals('discover', response['status'])
+        self.assertEqual('discover', response['status'])
 
     def test_node_update(self):
         node = self.env.create_node(api=False)
@@ -145,13 +145,13 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeCollectionHandler'),
             json.dumps([{'mac': node.mac, 'manufacturer': 'new'}]),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         resp = self.app.get(
             reverse('NodeCollectionHandler'),
             headers=self.default_headers
         )
         node = self.db.query(Node).get(node.id)
-        self.assertEquals('new', node.manufacturer)
+        self.assertEqual('new', node.manufacturer)
 
     def test_node_update_empty_mac_or_id(self):
         node = self.env.create_node(api=False)
@@ -161,8 +161,8 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps([{'manufacturer': 'man0'}]),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(resp.body, "Neither MAC nor ID is specified")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -170,8 +170,8 @@ class TestHandlers(BaseIntegrationTest):
                          'manufacturer': 'man1'}]),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(resp.body, "Neither MAC nor ID is specified")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -179,8 +179,8 @@ class TestHandlers(BaseIntegrationTest):
                          'manufacturer': 'man2'}]),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(resp.body, "Neither MAC nor ID is specified")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -189,8 +189,8 @@ class TestHandlers(BaseIntegrationTest):
                          'manufacturer': 'man3'}]),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(resp.body, "Neither MAC nor ID is specified")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.body, "Neither MAC nor ID is specified")
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -199,8 +199,8 @@ class TestHandlers(BaseIntegrationTest):
                          'manufacturer': 'man4'}]),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(resp.body, "Null MAC is specified")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.body, "Null MAC is specified")
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -209,7 +209,7 @@ class TestHandlers(BaseIntegrationTest):
                          'manufacturer': 'man5'}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -217,14 +217,14 @@ class TestHandlers(BaseIntegrationTest):
                          'manufacturer': 'man6'}]),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
             json.dumps([{'mac': node.mac,
                          'manufacturer': 'man7'}]),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -232,7 +232,7 @@ class TestHandlers(BaseIntegrationTest):
                          'mac': node.mac,
                          'manufacturer': 'man8'}]),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
     def node_update_with_invalid_id(self):
         node = self.env.create_node(api=False)
@@ -243,8 +243,8 @@ class TestHandlers(BaseIntegrationTest):
                          'mac': node.mac}]),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 400)
-        self.assertEquals(resp.body, "Invalid ID specified")
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.body, "Invalid ID specified")
 
     def test_node_update_agent_discover(self):
         self.env.create_node(
@@ -261,14 +261,14 @@ class TestHandlers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         resp = self.app.get(
             reverse('NodeCollectionHandler'),
             headers=self.default_headers
         )
         node_db = self.db.query(Node).get(node_db.id)
-        self.assertEquals('new', node_db.manufacturer)
-        self.assertEquals('provisioning', node_db.status)
+        self.assertEqual('new', node_db.manufacturer)
+        self.assertEqual('provisioning', node_db.status)
 
     def test_node_timestamp_updated_only_by_agent(self):
         node = self.env.create_node(api=False)
@@ -280,9 +280,9 @@ class TestHandlers(BaseIntegrationTest):
                  'manufacturer': 'old'}
             ]),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         node = self.db.query(Node).get(node.id)
-        self.assertEquals(node.timestamp, timestamp)
+        self.assertEqual(node.timestamp, timestamp)
 
         resp = self.app.put(
             reverse('NodeAgentHandler'),
@@ -291,10 +291,10 @@ class TestHandlers(BaseIntegrationTest):
                  'manufacturer': 'new'}
             ),
             headers=self.default_headers)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         node = self.db.query(Node).get(node.id)
-        self.assertNotEquals(node.timestamp, timestamp)
-        self.assertEquals('new', node.manufacturer)
+        self.assertNotEqual(node.timestamp, timestamp)
+        self.assertEqual('new', node.manufacturer)
 
     def test_agent_caching(self):
         node = self.env.create_node(api=False)
@@ -307,7 +307,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers)
         response = json.loads(resp.body)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         self.assertFalse('cached' in response and response['cached'])
         resp = self.app.put(
             reverse('NodeAgentHandler'),
@@ -318,7 +318,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers)
         response = json.loads(resp.body)
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
         self.assertTrue('cached' in response and response['cached'])
 
     def test_agent_updates_node_by_interfaces(self):
@@ -334,7 +334,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers)
 
-        self.assertEquals(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 200)
 
     def test_node_create_ip_not_in_admin_range(self):
         node = self.env.create_node(api=False)
@@ -344,7 +344,7 @@ class TestHandlers(BaseIntegrationTest):
         self.env.network_manager.update_interfaces_info(node)
 
         # node.mac == eth0 mac so eth0 should now be admin interface
-        self.assertEquals(node.admin_interface.name, 'eth0')
+        self.assertEqual(node.admin_interface.name, 'eth0')
 
     def test_node_create_ext_mac(self):
         node1 = self.env.create_node(
@@ -361,7 +361,7 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps(node2_json),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 409)
+        self.assertEqual(resp.status_code, 409)
 
     def test_node_create_without_mac(self):
         node = self.env.create_node(
@@ -370,7 +370,7 @@ class TestHandlers(BaseIntegrationTest):
             expect_http=400,
             expect_message="No mac address specified"
         )
-        self.assertEquals(node, None)
+        self.assertEqual(node, None)
 
     def test_node_create_with_invalid_disk_model(self):
         meta = self.env.default_metadata()
@@ -409,7 +409,7 @@ class TestHandlers(BaseIntegrationTest):
                 expect_errors=(http_code != 201)
             )
 
-            self.assertEquals(response.status_code, http_code)
+            self.assertEqual(response.status_code, http_code)
 
     def test_node_update_ext_mac(self):
         meta = self.env.default_metadata()
@@ -445,7 +445,7 @@ class TestHandlers(BaseIntegrationTest):
             json.dumps({'mac': node.mac, 'status': 'discover'}),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(409, resp.status_code)
+        self.assertEqual(409, resp.status_code)
 
     def test_node_creation_fail(self):
         resp = self.app.post(
@@ -455,7 +455,7 @@ class TestHandlers(BaseIntegrationTest):
                         'status': 'error'}),
             headers=self.default_headers,
             expect_errors=True)
-        self.assertEquals(resp.status_code, 403)
+        self.assertEqual(resp.status_code, 403)
 
     def test_reset_cluster_name_when_unassign_node(self):
         self.env.create(
@@ -473,13 +473,13 @@ class TestHandlers(BaseIntegrationTest):
                          'cluster_id': None,
                          'pending_roles': []}]),
             headers=self.default_headers)
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = json.loads(resp.body)
-        self.assertEquals(1, len(response))
-        self.assertEquals(node.id, response[0]['id'])
-        self.assertEquals(node.name, default_name)
-        self.assertEquals(node.cluster, None)
-        self.assertEquals(node.pending_role_list, [])
+        self.assertEqual(1, len(response))
+        self.assertEqual(node.id, response[0]['id'])
+        self.assertEqual(node.name, default_name)
+        self.assertEqual(node.cluster, None)
+        self.assertEqual(node.pending_role_list, [])
 
     def test_discovered_node_unified_name(self):
         node_mac = self.env.generate_random_mac()

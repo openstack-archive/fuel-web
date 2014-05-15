@@ -857,11 +857,12 @@ label.error {
 .node-name-roles > .name > p {
   display: inline;
   .font-layout-mixin(@font-size-big-1, @color-nodes-node-names, normal, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25));
-  border-bottom: 1px dotted @fuel-light-1;
-  &.node-renameable:hover {
-    border-bottom: 1px dotted #0178b3;
-    color: #0178b3;
-    cursor: pointer;
+  &.node-renameable {
+    border-bottom: 1px dotted @fuel-light-1;
+    &:hover {
+      border-bottom-color: #0178b3;
+      color: #0178b3;
+    }
   }
 }
 

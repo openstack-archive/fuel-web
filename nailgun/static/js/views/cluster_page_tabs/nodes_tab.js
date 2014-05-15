@@ -743,7 +743,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         renderNode: function(node) {
             var nodeView = new Node({
                 node: node,
-                renameable: !this.nodeList.screen.isLocked(),
                 group: this
             });
             this.registerSubView(nodeView);
@@ -870,6 +869,12 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                     observe: ['pending_addition', 'pending_deletion', 'pending_roles'],
                     onGet: 'formatNodeButtonIcon'
                 }]
+            },
+            '.name p': {
+                observe: ['name', 'mac'],
+                onGet: function(values) {
+                    return values[0] || values[1];
+                }
             }
         },
         sortRoles: function(roles) {
@@ -952,9 +957,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             }
         },
         startNodeRenaming: function() {
-            if (!this.renameable || this.renaming) {return;}
             $('html').off(this.eventNamespace);
             $('html').on(this.eventNamespace, _.after(2, _.bind(function(e) {
+                if (e.target.type == "text") {
+                    e.preventDefault();
+                }
                 if (!$(e.target).closest(this.$('.name input')).length) {
                     this.endNodeRenaming();
                 }
@@ -1055,7 +1062,6 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             this.$el.html(this.template(_.extend({
                 node: this.node,
                 renaming: this.renaming,
-                renameable: this.renameable,
                 edit: this.screen instanceof EditNodesScreen,
                 locked: this.screen.isLocked()
             }, this.templateHelpers))).i18n();

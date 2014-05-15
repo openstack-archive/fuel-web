@@ -15,10 +15,15 @@
 #    under the License.
 
 import contextlib
-from sqlalchemy.orm import scoped_session, sessionmaker
+
 from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 
+from nailgun.db.deadlock_detector import clean_locks
+from nailgun.db.deadlock_detector import handle_lock
 from nailgun.settings import settings
 
 
@@ -89,3 +94,38 @@ def flush():
         for table in reversed(Base.metadata.sorted_tables):
             con.execute(table.delete())
         trans.commit()
+
+
+# Methods substitution for deadlock detecting
+def with_lockmode_with_deadlock_detection(self, mode):
+    """with_lockmode function wrapper for deadlock detection
+    """
+    for ent in self._entities:
+        handle_lock('{0}'.format(ent.selectable))
+    return self.with_lockmode_origin(mode)
+
+
+Query.with_lockmode_origin = Query.with_lockmode
+Query.with_lockmode = with_lockmode_with_deadlock_detection
+
+
+def commit_with_deadlock_detection(self):
+    """commit function wrapper for deadlock detection
+    """
+    clean_locks()
+    self.commit_origin()
+
+
+Session.commit_origin = Session.commit
+Session.commit = commit_with_deadlock_detection
+
+
+def rollback_with_deadlock_detection(self):
+    """rollback function wrapper for deadlock detection
+    """
+    clean_locks()
+    self.rollback_origin()
+
+
+Session.rollback_origin = Session.rollback
+Session.rollback = rollback_with_deadlock_detection

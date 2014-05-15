@@ -180,8 +180,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.$el.html(this.template({
                 cluster: this.model,
                 tabs: this.tabs,
-                activeTab: this.activeTab,
-                renaming: this.renaming
+                activeTab: this.activeTab
             })).i18n();
             var options = {model: this.model, page: this};
             this.clusterCustomizationMessage = new ClusterCustomizationMessage(options);

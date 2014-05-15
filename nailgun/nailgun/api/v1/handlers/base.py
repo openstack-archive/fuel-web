@@ -201,6 +201,10 @@ class BaseHandler(object):
             errors.NodeOffline,
         ) as exc:
             raise self.http(400, exc.message)
+        except (
+            errors.ObjectNotFound,
+        ) as exc:
+            raise self.http(404, exc.message)
         except Exception as exc:
             raise
         return valid_data

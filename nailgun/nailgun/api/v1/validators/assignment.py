@@ -68,7 +68,10 @@ class NodeAssignmentValidator(AssignmentValidator):
         nodes = db.query(Node).filter(Node.id.in_(received_node_ids))
         cls.check_all_nodes(nodes, received_node_ids)
         cls.check_if_already_done(nodes)
-        cluster = objects.Cluster.get_by_uid(cluster_id)
+        cluster = objects.Cluster.get_by_uid(
+            cluster_id, fail_if_not_found=True
+        )
+
         for node_id in received_node_ids:
             cls.validate_roles(
                 cluster,

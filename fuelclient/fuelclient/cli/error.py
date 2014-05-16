@@ -23,27 +23,45 @@ def exit_with_error(message):
 
 
 class FuelClientException(Exception):
-    pass
+    """Base Exception for Fuel-Client
+
+    All child classes must be instantiated before raising.
+    """
+    def __init__(self, *args, **kwargs):
+        super(FuelClientException, self).__init__(*args, **kwargs)
+        self.message = args[0]
 
 
 class ServerDataException(FuelClientException):
-    pass
+    """ServerDataException - must be raised when
+    data returned from server cannot be processed by Fuel-Client methods.
+    """
 
 
 class DeployProgressError(FuelClientException):
-    pass
+    """DeployProgressError - must be raised when
+    deployment process interrupted on server.
+    """
 
 
 class ArgumentException(FuelClientException):
-    pass
+    """ArgumentException - must be raised when
+    incorrect arguments inputted through argparse or some function.
+    """
 
 
 class ActionException(FuelClientException):
-    pass
+    """ActionException - must be raised when
+    though arguments inputted to action are correct but they contradict
+    to logic in action.
+    """
 
 
 class ParserException(FuelClientException):
-    pass
+    """ParserException - must be raised when
+    some problem occurred in process of argument parsing,
+    in argparse extension or in Fuel-Client Parser submodule.
+    """
 
 
 def handle_exceptions(exc):

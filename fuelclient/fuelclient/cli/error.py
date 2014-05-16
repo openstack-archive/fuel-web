@@ -23,7 +23,10 @@ def exit_with_error(message):
 
 
 class FuelClientException(Exception):
-    pass
+
+    def __init__(self, *args, **kwargs):
+        super(FuelClientException, self).__init__(*args, **kwargs)
+        self.message = args[0]
 
 
 class ServerDataException(FuelClientException):

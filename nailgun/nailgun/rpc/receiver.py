@@ -482,7 +482,8 @@ class NailgunReceiver(object):
             )
 
             for n in update_nodes:
-                n.roles, n.pending_roles = n.pending_roles, n.roles
+                if n.roles:
+                    n.roles, n.pending_roles = n.pending_roles, n.roles
 
             db().commit()
 
@@ -563,7 +564,8 @@ class NailgunReceiver(object):
             )
 
             for n in update_nodes:
-                n.roles, n.pending_roles = n.pending_roles, n.roles
+                if n.roles:
+                    n.roles, n.pending_roles = n.pending_roles, n.roles
 
             db().commit()
 

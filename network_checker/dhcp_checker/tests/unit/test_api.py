@@ -84,4 +84,15 @@ class TestDhcpApi(unittest.TestCase):
         }
         api.check_dhcp_with_vlans(config_sample, timeout=1)
         make_listeners.assert_called_once_with(('eth1', 'eth0'))
-        self.assertEqual(send_discover.call_count, 2)
+        self.assertEqual(send_discover.call_count, 6)
+
+    @patch('dhcp_checker.api.send_dhcp_discover')
+    @patch('dhcp_checker.api.make_listeners')
+    def test_check_dhcp_with_vlans_repeat_2(self, make_listeners,
+                                            send_discover):
+        config_sample = {
+            'eth0': (),
+        }
+        api.check_dhcp_with_vlans(config_sample, timeout=1, repeat=3)
+        make_listeners.assert_called_once_with(('eth0',))
+        self.assertEqual(send_discover.call_count, 3)

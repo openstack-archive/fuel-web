@@ -108,7 +108,8 @@ def check_dhcp_with_vlans(config, timeout=5, repeat=2):
         listeners = make_listeners(ifaces)
 
         for i in utils.filtered_ifaces(itertools.chain(ifaces, *vlans)):
-            send_dhcp_discover(i)
+            for _ in xrange(repeat):
+                send_dhcp_discover(i)
 
         time.sleep(timeout)
 

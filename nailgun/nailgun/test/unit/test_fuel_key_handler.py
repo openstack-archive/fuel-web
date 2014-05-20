@@ -24,11 +24,11 @@ from nailgun.test.base import reverse
 
 class TestFuelKeyHandler(BaseTestCase):
 
-    @patch('nailgun.api.handlers.version.settings.VERSION', {
+    @patch('nailgun.api.v1.handlers.version.settings.VERSION', {
         'release': '0.1',
         'nailgun_sha': '12345'
     })
-    @patch('nailgun.api.handlers.version.settings.FUEL_KEY', 'uuid')
+    @patch('nailgun.api.v1.handlers.version.settings.FUEL_KEY', 'uuid')
     def test_version_handler(self):
         resp = self.app.get(
             reverse('FuelKeyHandler'),

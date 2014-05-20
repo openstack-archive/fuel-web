@@ -23,7 +23,7 @@ from nailgun.test.base import reverse
 
 class TestVersionHandler(BaseIntegrationTest):
 
-    @patch('nailgun.api.handlers.version.settings.VERSION', {
+    @patch('nailgun.api.v1.handlers.version.settings.VERSION', {
         'release': '0.1b',
         'nailgun_sha': '12345',
         "astute_sha": "Unknown build",

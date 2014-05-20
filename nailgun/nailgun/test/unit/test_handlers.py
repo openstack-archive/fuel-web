@@ -16,7 +16,7 @@
 
 import web
 
-from nailgun.api.handlers.base import BaseHandler
+from nailgun.api.v1.handlers.base import BaseHandler
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse

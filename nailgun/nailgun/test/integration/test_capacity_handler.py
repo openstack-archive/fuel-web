@@ -65,7 +65,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(report['allocation_stats']['allocated'], 0)
         self.assertEquals(report['allocation_stats']['unallocated'], 1)
 
-    @patch('nailgun.api.handlers.version.settings.VERSION', {
+    @patch('nailgun.api.v1.handlers.version.settings.VERSION', {
         'release': '0.1b'})
     def test_capacity_csv_checksum(self):
         self._create_capacity_log()

@@ -107,7 +107,7 @@ class NodeCollectionHandler(CollectionHandler):
             nodes_updated.append(node.id)
 
         # we need eagerload everything that is used in render
-        nodes = self.collection.get_by_id_list(
+        nodes = self.collection.filter_by_id_list(
             self.collection.eager(None, self.eager),
             nodes_updated
         )

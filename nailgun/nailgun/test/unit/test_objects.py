@@ -195,3 +195,53 @@ class TestNodeObject(BaseIntegrationTest):
             objects.Node.update_by_agent(node_db, copy.deepcopy(data))
 
             self.assertEqual(node_db.status, status)
+
+    def test_node_roles_to_pending_roles(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {'role': 'controller'}
+            ]
+        )
+        node_db = self.env.nodes[0]
+        node = objects.Node.get_by_uid(node_db.id, fail_if_not_found=True)
+        self.assertEquals(['controller'], node.roles)
+        self.assertEquals([], node.pending_roles)
+        # Checking roles moved
+        objects.Node.move_roles_to_pending_roles(node)
+        self.assertEquals([], node.roles)
+        self.assertEquals(['controller'], node.pending_roles)
+        # Checking second moving has no affect
+        objects.Node.move_roles_to_pending_roles(node)
+        self.assertEquals([], node.roles)
+        self.assertEquals(['controller'], node.pending_roles)
+
+    def test_objects_order_by_clause(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {'role': 'controller'},
+                {'role': 'controller'},
+                {'role': 'controller'},
+                {'role': 'controller'},
+                {'role': 'controller'},
+                {'role': 'controller'},
+                {'role': 'controller'},
+                {'role': 'controller'}
+            ]
+        )
+        # Checking ASC ordering applied
+        nodes = objects.NodeCollection.filter_by(
+            None,
+            order_by=('id',)
+        ).all()
+        self.assertListEqual(nodes, sorted(nodes, key=lambda x: x.id))
+        # Checking DESC ordering applied
+        nodes = objects.NodeCollection.filter_by(
+            None,
+            order_by=('-id',)
+        ).all()
+        self.assertListEqual(
+            nodes,
+            sorted(nodes, key=lambda x: x.id, reverse=True)
+        )

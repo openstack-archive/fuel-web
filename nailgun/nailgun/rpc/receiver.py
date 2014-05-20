@@ -21,6 +21,7 @@ import traceback
 
 from sqlalchemy import or_
 
+from nailgun import consts
 from nailgun import notifier
 from nailgun import objects
 from nailgun.settings import settings
@@ -29,7 +30,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
-from nailgun.db.sqlalchemy.models import Task
 from nailgun.logger import logger
 from nailgun.openstack.common import jsonutils
 from nailgun.task.helpers import TaskHelper
@@ -183,19 +183,16 @@ class NailgunReceiver(object):
             status = task.status
 
         # lock nodes for updating so they can't be deleted
-        list(
-            objects.NodeCollection.lock_for_update(
-                objects.NodeCollection.get_by_id_list(
-                    None,
-                    [n['uid'] for n in nodes]
-                )
-            )
+        q_nodes = objects.NodeCollection.filter_by_id_list(
+            None,
+            [n['uid'] for n in nodes],
         )
+        q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
+        objects.NodeCollection.lock_for_update(q_nodes).all()
 
         # First of all, let's update nodes in database
         for node in nodes:
             node_db = objects.Node.get_by_uid(node['uid'])
-
             if not node_db:
                 logger.warning(
                     u"No node found with uid '{0}' - nothing changed".format(
@@ -242,10 +239,7 @@ class NailgunReceiver(object):
                             node_id=node['uid'],
                             task_uuid=task_uuid
                         )
-
-            db().add(node_db)
         db().flush()
-
         if nodes and not progress:
             progress = TaskHelper.recalculate_deployment_task_progress(task)
 
@@ -450,12 +444,42 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
 
         task = TaskHelper.get_task_by_uuid(task_uuid)
+        # Locking stop task
+        objects.Task.get_by_uuid(
+            task_uuid,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
 
-        stop_tasks = db().query(Task).filter_by(
-            cluster_id=task.cluster_id,
-        ).filter(
-            Task.name.in_(["deploy", "deployment", "provision"])
-        ).all()
+        stopping_task_names = [
+            consts.TASK_NAMES.deploy,
+            consts.TASK_NAMES.deployment,
+            consts.TASK_NAMES.provision
+        ]
+
+        # Locking other tasks for stopping
+        q_stop_tasks = objects.TaskCollection.filter_by_list(
+            None,
+            'name',
+            stopping_task_names
+        )
+        q_stop_tasks = objects.TaskCollection.filter_by(
+            q_stop_tasks,
+            cluster_id=task.cluster_id
+        )
+        q_stop_tasks = objects.TaskCollection.order_by(
+            q_stop_tasks,
+            'id'
+        )
+        stop_tasks = objects.TaskCollection.lock_for_update(q_stop_tasks).all()
+
+        # Locking cluster
+        objects.Cluster.get_by_uid(
+            task.cluster_id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
         if not stop_tasks:
             logger.warning("stop_deployment_resp: deployment tasks \
                             not found for environment '%s'!", task.cluster_id)
@@ -466,31 +490,27 @@ class NailgunReceiver(object):
             if stop_tasks:
                 map(db().delete, stop_tasks)
 
-            db().commit()
-
-            update_nodes = db().query(Node).filter(
-                Node.id.in_([
-                    n["uid"] for n in itertools.chain(
-                        nodes,
-                        ia_nodes
-                    )
-                ]),
-                Node.cluster_id == task.cluster_id
-            ).yield_per(100)
-
-            update_nodes.update(
-                {
-                    "online": False,
-                    "status": "discover",
-                    "pending_addition": True
-                },
-                synchronize_session='fetch'
+            node_uids = [n['uid'] for n in itertools.chain(nodes, ia_nodes)]
+            q_nodes = objects.NodeCollection.filter_by_id_list(None, node_uids)
+            q_nodes = objects.NodeCollection.filter_by(
+                q_nodes,
+                cluster_id=task.cluster_id
             )
+            q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
+
+            # locking Nodes for update
+            update_nodes = objects.NodeCollection.lock_for_update(
+                q_nodes
+            ).all()
+            node_data = {
+                'online': False,
+                'status': consts.NODE_STATUSES.discover,
+                'pending_addition': True,
+            }
 
             for n in update_nodes:
-                n.roles, n.pending_roles = n.pending_roles, n.roles
-
-            db().commit()
+                objects.Node.update(n, node_data)
+                objects.Node.move_roles_to_pending_roles(n)
 
             if ia_nodes:
                 cls._notify_inaccessible(
@@ -568,6 +588,8 @@ class NailgunReceiver(object):
                 synchronize_session='fetch'
             )
 
+            # Use nailgun.objects.Node.move_roles_to_pending_roles after
+            # reset_environment_resp refactoring to nailgun objects
             for n in update_nodes:
                 n.roles, n.pending_roles = n.pending_roles, n.roles
 

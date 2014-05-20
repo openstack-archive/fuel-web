@@ -21,6 +21,7 @@ Base classes for objects and collections
 import collections
 
 from itertools import ifilter
+import operator
 
 from sqlalchemy import and_, not_
 from sqlalchemy.orm import joinedload
@@ -199,12 +200,74 @@ class NailgunCollection(object):
         ).yield_per(yield_per)
 
     @classmethod
+    def _query_order_by(cls, query, order_by):
+        """Adds order by clause into SQLAlchemy query
+
+        :param query: SQLAlchemy query
+        :param order_by: tuple of model fields names for ORDER BY criterion
+        to SQLAlchemy query. If name starts with '-' desc ordering applies,
+        else asc.
+        """
+        for field_name in order_by:
+            if field_name.startswith('-'):
+                field_name = field_name.lstrip('-')
+                ordering = 'desc'
+            else:
+                ordering = 'asc'
+            field = getattr(cls.single.model, field_name)
+            o_func = getattr(field, ordering)
+            query = query.order_by(o_func())
+        return query
+
+    @classmethod
+    def _iterable_order_by(cls, iterable, order_by):
+        """Sort iterable by field names in order_by
+
+        :param iterable: model objects collection
+        :param order_by: tuple of model fields names for sorting.
+        If name starts with '-' desc ordering applies, else asc.
+        """
+        for field_name in order_by:
+            if field_name.startswith('-'):
+                field_name = field_name.lstrip('-')
+                reverse = True
+            else:
+                reverse = False
+            iterable = sorted(
+                iterable,
+                key=lambda x: getattr(x, field_name),
+                reverse=reverse
+            )
+        return iterable
+
+    @classmethod
+    def order_by(cls, iterable, order_by):
+        """Order given iterable by specified order_by.
+
+        :param order_by: tuple of model fields names or single field name for
+            ORDER BY criterion to SQLAlchemy query. If name starts with '-'
+            desc ordering applies, else asc.
+        :type order_by: tuple of strings or string
+        """
+        if iterable is None or not order_by:
+            return iterable
+        if not isinstance(order_by, (list, tuple)):
+            order_by = (order_by,)
+        if cls._is_query(iterable):
+            return cls._query_order_by(iterable, order_by)
+        else:
+            return cls._iterable_order_by(iterable, order_by)
+
+    @classmethod
     def filter_by(cls, iterable, yield_per=100, **kwargs):
         """Filter given iterable by specified kwargs.
         In case if iterable=None filters all object instances
 
         :param iterable: iterable (SQLAlchemy query)
         :param yield_per: SQLAlchemy's yield_per() clause
+        :param order_by: tuple of model fields names for ORDER BY criterion
+            to SQLAlchemy query. If name starts with '-' desc ordering applies,
+            else asc.
         :returns: filtered iterable (SQLAlchemy query)
         """
         map(cls.single.check_field, kwargs.iterkeys())
@@ -269,7 +332,35 @@ class NailgunCollection(object):
             raise TypeError("First argument should be iterable")
 
     @classmethod
-    def get_by_id_list(cls, iterable, uid_list, yield_per=100):
+    def filter_by_list(cls, iterable, field_name, list_of_values,
+                       yield_per=100, order_by=()):
+        """Filter given iterable by list of list_of_values.
+        In case if iterable=None filters all object instances
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param field_name: filtering field name
+        :param list_of_values: list of values for objects filtration
+        :param yield_per: SQLAlchemy's yield_per() clause
+        :returns: filtered iterable (SQLAlchemy query)
+        """
+        field_getter = operator.attrgetter(field_name)
+        use_iterable = iterable or cls.all(yield_per=yield_per)
+        if cls._is_query(use_iterable):
+            result = use_iterable.filter(
+                field_getter(cls.single.model).in_(list_of_values)
+            )
+            result = cls._query_order_by(result, order_by)
+            return result
+        elif cls._is_iterable(use_iterable):
+            return ifilter(
+                lambda i: field_getter(i) in list_of_values,
+                use_iterable
+            )
+        else:
+            raise TypeError("First argument should be iterable")
+
+    @classmethod
+    def filter_by_id_list(cls, iterable, uid_list, yield_per=100):
         """Filter given iterable by list of uids.
         In case if iterable=None filters all object instances
 
@@ -278,16 +369,12 @@ class NailgunCollection(object):
         :param yield_per: SQLAlchemy's yield_per() clause
         :returns: filtered iterable (SQLAlchemy query)
         """
-        use_iterable = iterable or cls.all(yield_per=yield_per)
-        if cls._is_query(use_iterable):
-            return use_iterable.filter(cls.single.model.id.in_(uid_list))
-        elif cls._is_iterable(use_iterable):
-            return ifilter(
-                lambda i: i.id in uid_list,
-                use_iterable
-            )
-        else:
-            raise TypeError("First argument should be iterable")
+        return cls.filter_by_list(
+            iterable,
+            'id',
+            uid_list,
+            yield_per=yield_per
+        )
 
     @classmethod
     def eager(cls, iterable, fields, yield_per=100):

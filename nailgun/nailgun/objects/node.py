@@ -602,6 +602,13 @@ class Node(NailgunObject):
         )
         return node_dict
 
+    @classmethod
+    def move_roles_to_pending_roles(cls, instance):
+        """Move roles to pending_roles
+        """
+        instance.pending_roles += instance.roles
+        instance.roles = []
+
 
 class NodeCollection(NailgunCollection):
     """Node collection

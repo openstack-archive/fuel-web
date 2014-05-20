@@ -22,6 +22,7 @@ import traceback
 
 from sqlalchemy import or_
 
+from nailgun import consts
 from nailgun import notifier
 from nailgun import objects
 from nailgun.settings import settings
@@ -30,7 +31,6 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
-from nailgun.db.sqlalchemy.models import Task
 from nailgun.logger import logger
 from nailgun.task.helpers import TaskHelper
 
@@ -185,9 +185,10 @@ class NailgunReceiver(object):
         # lock nodes for updating so they can't be deleted
         list(
             objects.NodeCollection.lock_for_update(
-                objects.NodeCollection.get_by_id_list(
+                objects.NodeCollection.filter_by_id_list(
                     None,
-                    [n['uid'] for n in nodes]
+                    [n['uid'] for n in nodes],
+                    order_by=('id',)
                 )
             )
         )
@@ -444,12 +445,38 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
 
         task = TaskHelper.get_task_by_uuid(task_uuid)
+        # Locking stop task
+        objects.Task.get_by_uuid(
+            task_uuid,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
 
-        stop_tasks = db().query(Task).filter_by(
-            cluster_id=task.cluster_id,
-        ).filter(
-            Task.name.in_(["deploy", "deployment", "provision"])
-        ).all()
+        stopping_task_names = [
+            consts.TASK_NAMES.deploy,
+            consts.TASK_NAMES.deployment,
+            consts.TASK_NAMES.provision
+        ]
+
+        # Locking other tasks for stopping
+        q_stop_tasks = objects.TaskCollection.filter_by_name(
+            None,
+            stopping_task_names
+        )
+        q_stop_tasks = objects.TaskCollection.filter_by(
+            q_stop_tasks,
+            order_by=('id',),
+            cluster_id=task.cluster_id
+        )
+        stop_tasks = objects.TaskCollection.lock_for_update(q_stop_tasks).all()
+
+        # Locking cluster
+        objects.Cluster.get_by_uid(
+            task.cluster_id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
         if not stop_tasks:
             logger.warning("stop_deployment_resp: deployment tasks \
                             not found for environment '%s'!", task.cluster_id)
@@ -460,31 +487,27 @@ class NailgunReceiver(object):
             if stop_tasks:
                 map(db().delete, stop_tasks)
 
-            db().commit()
-
-            update_nodes = db().query(Node).filter(
-                Node.id.in_([
-                    n["uid"] for n in itertools.chain(
-                        nodes,
-                        ia_nodes
-                    )
-                ]),
-                Node.cluster_id == task.cluster_id
-            ).yield_per(100)
-
-            update_nodes.update(
-                {
-                    "online": False,
-                    "status": "discover",
-                    "pending_addition": True
-                },
-                synchronize_session='fetch'
+            node_uids = [n['uid'] for n in itertools.chain(nodes, ia_nodes)]
+            q_nodes = objects.NodeCollection.filter_by_id_list(None, node_uids)
+            q_nodes = objects.NodeCollection.filter_by(
+                q_nodes,
+                order_by=('id',),
+                cluster_id=task.cluster_id
             )
 
-            for n in update_nodes:
-                n.roles, n.pending_roles = n.pending_roles, n.roles
+            # locking Nodes for update
+            update_nodes = objects.NodeCollection.lock_for_update(
+                q_nodes
+            ).all()
+            node_data = {
+                'online': False,
+                'status': consts.NODE_STATUSES.discover,
+                'pending_addition': True,
+            }
 
-            db().commit()
+            for n in update_nodes:
+                objects.Node.update(n, node_data)
+                objects.Node.swap_roles_pending_roles(n)
 
             if ia_nodes:
                 cls._notify_inaccessible(
@@ -512,6 +535,8 @@ class NailgunReceiver(object):
             progress,
             message
         )
+
+        db().commit()
 
     @classmethod
     def reset_environment_resp(cls, **kwargs):

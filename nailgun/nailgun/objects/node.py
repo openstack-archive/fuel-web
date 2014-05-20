@@ -601,6 +601,14 @@ class Node(NailgunObject):
         )
         return node_dict
 
+    @classmethod
+    def swap_roles_pending_roles(cls, instance):
+        """Swaps roles with pending_roles
+        """
+        roles = instance.roles
+        instance.roles = instance.pending_roles
+        instance.pending_roles = roles
+
 
 class NodeCollection(NailgunCollection):
     """Node collection

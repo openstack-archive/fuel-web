@@ -18,7 +18,7 @@ from mock import Mock
 from mock import patch
 
 import nailgun
-from nailgun.api.handlers.redhat import RedHatSetupHandler
+from nailgun.api.v1.handlers.redhat import RedHatSetupHandler
 from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.task.manager import RedHatSetupTaskManager
@@ -72,8 +72,8 @@ class TestHandlers(BaseIntegrationTest):
 
     @fake_tasks()
     def test_redhat_account_validation_success(self):
-        with patch('nailgun.api.handlers.redhat.db', Mock()):
-            manager = 'nailgun.api.handlers.redhat.RedHatSetupTaskManager'
+        with patch('nailgun.api.v1.handlers.redhat.db', Mock()):
+            manager = 'nailgun.api.v1.handlers.redhat.RedHatSetupTaskManager'
             with patch(manager, Mock()) as mng:
                 task = Task()
                 task.id = 0

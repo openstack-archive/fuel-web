@@ -25,7 +25,8 @@ from itertools import ifilter
 
 from sqlalchemy.orm import joinedload
 
-from nailgun.api.serializers.base import BasicSerializer
+from nailgun.objects.serializers.base import BasicSerializer
+
 from nailgun.db import db
 from nailgun.db import NoCacheQuery
 from nailgun.errors import errors

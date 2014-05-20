@@ -22,7 +22,7 @@ from sqlalchemy import not_
 
 from nailgun import consts
 
-from nailgun.api.serializers.release import ReleaseSerializer
+from nailgun.objects.serializers.release import ReleaseSerializer
 
 from nailgun.db import db
 

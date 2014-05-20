@@ -14,13 +14,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1 import urls as api_urls
-from nailgun.webui import urls as webui_urls
+"""
+Product info handlers
+"""
+
+from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.api.v1.handlers.base import content_json
+from nailgun.settings import settings
 
 
-def urls():
-    return (
-        "/api/v1", api_urls.app(),
-        "/api", api_urls.app(),
-        "", webui_urls.app()
-    )
+class VersionHandler(BaseHandler):
+    """Version info handler
+    """
+
+    @content_json
+    def GET(self):
+        """:returns: FUEL/FUELWeb commit SHA, release version.
+        :http: * 200 (OK)
+        """
+        return settings.VERSION

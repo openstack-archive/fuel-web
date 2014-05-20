@@ -36,7 +36,7 @@ import web
 from webtest import app
 
 import nailgun
-from nailgun.api.urls.v1 import urls
+from nailgun.api.v1.urls import urls
 
 from nailgun.db import db
 from nailgun.db import flush

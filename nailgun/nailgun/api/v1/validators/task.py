@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 #    Copyright 2013 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,13 +13,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1 import urls as api_urls
-from nailgun.webui import urls as webui_urls
+from nailgun import consts
+
+from nailgun.api.v1.validators.base import BasicValidator
+from nailgun.errors import errors
 
 
-def urls():
-    return (
-        "/api/v1", api_urls.app(),
-        "/api", api_urls.app(),
-        "", webui_urls.app()
-    )
+class TaskValidator(BasicValidator):
+
+    @classmethod
+    def validate_delete(cls, instance, force=False):
+        if instance.status not in (
+            consts.TASK_STATUSES.ready,
+            consts.TASK_STATUSES.error
+        ) and not force:
+            raise errors.CannotDelete(
+                "You cannot delete running task manually"
+            )

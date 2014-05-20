@@ -24,7 +24,7 @@ from mock import Mock
 from mock import patch
 
 import nailgun
-from nailgun.api.handlers.logs import read_backwards
+from nailgun.api.v1.handlers.logs import read_backwards
 from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Role
 from nailgun.errors import errors
@@ -332,8 +332,8 @@ class TestLogs(BaseIntegrationTest):
             "id": 1,
             "uuid": "00000000-0000-0000-0000-000000000000"
         })
-        tm_patcher = patch('nailgun.api.handlers.logs.DumpTaskManager')
-        th_patcher = patch('nailgun.api.handlers.logs.Task')
+        tm_patcher = patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
+        th_patcher = patch('nailgun.api.v1.handlers.logs.Task')
         tm_mocked = tm_patcher.start()
         th_mocked = th_patcher.start()
         tm_instance = tm_mocked.return_value
@@ -348,7 +348,7 @@ class TestLogs(BaseIntegrationTest):
         self.assertEquals(resp.status_code, 202)
 
     def test_log_package_handler_failed(self):
-        tm_patcher = patch('nailgun.api.handlers.logs.DumpTaskManager')
+        tm_patcher = patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
         tm_mocked = tm_patcher.start()
         tm_instance = tm_mocked.return_value
 
@@ -397,7 +397,7 @@ class TestLogs(BaseIntegrationTest):
         response['entries'].reverse()
         self.assertEquals(response['entries'], response_log_entries)
 
-    @patch('nailgun.api.handlers.logs.DumpTaskManager')
+    @patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
     def test_log_package_handler_with_dump_task_manager_error(self,
                                                               dump_manager):
         """Test verifies that 400 status would be returned in case of errors

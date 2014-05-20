@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.validators.redhat import RedHatAccountValidator
+from nailgun.api.v1.validators.redhat import RedHatAccountValidator
 from nailgun.errors import errors
 from nailgun.test.base import BaseTestCase
 

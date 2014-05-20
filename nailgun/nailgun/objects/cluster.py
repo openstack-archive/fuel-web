@@ -18,7 +18,7 @@
 Cluster-related objects and collections
 """
 
-from nailgun.api.serializers.cluster import ClusterSerializer
+from nailgun.objects.serializers.cluster import ClusterSerializer
 
 from nailgun import consts
 

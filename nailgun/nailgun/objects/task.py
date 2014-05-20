@@ -15,7 +15,7 @@
 #    under the License.
 
 
-from nailgun.api.serializers.task import TaskSerializer
+from nailgun.objects.serializers.task import TaskSerializer
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models

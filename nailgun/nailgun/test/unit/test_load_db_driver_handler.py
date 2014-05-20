@@ -19,7 +19,7 @@ import unittest
 
 import web
 
-from nailgun.api.handlers import load_db_driver
+from nailgun.api.v1.handlers import load_db_driver
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 

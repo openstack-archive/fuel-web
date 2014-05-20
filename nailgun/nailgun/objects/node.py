@@ -24,7 +24,7 @@ from datetime import datetime
 
 from nailgun import consts
 
-from nailgun.api.serializers.node import NodeSerializer
+from nailgun.objects.serializers.node import NodeSerializer
 
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models

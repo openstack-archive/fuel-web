@@ -16,10 +16,11 @@
 
 import json
 
-from nailgun.api.serializers.network_configuration \
+from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
-from nailgun.api.serializers.network_configuration \
+from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
+
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
 from nailgun.test.base import BaseIntegrationTest

@@ -609,6 +609,14 @@ class Node(NailgunObject):
                (instance.status == consts.NODE_STATUSES.error
                 and instance.error_type == consts.NODE_ERRORS.deploy)
 
+    @classmethod
+    def move_roles_to_pending_roles(cls, instance):
+        """Move roles to pending_roles
+        """
+        instance.pending_roles += instance.roles
+        instance.roles = []
+        db().flush()
+
 
 class NodeCollection(NailgunCollection):
     """Node collection

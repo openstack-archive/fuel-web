@@ -40,6 +40,7 @@ class Task(NailgunObject):
         "properties": {
             "id": {"type": "number"},
             "cluster_id": {"type": "number"},
+            "node_id": {"type": "number"},
             "parent_id": {"type": "number"},
             "name": {
                 "type": "string",
@@ -94,3 +95,9 @@ class TaskCollection(NailgunCollection):
         if cluster_id == '':
             return cls.filter_by(None, cluster_id=None)
         return cls.filter_by(None, cluster_id=cluster_id)
+
+    @classmethod
+    def get_by_node_id(cls, node_id):
+        if node_id == '':
+            return cls.filter_by(None, node_id=None)
+        return cls.filter_by(None, node_id=node_id)

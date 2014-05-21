@@ -78,6 +78,7 @@ is accessible"}
         self.fixEtcHosts()
 
     def fixDnsmasqUpstream(self):
+        '''Called on init to apply default DNS settings.'''
         #check upstream dns server
         with open('/etc/dnsmasq.upstream', 'r') as f:
             dnslines = f.readlines()
@@ -94,7 +95,9 @@ is accessible"}
             with open('/etc/dnsmasq.upstream', 'w') as f:
                 nameservers = self.defaults['DNS_UPSTREAM'][
                     'value'].replace(',', ' ')
-                f.write("nameserver %s\n" % nameservers)
+                f.write("search {0}\n".format(self.defaults['DNS_SEARCH']))
+                f.write("domain {0}\n".format(self.defaults['DNS_DOMAIN']))
+                f.write("nameserver {0}\n".format(nameservers))
                 f.close()
 
     def fixEtcHosts(self):
@@ -269,6 +272,8 @@ is accessible"}
         #Write dnsmasq upstream server
         with open('/etc/dnsmasq.upstream', 'w') as f:
             nameservers = responses['DNS_UPSTREAM'].replace(',', ' ')
+            f.write("search %s\n" % responses['DNS_SEARCH'])
+            f.write("domain %s\n" % responses['DNS_DOMAIN'])
             f.write("nameserver %s\n" % nameservers)
         f.close()
 

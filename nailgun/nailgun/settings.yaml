@@ -559,6 +559,8 @@ DUMP:
         path: /etc/nailgun
       - type: dir
         path: /etc/astute
+      - type: dir
+        path: /etc/fuel
       - type: command
         command: df -h
         to_file: df.txt

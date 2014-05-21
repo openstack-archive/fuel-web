@@ -78,6 +78,7 @@ class Node(Base):
         nullable=False,
         default=consts.NODE_STATUSES.discover
     )
+    tasks = relationship("Task", backref="node", cascade="delete")
     meta = Column(JSON, default={})
     mac = Column(LowercaseString(17), nullable=False, unique=True)
     ip = Column(String(15))

@@ -82,7 +82,9 @@ The following steps are required to build the Fuel ISO images on Ubuntu
     sudo apt-get install python-setuptools yum yum-utils libmysqlclient-dev isomd5sum
     sudo apt-get install python-nose libvirt-bin python-ipaddr python-paramiko python-yaml
     sudo apt-get install python-pip kpartx extlinux unzip genisoimage nodejs multistrap
-    sudo apt-get install lxc-docker-0.10.0 lrzip python-daemon
+    sudo sh -c "echo deb http://mirror.yandex.ru/mirrors/docker/ docker main > /etc/apt/sources.list.d/docker.list"
+    sudo apt-get update
+    sudo apt-get install lxc-docker lrzip python-daemon
     sudo service docker start
     sudo gem install bundler -v 1.2.1
     sudo gem install builder

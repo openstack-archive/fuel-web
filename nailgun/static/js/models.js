@@ -285,24 +285,22 @@ define(['utils', 'deepModel'], function(utils) {
         findTask: function(filters) {
             return this.filterTasks(filters)[0];
         },
-        bindToView: function(view, filters, bindCallback, addRemoveCallback) {
-            if (!addRemoveCallback) {
-                addRemoveCallback = view.render;
-            }
+        bindToView: function(view, filters, bindCallback, addCallback, removeCallback) {
             bindCallback = _.bind(bindCallback, view);
-            addRemoveCallback = _.bind(addRemoveCallback, view);
+            addCallback = _.bind(addCallback || view.render, view);
+            removeCallback = _.bind(removeCallback || view.render, view);
             function taskMatchesFilters(task) {
                 return _.any(filters, task.match, task);
             }
             function onTaskAdd(task) {
                 if (taskMatchesFilters(task)) {
                     bindCallback(task);
-                    addRemoveCallback();
+                    addCallback();
                 }
             }
             function onTaskRemove(task) {
                 if (taskMatchesFilters(task)) {
-                    addRemoveCallback();
+                    removeCallback();
                 }
             }
             this.each(function(task) {

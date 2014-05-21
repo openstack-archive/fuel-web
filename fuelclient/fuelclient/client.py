@@ -124,4 +124,6 @@ class Client(object):
             default_flow_style=False
         )
 
+# This line is single point of instantiation for 'Client' class,
+# which intended to implement Singleton design pattern.
 APIClient = Client()

@@ -25,6 +25,10 @@ from fuelclient.cli.serializers import Serializer
 
 
 class Parser:
+    """Parser class - encapsulates argparse's ArgumentParser
+    and based on available actions, serializers and additional flags
+    populates it.
+    """
     def __init__(self):
         self.args = sys.argv
         self.parser = argparse.ArgumentParser(

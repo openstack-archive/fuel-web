@@ -11,7 +11,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+"""fuelclient.cli.actions sub-module contains files with action classes
+which implement command line interface logic
 
+All action classes must be added to action_tuple to be used by parser
+"""
 from fuelclient.cli.actions.deploy import DeployChangesAction
 from fuelclient.cli.actions.environment import EnvironmentAction
 from fuelclient.cli.actions.fact import DeploymentAction

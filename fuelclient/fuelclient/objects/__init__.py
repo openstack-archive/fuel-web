@@ -12,6 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+"""fuelclient.objects sub-module contains classes that mirror
+functionality from nailgun objects.
+"""
 
 from fuelclient.objects.base import BaseObject
 from fuelclient.objects.environment import Environment

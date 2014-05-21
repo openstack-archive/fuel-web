@@ -24,8 +24,18 @@ from fuelclient.client import APIClient
 
 class Action(object):
     """Action class generalizes logic of action execution
-    method action_func  - entry point of parser
+    method action_func  - entry point of parser with parsed arguments
 
+    flag_func_map - is tuple of pairs ("flag", self.some_method) where
+    "flag" is name of argument which causes "some_method" to be called.
+    None is used as "flag" when method will be called without any flag.
+
+    serializer - is Serializer class instance which supposed to be the
+    only way to read and write to output or file system.
+
+    args - tuple of function calls of functions from arguments module,
+    is a manifest of all arguments used in action, and is used to initialize
+    argparse subparser of that action.
     """
     def __init__(self):
         # Mapping of flags to methods
@@ -45,6 +55,10 @@ class Action(object):
 
     @property
     def examples(self):
+        """examples property is concatenation of __doc__ strings from
+        methods in child action classes, and is added as epilog of help
+        output
+        """
         methods_with_docs = set(
             method
             for _, method in self.flag_func_map
@@ -63,6 +77,12 @@ class Action(object):
 
 
 def wrap(method, args, f):
+    """wrap - is second order function, purpose of which is to
+    generalize argument checking for methods in actions in form
+    of decorator with arguments.
+
+    'check_all' and 'check_any' are partial function of wrap.
+    """
     @wraps(f)
     def wrapped_f(self, params):
         if method(getattr(params, _arg) for _arg in args):
@@ -79,8 +99,16 @@ def wrap(method, args, f):
 
 
 def check_all(*args):
+    """check_all - decorator with arguments, which checks that
+    all arguments are given before running action method, if
+    not all arguments are given, it raises an ArgumentException.
+    """
     return partial(wrap, all, args)
 
 
 def check_any(*args):
+    """check_any - decorator with arguments, which checks that
+    at least one arguments is given before running action method,
+    if no arguments were given, it raises an ArgumentException.
+    """
     return partial(wrap, any, args)

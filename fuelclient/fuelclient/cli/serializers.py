@@ -22,7 +22,9 @@ import yaml
 
 
 class Serializer(object):
-
+    """Serializer class - contains all logic responsible for
+    printing to stdout, reading and writing files to file system.
+    """
     serializers = {
         "json": {
             "w": lambda d: json.dumps(d, indent=4),

@@ -51,7 +51,7 @@ then clone fuel-devops repo and run setup.py ::
 
 	git clone git://github.com/stackforge/fuel-devops.git
 	cd fuel-devops
-	python ./setup.py
+	python ./setup.py install
 
 Devops installation in virtualenv
 ---------------------------------

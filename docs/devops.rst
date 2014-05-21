@@ -142,6 +142,7 @@ Clone fuel-main ::
 
 Install requirements ::
 
+    . devops-venv/bin/activate
     pip install -r ./fuelweb_test/requirements.txt --upgrade
 
 If you don't have a Fuel ISO and wanna build it please refer to 

@@ -6,9 +6,8 @@
         "requirejs-text": "2.0.10",
         "require-css": "0.1.0",
         "lodash": "1.1.1",
-        "autoNumeric": "http://github.com/BobKnothe/autoNumeric/zipball/1.9.12",
-        "jquery.timeout": "http://jquery-timeout.googlecode.com/files/jquery.timeout-1.1.0.js",
-        "backbone.stickit": "https://raw.github.com/NYTimes/backbone.stickit/0.7.0/backbone.stickit.js",
+        "autoNumeric": "1.9.12",
+        "backbone.stickit": "0.7.0",
         "i18next": "1.7.1",
         "backbone-deep-model": "0.10.4",
         "less": "1.5.1"
@@ -29,11 +28,8 @@
         "autoNumeric": {
             "js": "autoNumeric.js"
         },
-        "jquery.timeout": {
-            "js": "index.js"
-        },
         "backbone.stickit": {
-            "js": "index.js"
+            "js": "backbone.stickit.js"
         },
         "i18next": {
             "js": "release/i18next-1.7.1.js"

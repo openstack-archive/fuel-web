@@ -201,6 +201,9 @@ class NodeAgent
         next if intinfo[:type] !~ /^eth.*/
         # Exception: eth0.0(example) have "type" => "eth" but it is not physical interface
         next if int =~ /\d+\.\d+$/ or int =~ /vlan\d+$/
+        # Remove interfaces like eth0.101-hapr, eth1-hapr
+        next if int =~ /\d+-.+/
+
         int_meta = {:name => int}
         int_meta[:state] = intinfo[:state]
         (intinfo[:addresses] or {} rescue {}).each do |addr, addrinfo|

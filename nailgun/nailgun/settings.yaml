@@ -144,7 +144,7 @@ LOGS:
     <<: *python_log_format
     path: '/var/log/nailgun/receiverd.log'
   - id: astute
-    name: "Orchestrator"
+    name: "Astute"
     <<: *local_log_type
     <<: *remote_syslog_log_format
     path: '/var/log/astute/astute.log'

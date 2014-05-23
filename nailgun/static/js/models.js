@@ -551,7 +551,7 @@ define(['utils', 'deepModel'], function(utils) {
                             networkErrors.gateway = $.t('cluster_page.network_tab.validation.gateway_is_out_of_ip_range');
                         }
                     }
-                    var forbiddenVlans = _.compact(attrs.networks.map(function(net) {return net.id != network.id ? net.get('vlan_start') : null;}));
+                    var forbiddenVlans = attrs.networks.map(function(net) {return net.id != network.id ? net.get('vlan_start') : null;});
                     _.extend(networkErrors, utils.validateVlan(network.get('vlan_start'), forbiddenVlans, 'vlan_start'));
                     if (!_.isEmpty(networkErrors)) {
                         networksErrors[network.id] = networkErrors;
@@ -563,29 +563,28 @@ define(['utils', 'deepModel'], function(utils) {
             }
 
             // validate networking parameters
-            if (attrs.networking_parameters.get('net_manager')) {
+            var novaNetManager = attrs.networking_parameters.get('net_manager');
+            if (novaNetManager) {
                 networkingParametersErrors = _.extend(networkingParametersErrors, utils.validateCidr(attrs.networking_parameters.get('fixed_networks_cidr'), 'fixed_networks_cidr'));
                 var fixedAmount = attrs.networking_parameters.get('fixed_networks_amount');
                 var fixedVlan = attrs.networking_parameters.get('fixed_networks_vlan_start');
                 if (!utils.isNaturalNumber(fixedAmount)) {
                     networkingParametersErrors.fixed_networks_amount = $.t('cluster_page.network_tab.validation.invalid_amount');
                 }
-                if (!_.isNull(fixedVlan)) {
-                    var vlanErrors = utils.validateVlan(fixedVlan, attrs.networks.pluck('vlan_start'), 'fixed_networks_vlan_start');
-                    _.extend(networkingParametersErrors, vlanErrors);
-                    if (_.isEmpty(vlanErrors)) {
-                        if (!networkingParametersErrors.fixed_networks_amount && fixedAmount > 4095 - fixedVlan) {
-                            networkingParametersErrors.fixed_networks_amount = $.t('cluster_page.network_tab.validation.need_more_vlan');
+                var vlanErrors = utils.validateVlan(fixedVlan, attrs.networks.pluck('vlan_start'), 'fixed_networks_vlan_start', novaNetManager == 'VlanManager');
+                _.extend(networkingParametersErrors, vlanErrors);
+                if (_.isEmpty(vlanErrors)) {
+                    if (!networkingParametersErrors.fixed_networks_amount && fixedAmount > 4095 - fixedVlan) {
+                        networkingParametersErrors.fixed_networks_amount = $.t('cluster_page.network_tab.validation.need_more_vlan');
+                    }
+                    var vlanIntersection = false;
+                    _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
+                        if (utils.validateVlanRange(fixedVlan, fixedVlan + fixedAmount - 1, vlan)) {
+                            vlanIntersection = true;
                         }
-                        var vlanIntersection = false;
-                        _.each(_.compact(attrs.networks.pluck('vlan_start')), function(vlan) {
-                            if (utils.validateVlanRange(fixedVlan, fixedVlan + fixedAmount - 1, vlan)) {
-                                vlanIntersection = true;
-                            }
-                        });
-                        if (vlanIntersection) {
-                            networkingParametersErrors.fixed_networks_vlan_start = $.t('cluster_page.network_tab.validation.vlan_intersection');
-                        }
+                    });
+                    if (vlanIntersection) {
+                        networkingParametersErrors.fixed_networks_vlan_start = $.t('cluster_page.network_tab.validation.vlan_intersection');
                     }
                 }
             } else {

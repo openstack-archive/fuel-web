@@ -138,14 +138,14 @@ define(['require', 'expression_parser'], function(require, ExpressionParser) {
         isNaturalNumber: function(n) {
             return _.isNumber(n) && n > 0 && n % 1 === 0;
         },
-        validateVlan: function(vlan, forbiddenVlans, field) {
+        validateVlan: function(vlan, forbiddenVlans, field, disallowNullValue) {
             var error = {};
-            if (!_.isNull(vlan)) {
-                if (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094) {
-                    error[field] = $.t('cluster_page.network_tab.validation.invalid_vlan');
-                } else if (_.contains(forbiddenVlans, vlan)) {
-                    error[field] = $.t('cluster_page.network_tab.validation.forbidden_vlan');
-                }
+            if ((_.isNull(vlan) && disallowNullValue) || (!_.isNull(vlan) && (!utils.isNaturalNumber(vlan) || vlan < 1 || vlan > 4094))) {
+                error[field] = $.t('cluster_page.network_tab.validation.invalid_vlan');
+                return error;
+            }
+            if (_.contains(_.compact(forbiddenVlans), vlan)) {
+                error[field] = $.t('cluster_page.network_tab.validation.forbidden_vlan');
             }
             return error[field] ? error : {};
         },

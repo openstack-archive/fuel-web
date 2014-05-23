@@ -202,6 +202,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
             } else {
                 this.$('.table-logs .entries-skipped-msg').hide();
             }
+            this.$('.table-logs .no-logs-msg').hide();
             this.$('.logs-loading').show();
             this.$('select').attr('disabled', true);
             this.$('.show-logs-btn').addClass('disabled');
@@ -250,7 +251,6 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                 // autoscroll only if window is already scrolled to bottom
                 var scrollToBottom = !this.reversed && !doNotScroll && $(document).height() == $(window).scrollTop() + $(window).height();
 
-                this.$('.table-logs .no-logs-msg').hide();
                 this.$('.table-logs .log-entries')[this.reversed ? 'prepend' : 'append'](_.map(data.entries, function(entry) {
                     return this.logEntryTemplate({entry: entry});
                 }, this).join(''));

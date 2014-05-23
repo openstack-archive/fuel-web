@@ -198,9 +198,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').bindToView(this, [{group: ['deployment', 'network']}], function(task) {
                 task.on('change:status', this.render, this);
-            });
-            // FIXME: we don't need to listen to every task removal
-            this.model.get('tasks').on('remove', this.renderVerificationControl, this);
+            }, this.render, this.renderVerificationControl);
             this.settings = this.model.get('settings');
             (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {
                 this.setInitialData();

@@ -47,8 +47,9 @@ module.exports = function(grunt) {
         jslint: {
             client: {
                 src: [
-                    'static/js/*.js',
-                    'static/js/views/**/*.js',
+                    'static/js/**/*.js',
+                    '!static/js/libs/**',
+                    '!static/js/expression_parser.js'
                 ],
                 directives: {
                     predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
@@ -115,12 +116,22 @@ module.exports = function(grunt) {
                 files: false,
                 force: true
             }
+        },
+        jison: {
+            target : {
+                src: 'static/config_expression.jison',
+                dest: 'static/js/expression_parser.js',
+                options: {
+                    moduleType: 'js'
+                }
+            }
         }
     });
 
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-jison');
     grunt.loadNpmTasks('grunt-cleanempty');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');

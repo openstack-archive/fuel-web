@@ -318,9 +318,9 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'role': 'primary-mongo', 'priority': 500},
             {'role': 'primary-controller', 'priority': 600},
             {'role': 'controller', 'priority': 700},
-            {'role': 'controller', 'priority': 800},
-            {'role': 'ceph-osd', 'priority': 900},
-            {'role': 'other', 'priority': 900}
+            {'role': 'controller', 'priority': 700},
+            {'role': 'ceph-osd', 'priority': 800},
+            {'role': 'other', 'priority': 800}
         ]
         self.assertEquals(expected_priorities, nodes)
 

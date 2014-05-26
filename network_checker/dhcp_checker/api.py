@@ -107,10 +107,10 @@ def check_dhcp_with_vlans(config, timeout=5, repeat=2):
         ifaces, vlans = zip(*vifaces)
         listeners = make_listeners(ifaces)
 
-        for i in utils.filtered_ifaces(itertools.chain(ifaces, *vlans)):
-            send_dhcp_discover(i)
-
-        time.sleep(timeout)
+        for _ in xrange(repeat):
+            for i in utils.filtered_ifaces(itertools.chain(ifaces, *vlans)):
+                send_dhcp_discover(i)
+            time.sleep(timeout)
 
         for l in listeners:
             for pkt in l.readpkts():

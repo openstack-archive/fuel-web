@@ -54,7 +54,6 @@ class TestClusterHandlers(BaseIntegrationTest):
     def test_assignment_is_removed_when_delete_node_from_cluster(self):
         mac = self.env.generate_random_mac()
         meta = self.env.default_metadata()
-        meta = self.env.default_metadata()
         self.env.set_interfaces_in_meta(
             meta,
             [{'name': 'eth0', 'mac': mac},
@@ -157,7 +156,7 @@ class TestNodeHandlers(BaseIntegrationTest):
                 net['vlan_start'] = None
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
         self.assertEqual(task['status'], 'ready')
 
@@ -194,7 +193,7 @@ class TestNodeHandlers(BaseIntegrationTest):
             if net['name'] == 'management':
                 net['vlan_start'] = 112
         resp = self.env.nova_networks_put(cluster['id'], nets)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
         self.assertEqual(task['status'], 'ready')
 
@@ -528,21 +527,11 @@ class TestNodeNICsHandlersValidation(BaseIntegrationTest):
                                   self.data)
         self.assertGreater(len(self.nics_w_nets), 0)
 
-    def put_single(self):
-        return self.env.node_nics_put(self.env.nodes[0]["id"], self.data,
-                                      expect_errors=True)
-
-    def put_collection(self):
-        nodes_list = [{"id": self.env.nodes[0]["id"],
-                       "interfaces": self.data}]
-        return self.env.node_collection_nics_put(nodes_list,
-                                                 expect_errors=True)
-
     def node_nics_put_check_error(self, message):
-        for put_func in (self.put_single, self.put_collection):
-            resp = put_func()
-            self.assertEqual(resp.status_code, 400)
-            self.assertEqual(resp.body, message)
+        resp = self.env.node_nics_put(self.env.nodes[0]["id"], self.data,
+                                      expect_errors=True)
+        self.assertEquals(resp.status_code, 400)
+        self.assertEquals(resp.body, message)
 
     def test_assignment_change_failed_assigned_network_wo_id(self):
         self.nics_w_nets[0]["assigned_networks"] = [{}]

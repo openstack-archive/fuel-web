@@ -14,12 +14,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import sys
+"""
+Product info handlers
+"""
+import pecan
 
-sys.path.insert(0, os.path.dirname(__file__))
+from nailgun.api.v2.controllers.base import BaseController
+from nailgun.settings import settings
 
-from nailgun.app import build_wsgi_app
 
+class VersionController(BaseController):
+    """Version info handler
+    """
 
-application = build_wsgi_app()
+    @pecan.expose(template='json:', content_type='application/json')
+    def get_all(self):
+        """:returns: FUEL/FUELWeb commit SHA, release version.
+        :http: * 200 (OK)
+        """
+        return settings.VERSION

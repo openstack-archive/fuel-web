@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 #    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -14,12 +12,3 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(__file__))
-
-from nailgun.app import build_wsgi_app
-
-
-application = build_wsgi_app()

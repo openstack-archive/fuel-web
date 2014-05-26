@@ -624,3 +624,6 @@ class NodeCollection(NailgunCollection):
 
     #: Single Node object class
     single = Node
+
+
+Node.collection = NodeCollection

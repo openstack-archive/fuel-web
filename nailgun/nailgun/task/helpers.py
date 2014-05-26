@@ -49,7 +49,7 @@ class TaskHelper(object):
             if n.fqdn != fqdn:
                 n.fqdn = fqdn
                 logger.debug("Updating node fqdn: %s %s", n.id, n.fqdn)
-                db().commit()
+                db().flush()
 
     @classmethod
     def prepare_syslog_dir(cls, node, prefix=None):

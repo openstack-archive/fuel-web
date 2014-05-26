@@ -138,7 +138,7 @@ class NetworkManager(object):
                     network=admin_net_id
                 )
                 db().add(ip_db)
-            db().commit()
+            db().flush()
 
     @classmethod
     def assign_ips(cls, nodes_ids, network_name):

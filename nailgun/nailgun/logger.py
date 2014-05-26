@@ -87,9 +87,9 @@ class HTTPLoggerMiddleware(object):
         response_info = "Response code '%s' for %s %s from %s:%s" % (
             response_code,
             env['REQUEST_METHOD'],
-            env['REQUEST_URI'],
+            env.get('REQUEST_URI') or env.get('PATH_INFO'),
             self.__get_remote_ip(env),
-            env['REMOTE_PORT'],
+            env.get('REMOTE_PORT'),
         )
 
         if response_code == SERVER_ERROR_MSG:
@@ -110,9 +110,9 @@ class HTTPLoggerMiddleware(object):
 
         request_info = "Request %s %s from %s:%s %s" % (
             env['REQUEST_METHOD'],
-            env['REQUEST_URI'],
+            env.get('REQUEST_URI') or env.get('PATH_INFO'),
             self.__get_remote_ip(env),
-            env['REMOTE_PORT'],
+            env.get('REMOTE_PORT'),
             body
         )
 

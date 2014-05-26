@@ -811,3 +811,6 @@ class NodeCollection(NailgunCollection):
     @classmethod
     def get_by_group_id(cls, group_id):
         return cls.filter_by(None, group_id=group_id)
+
+
+Node.collection = NodeCollection

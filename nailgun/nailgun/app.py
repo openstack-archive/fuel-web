@@ -21,8 +21,8 @@ from web.httpserver import WSGIServer
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from nailgun.api.handlers import forbid_client_caching
-from nailgun.api.handlers import load_db_driver
+from nailgun.api.v1.handlers import forbid_client_caching
+from nailgun.api.v1.handlers import load_db_driver
 from nailgun.db import engine
 from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger

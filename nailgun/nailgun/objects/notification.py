@@ -27,7 +27,7 @@ from nailgun.objects import NailgunObject
 
 from nailgun.objects import Task
 
-from nailgun.api.serializers.notification import NotificationSerializer
+from nailgun.objects.serializers.notification import NotificationSerializer
 
 
 class Notification(NailgunObject):

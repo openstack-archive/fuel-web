@@ -22,12 +22,13 @@ import netaddr
 
 from nailgun import objects
 
-from nailgun.api.serializers.network_configuration \
+from nailgun.objects.serializers.network_configuration \
     import NetworkConfigurationSerializer
-from nailgun.api.serializers.network_configuration \
+from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
-from nailgun.api.serializers.network_configuration \
+from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
+
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.errors import errors
 from nailgun.logger import logger

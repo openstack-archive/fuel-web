@@ -19,8 +19,8 @@ import json
 
 from nailgun import objects
 
-from nailgun.api.handlers.base import BaseHandler
-from nailgun.api.urls.v1 import urls
+from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.api.v1.urls import urls
 from nailgun.test.base import reverse
 
 

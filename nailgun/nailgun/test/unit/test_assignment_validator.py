@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.validators.assignment import NodeAssignmentValidator
+from nailgun.api.v1.validators.assignment import NodeAssignmentValidator
 from nailgun.errors import errors
 from nailgun.test.base import BaseUnitTest
 

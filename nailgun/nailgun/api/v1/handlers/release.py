@@ -14,13 +14,30 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1 import urls as api_urls
-from nailgun.webui import urls as webui_urls
+"""
+Handlers dealing with releases
+"""
+
+from nailgun.api.v1.handlers.base import CollectionHandler
+from nailgun.api.v1.handlers.base import SingleHandler
+
+from nailgun.api.v1.validators.release import ReleaseValidator
+
+from nailgun.objects import Release
+from nailgun.objects import ReleaseCollection
 
 
-def urls():
-    return (
-        "/api/v1", api_urls.app(),
-        "/api", api_urls.app(),
-        "", webui_urls.app()
-    )
+class ReleaseHandler(SingleHandler):
+    """Release single handler
+    """
+
+    single = Release
+    validator = ReleaseValidator
+
+
+class ReleaseCollectionHandler(CollectionHandler):
+    """Release collection handler
+    """
+
+    validator = ReleaseValidator
+    collection = ReleaseCollection

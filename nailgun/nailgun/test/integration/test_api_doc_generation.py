@@ -21,7 +21,7 @@ from inspect import getmembers
 from inspect import isclass
 from inspect import ismethod
 
-from nailgun.api.urls.v1 import urls
+from nailgun.api.v1.urls import urls
 from nailgun.autoapidoc import SampleGenerator
 from nailgun.test.base import BaseIntegrationTest
 
@@ -54,7 +54,7 @@ class TestAPIDocGeneration(BaseIntegrationTest):
 
     def test_url_generator(self):
         path = os.path.dirname(os.path.realpath(__file__))
-        path = ('/'.join(path.split('/')[:-2])) + "/api/handlers/"
+        path = ('/'.join(path.split('/')[:-2])) + "/api/v1/handlers/"
         classes = self.load_from_path(path)
         names = set()
         unique_classes = []

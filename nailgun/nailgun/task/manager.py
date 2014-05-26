@@ -17,10 +17,11 @@
 import json
 import traceback
 
-from nailgun.api.serializers.network_configuration \
+from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
-from nailgun.api.serializers.network_configuration \
+from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
+
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import RedHatAccount

@@ -120,7 +120,10 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
                             networkConfiguration: networkConfiguration,
                             release: new models.Release({id: cluster.get('release_id')})
                         });
-                        return cluster.get('release').fetch();
+                        return cluster.get('release').fetch().done(function() {
+                            cluster.get('release').cluster = cluster;
+                            cluster.get('release').get('roles').release = cluster.get('release');
+                        });
                     }, this))
                     .done(_.bind(render, this))
                     .fail(_.bind(this.listClusters, this));

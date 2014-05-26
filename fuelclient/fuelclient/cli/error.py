@@ -18,6 +18,8 @@ import urllib2
 
 
 def exit_with_error(message):
+    """exit_with_error - writes message to stderr and exits with exit code 1.
+    """
     sys.stderr.write(message + "\n")
     exit(1)
 
@@ -65,6 +67,8 @@ class ParserException(FuelClientException):
 
 
 def handle_exceptions(exc):
+    """handle_exceptions - exception handling manager.
+    """
     if isinstance(exc, urllib2.HTTPError):
         error_body = exc.read()
         exit_with_error("{0} {1}".format(
@@ -80,6 +84,9 @@ def handle_exceptions(exc):
 
 
 def exceptions_decorator(func):
+    """exceptions_decorator - is decorator which intercepts exceptions and
+    redirects them to handle_exceptions.
+    """
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:

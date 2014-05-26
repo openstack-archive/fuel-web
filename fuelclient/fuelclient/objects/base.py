@@ -17,7 +17,13 @@ from fuelclient.client import APIClient
 
 
 class BaseObject(object):
+    """BaseObject class - base class for fuelclient.objects object classes
 
+    'class_api_path' - url path to object handler on Nailgun server.
+    'instance_api_path' - url path template which formatted with object id
+    returns only one serialized object.
+    'connection' - 'Client' class instance from fuelclient.client
+    """
     class_api_path = None
     instance_api_path = None
     connection = APIClient

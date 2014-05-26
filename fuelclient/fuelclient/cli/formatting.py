@@ -27,7 +27,7 @@ from fuelclient.cli.error import exit_with_error
 
 
 def format_table(data, acceptable_keys=None, column_to_join=None):
-    """Format list of dicts to ascii table
+    """Format list of dicts to table in a string form
 
     :acceptable_keys list(str): list of keys for which to create table
                                 also specifies their order
@@ -70,6 +70,8 @@ def format_table(data, acceptable_keys=None, column_to_join=None):
 
 
 def quote_and_join(words):
+    """quote_and_join - performs listing of objects and returns string.
+    """
     words = list(words)
     if len(words) > 1:
         return '{0} and "{1}"'.format(
@@ -86,6 +88,9 @@ def quote_and_join(words):
 
 
 def get_bar_for_progress(full_width, progress):
+    """get_bar_for_progress - returns string with a width of 'full_width'
+    which illustrates specific progress value.
+    """
     number_of_equal_signs = int(
         math.ceil(progress * float(full_width - 2) / 100)
     )
@@ -97,6 +102,9 @@ def get_bar_for_progress(full_width, progress):
 
 
 def download_snapshot_with_progress_bar(url, directory=os.path.curdir):
+    """downloads file from specific 'url' with progress bar and save it
+    to some 'directory'.
+    """
     if not os.path.exists(directory):
         exit_with_error("Folder {0} doesn't exist.".format(directory))
     file_name = os.path.join(
@@ -127,6 +135,9 @@ def download_snapshot_with_progress_bar(url, directory=os.path.curdir):
 
 
 def print_deploy_progress(deploy_task):
+    """Receives 'deploy_task' and depending on terminal availability
+    starts progress printing routines with or without curses.
+    """
     try:
         terminal_screen = curses.initscr()
         print_deploy_progress_with_terminal(deploy_task, terminal_screen)

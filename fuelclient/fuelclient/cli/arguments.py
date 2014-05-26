@@ -111,18 +111,6 @@ class SetAction(argparse.Action):
             setattr(namespace, self.dest, set(values))
 
 
-def get_serializer_arg(serialization_method):
-    return {
-        "args": ["--{0}".format(serialization_method)],
-        "params": {
-            "dest": serialization_method,
-            "action": "store_true",
-            "help": "prints only {0} to stdout".format(serialization_method),
-            "default": False
-        }
-    }
-
-
 def get_debug_arg():
     return {
         "args": ["--debug"],

@@ -94,3 +94,6 @@ class TaskCollection(NailgunCollection):
         if cluster_id == '':
             return cls.filter_by(None, cluster_id=None)
         return cls.filter_by(None, cluster_id=cluster_id)
+
+
+Task.collection = TaskCollection

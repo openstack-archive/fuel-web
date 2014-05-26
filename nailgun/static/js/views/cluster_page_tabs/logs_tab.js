@@ -135,10 +135,13 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
         },
         updateLevels: function(e) {
             var input = this.$('select[name=level]');
-            var chosenSourceId = this.$('select[name=source]').val();
+            input.addClass('testFlagInput');
+            var chosenSourceId;
             if (e) {
+                chosenSourceId = this.$('select[name=source]').val();
                 this.lastSource = chosenSourceId;
             } else {
+                chosenSourceId = this.lastSource;
                 this.$('select[name=source]').val(this.lastSource);
             }
             if (chosenSourceId) {

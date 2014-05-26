@@ -352,7 +352,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         applyChanges: function() {
             this.$('.btn-apply').prop('disabled', true);
-            var nodes  = new models.Nodes(this.screen.nodes.where({checked: true}));
+            var nodes  = new models.Nodes(_.invoke(this.screen.nodes.where({checked: true}), 'clone'));
             nodes.each(function(node) {
                 if (!this.nodes.cluster) {
                     node.set({cluster_id: this.cluster.id, pending_addition: true});

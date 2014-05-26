@@ -630,6 +630,15 @@ class NetworkManager(object):
         for interface in node.meta["interfaces"]:
             interface_db = db().query(NodeNICInterface).filter_by(
                 mac=interface['mac']).first()
+
+            # try to get interface instance by node_id and interface name.
+            # this protects us from loosing nodes when some NICs was
+            # replaced with a new one
+            for nic in node.nic_interfaces:
+                if nic.name == interface['name']:
+                    interface_db = nic
+                    break
+
             if interface_db:
                 cls.__update_existing_interface(interface_db.id, interface)
             else:

@@ -43,9 +43,10 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         },
         disableControls: function(disable) {
             var disabledState = disable || this.isLocked();
+            var hasRunningTests = this.hasRunningTests();
             this.runTestsButton.set({disabled: disabledState || !this.getNumberOfCheckedTests()});
-            this.stopTestsButton.set({disabled: !this.hasRunningTests()});
-            this.selectAllCheckbox.set({disabled: disabledState});
+            this.stopTestsButton.set({disabled: !hasRunningTests});
+            this.selectAllCheckbox.set({disabled: disabledState || hasRunningTests});
         },
         toggleTestsVisibility: function() {
             var hasRunningTests = this.hasRunningTests();
@@ -191,6 +192,9 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                     this.$('.testsets > .row').hide();
                     this.$('.testsets > .progress-bar').hide();
                     this.$('.testsets > .error-message').show();
+                }, this)
+                ).always(_.bind(function() {
+                    this.disableControls();
                 }, this));
             } else {
                 _.extend(this, this.model.get('ostf'));
@@ -250,7 +254,6 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                     this.registerSubView(testsetView);
                     this.$('.testsets').append(testsetView.render().el);
                 }, this);
-                this.disableControls();
             }
             this.initStickitBindings();
             return this;

@@ -56,7 +56,7 @@ from nailgun.objects import Cluster
 from nailgun.objects import Node
 from nailgun.objects import Release
 
-from nailgun.app import build_app
+from nailgun.app import build_wsgi_app2
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.network.manager import NetworkManager
 from nailgun.openstack.common import jsonutils
@@ -757,13 +757,6 @@ class Environment(object):
                              interfaces,
                              expect_errors)
 
-    def node_collection_nics_put(self, nodes,
-                                 expect_errors=False):
-        return self._api_put('NodeCollectionNICsHandler',
-                             {},
-                             nodes,
-                             expect_errors)
-
 
 class BaseTestCase(TestCase):
 
@@ -778,7 +771,7 @@ class BaseTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = app.TestApp(
-            build_app(db_driver=test_db_driver).wsgifunc()
+            build_wsgi_app2(db_driver=test_db_driver)
         )
         syncdb()
 

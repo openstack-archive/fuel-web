@@ -215,3 +215,6 @@ class ReleaseCollection(NailgunCollection):
 
     #: Single Release object class
     single = Release
+
+
+Release.collection = ReleaseCollection

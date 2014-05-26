@@ -724,3 +724,6 @@ class NodeCollection(NailgunCollection):
         instances_ids = [instance.id for instance in instances]
         q = cls.filter_by_list(None, 'id', instances_ids, order_by='id')
         return cls.lock_for_update(q).all()
+
+
+Node.collection = NodeCollection

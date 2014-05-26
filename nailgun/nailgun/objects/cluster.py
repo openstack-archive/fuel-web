@@ -769,6 +769,10 @@ class ClusterCollection(NailgunCollection):
     #: Single Cluster object class
     single = Cluster
 
+Cluster.collection = ClusterCollection
+
 
 class VmwareAttributes(NailgunObject):
     model = models.VmwareAttributes
+
+

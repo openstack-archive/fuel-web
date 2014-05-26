@@ -309,3 +309,6 @@ class TaskCollection(NailgunCollection):
         ).delete(
             synchronize_session='fetch'
         )
+
+
+Task.collection = TaskCollection

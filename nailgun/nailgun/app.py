@@ -21,8 +21,6 @@ from web.httpserver import WSGIServer
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from nailgun.api.v1.handlers import forbid_client_caching
-from nailgun.api.v1.handlers import load_db_driver
 from nailgun.db import engine
 from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger
@@ -36,18 +34,16 @@ from nailgun.settings import settings
 from nailgun.urls import urls
 
 
-def build_app(db_driver=None):
+def build_wsgi_app_old(db_driver=None):
     """Build app and disable debug mode in case of production
     """
+    from nailgun.api.v1.handlers import forbid_client_caching
+    from nailgun.api.v1.handlers import load_db_driver
     web.config.debug = bool(int(settings.DEVELOPMENT))
     app = web.application(urls(), locals(),
                           autoreload=bool(int(settings.AUTO_RELOAD)))
     app.add_processor(db_driver or load_db_driver)
     app.add_processor(forbid_client_caching)
-    return app
-
-
-def build_middleware(app):
 
     middleware_list = [
         ConnectionMonitorMiddleware,
@@ -66,7 +62,24 @@ def build_middleware(app):
     logger.debug('Initialize middleware: %s' %
                  (map(lambda x: x.__name__, middleware_list)))
 
-    return app(*middleware_list)
+    return app.wsgifunc(*middleware_list)
+
+
+def build_wsgi_app(db_driver=None):
+    """Build app and disable debug mode in case of production
+    """
+    from pecan.deploy import deploy
+    CONFIG_PATH = os.path.join(
+        os.path.dirname(__file__), "api", "v2", "config.py"
+    )
+    app = deploy(CONFIG_PATH)
+
+    if settings.AUTH['AUTHENTICATION_METHOD'] == 'keystone':
+        app = NailgunKeystoneAuthMiddleware(app)
+    elif settings.AUTH['AUTHENTICATION_METHOD'] == 'fake':
+        app = NailgunFakeKeystoneAuthMiddleware(app)
+
+    return app
 
 
 def run_server(func, server_address=('0.0.0.0', 8080)):
@@ -91,7 +104,7 @@ def appstart():
         )
         sys.exit(1)
 
-    run_server(build_middleware(build_app().wsgifunc),
+    run_server(build_wsgi_app(),
                (settings.LISTEN_ADDRESS, int(settings.LISTEN_PORT)))
 
     logger.info("Stopping WSGI app...")

@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2015 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,12 +12,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import sys
+import pecan.hooks
 
-sys.path.insert(0, os.path.dirname(__file__))
+from sqlalchemy import exc as sa_exc
 
-from nailgun.app import build_wsgi_app
+from nailgun.db import db
 
 
-application = build_wsgi_app()
+class CommitHook(pecan.hooks.PecanHook):
+
+    def on_error(self, state, exc):
+        if exc in (sa_exc.IntegrityError, sa_exc.DataError):
+            db().rollback()
+        return
+
+    def after(self, state):
+        db().commit()

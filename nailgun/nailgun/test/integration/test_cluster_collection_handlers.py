@@ -33,14 +33,14 @@ class TestHandlers(BaseIntegrationTest):
     def _get_cluster_networks(self, cluster_id):
         nets = self.app.get(
             reverse('NovaNetworkConfigurationHandler',
-                    {"cluster_id": cluster_id}),
+                    kwargs={"cluster_id": cluster_id}),
             headers=self.default_headers,
         ).json_body["networks"]
         return nets
 
     def test_cluster_list_empty(self):
         resp = self.app.get(
-            reverse('ClusterCollectionHandler'),
+            reverse('ClusterController'),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
@@ -49,7 +49,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_cluster_create(self):
         release_id = self.env.create_release(api=False).id
         resp = self.app.post(
-            reverse('ClusterCollectionHandler'),
+            reverse('ClusterController'),
             jsonutils.dumps({
                 'name': 'cluster-name',
                 'release': release_id,
@@ -145,7 +145,7 @@ class TestHandlers(BaseIntegrationTest):
         self.db.add(release)
         self.db.commit()
         resp = self.app.post(
-            reverse('ClusterCollectionHandler'),
+            reverse('ClusterController'),
             jsonutils.dumps({
                 'name': 'cluster-name',
                 'release': release.id,

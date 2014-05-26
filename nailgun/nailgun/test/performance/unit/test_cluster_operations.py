@@ -136,7 +136,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
     def test_get_clusters(self):
         func = functools.partial(
             self.get_handler,
-            'ClusterCollectionHandler'
+            'ClusterController'
         )
         self.check_time_exec(func)
 
@@ -146,7 +146,7 @@ class ClusterOperationsLoadTest(base.BaseUnitLoadTestCase):
             'release_id': release_id
         }
         return self.post_handler(
-            'ClusterCollectionHandler',
+            'ClusterController',
             cluster_data
         )
 

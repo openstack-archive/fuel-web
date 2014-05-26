@@ -33,14 +33,14 @@ class TestHandlers(BaseIntegrationTest):
 
     def delete(self, cluster_id):
         return self.app.delete(
-            reverse('ClusterHandler', kwargs={'obj_id': cluster_id}),
+            reverse('ClusterController', kwargs={'obj_id': cluster_id}),
             headers=self.default_headers
         )
 
     def test_cluster_get(self):
         cluster = self.env.create_cluster(api=False)
         resp = self.app.get(
-            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
+            reverse('ClusterController', kwargs={'obj_id': cluster.id}),
             headers=self.default_headers
         )
         self.assertEqual(200, resp.status_code)
@@ -52,7 +52,7 @@ class TestHandlers(BaseIntegrationTest):
         release = self.env.create_release(api=False)
         yet_another_cluster_name = 'Yet another cluster'
         resp = self.app.post(
-            reverse('ClusterCollectionHandler'),
+            reverse('ClusterController'),
             params=jsonutils.dumps({
                 'name': yet_another_cluster_name,
                 'release': release.id
@@ -70,7 +70,7 @@ class TestHandlers(BaseIntegrationTest):
         clusters_before = len(self.db.query(Cluster).all())
 
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
+            reverse('ClusterController', kwargs={'obj_id': cluster.id}),
             jsonutils.dumps({'name': updated_name}),
             headers=self.default_headers
         )
@@ -89,7 +89,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster = self.env.create_cluster(api=False)
         self.assertEqual(cluster.net_provider, "nova_network")
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
+            reverse('ClusterController', kwargs={'obj_id': cluster.id}),
             jsonutils.dumps({'net_provider': 'neutron'}),
             headers=self.default_headers,
             expect_errors=True
@@ -105,7 +105,7 @@ class TestHandlers(BaseIntegrationTest):
         node2 = self.env.create_node(api=False)
         cluster = self.env.create_cluster(api=False)
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
+            reverse('ClusterController', kwargs={'obj_id': cluster.id}),
             jsonutils.dumps({'nodes': [node1.id]}),
             headers=self.default_headers,
             expect_errors=True
@@ -117,7 +117,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(nodes[0].id, node1.id)
 
         resp = self.app.put(
-            reverse('ClusterHandler', kwargs={'obj_id': cluster.id}),
+            reverse('ClusterController', kwargs={'obj_id': cluster.id}),
             jsonutils.dumps({'nodes': [node2.id]}),
             headers=self.default_headers
         )

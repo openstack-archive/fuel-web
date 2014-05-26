@@ -283,9 +283,11 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(len(nodes_data), 1)
 
             # remove all interfaces except admin one
+            adm_eth = self.env.network_manager._get_interface_by_network_name(
+                nodes_data[0]['id'], 'fuelweb_admin')
             ifaces = list(nodes_data[0]['meta']['interfaces'])
             nodes_data[0]['meta']['interfaces'] = \
-                [i for i in ifaces if i['name'] == 'eth1']
+                [i for i in ifaces if i['name'] == adm_eth.name]
 
             # prepare put request
             data = {
@@ -328,3 +330,61 @@ class TestHandlers(BaseIntegrationTest):
             nodes_data = get_nodes()
             self.assertEqual(len(nodes_data), 1)
             self.assertItemsEqual(nodes_data[0]['meta']['interfaces'], ifaces)
+
+    def test_change_mac_of_assigned_nics(self):
+        def get_nodes():
+            resp = self.app.get(
+                reverse('NodeCollectionHandler',
+                        kwargs={'cluster_id': self.env.clusters[0].id}),
+                headers=self.default_headers,
+            )
+            return jsonutils.loads(resp.body)
+
+        meta = self.env.default_metadata()
+        meta["interfaces"] = [
+            {'name': 'eth0', 'mac': self.env.generate_random_mac()},
+            {'name': 'eth1', 'mac': self.env.generate_random_mac()},
+            {'name': 'eth2', 'mac': self.env.generate_random_mac()},
+            {'name': 'eth3', 'mac': self.env.generate_random_mac()},
+            {'name': 'eth4', 'mac': self.env.generate_random_mac()},
+        ]
+        self.env.create(nodes_kwargs=[{'api': True, 'meta': meta}])
+
+        # check all possible handlers
+        for handler in ('NodeAgentHandler',
+                        'NodeHandler',
+                        'NodeCollectionHandler'):
+
+            # create node and check it availability
+            nodes_data = get_nodes()
+            self.assertEqual(len(nodes_data), 1)
+
+            # change mac address of interfaces except admin one
+            adm_eth = self.env.network_manager._get_interface_by_network_name(
+                nodes_data[0]['id'], 'fuelweb_admin')
+            for iface in nodes_data[0]['meta']['interfaces']:
+                if iface['name'] != adm_eth.name:
+                    iface['mac'] = self.env.generate_random_mac()
+
+            # prepare put request
+            data = {
+                'id': nodes_data[0]['id'],
+                'meta': nodes_data[0]['meta'],
+            }
+            if handler in ('NodeCollectionHandler', ):
+                data = [data]
+
+            if handler in ('NodeHandler', ):
+                endpoint = reverse(handler, kwargs={'obj_id': data['id']})
+            else:
+                endpoint = reverse(handler)
+
+            self.app.put(
+                endpoint,
+                jsonutils.dumps(data),
+                headers=self.default_headers,
+            )
+
+            # check the node is visible for api
+            nodes_data = get_nodes()
+            self.assertEqual(len(nodes_data), 1)

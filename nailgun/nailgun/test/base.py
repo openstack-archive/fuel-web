@@ -35,9 +35,10 @@ import web
 from webtest import app
 
 import nailgun
-from nailgun.api.v1.urls import urls
 
 from nailgun import consts
+
+from nailgun.api import reverse
 
 from nailgun.db import db
 from nailgun.db import flush
@@ -58,7 +59,7 @@ from nailgun.objects import Node
 from nailgun.objects import NodeGroup
 from nailgun.objects import Release
 
-from nailgun.app import build_app
+from nailgun.app import build_wsgi_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.network.manager import NetworkManager
@@ -571,7 +572,7 @@ class EnvironmentManager(object):
                     kwargs={'cluster_id': self.clusters[0].id}),
                 headers=self.default_headers)
 
-            self.tester.assertEqual(202, resp.status_code)
+            self.tester.assertIn(resp.status_code, [200, 202])
             return self.db.query(Task).filter_by(
                 uuid=resp.json_body['uuid']
             ).first()
@@ -693,7 +694,7 @@ class EnvironmentManager(object):
                 nets,
                 headers=self.default_headers
             )
-            self.tester.assertEqual(202, resp.status_code)
+            self.tester.assertEqual(200, resp.status_code)
             task_uuid = resp.json_body['uuid']
             return self.db.query(Task).filter_by(uuid=task_uuid).first()
         else:
@@ -856,13 +857,6 @@ class EnvironmentManager(object):
                              interfaces,
                              expect_errors)
 
-    def node_collection_nics_put(self, nodes,
-                                 expect_errors=False):
-        return self._api_put('NodeCollectionNICsHandler',
-                             {},
-                             nodes,
-                             expect_errors)
-
 
 class BaseTestCase(TestCase):
 
@@ -877,7 +871,7 @@ class BaseTestCase(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = app.TestApp(
-            build_app(db_driver=test_db_driver).wsgifunc()
+            build_wsgi_app(db_driver=test_db_driver)
         )
         syncdb()
 
@@ -967,8 +961,8 @@ class BaseIntegrationTest(BaseTestCase):
 class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
     @classmethod
     def setUpClass(cls):
-        cls.app = app.TestApp(build_app(db_driver=test_db_driver).wsgifunc(
-            NailgunFakeKeystoneAuthMiddleware))
+        app_ = build_wsgi_app(db_driver=test_db_driver)
+        cls.app = app.TestApp(NailgunFakeKeystoneAuthMiddleware(app_))
         syncdb()
         nailgun.task.task.DeploymentTask._prepare_syslog_dir = mock.Mock()
 
@@ -1010,23 +1004,6 @@ def fake_tasks(fake_rpc=True,
             )(func)
         return func
     return wrapper
-
-
-def reverse(name, kwargs=None):
-    urldict = dict(zip(urls[1::2], urls[::2]))
-    url = urldict[name]
-    urlregex = re.compile(url)
-    for kwarg in urlregex.groupindex:
-        if kwarg not in kwargs:
-            raise KeyError("Invalid argument specified")
-        url = re.sub(
-            r"\(\?P<{0}>[^)]+\)".format(kwarg),
-            str(kwargs[kwarg]),
-            url,
-            1
-        )
-    url = re.sub(r"\??\$", "", url)
-    return "/api" + url
 
 
 # this method is for development and troubleshooting purposes

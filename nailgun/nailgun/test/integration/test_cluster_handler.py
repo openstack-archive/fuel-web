@@ -52,7 +52,7 @@ class TestHandlers(BaseIntegrationTest):
         release = self.env.create_release(api=False)
         yet_another_cluster_name = 'Yet another cluster'
         resp = self.app.post(
-            reverse('ClusterCollectionHandler'),
+            reverse('ClusterHandler'),
             params=jsonutils.dumps({
                 'name': yet_another_cluster_name,
                 'release': release.id
@@ -245,7 +245,7 @@ class TestHandlers(BaseIntegrationTest):
                 {'online': False, 'status': 'ready'}])
         cluster = self.env.clusters[0]
         get_resp = self.app.get(
-            reverse('ClusterGeneratedData',
+            reverse('ClusterGeneratedDataHandler',
                     kwargs={'cluster_id': cluster.id}),
             headers=self.default_headers
         )

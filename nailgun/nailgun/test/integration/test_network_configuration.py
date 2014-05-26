@@ -99,7 +99,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         mgmt['cidr'] = cidr
 
         resp = self.env.nova_networks_put(self.cluster.id, data)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
         self.assertEqual(task['status'], 'ready')
 
@@ -146,7 +146,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
                                   'vlan_start': new_vlan_id}]}
 
         resp = self.env.nova_networks_put(self.cluster.id, new_nets)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         self.db.refresh(network)
         self.assertEqual(network.vlan_start, 500)
 
@@ -172,7 +172,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(self.cluster.id, new_nets,
                                           expect_errors=True)
-        self.assertEqual(202, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -314,7 +314,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -347,7 +347,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -362,7 +362,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
-        self.assertEqual(400, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(
@@ -478,7 +478,7 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
         nets = resp.json_body
         resp = self.env.nova_networks_put(self.cluster['id'], nets,
                                           expect_errors=True)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(task['progress'], 100)
@@ -490,7 +490,7 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
     def test_deploy_error_when_admin_cidr_match_other_network_cidr(self):
         resp = self.env.cluster_changes_put(self.cluster['id'],
                                             expect_errors=True)
-        self.assertEqual(resp.status_code, 202)
+        self.assertEqual(resp.status_code, 200)
         task = resp.json_body
         self.assertEqual(task['status'], 'error')
         self.assertEqual(task['progress'], 100)

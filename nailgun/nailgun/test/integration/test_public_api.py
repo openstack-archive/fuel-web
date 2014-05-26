@@ -41,7 +41,7 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         resp = self.app.post(
-            reverse('NodeCollectionHandler'),
+            reverse('NodeController'),
             jsonutils.dumps({'mac': self.env.generate_random_mac(),
                             'status': 'discover'}),
             headers=self.default_headers)
@@ -65,11 +65,12 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(500, resp.status_code)
-        self.assertIn(exc_text, resp.body)
-        self.assertIn("Traceback", resp.body)
+        self.assertIn('error', resp.json_body)
+        self.assertEqual(exc_text, resp.json_body['error'])
         self.assertNotIn("html", resp.body)
 
-    @patch('nailgun.api.v1.handlers.version.utils.get_fuel_release_versions')
+    @patch('nailgun.api.v2.controllers.version.utils.'
+           'get_fuel_release_versions')
     def test_500_no_html_production(self, handler_get):
         exc_text = "Here goes an exception"
         handler_get.side_effect = Exception(exc_text)
@@ -80,4 +81,5 @@ class TestPublicHandlers(BaseAuthenticationIntegrationTest):
                 expect_errors=True
             )
         self.assertEqual(500, resp.status_code)
-        self.assertEqual(exc_text, resp.body)
+        self.assertIn('error', resp.json_body)
+        self.assertEqual(exc_text, resp.json_body['error'])

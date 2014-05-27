@@ -251,7 +251,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 locked: this.isLocked(),
                 segment_type: this.networkingParameters ? this.networkingParameters.get('segmentation_type') : null
             })).i18n();
-            if (this.networkingParameters) {
+            if (this.loading.state() != 'pending') {
                 this.stickit(this.networkingParameters, {'input[name=net-manager]': 'net_manager'});
                 // FIXME: quick hack for vCenter feature support.
                 // Reverse dependensies on OpenStack settings should be implemented.

@@ -10,6 +10,7 @@ Development Documentation
    develop/architecture
    develop/sequence
    develop/env
+   develop/system_tests/tree
    develop/nailgun
    develop/module_structure
    develop/fuel_settings

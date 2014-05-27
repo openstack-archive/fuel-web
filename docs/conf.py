@@ -15,6 +15,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.abspath('.'), "..", "nailgun"))
+
+if "SYSTEM_TESTS_PATH" in os.environ:
+    sys.path.append(os.environ.get("SYSTEM_TESTS_PATH"))
+
 autodoc_default_flags = ['members', 'show-inheritance']
 autodoc_member_order = 'bysource'
 

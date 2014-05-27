@@ -1,4 +1,5 @@
 #!/usr/bin/python
+
 #    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -82,7 +83,7 @@ class Actor(object):
 
     def _define_logger(self, filename=None,
                        appname='netprobe', level=logging.DEBUG):
-        logger = logging.getLogger()
+        logger = logging.getLogger(appname)
         logger.setLevel(level)
 
         syslog_formatter = logging.Formatter(
@@ -97,8 +98,9 @@ class Actor(object):
         # this handler.
         if filename:
             file_formatter = logging.Formatter(
-                '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+                '%(asctime)s %(levelname)s %(name)s %(message)s'
             )
+
             file_handler = logging.FileHandler(filename)
             file_handler.setFormatter(file_formatter)
             logger.addHandler(file_handler)
@@ -333,7 +335,7 @@ class Actor(object):
 class Sender(Actor):
 
     def __init__(self, config=None):
-        self.logger = self._define_logger('/root/netprobe_sender.log',
+        self.logger = self._define_logger('/var/log/netprobe_sender.log',
                                           'netprobe_sender')
         super(Sender, self).__init__(config)
         self.logger.info("=== Starting Sender ===")
@@ -384,7 +386,7 @@ class Sender(Actor):
 
 class Listener(Actor):
     def __init__(self, config=None):
-        self.logger = self._define_logger('/root/netprobe_listener.log',
+        self.logger = self._define_logger('/var/log/netprobe_listener.log',
                                           'netprobe_listener')
         super(Listener, self).__init__(config)
         self.logger.info("=== Starting Listener ===")

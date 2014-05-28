@@ -539,7 +539,7 @@
   extend: *full_release
   fields:
     name: "Havana on CentOS 6.4"
-    version: "2013.2.2"
+    version: "2013.2.3"
     operating_system: "CentOS"
     description: "This option will install the OpenStack Havana packages using a CentOS based operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:
@@ -571,7 +571,7 @@
   extend: *full_release
   fields:
     name: "Havana on Ubuntu 12.04"
-    version: "2013.2.2"
+    version: "2013.2.3"
     operating_system: "Ubuntu"
     description: "This option will install the OpenStack Havana packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
     attributes_metadata:

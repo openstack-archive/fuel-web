@@ -1,0 +1,15 @@
+<form class="environment-action-form" onsubmit="return false">
+  <h4 data-i18n="cluster_page.actions_tab.update_environment"></h4>
+  <div class="action-item-controls">
+    <div class="action-body">
+      <p class="action-item-description <%= isUpdateDisabled ? 'unavailable' : '' %>">
+        <%- $.t('cluster_page.actions_tab.'+descriptionKey, {action:  $.t('cluster_page.actions_tab.update_environment')}) %>
+      </p>
+      <% if (this.releases.length == 0 && !this.isUpdateDisabled) { %>
+        <p class="action-item-description notice" data-i18n="cluster_page.actions_tab.no_releases_to_update_message"></p>
+      <% } %>
+    </div>
+    <select name="update_release"></select>
+    <button class="btn btn-danger action-btn update-environment-btn"><span data-i18n="common.update_button"></span></button>
+  </div>
+</form>

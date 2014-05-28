@@ -290,7 +290,10 @@ class StopDeploymentTask(object):
                     {
                         'uid': n.uid,
                         'roles': n.roles,
-                        'slave_name': TaskHelper.make_slave_name(n.id)
+                        'slave_name': TaskHelper.make_slave_name(n.id),
+                        'admin_ip': objects.Node.get_network_manager(
+                            n
+                        ).get_admin_ip_for_node(n)
                     } for n in nodes_to_stop
                 ],
                 "engine": {

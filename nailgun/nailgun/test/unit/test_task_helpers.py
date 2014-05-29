@@ -17,6 +17,9 @@
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
+
+from nailgun import objects
+
 from nailgun.orchestrator.deployment_serializers \
     import DeploymentHASerializer
 from nailgun.task.helpers import TaskHelper
@@ -30,7 +33,8 @@ class TestTaskHelpers(BaseTestCase):
             nodes_kwargs=nodes)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        TaskHelper.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        self.db.flush()
         return cluster_db
 
     @property
@@ -94,6 +98,7 @@ class TestTaskHelpers(BaseTestCase):
         computes = self.filter_by_role(nodes, 'compute')
         self.assertEquals(len(computes), 1)
 
+    # TODO(aroma): move it to utils testing code
     def test_recalculate_deployment_task_progress(self):
         cluster = self.create_env([
             {'roles': ['controller'],
@@ -116,6 +121,7 @@ class TestTaskHelpers(BaseTestCase):
         progress = TaskHelper.recalculate_deployment_task_progress(task)
         self.assertEquals(progress, 25)
 
+    # TODO(aroma): move it to utils testing code
     def test_recalculate_provisioning_task_progress(self):
         cluster = self.create_env([
             {'roles': ['controller'],

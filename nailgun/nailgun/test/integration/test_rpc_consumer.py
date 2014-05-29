@@ -68,6 +68,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                   'nodes': [{'uid': node1.id, 'networks': nets},
                             {'uid': node2.id, 'networks': nets}]}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
         self.assertEqual(task.message, '')
@@ -103,6 +104,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                   'nodes': [{'uid': node1.id, 'networks': nets_resp},
                             {'uid': node2.id, 'networks': nets_resp}]}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         error_nodes = []
@@ -147,6 +149,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
         self.db.delete(node2)
         self.db.commit()
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         resp = self.app.get(
             reverse('TaskHandler', kwargs={'obj_id': task.id}),
             headers=self.default_headers
@@ -193,6 +196,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                   'nodes': [],
                   'error': error_msg}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         self.assertEqual(task.message, error_msg)
@@ -229,6 +233,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                             {'uid': node2.id, 'networks': nets_sent},
                             {'uid': node1.id, 'networks': nets_sent}]}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEquals(task.status, "ready")
         self.assertEquals(task.message, '')
@@ -355,6 +360,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                   'nodes': [{'uid': node1.id, 'networks': nets_sent},
                             {'uid': node2.id, 'networks': nets_sent}]}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         self.assertRegexpMatches(task.message, node3.name)
@@ -402,6 +408,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                             {'uid': node2.id, 'networks': []},
                             {'uid': node3.id, 'networks': nets_sent}]}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         self.assertEqual(task.message, '')
@@ -452,6 +459,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                   'nodes': [{'uid': node1.id, 'networks': []},
                             {'uid': node2.id, 'networks': nets_sent}]}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         self.assertEqual(task.message, '')
@@ -494,6 +502,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                   'nodes': [{'uid': node1.id, 'networks': nets_sent},
                             {'uid': node2.id, 'networks': nets_sent}]}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
 
@@ -531,6 +540,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                   'nodes': [{'uid': node1.id, 'networks': nets_resp},
                             {'uid': node2.id, 'networks': nets_resp}]}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "error")
         error_nodes = [{'uid': node1.id, 'interface': 'eth0',
@@ -574,6 +584,7 @@ class TestVerifyNetworks(BaseIntegrationTest):
                   'nodes': [{'uid': node1.id, 'networks': nets_sent},
                             {'uid': node2.id, 'networks': nets_sent}]}
         self.receiver.verify_networks_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(task)
         self.assertEqual(task.status, "ready")
 
@@ -619,6 +630,7 @@ class TestDhcpCheckTask(BaseIntegrationTest):
         }
 
         self.receiver.check_dhcp_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(self.task)
         self.assertEqual(self.task.status, "ready")
         self.assertEqual(self.task.result, {})
@@ -641,6 +653,7 @@ class TestDhcpCheckTask(BaseIntegrationTest):
                                 'iface': 'eth0'}]}]
         }
         self.receiver.check_dhcp_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(self.task)
         self.assertEqual(self.task.status, "error")
 
@@ -650,6 +663,7 @@ class TestDhcpCheckTask(BaseIntegrationTest):
             'status': 'ready'
         }
         self.receiver.check_dhcp_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(self.task)
         self.assertEqual(self.task.status, "ready")
         self.assertEqual(self.task.result, {})
@@ -660,6 +674,7 @@ class TestDhcpCheckTask(BaseIntegrationTest):
             'status': 'error'
         }
         self.receiver.check_dhcp_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(self.task)
         self.assertEqual(self.task.status, 'error')
         self.assertEqual(self.task.result, {})
@@ -696,6 +711,7 @@ class TestClusterUpdate(BaseIntegrationTest):
                   'nodes': [{'uid': node1.id, 'status': 'ready'},
                             {'uid': node2.id, 'status': 'ready'}]}
         self.receiver.deploy_resp(**kwargs)
+        self.db.flush()
         self.db.refresh(node1)
         self.db.refresh(node2)
         self.db.refresh(self.task)
@@ -795,6 +811,7 @@ class TestConsumer(BaseIntegrationTest):
         self.db.commit()
 
         kwargs = {'task_uuid': task.uuid,
+                  'status': 'running',
                   'nodes': [
                       {'uid': node.id,
                        'status': 'provisioning',
@@ -841,12 +858,15 @@ class TestConsumer(BaseIntegrationTest):
         subtask_progress = random.randint(1, 20)
 
         deletion_kwargs = {'task_uuid': task_deletion.uuid,
-                           'progress': subtask_progress}
+                           'progress': subtask_progress,
+                           'status': 'running'}
         provision_kwargs = {'task_uuid': task_provision.uuid,
-                            'progress': subtask_progress}
+                            'progress': subtask_progress,
+                            'status': 'running'}
 
         def progress_difference():
             self.receiver.provision_resp(**provision_kwargs)
+            self.db.flush()
 
             self.db.refresh(task_provision)
             self.assertEqual(task_provision.progress, subtask_progress)
@@ -855,6 +875,7 @@ class TestConsumer(BaseIntegrationTest):
             progress_before_delete_subtask = supertask.progress
 
             self.receiver.remove_nodes_resp(**deletion_kwargs)
+            self.db.flush()
 
             self.db.refresh(task_deletion)
             self.assertEqual(task_deletion.progress, subtask_progress)
@@ -904,19 +925,23 @@ class TestConsumer(BaseIntegrationTest):
         subtask_progress = random.randint(1, 20)
 
         deletion_kwargs = {'task_uuid': task_deletion.uuid,
-                           'progress': subtask_progress}
+                           'progress': subtask_progress,
+                           'status': 'running'}
         provision_kwargs = {'task_uuid': task_provision.uuid,
-                            'progress': subtask_progress}
+                            'progress': subtask_progress,
+                            'status': 'running'}
 
         self.receiver.provision_resp(**provision_kwargs)
+        self.db.flush()
         self.receiver.remove_nodes_resp(**deletion_kwargs)
+        self.db.flush()
 
         self.db.refresh(task_deletion)
         self.db.refresh(task_provision)
         self.db.refresh(supertask)
 
         calculated_progress = helpers.\
-            TaskHelper._calculate_parent_task_progress(
+            TaskHelper.calculate_parent_task_progress(
                 [task_deletion, task_provision]
             )
 

@@ -13,7 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import collections
 try:
     from collections import OrderedDict
 except Exception:
@@ -45,19 +44,19 @@ class servicepws(urwid.WidgetWrap):
                                 "value": "naily"},
                 "astute/password": {"label": "Astute password",
                                     "tooltip": "",
-                                    "value":  pwgen.password()},
+                                    "value": pwgen.password()},
                 "cobbler/user": {"label": "Cobbler user",
                                  "tooltip": "",
                                  "value": "cobbler"},
                 "cobbler/password": {"label": "Cobbler password",
                                      "tooltip": "",
-                                     "value":  pwgen.password()},
+                                     "value": pwgen.password()},
                 "mcollective/user": {"label": "Mcollective user",
                                      "tooltip": "",
                                      "value": "mcollective"},
                 "mcollective/password": {"label": "Mcollective password",
                                          "tooltip": "",
-                                         "value":  pwgen.password()},
+                                         "value": pwgen.password()},
                 "postgres/keystone_dbname": {"label": "Keystone DB name",
                                              "tooltip": "",
                                              "value": "keystone"},

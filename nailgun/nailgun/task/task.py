@@ -199,7 +199,11 @@ class ProvisionTask(object):
             if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
                 continue
 
-            TaskHelper.prepare_syslog_dir(node)
+            admin_net_id = objects.Node.get_network_manager(
+                node
+            ).get_admin_network_group_id()
+
+            TaskHelper.prepare_syslog_dir(node, admin_net_id)
 
         return make_astute_message(
             'provision',
@@ -241,7 +245,7 @@ class DeletionTask(object):
                     'id': node.id,
                     'uid': node.id,
                     'roles': node.roles,
-                    'slave_name': TaskHelper.make_slave_name(node.id)
+                    'slave_name': objects.Node.make_slave_name(node)
                 })
 
                 if USE_FAKE:
@@ -269,7 +273,7 @@ class DeletionTask(object):
         for node in nodes_to_delete_constant:
             node_db = db().query(Node).get(node['id'])
 
-            slave_name = TaskHelper.make_slave_name(node['id'])
+            slave_name = objects.Node.make_slave_name(node_db)
             logger.debug("Removing node from database and pending it "
                          "to clean its MBR: %s", slave_name)
             if node_db.status == 'discover':
@@ -322,7 +326,7 @@ class StopDeploymentTask(object):
                     {
                         'uid': n.uid,
                         'roles': n.roles,
-                        'slave_name': TaskHelper.make_slave_name(n.id),
+                        'slave_name': objects.Node.make_slave_name(n),
                         'admin_ip': objects.Node.get_network_manager(
                             n
                         ).get_admin_ip_for_node(n)
@@ -369,7 +373,7 @@ class ResetEnvironmentTask(object):
                     {
                         'uid': n.uid,
                         'roles': n.roles,
-                        'slave_name': TaskHelper.make_slave_name(n.id)
+                        'slave_name': objects.Node.make_slave_name(n)
                     } for n in nodes_to_reset
                 ],
                 "engine": {

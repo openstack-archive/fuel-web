@@ -13,7 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import itertools
 import logging
 import operator
 from optparse import OptionParser
@@ -314,8 +313,8 @@ def setup():
 
 
 def save_only(iface):
-    from common import pwgen
     import common.network as network
+    from common import pwgen
     import netifaces
     #Calculate and set Static/DHCP pool fields
     #Max IPs = net size - 2 (master node + bcast)

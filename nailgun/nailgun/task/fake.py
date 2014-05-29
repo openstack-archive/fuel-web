@@ -494,7 +494,8 @@ class FakeVerificationThread(FakeThread):
         receiver = NailgunReceiver
         kwargs = {
             'task_uuid': self.task_uuid,
-            'progress': 0
+            'progress': 0,
+            'status': 'running'
         }
 
         tick_count = int(settings.FAKE_TASKS_TICK_COUNT)
@@ -527,6 +528,8 @@ class FakeVerificationThread(FakeThread):
                 kwargs['status'] = 'ready'
                 ready = True
             resp_method(**kwargs)
+            db().commit()
+
             if time.time() - timer > timeout:
                 raise Exception("Timeout exceed")
             self.sleep(tick_interval)

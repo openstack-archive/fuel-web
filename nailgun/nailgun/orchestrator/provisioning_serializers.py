@@ -21,6 +21,7 @@ import netaddr
 
 from nailgun.logger import logger
 from nailgun.settings import settings
+
 from nailgun.task.helpers import TaskHelper
 
 
@@ -179,6 +180,6 @@ class ProvisioningSerializer(object):
 
 def serialize(cluster, nodes):
     """Serialize cluster for provisioning."""
-    TaskHelper.prepare_for_provisioning(nodes)
+    objects.NodeCollection.prepare_for_provisioning(nodes)
 
     return ProvisioningSerializer.serialize(cluster, nodes)

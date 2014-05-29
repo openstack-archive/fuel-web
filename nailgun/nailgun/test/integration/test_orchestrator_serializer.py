@@ -29,8 +29,10 @@ from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer
+
+from nailgun import objects
+
 from nailgun.settings import settings
-from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 from nailgun.volumes import manager
@@ -60,7 +62,7 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         return DeploymentHASerializer
 
     def serialize(self, cluster):
-        TaskHelper.prepare_for_deployment(cluster.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
         return self.serializer.serialize(cluster, cluster.nodes)
 
 
@@ -86,7 +88,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             nodes_kwargs=node_args)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        TaskHelper.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        self.db.flush()
         return cluster_db
 
     def assert_roles_flattened(self, nodes):
@@ -112,9 +115,12 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_serialize_node(self):
         node = self.env.create_node(
             api=True, cluster_id=self.cluster.id, pending_addition=True)
-        TaskHelper.prepare_for_deployment(self.cluster.nodes)
+
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+        self.db.flush()
 
         node_db = self.db.query(Node).get(node['id'])
+
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
 
         self.assertEqual(serialized_data['role'], 'controller')
@@ -289,7 +295,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
                 {'roles': ['cinder'], 'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        TaskHelper.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     @property
@@ -395,7 +401,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                  'pending_addition': True}])
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        TaskHelper.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def assert_roles_flattened(self, nodes):
@@ -420,7 +426,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
     def test_serialize_node(self):
         node = self.env.create_node(
             api=True, cluster_id=self.cluster.id, pending_addition=True)
-        TaskHelper.prepare_for_deployment(self.cluster.nodes)
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
 
         node_db = self.db.query(Node).get(node['id'])
         serialized_data = self.serializer.serialize_node(node_db, 'controller')
@@ -533,7 +539,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        TaskHelper.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     def _make_data_copy(self, data_to_copy):
@@ -737,7 +743,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
         )
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
-        TaskHelper.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
     @property
@@ -927,7 +933,7 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
             ]
         )
         cluster = self.db.query(Cluster).get(cluster['id'])
-        TaskHelper.prepare_for_deployment(cluster.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
         return cluster
 
     def test_mongo_roles_equals_in_defferent_modes(self):
@@ -985,7 +991,7 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
         )["id"]
 
         cluster = self.db.query(Cluster).get(cluster_id)
-        TaskHelper.prepare_for_deployment(cluster.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
         facts = self.serializer.serialize(cluster, cluster.nodes)
 
         self.assertEqual(1, len(facts))

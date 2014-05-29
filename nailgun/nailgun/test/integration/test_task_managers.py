@@ -30,7 +30,6 @@ from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.openstack.common import jsonutils
-from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -120,7 +119,7 @@ class TestTaskManagers(BaseIntegrationTest):
             {"pending_addition": True, 'roles': ['compute']}])
         cluster_db = self.env.clusters[0]
         # Generate ips, fqdns
-        TaskHelper.prepare_for_deployment(cluster_db.nodes)
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         # First node with status ready
         # should not be readeployed
         self.env.nodes[0].status = 'ready'

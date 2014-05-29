@@ -21,7 +21,6 @@ import netaddr
 
 from nailgun.logger import logger
 from nailgun.settings import settings
-from nailgun.task.helpers import TaskHelper
 
 
 class ProvisioningSerializer(object):
@@ -62,9 +61,9 @@ class ProvisioningSerializer(object):
         serialized_node = {
             'uid': node.uid,
             'power_address': node.ip,
-            'name': TaskHelper.make_slave_name(node.id),
+            'name': objects.Node.make_slave_name(node),
             # right now it duplicates to avoid possible issues
-            'slave_name': TaskHelper.make_slave_name(node.id),
+            'slave_name': objects.Node.make_slave_name(node),
             'hostname': node.fqdn,
             'power_pass': cls.get_ssh_key_path(node),
 
@@ -179,6 +178,6 @@ class ProvisioningSerializer(object):
 
 def serialize(cluster, nodes):
     """Serialize cluster for provisioning."""
-    TaskHelper.prepare_for_provisioning(nodes)
+    objects.NodeCollection.prepare_for_provisioning(nodes)
 
     return ProvisioningSerializer.serialize(cluster, nodes)

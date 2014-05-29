@@ -19,8 +19,6 @@ import shutil
 
 from sqlalchemy import or_
 
-from nailgun import objects
-
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
@@ -36,6 +34,7 @@ class TaskHelper(object):
     def make_slave_name(cls, nid):
         return u"node-%s" % str(nid)
 
+    # TODO(aroma): move to utils module
     @classmethod
     def make_slave_fqdn(cls, nid):
         return u"%s.%s" % (cls.make_slave_name(nid), settings.DNS_DOMAIN)
@@ -49,8 +48,9 @@ class TaskHelper(object):
                 logger.debug("Updating node fqdn: %s %s", n.id, n.fqdn)
                 db().commit()
 
+    # TODO(aroma): move it to utils module
     @classmethod
-    def prepare_syslog_dir(cls, node, prefix=None):
+    def prepare_syslog_dir(cls, node, admin_net_id, prefix=None):
         logger.debug("Preparing syslog directories for node: %s", node.fqdn)
         if not prefix:
             prefix = settings.SYSLOG_DIR
@@ -59,10 +59,6 @@ class TaskHelper(object):
         old = os.path.join(prefix, str(node.ip))
         bak = os.path.join(prefix, "%s.bak" % str(node.fqdn))
         new = os.path.join(prefix, str(node.fqdn))
-
-        admin_net_id = objects.Node.get_network_manager(
-            node
-        ).get_admin_network_group_id()
 
         links = map(
             lambda i: os.path.join(prefix, i.ip_addr),
@@ -117,123 +113,9 @@ class TaskHelper(object):
 
         os.system("/usr/bin/pkill -HUP rsyslog")
 
+    # TODO(aroma): move this function to utils module
     @classmethod
-    def update_task_status(cls, uuid, status, progress,
-                           msg="", result=None):
-        logger.debug("Updating task: %s", uuid)
-        task = db().query(Task).filter_by(uuid=uuid).first()
-        if not task:
-            logger.error("Can't set status='%s', message='%s':no task \
-                    with UUID %s found!", status, msg, uuid)
-            return
-
-        data = {'status': status, 'progress': progress,
-                'message': msg, 'result': result}
-
-        for key, value in data.iteritems():
-            if value is not None:
-                setattr(task, key, value)
-                logger.info(
-                    u"Task {0} ({1}) {2} is set to {3}".format(
-                        task.uuid, task.name, key, value))
-        db().commit()
-
-        if task.cluster_id:
-            logger.debug("Updating cluster status: %s "
-                         "cluster_id: %s status: %s",
-                         uuid, task.cluster_id, status)
-            cls.update_cluster_status(uuid)
-        if task.parent:
-            logger.debug("Updating parent task: %s.", task.parent.uuid)
-            cls.update_parent_task(task.parent.uuid)
-
-    @classmethod
-    def update_verify_networks(cls, uuid, status,
-                               progress, msg, result):
-        #TODO(dshulyak) move network tests into ostf
-        task = db().query(Task).filter_by(uuid=uuid).first()
-        if not task:
-            logger.error("Can't set status='%s', message='%s': No task \
-                    with UUID %s found!", status, msg, uuid)
-            return
-
-        previous_status = task.status
-
-        statuses = [sub.status for sub in task.subtasks]
-        messages = [sub.message for sub in task.subtasks]
-        messages.append(msg)
-        statuses.append(status)
-        if any(st == 'error' for st in statuses):
-            task.status = 'error'
-        else:
-            task.status = status or task.status
-        task.progress = progress or task.progress
-        task.result = result or task.result
-        # join messages if not None or ""
-        task.message = '\n'.join([m for m in messages if m])
-        db().commit()
-        if previous_status != task.status and task.cluster_id:
-            logger.debug("Updating cluster status: "
-                         "cluster_id: %s status: %s",
-                         task.cluster_id, status)
-            cls.update_cluster_status(uuid)
-
-    @classmethod
-    def get_task_by_uuid(cls, uuid):
-        task = db().query(Task).filter_by(uuid=uuid).first()
-        if not task:
-            raise errors.CannotFindTask(
-                'Cannot find task with uuid {0}'.format(uuid)
-            )
-
-        return task
-
-    @classmethod
-    def update_parent_task(cls, uuid):
-        task = db().query(Task).filter_by(uuid=uuid).first()
-        subtasks = task.subtasks
-        if len(subtasks):
-            if all(map(lambda s: s.status == 'ready', subtasks)):
-                task.status = 'ready'
-                task.progress = 100
-                task.message = u'\n'.join(map(
-                    lambda s: s.message, filter(
-                        lambda s: s.message is not None, subtasks)))
-                db().commit()
-                cls.update_cluster_status(uuid)
-            elif any(map(lambda s: s.status in ('error',), subtasks)):
-                for subtask in subtasks:
-                    if not subtask.status in ('error', 'ready'):
-                        subtask.status = 'error'
-                        subtask.progress = 100
-                        subtask.message = 'Task aborted'
-
-                task.status = 'error'
-                task.progress = 100
-                task.message = u'\n'.join(list(set(map(
-                    lambda s: (s.message or ""), filter(
-                        lambda s: (
-                            s.status == 'error' and not
-                            # TODO: make this check less ugly
-                            s.message == 'Task aborted'
-                        ), subtasks)))))
-                db().commit()
-                cls.update_cluster_status(uuid)
-            else:
-                subtasks_with_progress = filter(
-                    lambda s: s.progress is not None,
-                    subtasks
-                )
-                if subtasks_with_progress:
-                    task.progress = cls._calculate_parent_task_progress(
-                        subtasks_with_progress
-                    )
-                else:
-                    task.progress = 0
-                db().commit()
-
-    @classmethod
-    def _calculate_parent_task_progress(cls, subtasks_list):
+    def calculate_parent_task_progress(cls, subtasks_list):
         return int(
             round(
                 sum(
@@ -246,43 +128,9 @@ class TaskHelper(object):
                 ), 0)
         )
 
+    # TODO(aroma): move it to utils module
     @classmethod
-    def update_cluster_status(cls, uuid):
-        task = db().query(Task).filter_by(uuid=uuid).first()
-        cluster = task.cluster
-
-        if task.name == 'deploy':
-            if task.status == 'ready':
-                # If for some reasosns orchestrator
-                # didn't send ready status for node
-                # we should set it explicitly
-                for n in cluster.nodes:
-                    if n.status == 'deploying':
-                        n.status = 'ready'
-                        n.progress = 100
-
-                cls.__set_cluster_status(cluster, 'operational')
-                objects.Cluster.clear_pending_changes(cluster)
-            elif task.status == 'error' and \
-                    not cls.__before_deployment_error(task):
-                # We don't want to set cluster status to
-                # error because we don't want to lock
-                # settings if cluster wasn't delpoyed
-                cls.__set_cluster_status(cluster, 'error')
-        elif task.name == 'deployment' and task.status == 'error':
-            cls.__update_cluster_to_deployment_error(cluster)
-        elif task.name == 'provision' and task.status == 'error':
-            cls.__update_cluster_to_provisioning_error(cluster)
-        elif task.name == 'stop_deployment':
-            if task.status == 'error':
-                cls.__set_cluster_status(cluster, 'error')
-            else:
-                cls.__set_cluster_status(cluster, 'stopped')
-
-        db().commit()
-
-    @classmethod
-    def __before_deployment_error(cls, task):
+    def before_deployment_error(cls, task):
         """Returns True in case of check_before_deployment
         or check_networks error and if cluster wasn't
         deployed yet
@@ -295,42 +143,23 @@ class TaskHelper(object):
 
         return not task.cluster.is_locked and error_checking_tasks_count
 
+    # TODO(aroma): move this method to utils module
     @classmethod
-    def __update_cluster_to_provisioning_error(cls, cluster):
-        cls.__set_cluster_status(cluster, 'error')
-        nodes_to_error = db().query(Node).\
+    def get_nodes_to_provisioning_error(cls, cluster):
+        q_nodes_to_error = db().query(Node).\
             filter(Node.cluster == cluster).\
             filter(Node.status.in_(['provisioning']))
 
-        cls.__set_nodes_status_to_error(nodes_to_error, 'provision')
+        return q_nodes_to_error
 
+    # TODO(aroma): move this method to utils module
     @classmethod
-    def __update_cluster_to_deployment_error(cls, cluster):
-        cls.__set_cluster_status(cluster, 'error')
-        nodes_to_error = db().query(Node).\
+    def get_nodes_to_deployment_error(cls, cluster):
+        q_nodes_to_error = db().query(Node).\
             filter(Node.cluster == cluster).\
             filter(Node.status.in_(['provisioned', 'deploying']))
 
-        cls.__set_nodes_status_to_error(nodes_to_error, 'deploy')
-
-    @classmethod
-    def __set_cluster_status(cls, cluster, new_state):
-        logger.debug(
-            "Updating cluster (%s) status: from %s to %s",
-            cluster.full_name, cluster.status, new_state)
-        cluster.status = new_state
-
-    @classmethod
-    def __set_nodes_status_to_error(cls, nodes_to_error, error_type):
-        if nodes_to_error.count():
-            logger.debug(
-                u'Updating nodes to error with error_type "{0}": {1}'.format(
-                    error_type, [n.full_name for n in nodes_to_error]))
-
-        for node in nodes_to_error:
-            node.status = 'error'
-            node.progress = 0
-            node.error_type = error_type
+        return q_nodes_to_error
 
     @classmethod
     def recalculate_deployment_task_progress(cls, task):
@@ -375,6 +204,8 @@ class TaskHelper(object):
             cluster.nodes
         )
 
+    # TODO(aroma): considering moving this code to
+    # nailgun Cluster object's methods
     @classmethod
     def nodes_to_deploy(cls, cluster):
         nodes_to_deploy = sorted(filter(
@@ -466,33 +297,3 @@ class TaskHelper(object):
             db().commit()
             full_err_msg = u"\n".join(err_messages)
             raise errors.NetworkCheckError(full_err_msg)
-
-    @classmethod
-    def prepare_for_provisioning(cls, nodes):
-        """Prepare environment for provisioning,
-        update fqdns, assign admin IPs
-        """
-        cls.update_slave_nodes_fqdn(nodes)
-        for node in nodes:
-            objects.Node.get_network_manager(
-                node
-            ).assign_admin_ips(node.id)
-
-    @classmethod
-    def prepare_for_deployment(cls, nodes):
-        """Prepare environment for deployment,
-        assign management, public, storage ips
-        """
-        cls.update_slave_nodes_fqdn(nodes)
-
-        nodes_ids = [n.id for n in nodes]
-
-        # TODO(enchantner): check network manager instance for each node
-        netmanager = objects.Cluster.get_network_manager()
-        if nodes_ids:
-            netmanager.assign_ips(nodes_ids, 'management')
-            netmanager.assign_ips(nodes_ids, 'public')
-            netmanager.assign_ips(nodes_ids, 'storage')
-
-            for node in nodes:
-                netmanager.assign_admin_ips(node.id)

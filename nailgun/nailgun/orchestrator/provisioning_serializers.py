@@ -19,8 +19,10 @@
 from nailgun import objects
 import netaddr
 
+from nailgun.db.sqlalchemy import db
 from nailgun.logger import logger
 from nailgun.settings import settings
+
 from nailgun.task.helpers import TaskHelper
 
 
@@ -179,6 +181,9 @@ class ProvisioningSerializer(object):
 
 def serialize(cluster, nodes):
     """Serialize cluster for provisioning."""
-    TaskHelper.prepare_for_provisioning(nodes)
+    objects.Node.prepare_for_provisioning(nodes)
+
+    # TODO(aroma): check if call to flush is necessary here
+    db().flush()
 
     return ProvisioningSerializer.serialize(cluster, nodes)

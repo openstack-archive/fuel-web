@@ -884,7 +884,10 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 def serialize(cluster, nodes):
     """Serialization depends on deployment mode
     """
-    TaskHelper.prepare_for_deployment(cluster.nodes)
+    objects.Node.prepare_for_deployment(cluster.nodes)
+
+    # TODO(aroma): check if call to flush is necessary here
+    db().flush()
 
     if cluster.mode == 'multinode':
         serializer = DeploymentMultinodeSerializer

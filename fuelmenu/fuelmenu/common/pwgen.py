@@ -12,9 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import string
-
 from random import choice
+import string
 
 
 def password(arg=None):

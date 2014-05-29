@@ -314,9 +314,9 @@ def setup():
 
 def save_only(iface):
     import common.network as network
+    from common import pwgen
     import netifaces
 
-    from common import pwgen
     #Calculate and set Static/DHCP pool fields
     #Max IPs = net size - 2 (master node + bcast)
     try:

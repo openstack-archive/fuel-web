@@ -43,7 +43,6 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import Task
 from nailgun.openstack.common import jsonutils
-from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
 
@@ -120,7 +119,12 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                     cluster
                 ).update(cluster, data)
             except Exception as exc:
-                TaskHelper.set_error(task.uuid, exc)
+                # set task status to error and update its corresponding data
+                data = {'status': 'error',
+                        'progress': 100,
+                        'message': str(exc)}
+                objects.Task.update(task, data)
+
                 logger.error(traceback.format_exc())
 
         #TODO(enchantner): research this behaviour
@@ -183,7 +187,12 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                     cluster
                 ).update(cluster, data)
             except Exception as exc:
-                TaskHelper.set_error(task.uuid, exc)
+                # set task status to error and update its corresponding data
+                data = {'status': 'error',
+                        'progress': 100,
+                        'message': str(exc)}
+                objects.Task.update(task, data)
+
                 logger.error(traceback.format_exc())
 
         #TODO(enchantner): research this behaviour

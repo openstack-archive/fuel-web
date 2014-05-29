@@ -199,7 +199,11 @@ class ProvisionTask(object):
             if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:
                 continue
 
-            TaskHelper.prepare_syslog_dir(node)
+            admin_net_id = objects.Node.get_network_manager(
+                node
+            ).get_admin_network_group_id()
+
+            TaskHelper.prepare_syslog_dir(node, admin_net_id)
 
         return make_astute_message(
             'provision',

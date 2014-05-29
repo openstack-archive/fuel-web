@@ -158,6 +158,7 @@ class TestNodeHandlers(BaseIntegrationTest):
         for net in nets['networks']:
             if net['name'] == 'management':
                 net['vlan_start'] = None
+
         resp = self.env.nova_networks_put(cluster['id'], nets)
         self.assertEquals(resp.status_code, 202)
         task = json.loads(resp.body)

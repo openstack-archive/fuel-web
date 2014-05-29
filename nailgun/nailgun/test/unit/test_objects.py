@@ -20,9 +20,12 @@ from itertools import ifilter
 
 from nailgun.test.base import BaseIntegrationTest
 
+from nailgun.errors import errors
+
 from nailgun import consts
 
 from nailgun.db import NoCacheQuery
+from nailgun.db.sqlalchemy.models import Task
 
 from nailgun import objects
 
@@ -241,3 +244,18 @@ class TestNodeObject(BaseIntegrationTest):
             objects.Node.update_by_agent(node_db, copy.deepcopy(data))
 
             self.assertEqual(node_db.status, status)
+
+
+class TestTaskObject(BaseIntegrationTest):
+    def test_get_task_by_uuid_returns_task(self):
+        task = Task(name='deploy')
+        self.db.add(task)
+        self.db.commit()
+        task_by_uuid = objects.Task.get_by_uuid(task.uuid)
+        self.assertEquals(task.uuid, task_by_uuid.uuid)
+
+    def test_get_task_by_uuid_raises_error(self):
+        self.assertRaises(errors.ObjectNotFound,
+                          objects.Task.get_by_uuid,
+                          uuid='not_found_uuid',
+                          fail_if_not_found=True)

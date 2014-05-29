@@ -28,6 +28,7 @@ from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun import objects
 import nailgun.rpc as rpc
 from nailgun.task import task as tasks
 from nailgun.task.task import TaskHelper
@@ -52,12 +53,12 @@ class TaskManager(object):
                 hasattr(exc, "log_traceback") and exc.log_traceback
             ]):
                 logger.error(traceback.format_exc())
-            TaskHelper.update_task_status(
-                task.uuid,
-                status="error",
-                progress=100,
-                msg=err
-            )
+
+            # update task entity with given data
+            data = {'status': 'error',
+                    'progress': 100,
+                    'message': err}
+            objects.Task.update(task, data)
 
     def check_running_task(self, task_name):
         current_tasks = db().query(Task).filter_by(
@@ -149,12 +150,11 @@ class ApplyChangesTaskManager(TaskManager):
                     ]
                 )
             except Exception as exc:
-                TaskHelper.update_task_status(
-                    supertask.uuid,
-                    status='error',
-                    progress=100,
-                    msg=str(exc)
-                )
+                # update task entity with given data
+                data = {'status': 'error',
+                        'progress': 100,
+                        'message': str(exc)}
+                objects.Task.update(supertask, data)
                 return supertask
             task_messages.extend(redhat_messages)
         # /in case of Red Hat
@@ -170,7 +170,7 @@ class ApplyChangesTaskManager(TaskManager):
             self._call_silently(task_deletion, tasks.DeletionTask)
 
         if nodes_to_provision:
-            TaskHelper.update_slave_nodes_fqdn(nodes_to_provision)
+            objects.Node._update_slave_nodes_fqdn(nodes_to_provision)
             logger.debug("There are nodes to provision: %s",
                          " ".join([n.fqdn for n in nodes_to_provision]))
 
@@ -197,7 +197,7 @@ class ApplyChangesTaskManager(TaskManager):
             task_messages.append(provision_message)
 
         if nodes_to_deploy:
-            TaskHelper.update_slave_nodes_fqdn(nodes_to_deploy)
+            objects.Node._update_slave_nodes_fqdn(nodes_to_deploy)
             logger.debug("There are nodes to deploy: %s",
                          " ".join([n.fqdn for n in nodes_to_deploy]))
             task_deployment = supertask.create_subtask("deployment")
@@ -241,12 +241,11 @@ class ApplyChangesTaskManager(TaskManager):
     def _redhat_messages(self, supertask, nodes_info):
         account = db().query(RedHatAccount).first()
         if not account:
-            TaskHelper.update_task_status(
-                supertask.uuid,
-                status="error",
-                progress=100,
-                msg="RHEL account is not found"
-            )
+            # update task entity with given data
+            data = {'status': 'error',
+                    'progress': 100,
+                    'message': 'RHEL account is not found'}
+            objects.Task.update(supertask, data)
             return supertask
 
         rhel_data = {
@@ -358,7 +357,7 @@ class ProvisioningTaskManager(TaskManager):
                      https://blueprints.launchpad.net/fuel/+spec
                            /nailgun-separate-provisioning-for-redhat
         """
-        TaskHelper.update_slave_nodes_fqdn(nodes_to_provision)
+        objects.Node._update_slave_nodes_fqdn(nodes_to_provision)
         logger.debug('Nodes to provision: {0}'.format(
             ' '.join([n.fqdn for n in nodes_to_provision])))
 
@@ -391,7 +390,8 @@ class ProvisioningTaskManager(TaskManager):
 class DeploymentTaskManager(TaskManager):
 
     def execute(self, nodes_to_deployment):
-        TaskHelper.update_slave_nodes_fqdn(nodes_to_deployment)
+
+        objects.Node._update_slave_nodes_fqdn(nodes_to_deployment)
         logger.debug('Nodes to deploy: {0}'.format(
             ' '.join([n.fqdn for n in nodes_to_deployment])))
         task_deployment = Task(name='deployment', cluster=self.cluster)
@@ -535,11 +535,9 @@ class CheckNetworksTaskManager(TaskManager):
         )
         db().refresh(task)
         if task.status == 'running':
-            TaskHelper.update_task_status(
-                task.uuid,
-                status="ready",
-                progress=100
-            )
+            # update task status with given data
+            data = {'status': 'ready', 'progress': 100}
+            objects.Task.update(task, data)
         return task
 
 
@@ -745,12 +743,10 @@ class RedHatSetupTaskManager(TaskManager):
             )
             db().refresh(task)
             if task.status == 'error':
-                TaskHelper.update_task_status(
-                    supertask.uuid,
-                    status="error",
-                    progress=100,
-                    msg=task.message
-                )
+                # update task entity with given data
+                data = {'status': 'error', 'progress': 100,
+                        'message': task.message}
+                objects.Task.update(supertask, data)
                 return supertask
             task.cache = msg
             db().add(task)

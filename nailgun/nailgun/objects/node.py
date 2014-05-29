@@ -35,6 +35,7 @@ from nailgun.objects import Cluster
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Notification
+from nailgun.task.helpers import TaskHelper
 
 
 class Node(NailgunObject):
@@ -580,6 +581,39 @@ class Node(NailgunObject):
         instance.reset_name_to_default()
         db().flush()
         db().refresh(instance)
+
+    @classmethod
+    def _update_slave_nodes_fqdn(cls, instances):
+        for n in instances:
+            n.fqdn = TaskHelper.make_slave_fqdn(n.id)
+
+    @classmethod
+    def prepare_for_provisioning(cls, instances):
+        """Prepare environment for provisioning,
+        update fqdns, assign admin IPs
+        """
+        cls._update_slave_nodes_fqdn(instances)
+        for n in instances:
+            cls.get_network_manager(n).assign_admin_ips(n.id)
+
+    @classmethod
+    def prepare_for_deployment(cls, instances):
+        """Prepare environment for deployment,
+        assign management, public, storage ips
+        """
+        cls._update_slave_nodes_fqdn(instances)
+
+        nodes_ids = [n.id for n in instances]
+
+        # TODO(enchantner): check network manager instance for each node
+        netmanager = Cluster.get_network_manager()
+        if nodes_ids:
+            netmanager.assign_ips(nodes_ids, 'management')
+            netmanager.assign_ips(nodes_ids, 'public')
+            netmanager.assign_ips(nodes_ids, 'storage')
+
+            for node in instances:
+                netmanager.assign_admin_ips(node.id)
 
     @classmethod
     def to_dict(cls, instance, fields=None):

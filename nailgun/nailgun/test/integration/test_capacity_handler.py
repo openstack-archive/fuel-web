@@ -132,7 +132,7 @@ class TestHandlers(BaseIntegrationTest):
     def test_capacity_csv_log_with_unicode(self):
         self.env.create(
             cluster_kwargs={
-                'name': u'тест'
+                'name': 'test'
             },
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True}

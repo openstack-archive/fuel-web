@@ -17,7 +17,7 @@ from mock import patch
 
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
-from nailgun.task.helpers import TaskHelper
+from nailgun import objects
 from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test.base import BaseTestCase
 from nailgun.volumes.manager import VolumeManager
@@ -53,7 +53,8 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.db.add(task)
         self.db.commit()
 
-        TaskHelper.update_cluster_status(task.uuid)
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
         self.node_should_be_error_with_type(self.cluster.nodes[0], 'deploy')
@@ -64,7 +65,8 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.db.add(task)
         self.db.commit()
 
-        TaskHelper.update_cluster_status(task.uuid)
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
 
@@ -75,7 +77,8 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.db.add(task)
         self.db.commit()
 
-        TaskHelper.update_cluster_status(task.uuid)
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
         self.node_should_be_error_with_type(self.cluster.nodes[0], 'provision')
@@ -86,7 +89,8 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.db.add(task)
         self.db.commit()
 
-        TaskHelper.update_cluster_status(task.uuid)
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
 
         self.assertEqual(self.cluster.status, 'operational')
 
@@ -102,7 +106,8 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.db.add(task)
         self.db.commit()
 
-        TaskHelper.update_cluster_status(task.uuid)
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
 
         self.assertEqual(self.cluster.status, 'operational')
 
@@ -119,7 +124,9 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
         self.db.add(task)
         self.db.commit()
 
-        TaskHelper.update_task_status(task.uuid, 'error', 100)
+        data = {'status': 'error', 'progress': 100}
+        objects.Task.update(task, data)
+        self.db.flush()
 
         self.assertEqual(self.cluster.status, 'error')
         self.assertEqual(task.status, 'error')
@@ -144,7 +151,9 @@ class TestHelperUpdateClusterStatus(BaseTestCase):
             self.db.add(check_task)
             self.db.commit()
 
-            TaskHelper.update_cluster_status(supertask.uuid)
+            objects.Task._update_cluster_data(supertask)
+            self.db.flush()
+
             self.assertEqual(self.cluster.status, 'new')
 
 

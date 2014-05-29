@@ -34,7 +34,6 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.settings import settings
-from nailgun.task.helpers import TaskHelper
 from nailgun.utils import dict_merge
 from nailgun.volumes import manager as volume_manager
 
@@ -150,7 +149,7 @@ class DeploymentMultinodeSerializer(object):
                 node_list.append({
                     'uid': node.uid,
                     'fqdn': node.fqdn,
-                    'name': TaskHelper.make_slave_name(node.id),
+                    'name': objects.Node.make_slave_name(node),
                     'role': role})
 
         return node_list
@@ -887,7 +886,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 def serialize(cluster, nodes):
     """Serialization depends on deployment mode
     """
-    TaskHelper.prepare_for_deployment(cluster.nodes)
+    objects.NodeCollection.prepare_for_deployment(cluster.nodes)
 
     if cluster.mode == 'multinode':
         serializer = DeploymentMultinodeSerializer

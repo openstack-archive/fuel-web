@@ -102,7 +102,9 @@ class NailgunReceiver(object):
         if not error_msg:
             error_msg = ". ".join([success_msg, err_msg])
 
-        TaskHelper.update_task_status(task_uuid, status, progress, error_msg)
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        data = {'status': status, 'progress': progress, 'message': error_msg}
+        objects.Task.update(task, data)
 
     @classmethod
     def remove_cluster_resp(cls, **kwargs):
@@ -114,7 +116,7 @@ class NailgunReceiver(object):
 
         cls.remove_nodes_resp(**kwargs)
 
-        task = TaskHelper.get_task_by_uuid(task_uuid)
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
         cluster = task.cluster
 
         if task.status in ('ready',):
@@ -249,7 +251,8 @@ class NailgunReceiver(object):
         elif status in ('ready',):
             cls._success_action(task, status, progress)
         else:
-            TaskHelper.update_task_status(task.uuid, status, progress, message)
+            data = {'status': status, 'progress': progress, 'message': message}
+            objects.Task.update(task, data)
 
     @classmethod
     def provision_resp(cls, **kwargs):
@@ -262,8 +265,6 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
         nodes = kwargs.get('nodes', [])
-
-        task = TaskHelper.get_task_by_uuid(task_uuid)
 
         for node in nodes:
             uid = node.get('uid')
@@ -284,11 +285,12 @@ class NailgunReceiver(object):
 
         db().commit()
 
-        task = TaskHelper.get_task_by_uuid(task_uuid)
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
         if nodes and not progress:
             progress = TaskHelper.recalculate_provisioning_task_progress(task)
 
-        TaskHelper.update_task_status(task.uuid, status, progress, message)
+        data = {'status': status, 'progress': progress, 'message': message}
+        objects.Task.update(task, data)
 
     @classmethod
     def _generate_error_message(cls, task, error_types, names_only=False):
@@ -336,7 +338,8 @@ class NailgunReceiver(object):
             message,
             task.cluster_id
         )
-        TaskHelper.update_task_status(task.uuid, status, progress, message)
+        data = {'status': status, 'progress': progress, 'message': message}
+        objects.Task.update(task, data)
 
     @classmethod
     def _success_action(cls, task, status, progress):
@@ -428,7 +431,9 @@ class NailgunReceiver(object):
             message,
             task.cluster_id
         )
-        TaskHelper.update_task_status(task.uuid, status, progress, message)
+
+        data = {'status': status, 'progress': progress, 'message': message}
+        objects.Task.update(task, data)
 
     @classmethod
     def stop_deployment_resp(cls, **kwargs):
@@ -443,9 +448,8 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = TaskHelper.get_task_by_uuid(task_uuid)
         # Locking stop task
-        objects.Task.get_by_uuid(
+        task = objects.Task.get_by_uuid(
             task_uuid,
             fail_if_not_found=True,
             lock_for_update=True
@@ -532,12 +536,8 @@ class NailgunReceiver(object):
                 task.cluster_id
             )
 
-        TaskHelper.update_task_status(
-            task_uuid,
-            status,
-            progress,
-            message
-        )
+        data = {'status': status, 'progress': progress, 'message': message}
+        objects.Task.update(task, data)
 
     @classmethod
     def reset_environment_resp(cls, **kwargs):
@@ -552,7 +552,7 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = TaskHelper.get_task_by_uuid(task_uuid)
+        task = objects.Task.get_by_uuid(task_uuid)
 
         if status == "ready":
 
@@ -615,12 +615,8 @@ class NailgunReceiver(object):
                 task.cluster_id
             )
 
-        TaskHelper.update_task_status(
-            task.uuid,
-            status,
-            progress,
-            message
-        )
+        data = {'status': status, 'progress': progress, 'message': message}
+        objects.Task.update(task, data)
 
     @classmethod
     def _notify_inaccessible(cls, cluster_id, nodes_uids, action):
@@ -657,7 +653,7 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
 
         # We simply check that each node received all vlans for cluster
-        task = TaskHelper.get_task_by_uuid(task_uuid)
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
 
         result = []
         #  We expect that 'nodes' contains all nodes which we test.
@@ -765,11 +761,12 @@ class NailgunReceiver(object):
             status = 'error'
             logger.error(error_msg)
         if status not in ('ready', 'error'):
-            TaskHelper.update_task_status(task_uuid, status, progress,
-                                          error_msg, result)
+            data = {'status': status, 'progress': progress,
+                    'message': error_msg, 'result': result}
+            objects.Task.update(task, data)
         else:
-            TaskHelper.update_verify_networks(task_uuid, status, progress,
-                                              error_msg, result)
+            objects.Task.update_verify_networks(task, status, progress,
+                                                error_msg, result)
 
     @classmethod
     def check_dhcp_resp(cls, **kwargs):
@@ -817,8 +814,10 @@ class NailgunReceiver(object):
         status = status if not messages else "error"
         error_msg = '\n'.join(messages) if messages else error_msg
         logger.debug('Check dhcp message %s', error_msg)
-        TaskHelper.update_verify_networks(task_uuid, status, progress,
-                                          error_msg, result)
+
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        objects.Task.update_verify_networks(task, status, progress,
+                                            error_msg, result)
 
     # Red Hat related callbacks
 
@@ -833,7 +832,7 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = TaskHelper.get_task_by_uuid(task_uuid)
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
 
         release_info = task.cache['args']['release_info']
         release_id = release_info['release_id']
@@ -859,13 +858,9 @@ class NailgunReceiver(object):
             }
         }
 
-        TaskHelper.update_task_status(
-            task_uuid,
-            status,
-            progress,
-            error_msg,
-            result
-        )
+        data = {'status': status, 'progress': progress, 'message': error_msg,
+                'result': result}
+        objects.Task.update(task, data)
 
     @classmethod
     def redhat_check_licenses_resp(cls, **kwargs):
@@ -879,7 +874,7 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
         notify = kwargs.get('msg')
 
-        task = TaskHelper.get_task_by_uuid(task_uuid)
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
 
         release_info = task.cache['args']['release_info']
         release_id = release_info['release_id']
@@ -907,13 +902,9 @@ class NailgunReceiver(object):
             }
         }
 
-        TaskHelper.update_task_status(
-            task_uuid,
-            status,
-            progress,
-            error_msg,
-            result
-        )
+        data = {'status': status, 'progress': progress, 'message': error_msg,
+                'result': result}
+        objects.Task.update(task, data)
 
     @classmethod
     def download_release_resp(cls, **kwargs):
@@ -926,7 +917,7 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = TaskHelper.get_task_by_uuid(task_uuid)
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
 
         release_info = task.cache['args']['release_info']
         release_id = release_info['release_id']
@@ -953,13 +944,9 @@ class NailgunReceiver(object):
             }
         }
 
-        TaskHelper.update_task_status(
-            task_uuid,
-            status,
-            progress,
-            error_msg,
-            result
-        )
+        data = {'status': status, 'progress': progress, 'message': error_msg,
+                'result': result}
+        objects.Task.update(task, data)
 
     @classmethod
     def _update_release_state(cls, release_id, state):
@@ -1002,13 +989,19 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
         error = kwargs.get('error')
         msg = kwargs.get('msg')
+
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+
         if status == 'error':
             notifier.notify('error', error)
-            TaskHelper.update_task_status(task_uuid, status, 100, error)
+
+            data = {'status': status, 'progress': 100, 'message': error}
+            objects.Task.update(task, data)
+
         elif status == 'ready':
             dumpfile = os.path.basename(msg)
             notifier.notify('done', 'Snapshot is ready. '
                             'Visit Support page to download')
-            TaskHelper.update_task_status(
-                task_uuid, status, progress,
-                '/dump/{0}'.format(dumpfile))
+            data = {'status': status, 'progress': progress,
+                    'message': '/dump/{0}'.format(dumpfile)}
+            objects.Task.update(task, data)

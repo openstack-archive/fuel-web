@@ -20,9 +20,12 @@ from itertools import ifilter
 
 from nailgun.test.base import BaseIntegrationTest
 
+from nailgun.errors import errors
+
 from nailgun import consts
 
 from nailgun.db import NoCacheQuery
+from nailgun.db.sqlalchemy.models import Task
 
 from nailgun import objects
 
@@ -241,3 +244,152 @@ class TestNodeObject(BaseIntegrationTest):
             objects.Node.update_by_agent(node_db, copy.deepcopy(data))
 
             self.assertEqual(node_db.status, status)
+
+
+class TestTaskObject(BaseIntegrationTest):
+
+    def setUp(self):
+        super(TestTaskObject, self).setUp()
+        self.env.create(
+            nodes_kwargs=[
+                {'roles': ['controller']},
+                {'roles': ['compute']},
+                {'roles': ['cinder']}])
+
+    def _node_should_be_error_with_type(self, node, error_type):
+        self.assertEquals(node.status, 'error')
+        self.assertEquals(node.error_type, error_type)
+        self.assertEquals(node.progress, 0)
+
+    def _nodes_should_not_be_error(self, nodes):
+        for node in nodes:
+            self.assertEquals(node.status, 'discover')
+
+    @property
+    def cluster(self):
+        return self.env.clusters[0]
+
+    def test_update_nodes_to_error_if_deployment_task_failed(self):
+        self.cluster.nodes[0].status = 'deploying'
+        self.cluster.nodes[0].progress = 12
+        task = Task(name='deployment', cluster=self.cluster, status='error')
+        self.db.add(task)
+        self.db.flush()
+
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
+
+        self.assertEquals(self.cluster.status, 'error')
+        self._node_should_be_error_with_type(self.cluster.nodes[0], 'deploy')
+        self._nodes_should_not_be_error(self.cluster.nodes[1:])
+
+    def test_update_cluster_to_error_if_deploy_task_failed(self):
+        task = Task(name='deploy', cluster=self.cluster, status='error')
+        self.db.add(task)
+        self.db.flush()
+
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
+
+        self.assertEquals(self.cluster.status, 'error')
+
+    def test_update_nodes_to_error_if_provision_task_failed(self):
+        self.cluster.nodes[0].status = 'provisioning'
+        self.cluster.nodes[0].progress = 12
+        task = Task(name='provision', cluster=self.cluster, status='error')
+        self.db.add(task)
+        self.db.flush()
+
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
+
+        self.assertEquals(self.cluster.status, 'error')
+        self._node_should_be_error_with_type(self.cluster.nodes[0],
+                                             'provision')
+        self._nodes_should_not_be_error(self.cluster.nodes[1:])
+
+    def test_update_cluster_to_operational(self):
+        task = Task(name='deploy', cluster=self.cluster, status='ready')
+        self.db.add(task)
+        self.db.flush()
+
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
+
+        self.assertEquals(self.cluster.status, 'operational')
+
+    def test_update_if_parent_task_is_ready_all_nodes_should_be_ready(self):
+        for node in self.cluster.nodes:
+            node.status = 'ready'
+            node.progress = 100
+
+        self.cluster.nodes[0].status = 'deploying'
+        self.cluster.nodes[0].progress = 24
+
+        task = Task(name='deploy', cluster=self.cluster, status='ready')
+        self.db.add(task)
+        self.db.flush()
+
+        objects.Task._update_cluster_data(task)
+        self.db.flush()
+
+        self.assertEquals(self.cluster.status, 'operational')
+
+        for node in self.cluster.nodes:
+            self.assertEquals(node.status, 'ready')
+            self.assertEquals(node.progress, 100)
+
+    def test_update_cluster_status_if_task_was_already_in_error_status(self):
+        for node in self.cluster.nodes:
+            node.status = 'provisioning'
+            node.progress = 12
+
+        task = Task(name='provision', cluster=self.cluster, status='error')
+        self.db.add(task)
+        self.db.flush()
+
+        data = {'status': 'error', 'progress': 100}
+
+        objects.Task.update(task, data)
+        self.db.flush()
+
+        self.assertEquals(self.cluster.status, 'error')
+        self.assertEquals(task.status, 'error')
+
+        for node in self.cluster.nodes:
+            self.assertEquals(node.status, 'error')
+            self.assertEquals(node.progress, 0)
+
+    def test_do_not_set_cluster_to_error_if_validation_failed(self):
+        for task_name in ['check_before_deployment', 'check_networks']:
+            supertask = Task(
+                name='deploy',
+                cluster=self.cluster,
+                status='error')
+
+            check_task = Task(
+                name=task_name,
+                cluster=self.cluster,
+                status='error')
+
+            supertask.subtasks.append(check_task)
+            self.db.add(check_task)
+            self.db.flush()
+
+            objects.Task._update_cluster_data(supertask)
+            self.db.flush()
+
+            self.assertEquals(self.cluster.status, 'new')
+
+    def test_get_task_by_uuid_returns_task(self):
+        task = Task(name='deploy')
+        self.db.add(task)
+        self.db.flush()
+        task_by_uuid = objects.Task.get_by_uuid(task.uuid)
+        self.assertEquals(task.uuid, task_by_uuid.uuid)
+
+    def test_get_task_by_uuid_raises_error(self):
+        self.assertRaises(errors.ObjectNotFound,
+                          objects.Task.get_by_uuid,
+                          uuid='not_found_uuid',
+                          fail_if_not_found=True)

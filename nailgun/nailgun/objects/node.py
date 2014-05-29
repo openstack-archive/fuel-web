@@ -36,6 +36,8 @@ from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 from nailgun.objects import Notification
 
+from nailgun.settings import settings
+
 
 class Node(NailgunObject):
     """Node object
@@ -603,19 +605,22 @@ class Node(NailgunObject):
         return node_dict
 
     @classmethod
-    def can_be_updated(cls, instance):
-        return (instance.status in (consts.NODE_STATUSES.ready,
-                                    consts.NODE_STATUSES.provisioned)) or \
-               (instance.status == consts.NODE_STATUSES.error
-                and instance.error_type == consts.NODE_ERRORS.deploy)
-
-    @classmethod
     def move_roles_to_pending_roles(cls, instance):
         """Move roles to pending_roles
         """
         instance.pending_roles += instance.roles
         instance.roles = []
         db().flush()
+
+    @classmethod
+    def make_slave_name(cls, instance):
+        return u"node-{node_id}".format(node_id=instance.id)
+
+    @classmethod
+    def make_slave_fqdn(cls, instance):
+        return u"{instance_name}.{dns_domain}" \
+            .format(instance_name=cls.make_slave_name(instance),
+                    dns_domain=settings.DNS_DOMAIN)
 
 
 class NodeCollection(NailgunCollection):
@@ -624,3 +629,38 @@ class NodeCollection(NailgunCollection):
 
     #: Single Node object class
     single = Node
+
+    @classmethod
+    def update_slave_nodes_fqdn(cls, instances):
+        for n in instances:
+            n.fqdn = cls.single.make_slave_fqdn(n)
+
+        db().flush()
+
+    @classmethod
+    def prepare_for_deployment(cls, instances):
+        """Prepare environment for deployment,
+        assign management, public, storage ips
+        """
+        cls.update_slave_nodes_fqdn(instances)
+
+        nodes_ids = [n.id for n in instances]
+
+        # TODO(enchantner): check network manager instance for each node
+        netmanager = Cluster.get_network_manager()
+        if nodes_ids:
+            netmanager.assign_ips(nodes_ids, 'management')
+            netmanager.assign_ips(nodes_ids, 'public')
+            netmanager.assign_ips(nodes_ids, 'storage')
+
+            for node in instances:
+                netmanager.assign_admin_ips(node.id)
+
+    @classmethod
+    def prepare_for_provisioning(cls, instances):
+        """Prepare environment for provisioning,
+        update fqdns, assign admin IPs
+        """
+        cls.update_slave_nodes_fqdn(instances)
+        for n in instances:
+            cls.single.get_network_manager(n).assign_admin_ips(n.id)

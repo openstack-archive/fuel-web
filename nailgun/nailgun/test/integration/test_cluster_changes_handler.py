@@ -27,7 +27,6 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
-from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -248,7 +247,7 @@ class TestHandlers(BaseIntegrationTest):
                     'udevrules': udev_interfaces_mapping},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
-                'name': TaskHelper.make_slave_name(n.id),
+                'name': objects.Node.make_slave_name(n),
                 'hostname': n.fqdn,
                 'name_servers': '\"%s\"' % settings.DNS_SERVERS,
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
@@ -647,7 +646,7 @@ class TestHandlers(BaseIntegrationTest):
                     'udevrules': udev_interfaces_mapping},
                 'power_address': n.ip,
                 'power_pass': settings.PATH_TO_BOOTSTRAP_SSH_KEY,
-                'name': TaskHelper.make_slave_name(n.id),
+                'name': objects.Node.make_slave_name(n),
                 'hostname': n.fqdn,
                 'name_servers': '\"%s\"' % settings.DNS_SERVERS,
                 'name_servers_search': '\"%s\"' % settings.DNS_SEARCH,
@@ -781,7 +780,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEquals(len(n_rpc_provision), 1)
         self.assertEquals(
             n_rpc_provision[0]['name'],
-            TaskHelper.make_slave_name(self.env.nodes[0].id)
+            objects.Node.make_slave_name(self.env.nodes[0])
         )
 
         # deploy method call [1][0][1][1]

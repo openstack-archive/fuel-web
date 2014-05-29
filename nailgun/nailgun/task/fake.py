@@ -385,6 +385,7 @@ class FakeDeletionThread(FakeThread):
         nodes_to_restore = self.data['args'].get('nodes_to_restore', [])
         resp_method = getattr(receiver, self.respond_to)
         handling_db_errors(resp_method, **kwargs)
+        db().flush()
 
         recover_nodes = self.params.get("recover_nodes", True)
 
@@ -494,7 +495,8 @@ class FakeVerificationThread(FakeThread):
         receiver = NailgunReceiver
         kwargs = {
             'task_uuid': self.task_uuid,
-            'progress': 0
+            'progress': 0,
+            'status': 'running'
         }
 
         tick_count = int(settings.FAKE_TASKS_TICK_COUNT)
@@ -527,6 +529,8 @@ class FakeVerificationThread(FakeThread):
                 kwargs['status'] = 'ready'
                 ready = True
             resp_method(**kwargs)
+            db().commit()
+
             if time.time() - timer > timeout:
                 raise Exception("Timeout exceed")
             self.sleep(tick_interval)

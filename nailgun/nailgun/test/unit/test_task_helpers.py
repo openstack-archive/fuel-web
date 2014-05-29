@@ -30,6 +30,7 @@ class TestTaskHelpers(BaseTestCase):
             nodes_kwargs=nodes)
 
         cluster_db = self.db.query(Cluster).get(cluster['id'])
+        # TODO(aroma): change to corresponding method from Node object
         TaskHelper.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
@@ -40,6 +41,7 @@ class TestTaskHelpers(BaseTestCase):
     def filter_by_role(self, nodes, role):
         return filter(lambda node: role in node.all_roles, nodes)
 
+    # TODO(aroma): move it to Cluster object testing code
     def test_redeploy_all_controller_if_single_controller_failed(self):
         cluster = self.create_env([
             {'roles': ['controller'], 'status': 'error'},
@@ -55,6 +57,7 @@ class TestTaskHelpers(BaseTestCase):
         controllers = self.filter_by_role(nodes, 'controller')
         self.assertEquals(len(controllers), 3)
 
+    # TODO(aroma): move it to Cluster object testing code
     def test_redeploy_only_compute_cinder(self):
         cluster = self.create_env([
             {'roles': ['controller']},
@@ -73,6 +76,7 @@ class TestTaskHelpers(BaseTestCase):
         computes = self.filter_by_role(nodes, 'compute')
         self.assertEquals(len(computes), 1)
 
+    # TODO(aroma): move it to Cluster object testing code
     def test_redeploy_all_controller_and_compute_cinder(self):
         cluster = self.create_env([
             {'roles': ['controller'], 'status': 'error'},
@@ -94,6 +98,7 @@ class TestTaskHelpers(BaseTestCase):
         computes = self.filter_by_role(nodes, 'compute')
         self.assertEquals(len(computes), 1)
 
+    # TODO(aroma): move it to utils testing code
     def test_recalculate_deployment_task_progress(self):
         cluster = self.create_env([
             {'roles': ['controller'],
@@ -116,6 +121,7 @@ class TestTaskHelpers(BaseTestCase):
         progress = TaskHelper.recalculate_deployment_task_progress(task)
         self.assertEquals(progress, 25)
 
+    # TODO(aroma): move it to utils testing code
     def test_recalculate_provisioning_task_progress(self):
         cluster = self.create_env([
             {'roles': ['controller'],

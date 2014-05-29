@@ -884,7 +884,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 def serialize(cluster, nodes):
     """Serialization depends on deployment mode
     """
-    TaskHelper.prepare_for_deployment(cluster.nodes)
+    objects.Node.prepare_for_deployment(cluster.nodes)
+
+    # nailgun object doesn't controll db session flow,
+    # so we must do it explicitly here
+    db().commit()
 
     if cluster.mode == 'multinode':
         serializer = DeploymentMultinodeSerializer

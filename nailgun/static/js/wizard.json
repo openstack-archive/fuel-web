@@ -76,7 +76,7 @@
           "data": "neutron-gre",
           "label": "dialog.create_cluster_wizard.network.neutr_gre",
           "restrictions": {
-            "Compute.hypervisor != 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+            "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
           },
           "bind": [
             {"cluster:net_provider": "neutron"},
@@ -87,7 +87,7 @@
           "data": "neutron-vlan",
           "label": "dialog.create_cluster_wizard.network.neutr_vlan",
           "restrictions": {
-            "Compute.hypervisor != 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+            "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
           },
           "bind": [
             {"cluster:net_provider": "neutron"},
@@ -111,8 +111,8 @@
           "data": "ceph",
           "label": "dialog.create_cluster_wizard.storage.ceph",
           "restrictions": {
-            "'ceph-osd' in NameAndRelease.release_roles": "dialog.create_cluster_wizard.storage.alert",
-            "Compute.hypervisor != 'vcenter'": "dialog.create_cluster_wizard.storage.vcenter_alert"
+            "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert",
+            "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.vcenter_alert"
           },
           "bind": [
             {"settings:storage.volumes_ceph.value": true},
@@ -133,8 +133,8 @@
           "data": "ceph",
           "label": "dialog.create_cluster_wizard.storage.ceph",
           "restrictions": {
-             "'ceph-osd' in NameAndRelease.release_roles": "dialog.create_cluster_wizard.storage.alert",
-              "Compute.hypervisor != 'vcenter'": "dialog.create_cluster_wizard.storage.vcenter_alert"
+             "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert",
+             "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.vcenter_alert"
           },
           "bind": [{"settings:storage.images_ceph.value": true}]
         }
@@ -158,7 +158,7 @@
       "bind": "settings:additional_components.murano.value",
       "weight": 20,
       "restrictions": {
-        "Network.manager != 'nova-network'": "dialog.create_cluster_wizard.additional.network_mode_alert"
+        "Network.manager == 'nova-network'": "dialog.create_cluster_wizard.additional.network_mode_alert"
       }
     },
     "ceilometer": {

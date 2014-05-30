@@ -27,3 +27,19 @@ class CannotRunUpgrade(FuelUpgradeException):
 
 class DockerExecutedErrorNonZeroExitCode(FuelUpgradeException):
     pass
+
+
+class DockerFailedToBuildImageError(FuelUpgradeException):
+    pass
+
+
+class CyclicDependenciesError(FuelUpgradeException):
+    pass
+
+
+class CannotFindContainerError(FuelUpgradeException):
+    pass
+
+
+class TimeoutError(FuelUpgradeException):
+    pass

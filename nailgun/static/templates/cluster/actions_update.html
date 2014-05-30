@@ -1,0 +1,22 @@
+<form class="environment-action-form" onsubmit="return false">
+  <h4 data-i18n="cluster_page.actions_tab.update_environment"></h4>
+  <div class="action-item-controls">
+    <div class="action-body">
+      <% if (!(releases.deferred && releases.deferred.state() == 'pending')) { %>
+        <% if (!this.releases.length && !locked && cluster.get('status') == 'operational') { %>
+          <p class="action-item-description text-success" data-i18n="cluster_page.actions_tab.no_releases_to_update_message"></p>
+        <% } else { %>
+          <p class="action-item-description <%= locked ? 'unavailable' : '' %>">
+            <%- $.t('cluster_page.actions_tab.' + descriptionKey) %>
+          </p>
+        <% } %>
+      <% } else { %>
+        <div class="progress-bar description">
+          <div class="progress progress-striped progress-success active"><div class="bar"></div></div>
+        </div>
+      <% } %>
+    </div>
+    <select name="update_release"></select>
+    <button class="btn btn-success action-btn update-environment-btn"><span data-i18n="common.update_button"></span></button>
+  </div>
+</form>

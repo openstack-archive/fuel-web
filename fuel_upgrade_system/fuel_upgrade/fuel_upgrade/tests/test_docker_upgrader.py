@@ -45,6 +45,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.update_path = '/tmp/new_update'
         with mock.patch('os.makedirs'):
             self.upgrader = DockerUpgrader(self.update_path, self.fake_config)
+            self.upgrader.upgrade_verifier = mock.MagicMock()
 
     def tearDown(self):
         self.docker_patcher.stop()
@@ -83,7 +84,6 @@ class TestDockerUpgrader(BaseTestCase):
         mocked_methods = [
             'stop_fuel_containers',
             'upload_images',
-            'run_post_build_actions',
             'create_containers',
             'generate_configs',
             'switch_to_new_configs']
@@ -100,6 +100,7 @@ class TestDockerUpgrader(BaseTestCase):
 
         self.called_once(self.supervisor_mock.stop_all_services)
         self.called_once(self.supervisor_mock.restart_and_wait)
+        self.called_once(self.upgrader.upgrade_verifier.verify)
 
     def test_rollback(self, _):
         self.upgrader.stop_fuel_containers = mock.MagicMock()
@@ -144,7 +145,8 @@ class TestDockerUpgrader(BaseTestCase):
              'volumes_from': ['id2']},
             {'id': 'id2',
              'image_name': 'i_name2',
-             'container_name': 'name2'}]
+             'container_name': 'name2',
+             'after_container_creation_command': 'cmd'}]
 
         def mocked_create_container(*args, **kwargs):
             """Return name of the container
@@ -154,6 +156,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.upgrader.create_container = mock.MagicMock(
             side_effect=mocked_create_container)
         self.upgrader.start_container = mock.MagicMock()
+        self.upgrader.run_after_container_creation_command = mock.MagicMock()
 
         self.upgrader.create_containers()
 
@@ -177,6 +180,14 @@ class TestDockerUpgrader(BaseTestCase):
         self.assertEquals(
             self.upgrader.start_container.call_args_list,
             start_container_calls)
+        self.called_once(self.upgrader.run_after_container_creation_command)
+
+    def test_run_after_container_creation_command(self, _):
+        self.upgrader.exec_with_retries = mock.MagicMock()
+        self.upgrader.run_after_container_creation_command({
+            'after_container_creation_command': 'cmd',
+            'container_name': 'name'})
+        self.called_once(self.upgrader.exec_with_retries)
 
     def test_create_container(self, _):
         self.upgrader.create_container(
@@ -243,3 +254,58 @@ class TestDockerUpgrader(BaseTestCase):
     def test_switch_to_new_configs(self, _):
         self.upgrader.switch_to_new_configs()
         self.supervisor_mock.switch_to_new_configs.called_once()
+
+    def test_exec_cmd_in_container(self, exec_cmd_mock):
+        name = 'container_name'
+        cmd = 'some command'
+
+        self.upgrader.container_docker_id = mock.MagicMock(return_value=name)
+        self.upgrader.exec_cmd_in_container(name, cmd)
+
+        self.called_once(self.upgrader.container_docker_id)
+        exec_cmd_mock.assert_called_once_with(
+            "lxc-attach --name {0} -- {1}".format(name, cmd))
+
+    def test_save_db(self, _):
+        self.upgrader.verify_postgres_dump = mock.MagicMock(return_value=True)
+        self.upgrader.exec_cmd_in_container = mock.MagicMock()
+        self.upgrader.save_db()
+
+    def test_save_db_failed_verification(self, _):
+        self.upgrader.verify_postgres_dump = mock.MagicMock(return_value=False)
+        self.upgrader.exec_cmd_in_container = mock.MagicMock()
+        self.assertRaises(errors.DatabaseDumpError, self.upgrader.save_db)
+
+    @mock.patch(
+        'fuel_upgrade.upgrade.utils.file_contains_lines', returns_value=True)
+    @mock.patch(
+        'fuel_upgrade.upgrade.os.path.exists', side_effect=[False, True])
+    @mock.patch('fuel_upgrade.upgrade.os.remove')
+    def test_save_db_removes_file_in_case_of_error(
+            self, remove_mock, _, __, ___):
+        self.upgrader.exec_cmd_in_container = mock.MagicMock(
+            side_effect=errors.ExecutedErrorNonZeroExitCode())
+
+        self.assertRaises(
+            errors.ExecutedErrorNonZeroExitCode,
+            self.upgrader.save_db)
+
+        self.called_once(remove_mock)
+
+    @mock.patch('fuel_upgrade.upgrade.os.path.exists',
+                return_value=True)
+    @mock.patch('fuel_upgrade.upgrade.utils.file_contains_lines',
+                returns_value=True)
+    def test_verify_postgres_dump(self, file_contains_mock, exists_mock, __):
+        self.upgrader.verify_postgres_dump()
+
+        patterns = [
+            '-- PostgreSQL database cluster dump',
+            '-- PostgreSQL database dump',
+            '-- PostgreSQL database dump complete',
+            '-- PostgreSQL database cluster dump complete']
+
+        exists_mock.assert_called_once_with(self.upgrader.pg_dump_path)
+        file_contains_mock.assert_called_once_with(
+            self.upgrader.pg_dump_path,
+            patterns)

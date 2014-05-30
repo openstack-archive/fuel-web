@@ -22,8 +22,8 @@ from copy import deepcopy
 
 import docker
 import requests
-import yaml
 
+from fuel_upgrade.checker import FuelUpgradeVerify
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade import errors
 from fuel_upgrade.supervisor_client import SupervisorClient
@@ -54,6 +54,9 @@ class DockerUpgrader(UpgradeEngine):
         self.supervisor = SupervisorClient(self.config)
         self.new_release_images = self.make_new_release_images_list()
         self.new_release_containers = self.make_new_release_containers_list()
+        self.pg_dump_path = os.path.join(
+            self.working_directory, 'pg_dump_all.sql')
+        self.upgrade_verifier = FuelUpgradeVerify(self.config)
 
     def upgrade(self):
         """Method with upgarde logic
@@ -61,7 +64,6 @@ class DockerUpgrader(UpgradeEngine):
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
         self.upload_images()
-        self.run_post_build_actions()
         self.stop_fuel_containers()
         self.create_containers()
         self.stop_fuel_containers()
@@ -70,30 +72,81 @@ class DockerUpgrader(UpgradeEngine):
 
         # Reload configs and run new services
         self.supervisor.restart_and_wait()
+        self.upgrade_verifier.verify()
 
     def rollback(self):
+        """Method which contains rollback logic
+        """
         self.supervisor.switch_to_previous_configs()
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
         self.supervisor.restart_and_wait()
 
+    def before_upgrade_actions(self):
+        """Run before upgrade actions
+        """
+        self.save_db()
+
+    def save_db(self):
+        """Saves postgresql database into the file
+        """
+        logger.debug(u'Backup database')
+        if self.verify_postgres_dump():
+            logger.info('Database backup exists "{0}", '
+                        'do nothing'.format(self.pg_dump_path))
+            return
+
+        container_name = self.make_container_name(
+            'postgres',
+            self.config.current_version['VERSION']['release'])
+
+        try:
+            self.exec_cmd_in_container(
+                container_name,
+                u"su postgres -c 'pg_dumpall --clean' > {0}".format(
+                    self.pg_dump_path))
+        except errors.ExecutedErrorNonZeroExitCode:
+            if os.path.exists(self.pg_dump_path):
+                logger.info(u'Remove postgresql dump file because '
+                            'it failed {0}'.format(self.pg_dump_path))
+                os.remove(self.pg_dump_path)
+            raise
+
+        if not self.verify_postgres_dump():
+            raise errors.DatabaseDumpError(
+                u'Failed to make database dump, {0} file is broken'.format(
+                    self.pg_dump_path))
+
+    def verify_postgres_dump(self):
+        """Checks that postgresql dump is correct
+        """
+        if not os.path.exists(self.pg_dump_path):
+            return False
+        patterns = [
+            '-- PostgreSQL database cluster dump',
+            '-- PostgreSQL database dump',
+            '-- PostgreSQL database dump complete',
+            '-- PostgreSQL database cluster dump complete']
+
+        return utils.file_contains_lines(self.pg_dump_path, patterns)
+
     def post_upgrade_actions(self):
         """Post upgrade actions
 
-        * create new version yaml file
-        * and create symlink to /etc/fuel/version.yaml
+        * creates new version yaml file
+        * and creates symlink to /etc/fuel/version.yaml
         """
         logger.info(u'Run post upgrade actions')
+        version_yaml_from_upgrade = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), 'version.yaml'))
         base_config_dir = os.path.join(
             self.config.fuel_config_path,
             self.config.new_version['VERSION']['release'])
         new_version_path = '{0}/version.yaml'.format(
             base_config_dir)
-        utils.create_dir_if_not_exists(base_config_dir)
-        with open(new_version_path, 'w') as f:
-            f.write(yaml.dump(self.config.new_version,
-                              default_flow_style=False))
 
+        utils.create_dir_if_not_exists(base_config_dir)
+        utils.copy(version_yaml_from_upgrade, new_version_path)
         utils.symlink(new_version_path, self.config.current_fuel_version_path)
 
     def upload_images(self):
@@ -111,7 +164,7 @@ class DockerUpgrader(UpgradeEngine):
                 continue
             # NOTE(eli): docker-py binding
             # doesn't have equal call for
-            # image importing which equal to
+            # image importing which equals to
             # `docker load`
             utils.exec_cmd(u'docker load < "{0}"'.format(docker_image))
 
@@ -148,8 +201,41 @@ class DockerUpgrader(UpgradeEngine):
                 port_bindings=self.get_port_bindings(container),
                 links=links,
                 volumes_from=volumes_from,
-                binds=container.get('binds'),
+                binds=self.get_container_binds(container),
                 privileged=container.get('privileged', False))
+
+            if container.get('after_container_creation_command'):
+                self.run_after_container_creation_command(container)
+
+    def run_after_container_creation_command(self, container):
+        """Runs command in container with retries in
+        case of error
+
+        :param container: dict with container information
+        """
+        command = container['after_container_creation_command']
+
+        def execute():
+            self.exec_cmd_in_container(container['container_name'], command)
+
+        self.exec_with_retries(
+            execute, errors.ExecutedErrorNonZeroExitCode,
+            '', retries=10, interval=3)
+
+    def exec_cmd_in_container(self, container_name, cmd):
+        """Execute command in running container
+
+        :param name: name of the container, like fuel-core-5.1-nailgun
+        """
+        db_container_id = self.container_docker_id(container_name)
+        # NOTE(eli): we don't use dockerctl shell
+        # instead of lxc-attach here because
+        # release 5.0 has a bug which doesn't
+        # allow us to use quotes in command
+        # https://bugs.launchpad.net/fuel/+bug/1324200
+        utils.exec_cmd(
+            "lxc-attach --name {0} -- {1}".format(
+                db_container_id, cmd))
 
     def get_port_bindings(self, container):
         """Docker binding accepts port_bindings
@@ -181,7 +267,7 @@ class DockerUpgrader(UpgradeEngine):
                 for port in ports]
 
     def exec_with_retries(
-            self, func, exceptions, message, retries=1, interval=0):
+            self, func, exceptions, message, retries=0, interval=0):
         # TODO(eli): refactor it and make retries
         # as a decorator
 
@@ -196,6 +282,8 @@ class DockerUpgrader(UpgradeEngine):
                     continue
                 raise
 
+        return func()
+
     def get_container_links(self, container):
         links = []
         if container.get('links'):
@@ -207,6 +295,22 @@ class DockerUpgrader(UpgradeEngine):
                     container_link['alias']))
 
         return links
+
+    def get_container_binds(self, container):
+        """For some bindings we have to pass non hardcoded directory
+        as a parameter, e.g. `working_directory` which consists of
+        base path and version.
+        """
+        binds = container.get('binds')
+        if binds:
+            rendered_binds = {}
+            for index, bind in binds.items():
+                rendered_binds[index.format(
+                    working_directory=self.working_directory)] = bind
+
+            return rendered_binds
+
+        return binds
 
     @classmethod
     def build_dependencies_graph(cls, containers):
@@ -338,100 +442,6 @@ class DockerUpgrader(UpgradeEngine):
             self.docker_client.stop(
                 container_id, self.config.docker['stop_container_timeout'])
 
-    def run_post_build_actions(self):
-        """Run db migration for installed services
-
-        TODO(eli): We have here a lot of
-        hardcoded logic all this logic should
-        be described in configuration file
-        """
-        # FIXME(eli): Here is dirty hack which copies
-        # data from postgres container and copies
-        # db data to special directory, because
-        # docker does not allow us to inject files
-        # into the container
-        # https://github.com/dotcloud/docker/issues/5846
-        postgres_name = self.make_container_name(
-            'postgres',
-            version=self.config.current_version['VERSION']['release'])
-        previous_db_container = self._get_containers_by_name(
-            postgres_name)[0]
-
-        cmd = 'docker cp {0}:{1} {2}'.format(
-            previous_db_container['Id'],
-            '/var/lib/pgsql',
-            '/var/lib/')
-        logger.debug(cmd)
-        utils.exec_cmd(cmd)
-
-        volume_container = self.container_by_id('volume_db')
-        logger.info(u'Run volume_db container %s', volume_container)
-        self.run(
-            volume_container['image_name'],
-            name=volume_container['container_name'],
-            volumes=volume_container['volumes'],
-            command=volume_container['post_build_command'],
-            binds=volume_container['binds'],
-            detach=True)
-
-        volume_fuel_configs_container = self.container_by_id(
-            'volume_fuel_configs')
-        logger.info(u'Run volume_fuel_configs_container container %s',
-                    volume_fuel_configs_container)
-
-        self.run(
-            volume_fuel_configs_container['image_name'],
-            name=volume_fuel_configs_container['container_name'],
-            volumes=volume_fuel_configs_container['volumes'],
-            command=volume_fuel_configs_container['post_build_command'],
-            binds=volume_fuel_configs_container['binds'],
-            detach=True)
-
-        pg_container = self.container_by_id('postgresql')
-        logger.info(u'Run postgresql container %s', pg_container)
-        self.run(
-            pg_container['image_name'],
-            name=pg_container['container_name'],
-            volumes_from=volume_container['container_name'],
-            ports=pg_container['ports'],
-            port_bindings=self.get_port_bindings(pg_container),
-            detach=True)
-
-        volume_puppet_manifests_container = self.container_by_id(
-            'volume_puppet_manifests')
-        logger.info(u'Run volume_puppet_manifests_container container %s',
-                    volume_puppet_manifests_container)
-
-        self.run(
-            volume_puppet_manifests_container['image_name'],
-            name=volume_puppet_manifests_container['container_name'],
-            volumes=volume_puppet_manifests_container['volumes'],
-            command=volume_puppet_manifests_container['post_build_command'],
-            binds=volume_puppet_manifests_container['binds'],
-            detach=True)
-
-        nailgun_container = self.container_by_id('nailgun')
-        logger.info(u'Run db migration for nailgun %s', nailgun_container)
-        self.run(
-            nailgun_container['image_name'],
-            command=nailgun_container['post_build_command'],
-            retry_interval=2,
-            volumes_from=[
-                volume_fuel_configs_container['container_name'],
-                volume_puppet_manifests_container['container_name']],
-            retries_count=8)
-
-        ostf_container = self.container_by_id('ostf')
-        logger.info(u'Run db migration for ostf %s', ostf_container)
-        self.run(
-            ostf_container['image_name'],
-            command=ostf_container['post_build_command'],
-            retry_interval=3,
-            volumes_from=[
-                volume_fuel_configs_container['container_name'],
-                volume_puppet_manifests_container['container_name']],
-            retries_count=6)
-
     def run(self, image_name, **kwargs):
         """Run container from image, accepts the
         same parameters as `docker run` command.
@@ -543,11 +553,7 @@ class DockerUpgrader(UpgradeEngine):
 
         return new_containers
 
-    def make_container_name(
-            self,
-            container_id,
-            version=None):
-
+    def make_container_name(self, container_id, version=None):
         """Returns container name
 
         :params container_id: container's id
@@ -567,8 +573,8 @@ class DockerUpgrader(UpgradeEngine):
 
         for image in self.config.images:
             new_image = deepcopy(image)
-            new_image['name'] = self.make_image_name(
-                image['id'])
+            new_image['name'] = self.make_image_name(image['id'])
+            new_image['type'] = image['type']
             new_image['docker_image'] = os.path.join(
                 self.update_path,
                 image['id'] + '.' + self.config.images_extension)
@@ -579,15 +585,31 @@ class DockerUpgrader(UpgradeEngine):
 
         return new_images
 
-    def make_image_name(self, name):
+    def make_image_name(self, image_id):
         """Makes full image name
 
-        :param name: name of the image
+        :param image_id: image id from config file
         :returns: full name
         """
+        images = filter(
+            lambda i: i['id'] == image_id,
+            self.config.images)
+
+        if not images:
+            raise errors.CannotFindImageError(
+                'Cannot find image with id: {0}'.format(image_id))
+
+        image = images[0]
+
+        if image['type'] == 'base':
+            return image['id']
+        elif image['type'] != 'fuel':
+            raise errors.UnsupportedImageTypeError(
+                'Unsupported umage type: {0}'.format(image['type']))
+
         return u'{0}{1}_{2}'.format(
             self.config.image_prefix,
-            name,
+            image['id'],
             self.config.new_version['VERSION']['release'])
 
     def container_by_id(self, container_id):
@@ -605,13 +627,37 @@ class DockerUpgrader(UpgradeEngine):
 
         return filtered_containers[0]
 
+    def container_docker_id(self, name):
+        """Returns running container with specified name
+
+        :param name: name of the container
+        :returns: id of the container or None if not found
+        :raises CannotFindContainerError:
+        """
+        containers_with_name = self._get_containers_by_name(name)
+        running_containers = filter(
+            lambda c: c['Status'].startswith('Up'),
+            containers_with_name)
+
+        if not running_containers:
+            raise errors.CannotFindContainerError(
+                'Cannot find running container with name "{0}"'.format(name))
+
+        return running_containers[0]['Id']
+
     def remove_new_release_images(self):
         """We need to remove images for current release
         because this script can be run several times
         and we have to delete images before images
         building
         """
-        image_names = [c['name'] for c in self.new_release_images]
+        # Don't remove base images because we cannot
+        # determine what version they belong to
+        images = filter(
+            lambda i: i.get('type') == 'fuel',
+            self.new_release_images)
+        image_names = [c['name'] for c in images]
+
         for image in image_names:
             self._delete_containers_for_image(image)
             if self.docker_client.images(name=image):
@@ -676,7 +722,6 @@ class DockerInitializer(DockerUpgrader):
 
     def upgrade(self):
         self.upload_images()
-        self.run_post_build_actions()
         self.stop_fuel_containers()
         self.create_containers()
         self.stop_fuel_containers()
@@ -723,6 +768,7 @@ class UpgradeManager(object):
             try:
                 logger.debug(
                     '%s: upgrading...', upgrader.__class__.__name__)
+                upgrader.before_upgrade_actions()
                 upgrader.upgrade()
                 upgrader.post_upgrade_actions()
 
@@ -762,7 +808,7 @@ class UpgradeManager(object):
         tasks_url = 'http://{0}:{1}/api/v1/tasks'.format(
             nailgun['host'], nailgun['port'])
 
-        tasks = utils.get_request(tasks_url)
+        tasks, _ = utils.get_request(tasks_url)
 
         running_tasks = filter(
             lambda t: t['status'] == 'running', tasks)

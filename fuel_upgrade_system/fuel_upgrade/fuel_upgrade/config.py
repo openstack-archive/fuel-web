@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,18 +14,24 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 
-class FuelUpgradeException(Exception):
-    pass
-
-
-class ExecutedErrorNonZeroExitCode(FuelUpgradeException):
-    pass
+import yaml
 
 
-class CannotRunUpgrade(FuelUpgradeException):
-    pass
+class Config(object):
+    """Config object, returns None if field doesn't exist
+    """
+
+    def __init__(self):
+        config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+        self.config = yaml.load(file(config_path, 'r'))
+
+    def __getattr__(self, name):
+        return self.config.get(name, None)
+
+    def __repr__(self):
+        self.config
 
 
-class DockerExecutedErrorNonZeroExitCode(FuelUpgradeException):
-    pass
+config = Config()

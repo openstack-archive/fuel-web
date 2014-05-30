@@ -397,7 +397,7 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                     observe: attributesToObserve,
                     onGet: function() {
                         return _.any(conditions, function(condition) {
-                            return !utils.evaluateExpression(condition, {default: this.wizard.model}).value;
+                            return utils.evaluateExpression(condition, {default: this.wizard.model}).value;
                         }, this);
                     }
                 }]
@@ -441,7 +441,7 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                     _.each(paneConfig, function(paneRestrictions) {
                         _.each(paneRestrictions, function(message, condition) {
                             var result = utils.evaluateExpression(condition, {default: this.wizard.model}).value;
-                            if ((key == 'warnings' && result) || (key == 'restrictions' && !result)) {
+                            if ((key == 'warnings' && result) || (key == 'restrictions' && result)) {
                                 messages.push(message);
                             }
                         }, this);

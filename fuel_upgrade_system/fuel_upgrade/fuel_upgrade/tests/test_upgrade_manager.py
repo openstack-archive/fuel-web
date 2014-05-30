@@ -21,7 +21,7 @@ from fuel_upgrade.tests.base import BaseTestCase
 from fuel_upgrade.upgrade import UpgradeManager
 
 
-@mock.patch('fuel_upgrade.upgrade.utils.get_request', return_value=[])
+@mock.patch('fuel_upgrade.upgrade.utils.get_request', return_value=([], 200))
 class TestUpgradeManager(BaseTestCase):
 
     def default_args(self, **kwargs):
@@ -125,7 +125,7 @@ class TestUpgradeManager(BaseTestCase):
 
         with mock.patch(
                 'fuel_upgrade.upgrade.utils.get_request',
-                return_value=tasks) as get_method_mock:
+                return_value=(tasks, 200)) as get_method_mock:
 
             upgrader = UpgradeManager(
                 **self.default_args(upgraders=[engine_mock])
@@ -151,7 +151,7 @@ class TestUpgradeManager(BaseTestCase):
 
         with mock.patch(
                 'fuel_upgrade.upgrade.utils.get_request',
-                return_value=tasks) as get_method_mock:
+                return_value=(tasks, 200)) as get_method_mock:
             upgrader = UpgradeManager(
                 **self.default_args(upgraders=[engine_mock])
             )

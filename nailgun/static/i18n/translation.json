@@ -142,7 +142,8 @@
                     "settings": "Settings",
                     "logs": "Logs",
                     "healthcheck": "Health Check",
-                    "actions": "Actions"
+                    "actions": "Actions",
+                    "raid": "Raid"
                 },
                 "nodes_tab": {
                     "roles": "Roles",

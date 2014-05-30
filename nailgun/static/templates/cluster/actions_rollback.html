@@ -1,0 +1,13 @@
+<form class="environment-action-form" onsubmit="return false">
+  <h4 data-i18n="cluster_page.actions_tab.update_environment"></h4>
+  <div class="action-item-controls">
+    <div class="action-body">
+      <% if (isRollbackDisabled) { %>
+        <p class="action-item-description unavailable" data-i18n="cluster_page.actions_tab.rollback_disabled_for_deploying_cluster"></p>
+      <% } else { %>
+        <p class="action-item-description important" data-i18n="cluster_page.actions_tab.rollback_message"></p>
+      <% } %>
+    </div>
+    <button class="btn btn-danger action-btn update-environment-btn" <%- isRollbackDisabled ? 'disabled' : '' %>><span data-i18n="common.rollback_button"></span></button>
+  </div>
+</form>

@@ -18,25 +18,78 @@ supervisor:
   configs_prefix: /etc/supervisord.d/
   current_configs_prefix: /etc/supervisord.d/current
   endpoint: '/var/run/supervisor.sock'
-  restart_timeout: 300
+  restart_timeout: 600
+
+checker:
+  timeout: 600
+  interval: 3
 
 endpoints:
-  nailgun:
+  nginx_nailgun:
     port: 8000
+    host: 0.0.0.0
+  nginx_repo:
+    port: 8080
+    host: 0.0.0.0
+  nailgun:
+    port: 8001
     host: 127.0.0.1
+  ostf:
+    port: 8777
+    host: 127.0.0.1
+  cobbler:
+    port: 80
+    host: 127.0.0.1
+  postgres:
+    port: 5432
+    host: 127.0.0.1
+  rsync:
+    port: 873
+    host: 127.0.0.1
+  rsyslog:
+    port: 514
+    host: 127.0.0.1
+  rabbitmq:
+    user: naily
+    password: naily
+    port: 15672
+    host: 127.0.0.1
+  rabbitmq_mcollective:
+    port: 15672
+    host: 127.0.0.1
+    user: mcollective
+    password: marionette
 
+
+# Here are described all images which will
+# be loaded into the docker
+# `id` from id we make path to image files
+# `type`
+#   * fuel - create name of image like fuel-core-5.0-postgres
+#   * base - use name without prefix and postfix
 images:
   - id: astute
+    type: fuel
   - id: cobbler
+    type: fuel
   - id: mcollective
+    type: fuel
   - id: nailgun
+    type: fuel
   - id: nginx
+    type: fuel
   - id: ostf
+    type: fuel
   - id: postgres
+    type: fuel
   - id: rabbitmq
+    type: fuel
   - id: rsync
+    type: fuel
   - id: rsyslog
+    type: fuel
   - id: busybox
+    type: base
 
 
 containers:
@@ -44,7 +97,6 @@ containers:
   - id: nailgun
     supervisor_config: True
     from_image: nailgun
-    post_build_command: "puppet apply -v /etc/puppet/modules/nailgun/examples/nailgun-only.pp"
     port_bindings:
       8001:
         - '0.0.0.0'
@@ -68,6 +120,9 @@ containers:
   - id: astute
     supervisor_config: True
     from_image: astute
+    links:
+      - id: rabbitmq
+        alias: rabbitmq
     volumes_from:
       - volume_logs
       - volume_repos
@@ -213,7 +268,6 @@ containers:
   - id: ostf
     supervisor_config: True
     from_image: ostf
-    post_build_command: 'puppet apply -v /etc/puppet/modules/nailgun/examples/ostf-only.pp'
     port_bindings:
       8777:
         - '0.0.0.0'
@@ -233,6 +287,7 @@ containers:
 
 
   - id: postgres
+    after_container_creation_command: 'su postgres -c "psql -f /tmp/upgrade/pg_dump_all.sql postgres"'
     supervisor_config: True
     from_image: postgres
     port_bindings:
@@ -242,28 +297,15 @@ containers:
     ports:
       - 5432
     volumes_from:
-      - volume_db
       - volume_logs
       - volume_repos
       - volume_fuel_configs
-
-
-  - id: volume_db
-    supervisor_config: False
-    from_image: busybox
-    post_build_command: 'true'
-    volumes:
-      - /var/lib/pgsql
-    binds:
-      '/var/lib/pgsql':
-        bind: '/var/lib/pgsql'
-        ro: False
+      - volume_upgrade_directory
 
 
   - id: volume_repos
     supervisor_config: False
     from_image: busybox
-    post_build_command: 'true'
     volumes:
       - /var/www/nailgun
     binds:
@@ -275,11 +317,10 @@ containers:
   - id: volume_logs
     supervisor_config: False
     from_image: busybox
-    post_build_command: 'true'
     volumes:
-      - /var/log/docker-log
+      - /var/log
     binds:
-      '/var/log/docker-log':
+      '/var/log/docker-logs':
         bind: '/var/log'
         ro: False
 
@@ -287,7 +328,6 @@ containers:
   - id: volume_ssh_keys
     supervisor_config: False
     from_image: busybox
-    post_build_command: 'true'
     volumes:
       - /root/.ssh
     binds:
@@ -299,7 +339,6 @@ containers:
   - id: volume_dump
     supervisor_config: False
     from_image: busybox
-    post_build_command: 'true'
     volumes:
       - /dump
     binds:
@@ -311,7 +350,6 @@ containers:
   - id: volume_fuel_configs
     supervisor_config: False
     from_image: busybox
-    post_build_command: 'true'
     volumes:
       - /etc/fuel
     binds:
@@ -319,10 +357,10 @@ containers:
         bind: '/etc/fuel'
         ro: False
 
+
   - id: volume_puppet_manifests
     supervisor_config: False
     from_image: busybox
-    post_build_command: 'true'
     volumes:
       - /etc/puppet
     binds:
@@ -330,6 +368,16 @@ containers:
         bind: '/etc/puppet'
         ro: True
 
+
+  - id: volume_upgrade_directory
+    supervisor_config: False
+    from_image: busybox
+    volumes:
+      - /tmp/upgrade
+    binds:
+      '{working_directory}':
+        bind: '/tmp/upgrade'
+        ro: True
 
 # This node contains settings of OpenStack upgrader.
 # So please keep all related settings there.

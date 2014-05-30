@@ -22,6 +22,7 @@ from mock import patch
 
 from fuel_upgrade import errors
 from fuel_upgrade.tests.base import BaseTestCase
+from fuel_upgrade import utils
 from fuel_upgrade.utils import create_dir_if_not_exists
 from fuel_upgrade.utils import exec_cmd
 from fuel_upgrade.utils import get_request
@@ -68,13 +69,13 @@ class TestUtils(BaseTestCase):
         url = 'http://some-url.com/path'
         response = mock.MagicMock()
         response.read.return_value = '{"key": "value"}'
-        response.read.getcode = 200
+        response.getcode.return_value = 200
 
         with patch.object(
                 urllib2, 'urlopen', return_value=response) as urlopen:
 
-            json_resp = get_request(url)
-            self.assertEquals({'key': 'value'}, json_resp)
+            resp = get_request(url)
+            self.assertEquals(({'key': 'value'}, 200), resp)
 
         urlopen.assert_called_once_with(url)
 
@@ -138,3 +139,27 @@ class TestUtils(BaseTestCase):
             wait_for_true,
             lambda: False,
             timeout=0)
+
+    @mock.patch('fuel_upgrade.utils.shutil.copy')
+    def test_copy(self, copy_mock):
+        from_path = '/from_path'
+        to_path = '/to_path'
+
+        utils.copy(from_path, to_path)
+        copy_mock.assert_called_once_with(from_path, to_path)
+
+    def test_file_contains_lines_returns_true(self):
+        with mock.patch(
+                '__builtin__.open',
+                self.mock_open("line 1\n line2\n line3")):
+
+            self.assertTrue(
+                utils.file_contains_lines('/some/path', ['line 1', 'line3']))
+
+    def test_file_contains_lines_returns_false(self):
+        with mock.patch(
+                '__builtin__.open',
+                self.mock_open("line 1\n line2\n line3")):
+
+            self.assertFalse(
+                utils.file_contains_lines('/some/path', ['line 4', 'line3']))

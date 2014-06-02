@@ -309,7 +309,7 @@ function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemp
         },
         proceed: function() {
             this.$el.modal('hide');
-            app.page.removeFinishedTasks().always(_.bind(this.cb, this));
+            app.page.removeFinishedNetworkTasks().always(_.bind(this.cb, this));
         },
         render: function() {
             if (this.verification) {
@@ -357,7 +357,7 @@ function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemp
                         _.invoke(app.page.tab.screen.nodes.where({checked: true}), 'set', {checked: false});
                         app.page.tab.screen.updateBatchActionsButtons();
                         app.navbar.refresh();
-                        app.page.removeFinishedTasks();
+                        app.page.removeFinishedNetworkTasks();
                     }, this))
                     .fail(_.bind(this.displayError, this));
             }

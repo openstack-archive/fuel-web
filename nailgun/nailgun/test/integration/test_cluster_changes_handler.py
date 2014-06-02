@@ -1061,51 +1061,6 @@ class TestHandlers(BaseIntegrationTest):
             'Not enough controllers, ha_compact '
             'mode requires at least 1 controller')
 
-    def test_occurs_error_not_enough_osds_for_ceph(self):
-        cluster = self.env.create(
-            nodes_kwargs=[
-                {'roles': ['controller', 'ceph-osd'],
-                 'pending_addition': True}])
-
-        self.app.patch(
-            reverse(
-                'ClusterAttributesHandler',
-                kwargs={'cluster_id': cluster['id']}),
-            params=jsonutils.dumps({
-                'editable': {
-                    'storage': {'volumes_ceph': {'value': True},
-                                'osd_pool_size': {'value': 3}}}}),
-            headers=self.default_headers)
-
-        task = self.env.launch_deployment()
-
-        self.assertEqual(task.status, 'error')
-        self.assertEqual(
-            task.message,
-            'Number of OSD nodes (1) cannot be less than '
-            'the Ceph object replication factor (3). '
-            'Please either assign ceph-osd role to more nodes, '
-            'or reduce Ceph replication factor in the Settings tab.')
-
-    @fake_tasks(godmode=True)
-    def test_enough_osds_for_ceph(self):
-        cluster = self.env.create(
-            nodes_kwargs=[
-                {'roles': ['controller', 'ceph-osd'],
-                 'pending_addition': True}])
-        self.app.patch(
-            reverse(
-                'ClusterAttributesHandler',
-                kwargs={'cluster_id': cluster['id']}),
-            params=jsonutils.dumps({
-                'editable': {
-                    'storage': {'volumes_ceph': {'value': True},
-                                'osd_pool_size': {'value': 1}}}}),
-            headers=self.default_headers)
-
-        task = self.env.launch_deployment()
-        self.assertIn(task.status, ('running', 'ready'))
-
     @fake_tasks()
     def test_admin_untagged_intersection(self):
         meta = self.env.default_metadata()

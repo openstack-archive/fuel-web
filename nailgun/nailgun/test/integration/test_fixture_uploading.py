@@ -85,7 +85,7 @@ class TestFixture(BaseIntegrationTest):
                 "version": "0.0.1",
                 "description": "Sample release for testing",
                 "operating_system": "CentOS",
-                "roles": ["controller", "compute", "cinder", "ceph-osd"]
+                "roles": ["controller", "compute", "cinder"]
             }
         }]'''
         upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
@@ -94,7 +94,7 @@ class TestFixture(BaseIntegrationTest):
         ).all()
         self.assertEqual(len(rel), 1)
         self.assertEqual(list(rel[0].roles),
-                         ["controller", "compute", "cinder", "ceph-osd"])
+                         ["controller", "compute", "cinder"])
 
         data = '''[{
             "pk": 2,
@@ -104,7 +104,7 @@ class TestFixture(BaseIntegrationTest):
                 "version": "0.0.1",
                 "description": "Sample release for testing",
                 "operating_system": "CentOS",
-                "roles": ["compute", "ceph-osd", "controller", "cinder"]
+                "roles": ["compute", "controller", "cinder"]
             }
         }]'''
         upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
@@ -113,7 +113,7 @@ class TestFixture(BaseIntegrationTest):
         ).all()
         self.assertEqual(len(rel), 1)
         self.assertEqual(list(rel[0].roles),
-                         ["compute", "ceph-osd", "controller", "cinder"])
+                         ["compute", "controller", "cinder"])
 
         data = '''[{
             "pk": 3,
@@ -139,4 +139,4 @@ class TestFixture(BaseIntegrationTest):
         ).all()
         self.assertEqual(len(prev_rel), 1)
         self.assertEqual(list(prev_rel[0].roles),
-                         ["compute", "ceph-osd", "controller", "cinder"])
+                         ["compute", "controller", "cinder"])

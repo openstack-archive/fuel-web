@@ -36,7 +36,6 @@ from nailgun.db.sqlalchemy.models.fields import LowercaseString
 from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.logger import logger
-from nailgun.volumes.manager import VolumeManager
 
 
 class NodeRoles(Base):
@@ -141,10 +140,6 @@ class Node(Base):
         return NetworkManager.get_node_networks(self)
 
     @property
-    def volume_manager(self):
-        return VolumeManager(self)
-
-    @property
     def needs_reprovision(self):
         return self.status == 'error' and self.error_type == 'provision' and \
             not self.pending_deletion
@@ -193,11 +188,6 @@ class Node(Base):
     @property
     def pending_roles(self):
         return [role.name for role in self.pending_role_list]
-
-    @property
-    def all_roles(self):
-        """Returns all roles, self.roles and self.pending_roles."""
-        return set(self.pending_roles + self.roles)
 
     @pending_roles.setter
     def pending_roles(self, new_roles):

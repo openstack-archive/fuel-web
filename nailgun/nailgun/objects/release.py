@@ -31,6 +31,7 @@ from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
+from nailgun.plugins.hooks import release as release_hooks
 from nailgun.settings import settings
 
 
@@ -103,6 +104,18 @@ class Release(NailgunObject):
     }
 
     @classmethod
+    def get_instance_field(cls, instance, name):
+        value = super(Release, cls).get_instance_field(instance, name)
+        if name == "roles" and isinstance(value, list):
+            for name in release_hooks.get_custom_roles_metadata().keys():
+                value.append(name)
+        if name == "roles_metadata" and isinstance(value, dict):
+            for name, meta in release_hooks.get_custom_roles_metadata(
+            ).iteritems():
+                value[name] = meta
+        return value
+
+    @classmethod
     def create(cls, data):
         """Create Release instance with specified parameters in DB.
         Corresponding roles are created in DB using names specified
@@ -159,8 +172,13 @@ class Release(NailgunObject):
         ).delete(synchronize_session='fetch')
         db().refresh(instance)
 
+        # cleaning out plugin-provided roles
+        cleaned_roles = list(set(roles) - set(
+            release_hooks.get_custom_roles_metadata().keys()
+        ))
+
         added_roles = instance.roles
-        for role in roles:
+        for role in cleaned_roles:
             if role not in added_roles:
                 new_role = models.Role(
                     name=role,
@@ -181,6 +199,13 @@ class Release(NailgunObject):
             else:
                 orchestrator_data["release_id"] = instance.id
                 ReleaseOrchestratorData.create(orchestrator_data)
+
+    @classmethod
+    def get_volumes_metadata(cls, instance, for_node=None):
+        return release_hooks.process_volumes_metadata(
+            instance.volumes_metadata,
+            node=for_node
+        )
 
     @classmethod
     def get_orchestrator_data_dict(cls, instance):

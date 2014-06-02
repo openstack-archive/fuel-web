@@ -14,6 +14,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+
+import nailgun
+
+from nailgun import objects
+
 from nailgun.db.sqlalchemy.models.task import Task
 
 from nailgun.test.base import BaseIntegrationTest
@@ -60,6 +66,22 @@ class TestStopDeployment(BaseIntegrationTest):
             self.assertEquals(n.online, False)
             self.assertEquals(n.roles, [])
             self.assertNotEquals(n.pending_roles, [])
+
+    @fake_tasks(fake_rpc=False, mock_rpc=False)
+    @patch('nailgun.rpc.cast')
+    def test_admin_ip_in_args(self, mocked_rpc):
+        self.env.launch_deployment()
+        self.env.stop_deployment()
+        args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        for n in args[1]["args"]["nodes"]:
+            self.assertIn("admin_ip", n)
+            n_db = objects.Node.get_by_uid(n["uid"])
+            self.assertEquals(
+                n["admin_ip"],
+                objects.Node.get_network_manager(
+                    n_db
+                ).get_admin_ip_for_node(n_db)
+            )
 
     @fake_tasks(recover_nodes=False, tick_interval=1)
     def test_stop_provisioning(self):

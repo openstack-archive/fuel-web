@@ -141,6 +141,11 @@ function run_tests {
   fi
 
   # Run all enabled tests
+  if [ $flake8_checks -eq 1 ]; then
+    echo "Starting Flake8 tests..."
+    run_flake8 || errors+=" flake8_checks"
+  fi
+
   if [ $nailgun_tests -eq 1 ]; then
     echo "Starting Nailgun tests..."
     run_nailgun_tests || errors+=" nailgun_tests"
@@ -164,11 +169,6 @@ function run_tests {
   if [ $shotgun_tests -eq 1 ]; then
     echo "Starting Shotgun tests..."
     run_shotgun_tests || errors+=" shotgun_tests"
-  fi
-
-  if [ $flake8_checks -eq 1 ]; then
-    echo "Starting Flake8 tests..."
-    run_flake8 || errors+=" flake8_checks"
   fi
 
   if [ $jslint_checks -eq 1 ]; then

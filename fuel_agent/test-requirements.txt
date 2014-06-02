@@ -1,0 +1,4 @@
+mock>=1.0
+oslotest==1.0
+testtools>=0.9.34
+testrepository>=0.0.18

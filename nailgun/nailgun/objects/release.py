@@ -31,6 +31,8 @@ from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
+from nailgun.plugins.hooks import release as hooks
+
 
 class ReleaseOrchestratorData(NailgunObject):
     """ReleaseOrchestratorData object
@@ -97,6 +99,17 @@ class Release(NailgunObject):
             "clusters": {"type": "array"}
         }
     }
+
+    @classmethod
+    def get_instance_field(cls, instance, name):
+        value = super(Release, cls).get_instance_field(instance, name)
+        if name == "roles" and isinstance(value, list):
+            for name, _ in hooks.get_custom_roles():
+                value.append(name)
+        if name == "roles_metadata" and isinstance(value, dict):
+            for name, meta in hooks.get_custom_roles():
+                value[name] = meta
+        return value
 
     @classmethod
     def create(cls, data):
@@ -177,6 +190,12 @@ class Release(NailgunObject):
             else:
                 orchestrator_data["release_id"] = instance.id
                 ReleaseOrchestratorData.create(orchestrator_data)
+
+    @classmethod
+    def get_volumes_metadata(cls, instance):
+        return hooks.process_volumes_metadata(
+            instance.volumes_metadata
+        )
 
     @classmethod
     def get_orchestrator_data_dict(cls, instance):

@@ -32,9 +32,12 @@ class ReleaseSerializer(BasicSerializer):
     )
 
     @classmethod
-    def serialize(cls, instance, fields=None):
-        release_dict = super(ReleaseSerializer, cls).serialize(instance,
-                                                               fields)
+    def serialize(cls, instance, fields=None, fieldgetter=None):
+        release_dict = super(ReleaseSerializer, cls).serialize(
+            instance,
+            fields=fields,
+            fieldgetter=fieldgetter
+        )
         if instance.orchestrator_data:
             release_dict["orchestrator_data"] = \
                 ReleaseOrchestratorDataSerializer.serialize(

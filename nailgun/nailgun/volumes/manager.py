@@ -23,8 +23,13 @@ import json
 
 from copy import deepcopy
 from functools import partial
+
 from nailgun.errors import errors
 from nailgun.logger import logger
+
+from nailgun import objects
+
+from nailgun.plugins.hooks import release as release_hooks
 
 
 def is_service(space):
@@ -114,16 +119,20 @@ def get_node_spaces(node):
     """
     node_spaces = []
 
-    role_mapping = node.cluster.release.volumes_metadata[
+    volumes_metadata = objects.Release.get_volumes_metadata(
+        node.cluster.release
+    )
+
+    role_mapping = volumes_metadata[
         'volumes_roles_mapping']
 
     # TODO(dshulyak)
     # This logic should go to openstack.yaml (or other template)
     # when it will be extended with flexible template engine
     modify_volumes_hook(role_mapping, node)
-    all_spaces = node.cluster.release.volumes_metadata['volumes']
+    all_spaces = volumes_metadata['volumes']
 
-    for role in node.all_roles:
+    for role in objects.Node.get_all_roles(node):
         if not role_mapping.get(role):
             continue
         volumes = role_mapping[role]
@@ -175,7 +184,7 @@ def find_size_by_name(volumes, name, id_type):
 class DisksFormatConvertor(object):
     '''Class converts format from `simple` in which we
     communicate with UI to `full` in which we store
-    data about disks\volumes in database, send to
+    data about disks/volumes in database, send to
     orchestrator and vice versa.
 
     Full disk format example:
@@ -220,7 +229,7 @@ class DisksFormatConvertor(object):
         '''convert disks from simple format to full format
         '''
         full_format = []
-        volume_manager = node.volume_manager
+        volume_manager = objects.Node.get_volume_manager(node)
         for disk in disks:
             for volume in disk['volumes']:
                 full_format = volume_manager.set_volume_size(
@@ -319,10 +328,14 @@ class DisksFormatConvertor(object):
             ]
         '''
         volumes_info = []
+
         for space in get_node_spaces(node):
             # Here we calculate min_size of nodes
-            min_size = node.volume_manager.expand_generators(
-                space)['min_size']
+            min_size = objects.Node.get_volume_manager(
+                node
+            ).expand_generators(
+                space
+            )['min_size']
 
             volumes_info.append({
                 'name': space['id'],
@@ -471,11 +484,16 @@ class Disk(object):
         lvm_meta_size = self.get_lvm_meta_from_pool() if size else 0
 
         logger.debug('Appending PV to volumes.')
-        self.volumes.append({
+
+        vol = {
             'type': 'pv',
             'vg': name,
             'size': size + lvm_meta_size,
-            'lvm_meta_size': lvm_meta_size})
+            'lvm_meta_size': lvm_meta_size
+        }
+        if "plugin_name" in volume_info:
+            vol["plugin_name"] = volume_info["plugin_name"]
+        self.volumes.append(vol)
 
     def create_partition(self, partition_info, size=None, ptype='partition'):
         """Create partitions according templates in partition_info
@@ -490,14 +508,17 @@ class Disk(object):
 
         self.free_space -= size
 
-        self.volumes.append({
+        vol = {
             'size': size,
             'type': ptype,
             'name': partition_info['id'],
             'file_system': partition_info['file_system'],
             'disk_label': partition_info.get('disk_label'),
             'partition_guid': partition_info.get('partition_guid'),
-            'mount': partition_info['mount']})
+            'mount': partition_info['mount']}
+        if "plugin_name" in partition_info:
+            vol["plugin_name"] = partition_info["plugin_name"]
+        self.volumes.append(vol)
 
     def remove_pv(self, name):
         """Remove PV and return back lvm_meta size to pool
@@ -707,6 +728,9 @@ class VolumeManager(object):
             'calc_min_ceph_size': lambda: gb_to_mb(3),
             'calc_min_ceph_journal_size': lambda: 0,
         }
+
+        # plugins hook
+        generators.update(release_hooks.get_custom_volumes_generators())
 
         generators['calc_os_size'] = \
             lambda: generators['calc_root_size']() + \

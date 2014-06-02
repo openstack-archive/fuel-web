@@ -143,7 +143,7 @@ class DeploymentMultinodeSerializer(object):
         node_list = []
 
         for node in nodes:
-            for role in node.all_roles:
+            for role in objects.Node.get_all_roles(node):
                 node_list.append({
                     'uid': node.uid,
                     'fqdn': node.fqdn,
@@ -187,7 +187,7 @@ class DeploymentMultinodeSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in node.all_roles:
+            for role in objects.Node.get_all_roles(node):
                 serialized_nodes.append(cls.serialize_node(node, role))
         cls.set_primary_mongo(serialized_nodes)
         return serialized_nodes

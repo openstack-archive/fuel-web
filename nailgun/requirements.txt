@@ -4,7 +4,7 @@ Mako==0.9.1
 MarkupSafe==0.18
 Paste==1.7.5.1
 PyYAML==3.10
-SQLAlchemy>=0.7.9,<=0.9.99
+SQLAlchemy==0.9.4
 Shotgun==0.1.0
 alembic>=0.6.2
 amqplib==1.0.2
@@ -20,9 +20,10 @@ oslo.config>=1.2.1
 ply==3.4
 psycopg2==2.5.1
 pycrypto==2.6.1
+python-keystoneclient>=0.7.1
 simplejson>=3.3.0
 six>=1.5.2
+stevedore==1.0.0
 web.py==0.37
 wsgilog==0.3
 wsgiref==0.1.2
-python-keystoneclient>=0.7.1

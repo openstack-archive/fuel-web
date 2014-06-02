@@ -135,12 +135,12 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
         },
         updateLevels: function(e) {
             var input = this.$('select[name=level]');
-            var chosenSourceId = this.$('select[name=source]').val();
             if (e) {
-                this.lastSource = chosenSourceId;
+                this.lastSource = this.$('select[name=source]').val();
             } else {
                 this.$('select[name=source]').val(this.lastSource);
             }
+            var chosenSourceId = this.lastSource || this.$('select[name=source]').val();
             if (chosenSourceId) {
                 input.html('').attr('disabled', false);
                 var source = this.sources.get(chosenSourceId);

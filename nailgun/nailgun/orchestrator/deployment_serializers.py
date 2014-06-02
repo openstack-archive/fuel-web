@@ -20,12 +20,10 @@ from copy import deepcopy
 
 from netaddr import IPNetwork
 from sqlalchemy import and_
-from sqlalchemy import or_
-from sqlalchemy.orm import joinedload
-
-import math
 
 from nailgun import objects
+
+from nailgun.plugins.hooks import rpc as rpc_hooks
 
 from nailgun import consts
 from nailgun.db import db
@@ -102,7 +100,9 @@ class DeploymentMultinodeSerializer(object):
             if node['role'] in 'cinder':
                 attrs['use_cinder'] = True
 
-        cls.set_storage_parameters(cluster, attrs)
+        # default value for glance
+        attrs['storage']['pg_num'] = 128
+
         cls.set_primary_mongo(attrs['nodes'])
 
         attrs = dict_merge(
@@ -110,32 +110,10 @@ class DeploymentMultinodeSerializer(object):
             cls.get_net_provider_serializer(cluster).get_common_attrs(cluster,
                                                                       attrs))
 
-        return attrs
+        # plugins hooks
+        attrs = rpc_hooks.process_cluster_attrs(cluster, attrs)
 
-    @classmethod
-    def set_storage_parameters(cls, cluster, attrs):
-        """Generate pg_num as the number of OSDs across the cluster
-        multiplied by 100, divided by Ceph replication factor, and
-        rounded up to the nearest power of 2.
-        """
-        osd_num = 0
-        nodes = db().query(Node). \
-            filter(or_(
-                Node.role_list.any(name='ceph-osd'),
-                Node.pending_role_list.any(name='ceph-osd'))). \
-            filter(Node.cluster == cluster). \
-            options(joinedload('attributes'))
-        for node in nodes:
-            for disk in node.attributes.volumes:
-                for part in disk.get('volumes', []):
-                    if part.get('name') == 'ceph' and part.get('size', 0) > 0:
-                        osd_num += 1
-        if osd_num > 0:
-            repl = int(attrs['storage']['osd_pool_size'])
-            pg_num = 2 ** int(math.ceil(math.log(osd_num * 100.0 / repl, 2)))
-        else:
-            pg_num = 128
-        attrs['storage']['pg_num'] = pg_num
+        return attrs
 
     @classmethod
     def node_list(cls, nodes):
@@ -145,7 +123,7 @@ class DeploymentMultinodeSerializer(object):
         node_list = []
 
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in sorted(objects.Node.get_all_roles(node)):
                 node_list.append({
                     'uid': node.uid,
                     'fqdn': node.fqdn,
@@ -189,7 +167,7 @@ class DeploymentMultinodeSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in sorted(objects.Node.get_all_roles(node)):
                 serialized_nodes.append(cls.serialize_node(node, role))
         cls.set_primary_mongo(serialized_nodes)
         return serialized_nodes
@@ -214,18 +192,21 @@ class DeploymentMultinodeSerializer(object):
             cls.get_net_provider_serializer(node.cluster).get_node_attrs(node))
         node_attrs.update(cls.get_image_cache_max_size(node))
         node_attrs.update(cls.generate_test_vm_image_data(node))
+
+        # plugins hooks
+        node_attrs = rpc_hooks.process_node_attrs(node, node_attrs)
+
         return node_attrs
 
     @classmethod
     def get_image_cache_max_size(cls, node):
-        images_ceph = (node.cluster.attributes['editable']['storage']
-                       ['images_ceph']['value'])
-        if images_ceph:
-            image_cache_max_size = '0'
-        else:
-            image_cache_max_size = volume_manager.calc_glance_cache_size(
-                node.attributes.volumes)
-        return {'glance': {'image_cache_max_size': image_cache_max_size}}
+        return {
+            'glance': {
+                'image_cache_max_size': volume_manager.calc_glance_cache_size(
+                    node.attributes.volumes
+                )
+            }
+        }
 
     @classmethod
     def generate_test_vm_image_data(cls, node):

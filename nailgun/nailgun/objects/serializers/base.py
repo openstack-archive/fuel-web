@@ -20,13 +20,20 @@ class BasicSerializer(object):
     fields = ()
 
     @classmethod
-    def serialize(cls, instance, fields=None):
+    def serialize(cls, instance, fields=None, fieldgetter=None):
         data_dict = {}
         use_fields = fields if fields else cls.fields
         if not use_fields:
             raise ValueError("No fields for serialize")
         for field in use_fields:
-            value = getattr(instance, field)
+            if not fieldgetter:
+                value = getattr(instance, field)
+            else:
+                # custom fieldgetter means we know what we do
+                value = fieldgetter(instance, field)
+                data_dict[field] = value
+                continue
+
             if value is None:
                 data_dict[field] = value
             else:

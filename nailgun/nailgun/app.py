@@ -28,6 +28,7 @@ from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger
 from nailgun.middleware.http_method_override import \
     HTTPMethodOverrideMiddleware
+from nailgun.middleware.plugin import HTTPPluginMiddleware
 from nailgun.middleware.static import StaticMiddleware
 from nailgun.settings import settings
 from nailgun.urls import urls
@@ -48,6 +49,7 @@ def build_middleware(app):
     middleware_list = [
         HTTPLoggerMiddleware,
         HTTPMethodOverrideMiddleware,
+        HTTPPluginMiddleware
     ]
 
     if settings.DEVELOPMENT:

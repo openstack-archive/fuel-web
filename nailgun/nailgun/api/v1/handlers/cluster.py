@@ -28,6 +28,8 @@ from nailgun.api.v1.handlers.base import SingleHandler
 
 from nailgun import objects
 
+from nailgun.plugins.hooks import cluster as cluster_hooks
+
 from nailgun.api.v1.handlers.base import content_json
 
 from nailgun.api.v1.validators.cluster import AttributesValidator
@@ -157,6 +159,12 @@ class ClusterAttributesHandler(BaseHandler):
         for key, value in data.iteritems():
             setattr(cluster.attributes, key, value)
 
+        # temporary plugin hook until we have UI part
+        cluster.attributes = cluster_hooks.process_cluster_attributes(
+            cluster.id,
+            cluster.attributes
+        )
+
         objects.Cluster.add_pending_changes(cluster, "attributes")
         return {"editable": cluster.attributes.editable}
 
@@ -181,6 +189,12 @@ class ClusterAttributesHandler(BaseHandler):
 
         cluster.attributes.editable = utils.dict_merge(
             cluster.attributes.editable, data['editable'])
+
+        # temporary plugin hook until we have UI part
+        cluster.attributes = cluster_hooks.process_cluster_attributes(
+            cluster.id,
+            cluster.attributes
+        )
 
         objects.Cluster.add_pending_changes(cluster, "attributes")
         return {"editable": cluster.attributes.editable}

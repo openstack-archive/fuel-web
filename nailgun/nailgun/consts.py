@@ -167,3 +167,10 @@ CLUSTER_CHANGES = Enum(
     'disks',
     'interfaces'
 )
+
+PLUGIN_RECORD_TYPES = Enum(
+    'role',
+    'pending_role',
+    'volume',
+    'cluster_attribute'
+)

@@ -238,6 +238,7 @@ class Environment(object):
             self.tester.assertEqual(resp.status_code, expect_http)
             node = jsonutils.loads(resp.body)
             node_db = Node.get_by_uid(node['id'])
+
             if 'interfaces' not in node_data['meta'] \
                     or not node_data['meta']['interfaces']:
                 self._set_interfaces_if_not_set_in_meta(
@@ -393,7 +394,7 @@ class Environment(object):
         return meta['interfaces']
 
     def get_default_roles(self):
-        return ['controller', 'compute', 'cinder', 'ceph-osd', 'mongo']
+        return ['controller', 'compute', 'cinder', 'mongo']
 
     def get_default_volumes_metadata(self):
         return self.read_fixtures(

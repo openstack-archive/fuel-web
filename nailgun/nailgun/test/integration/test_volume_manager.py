@@ -17,6 +17,9 @@
 from mock import patch
 
 from nailgun.openstack.common import jsonutils
+
+from nailgun import objects
+
 from nailgun.test import base
 from nailgun.test.base import reverse
 from nailgun.volumes import manager
@@ -76,7 +79,9 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
             params=jsonutils.dumps({
                 'editable': {'storage': {'images_ceph': {'value': True}}}}),
             headers=self.default_headers)
-        volumes = self.env.nodes[0].volume_manager.gen_volumes_info()
+        volumes = objects.Node.get_volume_manager(
+            self.env.nodes[0]
+        ).gen_volumes_info()
 
         image_volume = next((v for v in volumes if v['id'] == 'image'), None)
         self.assertIsNone(image_volume)
@@ -87,7 +92,9 @@ class TestVolumeManagerGlancePartition(base.BaseIntegrationTest):
                 'mode': 'multinode'},
             nodes_kwargs=[
                 {'roles': ['controller']}])
-        volumes = self.env.nodes[0].volume_manager.gen_volumes_info()
+        volumes = objects.Node.get_volume_manager(
+            self.env.nodes[0]
+        ).gen_volumes_info()
 
         image_volume = next((v for v in volumes if v['id'] == 'image'), None)
         self.assertIsNotNone(image_volume)

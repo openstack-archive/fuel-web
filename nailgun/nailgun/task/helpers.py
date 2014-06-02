@@ -19,6 +19,8 @@ import shutil
 
 from sqlalchemy import or_
 
+from nailgun import objects
+
 from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
@@ -278,8 +280,8 @@ class TaskHelper(object):
         at least one controller.
         """
         for node in nodes:
-            if 'controller' in node.all_roles or \
-               'primary-controller' in node.all_roles:
+            if 'controller' in objects.Node.get_all_roles(node) or \
+               'primary-controller' in objects.Node.get_all_roles(node):
                 return True
         return False
 

@@ -17,10 +17,16 @@
 """
 Node-related objects and collections
 """
+import copy
 import operator
 import traceback
 
 from datetime import datetime
+from itertools import ifilter
+
+from sqlalchemy import or_
+
+from sqlalchemy import String
 
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import subqueryload_all
@@ -40,6 +46,9 @@ from nailgun.objects import NailgunObject
 from nailgun.objects import Notification
 
 from nailgun.settings import settings
+
+from nailgun.plugins.hooks import node as node_hooks
+from nailgun.plugins.hooks import release as release_hooks
 
 
 class Node(NailgunObject):
@@ -204,6 +213,11 @@ class Node(NailgunObject):
         return new_node
 
     @classmethod
+    def get_volume_manager(cls, instance):
+        from nailgun.volumes.manager import VolumeManager
+        return VolumeManager(instance)
+
+    @classmethod
     def create_attributes(cls, instance):
         """Create attributes for Node instance
 
@@ -255,6 +269,17 @@ class Node(NailgunObject):
         db().refresh(instance)
 
     @classmethod
+    def get_volumes(cls, instance):
+        volumes = copy.deepcopy(instance.attributes.volumes)
+        for disk in volumes:
+            for vol in release_hooks.get_custom_volumes_for_disk(
+                instance.id,
+                disk["id"]
+            ):
+                disk["volumes"].append(vol)
+        return volumes
+
+    @classmethod
     def update_volumes(cls, instance):
         """Update volumes for Node instance.
         Adds pending "disks" changes for Cluster which Node belongs to
@@ -267,7 +292,18 @@ class Node(NailgunObject):
             attrs = cls.create_attributes(instance)
 
         try:
-            attrs.volumes = instance.volume_manager.gen_volumes_info()
+            disks = cls.get_volume_manager(
+                instance
+            ).gen_volumes_info()
+
+            for disk in disks:
+                disk["volumes"] = release_hooks.process_volumes(
+                    disk["volumes"],
+                    disk["id"],
+                    instance.id
+                )
+
+            attrs.volumes = disks
         except Exception as exc:
             msg = (
                 u"Failed to generate volumes "
@@ -407,11 +443,11 @@ class Node(NailgunObject):
 
         # calculating flags
         roles_changed = (
-            roles is not None and set(roles) != set(instance.roles)
+            roles is not None and set(roles) != set(cls.get_roles(instance))
         )
         pending_roles_changed = (
             pending_roles is not None and
-            set(pending_roles) != set(instance.pending_roles)
+            set(pending_roles) != set(cls.get_pending_roles(instance))
         )
 
         super(Node, cls).update(instance, data)
@@ -490,6 +526,13 @@ class Node(NailgunObject):
         :param new_roles: list of new role names
         :returns: None
         """
+        # Plugin hook
+        new_roles_processed = node_hooks.process_custom_roles(
+            node_id=instance.id,
+            new_roles=new_roles
+        )
+        plugin_made_changes = new_roles_processed != new_roles
+
         if not instance.cluster_id:
             logger.warning(
                 u"Attempting to assign roles to node "
@@ -499,16 +542,43 @@ class Node(NailgunObject):
             )
             return
 
-        if new_roles:
+        if new_roles_processed:
             instance.role_list = db().query(models.Role).filter_by(
                 release_id=instance.cluster.release_id,
             ).filter(
-                models.Role.name.in_(new_roles)
+                models.Role.name.in_(new_roles_processed)
             ).all()
         else:
-            instance.role_list = []
+            if not plugin_made_changes:
+                instance.role_list = []
         db().flush()
         db().refresh(instance)
+
+    @classmethod
+    def get_instance_field(cls, instance, name):
+        value = super(Node, cls).get_instance_field(instance, name)
+        if name == "pending_roles" and isinstance(value, list):
+            for r in node_hooks.get_custom_pending_roles(
+                node_id=instance.id
+            ):
+                value.append(r)
+        return value
+
+    @classmethod
+    def get_all_roles(cls, instance):
+        roles = node_hooks.get_custom_roles(instance.id) + instance.roles
+        pending_roles = node_hooks.get_custom_pending_roles(instance.id) +\
+            instance.pending_roles
+        return set(roles + pending_roles)
+
+    @classmethod
+    def get_roles(cls, instance):
+        return node_hooks.get_custom_roles(instance.id) + instance.roles
+
+    @classmethod
+    def get_pending_roles(cls, instance):
+        return node_hooks.get_custom_pending_roles(instance.id) +\
+            instance.pending_roles
 
     @classmethod
     def update_pending_roles(cls, instance, new_pending_roles):
@@ -519,6 +589,13 @@ class Node(NailgunObject):
         :param new_pending_roles: list of new pending role names
         :returns: None
         """
+        # Plugin hook
+        new_pending_roles_processed = node_hooks.process_custom_pending_roles(
+            node_id=instance.id,
+            new_pending_roles=new_pending_roles
+        )
+        plugin_made_changes = new_pending_roles_processed != new_pending_roles
+
         if not instance.cluster_id:
             logger.warning(
                 u"Attempting to assign pending roles to node "
@@ -531,22 +608,23 @@ class Node(NailgunObject):
         logger.debug(
             u"Updating pending roles for node {0}: {1}".format(
                 instance.id,
-                new_pending_roles
+                new_pending_roles_processed
             )
         )
 
-        if new_pending_roles == []:
+        if new_pending_roles_processed == []:
             instance.pending_role_list = []
-            #TODO(enchantner): research why the hell we need this
-            Cluster.clear_pending_changes(
-                instance.cluster,
-                node_id=instance.id
-            )
+            if not plugin_made_changes:
+                # research why the hell we need this
+                Cluster.clear_pending_changes(
+                    instance.cluster,
+                    node_id=instance.id
+                )
         else:
             instance.pending_role_list = db().query(models.Role).filter_by(
                 release_id=instance.cluster.release_id,
             ).filter(
-                models.Role.name.in_(new_pending_roles)
+                models.Role.name.in_(new_pending_roles_processed)
             ).all()
 
         db().flush()
@@ -718,3 +796,47 @@ class NodeCollection(NailgunCollection):
         instances_ids = [instance.id for instance in instances]
         q = cls.filter_by_list(None, 'id', instances_ids, order_by='id')
         return cls.lock_for_update(q).all()
+
+    @classmethod
+    def filter_by_role_or_pending_role(
+        cls,
+        iterable,
+        role_name,
+        yield_per=100
+    ):
+        use_iterable = iterable or cls.all(yield_per=yield_per)
+        if cls._is_query(use_iterable):
+
+            filters = [
+                cls.single.model.role_list.any(name=role_name),
+                cls.single.model.pending_role_list.any(name=role_name)
+            ]
+
+            plugin_nodes = zip(*db.query(
+                models.PluginRecord.data["node_id"]
+            ).filter(
+                or_(
+                    models.PluginRecord.record_type ==
+                    consts.PLUGIN_RECORD_TYPES.role,
+                    models.PluginRecord.record_type ==
+                    consts.PLUGIN_RECORD_TYPES.pending_role
+                ),
+                models.PluginRecord.data["name"].cast(
+                    String
+                ) == role_name
+            ).all())
+            if plugin_nodes:
+                filters.append(
+                    cls.single.model.id.in_(plugin_nodes[0])
+                )
+            return use_iterable.filter(or_(*filters))
+        elif cls._is_iterable(use_iterable):
+            return ifilter(
+                lambda i: any([
+                    role_name in i.role_list,
+                    role_name in i.pending_role_list
+                ]),
+                use_iterable
+            )
+        else:
+            raise TypeError("First argument should be iterable")

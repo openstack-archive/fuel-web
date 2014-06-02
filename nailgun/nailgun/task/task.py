@@ -499,7 +499,7 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def _check_controllers_count(cls, task):
         controllers_count = len(filter(
-            lambda node: 'controller' in node.all_roles,
+            lambda node: 'controller' in objects.Node.get_all_roles(node),
             task.cluster.nodes)
         )
         cluster_mode = task.cluster.mode
@@ -518,7 +518,9 @@ class CheckBeforeDeploymentTask(object):
         try:
             for node in task.cluster.nodes:
                 if cls._is_disk_checking_required(node):
-                    node.volume_manager.check_disk_space_for_deployment()
+                    objects.Node.get_volume_manager(
+                        node
+                    ).check_disk_space_for_deployment()
         except errors.NotEnoughFreeSpace:
             raise errors.NotEnoughFreeSpace(
                 u"Node '{0}' has insufficient disk space".format(
@@ -531,7 +533,9 @@ class CheckBeforeDeploymentTask(object):
         try:
             for node in task.cluster.nodes:
                 if cls._is_disk_checking_required(node):
-                    node.volume_manager.check_volume_sizes_for_deployment()
+                    objects.Node.get_volume_manager(
+                        node
+                    ).check_volume_sizes_for_deployment()
         except errors.NotEnoughFreeSpace as e:
             raise errors.NotEnoughFreeSpace(
                 u"Node '%s' has insufficient disk space\n%s" % (
@@ -562,7 +566,7 @@ class CheckBeforeDeploymentTask(object):
     @classmethod
     def _check_ceph_osds(cls, task):
         osd_count = len(filter(
-            lambda node: 'ceph-osd' in node.all_roles,
+            lambda node: 'ceph-osd' in objects.Node.get_all_roles(node),
             task.cluster.nodes))
         osd_pool_size = int(objects.Attributes.merged_attrs(
             task.cluster.attributes

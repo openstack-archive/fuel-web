@@ -56,7 +56,9 @@ class NodeAssignmentHandler(BaseHandler):
             node.pending_addition = True
             try:
                 node.attributes.volumes = \
-                    node.volume_manager.gen_volumes_info()
+                    objects.Node.get_volume_manager(
+                        node
+                    ).gen_volumes_info()
 
                 objects.Cluster.add_pending_changes(
                     node.cluster,

@@ -167,3 +167,9 @@ NOTIFICATION_TOPICS = Enum(
     'warning',
     'release',
 )
+
+PLUGIN_RECORD_TYPES = Enum(
+    'role',
+    'pending_role',
+    'volume'
+)

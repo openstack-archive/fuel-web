@@ -266,7 +266,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'role': 'mongo'},
             {'role': 'primary-mongo'},
             {'role': 'controller'},
-            {'role': 'ceph-osd'},
             {'role': 'other'}
         ]
         serializer = DeploymentMultinodeSerializer()
@@ -276,7 +275,6 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             {'role': 'mongo', 'priority': 200},
             {'role': 'primary-mongo', 'priority': 300},
             {'role': 'controller', 'priority': 400},
-            {'role': 'ceph-osd', 'priority': 500},
             {'role': 'other', 'priority': 500}
         ]
         self.assertEqual(expected_priorities, nodes)
@@ -342,7 +340,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'role': 'primary-controller'},
             {'role': 'controller'},
             {'role': 'controller'},
-            {'role': 'ceph-osd'},
             {'role': 'other'}
         ]
         self.serializer.set_deployment_priorities(nodes)
@@ -356,7 +353,6 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'role': 'primary-controller', 'priority': 700},
             {'role': 'controller', 'priority': 800},
             {'role': 'controller', 'priority': 800},
-            {'role': 'ceph-osd', 'priority': 900},
             {'role': 'other', 'priority': 900}
         ]
         self.assertEqual(expected_priorities, nodes)
@@ -938,79 +934,6 @@ class TestNeutronOrchestratorSerializerBonds(OrchestratorSerializerTestBase):
     def test_bonds_serialization(self):
         for mode in OVS_BOND_MODES:
             self.check_bond_with_mode(mode)
-
-
-class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
-
-    def setUp(self):
-        super(TestCephOsdImageOrchestratorSerialize, self).setUp()
-        cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'multinode'},
-            nodes_kwargs=[
-                {'roles': ['controller', 'ceph-osd']}])
-        self.app.patch(
-            reverse(
-                'ClusterAttributesHandler',
-                kwargs={'cluster_id': cluster['id']}),
-            params=jsonutils.dumps({
-                'editable': {'storage': {'images_ceph': {'value': True}}}}),
-            headers=self.default_headers)
-        self.cluster = self.db.query(Cluster).get(cluster['id'])
-
-    def test_glance_image_cache_max_size(self):
-        data = self.serialize(self.cluster)
-        self.assertEqual(len(data), 2)
-        # one node - 2 roles
-        self.assertEqual(data[0]['uid'], data[1]['uid'])
-        self.assertEqual(data[0]['glance']['image_cache_max_size'], '0')
-        self.assertEqual(data[1]['glance']['image_cache_max_size'], '0')
-
-
-class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
-
-    def create_env(self, nodes, osd_pool_size='2'):
-        cluster = self.env.create(
-            cluster_kwargs={
-                'mode': 'multinode'},
-            nodes_kwargs=nodes)
-        self.app.patch(
-            reverse(
-                'ClusterAttributesHandler',
-                kwargs={'cluster_id': cluster['id']}),
-            params=jsonutils.dumps(
-                {'editable': {
-                    'storage': {
-                        'osd_pool_size': {'value': osd_pool_size}}}}),
-            headers=self.default_headers)
-        return self.db.query(Cluster).get(cluster['id'])
-
-    def test_pg_num_no_osd_nodes(self):
-        cluster = self.create_env([
-            {'roles': ['controller']}])
-        data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 128)
-
-    def test_pg_num_1_osd_node(self):
-        cluster = self.create_env([
-            {'roles': ['controller', 'ceph-osd']}])
-        data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 256)
-
-    def test_pg_num_1_osd_node_repl_4(self):
-        cluster = self.create_env(
-            [{'roles': ['controller', 'ceph-osd']}],
-            '4')
-        data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 128)
-
-    def test_pg_num_3_osd_nodes(self):
-        cluster = self.create_env([
-            {'roles': ['controller', 'ceph-osd']},
-            {'roles': ['compute', 'ceph-osd']},
-            {'roles': ['compute', 'ceph-osd']}])
-        data = self.serialize(cluster)
-        self.assertEqual(data[0]['storage']['pg_num'], 512)
 
 
 class TestMongoNodesSerialization(OrchestratorSerializerTestBase):

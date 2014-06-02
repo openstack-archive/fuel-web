@@ -79,7 +79,7 @@ class ProvisioningSerializer(object):
                 'udevrules': cls.interfaces_mapping_for_udev(node)},
             'ks_meta': {
                 'pm_data': {
-                    'ks_spaces': node.attributes.volumes,
+                    'ks_spaces': objects.Node.get_volumes(node),
                     'kernel_params': node.kernel_params},
                 'fuel_version': node.cluster.fuel_version,
                 'puppet_auto_setup': 1,

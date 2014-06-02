@@ -28,6 +28,7 @@ import sqlalchemy as sa
 
 from nailgun import consts
 from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
 
 
@@ -122,6 +123,8 @@ def upgrade():
         old_notification_topics,    # old options
         new_notification_topics,    # new options
     )
+    op.drop_table('red_hat_accounts')
+    drop_enum('license_type')
     ### end Alembic commands ###
 
 
@@ -156,4 +159,23 @@ def downgrade():
     )
     op.drop_column('clusters', 'pending_release_id')
     op.drop_column('releases', 'can_update_from_versions')
+    op.create_table('red_hat_accounts',
+                    sa.Column('id', sa.Integer(), nullable=False),
+                    sa.Column('username',
+                              sa.String(length=100),
+                              nullable=False),
+                    sa.Column('password',
+                              sa.String(length=100),
+                              nullable=False),
+                    sa.Column('license_type', sa.Enum('rhsm', 'rhn',
+                                                      name='license_type'),
+                              nullable=False),
+                    sa.Column('satellite',
+                              sa.String(length=250),
+                              nullable=False),
+                    sa.Column('activation_key',
+                              sa.String(length=300),
+                              nullable=False),
+                    sa.PrimaryKeyConstraint('id')
+                    )
     ### end Alembic commands ###

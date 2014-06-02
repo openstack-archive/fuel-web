@@ -27,7 +27,6 @@ PLUGIN_NAMESPACE = 'nailgun.plugin'
 API_NAMESPACE = 'nailgun.rest_api'
 CUSTOM_ROLES_NAMESPACE = 'nailgun.custom_roles'
 
-
 objs_cache = {}
 plugins = {}
 api_plugins = {}
@@ -80,7 +79,6 @@ def plugin_hook(name):
     def decorator(func):
         @functools.wraps(func)
         def decorated(*args, **kwargs):
-
             manager = objs_cache.setdefault(
                 name,
                 NamedExtensionManager(

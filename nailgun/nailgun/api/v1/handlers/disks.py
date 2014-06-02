@@ -67,7 +67,8 @@ class NodeDisksHandler(BaseHandler):
         objects.Node.set_volumes(node, volumes_data)
 
         return DisksFormatConvertor.format_disks_to_simple(
-            node.attributes.volumes)
+            objects.Node.get_volumes(node)
+        )
 
 
 class NodeDefaultsDisksHandler(BaseHandler):

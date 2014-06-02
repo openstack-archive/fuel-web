@@ -171,6 +171,7 @@ class DeploymentMultinodeSerializer(object):
         else:
             pg_num = 128
         attrs['storage']['pg_num'] = pg_num
+
         return attrs
 
     @classmethod

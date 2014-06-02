@@ -742,10 +742,8 @@ class TestFixtures(BaseIntegrationTest):
     def get_vgs_for_releases(self):
         openstack = self.env.read_fixtures(
             ('openstack',))[0]['fields']['volumes_metadata']['volumes']
-        redhat = self.env.read_fixtures(
-            ('openstack',))[1]['fields']['volumes_metadata']['volumes']
 
-        return [only_vg(openstack), only_vg(redhat)]
+        return [only_vg(openstack)]
 
     def test_each_logical_volume_has_file_system(self):
         for release_vgs in self.get_vgs_for_releases:

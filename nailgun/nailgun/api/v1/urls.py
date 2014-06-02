@@ -69,8 +69,6 @@ from nailgun.api.v1.handlers.orchestrator import DeploySelectedNodes
 from nailgun.api.v1.handlers.orchestrator import ProvisioningInfo
 from nailgun.api.v1.handlers.orchestrator import ProvisionSelectedNodes
 
-from nailgun.api.v1.handlers.redhat import RedHatAccountHandler
-from nailgun.api.v1.handlers.redhat import RedHatSetupHandler
 from nailgun.api.v1.handlers.registration import FuelKeyHandler
 from nailgun.api.v1.handlers.release import ReleaseCollectionHandler
 from nailgun.api.v1.handlers.release import ReleaseHandler

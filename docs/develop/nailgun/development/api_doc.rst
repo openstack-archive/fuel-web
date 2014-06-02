@@ -60,13 +60,6 @@ Logs API
 	:inherited-members:
 
 
-Redhat API
------------------
-
-.. automodule:: nailgun.api.v1.handlers.redhat
-	:inherited-members:
-
-
 Version API
 -----------------
 

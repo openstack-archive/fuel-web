@@ -48,7 +48,6 @@ from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import Notification
-from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Task
 
 # here come objects
@@ -150,23 +149,6 @@ class Environment(object):
             db().commit()
             self.releases.append(release)
         return release
-
-    def download_release(self, release_id):
-        release_data = {
-            'license_type': 'rhsm',
-            'username': 'rheltest',
-            'password': 'password',
-            'release_id': release_id
-        }
-
-        resp = self.app.post(
-            reverse('RedHatAccountHandler'),
-            params=jsonutils.dumps(release_data),
-            headers=self.default_headers
-        )
-        self.tester.assertEqual(resp.status_code, 200)
-        download_task = jsonutils.loads(resp.body)
-        return self.db.query(Task).get(download_task['id'])
 
     def create_cluster(self, api=True, exclude=None, **kwargs):
         cluster_data = {
@@ -290,20 +272,6 @@ class Environment(object):
             self.set_interfaces_in_meta(meta, if_list)
             nodes.append(self.create_node(meta=meta, **kwargs))
         return nodes
-
-    def create_rh_account(self, **kwargs):
-        username = kwargs.pop("username", "rh_username")
-        password = kwargs.pop("password", "rh_password")
-        license_type = kwargs.pop("license_type", "rhsm")
-        rh_account = RedHatAccount(
-            username=username,
-            password=password,
-            license_type=license_type,
-            **kwargs
-        )
-        self.db.add(rh_account)
-        self.db.commit()
-        return rh_account
 
     def create_task(self, **kwargs):
         task = Task(**kwargs)

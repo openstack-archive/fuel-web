@@ -568,82 +568,6 @@ class FakeCheckingDhcpThread(FakeAmpqThread):
             return (self._get_message(settings.ADMIN_NETWORK['mac']),)
 
 
-class FakeRedHatCredentials(FakeAmpqThread):
-    def message_gen(self):
-        self.sleep(self.tick_interval)
-
-        error = self.params.get("error")
-
-        redhat_info = self.data['args']['release_info']['redhat']
-        if redhat_info['username'] != 'rheltest':
-            self.error = "Invalid Red Hat credentials"
-            return [{
-                'task_uuid': self.task_uuid,
-                'status': 'error',
-                'progress': 100,
-                'error': self.error
-            }]
-
-        if error:
-            self.error = error
-            return [{
-                'task_uuid': self.task_uuid,
-                'status': 'error',
-                'progress': 100,
-                'error': self.error
-            }]
-        else:
-            return [{
-                'task_uuid': self.task_uuid,
-                'status': 'ready',
-                'progress': 100
-            }]
-
-
-class FakeRedHatLicenses(FakeAmpqThread):
-    def message_gen(self):
-        self.sleep(self.tick_interval)
-        error = self.params.get("error")
-
-        if error:
-            self.error = error
-            return [{
-                'task_uuid': self.task_uuid,
-                'status': 'error',
-                'progress': 100,
-                'error': self.error
-            }]
-        else:
-            return [{
-                'task_uuid': self.task_uuid,
-                'status': 'ready',
-                'progress': 100,
-                # for case of user warning
-                #'msg': ''
-            }]
-
-
-class FakeRedHatUpdateCobbler(FakeAmpqThread):
-    def message_gen(self):
-        self.sleep(self.tick_interval)
-        error = self.params.get("error")
-
-        if error:
-            self.error = error
-            return [{
-                'task_uuid': self.task_uuid,
-                'status': 'error',
-                'progress': 100,
-                'error': self.error
-            }]
-        else:
-            return [{
-                'task_uuid': self.task_uuid,
-                'status': 'ready',
-                'progress': 100
-            }]
-
-
 class DownloadReleaseThread(FakeAmpqThread):
     def message_gen(self):
         kwargs = {
@@ -699,9 +623,6 @@ FAKE_THREADS = {
     'verify_networks': FakeVerificationThread,
     'check_dhcp': FakeCheckingDhcpThread,
     'download_release': DownloadReleaseThread,
-    'check_redhat_credentials': FakeRedHatCredentials,
-    'check_redhat_licenses': FakeRedHatLicenses,
-    'redhat_update_cobbler_profile': FakeRedHatUpdateCobbler,
     'dump_environment': FakeDumpEnvironment,
     'generate_capacity_log': FakeCapacityLog
 }

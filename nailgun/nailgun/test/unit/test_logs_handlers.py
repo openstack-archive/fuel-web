@@ -24,7 +24,6 @@ from mock import patch
 
 import nailgun
 from nailgun.api.v1.handlers.logs import read_backwards
-from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Role
 from nailgun.errors import errors
 from nailgun.openstack.common import jsonutils
@@ -260,10 +259,6 @@ class TestLogs(BaseIntegrationTest):
             name='node1',
             fqdn='node1.domain.tld'
         )
-        self.env.create_rh_account(
-            username='RHUSER',
-            password='RHPASS'
-        )
         conf = {
             'dump': {
                 'local': {
@@ -275,10 +270,7 @@ class TestLogs(BaseIntegrationTest):
                     'objects': [{
                         'type': 'subs',
                         'path': '/var/log/remote',
-                        'subs': {
-                            'RHUSER': 'substituted_username',
-                            'RHPASS': 'substituted_password'
-                        }
+                        'subs': {}
                     }],
                 },
                 'slave': {
@@ -363,39 +355,6 @@ class TestLogs(BaseIntegrationTest):
         )
         tm_patcher.stop()
         self.assertEqual(resp.status_code, 400)
-
-    def test_log_entry_collection_handler_sensitive(self):
-        account = RedHatAccount()
-        account.username = "REDHATUSERNAME"
-        account.password = "REDHATPASSWORD"
-        account.license_type = "rhsm"
-        self.db.add(account)
-        self.db.commit()
-
-        log_entries = [
-            [
-                time.strftime(settings.UI_LOG_DATE_FORMAT),
-                'LEVEL111',
-                'begin REDHATUSERNAME REDHATPASSWORD end',
-            ],
-        ]
-        response_log_entries = [
-            [
-                time.strftime(settings.UI_LOG_DATE_FORMAT),
-                'LEVEL111',
-                'begin username password end',
-            ],
-        ]
-        self._create_logfile_for_node(settings.LOGS[0], log_entries)
-        resp = self.app.get(
-            reverse('LogEntryCollectionHandler'),
-            params={'source': settings.LOGS[0]['id']},
-            headers=self.default_headers
-        )
-        self.assertEqual(200, resp.status_code)
-        response = jsonutils.loads(resp.body)
-        response['entries'].reverse()
-        self.assertEqual(response['entries'], response_log_entries)
 
     @patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
     def test_log_package_handler_with_dump_task_manager_error(self,

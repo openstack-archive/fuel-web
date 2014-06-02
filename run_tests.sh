@@ -20,6 +20,8 @@ function usage {
   echo "Usage: $0 [OPTION]..."
   echo "Run Fuel-Web test suite(s)"
   echo ""
+  echo "  -a, --agent                 Run FUEL_AGENT tests"
+  echo "  -A, --no-agent              Don't run FUEL_AGENT tests"
   echo "  -n, --nailgun               Run NAILGUN both unit and integration tests"
   echo "  -N, --no-nailgun            Don't run NAILGUN tests"
   echo "  -w, --webui                 Run WEB-UI tests"
@@ -47,6 +49,8 @@ function process_options {
   for arg in $@; do
     case "$arg" in
       -h|--help) usage;;
+      -a|--agent) agent_tests=1;;
+      -A|--no-agent) no_agent_tests=1;;
       -n|--nailgun) nailgun_tests=1;;
       -N|--no-nailgun) no_nailgun_tests=1;;
       -w|--webui) webui_tests=1;;
@@ -86,9 +90,12 @@ FUELCLIENT_XUNIT=${FUELCLIENT_XUNIT:-"$ROOT/fuelclient.xml"}
 FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-"$ROOT/fuelupgrade.xml"}
 FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-"$ROOT/fuelupgradedownloader.xml"}
 SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
+AGENT_XUNIT=${AGENT_XUNIT:-"$ROOT/fuelagent.xml"}
 
 # disabled/enabled flags that are setted from the cli.
 # used for manipulating run logic.
+agent_tests=0
+no_agent_tests=0
 nailgun_tests=0
 no_nailgun_tests=0
 webui_tests=0
@@ -123,7 +130,8 @@ function run_tests {
   fi
 
   # Enable all tests if none was specified skipping all explicitly disabled tests.
-  if [[ $nailgun_tests -eq 0 && \
+  if [[ $agent_tests -eq 0 && \
+      $nailgun_tests -eq 0 && \
       $webui_tests -eq 0 && \
       $cli_tests -eq 0 && \
       $upgrade_system -eq 0 && \
@@ -131,6 +139,7 @@ function run_tests {
       $flake8_checks -eq 0 && \
       $jslint_checks -eq 0 ]]; then
 
+    if [ $no_agent_tests -ne 1 ];  then agent_tests=1;  fi
     if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
     if [ $no_webui_tests -ne 1 ];    then webui_tests=1;    fi
     if [ $no_cli_tests -ne 1 ];      then cli_tests=1;      fi
@@ -144,6 +153,11 @@ function run_tests {
   if [ $flake8_checks -eq 1 ]; then
     echo "Starting Flake8 tests..."
     run_flake8 || errors+=" flake8_checks"
+  fi
+
+  if [ $agent_tests -eq 1 ]; then
+    echo "Starting Nailgun tests..."
+    run_agent_tests || errors+=" agent_tests"
   fi
 
   if [ $nailgun_tests -eq 1 ]; then
@@ -378,6 +392,19 @@ function run_shotgun_tests {
   return $result
 }
 
+function run_agent_tests {
+  local result=0
+
+  pushd $ROOT/fuel_agent >> /dev/null
+
+  # run tests
+  tox -epy26,py27 || result=1
+
+  popd >> /dev/null
+
+  return $result
+}
+
 function run_flake8_subproject {
   local DIRECTORY=$1
   local result=0
@@ -397,6 +424,7 @@ function run_flake8_subproject {
 # * H802 --- first line of git commit commentary should be less than 50 characters
 function run_flake8 {
   local result=0
+  run_flake8_subproject fuel_agent && \
   run_flake8_subproject nailgun && \
   run_flake8_subproject fuelclient && \
   run_flake8_subproject fuelmenu && \

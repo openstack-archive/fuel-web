@@ -18,6 +18,8 @@ from copy import deepcopy
 from mock import patch
 import string
 
+from nailgun import objects
+
 from nailgun.errors import errors
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
@@ -104,12 +106,12 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                             get_vgs(modified_roles_response))
         original_roles_response = modified_roles_response
 
-        # replacing role
-        update_node_roles(['compute', 'ceph-osd'])
-        modified_roles_response = self.get(node_db.id)
-        self.assertNotEqual(get_vgs(original_roles_response),
-                            get_vgs(modified_roles_response))
-        original_roles_response = modified_roles_response
+        # # replacing role (useless without ceph-osd role)
+        # update_node_roles(['compute', 'ceph-osd'])
+        # modified_roles_response = self.get(node_db.id)
+        # self.assertNotEqual(get_vgs(original_roles_response),
+        #                     get_vgs(modified_roles_response))
+        # original_roles_response = modified_roles_response
 
         # removing role
         update_node_roles(['compute'])
@@ -172,24 +174,6 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
 
             volume_group_size = new_volume_size * updated_disks_count
             self.assertEqual(size_volumes_after, volume_group_size)
-
-    def test_update_ceph_partition(self):
-        node = self.create_node(roles=['ceph-osd'])
-        disks = self.get(node.id)
-
-        new_volume_size = 4321
-        for disk in disks:
-            if disk['size'] > 0:
-                for volume in disk['volumes']:
-                    volume['size'] = new_volume_size
-
-        self.put(node.id, disks)
-        partitions_after_update = filter(
-            lambda volume: volume.get('type') == 'partition',
-            node.attributes.volumes)
-
-        for partition_after in partitions_after_update:
-            self.assertEqual(partition_after['size'], new_volume_size)
 
     def test_validator_at_least_one_disk_exists(self):
         node = self.create_node()
@@ -275,7 +259,9 @@ class TestNodeDefaultsDisksHandler(BaseIntegrationTest):
         node_db = self.env.nodes[0]
         volumes_from_api = self.get(node_db.id)
 
-        default_volumes = node_db.volume_manager.gen_volumes_info()
+        default_volumes = objects.Node.get_volume_manager(
+            node_db
+        ).gen_volumes_info()
         disks = only_disks(default_volumes)
 
         self.assertEqual(len(disks), len(volumes_from_api))
@@ -325,11 +311,6 @@ class TestNodeVolumesInformationHandler(BaseIntegrationTest):
         node_db = self.create_node('controller')
         response = self.get(node_db.id)
         self.check_volumes(response, ['os', 'image'])
-
-    def test_volumes_information_for_ceph_role(self):
-        node_db = self.create_node('ceph-osd')
-        response = self.get(node_db.id)
-        self.check_volumes(response, ['os', 'ceph', 'cephjournal'])
 
 
 class TestVolumeManager(BaseIntegrationTest):
@@ -472,7 +453,7 @@ class TestVolumeManager(BaseIntegrationTest):
 
     def test_allocates_all_free_space_for_os_for_controller_role(self):
         node = self.create_node('controller')
-        disks = only_disks(node.volume_manager.volumes)
+        disks = only_disks(objects.Node.get_volume_manager(node).volumes)
         disks_size_sum = sum([disk['size'] for disk in disks])
         os_sum_size = self.os_size(disks)
         glance_sum_size = self.glance_size(disks)
@@ -481,38 +462,34 @@ class TestVolumeManager(BaseIntegrationTest):
         self.assertEqual(disks_size_sum - reserved_size,
                          os_sum_size + glance_sum_size)
         self.logical_volume_sizes_should_equal_all_phisical_volumes(
-            node.attributes.volumes)
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+            objects.Node.get_volumes(node))
+        self.check_disk_size_equal_sum_of_all_volumes(
+            objects.Node.get_volumes(node)
+        )
 
     def test_allocates_all_free_space_for_vm_for_compute_role(self):
         node = self.create_node('compute')
-        self.should_contain_os_with_minimal_size(node.volume_manager)
+        self.should_contain_os_with_minimal_size(
+            objects.Node.get_volume_manager(node)
+        )
         self.all_free_space_except_os_for_volume(
-            node.volume_manager.volumes, 'vm')
+            objects.Node.get_volume_manager(node).volumes, 'vm')
         self.logical_volume_sizes_should_equal_all_phisical_volumes(
-            node.attributes.volumes)
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
+            objects.Node.get_volumes(node))
+        self.check_disk_size_equal_sum_of_all_volumes(
+            objects.Node.get_volumes(node)
+        )
 
     def test_allocates_all_free_space_for_vm_for_cinder_role(self):
         node = self.create_node('cinder')
-        self.should_contain_os_with_minimal_size(node.volume_manager)
+        self.should_contain_os_with_minimal_size(
+            objects.Node.get_volume_manager(node)
+        )
         self.all_free_space_except_os_for_volume(
-            node.volume_manager.volumes, 'cinder')
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
-
-    def test_allocates_space_single_disk_for_ceph_for_ceph_role(self):
-        node = self.create_node('ceph-osd')
-        self.update_node_with_single_disk(node, 30000)
-        self.should_contain_os_with_minimal_size(node.volume_manager)
-        self.all_free_space_except_os_for_volume(
-            node.volume_manager.volumes, 'ceph')
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
-
-    def test_allocates_full_disks_for_ceph_for_ceph_role(self):
-        node = self.create_node('ceph-osd')
-        self.should_contain_os_with_minimal_size(node.volume_manager)
-        self.all_free_space_except_os_disks_for_volume(
-            node.volume_manager, 'ceph')
+            objects.Node.get_volume_manager(node).volumes, 'cinder')
+        self.check_disk_size_equal_sum_of_all_volumes(
+            objects.Node.get_volumes(node)
+        )
 
     def should_allocates_same_size(self, volumes, same_size_volume_names):
         disks = only_disks(volumes)
@@ -543,28 +520,10 @@ class TestVolumeManager(BaseIntegrationTest):
             # differ by 1.
             self.assertAlmostEqual(pv['size'], average_size, delta=1)
 
-    def test_multirole_controller_ceph(self):
-        node = self.create_node('controller', 'ceph-osd')
-        self.should_contain_os_with_minimal_size(node.volume_manager)
-        self.should_allocates_same_size(
-            node.volume_manager.volumes, ['image', 'ceph'])
-        self.logical_volume_sizes_should_equal_all_phisical_volumes(
-            node.attributes.volumes)
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
-
-    def test_multirole_controller_cinder_ceph(self):
-        node = self.create_node('controller', 'cinder', 'ceph-osd')
-        self.should_contain_os_with_minimal_size(node.volume_manager)
-        self.should_allocates_same_size(
-            node.volume_manager.volumes, ['image', 'cinder', 'ceph'])
-        self.logical_volume_sizes_should_equal_all_phisical_volumes(
-            node.attributes.volumes)
-        self.check_disk_size_equal_sum_of_all_volumes(node.attributes.volumes)
-
     def create_node_and_calculate_min_size(
             self, role, space_info, volumes_metadata):
         node = self.create_node(role)
-        volume_manager = node.volume_manager
+        volume_manager = objects.Node.get_volume_manager(node)
         min_installation_size = self.__calc_minimal_installation_size(
             volume_manager
         )
@@ -617,7 +576,7 @@ class TestVolumeManager(BaseIntegrationTest):
                     role, space_info, volumes_metadata)
 
             self.update_node_with_single_disk(node, min_size)
-            vm = node.volume_manager
+            vm = objects.Node.get_volume_manager(node)
             with patch.object(vm,
                               '_VolumeManager'
                               '__calc_minimal_installation_size',
@@ -625,7 +584,7 @@ class TestVolumeManager(BaseIntegrationTest):
                 vm.check_disk_space_for_deployment()
 
             self.update_node_with_single_disk(node, min_size - 1)
-            vm = node.volume_manager
+            vm = objects.Node.get_volume_manager(node)
             with patch.object(vm,
                               '_VolumeManager'
                               '__calc_minimal_installation_size',
@@ -641,7 +600,7 @@ class TestVolumeManager(BaseIntegrationTest):
 
         for role, space_info in volumes_roles_mapping.iteritems():
             node = self.create_node(role)
-            vm = node.volume_manager
+            vm = objects.Node.get_volume_manager(node)
             self.assertEqual(
                 vm._VolumeManager__calc_minimal_installation_size(),
                 self.__calc_minimal_installation_size(vm)
@@ -659,28 +618,17 @@ class TestVolumeManager(BaseIntegrationTest):
             min_installation_size += min_size
         return min_installation_size
 
-    def test_check_volume_size_for_deployment(self):
-        node = self.create_node('controller', 'ceph-osd')
-        # First disk contains more than minimum size of all VGs
-        self.update_node_with_single_disk(node, 116384)
-        # Second is taken entirely by ceph
-        self.add_disk_to_node(node, 65536)
-        node.volume_manager.check_volume_sizes_for_deployment()
-
-        # First disk contains less than minimum size of all VGs
-        self.update_node_with_single_disk(node, 16384)
-        # Second is taken entirely by ceph
-        self.add_disk_to_node(node, 65536)
-        self.assertRaises(
-            errors.NotEnoughFreeSpace,
-            node.volume_manager.check_volume_sizes_for_deployment)
-
     def update_ram_and_assert_swap_size(self, node, size, swap_size):
         new_meta = deepcopy(node.meta)
         new_meta['memory']['total'] = (1024 ** 2) * size
         node.meta = new_meta
         self.env.db.commit()
-        self.assertEqual(node.volume_manager._calc_swap_size(), swap_size)
+        self.assertEqual(
+            objects.Node.get_volume_manager(
+                node
+            )._calc_swap_size(),
+            swap_size
+        )
 
     def test_root_size_calculation(self):
         node = self.create_node('controller')

@@ -34,11 +34,15 @@ class ReleaseSerializer(BasicSerializer):
     )
 
     @classmethod
-    def serialize(cls, instance, fields=None):
+    def serialize(cls, instance, fields=None, fieldgetter=None):
         from nailgun.objects.release import Release
 
         release_dict = \
-            super(ReleaseSerializer, cls).serialize(instance, fields)
+            super(ReleaseSerializer, cls).serialize(
+                instance,
+                fields=fields,
+                fieldgetter=fieldgetter
+            )
         release_dict["is_deployable"] = Release.is_deployable(instance)
 
         if instance.orchestrator_data:

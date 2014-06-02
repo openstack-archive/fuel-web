@@ -170,7 +170,15 @@ CLUSTER_CHANGES = Enum(
     'interfaces'
 )
 
+
 PROVISION_METHODS = Enum(
     'cobbler',
     'image'
+)
+
+PLUGIN_RECORD_TYPES = Enum(
+    'role',
+    'pending_role',
+    'volume',
+    'cluster_attribute'
 )

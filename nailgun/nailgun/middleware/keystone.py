@@ -31,6 +31,7 @@ def public_urls():
         urls['{0}{1}'.format('/api', url)] = methods
     urls["/$"] = ['GET']
     urls["/static"] = ['GET']
+    urls["/plugins"] = ['GET']
     urls["/keystone"] = ['GET', 'POST']
     return urls
 

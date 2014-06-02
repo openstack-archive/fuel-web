@@ -21,13 +21,12 @@ from itertools import groupby
 
 from netaddr import IPNetwork
 from sqlalchemy import and_
-from sqlalchemy import or_
-from sqlalchemy.orm import joinedload
 
-import math
 import six
 
 from nailgun import objects
+
+from nailgun.plugins.hooks import rpc as rpc_hooks
 
 from nailgun import consts
 from nailgun.db import db
@@ -35,7 +34,6 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects import Cluster
 from nailgun.orchestrator import priority_serializers as ps
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
@@ -316,13 +314,14 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         enabled.
         """
         # Get Mellanox data
-        neutron_mellanox_data =  \
-            Cluster.get_attributes(node.cluster).editable\
-            .get('neutron_mellanox', {})
+        neutron_mellanox_data = objects.Cluster.get_attributes(
+            node.cluster
+        ).editable.get('neutron_mellanox', {})
 
         # Get storage data
-        storage_data = \
-            Cluster.get_attributes(node.cluster).editable.get('storage', {})
+        storage_data = objects.Cluster.get_attributes(
+            node.cluster
+        ).editable.get('storage', {})
 
         # Get network manager
         nm = objects.Node.get_network_manager(node)
@@ -423,7 +422,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if cluster.release.operating_system == 'RHEL':
             attrs['amqp'] = {'provider': 'qpid-rh'}
 
-        cluster_attrs = Cluster.get_attributes(cluster).editable
+        cluster_attrs = objects.Cluster.get_attributes(cluster).editable
         if 'nsx_plugin' in cluster_attrs and \
                 cluster_attrs['nsx_plugin']['metadata']['enabled']:
             attrs['L2']['provider'] = 'nsx'
@@ -700,7 +699,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             }
 
         # Set non-default ml2 configurations
-        attrs = Cluster.get_attributes(cluster).editable
+        attrs = objects.Cluster.get_attributes(cluster).editable
         if 'neutron_mellanox' in attrs and \
                 attrs['neutron_mellanox']['plugin']['value'] == 'ethernet':
             res['mechanism_drivers'] = 'mlnx,openvswitch'
@@ -715,7 +714,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         l3 = {
             "use_namespaces": True
         }
-        attrs = Cluster.get_attributes(cluster).editable
+        attrs = objects.Cluster.get_attributes(cluster).editable
         if 'nsx_plugin' in attrs and \
                 attrs['nsx_plugin']['metadata']['enabled']:
             dhcp_attrs = l3.setdefault('dhcp_agent', {})
@@ -824,13 +823,19 @@ class DeploymentMultinodeSerializer(object):
             if node['role'] in 'cinder':
                 attrs['use_cinder'] = True
 
-        self.set_storage_parameters(cluster, attrs)
+        attrs['storage']['pg_num'] = 128
         self.set_primary_mongo(attrs['nodes'])
 
         attrs = dict_merge(
             attrs,
-            self.get_net_provider_serializer(cluster).get_common_attrs(cluster,
-                                                                       attrs))
+            self.get_net_provider_serializer(cluster).get_common_attrs(
+                cluster,
+                attrs
+            )
+        )
+
+        # plugins hooks
+        attrs = rpc_hooks.process_cluster_attrs(cluster, attrs)
 
         return attrs
 
@@ -851,30 +856,6 @@ class DeploymentMultinodeSerializer(object):
             return cluster.release
         return None
 
-    def set_storage_parameters(self, cluster, attrs):
-        """Generate pg_num as the number of OSDs across the cluster
-        multiplied by 100, divided by Ceph replication factor, and
-        rounded up to the nearest power of 2.
-        """
-        osd_num = 0
-        nodes = db().query(Node). \
-            filter(or_(
-                Node.role_list.any(name='ceph-osd'),
-                Node.pending_role_list.any(name='ceph-osd'))). \
-            filter(Node.cluster == cluster). \
-            options(joinedload('attributes'))
-        for node in nodes:
-            for disk in node.attributes.volumes:
-                for part in disk.get('volumes', []):
-                    if part.get('name') == 'ceph' and part.get('size', 0) > 0:
-                        osd_num += 1
-        if osd_num > 0:
-            repl = int(attrs['storage']['osd_pool_size'])
-            pg_num = 2 ** int(math.ceil(math.log(osd_num * 100.0 / repl, 2)))
-        else:
-            pg_num = 128
-        attrs['storage']['pg_num'] = pg_num
-
     def node_list(self, nodes):
         """Generate nodes list. Represents
         as "nodes" parameter in facts.
@@ -882,7 +863,7 @@ class DeploymentMultinodeSerializer(object):
         node_list = []
 
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in sorted(objects.Node.get_all_roles(node)):
                 node_list.append({
                     'uid': node.uid,
                     'fqdn': node.fqdn,
@@ -916,7 +897,7 @@ class DeploymentMultinodeSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in sorted(node.all_roles):
+            for role in sorted(objects.Node.get_all_roles(node)):
                 serialized_nodes.append(self.serialize_node(node, role))
         self.set_primary_mongo(serialized_nodes)
         return serialized_nodes
@@ -940,6 +921,10 @@ class DeploymentMultinodeSerializer(object):
             node.cluster).get_node_attrs(node))
         node_attrs.update(self.get_image_cache_max_size(node))
         node_attrs.update(self.generate_test_vm_image_data(node))
+
+        # plugins hooks
+        node_attrs = rpc_hooks.process_node_attrs(node, node_attrs)
+
         return node_attrs
 
     def get_image_cache_max_size(self, node):

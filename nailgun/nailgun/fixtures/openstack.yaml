@@ -458,14 +458,8 @@
       - controller
       - compute
       - cinder
-      - ceph-osd
       - mongo
     roles_metadata:
-      ceph-osd:
-        name: "Storage - Ceph OSD"
-        description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
-        conflicts:
-          - mongo
       mongo:
         name: "Telemetry - MongoDB"
         description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
@@ -548,10 +542,6 @@
               metadata_proxy_shared_secret: ""
     volumes_metadata:
       volumes_roles_mapping:
-        ceph-osd:
-          - {allocate_size: "min", id: "os"}
-          - {allocate_size: "min", id: "cephjournal"}
-          - {allocate_size: "full-disk", id: "ceph"}
         mongo:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "mongo"}
@@ -568,22 +558,6 @@
                 generator: "calc_total_vg"
                 generator_args: ["mongo"]
               file_system: "ext4"
-        - id: "ceph"
-          type: "partition"
-          min_size: {generator: "calc_min_ceph_size"}
-          label: "Ceph"
-          name: "Ceph"
-          mount: "none"
-          partition_guid: "4fbd7e29-9d25-41b8-afd0-062c0ceff05d"
-          file_system: "none"
-        - id: "cephjournal"
-          type: "partition"
-          min_size: {generator: "calc_min_ceph_journal_size"}
-          name: "Ceph Journal"
-          label: "Ceph Journal"
-          mount: "none"
-          partition_guid: "45b0969e-9b03-4f30-b4c6-b4b80ceff106"
-          file_system: "none"
         - id: "os"
           type: "vg"
           min_size: {generator: "calc_min_os_size"}

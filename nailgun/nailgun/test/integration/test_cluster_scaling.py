@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import objects
+
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.task.helpers import TaskHelper
 from nailgun.test.base import BaseIntegrationTest
@@ -29,7 +31,10 @@ class TestClusterScaling(BaseIntegrationTest):
         return cluster_db
 
     def filter_by_role(self, nodes, role):
-        return filter(lambda node: role in node.all_roles, nodes)
+        return filter(
+            lambda node: role in objects.Node.get_all_roles(node),
+            nodes
+        )
 
     @fake_tasks()
     def test_deploy_single_controller(self):

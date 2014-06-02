@@ -40,7 +40,7 @@ class NodeDisksHandler(BaseHandler):
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(objects.Node, node_id)
-        node_volumes = node.attributes.volumes
+        node_volumes = objects.Node.get_volumes(node)
         return DisksFormatConvertor.format_disks_to_simple(node_volumes)
 
     @content_json
@@ -67,7 +67,8 @@ class NodeDisksHandler(BaseHandler):
         objects.Node.set_volumes(node, volumes_data)
 
         return DisksFormatConvertor.format_disks_to_simple(
-            node.attributes.volumes)
+            objects.Node.get_volumes(node)
+        )
 
 
 class NodeDefaultsDisksHandler(BaseHandler):
@@ -85,7 +86,10 @@ class NodeDefaultsDisksHandler(BaseHandler):
             raise self.http(404)
 
         volumes = DisksFormatConvertor.format_disks_to_simple(
-            node.volume_manager.gen_volumes_info())
+            objects.Node.get_volume_manager(
+                node
+            ).gen_volumes_info()
+        )
 
         return volumes
 

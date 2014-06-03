@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-casper.start();
+casper.start().authenticate();
 casper.createCluster({name: 'Test Cluster'});
 var nodes = [
     {status: 'discover', manufacturer: 'Dell', mac: 'C0:8D:DF:52:76:F1', cluster_id: 1, roles: ['compute'], pending_addition: true}

@@ -46,6 +46,20 @@ casper.test.assertSelectorDisappears = function(selector, message, timeout) {
     }, timeout);
 }
 
+casper.authenticate = function(options) {
+    options = options || {};
+    var username = options.username || 'admin';
+    var password = options.password || 'admin';
+    this.thenOpen(baseUrl + 'api/version');
+    this.then(function() {
+        this.evaluate(function(username, password) {
+            localStorage.setItem('username', username);
+            localStorage.setItem('password', password);
+        }, [username, password]);
+    });
+    return this;
+}
+
 casper.createCluster = function(options) {
     options.release = 1; // centos
     return this.thenOpen(baseUrl + 'api/clusters', {

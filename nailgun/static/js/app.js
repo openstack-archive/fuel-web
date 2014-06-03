@@ -18,7 +18,9 @@ define(
     'coccyx',
     'js/coccyx_mixins',
     'models',
+    'keystone_client',
     'views/common',
+    'views/login_page',
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
     'views/clusters_page',
@@ -27,11 +29,13 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
         routes: {
+            'login': 'login',
+            'logout': 'logout',
             'clusters': 'listClusters',
             'cluster/:id': 'showCluster',
             'cluster/:id/:tab(/:opt1)(/:opt2)': 'showClusterTab',
@@ -42,8 +46,76 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             '*default': 'listClusters'
         },
         initialize: function() {
-            this.version = new models.FuelVersion();
-            this.version.fetch();
+            window.app = this;
+
+            // add deferred-related mixins
+            _.extend(Backbone.View.prototype, coccyxMixins);
+
+            // reject deferreds on view teardown
+            Coccyx.addTearDownCallback(function() {
+                this.rejectRegisteredDeferreds();
+            });
+
+            // remove stickit bindings on teardown
+            Coccyx.addTearDownCallback(function() {
+                this.unstickit();
+            });
+
+            // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
+            $.ajaxSetup({ cache: false });
+
+
+            var keystoneClient = this.keystoneClient = new KeystoneClient('/keystone', {
+                cacheTokenFor: 10 * 60 * 1000,
+                tenant: 'admin'
+            });
+            var version = this.version = new models.FuelVersion();
+
+            version.fetch().done(_.bind(function() {
+                this.user = new models.User({authenticated: !version.get('auth_required')});
+
+                var originalSync = Backbone.sync;
+                Backbone.sync = function(method, model, options) {
+                    // our server doesn't support PATCH, so use PUT instead
+                    if (method == 'patch') {
+                        method = 'update';
+                    }
+                    if (version.get('auth_required') && !this.authExempt) {
+                        // add keystone token to headers
+                        return keystoneClient.updateToken()
+                            .fail(function() {
+                                app.logout();
+                            })
+                            .then(_.bind(function() {
+                                options = options || {};
+                                options.headers = options.headers || {};
+                                options.headers['X-Auth-Token'] = keystoneClient.token;
+                                return originalSync.call(this, method, model, options);
+                            }, this));
+                    }
+                    return originalSync.call(this, method, model, options);
+                };
+
+                this.renderLayout();
+
+                if (version.get('auth_required')) {
+                    _.extend(keystoneClient, this.user.pick('username', 'password'));
+                    keystoneClient.updateToken()
+                        .done(function() {
+                            app.user.set({authenticated: true});
+                        })
+                        .always(function() {
+                            Backbone.history.start();
+                        })
+                        .fail(function() {
+                            app.navigate('#login', {trigger: true});
+                        });
+                } else {
+                    Backbone.history.start();
+                }
+            }, this));
+        },
+        renderLayout: function() {
             this.content = $('#content');
             this.navbar = new commonViews.Navbar({elements: [
                 {label: 'environments', url: '#clusters'},
@@ -53,7 +125,7 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             this.content.before(this.navbar.render().el);
             this.breadcrumbs = new commonViews.Breadcrumbs();
             this.content.before(this.breadcrumbs.render().el);
-            this.footer = new commonViews.Footer({version: this.version});
+            this.footer = new commonViews.Footer();
             $('#footer').html(this.footer.render().el);
             this.content.find('.loading').addClass('layout-loaded');
         },
@@ -66,6 +138,25 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             this.page.updateBreadcrumbs();
             this.page.updateTitle();
             this.content.html(this.page.render().el);
+
+        },
+        // routes
+        login: function() {
+            this.setPage(LoginPage);
+        },
+        logout: function() {
+            if (this.version.get('auth_required') && this.user.get('authenticated')) {
+                this.user.set('authenticated', false);
+                this.user.unset('username');
+                this.user.unset('password');
+                delete app.keystoneClient.username;
+                delete app.keystoneClient.password;
+                delete app.keystoneClient.token;
+                delete app.keystoneClient.tokenUpdateTime;
+            }
+            _.defer(function() {
+                app.navigate('#login', {trigger: true, replace: true});
+            });
         },
         showCluster: function(id) {
             this.navigate('#cluster/' + id + '/nodes', {trigger: true, replace: true});
@@ -166,38 +257,7 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
 
     return {
         initialize: function() {
-            // our server doesn't support PATCH, so use PUT instead
-            var originalSync = Backbone.sync;
-            Backbone.sync = function() {
-                var args = arguments;
-                if (args[0] == 'patch') {
-                    args[0] = 'update';
-                }
-                return originalSync.apply(this, args);
-            };
-
-            // add deferred-related mixins
-            _.extend(Backbone.View.prototype, coccyxMixins);
-
-            // reject deferreds on view teardown
-            Coccyx.addTearDownCallback(function() {
-                this.rejectRegisteredDeferreds();
-            });
-
-            // remove stickit bindings on teardown
-            Coccyx.addTearDownCallback(function() {
-                this.unstickit();
-            });
-
-            // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
-            $.ajaxSetup({ cache: false });
-
-            window.isWebkit = navigator.userAgent.indexOf('AppleWebKit/') !== -1;
-
-            var app = new AppRouter();
-            window.app = app;
-
-            Backbone.history.start();
+            return new AppRouter();
         }
     };
 });

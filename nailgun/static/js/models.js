@@ -730,6 +730,26 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
         urlRoot: '/api/version'
     });
 
+    models.User = Backbone.Model.extend({
+        constructorName: 'User',
+        locallyStoredAttributes: ['username', 'token'],
+        initialize: function() {
+            _.each(this.locallyStoredAttributes, function(attribute) {
+                var locallyStoredValue = localStorage.getItem(attribute);
+                if (locallyStoredValue) {
+                    this.set(attribute, locallyStoredValue);
+                }
+                this.on('change:' + attribute, function(model, value) {
+                    if (_.isUndefined(value)) {
+                        localStorage.removeItem(attribute);
+                    } else {
+                        localStorage.setItem(attribute, value);
+                    }
+                });
+            }, this);
+        }
+    });
+
     models.LogsPackage = Backbone.Model.extend({
         constructorName: 'LogsPackage',
         urlRoot: '/api/logs/package'

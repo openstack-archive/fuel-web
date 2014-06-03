@@ -46,6 +46,9 @@ function(models, utils, commonViews, dialogViews, wizard, clustersPageTemplate, 
                 this.registerSubView(registerTrialView);
                 this.$('.page-title').before(registerTrialView.render().el);
             }
+            app.footer.$el.toggle(app.user.get('authenticated'));
+            app.breadcrumbs.$el.toggle(app.user.get('authenticated'));
+            app.navbar.$el.toggle(app.user.get('authenticated'));
             return this;
         }
     });
@@ -170,8 +173,10 @@ function(models, utils, commonViews, dialogViews, wizard, clustersPageTemplate, 
             this.remove();
         },
         render: function() {
-            this.$el.html(this.template()).i18n();
-            this.stickit(this.fuelKey);
+            if (app.version.get('mirantis') == 'yes' && !localStorage.trialRemoved) {
+                this.$el.html(this.template()).i18n();
+                this.stickit(this.fuelKey);
+            }
             return this;
         }
     });

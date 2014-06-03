@@ -72,6 +72,15 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             return $.when(this.statistics.fetch(), this.notifications.fetch({limit: this.notificationsDisplayCount}));
         },
         initialize: function(options) {
+            app.user.on('change:authenticated', function(model, value) {
+                if (value) {
+                    this.refresh();
+                } else {
+                    this.statistics.clear();
+                    this.notifications.reset();
+                }
+                this.render();
+            }, this);
             this.elements = _.isArray(options.elements) ? options.elements : [];
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
@@ -82,6 +91,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             if (!this.$('.navigation-bar-ul a').length) {
                 this.$el.html(this.template({elements: this.elements}));
             }
+            this.$('.navigation-bar-ul li:not(:first)').toggle(app.user.get('authenticated'));
             this.stats = new views.NodesStats({statistics: this.statistics, navbar: this});
             this.registerSubView(this.stats);
             this.$('.nodes-summary-container').html(this.stats.render().el);
@@ -144,10 +154,13 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.collection.on('sync', this.render, this);
+            this.collection.on('sync reset', this.render, this);
         },
         render: function() {
-            this.$el.html(this.template({notifications: this.collection}));
+            this.$el.html(this.template({
+                notifications: this.collection.where({status: 'unread'}),
+                authenticated: app.user.get('authenticated')
+            }));
             return this;
         }
     });

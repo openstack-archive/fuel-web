@@ -75,6 +75,7 @@ function(commonViews, models, supportPageTemplate) {
             this.$('.genereting-logs').removeClass('hide');
         },
         initialize: function(options) {
+            console.log('support.initialize');
             _.defaults(this, options);
             this.fuelKey = new models.FuelKey();
             this.fuelKey.fetch();
@@ -93,6 +94,7 @@ function(commonViews, models, supportPageTemplate) {
             }
         },
         render: function() {
+            console.log('support.render');
             this.$el.html(this.template({tasks: this.logsPackageTasks})).i18n();
             this.stickit(this.fuelKey);
             return this;

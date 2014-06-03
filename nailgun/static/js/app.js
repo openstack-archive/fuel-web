@@ -18,7 +18,9 @@ define(
     'coccyx',
     'js/coccyx_mixins',
     'models',
+    'keystone_client',
     'views/common',
+    'views/login_page',
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
     'views/clusters_page',
@@ -27,11 +29,13 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
         routes: {
+            'login': 'login',
+            'logout': 'logout',
             'clusters': 'listClusters',
             'cluster/:id': 'showCluster',
             'cluster/:id/:tab(/:opt1)(/:opt2)': 'showClusterTab',
@@ -42,8 +46,55 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             '*default': 'listClusters'
         },
         initialize: function() {
+            window.app = this;
+
+            // add deferred-related mixins
+            _.extend(Backbone.View.prototype, coccyxMixins);
+
+            // reject deferreds on view teardown
+            Coccyx.addTearDownCallback(function() {
+                this.rejectRegisteredDeferreds();
+            });
+
+            // remove stickit bindings on teardown
+            Coccyx.addTearDownCallback(function() {
+                this.unstickit();
+            });
+
+            // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
+            $.ajaxSetup({ cache: false });
+
+            this.user = new models.User({authenticated: false});
+
+            var keystoneClient = this.keystoneClient = new KeystoneClient('/keystone', {
+                cacheTokenFor: 5 * 60 * 1000,
+                tenant: ''
+            });
+            _.extend(keystoneClient, this.user.pick('username', 'token'));
+
+            var originalSync = Backbone.sync;
+            Backbone.sync = function(method, model, options) {
+                var args = arguments;
+                // our server doesn't support PATCH, so use PUT instead
+                if (args[0] == 'patch') {
+                    args[0] = 'update';
+                }
+                // add keystone token to headers
+                return keystoneClient.updateToken()
+                    .fail(function() {
+                        app.logout();
+                    })
+                    .then(_.bind(function() {
+                        app.user.set('token', keystoneClient.token);
+                        options.headers = options.headers || {};
+                        options.headers['X-Auth-Token'] = keystoneClient.token;
+                        return originalSync.apply(this, args);
+                    }, this));
+            };
+
             this.version = new models.FuelVersion();
             this.version.fetch();
+
             this.content = $('#content');
             this.navbar = new commonViews.Navbar({elements: [
                 ['environments', '#clusters'],
@@ -56,6 +107,16 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             this.footer = new commonViews.Footer({version: this.version});
             $('#footer').html(this.footer.render().el);
             this.content.find('.loading').addClass('layout-loaded');
+
+            keystoneClient.updateToken()
+                .done(function() {
+                    app.user.set({authenticated: true});
+                    Backbone.history.start();
+                })
+                .fail(function() {
+                    Backbone.history.start();
+                    app.navigate('#login', {trigger: true});
+                });
         },
         setPage: function(NewPage, options) {
             if (this.page) {
@@ -66,6 +127,22 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             this.page.updateBreadcrumbs();
             this.page.updateTitle();
             this.content.html(this.page.render().el);
+        },
+        // routes
+        login: function() {
+            console.log('login');
+            this.setPage(LoginPage);
+        },
+        logout: function() {
+            if (this.user.get('authenticated')) {
+                this.user.set('authenticated', false);
+                this.user.unset('token');
+                this.user.unset('username');
+                delete app.keystoneClient.token;
+                delete app.keystoneClient.username;
+                delete app.keystoneClient.tokenUpdateTime;
+            }
+            app.navigate('#login', {trigger: true, replace: true});
         },
         showCluster: function(id) {
             this.navigate('#cluster/' + id + '/nodes', {trigger: true, replace: true});
@@ -166,38 +243,7 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
 
     return {
         initialize: function() {
-            // our server doesn't support PATCH, so use PUT instead
-            var originalSync = Backbone.sync;
-            Backbone.sync = function() {
-                var args = arguments;
-                if (args[0] == 'patch') {
-                    args[0] = 'update';
-                }
-                return originalSync.apply(this, args);
-            };
-
-            // add deferred-related mixins
-            _.extend(Backbone.View.prototype, coccyxMixins);
-
-            // reject deferreds on view teardown
-            Coccyx.addTearDownCallback(function() {
-                this.rejectRegisteredDeferreds();
-            });
-
-            // remove stickit bindings on teardown
-            Coccyx.addTearDownCallback(function() {
-                this.unstickit();
-            });
-
-            // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
-            $.ajaxSetup({ cache: false });
-
-            window.isWebkit = navigator.userAgent.indexOf('AppleWebKit/') !== -1;
-
-            var app = new AppRouter();
-            window.app = app;
-
-            Backbone.history.start();
+            return new AppRouter();
         }
     };
 });

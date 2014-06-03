@@ -70,19 +70,34 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             this.refresh().always(_.bind(this.scheduleUpdate, this));
         },
         refresh: function() {
-            return $.when(this.statistics.fetch(), this.notifications.fetch({limit: this.notificationsDisplayCount}));
+            if (app.user.get('authenticated')) {
+                return $.when(this.statistics.fetch(), this.notifications.fetch({limit: this.notificationsDisplayCount}));
+            }
+            return $.Deferred().reject();
         },
         initialize: function(options) {
             this.elements = new Backbone.Collection(options.elements);
             this.elements.invoke('set', {active: false});
             this.elements.on('change:active', this.render, this);
+            app.user.on('change:authenticated', function(model, value) {
+                if (value) {
+                    this.refresh();
+                } else {
+                    this.statistics.clear();
+                    this.notifications.reset();
+                }
+                this.render();
+            }, this);
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
             this.update();
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({elements: this.elements}));
+            this.$el.html(this.template({
+                elements: this.elements,
+                username: app.keystoneClient.username
+            }));
             this.stats = new views.NodesStats({statistics: this.statistics, navbar: this});
             this.registerSubView(this.stats);
             this.$('.nodes-summary-container').html(this.stats.render().el);
@@ -145,10 +160,13 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.collection.on('sync', this.render, this);
+            this.collection.on('sync reset', this.render, this);
         },
         render: function() {
-            this.$el.html(this.template({notifications: this.collection}));
+            this.$el.html(this.template({
+                notifications: this.collection.where({status: 'unread'}),
+                authenticated: app.user.get('authenticated')
+            }));
             return this;
         }
     });

@@ -311,7 +311,7 @@ define(['utils', 'deepModel'], function(utils) {
         toJSON: function(options) {
             var result = this.constructor.__super__.toJSON.call(this, options);
             _.each(result, function(group, groupName) {
-                result[groupName].metadata = _.omit(group.metadata, 'disabled');
+                result[groupName].metadata = _.omit(group.metadata, 'disabled', 'visible');
                 _.each(group, function(setting, settingName) {
                     group[settingName] = _.omit(setting, 'disabled');
                     _.each(setting.values, function(option, index) {

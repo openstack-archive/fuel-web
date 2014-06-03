@@ -53,11 +53,42 @@
           "label": "dialog.create_cluster_wizard.compute.vcenter",
           "description": "dialog.create_cluster_wizard.compute.vcenter_description",
           "warnings": {
-             "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.vcenter_warning",
              "Mode.mode == 'ha_compact' and Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.ha_vcenter_warning"
           }
         }
       ]
+    },
+    "vcenter_credentials": {
+      "type": "text",
+      "fields": [
+        {
+          "type": "text",
+          "label": "vCenter IP",
+          "name": "host_ip",
+          "description": "IP Address of vCenter"
+        },
+        {
+          "type": "text",
+          "label": "Username",
+          "name": "vc_user",
+          "description": "vCenter admin username"
+        },
+        {
+          "type": "password",
+          "label": "Password",
+          "name": "vc_password",
+          "description": "vCenter admin password"
+        },
+        {
+          "type": "text",
+          "label": "Cluster",
+          "name": "cluster",
+          "description": "vCenter cluster name"
+        }
+      ],
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": "none"
+      }
     }
   },
   "Network": {

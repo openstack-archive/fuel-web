@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-casper.start();
+casper.start().authenticate();
 casper.createCluster({name: 'Test Cluster'});
 casper.loadPage('#cluster/1/network').waitForSelector('#tab-network > *');
 

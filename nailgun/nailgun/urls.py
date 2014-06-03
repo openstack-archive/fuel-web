@@ -15,15 +15,20 @@
 #    under the License.
 
 from nailgun.api.v1 import urls as api_urls
+from nailgun.fake_keystone import urls as fake_keystone_urls
+from nailgun.settings import settings
 from nailgun.webui import urls as webui_urls
 
 
 def urls():
-    return (
+    urls = [
         "/api/v1", api_urls.app(),
         "/api", api_urls.app(),
         "", webui_urls.app()
-    )
+    ]
+    if settings.AUTH['AUTHENTICATION_METHOD'] == 'fake':
+        urls = ["/keystone", fake_keystone_urls.app()] + urls
+    return urls
 
 
 def public_urls():

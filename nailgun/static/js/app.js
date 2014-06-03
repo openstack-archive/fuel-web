@@ -18,7 +18,9 @@ define(
     'coccyx',
     'js/coccyx_mixins',
     'models',
+    'keystone_client',
     'views/common',
+    'views/login_page',
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
     'views/clusters_page',
@@ -27,11 +29,13 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
         routes: {
+            'login': 'login',
+            'logout': 'logout',
             'clusters': 'listClusters',
             'cluster/:id': 'showCluster',
             'cluster/:id/:tab(/:opt1)(/:opt2)': 'showClusterTab',
@@ -42,6 +46,33 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             '*default': 'listClusters'
         },
         initialize: function() {
+            var keystoneClient = this.keystoneClient = new KeystoneClient('/keystone', {
+                cacheTokenFor: 5 * 60 * 1000,
+                tenant: '',
+                username: 'demo1',
+                password: '93f3bf249e2605e2a5a6',
+                token: localStorage.getItem('keystoneToken')
+            });
+            var originalSync = Backbone.sync;
+            Backbone.sync = function(method, model, options) {
+                var args = arguments;
+                // our server doesn't support PATCH, so use PUT instead
+                if (args[0] == 'patch') {
+                    args[0] = 'update';
+                }
+                // add keystone token to headers
+                return keystoneClient.updateToken()
+                    .fail(function() {
+                        app.logout();
+                    })
+                    .then(_.bind(function() {
+                        localStorage.setItem('keystoneToken', keystoneClient.token);
+                        options.headers = options.headers || {};
+                        options.headers['X-Auth-Token'] = keystoneClient.token;
+                        return originalSync.apply(this, args);
+                    }, this));
+            };
+            this.user = new Backbone.Model({authenticated: false});
             this.version = new models.FuelVersion();
             this.version.fetch();
             this.content = $('#content');
@@ -66,6 +97,18 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             this.page.updateBreadcrumbs();
             this.page.updateTitle();
             this.content.html(this.page.render().el);
+        },
+        login: function() {
+            this.setPage(LoginPage);
+        },
+        logout: function() {
+            if (this.user.get('authenticated')) {
+                this.user.set('authenticated', false);
+                localStorage.removeItem('keystoneToken');
+                delete app.keystoneClient.token;
+                delete app.keystoneClient.username;
+            }
+            app.navigate('#login', {trigger: true});
         },
         showCluster: function(id) {
             this.navigate('#cluster/' + id + '/nodes', {trigger: true, replace: true});
@@ -166,16 +209,6 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
 
     return {
         initialize: function() {
-            // our server doesn't support PATCH, so use PUT instead
-            var originalSync = Backbone.sync;
-            Backbone.sync = function() {
-                var args = arguments;
-                if (args[0] == 'patch') {
-                    args[0] = 'update';
-                }
-                return originalSync.apply(this, args);
-            };
-
             // add deferred-related mixins
             _.extend(Backbone.View.prototype, coccyxMixins);
 

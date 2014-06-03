@@ -53,11 +53,63 @@
           "label": "dialog.create_cluster_wizard.compute.vcenter",
           "description": "dialog.create_cluster_wizard.compute.vcenter_description",
           "warnings": {
-             "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.vcenter_warning",
              "Mode.mode == 'ha_compact' and Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.ha_vcenter_warning"
           }
         }
       ]
+    },
+    "host_ip": {
+      "type": "text",
+      "label": "vCenter IP",
+      "description": "IP Address of vCenter",
+      "bind": "settings:vcenter.host_ip.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      },
+      "regex": {
+        "source": "/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/",
+        "error": "dialog.create_cluster_wizard.compute.vcenter_ip_warning"
+      }
+    },
+    "vc_user": {
+      "type": "text",
+      "label": "Username",
+      "description": "vCenter admin username",
+      "bind": "settings:vcenter.vc_user.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      },
+      "regex": {
+        "source": "/^.+$/",
+        "error": "dialog.create_cluster_wizard.compute.vcenter_username_warning"
+      }
+    },
+    "vc_password": {
+      "type": "password",
+      "label": "Password",
+      "description": "vCenter admin password",
+      "bind": "settings:vcenter.vc_password.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      },
+      "regex": {
+        "source": "/^.+$/",
+        "error": "dialog.create_cluster_wizard.compute.vcenter_password_warning"
+      }
+    },
+    "cluster": {
+      "type": "text",
+      "label": "Cluster",
+      "name": "cluster",
+      "description": "vCenter cluster name",
+      "bind": "settings:vcenter.cluster.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      },
+      "regex": {
+        "source": "/^.+$/",
+        "error": "dialog.create_cluster_wizard.compute.vcenter_cluster_warning"
+      }
     }
   },
   "Network": {

@@ -53,11 +53,46 @@
           "label": "dialog.create_cluster_wizard.compute.vcenter",
           "description": "dialog.create_cluster_wizard.compute.vcenter_description",
           "warnings": {
-             "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.vcenter_warning",
              "Mode.mode == 'ha_compact' and Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.ha_vcenter_warning"
           }
         }
       ]
+    },
+    "host_ip": {
+      "type": "text",
+      "label": "dialog.create_cluster_wizard.compute.vcenter_ip",
+      "description": "dialog.create_cluster_wizard.compute.vcenter_ip_description",
+      "bind": "settings:vcenter.host_ip.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      }
+    },
+    "vc_user": {
+      "type": "text",
+      "label": "dialog.create_cluster_wizard.compute.vcenter_username",
+      "description": "dialog.create_cluster_wizard.compute.vcenter_username_description",
+      "bind": "settings:vcenter.vc_user.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      }
+    },
+    "vc_password": {
+      "type": "password",
+      "label": "dialog.create_cluster_wizard.compute.vcenter_password",
+      "description": "dialog.create_cluster_wizard.compute.vcenter_password_description",
+      "bind": "settings:vcenter.vc_password.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      }
+    },
+    "cluster": {
+      "type": "text",
+      "label": "dialog.create_cluster_wizard.compute.vcenter_cluster",
+      "description": "dialog.create_cluster_wizard.compute.vcenter_cluster_description",
+      "bind": "settings:vcenter.cluster.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      }
     }
   },
   "Network": {

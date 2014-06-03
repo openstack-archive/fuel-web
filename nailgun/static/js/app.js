@@ -18,6 +18,7 @@ define(
     'coccyx',
     'js/coccyx_mixins',
     'models',
+    'keystone_client',
     'views/common',
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
@@ -27,7 +28,7 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({

@@ -1,0 +1,21 @@
+<div class="parameter-box clearfix text-type">
+    <div class="openstack-sub-title parameter-name text-type"><%- label %></div>
+    <% if (type == 'text') { %>
+        <div class="parameter-control">
+          <input type="text" value="" name="<%- name %>" class="" data-attribute="<%- attribute %>">
+        </div>
+    <% } %>
+    <% if (type =='password') { %>
+        <div class="parameter-control input-append">
+            <input type="password" value="" name="<%- name %>" class="input-append" data-attribute="<%- attribute %>">
+            <span class="add-on">
+                <i class="icon-eye" style="display: inline;"></i>
+                <i class="icon-eye-off hide" style="display: none;"></i>
+            </span>
+        </div>
+    <% } %>
+    <div class="parameter-description description">
+      <%- description %>
+    </div>
+    <div class="parameter-description validation-error hide" style="display: none;"></div>
+</div>

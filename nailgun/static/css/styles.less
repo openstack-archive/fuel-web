@@ -2,6 +2,7 @@
 @import 'bootstrap.css';
 @import 'retina.less';
 
+
 // Global colors
 // --------------------------------------------------
 
@@ -3334,4 +3335,93 @@ i.btn-cluster-details {
   width: 760px;
   margin-left: -380px;
   min-height: 485px;
+}
+
+
+/**  Login **/
+.login-placeholder {
+  height: 100%;
+  min-height: 100%; 
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 100%;
+}
+
+.login-box {
+  position: relative;
+  width: 500px;
+  height: 450px;
+  background-color: @fuel-white-color;
+  border-radius: 18px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 15%;
+  box-shadow: 0 1px 1px rgba(0,0,0,.5);
+}
+
+.login-logo-circle {
+  width: 160px;
+  height: 160px;
+  background-color: @fuel-white-color;
+  position: relative;
+  top: -80px;
+  border-radius: 80px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.login-logo {
+  background: url(../img/fuel-big-logo.png) repeat scroll 0 0 rgba(0, 0, 0, 0);
+  height: 260px;
+  left: 156px;
+  position: relative;
+  top: -240px;
+  width: 200px;
+  margin-bottom: -220px;
+}
+
+.login-fields-box {
+  height: 276px;
+  overflow: hidden;
+}
+
+.login-fields-box > .form-horizontal .control-group > label {
+  width: 114px;
+  font-size: 18px;
+  padding-top: 5px;
+}
+
+.login-fields-box > .form-horizontal .control-group > label > i {
+    color: #999999;
+}
+
+.login-fields-box > .form-horizontal .control-group > .controls {
+  margin-left: 120px;
+}
+
+.login-fields-box > .form-horizontal .control-group > .controls > button {
+  width: 160px;
+}
+
+.login-error-auth {
+  margin: 5px 0px 20px;
+  height: 20px;
+  overflow: hidden;
+}
+
+.login-language-box {
+  margin-top: 40px;
+  margin-left: 180px;
+}
+
+.login-copyrights {
+  margin-top: 20px;
+}
+.login-copyrights > p {
+  line-height: 18px;
+  margin: 0px;
+  padding: 0px;
+  color: #cccccc;
+  font-size: @font-size-small-2;
 }

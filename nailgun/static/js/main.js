@@ -25,6 +25,7 @@ requirejs.config({
         'jquery-autoNumeric': 'js/libs/bower/autoNumeric/js/autoNumeric',
         utils: 'js/utils',
         expression_parser: 'js/expression_parser',
+        keystone_client: 'js/keystone_client',
         lodash: 'js/libs/bower/lodash/js/lodash',
         backbone: 'js/libs/custom/backbone',
         stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',

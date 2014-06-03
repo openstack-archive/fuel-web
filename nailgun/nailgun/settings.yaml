@@ -9,7 +9,7 @@ VERSION:
   astute_sha: "Unknown build"
   fuellib_sha: "Unknown build"
   ostf_sha: "Unknown build"
-  mirantis: "no"
+  mirantis: "yes"
 
 FUEL_KEY: "Unknown"
 
@@ -514,6 +514,9 @@ DNS_SEARCH: "example.com"
 
 FAKE_TASKS_TICK_INTERVAL: "1"
 FAKE_TASKS_TICK_COUNT: "30"
+
+FAKE_KEYSTONE_USERNAME: admin
+FAKE_KEYSTONE_PASSWORD: admin
 
 RHEL_VALIDATION_TIMEOUT: 10
 

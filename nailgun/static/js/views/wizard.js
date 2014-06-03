@@ -27,9 +27,10 @@ define(
     'text!templates/dialogs/create_cluster_wizard/ready.html',
     'text!templates/dialogs/create_cluster_wizard/control_template.html',
     'text!templates/dialogs/create_cluster_wizard/warning.html',
+    'text!templates/dialogs/create_cluster_wizard/text_input.html',
     'text!js/wizard.json'
 ],
-function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, wizardInfo) {
+function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate, wizardInfo) {
     'use strict';
 
     var views = {};
@@ -305,6 +306,17 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
     views.WizardPane = Backbone.View.extend({
         template: _.template(commonWizardTemplate),
         constructorName: 'WizardPane',
+        events: {
+            'click span.add-on': 'showPassword'
+        },
+        showPassword: function(e) {
+            var input = this.$(e.currentTarget).prev();
+            if (input.attr('disabled')) {
+                return;
+            }
+            input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
+            this.$(e.currentTarget).find('i').toggle();
+        },
         initialize: function(options) {
             _.defaults(this, options);
             this.attachWarningListeners();
@@ -319,43 +331,54 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
             });
             var controlTpl = _.template(controlTemplate);
             _.each(this.config, function(attributeConfig, attribute) {
-                if (attributeConfig.type == 'checkbox') {
-                    controlsHtml += (controlTpl(_.extend(attributeConfig, {
-                        pane: attribute,
-                        labelClasses: configToUse.labelClasses,
-                        descriptionClasses: configToUse.descriptionClasses,
-                        label: attributeConfig.label,
-                        hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription ,
-                        description: attributeConfig.description
-                    })));
-                }
-                else {
-                    _.each(attributeConfig.values, function(value, valueIndex) {
-                        var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
-                        if (shouldBeAdded) {
-                            controlsHtml += (controlTpl(_.extend(attributeConfig, {
-                                value: value.data,
-                                pane: attribute,
-                                labelClasses: configToUse.labelClasses || '',
-                                descriptionClasses: configToUse.descriptionClasses || '',
-                                label: value.label,
-                                hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription,
-                                description: value.description || ''
-                            })));
-                        }
-                    }, this);
+                switch (attributeConfig.type) {
+                    case 'checkbox':
+                        controlsHtml += (controlTpl(_.extend(attributeConfig, {
+                            pane: attribute,
+                            labelClasses: configToUse.labelClasses,
+                            descriptionClasses: configToUse.descriptionClasses,
+                            label: attributeConfig.label,
+                            hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription ,
+                            description: attributeConfig.description
+                        })));
+                        break;
+                    case 'radio':
+                        _.each(attributeConfig.values, function(value, valueIndex) {
+                            var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
+                            if (shouldBeAdded) {
+                                controlsHtml += (controlTpl(_.extend(attributeConfig, {
+                                    value: value.data,
+                                    pane: attribute,
+                                    labelClasses: configToUse.labelClasses || '',
+                                    descriptionClasses: configToUse.descriptionClasses || '',
+                                    label: value.label,
+                                    hasDescription: _.isUndefined(configToUse.hasDescription) ? false : configToUse.hasDescription,
+                                    description: value.description || ''
+                                })));
+                            }
+                        }, this);
+                        break;
+                    case 'text':
+                    case 'password':
+                        var newControlTemplate = _.template(textInputTemplate);
+                        var newControlsHtml = '';
+                        newControlsHtml = (newControlTemplate(_.extend(attributeConfig, {attribute: attribute})));
+                        controlsHtml += newControlsHtml;
+                        break;
                 }
             }, this);
             return controlsHtml;
         },
         attachWarningListeners: function() {
             var attributesToObserve = [];
-            _.each(this.wizard.warnings[this.constructorName], function(paneConfig) {
-                _.each(paneConfig, function(paneRestrictions) {
-                    _.each(paneRestrictions, function(message, condition) {
-                        var evaluatedExpression = utils.evaluateExpression(condition, {default: this.wizard.model}, {strict: false});
-                        _.each(evaluatedExpression.modelPaths, function(modelPath) {
-                            attributesToObserve.push(modelPath.attribute);
+            _.each(['warnings', 'restrictions'], function (key) {
+                _.each(this.wizard[key][this.constructorName], function(paneConfig) {
+                    _.each(paneConfig, function(paneRestrictions) {
+                        _.each(paneRestrictions, function(message, condition) {
+                            var evaluatedExpression = utils.evaluateExpression(condition, {default: this.wizard.model}, {strict: false});
+                            _.each(evaluatedExpression.modelPaths, function(modelPath) {
+                                attributesToObserve.push(modelPath.attribute);
+                            }, this);
                         }, this);
                     }, this);
                 }, this);
@@ -368,16 +391,21 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
             this.bindings = {};
             _.each(this.config, function(attributeConfig, attribute) {
                 this.bindings['[name=' + attribute + ']'] = {observe: this.constructorName + '.' + attribute};
-                if (attributeConfig.type == 'radio') {
-                    _.each(attributeConfig.values, function(value) {
-                        if (value.restrictions) {
-                            this.createDisabledBindings(_.keys(value.restrictions), {name: attribute, value: value.data});
+                switch (attributeConfig.type) {
+                    case 'radio':
+                        _.each(attributeConfig.values, function(value) {
+                            if (value.restrictions) {
+                                this.createDisabledBindings(_.keys(value.restrictions), {name: attribute, value: value.data});
+                            }
+                        }, this);
+                        break;
+                    case 'checkbox':
+                    case 'text':
+                    case 'password':
+                        if (attributeConfig.restrictions) {
+                            this.createDisabledBindings(_.keys(attributeConfig.restrictions), {name: attribute});
                         }
-                    }, this);
-                } else {
-                    if (attributeConfig.restrictions) {
-                        this.createDisabledBindings(_.keys(attributeConfig.restrictions), {name: attribute});
-                    }
+                        break;
                 }
             }, this);
             this.stickit(this.wizard.model);
@@ -450,7 +478,7 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
             }, this);
             if (messages.length) {
                 var translationParams = this.buildTranslationParams();
-                _.each(_.uniq(messages), function(message) {
+                _.each(_.compact(_.uniq(messages)), function(message) {
                     this.showWarning($.t(message, translationParams));
                 }, this);
             }

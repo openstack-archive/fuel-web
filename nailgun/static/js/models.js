@@ -720,7 +720,26 @@ define(['utils', 'deepModel'], function(utils) {
             _.each(config, _.bind(function(paneConfig, paneName) {
                 result[paneName] = {};
                 _.each(paneConfig, function(attributeConfig, attribute) {
-                        result[paneName][attribute] = attributeConfig.value || null;
+                    var attributeConfigValue = attributeConfig.value;
+                    switch (attributeConfig.type) {
+                        case 'checkbox':
+                            if (_.isUndefined(attributeConfigValue)) {
+                                attributeConfigValue = false;
+                            }
+                            break;
+                        case 'radio':
+                            if (_.isUndefined(attributeConfigValue)) {
+                                attributeConfigValue = _.first(attributeConfig.values).data;
+                            }
+                            break;
+                        case 'password':
+                        case 'text':
+                            if (_.isUndefined(attributeConfigValue)) {
+                                attributeConfigValue = "";
+                            }
+                            break;
+                    }
+                    result[paneName][attribute] = attributeConfigValue;
                 });
             }, this));
             return result;

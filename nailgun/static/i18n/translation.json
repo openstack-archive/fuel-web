@@ -346,6 +346,9 @@
                 "cluster_was_modified_from_cli" : "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",
                 "reconfigure_redhat_account": "You can __opt1__ reconfigure your Red Hat account __opt2__ or "
             },
+            "login_page": {
+                "title": "Log In"
+            },
             "capacity_page": {
                 "title": "Capacity Audit",
                 "license_usage": "License Usage Report",

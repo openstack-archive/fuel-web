@@ -65,6 +65,14 @@
                 "management": "Management",
                 "storage": "Storage"
             },
+            "login_page": {
+                "username": "Username",
+                "password": "Password",
+                "login_error": "Unable to log in",
+                "log_in": "Log in",
+                "language_change": "Change Language",
+                "title": "Log In"
+            },
             "navbar": {
                 "environments": "Environments",
                 "releases": "Releases",

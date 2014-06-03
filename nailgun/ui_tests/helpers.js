@@ -46,6 +46,29 @@ casper.test.assertSelectorDisappears = function(selector, message, timeout) {
     }, timeout);
 }
 
+casper.authenticate = function(options) {
+    options = options || {};
+    this.thenOpen(baseUrl + 'keystone/v2.0/tokens', {
+        method: 'post',
+        headers: {'Content-Type': 'application/json'},
+        data: JSON.stringify({
+            auth: {
+                passwordCredentials: {
+                    username: options.username || 'admin',
+                    password: options.password || 'admin'
+                }
+            }
+        })
+    });
+    this.then(function() {
+        this.evaluate(function() {
+            var response = JSON.parse(document.getElementsByTagName('body')[0].innerText);
+            localStorage.setItem('token', response.access.token.id);
+        });
+    });
+    return this;
+}
+
 casper.createCluster = function(options) {
     options.release = 1; // centos
     return this.thenOpen(baseUrl + 'api/clusters', {

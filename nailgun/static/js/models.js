@@ -727,7 +727,28 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
 
     models.FuelVersion = Backbone.Model.extend({
         constructorName: 'FuelVersion',
-        urlRoot: '/api/version'
+        urlRoot: '/api/version',
+        authExempt: true
+    });
+
+    models.User = Backbone.Model.extend({
+        constructorName: 'User',
+        locallyStoredAttributes: ['username', 'password'],
+        initialize: function() {
+            _.each(this.locallyStoredAttributes, function(attribute) {
+                var locallyStoredValue = localStorage.getItem(attribute);
+                if (locallyStoredValue) {
+                    this.set(attribute, locallyStoredValue);
+                }
+                this.on('change:' + attribute, function(model, value) {
+                    if (_.isUndefined(value)) {
+                        localStorage.removeItem(attribute);
+                    } else {
+                        localStorage.setItem(attribute, value);
+                    }
+                });
+            }, this);
+        }
     });
 
     models.LogsPackage = Backbone.Model.extend({

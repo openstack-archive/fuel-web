@@ -72,6 +72,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             return $.when(this.statistics.fetch(), this.notifications.fetch({limit: this.notificationsDisplayCount}));
         },
         initialize: function(options) {
+            app.user.on('change:authenticated', this.refresh, this);
             this.elements = _.isArray(options.elements) ? options.elements : [];
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();

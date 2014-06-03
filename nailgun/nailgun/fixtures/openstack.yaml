@@ -177,6 +177,8 @@
           metadata:
             label: "vCenter"
             weight: 20
+            restrictions:
+              - "settings:common.libvirt_type.value != 'vcenter'"
           use_vcenter:
             value: true
             label: ""
@@ -189,32 +191,24 @@
             description: "IP Address of vCenter"
             weight: 10
             type: "text"
-            restrictions:
-              - "settings:common.libvirt_type.value != 'vcenter'"
           vc_user:
             value: ""
             label: "Username"
             description: "vCenter admin username"
             weight: 30
             type: "text"
-            restrictions:
-              - "settings:common.libvirt_type.value != 'vcenter'"
           vc_password:
             value: ""
             label: "Password"
             description: "vCenter admin password"
             weight: 30
             type: "password"
-            restrictions:
-              - "settings:common.libvirt_type.value != 'vcenter'"
           cluster:
             value: ""
             label: "Cluster"
             description: "vCenter cluster name"
             weight: 40
             type: "text"
-            restrictions:
-              - "settings:common.libvirt_type.value != 'vcenter'"
         common:
           metadata:
             label: "Common"

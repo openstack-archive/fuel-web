@@ -189,6 +189,9 @@
             description: "IP Address of vCenter"
             weight: 10
             type: "text"
+            regex:
+              source: "^.+$"
+              error: "Invalid IP address"
             restrictions:
               - "settings:common.libvirt_type.value != 'vcenter'"
           vc_user:
@@ -197,6 +200,9 @@
             description: "vCenter admin username"
             weight: 30
             type: "text"
+            regex:
+              source: "^.+$"
+              error: "Invalid username"
             restrictions:
               - "settings:common.libvirt_type.value != 'vcenter'"
           vc_password:
@@ -205,6 +211,9 @@
             description: "vCenter admin password"
             weight: 30
             type: "password"
+            regex:
+              source: "^.+$"
+              error: "Invalid password"
             restrictions:
               - "settings:common.libvirt_type.value != 'vcenter'"
           cluster:
@@ -213,6 +222,9 @@
             description: "vCenter cluster name"
             weight: 40
             type: "text"
+            regex:
+              source: "^.+$"
+              error: "Invalid cluster name"
             restrictions:
               - "settings:common.libvirt_type.value != 'vcenter'"
         common:

@@ -262,10 +262,12 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                     .done(_.bind(function() {
                         this.collection.add(cluster);
                         this.settings.url = _.result(cluster, 'url') + '/attributes';
-                        this.settings.fetch()
+                        cluster.set('networkConfiguration', new models.NetworkConfiguration());
+                        cluster.get('networkConfiguration').url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
+                        $.when(this.settings.fetch(), cluster.get('networkConfiguration').fetch())
                             .then(_.bind(this.beforeSettingsSaving, this))
                             .then(_.bind(function() {
-                                return this.settings.save();
+                                return this.settings.save(this.settings.attributes, {validate: true, cluster: cluster});
                             }, this))
                             .done(_.bind(function() {
                                 this.$el.modal('hide');

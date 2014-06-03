@@ -53,7 +53,7 @@
           "label": "dialog.create_cluster_wizard.compute.vcenter",
           "description": "dialog.create_cluster_wizard.compute.vcenter_description",
           "warnings": {
-             "Mode.mode == 'ha_compact' and Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.ha_vcenter_warning"
+            "Mode.mode == 'ha_compact' and Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.ha_vcenter_warning"
           }
         }
       ]

@@ -81,7 +81,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.$('input.error').removeClass('error');
             this.$('.description').show();
             this.$('.validation-error').hide();
-            this.settings.isValid();
+            this.settings.isValid({cluster: this.model});
             this.calculateButtonsState();
         },
         composeBindings: function() {
@@ -167,32 +167,27 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             }, this);
             return disabled;
         },
-        calculateSettingDisabledState: function(groupName, settingName, composeListeners) {
+        handleSettingLimitations: function(groupName, settingName, composeListeners) {
             var settingPath = groupName + '.' + settingName;
-            var isSettingDisabled = false;
-            var callback = _.bind(this.calculateSettingDisabledState, this, groupName, settingName, false);
-            var handleRestriction = _.bind(function(restriction, isDisabled, isConflict) {
-                var evaluatedRestriction = utils.evaluateExpression(restriction, this.configModels);
-                isDisabled = isDisabled || evaluatedRestriction.value;
-                if (composeListeners) {
+            var callback = _.bind(this.handleSettingLimitations, this, groupName, settingName, false);
+            if (composeListeners) {
+                _.each(this.settings.get(settingPath + '.restrictions'), function(restriction) {
+                    var evaluatedRestriction = utils.evaluateExpression(restriction, this.configModels);
                     _.invoke(evaluatedRestriction.modelPaths, 'change', callback);
-                }
-                return isDisabled;
-            }, this);
-            _.each(this.settings.get(settingPath + '.restrictions'), function(restriction) {
-                isSettingDisabled = handleRestriction(restriction, isSettingDisabled, false);
-                return !isSettingDisabled;
-            });
-            if (!isSettingDisabled) {
-                isSettingDisabled = this.checkDependentRoles(settingPath) || this.checkDependentSettings(settingPath, callback, composeListeners);
+                }, this);
             }
+            var isSettingDisabled = this.settings.get(settingPath + '.disabled') || this.checkDependentRoles(settingPath) || this.checkDependentSettings(settingPath, callback, composeListeners);
             this.settings.set(settingPath + '.disabled', isSettingDisabled);
             _.each(this.settings.get(settingPath + '.values'), function(value, index) {
                 var isOptionDisabled = false;
                 _.each(value.restrictions, function(restriction) {
-                    isOptionDisabled = handleRestriction(restriction, isOptionDisabled, false);
+                    var evaluatedRestriction = utils.evaluateExpression(restriction, this.configModels);
+                    if (composeListeners) {
+                        _.invoke(evaluatedRestriction.modelPaths, 'change', callback);
+                    }
+                    isOptionDisabled = evaluatedRestriction.value;
                     return !isOptionDisabled;
-                });
+                }, this);
                 var settingValues = _.cloneDeep(this.settings.get(settingPath + '.values'));
                 settingValues[index].disabled = isOptionDisabled;
                 this.settings.set(settingPath + '.values', settingValues);
@@ -219,8 +214,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     this.$('.settings').append(settingGroupView.render().el);
                 }, this);
                 this.composeBindings();
-                this.settings.isValid();
-                this.calculateButtonsState();
+                this.onSettingChange();
             }
             return this;
         },
@@ -234,8 +228,8 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.settings.on('invalid', function(model, errors) {
                 _.each(errors, function(error) {
                     var input = this.$('input[name="' + error.field + '"]');
-                    input.addClass('error').parent().siblings('.validation-error').text(error.message);
-                    input.parent().siblings('.parameter-description').toggle();
+                    input.addClass('error').parent().siblings('.validation-error').text(error.message).show();
+                    input.parent().siblings('.description').hide();
                 }, this);
             }, this);
             (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {
@@ -248,7 +242,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                 };
                 _.each(this.settings.attributes, function(group, groupName) {
                     _.each(group, function(setting, settingName) {
-                        this.calculateSettingDisabledState(groupName, settingName, true);
+                        this.handleSettingLimitations(groupName, settingName, true);
                     }, this);
                 }, this);
                 this.settings.on('change', this.onSettingChange, this);

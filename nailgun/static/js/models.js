@@ -321,11 +321,34 @@ define(['utils', 'deepModel'], function(utils) {
             }, this);
             return {editable: result};
         },
-        validate: function(attrs) {
+        processRestrictions: function(cluster) {
+            _.each(this.attributes, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    var settingPath = groupName + '.' + settingName;
+                    var configModels = {
+                        cluster: cluster,
+                        networking_parameters: cluster.get('networkConfiguration').get('networking_parameters'),
+                        settings: this,
+                        default: this
+                    };
+                    var disabled = false;
+                    _.each(this.get(settingPath + '.restrictions'), function(restriction) {
+                        disabled = utils.evaluateExpression(restriction, configModels).value;
+                        return !disabled;
+                    });
+                    this.set(settingPath + '.disabled', disabled);
+                }, this);
+            }, this);
+        },
+        validate: function(attrs, options) {
+            if (options && options.cluster) {
+                this.processRestrictions(options.cluster);
+            }
             var errors = [];
             _.each(attrs, function(group, groupName) {
+                //if (!group.metadata.visible) { return false; }
                 _.each(group, function(setting, settingName) {
-                    if (setting.regex && setting.regex.source) {
+                    if (setting.regex && setting.regex.source && !setting.disabled) {
                         var regExp = new RegExp(setting.regex.source);
                         if (!setting.value.match(regExp)) {
                             errors.push({

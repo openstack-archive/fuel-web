@@ -18,6 +18,8 @@ var port = system.env.SERVER_PORT || 5544;
 
 var baseUrl = 'http://127.0.0.1:' + port + '/';
 
+var authToken;
+
 casper.on('page.error', function(msg) {
     casper.echo(msg, 'ERROR');
 });
@@ -46,12 +48,44 @@ casper.test.assertSelectorDisappears = function(selector, message, timeout) {
     }, timeout);
 }
 
-casper.createCluster = function(options) {
-    options.release = 1; // centos
-    return this.thenOpen(baseUrl + 'api/clusters', {
+casper.authenticate = function(options) {
+    options = options || {};
+    var username = options.username || 'admin';
+    var password = options.password || 'admin';
+    this.thenOpen(baseUrl + 'keystone/v2.0/tokens', {
         method: 'post',
         headers: {'Content-Type': 'application/json'},
-        data: JSON.stringify(options)
+        data: JSON.stringify({
+            auth: {
+                passwordCredentials: {
+                    username: username,
+                    password: password
+                }
+            }
+        })
+    });
+    this.then(function() {
+        authToken = this.evaluate(function(username, password) {
+            localStorage.setItem('username', username);
+            localStorage.setItem('password', password);
+            var authToken = '';
+            try {
+                authToken = JSON.parse(document.body.innerText).access.token.id;
+            } catch (ignore) {}
+            return authToken;
+        }, [username, password]);
+    });
+    return this;
+}
+
+casper.createCluster = function(options) {
+    options.release = 1; // centos
+    this.then(function() {
+        return this.open(baseUrl + 'api/clusters', {
+            method: 'post',
+            headers: {'Content-Type': 'application/json', 'X-Auth-Token': authToken},
+            data: JSON.stringify(options)
+        });
     });
 }
 
@@ -136,7 +170,7 @@ casper.createNode = function(options) {
     };
     return this.thenOpen(baseUrl + 'api/nodes', {
         method: 'post',
-        headers: {'Content-Type': 'application/json'},
+        headers: {'Content-Type': 'application/json', 'X-Auth-Token': authToken},
         data: JSON.stringify(options)
     });
 }

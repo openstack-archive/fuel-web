@@ -1,3 +1,10 @@
+<div class="user-info-box">
+  <% if (version.get('auth_required') && user.get('authenticated')) { %>
+    <i class="icon-user"></i>
+    <%- user.get('username') %>
+    <a href="#logout"><%- $.t('common.logout') %></a>
+  <% } %>
+</div>
 <div class="navigation-bar">
   <div class="navigation-bar-box">
     <ul class="navigation-bar-ul">

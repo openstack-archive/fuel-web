@@ -265,7 +265,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         rangeTemplate: _.template(rangeTemplate),
         events: {
             'click .ip-ranges-control button:not([disabled])': 'changeIPRanges',
-            'focus input[name=range1]': 'autoCompleteIPRanges'
+            'focus .autocomplete input:last': 'autoCompleteIPRanges'
         },
         changeIPRanges: function(e) {
             var config = this.ipRangesConfig;

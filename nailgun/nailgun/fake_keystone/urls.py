@@ -14,18 +14,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.api.v1 import urls as api_urls
-from nailgun.fake_keystone import urls as fake_keystone_urls
-from nailgun.settings import settings
-from nailgun.webui import urls as webui_urls
+import web
+
+from nailgun.fake_keystone.handlers import TokensHandler
+
+urls = (
+    r"/v2.0/tokens/?$", TokensHandler.__name__,
+)
+
+_locals = locals()
 
 
-def urls():
-    urls = [
-        "/api/v1", api_urls.app(),
-        "/api", api_urls.app(),
-        "", webui_urls.app()
-    ]
-    if settings.AUTH['AUTHENTICATION_METHOD'] == 'fake':
-        urls = ["/keystone", fake_keystone_urls.app()] + urls
-    return urls
+def app():
+    return web.application(urls, _locals)

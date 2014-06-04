@@ -38,7 +38,7 @@ function(utils, models, NodeListScreen) {
                 task.on('change:status', this.render, this);
             });
             this.constructor.__super__.initialize.apply(this, arguments);
-            this.nodes.deferred = this.nodes.fetch().done(_.bind(this.render, this));
+            this.nodes.deferred = this.nodes.fetch({cache: true}).done(_.bind(this.render, this));
         }
     });
 

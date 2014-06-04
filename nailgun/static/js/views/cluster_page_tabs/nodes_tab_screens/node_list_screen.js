@@ -40,7 +40,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
         },
         update: function() {
-            this.nodes.fetch().always(_.bind(this.scheduleUpdate, this));
+            this.nodes.fetch({cache: true}).always(_.bind(this.scheduleUpdate, this));
         },
         calculateApplyButtonState: function() {
             this.applyChangesButton.set('disabled', !this.hasChanges());

@@ -157,6 +157,7 @@ define(['utils', 'deepModel'], function(utils) {
     models.Nodes = Backbone.Collection.extend({
         constructorName: 'Nodes',
         model: models.Node,
+        cacheFor: 60 * 1000,
         url: '/api/nodes',
         comparator: function(node) {
             return node.id;
@@ -192,6 +193,7 @@ define(['utils', 'deepModel'], function(utils) {
             return this.groupBy(function(node) {return node.getRolesSummary() + '; \u00A0' + node.getHardwareSummary();});
         }
     });
+    _.extend(models.Nodes.prototype, cacheMixin);
 
     models.NodesStatistics = Backbone.Model.extend({
         constructorName: 'NodesStatistics',

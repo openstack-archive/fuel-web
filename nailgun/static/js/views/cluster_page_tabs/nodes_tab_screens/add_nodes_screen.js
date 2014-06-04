@@ -34,11 +34,11 @@ function(utils, models, NodeListScreen) {
             _.defaults(this, options);
             this.nodes = new models.Nodes();
             this.nodes.fetch = function(options) {
-                return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
+                return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}, cache: true}, options));
             };
             this.constructor.__super__.initialize.apply(this, arguments);
             this.nodes.on('change:checked', this.removeRoles, this);
-            this.nodes.deferred = this.nodes.fetch().done(_.bind(this.render, this));
+            this.nodes.deferred = this.nodes.fetch({cache:true}).done(_.bind(this.render, this));
         }
     });
 

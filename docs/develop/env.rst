@@ -38,7 +38,7 @@ Astute
 #. Install Ruby dependencies::
 
     sudo apt-get install git curl
-    \curl -sSL https://get.rvm.io | bash -s stable
+    curl -sSL https://get.rvm.io | bash -s stable
     source ~/.rvm/scripts/rvm
     rvm install 2.1
     rvm use 2.1
@@ -84,11 +84,12 @@ The following steps are required to build the Fuel ISO images on Ubuntu
     sudo apt-get install python-pip kpartx extlinux unzip genisoimage nodejs multistrap
     sudo sh -c "echo deb http://mirror.yandex.ru/mirrors/docker/ docker main > /etc/apt/sources.list.d/docker.list"
     sudo apt-get update
-    sudo apt-get install lxc-docker lrzip python-daemon
+    sudo apt-get install lxc-docker lrzip
     sudo service docker start
     sudo gem install bundler -v 1.2.1
     sudo gem install builder
-    sudo pip install xmlbuilder jinja2
+    sudo apt-get remove python-daemon python-lockfile
+    sudo pip install xmlbuilder jinja2 lockfile==0.8 python-daemon==1.5.5
     sudo npm install -g grunt-cli
 
 #. (alternative) If you have completed the instructions in the previous

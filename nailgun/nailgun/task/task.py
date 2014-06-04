@@ -194,7 +194,7 @@ class DeletionTask(object):
                     'id': node.id,
                     'uid': node.id,
                     'roles': node.roles,
-                    'slave_name': TaskHelper.make_slave_name(node.id)
+                    'slave_name': TaskHelper.make_slave_name(node)
                 })
 
                 if USE_FAKE:
@@ -222,7 +222,7 @@ class DeletionTask(object):
         for node in nodes_to_delete_constant:
             node_db = db().query(Node).get(node['id'])
 
-            slave_name = TaskHelper.make_slave_name(node['id'])
+            slave_name = TaskHelper.make_slave_name(node_db)
             logger.debug("Removing node from database and pending it "
                          "to clean its MBR: %s", slave_name)
             if node_db.status == 'discover':
@@ -274,7 +274,7 @@ class StopDeploymentTask(object):
                     {
                         'uid': n.uid,
                         'roles': n.roles,
-                        'slave_name': TaskHelper.make_slave_name(n.id)
+                        'slave_name': TaskHelper.make_slave_name(node_db)
                     } for n in nodes_to_stop
                 ],
                 "engine": {
@@ -307,7 +307,7 @@ class ResetEnvironmentTask(object):
                     {
                         'uid': n.uid,
                         'roles': n.roles,
-                        'slave_name': TaskHelper.make_slave_name(n.id)
+                        'slave_name': TaskHelper.make_slave_name(node_db)
                     } for n in nodes_to_reset
                 ],
                 "engine": {

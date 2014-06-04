@@ -56,9 +56,9 @@ class ProvisioningSerializer(object):
         serialized_node = {
             'uid': node.uid,
             'power_address': node.ip,
-            'name': TaskHelper.make_slave_name(node.id),
+            'name': TaskHelper.make_slave_name(node),
             # right now it duplicates to avoid possible issues
-            'slave_name': TaskHelper.make_slave_name(node.id),
+            'slave_name': TaskHelper.make_slave_name(node),
             'hostname': node.fqdn,
             'power_pass': cls.get_ssh_key_path(node),
 

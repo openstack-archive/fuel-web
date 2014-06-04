@@ -139,7 +139,7 @@ class DeploymentMultinodeSerializer(object):
                 node_list.append({
                     'uid': node.uid,
                     'fqdn': node.fqdn,
-                    'name': TaskHelper.make_slave_name(node.id),
+                    'name': TaskHelper.make_slave_name(node),
                     'role': role})
 
         return node_list

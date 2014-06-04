@@ -204,7 +204,7 @@ class DeploymentMultinodeSerializer(object):
             'status': node.status,
             'role': role,
             # TODO (eli): need to remove, requried
-            # for fucking fake thread only
+            # for the fake thread only
             'online': node.online
         }
 

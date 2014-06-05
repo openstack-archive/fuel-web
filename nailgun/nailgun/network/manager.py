@@ -951,6 +951,29 @@ class NetworkManager(object):
         ).first()
 
     @classmethod
+    def get_ifaces_for_specific_network_in_cluster(
+            cls, cluster_id, netname):
+        """Method for receiving node_id:iface pairs for all nodes in
+            specific cluster
+        :param cluster_id: Node database ID.
+        :type  cluster_id: int
+        :param netname: Nailgun specific network name
+        :type  netname: str
+        :returns: List of node_id, iface pairs for all nodes in cluster.
+        """
+        nics_db = db().query(
+            NodeNICInterface.node_id, NodeNICInterface.name).filter(
+                NodeNICInterface.node.has(cluster_id=cluster_id),
+                NodeNICInterface.assigned_networks_list.any(name=netname)
+            )
+        bonds_db = db().query(
+            NodeBondInterface.node_id, NodeBondInterface.name).filter(
+                NodeBondInterface.node.has(cluster_id=cluster_id),
+                NodeBondInterface.assigned_networks_list.any(name=netname)
+            )
+        return nics_db.union(bonds_db).yield_per(100)
+
+    @classmethod
     def _set_ip_ranges(cls, network_group_id, ip_ranges):
         # deleting old ip ranges
         db().query(IPAddrRange).filter_by(

@@ -27,6 +27,7 @@ from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun import objects
 from nailgun.openstack.common import jsonutils
 import nailgun.rpc as rpc
 from nailgun.task import task as tasks
@@ -655,22 +656,28 @@ class VerifyNetworksTaskManager(TaskManager):
             # this one is connected with UI issues - we need to
             # separate if error happened inside nailgun or somewhere
             # in the orchestrator, and UI does it by task name.
-
-            dhcp_subtask = Task(
-                name='check_dhcp',
-                cluster=self.cluster,
-                parent_id=task.id)
-            db().add(dhcp_subtask)
-            db().commit()
-            db().refresh(task)
-
             task.name = 'verify_networks'
 
-            self._call_silently(
-                task,
-                tasks.VerifyNetworksTask,
-                vlan_ids
-            )
+            dhcp_subtask = objects.task.Task.create_subtask(
+                task, name='check_dhcp',)
+            db().add(dhcp_subtask)
+
+            multicast = objects.task.Task.create_subtask(
+                task, name='multicast_verification')
+            db().add(multicast)
+            db().flush()
+            corosync = self.cluster.attributes['editable']['corosync']
+            group = corosync['group']['value']
+            port = corosync['port']['value']
+            conf = {'group': group, 'port': port}
+
+            verify_task = tasks.VerifyNetworksTask(task, vlan_ids)
+            verify_task.add_subtask(tasks.CheckDhcpTask(dhcp_subtask,
+                                                        vlan_ids))
+            verify_task.add_subtask(
+                tasks.MulticastVerificationTask(multicast, conf))
+
+            self._call_silently(task, verify_task)
 
         return task
 
@@ -745,6 +752,7 @@ class DownloadReleaseTaskManager(TaskManager):
 
 
 class RedHatSetupTaskManager(TaskManager):
+
     def __init__(self, data):
         self.data = data
 
@@ -824,6 +832,7 @@ class RedHatSetupTaskManager(TaskManager):
 
 
 class DumpTaskManager(TaskManager):
+
     def execute(self):
         logger.info("Trying to start dump_environment task")
         self.check_running_task('dump')
@@ -839,6 +848,7 @@ class DumpTaskManager(TaskManager):
 
 
 class GenerateCapacityLogTaskManager(TaskManager):
+
     def execute(self):
         logger.info("Trying to start capacity_log task")
         self.check_running_task('capacity_log')

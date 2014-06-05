@@ -262,17 +262,25 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                     .done(_.bind(function() {
                         this.collection.add(cluster);
                         this.settings.url = _.result(cluster, 'url') + '/attributes';
-                        this.settings.fetch()
+                        cluster.set('networkConfiguration', new models.NetworkConfiguration());
+                        cluster.get('networkConfiguration').url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
+                        var displaySettingConfigurationError = _.bind(function() {
+                            this.displayErrorMessage({message: $.t('dialog.create_cluster_wizard.configuration_failed_warning')});
+                        }, this);
+                        $.when(this.settings.fetch(), cluster.get('networkConfiguration').fetch())
                             .then(_.bind(this.beforeSettingsSaving, this))
                             .then(_.bind(function() {
-                                return this.settings.save();
+                                this.settings.processRestrictions(cluster);
+                                var result = this.settings.save(this.settings.attributes, {
+                                    success: _.bind(function() {
+                                        this.$el.modal('hide');
+                                    }, this),
+                                    error: displaySettingConfigurationError
+                                });
+                                if (!result) { displaySettingConfigurationError(); }
+                                return result;
                             }, this))
-                            .done(_.bind(function() {
-                                this.$el.modal('hide');
-                            }, this))
-                            .fail(_.bind(function() {
-                                this.displayErrorMessage({message: $.t('dialog.create_cluster_wizard.configuration_failed_warning')});
-                            }, this));
+                            .fail(displaySettingConfigurationError);
                     }, this))
                     .fail(_.bind(function(response) {
                         if (response.status == 409) {

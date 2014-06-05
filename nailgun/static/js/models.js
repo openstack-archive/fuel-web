@@ -311,7 +311,7 @@ define(['utils', 'deepModel'], function(utils) {
         toJSON: function(options) {
             var result = this.constructor.__super__.toJSON.call(this, options);
             _.each(result, function(group, groupName) {
-                result[groupName].metadata = _.omit(group.metadata, 'disabled', 'visible');
+                result[groupName].metadata = _.omit(group.metadata, 'disabled', 'visible', 'hasDependentRole');
                 _.each(group, function(setting, settingName) {
                     group[settingName] = _.omit(setting, 'disabled');
                     _.each(setting.values, function(option, index) {
@@ -321,20 +321,48 @@ define(['utils', 'deepModel'], function(utils) {
             }, this);
             return {editable: result};
         },
+        processRestrictions: function(cluster) {
+            var configModels = {
+                cluster: cluster,
+                networking_parameters: cluster.get('networkConfiguration').get('networking_parameters'),
+                settings: this,
+                default: this
+            };
+            var handleRestrictions = function(restrictions) {
+                return _.any(restrictions, function(restriction) {
+                    return utils.evaluateExpression(restriction, configModels).value;
+                });
+            };
+            _.each(this.attributes, function(group) {
+                group.metadata.visible = !handleRestrictions(group.metadata.restrictions);
+                if (group.metadata.visible) {
+                    _.each(group, function(setting) {
+                        setting.disabled = handleRestrictions(setting.restrictions);
+                        if (!setting.disabled) {
+                            _.each(setting.values, function(value) {
+                                value.disabled = handleRestrictions(value.restrictions);
+                            });
+                        }
+                    });
+                }
+            });
+        },
         validate: function(attrs) {
             var errors = [];
             _.each(attrs, function(group, groupName) {
-                _.each(group, function(setting, settingName) {
-                    if (setting.regex && setting.regex.source) {
-                        var regExp = new RegExp(setting.regex.source);
-                        if (!setting.value.match(regExp)) {
-                            errors.push({
-                                field: groupName + '.' + settingName,
-                                message: setting.regex.error
-                            });
+                if (group.metadata.visible) {
+                    _.each(group, function(setting, settingName) {
+                        if (setting.regex && setting.regex.source && !setting.disabled) {
+                            var regExp = new RegExp(setting.regex.source);
+                            if (!setting.value.match(regExp)) {
+                                errors.push({
+                                    field: groupName + '.' + settingName,
+                                    message: setting.regex.error
+                                });
+                            }
                         }
-                    }
-                });
+                    });
+                }
             });
             return errors.length ? errors : null;
         }

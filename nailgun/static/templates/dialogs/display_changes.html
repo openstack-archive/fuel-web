@@ -44,7 +44,8 @@
     var warnings = {
      'controller': $.t("dialog.display_changes.warnings.controller", {nodeSize: size}),
      'mongo': $.t("dialog.display_changes.warnings.mongo"),
-     'compute': $.t("dialog.display_changes.warnings.compute")
+     'compute': $.t("dialog.display_changes.warnings.compute"),
+     'settings': $.t("dialog.display_changes.warnings.invalid_settings")
     };
     var warning = null, canDeploy = true;
   %>
@@ -64,6 +65,8 @@
       warning = 'mongo';
     } else if (!cluster.get('nodes').nodesAfterDeploymentWithRole('compute') && cluster.get('settings').get('common').libvirt_type.value !== 'vcenter') {
       warning = 'compute';
+    } else if (!cluster.get('settings').isValid()) {
+      warning = 'settings';
     }
   %>
   <% if (warning) { %>

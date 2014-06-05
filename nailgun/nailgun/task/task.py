@@ -364,14 +364,7 @@ class ClusterDeletionTask(object):
 
 class VerifyNetworksTask(object):
 
-    @classmethod
-    def _subtask_message(cls, task):
-        for subtask in task.subtasks:
-            yield subtask.name, {'respond_to': '{0}_resp'.format(subtask.name),
-                                 'task_uuid': subtask.uuid}
-
-    @classmethod
-    def _message(cls, task, data):
+    def _get_message_body(cls, task, data):
         nodes = []
         for n in task.cluster.nodes:
             node_json = {'uid': n.id, 'networks': []}
@@ -401,15 +394,16 @@ class VerifyNetworksTask(object):
                     {'iface': nic.name, 'vlans': vlans}
                 )
             nodes.append(node_json)
+        return {'task_uuid': task.uuid, 'nodes': nodes}
+
+    @classmethod
+    def _message(cls, task, data):
+        #TODO(dshulyak): rename method in astute dispatcher
         message = make_astute_message(
-            task.name,
-            '{0}_resp'.format(task.name),
-            {
-                'task_uuid': task.uuid,
-                'nodes': nodes
-            }
+            'verify_networks',
+            'verify_networks_resp',
+            cls._get_message_body(task, data)
         )
-        message['subtasks'] = dict(cls._subtask_message(task))
         return message
 
     @classmethod
@@ -422,6 +416,20 @@ class VerifyNetworksTask(object):
         db().add(task)
         db().commit()
         rpc.cast('naily', message)
+
+
+class CheckDhcpTask(VerifyNetworksTask):
+    """Task for dhcp verification
+    """
+
+    @classmethod
+    def _message(cls, task, data):
+        message = make_astute_message(
+            'check_dhcp',
+            '{0}_resp'.format(task.name),
+            cls._get_message_body(task, data)
+        )
+        return message
 
 
 class CheckNetworksTask(object):

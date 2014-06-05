@@ -32,6 +32,8 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.db.sqlalchemy.models import NodeBondInterface
+from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
@@ -362,18 +364,15 @@ class ClusterDeletionTask(object):
         DeletionTask.execute(task, 'remove_cluster_resp')
 
 
-class VerifyNetworksTask(object):
+class BaseNetworkVerification(object):
 
-    @classmethod
-    def _subtask_message(cls, task):
-        for subtask in task.subtasks:
-            yield subtask.name, {'respond_to': '{0}_resp'.format(subtask.name),
-                                 'task_uuid': subtask.uuid}
+    def __init__(self, task, config):
+        self.task = task
+        self.config = config
 
-    @classmethod
-    def _message(cls, task, data):
+    def get_message_body(self):
         nodes = []
-        for n in task.cluster.nodes:
+        for n in self.task.cluster.nodes:
             node_json = {'uid': n.id, 'networks': []}
 
             for nic in n.nic_interfaces:
@@ -388,7 +387,8 @@ class VerifyNetworksTask(object):
                     if not ng.cluster_id:
                         vlans.append(0)
                         continue
-                    data_ng = filter(lambda i: i['name'] == ng.name, data)[0]
+                    data_ng = filter(lambda i: i['name'] == ng.name,
+                                     self.config)[0]
                     if data_ng['vlans']:
                         vlans.extend(data_ng['vlans'])
                     else:
@@ -401,27 +401,70 @@ class VerifyNetworksTask(object):
                     {'iface': nic.name, 'vlans': vlans}
                 )
             nodes.append(node_json)
-        message = make_astute_message(
-            task.name,
-            '{0}_resp'.format(task.name),
+
+        return nodes
+
+    def get_message(self):
+        nodes = self.get_message_body()
+        return make_astute_message(
+            self.task.name,
+            '{0}_resp'.format(self.task.name),
             {
-                'task_uuid': task.uuid,
+                'task_uuid': self.task.uuid,
                 'nodes': nodes
             }
         )
-        message['subtasks'] = dict(cls._subtask_message(task))
-        return message
 
-    @classmethod
-    def execute(cls, task, data):
-        message = cls._message(task, data)
+    def execute(self):
+        message = self.get_message()
+
         logger.debug("%s method is called with: %s",
-                     task.name, message)
+                     self.task.name, message)
 
-        task.cache = message
-        db().add(task)
+        self.task.cache = message
+        db().add(self.task)
         db().commit()
         rpc.cast('naily', message)
+
+
+class VerifyNetworksTask(BaseNetworkVerification):
+
+    def __init__(self, *args, **kwargs):
+        super(BaseNetworkVerification, self).__init__(*args, **kwargs)
+        self.subtasks = []
+
+    def add_subtask(self, subtask):
+        self.subtasks.append(subtask.get_message())
+
+    def get_message(self):
+        message = super(VerifyNetworksTask, self).get_message()
+        message['subtasks'] = self.subtasks
+        return message
+
+
+class CheckDhcpTask(BaseNetworkVerification):
+    """Task for dhcp verification
+    """
+
+
+class MulticastVerificationTask(BaseNetworkVerification):
+
+    def get_message_body(self):
+        # multicast verification should be done only for network which
+        # corosync uses for communication - management in our case
+        nics_db = db().query(
+            NodeNICInterface.node_id, NodeNICInterface.name).filter(
+                NodeNICInterface.node.has(cluster_id=self.task.cluster_id),
+                NodeNICInterface.assigned_networks_list.any(name='management')
+            )
+        bonds_db = db().query(
+            NodeBondInterface.node_id, NodeBondInterface.name).filter(
+                NodeBondInterface.node.has(cluster_id=self.task.cluster_id),
+                NodeBondInterface.assigned_networks_list.any(name='management')
+            )
+        all_nics = nics_db.union(bonds_db).yield_per(100)
+        return [dict(self.config, iface=nic[1], uid=str(nic[0]))
+                for nic in all_nics]
 
 
 class CheckNetworksTask(object):

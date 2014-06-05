@@ -284,6 +284,28 @@
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
             type: "text"
+        corosync:
+          metadata:
+            weight: 50
+            label: "Corosync"
+          group:
+            value: "226.94.1.1"
+            label: "Group"
+            description: ""
+            weight: 10
+            type: "text"
+          port:
+            value: "12000"
+            label: "Port"
+            description: ""
+            weight: 20
+            type: "text"
+          verified:
+            value: false
+            label: "Need to pass network verification."
+            description: "Set True only if multicast is configured correctly on router."
+            weight: 10
+            type: "checkbox"
         syslog:
           metadata:
             label: "Syslog"

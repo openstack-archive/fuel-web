@@ -15,6 +15,7 @@
 #    under the License.
 
 import collections
+import copy
 import itertools
 import os
 import traceback
@@ -26,6 +27,7 @@ from nailgun import notifier
 from nailgun import objects
 from nailgun.settings import settings
 
+from nailgun.consts import TASK_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import IPAddr
 from nailgun.db.sqlalchemy.models import Node
@@ -767,6 +769,60 @@ class NailgunReceiver(object):
         else:
             objects.Task.update_verify_networks(task, status, progress,
                                                 error_msg, result)
+
+    @classmethod
+    def multicast_verification_resp(cls, **kwargs):
+        """Receiver for verification of multicast packages
+        data - {1: response, 2: response}
+        """
+        logger.info(
+            u"RPC method multicast_resp received: {0}".format(
+                jsonutils.dumps(kwargs))
+        )
+        task_uuid = kwargs.get('task_uuid')
+        task = objects.task.Task.get_by_uuid(uuid=task_uuid)
+        if kwargs.get('status'):
+            task.status = kwargs['status']
+        task.progress = kwargs.get('progress', 0)
+
+        response = kwargs.get('nodes', {})
+        error_msg = kwargs.get('error')
+
+        if task.status == TASK_STATUSES.error:
+            task.message = error_msg
+        elif task.status == TASK_STATUSES.ready:
+            errors = []
+            results = []
+            node_ids = set(config['uid'] for config
+                           in task.cache['args']['nodes'])
+            not_received_nodes = node_ids - set(response.keys())
+            if not_received_nodes:
+                msg = (u'No answer from nodes: {0}').format(
+                    list(not_received_nodes))
+                errors.append(msg)
+            for node_id, received_ids in response.iteritems():
+                result = {}
+                not_received_ids = node_ids - set(received_ids or [])
+                result = {'node_id': node_id,
+                          'not_received': list(not_received_ids)}
+                results.append(result)
+                if not_received_ids:
+                    msg = (u'Not received ids {0}'
+                           u' for node {1}.').format(not_received_ids, node_id)
+                    errors.append(msg)
+
+            task.message = '\n'.join(errors)
+            if errors:
+                task.status = TASK_STATUSES.error
+            task.result = results
+        if task.status == TASK_STATUSES.ready:
+            editable = copy.deepcopy(task.cluster.attributes.editable)
+            editable['corosync']['verified']['value'] = True
+            task.cluster.attributes.editable = editable
+        logger.debug(u'Multicast verification message %s', task.message)
+        objects.Task.update_verify_networks(
+            task, task.status,
+            task.progress, task.message, task.result)
 
     @classmethod
     def check_dhcp_resp(cls, **kwargs):

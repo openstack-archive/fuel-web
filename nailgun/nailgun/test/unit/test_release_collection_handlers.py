@@ -14,9 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from nailgun.db.sqlalchemy.models import Release
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -28,13 +27,13 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals([], response)
 
     def test_release_creation(self):
         resp = self.app.post(
             reverse('ReleaseCollectionHandler'),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'name': 'Another test release',
                 'version': '1.0',
                 'operating_system': 'CentOS'
@@ -49,7 +48,7 @@ class TestHandlers(BaseIntegrationTest):
         release_description = "This is test release"
         resp = self.app.post(
             reverse('ReleaseCollectionHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 'name': release_name,
                 'version': release_version,
                 'description': release_description,
@@ -79,7 +78,7 @@ class TestHandlers(BaseIntegrationTest):
                                 "vlan_start": 103,
                                 "assign_vip": False
                             }
-                        ]
+                            ]
                     }
                 }
             }),
@@ -89,7 +88,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.post(
             reverse('ReleaseCollectionHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 'name': release_name,
                 'version': release_version,
                 'description': release_description,
@@ -108,7 +107,7 @@ class TestHandlers(BaseIntegrationTest):
                                 "vlan_start": 103,
                                 "assign_vip": False
                             }
-                        ]
+                            ]
                     }
                 }
             }),
@@ -130,7 +129,7 @@ class TestHandlers(BaseIntegrationTest):
         release_description = "This is test release"
         resp = self.app.post(
             reverse('ReleaseCollectionHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 'name': release_name,
                 'version': release_version,
                 'description': release_description,
@@ -160,7 +159,7 @@ class TestHandlers(BaseIntegrationTest):
                                 "vlan_start": 103,
                                 "assign_vip": False
                             }
-                        ]
+                            ]
                     }
                 }
             }),
@@ -170,7 +169,7 @@ class TestHandlers(BaseIntegrationTest):
 
         resp = self.app.post(
             reverse('ReleaseCollectionHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 'name': release_name,
                 'version': release_version,
                 'description': release_description,
@@ -189,7 +188,7 @@ class TestHandlers(BaseIntegrationTest):
                                 "vlan_start": 103,
                                 "assign_vip": False
                             }
-                        ]
+                            ]
                     }
                 }
             }),
@@ -214,7 +213,7 @@ class TestHandlers(BaseIntegrationTest):
         }
         resp = self.app.post(
             reverse('ReleaseCollectionHandler'),
-            json.dumps({
+            jsonutils.dumps({
                 'name': release_name,
                 'version': release_version,
                 'description': release_description,
@@ -244,8 +243,7 @@ class TestHandlers(BaseIntegrationTest):
                                 ],
                                 "vlan_start": 103,
                                 "assign_vip": False
-                            }
-                        ]
+                            }]
                     }
                 }
             }),
@@ -258,6 +256,6 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(1, len(response))
         self.assertEquals(orch_data, response[0]["orchestrator_data"])

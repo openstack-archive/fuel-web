@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 from mock import patch
 
 from sqlalchemy.sql import not_
@@ -22,6 +21,7 @@ from sqlalchemy.sql import not_
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -34,7 +34,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_get_request_should_return_net_manager_and_networks(self):
         response = self.env.nova_networks_get(self.cluster.id)
-        data = json.loads(response.body)
+        data = jsonutils.loads(response.body)
         cluster = self.db.query(Cluster).get(self.cluster.id)
 
         self.assertEquals(data['networking_parameters']['net_manager'],
@@ -91,7 +91,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_refresh_mask_on_cidr_change(self):
         response = self.env.nova_networks_get(self.cluster.id)
-        data = json.loads(response.body)
+        data = jsonutils.loads(response.body)
 
         mgmt = [n for n in data['networks']
                 if n['name'] == 'management'][0]
@@ -100,7 +100,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.nova_networks_put(self.cluster.id, data)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
         self.db.refresh(self.cluster)
@@ -113,7 +113,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
             reverse(
                 'NeutronNetworkConfigurationHandler',
                 kwargs={'cluster_id': self.cluster.id}),
-            json.dumps({}),
+            jsonutils.dumps({}),
             headers=self.default_headers,
             expect_errors=True
         )
@@ -173,7 +173,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.nova_networks_put(self.cluster.id, new_nets,
                                           expect_errors=True)
         self.assertEquals(202, resp.status_code)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(
             task['message'],
@@ -182,7 +182,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_admin_public_floating_untagged_others_tagged(self):
         resp = self.env.nova_networks_get(self.cluster.id)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         for net in data['networks']:
             if net['name'] in ('fuelweb_admin', 'public', 'fixed'):
                 self.assertIsNone(net['vlan_start'])
@@ -192,7 +192,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def test_mgmt_storage_networks_have_no_gateway(self):
         resp = self.env.nova_networks_get(self.cluster.id)
         self.assertEquals(200, resp.status_code)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         for net in data['networks']:
             if net['name'] in ['management', 'storage']:
                 self.assertIsNone(net['gateway'])
@@ -214,7 +214,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         )
 
         resp = self.env.nova_networks_get(cluster['id'])
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         mgmt = filter(lambda n: n['name'] == 'management',
                       data['networks'])[0]
         self.assertEquals(mgmt['gateway'], '192.168.0.1')
@@ -239,7 +239,7 @@ class TestNovaNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         )
 
         resp = self.env.nova_networks_get(cluster['id'])
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         for n in data['networks']:
             if n['name'] in ('management', 'storage'):
                 self.assertIsNone(n['gateway'])
@@ -257,7 +257,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_get_request_should_return_net_provider_segment_and_networks(self):
         response = self.env.neutron_networks_get(self.cluster.id)
-        data = json.loads(response.body)
+        data = jsonutils.loads(response.body)
         cluster = self.db.query(Cluster).get(self.cluster.id)
 
         self.assertEquals(data['networking_parameters']['segmentation_type'],
@@ -278,7 +278,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_get_request_should_return_vips(self):
         response = self.env.neutron_networks_get(self.cluster.id)
-        data = json.loads(response.body)
+        data = jsonutils.loads(response.body)
 
         self.assertIn('public_vip', data)
         self.assertIn('management_vip', data)
@@ -290,7 +290,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_refresh_mask_on_cidr_change(self):
         response = self.env.neutron_networks_get(self.cluster.id)
-        data = json.loads(response.body)
+        data = jsonutils.loads(response.body)
 
         mgmt = [n for n in data['networks']
                 if n['name'] == 'management'][0]
@@ -299,7 +299,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEquals(202, resp.status_code)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
         self.db.refresh(self.cluster)
@@ -309,13 +309,13 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_do_not_update_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         data['networking_parameters']['segmentation_type'] = 'vlan'
 
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
         self.assertEquals(202, resp.status_code)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(
             task['message'],
@@ -324,7 +324,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_network_group_update_changes_network(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         network = self.db.query(NetworkGroup).get(data['networks'][0]['id'])
         self.assertIsNotNone(network)
 
@@ -338,7 +338,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_update_networks_fails_if_change_net_segmentation_type(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         network = self.db.query(NetworkGroup).get(data['networks'][0]['id'])
         self.assertIsNotNone(network)
 
@@ -348,7 +348,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(self.cluster.id, data,
                                              expect_errors=True)
         self.assertEquals(202, resp.status_code)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(
             task['message'],
@@ -363,7 +363,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         resp = self.env.neutron_networks_put(self.cluster.id, new_nets,
                                              expect_errors=True)
         self.assertEquals(202, resp.status_code)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(
             task['message'],
@@ -371,7 +371,8 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         )
 
     def test_refresh_public_cidr_on_its_change(self):
-        data = json.loads(self.env.neutron_networks_get(self.cluster.id).body)
+        data = jsonutils.loads(self.env.neutron_networks_get(
+            self.cluster.id).body)
         publ = filter(lambda ng: ng['name'] == 'public', data['networks'])[0]
         self.assertEquals(publ['cidr'], '172.16.0.0/24')
 
@@ -384,7 +385,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
         resp = self.env.neutron_networks_put(self.cluster.id, data)
         self.assertEquals(202, resp.status_code)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
 
         self.db.refresh(self.cluster)
@@ -394,7 +395,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
 
     def test_admin_public_untagged_others_tagged(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         for net in data['networks']:
             if net['name'] in ('fuelweb_admin', 'public',):
                 self.assertIsNone(net['vlan_start'])
@@ -404,7 +405,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
     def test_mgmt_storage_networks_have_no_gateway(self):
         resp = self.env.neutron_networks_get(self.cluster.id)
         self.assertEquals(200, resp.status_code)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         for net in data['networks']:
             if net['name'] in ['management', 'storage']:
                 self.assertIsNone(net['gateway'])
@@ -426,7 +427,7 @@ class TestNeutronNetworkConfigurationHandlerMultinode(BaseIntegrationTest):
         )
 
         resp = self.env.neutron_networks_get(cluster['id'])
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         mgmt = filter(lambda n: n['name'] == 'management',
                       data['networks'])[0]
         self.assertEquals(mgmt['gateway'], '192.168.0.1')
@@ -443,7 +444,8 @@ class TestNovaNetworkConfigurationHandlerHA(BaseIntegrationTest):
         self.net_manager = NetworkManager
 
     def test_returns_management_vip_and_public_vip(self):
-        resp = json.loads(self.env.nova_networks_get(self.cluster.id).body)
+        resp = jsonutils.loads(
+            self.env.nova_networks_get(self.cluster.id).body)
 
         self.assertEquals(
             resp['management_vip'],
@@ -475,11 +477,11 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
 
     def test_netconfig_error_when_admin_cidr_match_other_network_cidr(self):
         resp = self.env.nova_networks_get(self.cluster['id'])
-        nets = json.loads(resp.body)
+        nets = jsonutils.loads(resp.body)
         resp = self.env.nova_networks_put(self.cluster['id'], nets,
                                           expect_errors=True)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'check_networks')
@@ -491,7 +493,7 @@ class TestAdminNetworkConfiguration(BaseIntegrationTest):
         resp = self.env.cluster_changes_put(self.cluster['id'],
                                             expect_errors=True)
         self.assertEquals(resp.status_code, 202)
-        task = json.loads(resp.body)
+        task = jsonutils.loads(resp.body)
         self.assertEquals(task['status'], 'error')
         self.assertEquals(task['progress'], 100)
         self.assertEquals(task['name'], 'deploy')

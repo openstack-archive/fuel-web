@@ -14,9 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from nailgun.db.sqlalchemy.models import Release
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -26,14 +25,14 @@ class TestHandlers(BaseIntegrationTest):
         release = self.env.create_release(api=False)
         resp = self.app.put(
             reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'name': 'modified release',
                 'version': '5.1'
             }),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         release_from_db = self.db.query(Release).one()
         self.db.refresh(release_from_db)
         self.assertEquals('5.1', release_from_db.version)

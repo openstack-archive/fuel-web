@@ -14,12 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from nailgun import objects
 
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import ClusterChanges
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -62,7 +61,7 @@ class TestClusterChanges(BaseIntegrationTest):
                 kwargs={'obj_id': cluster['id']}),
             headers=self.default_headers
         )
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertIn(
             {"name": "disks", "node_id": node_db.id},
             response["changes"]
@@ -82,7 +81,7 @@ class TestClusterChanges(BaseIntegrationTest):
         self.assertEquals(len(node_disks_changes), 1)
         self.app.put(
             reverse('NodeCollectionHandler'),
-            json.dumps([{"id": node_db.id, "cluster_id": None}]),
+            jsonutils.dumps([{"id": node_db.id, "cluster_id": None}]),
             headers=self.default_headers
         )
         self.env.refresh_clusters()
@@ -102,7 +101,7 @@ class TestClusterChanges(BaseIntegrationTest):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
-            json.dumps({
+            jsonutils.dumps({
                 'editable': {
                     "foo": "bar"
                 }
@@ -143,12 +142,12 @@ class TestClusterChanges(BaseIntegrationTest):
                 kwargs={'cluster_id': cluster['id']}),
             headers=self.default_headers
         )
-        net_id = json.loads(resp.body)['networks'][0]["id"]
+        net_id = jsonutils.loads(resp.body)['networks'][0]["id"]
         resp = self.app.put(
             reverse(
                 'NovaNetworkConfigurationHandler',
                 kwargs={'cluster_id': cluster['id']}),
-            json.dumps({'networks': [{
+            jsonutils.dumps({'networks': [{
                 "id": net_id, "access": "restricted"}
             ]}),
             headers=self.default_headers
@@ -214,7 +213,7 @@ class TestClusterChanges(BaseIntegrationTest):
         self.app.put(
             reverse("NodeHandler",
                     kwargs={"obj_id": new_node["id"]}),
-            json.dumps({
+            jsonutils.dumps({
                 "cluster": None,
                 "pending_addition": False,
                 "pending_roles": []

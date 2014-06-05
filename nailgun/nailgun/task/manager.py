@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import traceback
 
 from nailgun.objects.serializers.network_configuration \
@@ -28,6 +27,7 @@ from nailgun.db.sqlalchemy.models import RedHatAccount
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.openstack.common import jsonutils
 import nailgun.rpc as rpc
 from nailgun.task import task as tasks
 from nailgun.task.task import TaskHelper
@@ -88,7 +88,7 @@ class ApplyChangesTaskManager(TaskManager):
         network_info = self.serialize_network_cfg(self.cluster)
         logger.info(
             u"Network info:\n{0}".format(
-                json.dumps(network_info, indent=4)
+                jsonutils.dumps(network_info, indent=4)
             )
         )
 

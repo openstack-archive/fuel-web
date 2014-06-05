@@ -19,7 +19,6 @@ Base classes for objects and collections
 """
 
 import collections
-import json
 
 from itertools import ifilter
 
@@ -31,6 +30,14 @@ from nailgun.objects.serializers.base import BasicSerializer
 from nailgun.db import db
 from nailgun.db import NoCacheQuery
 from nailgun.errors import errors
+
+from nailgun.openstack.common.db import api as db_api
+from nailgun.openstack.common import jsonutils
+
+
+_BACKEND_MAPPING = {'sqlalchemy': 'nailgun.db.sqlalchemy.api'}
+
+IMPL = db_api.DBAPI(backend_mapping=_BACKEND_MAPPING)
 
 
 class NailgunObject(object):
@@ -154,7 +161,7 @@ class NailgunObject(object):
         :param fields: exact fields to serialize
         :returns: serialized object (model) as JSON string
         """
-        return json.dumps(
+        return jsonutils.dumps(
             cls.to_dict(instance, fields=fields)
         )
 
@@ -335,7 +342,7 @@ class NailgunCollection(object):
         :param yield_per: SQLAlchemy's yield_per() clause
         :returns: collection of objects as a JSON string
         """
-        return json.dumps(
+        return jsonutils.dumps(
             cls.to_list(
                 fields=fields,
                 yield_per=yield_per,

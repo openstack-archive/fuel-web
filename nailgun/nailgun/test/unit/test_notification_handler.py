@@ -14,8 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -32,7 +31,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertIsNone(response.get('cluster'))
         self.assertEquals(notification.status, 'unread')
         self.assertEquals(notification.id, response['id'])
@@ -49,7 +48,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NotificationCollectionHandler'),
             headers=self.default_headers
         )
-        notif_api = json.loads(resp.body)[0]
+        notif_api = jsonutils.loads(resp.body)[0]
         self.assertIn('date', notif_api)
         self.assertNotEqual(notif_api['date'], '')
         self.assertIn('time', notif_api)
@@ -66,7 +65,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(response.get('cluster'), cluster.id)
         self.assertEquals(notification.status, 'unread')
         self.assertEquals(notification.id, response['id'])
@@ -84,10 +83,10 @@ class TestHandlers(BaseIntegrationTest):
                 'NotificationHandler',
                 kwargs={'obj_id': notification.id}
             ),
-            json.dumps(notification_update),
+            jsonutils.dumps(notification_update),
             headers=self.default_headers
         )
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(notification.id, response['id'])
         self.assertEquals('read', response['status'])
         self.assertEquals(notification.topic, response['topic'])

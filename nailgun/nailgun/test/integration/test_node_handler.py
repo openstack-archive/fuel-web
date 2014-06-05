@@ -14,9 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
@@ -31,7 +30,7 @@ class TestHandlers(BaseIntegrationTest):
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
             headers=self.default_headers)
         self.assertEquals(200, resp.status_code)
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEquals(node.id, response['id'])
         self.assertEquals(node.name, response['name'])
         self.assertEquals(node.mac, response['mac'])
@@ -51,9 +50,9 @@ class TestHandlers(BaseIntegrationTest):
         node_id = '080000000003'
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
-            json.dumps({'id': node_id,
-                        'mac': self.env.generate_random_mac(),
-                        'status': 'discover'}),
+            jsonutils.dumps({'id': node_id,
+                            'mac': self.env.generate_random_mac(),
+                            'status': 'discover'}),
             headers=self.default_headers,
             expect_errors=True)
         # we now just ignore 'id' if present
@@ -74,7 +73,7 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=False)
         resp = self.app.put(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
-            json.dumps({'meta': new_metadata}),
+            jsonutils.dumps({'meta': new_metadata}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
         self.db.refresh(node)
@@ -90,7 +89,7 @@ class TestHandlers(BaseIntegrationTest):
         params = {'status': 'error'}
         resp = self.app.put(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
-            json.dumps(params),
+            jsonutils.dumps(params),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
 
@@ -100,7 +99,7 @@ class TestHandlers(BaseIntegrationTest):
         for flag in flags:
             resp = self.app.put(
                 reverse('NodeHandler', kwargs={'obj_id': node.id}),
-                json.dumps({flag: True}),
+                jsonutils.dumps({flag: True}),
                 headers=self.default_headers
             )
             self.assertEquals(resp.status_code, 200)
@@ -126,7 +125,7 @@ class TestHandlers(BaseIntegrationTest):
         params = {'status': 'invalid_status'}
         resp = self.app.put(
             reverse('NodeHandler', kwargs={'obj_id': node.id}),
-            json.dumps(params),
+            jsonutils.dumps(params),
             headers=self.default_headers,
             expect_errors=True)
         self.assertEquals(resp.status_code, 400)
@@ -163,7 +162,7 @@ class TestHandlers(BaseIntegrationTest):
         for i in range(5):
             response = self.app.put(
                 reverse('NodeAgentHandler'),
-                json.dumps(node),
+                jsonutils.dumps(node),
                 headers=self.default_headers,
             )
             self.assertEquals(response.status_code, 200)

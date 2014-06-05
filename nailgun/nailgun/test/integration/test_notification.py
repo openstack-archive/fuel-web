@@ -14,13 +14,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import uuid
 
 from nailgun.db.sqlalchemy.models import Notification
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
 from nailgun import notifier
+from nailgun.openstack.common import jsonutils
 from nailgun.rpc import receiver as rcvr
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -91,9 +91,9 @@ class TestNotification(BaseIntegrationTest):
 
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
-            json.dumps({'mac': self.env.generate_random_mac(),
-                        'meta': self.env.default_metadata(),
-                        'status': 'discover'}),
+            jsonutils.dumps({'mac': self.env.generate_random_mac(),
+                             'meta': self.env.default_metadata(),
+                             'status': 'discover'}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 201)
 

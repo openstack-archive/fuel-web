@@ -15,9 +15,9 @@
 #    under the License.
 
 import base64
-import json
 from mock import patch
 
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseTestCase
 from nailgun.test.base import reverse
 
@@ -40,15 +40,15 @@ class TestFuelKeyHandler(BaseTestCase):
             "release": fuel_release,
             "uuid": "uuid"
         }
-        signature = base64.b64encode(json.dumps(key_data))
+        signature = base64.b64encode(jsonutils.dumps(key_data))
         key_data["signature"] = signature
 
         self.assertEqual(200, resp.status_code)
 
-        response = json.loads(resp.body)
+        response = jsonutils.loads(resp.body)
         self.assertEqual(
             response,
-            {"key": base64.b64encode(json.dumps(key_data))}
+            {"key": base64.b64encode(jsonutils.dumps(key_data))}
         )
-        resp_data = json.loads(base64.b64decode(response["key"]))
+        resp_data = jsonutils.loads(base64.b64decode(response["key"]))
         self.assertEqual(resp_data["release"], fuel_release)

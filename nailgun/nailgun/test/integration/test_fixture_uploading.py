@@ -15,12 +15,12 @@
 #    under the License.
 
 import cStringIO
-import json
 import yaml
 
 from nailgun.db.sqlalchemy.fixman import upload_fixture
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import Release
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 
 
@@ -44,7 +44,7 @@ class TestFixture(BaseIntegrationTest):
             }
         }]'''
 
-        upload_fixture(cStringIO.StringIO(data), loader=json)
+        upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
         check = self.db.query(Release).filter(
             Release.name == u"JSONFixtureRelease"
         )
@@ -88,7 +88,7 @@ class TestFixture(BaseIntegrationTest):
                 "roles": ["controller", "compute", "cinder", "ceph-osd"]
             }
         }]'''
-        upload_fixture(cStringIO.StringIO(data), loader=json)
+        upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
         rel = self.db.query(Release).filter(
             Release.name == u"CustomFixtureRelease1"
         ).all()
@@ -107,7 +107,7 @@ class TestFixture(BaseIntegrationTest):
                 "roles": ["compute", "ceph-osd", "controller", "cinder"]
             }
         }]'''
-        upload_fixture(cStringIO.StringIO(data), loader=json)
+        upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
         rel = self.db.query(Release).filter(
             Release.name == u"CustomFixtureRelease2"
         ).all()
@@ -126,7 +126,7 @@ class TestFixture(BaseIntegrationTest):
                 "roles": ["compute", "cinder", "controller", "cinder"]
             }
         }]'''
-        upload_fixture(cStringIO.StringIO(data), loader=json)
+        upload_fixture(cStringIO.StringIO(data), loader=jsonutils)
         rel = self.db.query(Release).filter(
             Release.name == u"CustomFixtureRelease3"
         ).all()

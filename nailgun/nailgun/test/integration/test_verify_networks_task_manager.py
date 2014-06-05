@@ -14,10 +14,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -61,7 +60,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        nets = json.loads(resp.body)
+        nets = jsonutils.loads(resp.body)
 
         nets['networks'][-1]["vlan_start"] = 500
         task = self.env.launch_verify_networks(nets)
@@ -78,7 +77,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        nets = json.loads(resp.body)
+        nets = jsonutils.loads(resp.body)
 
         admin_ng = self.env.network_manager.get_admin_network_group()
 
@@ -104,7 +103,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             headers=self.default_headers
         )
         self.assertEquals(200, resp.status_code)
-        nets = json.loads(resp.body)
+        nets = jsonutils.loads(resp.body)
 
         for net in nets['networks']:
             if net['name'] in ('storage',):
@@ -134,7 +133,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             ),
             headers=self.default_headers
         )
-        nets = json.loads(resp.body)
+        nets = jsonutils.loads(resp.body)
 
         task = self.env.launch_verify_networks(nets)
         self.db.refresh(task)
@@ -259,7 +258,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
                     kwargs={'node_id': node['id']}),
             headers=self.default_headers)
         self.assertEquals(resp.status_code, 200)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         admin_nic, other_nic, empty_nic = None, None, None
         for nic in data:
             net_names = [n['name'] for n in nic['assigned_networks']]
@@ -275,7 +274,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
     def verify_bonds(self, node):
         resp = self.env.node_nics_get(node["id"])
         self.assertEqual(resp.status_code, 200)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         bond = filter(lambda nic: nic["type"] == NETWORK_INTERFACE_TYPES.bond,
                       data)
         self.assertEqual(len(bond), 1)
@@ -316,7 +315,7 @@ class TestNetworkVerificationWithBonds(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEquals(202, resp.status_code)
-        data = json.loads(resp.body)
+        data = jsonutils.loads(resp.body)
         self.assertEqual(
             data['result'],
             {u'warning': [u"Node '{0}': interface 'ovs-bond0' slave NICs have "
@@ -382,7 +381,7 @@ class TestVerifyNeutronVlan(BaseIntegrationTest):
                             headers=self.default_headers)
         self.assertEquals(200, resp.status_code)
         priv_nics = {}
-        for node in json.loads(resp.body):
+        for node in jsonutils.loads(resp.body):
             for net in node['network_data']:
                 if net['name'] == 'private':
                     priv_nics[node['id']] = net['dev']

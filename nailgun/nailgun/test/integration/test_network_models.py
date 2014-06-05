@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 
 from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
@@ -23,6 +22,7 @@ from nailgun.objects.serializers.network_configuration \
 
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.db.sqlalchemy.models import NovaNetworkConfig
+from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
@@ -46,7 +46,7 @@ class TestNetworkModels(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_ready(supertask, 60)
 
-        test_nets = json.loads(self.env.nova_networks_get(
+        test_nets = jsonutils.loads(self.env.nova_networks_get(
             self.env.clusters[0].id
         ).body)
 
@@ -65,7 +65,7 @@ class TestNetworkModels(BaseIntegrationTest):
         resp_cluster = self.app.put(
             reverse('ClusterAttributesHandler',
                     kwargs={'cluster_id': self.env.clusters[0].id}),
-            json.dumps({
+            jsonutils.dumps({
                 'editable': {
                     "foo": "bar"
                 }

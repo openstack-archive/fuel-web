@@ -18,7 +18,6 @@
 Handlers dealing with network configurations
 """
 
-import json
 import traceback
 import web
 
@@ -43,6 +42,7 @@ from nailgun import objects
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import Task
+from nailgun.openstack.common import jsonutils
 from nailgun.task.helpers import TaskHelper
 from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
@@ -90,7 +90,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
         :http: * 202 (network checking task created)
                * 404 (cluster not found in db)
         """
-        data = json.loads(web.data())
+        data = jsonutils.loads(web.data())
         if data.get("networks"):
             data["networks"] = [
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
@@ -108,12 +108,12 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
             try:
                 if 'networks' in data:
                     self.validator.validate_networks_update(
-                        json.dumps(data)
+                        jsonutils.dumps(data)
                     )
 
                 if 'dns_nameservers' in data:
                     self.validator.validate_dns_servers_update(
-                        json.dumps(data)
+                        jsonutils.dumps(data)
                     )
 
                 objects.Cluster.get_network_manager(
@@ -152,7 +152,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 
     @content_json
     def PUT(self, cluster_id):
-        data = json.loads(web.data())
+        data = jsonutils.loads(web.data())
         if data.get("networks"):
             data["networks"] = [
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
@@ -170,12 +170,12 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
             try:
                 if 'networks' in data:
                     self.validator.validate_networks_update(
-                        json.dumps(data)
+                        jsonutils.dumps(data)
                     )
 
                 if 'networking_parameters' in data:
                     self.validator.validate_neutron_params(
-                        json.dumps(data),
+                        jsonutils.dumps(data),
                         cluster_id=cluster_id
                     )
 

@@ -18,13 +18,13 @@ import copy
 from operator import attrgetter
 from operator import itemgetter
 
-import json
 from netaddr import IPRange
 
 from nailgun.consts import OVS_BOND_MODES
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
+from nailgun.openstack.common import jsonutils
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentHASerializer
 from nailgun.orchestrator.deployment_serializers import\
@@ -181,7 +181,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         data = {'networking_parameters': {'net_manager': 'VlanManager'}}
         url = reverse('NovaNetworkConfigurationHandler',
                       kwargs={'cluster_id': cluster.id})
-        self.app.put(url, json.dumps(data),
+        self.app.put(url, jsonutils.dumps(data),
                      headers=self.default_headers,
                      expect_errors=False)
         facts = self.serializer.serialize(cluster, cluster.nodes)
@@ -852,7 +852,7 @@ class TestCephOsdImageOrchestratorSerialize(OrchestratorSerializerTestBase):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
-            params=json.dumps({
+            params=jsonutils.dumps({
                 'editable': {'storage': {'images_ceph': {'value': True}}}}),
             headers=self.default_headers)
         self.cluster = self.db.query(Cluster).get(cluster['id'])
@@ -877,7 +877,7 @@ class TestCephPgNumOrchestratorSerialize(OrchestratorSerializerTestBase):
             reverse(
                 'ClusterAttributesHandler',
                 kwargs={'cluster_id': cluster['id']}),
-            params=json.dumps(
+            params=jsonutils.dumps(
                 {'editable': {
                     'storage': {
                         'osd_pool_size': {'value': osd_pool_size}}}}),
@@ -965,7 +965,7 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
         }
         resp = self.app.put(
             reverse('ReleaseHandler', kwargs={'obj_id': release_id}),
-            params=json.dumps(
+            params=jsonutils.dumps(
                 {
                     "orchestrator_data": orch_data
                 }

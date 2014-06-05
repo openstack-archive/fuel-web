@@ -394,18 +394,15 @@ class ClusterDeletionTask(object):
         DeletionTask.execute(task, 'remove_cluster_resp')
 
 
-class VerifyNetworksTask(object):
+class BaseNetworkVerification(object):
 
-    @classmethod
-    def _subtask_message(cls, task):
-        for subtask in task.subtasks:
-            yield subtask.name, {'respond_to': '{0}_resp'.format(subtask.name),
-                                 'task_uuid': subtask.uuid}
+    def __init__(self, task, config):
+        self.task = task
+        self.config = config
 
-    @classmethod
-    def _message(cls, task, data):
+    def get_message_body(self):
         nodes = []
-        for n in task.cluster.nodes:
+        for n in self.task.cluster.nodes:
             node_json = {'uid': n.id, 'networks': []}
 
             for nic in n.nic_interfaces:
@@ -420,7 +417,8 @@ class VerifyNetworksTask(object):
                     if not ng.cluster_id:
                         vlans.append(0)
                         continue
-                    data_ng = filter(lambda i: i['name'] == ng.name, data)[0]
+                    data_ng = filter(lambda i: i['name'] == ng.name,
+                                     self.config)[0]
                     if data_ng['vlans']:
                         vlans.extend(data_ng['vlans'])
                     else:
@@ -433,27 +431,64 @@ class VerifyNetworksTask(object):
                     {'iface': nic.name, 'vlans': vlans}
                 )
             nodes.append(node_json)
-        message = make_astute_message(
-            task.name,
-            '{0}_resp'.format(task.name),
+
+        return nodes
+
+    def get_message(self):
+        nodes = self.get_message_body()
+        return make_astute_message(
+            self.task.name,
+            '{0}_resp'.format(self.task.name),
             {
-                'task_uuid': task.uuid,
+                'task_uuid': self.task.uuid,
                 'nodes': nodes
             }
         )
-        message['subtasks'] = dict(cls._subtask_message(task))
-        return message
 
-    @classmethod
-    def execute(cls, task, data):
-        message = cls._message(task, data)
+    def execute(self, task=None):
+        # task is there for prev compatibility
+        message = self.get_message()
+
         logger.debug("%s method is called with: %s",
-                     task.name, message)
+                     self.task.name, message)
 
-        task.cache = message
-        db().add(task)
+        self.task.cache = message
+        db().add(self.task)
         db().commit()
         rpc.cast('naily', message)
+
+
+class VerifyNetworksTask(BaseNetworkVerification):
+
+    def __init__(self, *args):
+        super(VerifyNetworksTask, self).__init__(*args)
+        self.subtasks = []
+
+    def add_subtask(self, subtask):
+        self.subtasks.append(subtask.get_message())
+
+    def get_message(self):
+        message = super(VerifyNetworksTask, self).get_message()
+        message['subtasks'] = self.subtasks
+        return message
+
+
+class CheckDhcpTask(BaseNetworkVerification):
+    """Task for dhcp verification
+    """
+
+
+class MulticastVerificationTask(BaseNetworkVerification):
+
+    def get_message_body(self):
+        # multicast verification should be done only for network which
+        # corosync uses for communication - management in our case
+        netmanager = objects.cluster.Cluster.get_network_manager(
+            self.task.cluster)
+        all_nics = netmanager.get_ifaces_for_specific_network_in_cluster(
+            self.task.cluster_id, 'management')
+        return [dict(self.config, iface=nic[1], uid=str(nic[0]))
+                for nic in all_nics]
 
 
 class CheckNetworksTask(object):

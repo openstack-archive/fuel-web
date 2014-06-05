@@ -191,24 +191,36 @@
             description: "IP Address of vCenter"
             weight: 10
             type: "text"
+            regex:
+              source: "^.+$"
+              error: "Invalid IP address"
           vc_user:
             value: ""
             label: "Username"
             description: "vCenter admin username"
             weight: 30
             type: "text"
+            regex:
+              source: "^.+$"
+              error: "Invalid username"
           vc_password:
             value: ""
             label: "Password"
             description: "vCenter admin password"
             weight: 30
             type: "password"
+            regex:
+              source: "^.+$"
+              error: "Invalid password"
           cluster:
             value: ""
             label: "Cluster"
             description: "vCenter cluster name"
             weight: 40
             type: "text"
+            regex:
+              source: "^.+$"
+              error: "Invalid cluster name"
         common:
           metadata:
             label: "Common"

@@ -265,7 +265,7 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                         this.settings.fetch()
                             .then(_.bind(this.beforeSettingsSaving, this))
                             .then(_.bind(function() {
-                                return this.settings.save();
+                                return this.settings.save(this.settings.attributes, {validate: false});
                             }, this))
                             .done(_.bind(function() {
                                 this.$el.modal('hide');

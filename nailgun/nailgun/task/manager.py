@@ -599,22 +599,31 @@ class VerifyNetworksTaskManager(TaskManager):
             # this one is connected with UI issues - we need to
             # separate if error happened inside nailgun or somewhere
             # in the orchestrator, and UI does it by task name.
+            task.name = 'verify_networks'
 
             dhcp_subtask = Task(
                 name='check_dhcp',
                 cluster=self.cluster,
                 parent_id=task.id)
             db().add(dhcp_subtask)
-            db().commit()
-            db().refresh(task)
 
-            task.name = 'verify_networks'
+            multicast = Task(
+                name='multicast_verification',
+                cluster=self.cluster,
+                parent_id=task.id)
+            db().add(multicast)
+            db().flush()
 
-            self._call_silently(
-                task,
-                tasks.VerifyNetworksTask,
-                vlan_ids
-            )
+            #FIXME create generated or editable argument for this stuff
+            conf = {'group': '250.0.0.100', 'port': '9600'}
+
+            verify_task = tasks.VerifyNetworksTask(task, vlan_ids)
+            verify_task.add_subtask(tasks.CheckDhcpTask(dhcp_subtask,
+                                                        vlan_ids))
+            verify_task.add_subtask(
+                tasks.MulticastVerificationTask(multicast, conf))
+
+            self._call_silently(task, verify_task)
 
         return task
 
@@ -689,6 +698,7 @@ class DownloadReleaseTaskManager(TaskManager):
 
 
 class RedHatSetupTaskManager(TaskManager):
+
     def __init__(self, data):
         self.data = data
 
@@ -768,6 +778,7 @@ class RedHatSetupTaskManager(TaskManager):
 
 
 class DumpTaskManager(TaskManager):
+
     def execute(self):
         logger.info("Trying to start dump_environment task")
         self.check_running_task('dump')
@@ -783,6 +794,7 @@ class DumpTaskManager(TaskManager):
 
 
 class GenerateCapacityLogTaskManager(TaskManager):
+
     def execute(self):
         logger.info("Trying to start capacity_log task")
         self.check_running_task('capacity_log')

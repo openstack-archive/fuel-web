@@ -88,10 +88,11 @@ class EnvironmentAction(Action):
             data = env.set(mode=params.mode)
         else:
             data = env.get_fresh_data()
+
         self.serializer.print_to_output(
             data,
-            "Environment '{name}' with id={id}, mode={mode}"
-            " and network-mode={net_provider} was created!"
+            u"Environment '{name}' with id={id}, mode={mode}"
+            u" and network-mode={net_provider} was created!"
             .format(**data)
         )
 

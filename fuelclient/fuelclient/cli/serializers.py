@@ -63,7 +63,7 @@ class Serializer(object):
         if self.format_flags:
             self.print_formatted(formatted_data)
         else:
-            print_method(arg)
+            print_method(arg.encode('utf-8'))
 
     def prepare_path(self, path):
         return "{0}.{1}".format(

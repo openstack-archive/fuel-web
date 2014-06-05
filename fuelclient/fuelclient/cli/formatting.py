@@ -54,18 +54,20 @@ def format_table(data, acceptable_keys=None, column_to_join=None):
     )
     for row in rows:
         column_widths.update(
-            (index, max(column_widths[index], len(str(element))))
+            (index, max(column_widths[index], len(unicode(element))))
             for index, element in enumerate(row)
         )
-    row_template = ' | '.join(
-        "{{{0}:{1}}}".format(idx, width)
+    row_template = u' | '.join(
+        u"{{{0}:{1}}}".format(idx, width)
         for idx, width in column_widths.iteritems()
     )
-    return '\n'.join(
+
+    return u'\n'.join(
         (row_template.format(*header),
-         '-|-'.join(column_widths[column_index] * '-'
-                    for column_index in range(number_of_columns)),
-         '\n'.join(row_template.format(*map(str, x)) for x in rows))
+         u'-|-'.join(column_widths[column_index] * u'-'
+                     for column_index in range(number_of_columns)),
+         u'\n'.join(row_template.format(*map(unicode, x))
+                    for x in rows))
     )
 
 
@@ -243,8 +245,8 @@ def print_health_check(env):
         )
         for test in new_finished_tests:
             print(
-                "[{0:2} of {1}] [{status}] '{name}' "
-                "({taken:.4} s) {message}".format(
+                u"[{0:2} of {1}] [{status}] '{name}' "
+                u"({taken:.4} s) {message}".format(
                     test_counter,
                     total_tests_count,
                     **test

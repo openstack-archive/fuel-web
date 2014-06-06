@@ -698,7 +698,9 @@ class VolumeManager(object):
             'calc_total_vg': self._calc_total_vg,
             # virtual storage = 5GB
             'calc_min_vm_size': lambda: gb_to_mb(5),
-            'calc_min_glance_size': lambda: gb_to_mb(5),
+            'calc_min_glance_size': lambda: 0,
+            'calc_min_glance_cache_size': lambda: 0,
+            'calc_min_mysql_size': lambda: 0,
             'calc_min_cinder_size': lambda: gb_to_mb(1.5),
             'calc_min_mongo_size': lambda: gb_to_mb(10),
             'calc_total_root_vg': self._calc_total_root_vg,

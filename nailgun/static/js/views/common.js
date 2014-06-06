@@ -58,9 +58,10 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         template: _.template(navbarTemplate),
         updateInterval: 20000,
         notificationsDisplayCount: 5,
-        setActive: function(element) {
-            this.$('a.active').removeClass('active');
-            this.$('a[href="#' + element + '"]').addClass('active');
+        setActive: function(url) {
+            this.elements.each(function(element) {
+                element.set({active: element.get('url') == '#' + url});
+            });
         },
         scheduleUpdate: function() {
             this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
@@ -72,16 +73,16 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             return $.when(this.statistics.fetch(), this.notifications.fetch({limit: this.notificationsDisplayCount}));
         },
         initialize: function(options) {
-            this.elements = _.isArray(options.elements) ? options.elements : [];
+            this.elements = new Backbone.Collection(options.elements);
+            this.elements.invoke('set', {active: false});
+            this.elements.on('change:active', this.render, this);
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
             this.update();
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            if (!this.$('.navigation-bar-ul a').length) {
-                this.$el.html(this.template({elements: this.elements}));
-            }
+            this.$el.html(this.template({elements: this.elements}));
             this.stats = new views.NodesStats({statistics: this.statistics, navbar: this});
             this.registerSubView(this.stats);
             this.$('.nodes-summary-container').html(this.stats.render().el);

@@ -142,7 +142,8 @@
                     "settings": "Settings",
                     "logs": "Logs",
                     "healthcheck": "Health Check",
-                    "actions": "Actions"
+                    "actions": "Actions",
+                    "raid": "Raid"
                 },
                 "nodes_tab": {
                     "roles": "Roles",
@@ -366,11 +367,13 @@
                     "prev": "Prev",
                     "next": "Next",
                     "create": "Create",
+                    "configuration_failed_warning": "Your OpenStack environment has been created, but configuration failed. You can configure it manually.",
                     "name_release": {
                         "title": "Name and Release",
                         "name": "Name",
                         "release_label": "OpenStack Release",
-                        "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment."
+                        "red_hat_info": "To deploy Red Hat OpenStack, you must first download both RHOS and RHEL to be cached on the Fuel master node.  You can do this from the Releases page or just choose your subscription type and enter your credentials below.  RHEL and RHOS will be automatically downloaded and cached after you create the environment.",
+                        "existing_environment": "Environment with name \"__name__\" already exists"
                     },
                     "mode": {
                         "title": "Deployment Mode"
@@ -383,19 +386,21 @@
                         "kvm_description": "Choose this type of hypervisor if you run OpenStack on hardware",
                         "qemu_description": "Choose this type of hypervisor if you run OpenStack on virtual hosts",
                         "vcenter_description": "Choose this option if you have a vCenter environment with ESXi servers to be used as hypervisors",
-                        "vcenter_warning": "Please remember to enter vCenter environment information in the Settings tab before deploying"
+                        "vcenter_warning": "Please remember to enter vCenter environment information in the Settings tab before deploying",
+                        "ha_vcenter_warning": "The vCenter hypervisor option will run properly in HA mode, but itself is not highly available. Please refer to the documentation for more details"
                     },
                     "network": {
                         "title": "Network",
-                        "release_alert": "Neutron is not supported in __releaseName__",
-                        "hypervisor_alert": "Neutron is not available with __hypervisor__ as a compute option.",
+                        "release_alert": "Neutron is not supported in __NameAndRelease.release_name__",
+                        "hypervisor_alert": "Neutron is not available with __Compute.hypervisor__ as a compute option.",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron with GRE segmentation",
                         "neutr_vlan": "Neutron with VLAN segmentation"
                     },
                     "storage": {
                         "title": "Storage Backends",
-                        "alert": "Ceph is not supported in __releaseName__",
+                        "alert": "Ceph is not supported in __NameAndRelease.release_name__",
+                        "vcenter_alert": "Ceph cannot be used with vCenter.",
                         "default": "Default",
                         "ceph": "Ceph",
                         "cinder": "Cinder",
@@ -405,7 +410,7 @@
                     },
                     "additional": {
                         "title": "Additional Services",
-                        "release_alert": "Additional services are not available in __releaseName__",
+                        "release_alert": "Additional services are not available in __NameAndRelease.release_name__",
                         "network_mode_alert": "Murano requires Neutron as a network option.",
                         "install_sahara": "Install Sahara",
                         "install_sahara_description": "Sahara enables on demand provisioning of Hadoop clusters to be deployed on OpenStack utilizing a variety of vendor distributions.",
@@ -433,12 +438,12 @@
                 },
                 "display_changes": {
                     "title": "Deploy Changes",
-                    "added_node": "Added __nodesCount__ node.",
-                    "added_node_plural": "Added __nodesCount__ nodes.",
-                    "deleted_node": "Deleted __nodesCount__ node.",
-                    "deleted_node_plural":  "Deleted __nodesCount__ nodes.",
-                    "reconfigured_node": "Reconfigured roles of  __nodesCount__ node.",
-                    "reconfigured_node_plural": "Reconfigured roles of  __nodesCount__ nodes.",
+                    "added_node": "Added __count__ node.",
+                    "added_node_plural": "Added __count__ nodes.",
+                    "deleted_node": "Deleted __count__ node.",
+                    "deleted_node_plural":  "Deleted __count__ nodes.",
+                    "reconfigured_node": "Reconfigured roles of  __count__ node.",
+                    "reconfigured_node_plural": "Reconfigured roles of  __count__ nodes.",
                     "settings_changes": {
                         "attrs": "OpenStack settings.",
                         "networks": "network settings.",
@@ -447,6 +452,7 @@
                     "warnings": {
                         "controller": "Environment should have __nodeSize__ controller node",
                         "controller_plural": "Environment should have __nodeSize__ controller nodes",
+                        "mongo": "When Ceilometer is enabled, environment should have Telemetry - MongoDB node",
                         "compute": "Compute nodes are recommended for deployment"
                     },
                     "changed_task_name": "Changed __item__",

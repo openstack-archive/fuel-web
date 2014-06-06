@@ -89,7 +89,7 @@ def topological_sorting(dep_graph):
 
     while graph:
         cyclic = True
-        for node, dependencies in graph.items():
+        for node, dependencies in sorted(graph.items(), key=lambda n: n[0]):
             for dependency in dependencies:
                 if dependency in graph:
                     break

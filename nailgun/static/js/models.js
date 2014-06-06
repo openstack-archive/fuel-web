@@ -33,6 +33,15 @@ define(['utils', 'deepModel'], function(utils) {
         }
     };
 
+    models.MenuItem = Backbone.Model.extend({
+        constructorName: 'MenuItem'
+    });
+
+    models.MenuItems = Backbone.Collection.extend({
+        constructorName: 'MenuItems',
+        model: models.MenuItem
+    });
+
     models.Release = Backbone.Model.extend({
         constructorName: 'Release',
         urlRoot: '/api/releases'

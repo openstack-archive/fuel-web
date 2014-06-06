@@ -4,9 +4,7 @@
       <li class="product-logo">
         <a href="#"><div class="logo"></div></a>
       </li>
-      <% _.each(elements, function(element) { %>
-        <li><a href="<%- element[1] %>"><%- $.t('navbar.' + element[0], {defaultValue: element[0]}) %></a></li>
-      <% }) %>
+      <div class="menu-items"></div>
       <li class="space"></li>
       <li class="navigation-bar-icon notifications"></li>
       <li class="navigation-bar-icon nodes-summary-container"></li>

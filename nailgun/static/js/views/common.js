@@ -58,9 +58,10 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         template: _.template(navbarTemplate),
         updateInterval: 20000,
         notificationsDisplayCount: 5,
-        setActive: function(element) {
-            this.$('a.active').removeClass('active');
-            this.$('a[href="#' + element + '"]').addClass('active');
+        setActive: function(url) {
+            this.elements.each(function(element) {
+                element.set({active: element.get('url') == '#' + url});
+            });
         },
         scheduleUpdate: function() {
             this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
@@ -72,16 +73,20 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             return $.when(this.statistics.fetch(), this.notifications.fetch({limit: this.notificationsDisplayCount}));
         },
         initialize: function(options) {
-            this.elements = _.isArray(options.elements) ? options.elements : [];
+            this.elements = new models.MenuItems(options.elements);
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
             this.update();
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            if (!this.$('.navigation-bar-ul a').length) {
-                this.$el.html(this.template({elements: this.elements}));
-            }
+            this.$el.html(this.template());
+            this.$('.menu-items').html('');
+            this.elements.each(function(element) {
+                var menuItem = new views.MenuItem({element: element});
+                this.registerSubView(menuItem);
+                this.$('.menu-items').append(menuItem.render().el);
+            }, this);
             this.stats = new views.NodesStats({statistics: this.statistics, navbar: this});
             this.registerSubView(this.stats);
             this.$('.nodes-summary-container').html(this.stats.render().el);
@@ -91,6 +96,34 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             this.popover = new views.NotificationsPopover({collection: this.notifications, navbar: this});
             this.registerSubView(this.popover);
             this.$('.notification-wrapper').html(this.popover.render().el);
+            return this;
+        }
+    });
+
+    views.MenuItem = Backbone.View.extend({
+        tagName: 'li',
+        bindings: {
+            'a': {
+                observe: 'label',
+                onGet: function(value) {
+                    return $.t('navbar.' + value, {defaultValue: value});
+                },
+                attributes: [
+                    {name: 'href', observe: 'url'},
+                    {
+                        name: 'class',
+                        observe: 'active',
+                        onGet: function(value) { return value ? 'active' : ''; }
+                    }
+                ]
+            }
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+        },
+        render: function() {
+            this.$el.html($('<a/>'));
+            this.stickit(this.element);
             return this;
         }
     });

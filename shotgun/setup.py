@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 #    Copyright 2013 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -12,51 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
-import os
-import os.path
-
 import setuptools
 
-requires = [
-    'Fabric==1.7.0'
-]
-
-major_version = '0.1'
-minor_version = '0'
-name = 'Shotgun'
-
-version = "%s.%s" % (major_version, minor_version)
-
-
-def recursive_data_files(spec_data_files):
-    result = []
-    for dstdir, srcdir in spec_data_files:
-        for topdir, dirs, files in os.walk(srcdir):
-            for f in files:
-                result.append((os.path.join(dstdir, topdir),
-                               [os.path.join(topdir, f)]))
-    return result
-
-
-if __name__ == "__main__":
-    setuptools.setup(
-        name=name,
-        version=version,
-        description='Shotgun package',
-        long_description="""Shotgun is diagnostic snapshot generator""",
-        classifiers=[
-            "Development Status :: 4 - Beta",
-            "Programming Language :: Python",
-        ],
-        author='Mirantis Inc.',
-        author_email='product@mirantis.com',
-        url='http://mirantis.com',
-        keywords='shotgun mirantis',
-        packages=setuptools.find_packages(),
-        zip_safe=False,
-        install_requires=requires,
-        include_package_data=True,
-        entry_points={
-            'console_scripts': [
-                'shotgun = shotgun.cli:main']})
+setuptools.setup(
+    setup_requires=['pbr'],
+    pbr=True)

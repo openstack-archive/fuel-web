@@ -191,6 +191,9 @@ function run_tests {
 # Arguments:
 #
 #   $@ -- tests to be run; with no arguments all tests will be run
+#
+# It is supposed that we prepare database (run DBMS and create schema)
+# before running tests.
 function run_nailgun_tests {
   local TESTS="$ROOT/nailgun/nailgun/test"
 
@@ -202,10 +205,13 @@ function run_nailgun_tests {
   dropdb
   syncdb
 
+  pushd $ROOT/nailgun >> /dev/null
   # run tests
-  $TESTRTESTS -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT
+  tox -epy26,py27 -- -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT || result=1
+  result=$?
+  popd >> /dev/null
+  return $result
 }
-
 
 # Run webui tests.
 #
@@ -277,6 +283,9 @@ function run_webui_tests {
 # Arguments:
 #
 #   $@ -- tests to be run; with no arguments all tests will be run
+#
+# It is supposed that nailgun server is up and working.
+# We are going to pass nailgun url to test runner.
 function run_cli_tests {
   local SERVER_PORT=8003
   local TESTS=$ROOT/fuelclient/tests
@@ -284,8 +293,6 @@ function run_cli_tests {
   if [ $# -ne 0 ]; then
     TESTS=$@
   fi
-
-  pushd $ROOT/nailgun >> /dev/null
 
   local server_log=`mktemp /tmp/test_nailgun_cli_server.XXXX`
   local result=0
@@ -298,8 +305,11 @@ function run_cli_tests {
 
   if [ $pid -ne 0 ]; then
 
-    $TESTRTESTS -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT
+    pushd $ROOT/fuelclient >> /dev/null
+    # run tests
+    tox -epy26,py27 -- -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT || result=1
     result=$?
+    popd >> /dev/null
 
     kill $pid
     wait $pid 2> /dev/null
@@ -309,11 +319,9 @@ function run_cli_tests {
   fi
 
   rm $server_log
-  popd >> /dev/null
 
   return $result
 }
-
 
 # Run tests for fuel upgrade system
 #
@@ -332,10 +340,14 @@ function run_upgrade_system_tests {
     $TESTRTESTS -vv $testropts $TESTS || result=1
   else
     # run all tests
-    $TESTRTESTS -vv $testropts $UPGRADE_TESTS --xunit-file $FUELUPGRADE_XUNIT \
-        || result=1
-    $TESTRTESTS -vv $testropts $DOWNLOADER_TESTS --xunit-file $FUELUPGRADEDOWNLOADER_XUNIT \
-        || result=1
+    pushd $ROOT/fuel_upgrade_system/fuel_upgrade >> /dev/null
+    tox -epy26,py27 -- -vv $testropts $UPGRADE_TESTS --xunit-file $FUELUPGRADE_XUNIT || result=1
+    popd >> /dev/null
+
+    pushd $ROOT/fuel_upgrade_system/fuel_update_downloader >> /dev/null
+    tox -epy26,py27 -- -vv $testropts $DOWNLOADER_TESTS --xunit-file $FUELUPGRADEDOWNLOADER_XUNIT || result=1
+    popd >> /dev/null
+
   fi
 
   return $result
@@ -356,12 +368,24 @@ function run_shotgun_tests {
     TESTS="$@"
   fi
 
+  pushd $ROOT/shotgun >> /dev/null
+
   # run tests
-  $TESTRTESTS -vv $testropts $TESTS --xunit-file $SHOTGUN_XUNIT || result=1
+  tox -epy26,py27 || result=1
+
+  popd >> /dev/null
 
   return $result
 }
 
+function run_flake8_subproject {
+  local DIRECTORY=$1
+  local result=0
+  pushd $ROOT/$DIRECTORY >> /dev/null
+  tox -epep8 || result=1
+  popd >> /dev/null
+  return $result
+}
 
 # Check python code with flake8 and pep8.
 #
@@ -372,22 +396,15 @@ function run_shotgun_tests {
 #            only modules and not functions
 # * H802 --- first line of git commit commentary should be less than 50 characters
 function run_flake8 {
-  pushd $ROOT >> /dev/null
-
   local result=0
-  ${FLAKE8} \
-    --exclude=__init__.py,docs \
-    --ignore=H234,H302,H802 \
-    --show-source \
-    --show-pep8 \
-    --count . \
-  || result=1
-
-  ${PEP8} \
-    --exclude=welcome.py docs \
-  || result=1
-
-  popd >> /dev/null
+  run_flake8_subproject nailgun && \
+  run_flake8_subproject fuelclient && \
+  run_flake8_subproject fuelmenu && \
+  run_flake8_subproject network_checker && \
+  run_flake8_subproject fuel_upgrade_system/fuel_update_downloader && \
+  run_flake8_subproject fuel_upgrade_system/fuel_upgrade && \
+  run_flake8_subproject shotgun || result=1
+  result=$?
   return $result
 }
 
@@ -420,10 +437,10 @@ function run_cleanup {
 function syncdb {
   pushd $ROOT/nailgun >> /dev/null
 
-  python manage.py syncdb > /dev/null
+  tox -evenv -- python manage.py syncdb > /dev/null
 
   if [[ $# -ne 0 && $1 = true ]]; then
-    python manage.py loaddefault > /dev/null
+    tox -evenv -- python manage.py loaddefault > /dev/null
   fi
 
   popd >> /dev/null
@@ -433,7 +450,7 @@ function syncdb {
 function dropdb {
   pushd $ROOT/nailgun >> /dev/null
 
-  python manage.py dropdb > /dev/null
+  tox -evenv -- python manage.py dropdb > /dev/null
 
   popd >> /dev/null
 }
@@ -470,8 +487,8 @@ function run_server {
   fi
 
   # run new server instance
-  $RUN_SERVER >> $SERVER_LOG 2>&1 &
-  local pid=$!
+  tox -evenv -- $RUN_SERVER >> $SERVER_LOG 2>&1 &
+  local pid=`ps aux | grep "$filter" | grep -v grep | awk '{ print $2 }'`
 
   # wait for server availability
   which nc > /dev/null

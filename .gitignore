@@ -26,6 +26,10 @@ nailgun/static/js/libs/bower
 
 nailgun/static/css/styles.css
 
+*.egg
+.testrepository
+.tox
+.venv
 .idea
 .DS_Store
 

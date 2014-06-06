@@ -1,4 +1,5 @@
 -r requirements.txt
+hacking==0.7
 mock==1.0
 nose==1.1.2
 nose2==0.4.1

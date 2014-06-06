@@ -47,8 +47,14 @@ module Naily
     def main_worker
       @consumer = AMQP::Consumer.new(@channel, @queue)
       @consumer.on_delivery do |metadata, payload|
-        Naily.logger.debug "Process message from worker queue: #{payload.inspect}"
-        perform_main_job(metadata, payload)
+        if @main_work_thread.nil? || !@main_work_thread.alive?
+          Naily.logger.debug "Process message from worker queue: #{payload.inspect}"
+          perform_main_job(metadata, payload)
+        else
+          Naily.logger.debug "Requeue message because worker is busy: #{payload.inspect}"
+          # Avoid throttle by consume/reject cycle if only one worker is running
+          EM.add_timer(2) { metadata.reject(:requeue => true) }
+        end
       end
       @consumer.consume
     end
@@ -62,15 +68,13 @@ module Naily
 
     def perform_main_job(metadata, payload)
       @main_work_thread = Thread.new do
-        begin
-          data = parse_data(payload)
-          @tasks_queue = TaskQueue.new
+        metadata.ack
 
-          @tasks_queue.add_task(data)
-          dispatch(@tasks_queue)
-        ensure
-          metadata.ack
-        end
+        data = parse_data(payload)
+        @tasks_queue = TaskQueue.new
+        @tasks_queue.add_task(data)
+
+        dispatch(@tasks_queue)
       end
     end
 

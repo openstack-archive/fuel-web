@@ -325,10 +325,12 @@ class NailgunReceiver(object):
 
     @classmethod
     def _error_action(cls, task, status, progress, message=None):
+        task_name = task.name.title()
         if message:
-            message = u"Deployment has failed. {0}".format(message)
+            message = u"{0} has failed. {1}".format(task_name, message)
         else:
-            message = u"Deployment has failed. Check these nodes:\n{0}".format(
+            message = u"{0} has failed. Check these nodes:\n{1}".format(
+                task_name,
                 cls._generate_error_message(
                     task,
                     error_types=('deploy', 'provision'),
@@ -350,6 +352,7 @@ class NailgunReceiver(object):
             cls._error_action(task, 'error', 100)
             return
 
+        task_name = task.name.title()
         if task.cluster.mode in ('singlenode', 'multinode'):
             # determining horizon url - it's an IP
             # of a first cluster controller
@@ -371,27 +374,29 @@ class NailgunReceiver(object):
                 if public_net:
                     horizon_ip = public_net[0]['ip'].split('/')[0]
                     message = (
-                        u"Deployment of environment '{0}' is done. "
+                        u"{0} of environment '{1}' is done. "
                         "Access the OpenStack dashboard (Horizon) at "
-                        "http://{1}/ or via internal network at http://{2}/"
+                        "http://{2}/ or via internal network at http://{3}/"
                     ).format(
+                        task_name,
                         task.cluster.name,
                         horizon_ip,
                         controller.ip
                     )
                 else:
-                    message = (
-                        u"Deployment of environment '{0}' is done"
-                    ).format(task.cluster.name)
+                    message = u"{0} of environment '{1}' is done".format(
+                        task_name,
+                        task.cluster.name
+                    )
                     logger.warning(
                         u"Public ip for controller node "
                         "not found in '{0}'".format(task.cluster.name)
                     )
             else:
-                message = (
-                    u"Deployment of environment"
-                    " '{0}' is done"
-                ).format(task.cluster.name)
+                message = u"{0} of environment '{1}' is done".format(
+                    task_name,
+                    task.cluster.name
+                )
                 logger.warning(u"Controller node not found in '{0}'".format(
                     task.cluster.name
                 ))
@@ -400,9 +405,10 @@ class NailgunReceiver(object):
             # from a public network saved in task cache
             try:
                 message = (
-                    u"Deployment of environment '{0}' is done. "
-                    "Access the OpenStack dashboard (Horizon) at {1}"
+                    u"{0} of environment '{1}' is done. "
+                    "Access the OpenStack dashboard (Horizon) at {2}"
                 ).format(
+                    task_name,
                     task.cluster.name,
                     objects.Cluster.get_network_manager(
                         task.cluster
@@ -413,10 +419,10 @@ class NailgunReceiver(object):
                     str(exc),
                     traceback.format_exc()
                 ]))
-                message = (
-                    u"Deployment of environment"
-                    " '{0}' is done"
-                ).format(task.cluster.name)
+                message = u"{0} of environment '{1}' is done".format(
+                    task_name,
+                    task.cluster.name
+                )
                 logger.warning(
                     u"Cannot find virtual IP for '{0}'".format(
                         task.cluster.name

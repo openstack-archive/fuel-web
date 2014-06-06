@@ -1,4 +1,4 @@
 argparse
 cliff-tablib
-scapy
-pcap
+scapy==2.2.0-dev
+pypcap==1.1.1

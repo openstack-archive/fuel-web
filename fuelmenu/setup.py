@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #    Copyright 2013 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -15,40 +15,6 @@
 
 import setuptools
 
-
 setuptools.setup(
-    name="fuelmenu",
-    version='0.1',
-    description="Console util for pre-configuration of Fuel server",
-    author="Matthew Mosesohn",
-    author_email="mmosesohn@mirantis.com",
-    classifiers=[
-        "License :: OSI Approved :: MIT License",
-        "Development Status :: 5 - Production/Stable",
-        "Environment :: Console",
-        "Environment :: Console :: Curses",
-        "Operating System :: POSIX",
-        "Programming Language :: Python",
-        "Topic :: Security",
-        "Topic :: Internet",
-        "Topic :: Internet :: WWW/HTTP",
-        "Topic :: Internet :: Proxy Servers",
-        "Topic :: Software Development :: Testing"
-    ],
-    install_requires=[
-        'netaddr>=0.7.5',
-        'OrderedDict>=1.1',
-        'PyYAML>=3.10',
-        'netifaces>=0.5',
-        'ethtool>=0.6',
-        #'pypcap',
-        'urwid>=1.1.1',
-    ],
-    include_package_data=True,
-    packages=setuptools.find_packages(),
-    entry_points={
-        'console_scripts': [
-            'fuelmenu = fuelmenu.fuelmenu:main',
-        ],
-    },
-)
+    setup_requires=['pbr'],
+    pbr=True)

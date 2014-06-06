@@ -24,8 +24,7 @@ import xmlrpclib
 
 import fabric.api
 
-from shotgun.utils import execute
-from shotgun.utils import is_local
+from shotgun import utils
 
 
 logger = logging.getLogger(__name__)
@@ -63,7 +62,7 @@ class Driver(object):
         self.data = data
         self.host = self.data.get("host", {}).get("address", "localhost")
         self.ssh_key = self.data.get("host", {}).get("ssh-key")
-        self.local = is_local(self.host)
+        self.local = utils.is_local(self.host)
         self.conf = conf
 
     def snapshot(self):
@@ -88,7 +87,8 @@ class Driver(object):
                     out.stderr = output.stderr
             else:
                 logger.debug("Running local command: %s", command)
-                out.return_code, out.stdout, out.stderr = execute(command)
+                out.return_code, out.stdout, out.stderr = \
+                    utils.execute(command)
             logger.debug("Stderr: %s", out.stderr)
         except Exception as e:
             logger.error("Error occured: %s", str(e))
@@ -108,13 +108,14 @@ class Driver(object):
                 ):
                     logger.debug("Getting remote file: %s %s",
                                  path, target_path)
-                    execute('mkdir -p "{0}"'.format(target_path))
+                    utils.execute('mkdir -p "{0}"'.format(target_path))
                     return fabric.api.get(path, target_path)
             else:
                 logger.debug("Getting local file: cp -r %s %s",
                              path, target_path)
-                execute('mkdir -p "{0}"'.format(target_path))
-                return execute('cp -r "{0}" "{1}"'.format(path, target_path))
+                utils.execute('mkdir -p "{0}"'.format(target_path))
+                return utils.execute(
+                    'cp -r "{0}" "{1}"'.format(path, target_path))
         except Exception as e:
             logger.error("Error occured: %s", str(e))
 
@@ -174,7 +175,7 @@ class Subs(File):
             "sed -f {0}".format(sedscript.name),
             self.compress(from_filename),
         ]))
-        execute(command, to_filename=to_filename)
+        utils.execute(command, to_filename=to_filename)
         sedscript.close()
 
     def snapshot(self):
@@ -207,9 +208,10 @@ class Subs(File):
                 match_orig_path = os.path.join("/", rel_tgt_host)
                 if not fnmatch.fnmatch(match_orig_path, self.path):
                     continue
-                tempfilename = execute("mktemp")[1].strip()
+                tempfilename = utils.execute("mktemp")[1].strip()
                 self.sed(fullfilename, tempfilename)
-                execute('mv -f "{0}" "{1}"'.format(tempfilename, fullfilename))
+                utils.execute(
+                    'mv -f "{0}" "{1}"'.format(tempfilename, fullfilename))
 
 
 class Postgres(Driver):
@@ -245,10 +247,10 @@ class Postgres(Driver):
                      "-f {file} {dbname}".format(
                          dbhost=self.dbhost, username=self.username,
                          file=temp, dbname=self.dbname))
-        execute('mkdir -p "{0}"'.format(self.target_path))
+        utils.execute('mkdir -p "{0}"'.format(self.target_path))
         dump_basename = "{0}_{1}.sql".format(self.dbhost, self.dbname)
 
-        execute('mv -f "{0}" "{1}"'.format(
+        utils.execute('mv -f "{0}" "{1}"'.format(
             temp,
             os.path.join(self.target_path, dump_basename)))
 
@@ -265,7 +267,8 @@ class XmlRpc(Driver):
             self.conf.target, self.host, "xmlrpc", self.to_file)
 
     def snapshot(self):
-        execute('mkdir -p "{0}"'.format(os.path.dirname(self.target_path)))
+        utils.execute(
+            'mkdir -p "{0}"'.format(os.path.dirname(self.target_path)))
 
         server = xmlrpclib.Server(self.server)
         with open(self.target_path, "w") as f:
@@ -289,7 +292,8 @@ class Command(Driver):
 
     def snapshot(self):
         out = self.command(self.cmdname)
-        execute('mkdir -p "{0}"'.format(os.path.dirname(self.target_path)))
+        utils.execute(
+            'mkdir -p "{0}"'.format(os.path.dirname(self.target_path)))
         with open(self.target_path, "w") as f:
             f.write("===== COMMAND =====: {0}\n".format(self.cmdname))
             f.write("===== RETURN CODE =====: {0}\n".format(

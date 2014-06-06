@@ -18,11 +18,11 @@ import argparse
 import json
 import logging
 
-from shotgun.logger import configure_logger
-configure_logger()
+from shotgun import logger
+logger.configure_logger()
 
-from shotgun.config import Config
-from shotgun.manager import Manager
+from shotgun import config as cfg
+from shotgun import manager as mgr
 
 
 logger = logging.getLogger(__name__)
@@ -61,8 +61,8 @@ def make_snapshot(args):
 
     :param args: argparse object
     """
-    config_object = Config(read_config(args.config))
-    manager = Manager(config_object)
+    config_object = cfg.Config(read_config(args.config))
+    manager = mgr.Manager(config_object)
     snapshot_path = manager.snapshot()
     logger.info(u'Snapshot path: {0}'.format(snapshot_path))
 

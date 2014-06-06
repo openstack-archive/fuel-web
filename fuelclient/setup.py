@@ -1,4 +1,5 @@
-#    Copyright 2013-2014 Mirantis, Inc.
+#!/usr/bin/env python
+#    Copyright 2013 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,22 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from setuptools import find_packages
-from setuptools import setup
+import setuptools
 
-setup(
-    name='fuelclient',
-    version='0.2',
-    description='Command line interface for Nailgun',
-    long_description="""Command line interface for Nailgun""",
-    author='Mirantis Inc.',
-    author_email='product@mirantis.com',
-    url='http://mirantis.com',
-    install_requires=['PyYAML==3.10', "argparse==1.2.1"],
-    packages=find_packages(),
-    entry_points={
-        'console_scripts': [
-            'fuel = fuelclient.cli.parser:main',
-        ],
-    }
-)
+setuptools.setup(
+    setup_requires=['pbr'],
+    pbr=True)

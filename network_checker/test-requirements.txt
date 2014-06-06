@@ -1,2 +1,3 @@
-mock
+hacking==0.7
+mock>=1.0
 pytest

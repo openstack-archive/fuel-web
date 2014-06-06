@@ -83,7 +83,9 @@
       volumes_roles_mapping:
         controller:
           - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "mysql"}
           - {allocate_size: "all", id: "image"}
+          - {allocate_size: "all", id: "image-cache"}
         compute:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "vm"}
@@ -132,6 +134,30 @@
                 generator: "calc_total_vg"
                 generator_args: ["image"]
               file_system: "xfs"
+        - id: "image-cache"
+          type: "vg"
+          min_size: {generator: "calc_min_glance_cache_size"}
+          label: "Image Cache"
+          volumes:
+            - mount: "/var/lib/glance/images-cache"
+              type: "lv"
+              name: "glance-cache"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["image-cache"]
+              file_system: "xfs"
+        - id: "mysql"
+          type: "vg"
+          min_size: {generator: "calc_min_mysql_size"}
+          label: "MySQL"
+          volumes:
+            - mount: "/var/lib/mysql"
+              type: "lv"
+              name: "mysql_vol"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["mysql"]
+              file_system: "ext4"
         - id: "cinder"
           type: "vg"
           label: "Cinder"
@@ -542,6 +568,30 @@
           label: "Cinder"
           min_size: {generator: "calc_min_cinder_size"}
           volumes: []
+        - id: "mysql"
+          type: "vg"
+          min_size: {generator: "calc_min_mysql_size"}
+          label: "MySQL"
+          volumes:
+            - mount: "/var/lib/mysql"
+              type: "lv"
+              name: "mysql_vol"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["mysql"]
+              file_system: "ext4"
+        - id: "image-cache"
+          type: "vg"
+          min_size: {generator: "calc_min_glance_cache_size"}
+          label: "Image Cache"
+          volumes:
+            - mount: "/var/lib/glance/images-cache"
+              type: "lv"
+              name: "glance-cache"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["image-cache"]
+              file_system: "xfs"
     attributes_metadata:
       editable:
         kernel_params:

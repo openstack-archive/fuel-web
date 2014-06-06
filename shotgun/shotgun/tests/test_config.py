@@ -13,33 +13,33 @@
 #    under the License.
 
 try:
-    from unittest.case import TestCase
+    from unittest import case as testcase
 except ImportError:
     # Runing unit-tests in production environment
-    from unittest2.case import TestCase
-from mock import patch
+    from unittest2 import case as testcase
+import mock
 import re
 import time
 
-from shotgun.config import Config
+from shotgun import config as cfg
 
 
-class TestConfig(TestCase):
+class TestConfig(testcase.TestCase):
 
     def test_timestamp(self):
         t = time.localtime()
-        with patch('shotgun.config.time') as MockedTime:
+        with mock.patch('shotgun.config.time') as MockedTime:
             MockedTime.localtime.return_value = t
             MockedTime.strftime.side_effect = time.strftime
-            conf = Config({})
+            conf = cfg.Config({})
             stamped = conf._timestamp("sample")
-        self.assertEquals(
+        self.assertEqual(
             stamped,
             "sample-{0}".format(time.strftime('%Y-%m-%d_%H-%M-%S', t))
         )
 
     def test_target_timestamp(self):
-        conf = Config({
+        conf = cfg.Config({
             "target": "/tmp/sample",
             "timestamp": True
         })

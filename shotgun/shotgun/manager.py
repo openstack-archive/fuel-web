@@ -15,8 +15,8 @@
 import logging
 import os
 
-from shotgun.driver import Driver
-from shotgun.utils import execute
+from shotgun import driver as drv
+from shotgun import utils
 
 
 logger = logging.getLogger(__name__)
@@ -31,14 +31,14 @@ class Manager(object):
         logger.debug("Making snapshot")
         for obj_data in self.conf.objects:
             logger.debug("Dumping: %s", obj_data)
-            driver = Driver.getDriver(obj_data, self.conf)
+            driver = drv.Driver.getDriver(obj_data, self.conf)
             driver.snapshot()
         logger.debug("Archiving dump directory: %s", self.conf.target)
-        execute("tar zcf {0}.tgz -C {1} {2}"
-                "".format(self.conf.target,
-                          os.path.dirname(self.conf.target),
-                          os.path.basename(self.conf.target)))
-        execute("rm -r {0}".format(self.conf.target))
+        utils.execute("tar zcf {0}.tgz -C {1} {2}"
+                      "".format(self.conf.target,
+                                os.path.dirname(self.conf.target),
+                                os.path.basename(self.conf.target)))
+        utils.execute("rm -r {0}".format(self.conf.target))
         with open(self.conf.lastdump, "w") as fo:
             fo.write("{0}.tgz".format(self.conf.target))
         return "{0}.tgz".format(self.conf.target)

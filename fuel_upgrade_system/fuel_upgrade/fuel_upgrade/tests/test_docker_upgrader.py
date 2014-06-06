@@ -22,7 +22,7 @@ from fuel_upgrade.upgrade import DockerUpgrader
 from fuel_upgrade.tests.base import BaseTestCase
 
 
-@mock.patch('fuel_upgrade.upgrade.utils.exec_cmd')
+@mock.patch('fuel_upgrade.upgrade.utils.exec_cmd', return_value=1)
 class TestDockerUpgrader(BaseTestCase):
 
     def setUp(self):
@@ -50,10 +50,12 @@ class TestDockerUpgrader(BaseTestCase):
         self.docker_patcher.stop()
         self.supervisor_patcher.stop()
 
+
     @mock.patch('fuel_upgrade.upgrade.time.sleep')
     def test_run_with_retries(self, sleep, _):
         image_name = 'test_image'
         retries_count = 3
+        self.docker_mock.wait.return_value = 1
 
         with self.assertRaises(errors.DockerExecutedErrorNonZeroExitCode):
             self.upgrader.run(
@@ -200,7 +202,7 @@ class TestDockerUpgrader(BaseTestCase):
 
         actual_graph = self.upgrader.build_dependencies_graph(containers)
         expected_graph = {
-            '1': ['3', '2'],
+            '1': ['2', '3'],
             '2': [],
             '3': ['2']}
 

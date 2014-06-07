@@ -26,14 +26,15 @@ define(
     'text!templates/cluster/node.html',
     'text!templates/cluster/node_roles.html',
     'text!templates/cluster/edit_node_disks.html',
+    'text!templates/cluster/raid_tab.html',
     'text!templates/cluster/node_disk.html',
     'text!templates/cluster/volume_style.html',
     'text!templates/cluster/edit_node_interfaces.html',
     'text!templates/cluster/node_interface.html'
 ],
-function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, assignRolesPanelTemplate, nodeListTemplate, nodeGroupTemplate, nodeTemplate, nodeRoleTemplate, editNodeDisksScreenTemplate, nodeDisksTemplate, volumeStylesTemplate, editNodeInterfacesScreenTemplate, nodeInterfaceTemplate) {
+function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, assignRolesPanelTemplate, nodeListTemplate, nodeGroupTemplate, nodeTemplate, nodeRoleTemplate, editNodeDisksScreenTemplate, EditNodeControllersScreenTemplate, nodeDisksTemplate, volumeStylesTemplate, editNodeInterfacesScreenTemplate, nodeInterfaceTemplate) {
     'use strict';
-    var NodesTab, Screen, NodeListScreen, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, NodesManagementPanel, AssignRolesPanel, NodeList, NodeGroup, Node, EditNodeScreen, EditNodeDisksScreen, NodeDisk, EditNodeInterfacesScreen, NodeInterface;
+    var NodesTab, Screen, NodeListScreen, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, NodesManagementPanel, AssignRolesPanel, NodeList, NodeGroup, Node, EditNodeScreen, EditNodeDisksScreen, EditNodeControllersScreen, NodeDisk, EditNodeInterfacesScreen, NodeInterface;
 
     NodesTab = commonViews.Tab.extend({
         className: 'wrapper',
@@ -78,6 +79,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 'add': AddNodesScreen,
                 'edit': EditNodesScreen,
                 'disks': EditNodeDisksScreen,
+                'controllers': EditNodeControllersScreen,
                 'interfaces': EditNodeInterfacesScreen
             };
             this.changeScreen(screens[options[0]] || screens.list, options.slice(1));
@@ -1087,6 +1089,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         constructorName: 'EditNodeDisksScreen',
         template: _.template(editNodeDisksScreenTemplate),
         events: {
+            'click .btn-configure-controllers' : 'goToConfigurationScreen',
             'click .btn-defaults': 'loadDefaults',
             'click .btn-revert-changes': 'revertChanges',
             'click .btn-apply:not(:disabled)': 'applyChanges',
@@ -1097,6 +1100,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
             return !this.nodes.reduce(function(result, node) {
                 return result && _.isEqual(disks, node.disks.toJSON());
             }, true);
+        },
+        goToConfigurationScreen: function(e) {
+            var selectedNodesIds = _.pluck(this.nodes.where({checked: true}), 'id').join(',');
+            //Need fix cluster.id
+            app.navigate('#cluster/' + '1' + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
         },
         hasValidationErrors: function() {
             var result = false;
@@ -1226,6 +1234,42 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
                 this.renderDisks();
                 this.checkForChanges();
             }
+            this.setupButtonsBindings();
+            return this;
+        }
+    });
+
+
+
+    EditNodeControllersScreen = EditNodeScreen.extend({
+        className: 'edit-node-controllers-screen',
+        constructorName: 'EditNodeControllersScreen',
+        screen: null,
+        template: _.template(EditNodeControllersScreenTemplate),
+        events: {
+            'click .btn-configure-disks' : 'goToConfigurationScreen',
+            'click .btn-defaults': 'loadDefaults',
+            'click .btn-revert-changes': 'revertChanges',
+            'click .btn-apply:not(:disabled)': 'applyChanges',
+            'click .btn-return:not(:disabled)': 'returnToNodeList'
+        },
+        setActive: function(element) {
+            this.$('li.active').removeClass('active');
+            this.$('li').addClass('active');
+        },
+        goToConfigurationScreen: function(e) {
+            var selectedNodesIds = _.pluck(this.nodes.where({checked: true}), 'id').join(',');
+            //Need fix cluster.id
+            app.navigate('#cluster/' + '1' + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+            this.nodes = this.model.get('nodes');
+        },
+        render: function() {
+            this.$el.html(this.template({
+                nodes: this.nodes
+            })).i18n();
             this.setupButtonsBindings();
             return this;
         }

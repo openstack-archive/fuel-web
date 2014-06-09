@@ -577,6 +577,7 @@ class VolumeManager(object):
         """Disks and volumes will be set according to node attributes.
         VolumeManager should not make any updates in database.
         """
+        self.node = node
         self.node_name = node.name
 
         # Make sure that we don't change volumes directly from manager
@@ -973,3 +974,53 @@ class VolumeManager(object):
 
     def __logger(self, message):
         logger.debug('VolumeManager %s: %s', id(self), message)
+
+
+class RAIDVolumeManager(VolumeManager):
+
+    def gen_volumes_info(self):
+        volumes = super(RAIDVolumeManager, self).gen_volumes_info()
+
+        if self.node.raids is None or self.node.raids.config == {}:
+            # no or empty raid config, nothing to do
+            return volumes
+
+        simple_volumes = DisksFormatConvertor.format_disks_to_simple(
+            volumes)
+
+        # as we need to map block devices to raid configuration,
+        # we need to drop raid config actions that don't create
+        # usable block devices
+        _dev_action = ("create", "create_nwd")
+        config = []
+        for conf in self.node.raids.config["raids"]:
+            if conf["action"] in _dev_action:
+                config.append(conf)
+        sorted_config = sorted(config, key=lambda k: k["raid_idx"])
+
+        new_volumes = []
+        for i, volume_config in enumerate(simple_volumes):
+            raid_conf = sorted_config[i]
+            raid_role = raid_conf.get("raid_role", None)
+            if not raid_role:
+                # if 'raid_role' field is missing it means
+                # that we're not dealing with the default configuration
+                # and user didn't provide 'raid_role' in theirs custom
+                # config, so fall back to the default volume configuration
+                self.__logger('Missing "raid_role" field, fall back '
+                              'to the default configuration')
+                return volumes
+            volumes = volume_config["volumes"]
+            volume_names = [v["name"] for v in volumes]
+            if raid_role not in volume_names:
+                continue
+            for volume in volumes:
+                if volume["name"] == raid_role:
+                    volume["size"] = volume_config["size"]
+                else:
+                    volume["size"] = 0
+                new_volumes = self.set_volume_size(volume_config['id'],
+                                                   volume['name'],
+                                                   volume['size'])
+
+        return new_volumes

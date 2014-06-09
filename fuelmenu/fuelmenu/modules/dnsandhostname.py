@@ -15,7 +15,6 @@
 
 from fuelmenu.common import dialog
 from fuelmenu.common.modulehelper import ModuleHelper
-from fuelmenu.common import nailyfactersettings
 from fuelmenu.common import replace
 import fuelmenu.common.urwidwrapper as widget
 from fuelmenu.settings import Settings
@@ -325,14 +324,6 @@ is accessible"}
         Settings().write(newsettings,
                          defaultsfile=self.parent.defaultsettingsfile,
                          outfn=self.parent.settingsfile)
-        #Write naily.facts
-        factsettings = dict()
-        #log.debug(newsettings)
-        for key in newsettings.keys():
-            if key != "blank":
-                factsettings[key] = newsettings[key]
-        n = nailyfactersettings.NailyFacterSettings()
-        n.write(factsettings)
 
         #Set oldsettings to reflect new settings
         self.oldsettings = newsettings

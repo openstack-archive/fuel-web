@@ -117,6 +117,23 @@ module.exports = function(grunt) {
                 force: true
             }
         },
+        replace: {
+            sha: {
+                src: 'static/index.html',
+                dest: staticDir + '/',
+                replacements: [{
+                    from: '__COMMIT_SHA__',
+                    to: function() {
+                        return grunt.config.get('meta.revision');
+                    }
+                }]
+            }
+        },
+        revision: {
+            options: {
+                short: false
+            }
+        },
         jison: {
             target : {
                 src: 'static/config_expression.jison',
@@ -133,11 +150,13 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-clean');
     grunt.loadNpmTasks('grunt-jison');
     grunt.loadNpmTasks('grunt-cleanempty');
+    grunt.loadNpmTasks('grunt-text-replace');
+    grunt.loadNpmTasks('grunt-git-revision');
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
     grunt.loadNpmTasks('grunt-debug-task');
     grunt.registerTask('trimstatic', ['clean', 'cleanempty']);
-    grunt.registerTask('build', ['bower', 'less', 'requirejs', 'trimstatic']);
+    grunt.registerTask('build', ['bower', 'less', 'requirejs', 'trimstatic', 'revision', 'replace']);
     grunt.registerTask('default', ['build']);
     grunt.task.loadTasks('grunt');
 };

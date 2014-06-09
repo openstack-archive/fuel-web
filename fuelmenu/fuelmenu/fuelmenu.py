@@ -78,7 +78,7 @@ class FuelSetup(object):
         self.screen = None
         self.defaultsettingsfile = "%s/settings.yaml" \
                                    % (os.path.dirname(__file__))
-        self.settingsfile = "/etc/astute.yaml"
+        self.settingsfile = "/etc/fuel/astute.yaml"
         self.managediface = "eth0"
         #Set to true to move all settings to end
         self.globalsave = True
@@ -304,21 +304,8 @@ def setup():
 
 
 def save_only(iface):
-    from common import nailyfactersettings
     import common.network as network
     import netifaces
-    #Naily.facts translation map from astute.yaml format
-    facter_translate = \
-        {
-            "ADMIN_NETWORK/interface": "internal_interface",
-            "ADMIN_NETWORK/ipaddress": "internal_ipaddress",
-            "ADMIN_NETWORK/netmask": "internal_netmask",
-            "ADMIN_NETWORK/mac": "internal_mac",
-            "ADMIN_NETWORK/dhcp_pool_start": "dhcp_pool_start",
-            "ADMIN_NETWORK/dhcp_pool_end": "dhcp_pool_end",
-            "ADMIN_NETWORK/static_pool_start": "static_pool_start",
-            "ADMIN_NETWORK/static_pool_end": "static_pool_end",
-        }
     #Calculate and set Static/DHCP pool fields
     #Max IPs = net size - 2 (master node + bcast)
     try:
@@ -364,13 +351,7 @@ def save_only(iface):
             newsettings[setting] = settings[setting]
     #Write astute.yaml
     Settings().write(newsettings, defaultsfile=None,
-                     outfn="/etc/astute.yaml")
-    #Prepare naily.facts
-    factsettings = dict()
-    for key in facter_translate.keys():
-        factsettings[facter_translate[key]] = settings[key]
-    n = nailyfactersettings.NailyFacterSettings()
-    n.write(factsettings)
+                     outfn="/etc/fuel/astute.yaml")
 
 
 def main(*args, **kwargs):

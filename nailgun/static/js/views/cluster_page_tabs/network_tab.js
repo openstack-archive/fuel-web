@@ -57,16 +57,23 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         verifyNetworks: function() {
             if (!this.networkConfiguration.validationError) {
                 this.disableControls();
-                this.removeEmptyRanges();
+                this.prepareIpRanges();
                 this.page.removeFinishedNetworkTasks().always(_.bind(this.startVerification, this));
             }
         },
-        removeEmptyRanges: function() {
+        prepareIpRanges: function() {
+            var removeEmptyRanges = function(ranges) {
+                return _.filter(ranges, function(range) {return _.compact(range).length;});
+            };
             this.networkConfiguration.get('networks').each(function(network) {
                 if (network.get('meta').notation == 'ip_ranges') {
-                    network.set({ip_ranges: _.filter(network.get('ip_ranges'), function(range) {return _.compact(range).length;})}, {silent: true});
+                    network.set({ip_ranges: removeEmptyRanges(network.get('ip_ranges'))});
                 }
             });
+            var floatingRanges = this.networkConfiguration.get('networking_parameters').get('floating_ranges');
+            if (floatingRanges) {
+                this.networkConfiguration.get('networking_parameters').set({floating_ranges: removeEmptyRanges(floatingRanges)});
+            }
         },
         startVerification: function() {
             var task = new models.Task();
@@ -101,7 +108,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             var deferred;
             if (!this.networkConfiguration.validationError) {
                 this.disableControls();
-                this.removeEmptyRanges();
+                this.prepareIpRanges();
                 deferred = Backbone.sync('update', this.networkConfiguration)
                     .done(_.bind(function(task) {
                         if (task && task.status == 'error') {

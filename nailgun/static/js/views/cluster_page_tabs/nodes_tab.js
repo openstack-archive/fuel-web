@@ -26,7 +26,7 @@ define(
     'text!templates/cluster/node.html',
     'text!templates/cluster/node_roles.html',
     'text!templates/cluster/edit_node_disks.html',
-    'text!templates/cluster/raid_tab.html',
+    'text!templates/cluster/edit_node_controllers.html',
     'text!templates/cluster/node_disk.html',
     'text!templates/cluster/volume_style.html',
     'text!templates/cluster/edit_node_interfaces.html',
@@ -1103,6 +1103,10 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         },
         goToConfigurationScreen: function(e) {
             var selectedNodesIds = _.pluck(this.nodes.where({checked: true}), 'id').join(',');
+            var controllers = this.controllers;
+            var controllerIds = parseInt($(e.currentTarget).data('id'), 10);
+            controllers[controllerIds].checked = true;
+
             //Need fix cluster.id
             app.navigate('#cluster/' + '1' + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
         },
@@ -1171,6 +1175,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
+                this.controllers = this.nodes.at(0).get('meta').raid.controllers;
                 this.model.on('change:status', this.revertChanges, this);
                 this.volumes = new models.Volumes([], {url: _.result(this.nodes.at(0), 'url') + '/volumes'});
                 this.loading = $.when.apply($, this.nodes.map(function(node) {
@@ -1228,6 +1233,7 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         render: function() {
             this.$el.html(this.template({
                 nodes: this.nodes,
+                controllers: this.controllers,
                 locked: this.isLocked()
             })).i18n();
             if (this.loading && this.loading.state() != 'pending') {
@@ -1248,27 +1254,61 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         template: _.template(EditNodeControllersScreenTemplate),
         events: {
             'click .btn-configure-disks' : 'goToConfigurationScreen',
+            'click .btn-configure-controllers' : 'goToOtherController',
             'click .btn-defaults': 'loadDefaults',
             'click .btn-revert-changes': 'revertChanges',
             'click .btn-apply:not(:disabled)': 'applyChanges',
             'click .btn-return:not(:disabled)': 'returnToNodeList'
         },
-        setActive: function(element) {
-            this.$('li.active').removeClass('active');
-            this.$('li').addClass('active');
+
+        goToOtherController: function(e) {
+            var selectedNodesIds = _.pluck(this.nodes.where({checked: true}), 'id').join(',');
+            var controllerIds = parseInt($(e.target).data('id'), 10);
+            if (controllerIds >= 0) {
+                this.controllers[controllerIds].checked = true;
+            };
+            this.updateController();
+            this.render();
+
+            //Need fix cluster.id
+            app.navigate('#cluster/' + '1' + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
         },
+
         goToConfigurationScreen: function(e) {
             var selectedNodesIds = _.pluck(this.nodes.where({checked: true}), 'id').join(',');
             //Need fix cluster.id
             app.navigate('#cluster/' + '1' + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
         },
+
+        updateController: function() {
+            var controller = 0;
+            var active = 0;
+            var num = 0;
+            _.each(this.controllers, function(ctr){
+                if (ctr.checked) {
+                    ctr.checked = false;
+                    active = num;
+                    controller = ctr;
+                };
+                num = num + 1;
+            });
+            this.controller = controller;
+            this.active = active;
+        },
+
         initialize: function(options) {
             _.defaults(this, options);
             this.nodes = this.model.get('nodes');
+            this.active = 0;
+            this.controllers = this.nodes.at(0).get('meta').raid.controllers;
+            this.updateController();
         },
         render: function() {
             this.$el.html(this.template({
-                nodes: this.nodes
+                nodes: this.nodes,
+                controllers: this.controllers,
+                controller: this.controller,
+                active: this.active
             })).i18n();
             this.setupButtonsBindings();
             return this;

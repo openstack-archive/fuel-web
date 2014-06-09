@@ -1,10 +1,12 @@
-
 <div class="edit-node-disks">
   <div class="wrapper">
+
     <ul class="nav nav-pills">
   		<li class="active"><a class="btn-configure-disks" data-action="disks">Disks</a></li>
-  		<li><a class="btn-configure-controllers" data-action="controllers">Controller 1</a></li>
-  		<li><a href="#">Controller 2</a></li>
+        <% _.each(controllers, function(controller) { %>
+            <li><a data-id="<%= controller.controller_id %>" class="btn-configure-controllers" data-action="controllers">Controller <%= controller.controller_id+1 %></a></li>
+        <% }); %>
+
 	</ul>
 
   <h3>

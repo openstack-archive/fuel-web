@@ -78,7 +78,7 @@ class FuelSetup(object):
         self.screen = None
         self.defaultsettingsfile = "%s/settings.yaml" \
                                    % (os.path.dirname(__file__))
-        self.settingsfile = "/etc/astute.yaml"
+        self.settingsfile = "/etc/fuel/astute.yaml"
         self.managediface = "eth0"
         #Set to true to move all settings to end
         self.globalsave = True
@@ -304,7 +304,6 @@ def setup():
 
 
 def save_only(iface):
-    from common import nailyfactersettings
     import common.network as network
     import netifaces
     #Naily.facts translation map from astute.yaml format
@@ -365,12 +364,6 @@ def save_only(iface):
     #Write astute.yaml
     Settings().write(newsettings, defaultsfile=None,
                      outfn="/etc/astute.yaml")
-    #Prepare naily.facts
-    factsettings = dict()
-    for key in facter_translate.keys():
-        factsettings[facter_translate[key]] = settings[key]
-    n = nailyfactersettings.NailyFacterSettings()
-    n.write(factsettings)
 
 
 def main(*args, **kwargs):

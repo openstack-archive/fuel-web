@@ -18,7 +18,6 @@ import dhcp_checker.utils
 from fuelmenu.common import dialog
 from fuelmenu.common.errors import BadIPException
 from fuelmenu.common.modulehelper import ModuleHelper
-from fuelmenu.common import nailyfactersettings
 from fuelmenu.common import network
 from fuelmenu.common import timeout
 import fuelmenu.common.urwidwrapper as widget
@@ -349,16 +348,6 @@ interface first.")
         Settings().write(newsettings,
                          defaultsfile=self.parent.defaultsettingsfile,
                          outfn=self.parent.settingsfile)
-        #Write naily.facts
-        factsettings = dict()
-        #for key in newsettings.keys():
-        log.debug(str(facter_translate))
-        log.debug(str(newsettings))
-        for key in facter_translate.keys():
-            factsettings[facter_translate[key]] = responses[key]
-        n = nailyfactersettings.NailyFacterSettings()
-        log.debug("Facts to write: %s" % factsettings)
-        n.write(factsettings)
 
         #Set oldsettings to reflect new settings
         self.oldsettings = newsettings

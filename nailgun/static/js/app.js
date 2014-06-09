@@ -46,9 +46,9 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             this.version.fetch();
             this.content = $('#content');
             this.navbar = new commonViews.Navbar({elements: [
-                ['environments', '#clusters'],
-                ['releases', '#releases'],
-                ['support', '#support']
+                {label: 'environments', url: '#clusters'},
+                {label: 'releases', url:'#releases'},
+                {label: 'support', url:'#support'}
             ]});
             this.content.before(this.navbar.render().el);
             this.breadcrumbs = new commonViews.Breadcrumbs();

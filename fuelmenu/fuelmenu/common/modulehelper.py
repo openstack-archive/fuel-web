@@ -150,8 +150,9 @@ class ModuleHelper(object):
     @classmethod
     def getNetwork(cls, modobj):
         """Returns addr, broadcast, netmask for each network interface."""
+        re_ifaces = re.compile(r"lo|vir|vbox|docker|veth")
         for iface in netifaces.interfaces():
-            if 'lo' in iface or 'vir' in iface or 'vbox' in iface:
+            if re_ifaces.search(iface):
                     continue
             try:
                 modobj.netsettings.update({iface: netifaces.ifaddresses(iface)[

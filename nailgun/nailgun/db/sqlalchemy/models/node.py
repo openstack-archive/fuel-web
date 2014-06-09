@@ -36,6 +36,7 @@ from nailgun.db.sqlalchemy.models.fields import LowercaseString
 from nailgun.db.sqlalchemy.models.network import NetworkBondAssignment
 from nailgun.db.sqlalchemy.models.network import NetworkNICAssignment
 from nailgun.logger import logger
+from nailgun.volumes.manager import RAIDVolumeManager
 from nailgun.volumes.manager import VolumeManager
 
 
@@ -145,7 +146,10 @@ class Node(Base):
 
     @property
     def volume_manager(self):
-        return VolumeManager(self)
+        if self.raids is not None and self.raids.config != {}:
+            return RAIDVolumeManager(self)
+        else:
+            return VolumeManager(self)
 
     @property
     def needs_reprovision(self):

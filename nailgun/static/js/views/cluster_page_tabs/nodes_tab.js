@@ -1175,7 +1175,11 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
-                this.controllers = this.nodes.at(0).get('meta').raid.controllers;
+                try {
+                    this.controllers = this.nodes.at(0).get('meta').raid.controllers;
+                } catch(e) {
+                    this.controllers = [];
+                }
                 this.model.on('change:status', this.revertChanges, this);
                 this.volumes = new models.Volumes([], {url: _.result(this.nodes.at(0), 'url') + '/volumes'});
                 this.loading = $.when.apply($, this.nodes.map(function(node) {
@@ -1253,12 +1257,42 @@ function(utils, models, commonViews, dialogViews, nodesManagementPanelTemplate, 
         screen: null,
         template: _.template(EditNodeControllersScreenTemplate),
         events: {
+            'click [type="checkbox"]:checked': 'checkOnTypeDisk',
+            'click [type="checkbox"]:not(:checked)': 'checkOffTypeDisk',
             'click .btn-configure-disks' : 'goToConfigurationScreen',
             'click .btn-configure-controllers' : 'goToOtherController',
             'click .btn-defaults': 'loadDefaults',
             'click .btn-revert-changes': 'revertChanges',
             'click .btn-apply:not(:disabled)': 'applyChanges',
             'click .btn-return:not(:disabled)': 'returnToNodeList'
+        },
+
+        checkOnTypeDisk: function(e) {
+            var currentType = $(e.target).data('id');
+            var allCheckBox = document.getElementsByTagName('input');
+            for(var i=0; i<allCheckBox.length; i++) {
+                if (currentType != $(allCheckBox[i]).data('id')) {
+                    allCheckBox[i].disabled = true;
+                };
+            };
+
+        },
+
+        checkOffTypeDisk: function(e) {
+            var currentType = $(e.target).data('id');
+            var allCheckBox = document.getElementsByTagName('input');
+            var count = 0;
+            for(var i=0; i<allCheckBox.length; i++) {
+                if (currentType == $(allCheckBox[i]).data('id') && allCheckBox[i].checked) {
+                    count++;
+                };
+            };
+            if (count == 0) {
+                for(var i=0; i<allCheckBox.length; i++) {
+                    allCheckBox[i].disabled = false;
+                };
+            };
+
         },
 
         goToOtherController: function(e) {

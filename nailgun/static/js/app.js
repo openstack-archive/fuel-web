@@ -193,6 +193,10 @@ function(Coccyx, coccyxMixins, models, commonViews, ClusterPage, NodesTab, Clust
             $.ajaxSetup({ cache: false });
 
             window.isWebkit = navigator.userAgent.indexOf('AppleWebKit/') !== -1;
+            
+            window.BackboneRactive = Ractive.extend({
+                adapt: ['Backbone']
+            });
 
             var app = new AppRouter();
             window.app = app;

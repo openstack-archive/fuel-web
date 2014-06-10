@@ -28,6 +28,8 @@ requirejs.config({
         lodash: 'js/libs/bower/lodash/js/lodash',
         backbone: 'js/libs/custom/backbone',
         stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
+        ractive: 'js/libs/bower/ractive/js/ractive',
+        ractive_backbone_adaptor: 'js/libs/custom/ractive-adaptors-backbone',
         coccyx: 'js/libs/custom/coccyx',
         cocktail: 'js/libs/bower/cocktail/Cocktail',
         localstorage: 'js/libs/bower/backbone.localstorage/backbone.localStorage',
@@ -66,6 +68,9 @@ requirejs.config({
         localstorage: {
             deps: ['backbone']
         },
+        ractive_backbone_adaptor: {
+            deps: ['ractive', 'backbone']
+        },
         deepModel: {
             deps: ['backbone']
         },
@@ -103,6 +108,8 @@ require([
     'underscore',
     'backbone',
     'stickit',
+    'ractive',
+    'ractive_backbone_adaptor',
     'deepModel',
     'coccyx',
     'cocktail',

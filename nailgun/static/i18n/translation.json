@@ -118,10 +118,10 @@
                 "no_releases_message": "There are no releases available.",
                 "release": {
                     "configure_button": "Configure",
-                    "active": "Active",
+                    "available": "Active",
                     "error": "Error",
                     "not_available": "Not available",
-                    "download_progress": "Downloading"
+                    "downloading": "Downloading"
                 }
             },
             "clusters_page": {

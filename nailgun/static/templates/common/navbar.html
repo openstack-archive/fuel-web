@@ -4,9 +4,13 @@
       <li class="product-logo">
         <a href="#"><div class="logo"></div></a>
       </li>
-      <% elements.each(function(element) { %>
-        <li><a class="<%= element.get('active') ? 'active' : '' %>" href="<%- element.get('url') %>"><%- $.t('navbar.' + element.get('label'), {defaultValue: element.get('label')}) %></a></li>
-      <% }) %>
+      {{#elements}}
+        <li>
+          <a class="{{#active}} active {{/active}}" href="{{url}}">
+            {{ t('navbar.' + label, {defaultValue: label}) }}
+          </a>
+        </li>
+      {{/elements}}
       <li class="space"></li>
       <li class="navigation-bar-icon notifications"></li>
       <li class="navigation-bar-icon nodes-summary-container"></li>

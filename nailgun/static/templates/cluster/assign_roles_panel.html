@@ -1,11 +1,11 @@
 <h4 data-i18n="cluster_page.nodes_tab.assign_roles"></h4>
-<% roles.each(function(role) { %>
+{{#roles}}
   <div class="role-container">
     <label>
-      <input type="checkbox" name="<%- role.get('name') %>" />
-      <%- role.get('label') %>
+      <input type="checkbox" name="{{name}}" checked="{{checked}}" disabled="{{disabled}}" indeterminate="{{indeterminate}}" />
+      {{label}}
     </label>
-    <div class="role-conflict <%- role.get('name') %>"></div>
-    <div class="role-description"><%- role.get('description') %></div>
+    <div class="role-conflict {{name}}">{{conflict}}</div>
+    <div class="role-description">{{description}}</div>
   </div>
-<% }) %>
+{{/roles}}

@@ -1,20 +1,22 @@
 <div class="footer-box">
-  <% if (_.contains(version.get('feature_groups'), 'mirantis')) { %>
+  {{#mirantis}}
     <a href="http://www.mirantis.com" target="_blank" class="footer-logo"></a>
     <div class="footer-copyright pull-left" data-i18n="common.copyright"></div>
-  <% } %>
-  <% if (version.get('release')) { %>
-    <div class="footer-version pull-right">Version: <%- version.get('release') %></div>
-  <% } %>
+  {{/mirantis}}
+  {{#version}}
+    {{#release}}
+      <div class="footer-version pull-right">Version: {{release}}</div>
+    {{/release}}
+  {{/version}}
   <div class="footer-lang pull-right">
     <div class="dropdown dropup">
-      <button class="dropdown-toggle current-locale btn btn-link" data-toggle="dropdown"><%- currentLocale.name %></button>
+      <button class="dropdown-toggle current-locale btn btn-link" data-toggle="dropdown">{{currentLocale.name}}</button>
       <ul class="dropdown-menu locales">
-        <% _.each(locales, function(locale) { %>
+        {{#locales}}
           <li>
-            <a data-locale="<%- locale.locale %>"><%- locale.name %></a>
+            <a data-locale="{{locale}}">{{name}}</a>
           </li>
-        <% }) %>
+        {{/locales}}
       </ul>
     </div>
   </div>

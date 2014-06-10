@@ -63,7 +63,6 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
 
     Release = Backbone.View.extend({
         tagName: 'tr',
-        template: _.template(releaseTemplate),
         'events': {
             'click .btn-rhel-setup': 'showRhelLicenseCredentials'
         },
@@ -113,7 +112,15 @@ function(utils, commonViews, dialogViews, releasesListTemplate, releaseTemplate)
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({release: this.release})).i18n();
+            var ractive = new BackboneRactive({
+                el: this.$el,
+                template: releaseTemplate,
+                data: {
+                    release: this.release,
+                    downloading: this.release.get('state') == 'downloading'
+                }
+            });
+            this.$el.i18n();
             this.updateProgress();
             this.updateErrorMessage();
             return this;

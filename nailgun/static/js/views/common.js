@@ -55,7 +55,6 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
 
     views.Navbar = Backbone.View.extend({
         className: 'container',
-        template: _.template(navbarTemplate),
         updateInterval: 20000,
         notificationsDisplayCount: 5,
         setActive: function(url) {
@@ -75,14 +74,21 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         initialize: function(options) {
             this.elements = new Backbone.Collection(options.elements);
             this.elements.invoke('set', {active: false});
-            this.elements.on('change:active', this.render, this);
             this.statistics = new models.NodesStatistics();
             this.notifications = new models.Notifications();
             this.update();
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({elements: this.elements}));
+            var ractive = new BackboneRactive({
+                el: this.$el,
+                template: navbarTemplate,
+                data: {
+                    elements: this.elements,
+                    t: $.t
+                }
+            });
+            this.$el.i18n();
             this.stats = new views.NodesStats({statistics: this.statistics, navbar: this});
             this.registerSubView(this.stats);
             this.$('.nodes-summary-container').html(this.stats.render().el);
@@ -97,45 +103,25 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
     });
 
     views.NodesStats = Backbone.View.extend({
-        template: _.template(nodesStatsTemplate),
-        bindings: {
-            '.total-nodes-count': {
-                observe: 'total',
-                onGet: 'returnValueOrNonBreakingSpace'
-            },
-            '.total-nodes-title': {
-                observe: 'total',
-                onGet: 'formatTitle',
-                updateMethod: 'html'
-            },
-            '.unallocated-nodes-count': {
-                observe: 'unallocated',
-                onGet: 'returnValueOrNonBreakingSpace'
-            },
-            '.unallocated-nodes-title': {
-                observe: 'unallocated',
-                onGet: 'formatTitle',
-                updateMethod: 'html'
-            }
-        },
-        returnValueOrNonBreakingSpace: function(value) {
-            return !_.isUndefined(value) ? value : '\u00A0';
-        },
-        formatTitle: function(value, options) {
-            return !_.isUndefined(value) ? utils.linebreaks(_.escape($.t('navbar.stats.' + options.observe, {count: value}))) : '';
-        },
         initialize: function(options) {
             _.defaults(this, options);
         },
         render: function() {
-            this.$el.html(this.template({stats: this.statistics}));
-            this.stickit(this.statistics);
+            var ractive = new BackboneRactive({
+                el: this.$el,
+                template: nodesStatsTemplate,
+                data: {
+                    stats: this.statistics,
+                    linebreaks: utils.linebreaks,
+                    t: $.t
+                }
+            });
+            this.$el.i18n();
             return this;
         }
     });
 
     views.Notifications = Backbone.View.extend({
-        template: _.template(notificationsTemplate),
         events: {
             'click .icon-comment': 'togglePopover',
             'click .badge': 'togglePopover'
@@ -148,7 +134,11 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             this.collection.on('sync', this.render, this);
         },
         render: function() {
-            this.$el.html(this.template({notifications: this.collection}));
+            var ractive = new BackboneRactive({
+                el: this.$el,
+                template: notificationsTemplate,
+                data: {newNotificationsLength: this.collection.where({'status': 'unread'}).length}
+            });
             return this;
         }
     });
@@ -240,7 +230,6 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
     });
 
     views.Footer = Backbone.View.extend({
-        template: _.template(footerTemplate),
         events: {
             'click .footer-lang li a': 'setLocale'
         },
@@ -267,15 +256,21 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
             this.locales = this.getAvailableLocales();
             this.setDefaultLocale();
             this.version = options.version;
-            this.version.on('sync', this.render, this);
             this.render();
         },
         render: function() {
-            this.$el.html(this.template({
-                version: this.version,
-                locales: this.locales,
-                currentLocale: this.getCurrentLocale()
-            })).i18n();
+            var ractive = new BackboneRactive({
+                el: this.$el,
+                template: footerTemplate,
+                data: {
+                    mirantis: _.contains(this.version.get('feature_groups'), 'mirantis'),
+                    version: this.version,
+                    locales: this.locales,
+                    currentLocale: this.getCurrentLocale(),
+                    t: $.t
+                }
+            });
+            this.$el.i18n();
             return this;
         }
     });

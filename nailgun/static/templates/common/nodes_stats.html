@@ -1,6 +1,16 @@
-<div class="statistic">
-  <div class="stat-count total-nodes-count"></div>
-  <div class="stat-title total-nodes-title"></div>
-  <div class="stat-count unallocated-nodes-count"></div>
-  <div class="stat-title unallocated-nodes-title"></div>
-</div>
+{{#stats}}
+  <div class="statistic">
+    <div class="stat-count total-nodes-count">
+      {{ total || '\u00A0' }}
+    </div>
+    <div class="stat-title total-nodes-title">
+      {{#total}}{{{ linebreaks(t('navbar.stats.total', {count: total, escapeInterpolation: true})) }}}{{/total}}
+    </div>
+    <div class="stat-count unallocated-nodes-count">
+      {{ unallocated || '\u00A0' }}
+    </div>
+    <div class="stat-title unallocated-nodes-title">
+      {{#unallocated}}{{{ linebreaks(t('navbar.stats.unallocated', {count: unallocated, escapeInterpolation: true})) }}}{{/unallocated}}
+    </div>
+  </div>
+{{/stats}}

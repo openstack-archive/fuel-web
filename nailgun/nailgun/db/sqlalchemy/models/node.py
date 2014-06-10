@@ -118,6 +118,8 @@ class Node(Base):
     # hash function from raw node agent request data - for caching purposes
     agent_checksum = Column(String(40), nullable=True)
 
+    ip_addrs = relationship("IPAddr", viewonly=True)
+
     @property
     def interfaces(self):
         return self.nic_interfaces + self.bond_interfaces
@@ -134,7 +136,7 @@ class Node(Base):
     def network_data(self):
         # TODO(enchantner): move to object
         from nailgun.network.manager import NetworkManager
-        return NetworkManager.get_node_networks(self.id)
+        return NetworkManager.get_node_networks(self)
 
     @property
     def volume_manager(self):

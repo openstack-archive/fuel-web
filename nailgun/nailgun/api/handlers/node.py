@@ -54,7 +54,7 @@ class NodeCollectionHandler(CollectionHandler):
     fields = ('id', 'name', 'meta', 'progress', 'roles', 'pending_roles',
               'status', 'mac', 'fqdn', 'ip', 'manufacturer', 'platform_name',
               'pending_addition', 'pending_deletion', 'os_platform',
-              'error_type', 'online', 'cluster', 'uuid')
+              'error_type', 'online', 'cluster', 'uuid', 'network_data')
 
     validator = NodeValidator
     collection = objects.NodeCollection
@@ -65,7 +65,8 @@ class NodeCollectionHandler(CollectionHandler):
         'bond_interfaces',
         'bond_interfaces.assigned_networks_list',
         'role_list',
-        'pending_role_list'
+        'pending_role_list',
+        'ip_addrs'
     )
 
     @content_json

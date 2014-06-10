@@ -581,25 +581,19 @@ class Node(NailgunObject):
         db().refresh(instance)
 
     @classmethod
-    def to_dict(cls, instance, fields=None):
-        """Serialize Node instance to Python dict.
-        Adds "network_data" field which includes all network data for Node
+    def can_be_updated(cls, instance):
+        return (instance.status in (consts.NODE_STATUSES.ready,
+                                    consts.NODE_STATUSES.provisioned)) or \
+               (instance.status == consts.NODE_STATUSES.error
+                and instance.error_type == consts.NODE_ERRORS.deploy)
 
-        :param instance: Node instance
-        :param fields: exact fields to serialize
-        :returns: serialized Node as dictionary
+    @classmethod
+    def move_roles_to_pending_roles(cls, instance):
+        """Move roles to pending_roles
         """
-        node_dict = super(Node, cls).to_dict(instance, fields=fields)
-        net_manager = Cluster.get_network_manager(instance.cluster)
-        ips_mapped = net_manager.get_grouped_ips_by_node()
-        networks_grouped = net_manager.get_networks_grouped_by_cluster()
-
-        node_dict['network_data'] = net_manager.get_node_networks_optimized(
-            instance,
-            ips_mapped.get(instance.id, []),
-            networks_grouped.get(instance.cluster_id, [])
-        )
-        return node_dict
+        instance.pending_roles += instance.roles
+        instance.roles = []
+        db().flush()
 
 
 class NodeCollection(NailgunCollection):

@@ -661,7 +661,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 if cls._node_has_role_by_name(node, 'controller'):
                     net_manager = objects.Node.get_network_manager(node)
                     mgmt_cidr = net_manager.get_node_network_by_netname(
-                        node.id,
+                        node,
                         'management'
                     )['ip']
                     attrs['management_vip'] = mgmt_cidr.split('/')[0]
@@ -787,14 +787,14 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         for ngname, brname in netgroup_mapping:
             # Here we get a dict with network description for this particular
             # node with its assigned IPs and device names for each network.
-            netgroup = nm.get_node_network_by_netname(node.id, ngname)
+            netgroup = nm.get_node_network_by_netname(node, ngname)
             attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
             netgroups[ngname] = netgroup
         attrs['endpoints']['br-ex']['gateway'] = netgroups['public']['gateway']
 
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:
-            netgroup = nm.get_node_network_by_netname(node.id, ngname)
+            netgroup = nm.get_node_network_by_netname(node, ngname)
             if not netgroup['vlan']:
                 # Untagged network.
                 attrs['transformations'].append({

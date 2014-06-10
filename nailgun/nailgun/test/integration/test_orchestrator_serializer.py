@@ -238,8 +238,8 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
             },
             'eth0': {
                 'interface': 'eth0',
-                'ipaddr': ['192.168.0.1/24',
-                           '172.16.0.2/24',
+                'ipaddr': ['172.16.0.2/24',
+                           '192.168.0.1/24',
                            '192.168.1.1/24'],
                 'gateway': '172.16.0.1'
             }

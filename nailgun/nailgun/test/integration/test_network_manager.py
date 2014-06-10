@@ -123,7 +123,7 @@ class TestNetworkManager(BaseIntegrationTest):
                 filter(
                     lambda n: n['name'] == 'management',
                     self.env.network_manager.get_node_networks(
-                        node_db.id
+                        node_db
                     )
                 )
             ),
@@ -155,7 +155,7 @@ class TestNetworkManager(BaseIntegrationTest):
         task = json.loads(resp.body)
         self.assertEquals(task['status'], 'ready')
         network_data = self.env.network_manager.get_node_networks(
-            self.env.nodes[0].id
+            self.env.nodes[0]
         )
 
         self.assertEquals(len(network_data), 4)
@@ -181,67 +181,10 @@ class TestNetworkManager(BaseIntegrationTest):
         self.assertTrue(isinstance(ips[0].node_data, Node))
         self.assertTrue(isinstance(ips[0].network_data, NetworkGroup))
 
-    def test_get_node_networks_optimization(self):
-        self.env.create(
-            cluster_kwargs={},
-            nodes_kwargs=[
-                {"pending_addition": True, "api": True},
-                {"pending_addition": True, "api": True}
-            ]
-        )
-
-        self.env.network_manager.assign_ips(
-            [n.id for n in self.env.nodes],
-            "management"
-        )
-
-        nodes = self.db.query(Node).all()
-
-        ips_mapped = self.env.network_manager.get_grouped_ips_by_node()
-        networks_grouped = self.env.network_manager.\
-            get_networks_grouped_by_cluster()
-        full_results = []
-        for node in nodes:
-            result = self.env.network_manager.get_node_networks_optimized(
-                node, ips_mapped.get(node.id, []),
-                networks_grouped.get(node.cluster_id, []))
-            full_results.append(result)
-        self.assertEqual(len(full_results), 2)
-
-    def test_network_group_grouping_by_cluster(self):
-        """Verifies that for cluster created would be returned all networks,
-        except fuel_admin
-        """
-        cluster = self.env.create_cluster(api=True)
-        self.env.create_node(api=True)
-        networks = self.env.network_manager.get_networks_grouped_by_cluster()
-        self.assertTrue(isinstance(networks, dict))
-        self.assertIn(cluster['id'], networks)
-        self.assertEqual(len(networks[cluster['id']]), 4)
-        networks_keys = (n.name for n in networks[cluster['id']])
-        # NetworkGroup.names[1:6] - all except fuel_admin and private
-        # private is not used with NovaNetwork
-        self.assertEqual(sorted(networks_keys),
-                         sorted(NetworkGroup.NAMES[1:5]))
-
-    def test_group_by_key_and_history_util(self):
-        """Verifies that grouping util will return defaultdict(list) with
-        items grouped by user provided func
-        """
-        example = [{'key': 'value1'},
-                   {'key': 'value1'},
-                   {'key': 'value3'}]
-        result = self.env.network_manager.group_by_key_and_history(
-            example, lambda item: item['key'])
-        expected = {'value1': [{'key': 'value1'}, {'key': 'value1'}],
-                    'value3': [{'key': 'value3'}]}
-        self.assertEqual(result, expected)
-        self.assertEqual(result['value2'], [])
-
     def test_nets_empty_list_if_node_does_not_belong_to_cluster(self):
         node = self.env.create_node(api=False)
-        network_data = self.env.network_manager.get_node_networks(node.id)
-        self.assertEquals(network_data, [])
+        network_data = self.env.network_manager.get_node_networks(node)
+        self.assertEqual(network_data, [])
 
     def test_assign_admin_ips(self):
         node = self.env.create_node()

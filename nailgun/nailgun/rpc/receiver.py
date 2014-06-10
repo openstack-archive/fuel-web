@@ -366,7 +366,7 @@ class NailgunReceiver(object):
                     lambda n: n['name'] == 'public' and 'ip' in n,
                     objects.Node.get_network_manager(
                         controller
-                    ).get_node_networks(controller.id)
+                    ).get_node_networks(controller)
                 )
                 if public_net:
                     horizon_ip = public_net[0]['ip'].split('/')[0]

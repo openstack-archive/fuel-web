@@ -1,24 +1,28 @@
-<div class="node">
+{{#node}}
+<div class="node {{#checked}} checked {{/checked}}">
     <label class="node-box">
         <div class="custom-tumbler node-checkbox">
-            <input type="checkbox" />
+            <input type="checkbox" checked="{{checked}}" disabled="{{disabled}}"/>
             <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
         </div>
         <div class="node-content">
-            <div class="node-logo <%- node.get('manufacturer') ? 'manufacturer-' + node.get('manufacturer').toLowerCase() : '' %>"></div>
+            <div class="node-logo {{#manufacturer}}manufacturer-{{manufacturer.toLowerCase()}}{{/manufacturer}}"></div>
             <div class="node-name-roles">
                 <div class="name enable-selection">
-                    <% if (renaming) { %>
-                        <input type="text"  value="<%- node.get('name') || '' %>" />
-                    <% } else { %>
-                        <p class="<%= renameable ? 'node-renameable' : '' %>" title="<%- renameable ? $.t('cluster_page.nodes_tab.node.edit_name') : '' %>"><%- node.get('name') || node.get('mac') %></p>
-                    <% } %>
+                    {{#renaming}}
+                        <input type="text"  value="{{name}}" />
+                    {{/renaming}}
+                    {{^renaming}}
+                        <p class="{{#renameable}}node-renameable{{/renameable}}" title="{{#renameable}}{{t('cluster_page.nodes_tab.node.edit_name')}}{{/renameable}}">{{ name || mac }}</p>
+                    {{/renaming}}
                 </div>
                 <div class="role-list"></div>
             </div>
+            {{#cluster}}
             <div class="node-button">
-                <button class="" title=""><i class=""></i></button>
+                <button><i class=""></i></button>
             </div>
+            {{/cluster}}
             <div class="node-status">
                 <div class="node-status-container">
                     <div class="progress"><div class="bar"></div></div>
@@ -28,10 +32,11 @@
             </div>
             <div class="node-details"></div>
             <div class="node-hardware">
-                <span><%- $.t('node_details.cpu') %>: <%= node.resource('cores') || '?' %></span>
-                <span><%- $.t('node_details.hdd') %>: <%= node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + $.t('common.size.gb') %></span>
-                <span><%- $.t('node_details.ram') %>: <%= node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + $.t('common.size.gb') %></span>
+                <span>{{ t('node_details.cpu') }}: {{ node.resource('cores') || '?' }}</span>
+                <span>{{ t('node_details.hdd') }}: {{ node.resource('hdd') ? showDiskSize(node.resource('hdd')) : '?' + t('common.size.gb') }}</span>
+                <span>{{ t('node_details.ram') }}: {{ node.resource('ram') ? showMemorySize(node.resource('ram')) : '?' + t('common.size.gb') }}</span>
             </div>
         </div>
     </label>
 </div>
+{{/node}}

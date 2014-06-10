@@ -282,7 +282,6 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
     });
 
     AssignRolesPanel = Backbone.View.extend({
-        template: _.template(assignRolesPanelTemplate),
         className: 'roles-panel',
         handleChanges: function() {
             this.nodes = new models.Nodes(this.screen.nodes.where({checked: true}));
@@ -430,20 +429,18 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 onSet: function(value) {
                     role.set('indeterminate', false);
                     return value;
-                },
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled'
-                },{
-                    name: 'indeterminate',
-                    observe: 'indeterminate'
-                }]
+                }
             };
-            bindings['.role-conflict.' + role.get('name')] = 'conflict';
-            return this.stickit(role, bindings);
+            this.stickit(role, bindings);
         },
         render: function() {
-            this.$el.html(this.template({roles: this.collection})).i18n();
+            var ractive = new Ractive({
+                el: this.$el,
+                template: assignRolesPanelTemplate,
+                adapt: ['Backbone'],
+                data: {roles: this.collection}
+            });
+            this.$el.i18n();
             this.collection.each(this.stickitRole, this);
             this.checkForConflicts();
             return this;
@@ -650,22 +647,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                     }));
                 }
             },
-            '.node': {
-                attributes: [{
-                    name: 'class',
-                    observe: 'checked',
-                    onGet: function(value, options) {
-                        return value ? 'node checked' : 'node';
-                    }
-                }]
-            },
-            '.node-checkbox input': {
-                observe: 'checked',
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled'
-                }]
-            },
+            '.node-checkbox input': 'checked',
             '.node-status-label': {
                 observe: ['status', 'online', 'pending_addition', 'pending_deletion'],
                 onGet: 'formatStatusLabel'
@@ -714,9 +696,6 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             },
             '.node-button button': {
                 observe: 'cluster',
-                visible: function(value) {
-                    return !_.isUndefined(value) && value != '';
-                },
                 attributes: [{
                     name: 'class',
                     observe: ['pending_addition', 'pending_deletion', 'pending_roles'],
@@ -915,13 +894,18 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template(_.extend({
-                node: this.node,
-                renaming: this.renaming,
-                renameable: this.renameable,
-                edit: this.screen instanceof this.screen.EditNodesScreen,
-                locked: this.screen.isLocked()
-            }, this.templateHelpers))).i18n();
+            var ractive = new Ractive({
+                el: this.$el,
+                template: nodeTemplate,
+                adapt: ['Backbone'],
+                data: _.extend({
+                    node: this.node,
+                    renaming: this.renaming,
+                    renameable: this.renameable,
+                    t: $.t
+                }, this.templateHelpers)
+            });
+            this.$el.i18n();
             this.stickit(this.node);
             this.calculateNodeState();
             return this;

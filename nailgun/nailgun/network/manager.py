@@ -14,9 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from collections import defaultdict
 from itertools import chain
-from itertools import groupby
 from itertools import ifilter
 from itertools import imap
 from itertools import islice
@@ -28,7 +26,7 @@ from netaddr import IPRange
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import not_
 
-from nailgun.objects import Cluster
+from nailgun import objects
 
 from nailgun import consts
 from nailgun.db import db
@@ -240,7 +238,7 @@ class NetworkManager(object):
         :returns: None
         :raises: Exception
         """
-        cluster = Cluster.get_by_uid(cluster_id)
+        cluster = objects.Cluster.get_by_uid(cluster_id)
         if not cluster:
             raise Exception(u"Cluster id='%s' not found" % cluster_id)
 
@@ -484,46 +482,6 @@ class NetworkManager(object):
                 for ng in nic.assigned_networks_list]
 
     @classmethod
-    def get_node_networks(cls, node_id):
-        """Method for receiving network data for a given node.
-
-        :param node_id: Node database ID.
-        :type  node_id: int
-        :returns: List of network info for node.
-        """
-        node_db = db().query(Node).get(node_id)
-        cluster_db = node_db.cluster
-        if cluster_db is None:
-            # Node doesn't belong to any cluster, so it should not have nets
-            return []
-
-        ips = cls._get_ips_except_admin(node_id=node_id)
-        network_data = []
-        network_ids = []
-        for ip in ips:
-            net = db().query(NetworkGroup).get(ip.network)
-            interface = cls._get_interface_by_network_name(
-                node_db.id, net.name)
-
-            prefix = str(IPNetwork(net.cidr).prefixlen)
-            netmask = str(IPNetwork(net.cidr).netmask)
-
-            network_data.append({
-                'name': net.name,
-                'vlan': cls.get_network_vlan(net, cluster_db),
-                'ip': ip.ip_addr + '/' + prefix,
-                'netmask': netmask,
-                'brd': str(IPNetwork(net.cidr).broadcast),
-                'gateway': net.gateway,
-                'dev': interface.name})
-            network_ids.append(net.id)
-
-        network_data.extend(
-            cls._add_networks_wo_ips(cluster_db, network_ids, node_db))
-
-        return network_data
-
-    @classmethod
     def _get_admin_node_network(cls, node_id):
         net = cls.get_admin_network_group()
         net_cidr = IPNetwork(net.cidr)
@@ -547,114 +505,64 @@ class NetworkManager(object):
             lambda n: n['name'] == netname, networks)[0]
 
     @classmethod
-    def group_by_key_and_history(cls, values, key_func):
-        response = defaultdict(list)
-        for group, value in groupby(values, key_func):
-            response[group].extend(list(value))
-        return response
-
-    @classmethod
-    def get_grouped_ips_by_node(cls):
-        """returns {node.id: generator([IPAddr1, IPAddr2])}
-        """
-        ips_db = cls._get_ips_except_admin(joined=True)
-        return cls.group_by_key_and_history(ips_db, lambda ip: ip.node)
-
-    @classmethod
-    def get_networks_grouped_by_cluster(cls):
-        networks = db().query(NetworkGroup).order_by(NetworkGroup.id).all()
-        return cls.group_by_key_and_history(
-            networks,
-            lambda net: net.cluster_id)
-
-    @classmethod
     def get_network_vlan(cls, net_db, cl_db):
         return net_db.vlan_start if not net_db.meta.get('ext_net_data') \
             else getattr(cl_db.network_config, net_db.meta['ext_net_data'][0])
 
     @classmethod
-    def get_node_networks_optimized(cls, node_db, ips_db, networks):
-        """Method for receiving data for a given node with db data provided
-        as input
-        @nodes_db - List of Node instances
-        @ips_db - generator([IPAddr1, IPAddr2])
-        """
+    def fixed_and_vlan_manager(cls, net, cluster_db):
+        return net.name == 'fixed' \
+            and cluster_db.network_config.net_manager == 'VlanManager'
+
+    @classmethod
+    def _get_network_data_with_ip(cls, node_db, interface, net, ip):
+        prefix = str(IPNetwork(net.cidr).prefixlen)
+        return {
+            'name': net.name,
+            'vlan': cls.get_network_vlan(net, node_db.cluster),
+            'ip': ip.ip_addr + '/' + prefix,
+            'netmask': str(IPNetwork(net.cidr).netmask),
+            'brd': str(IPNetwork(net.cidr).broadcast),
+            'gateway': net.gateway,
+            'dev': interface.name}
+
+    @classmethod
+    def _get_network_data_wo_ip(cls, node_db, interface, net):
+        return {'name': net.name,
+                'vlan': cls.get_network_vlan(net, node_db.cluster),
+                'dev': interface.name}
+
+    @classmethod
+    def _get_networks_except_admin(cls, networks):
+        return (net for net in networks
+                if net.name != 'fuelweb_admin')
+
+    @classmethod
+    def get_node_networks(cls, node_db):
+        if not isinstance(node_db, Node):
+            node_db = objects.Node.get_by_uid(node_db)
         cluster_db = node_db.cluster
         if cluster_db is None:
             # Node doesn't belong to any cluster, so it should not have nets
             return []
 
         network_data = []
-        network_ids = []
-        for ip in ips_db:
-            net = ip.network_data
-            interface = cls._get_interface_by_network_name(
-                node_db,
-                net.name
-            )
-
-            prefix = str(IPNetwork(net.cidr).prefixlen)
-            netmask = str(IPNetwork(net.cidr).netmask)
-
-            network_data.append({
-                'name': net.name,
-                'vlan': cls.get_network_vlan(net, cluster_db),
-                'ip': ip.ip_addr + '/' + prefix,
-                'netmask': netmask,
-                'brd': str(IPNetwork(net.cidr).broadcast),
-                'gateway': net.gateway,
-                'dev': interface.name})
-            network_ids.append(net.id)
-
-        nets_wo_ips = [n for n in networks if n.id not in network_ids]
-
-        for net in nets_wo_ips:
-            interface = cls._get_interface_by_network_name(
-                node_db,
-                net.name
-            )
-
-            if net.name == 'fixed' \
-                    and cluster_db.network_config.net_manager == 'VlanManager':
-                continue
-            network_data.append({
-                'name': net.name,
-                'vlan': cls.get_network_vlan(net, cluster_db),
-                'dev': interface.name})
+        for interface in node_db.interfaces:
+            networks_wo_admin = cls._get_networks_except_admin(
+                interface.assigned_networks_list)
+            for net in networks_wo_admin:
+                ip = cls._get_ip_by_network_name(node_db, net.name)
+                if ip is not None:
+                    network_data.append(cls._get_network_data_with_ip(
+                        node_db, interface, net, ip))
+                else:
+                    if not cls.fixed_and_vlan_manager(net, cluster_db):
+                        network_data.append(cls._get_network_data_wo_ip(
+                            node_db, interface, net))
 
         network_data.append(cls._get_admin_network(node_db))
 
         return network_data
-
-    @classmethod
-    def _add_networks_wo_ips(cls, cluster_db, network_ids, node_db):
-        add_net_data = []
-        # And now let's add networks w/o IP addresses
-        nets = db().query(NetworkGroup).\
-            filter(NetworkGroup.cluster_id == cluster_db.id)
-        if network_ids:
-            nets = nets.filter(not_(NetworkGroup.id.in_(network_ids)))
-
-        # For now, we pass information about all networks,
-        #    so these vlans will be created on every node we call this func for
-        # However it will end up with errors if we precreate vlans in VLAN mode
-        #   in fixed network. We are skipping fixed nets in Vlan mode.
-        for net in nets.order_by(NetworkGroup.id).all():
-            interface = cls._get_interface_by_network_name(
-                node_db,
-                net.name
-            )
-
-            if net.name == 'fixed' \
-                    and cluster_db.network_config.net_manager == 'VlanManager':
-                continue
-            add_net_data.append({
-                'name': net.name,
-                'vlan': cls.get_network_vlan(net, cluster_db),
-                'dev': interface.name})
-
-        add_net_data.append(cls._get_admin_network(node_db))
-        return add_net_data
 
     @classmethod
     def _update_attrs(cls, node_data):
@@ -886,8 +794,15 @@ class NetworkManager(object):
             '{1}'.format(network_name, node.full_name))
 
     @classmethod
+    def _get_ip_by_network_name(cls, node, network_name):
+        for ip in node.ip_addrs:
+            if ip.network_data.name == network_name:
+                return ip
+        return None
+
+    @classmethod
     def get_end_point_ip(cls, cluster_id):
-        cluster_db = Cluster.get_by_uid(cluster_id)
+        cluster_db = objects.Cluster.get_by_uid(cluster_id)
         ip = None
         if cluster_db.is_ha_mode:
             ip = cls.assign_vip(cluster_db.id, "public")
@@ -972,7 +887,7 @@ class NetworkManager(object):
         :type  cluster_id: int
         :returns: None
         """
-        cluster_db = Cluster.get_by_uid(cluster_id)
+        cluster_db = objects.Cluster.get_by_uid(cluster_id)
         networks_metadata = cluster_db.release.networks_metadata
         networks_list = networks_metadata[cluster_db.net_provider]["networks"]
         used_nets = [IPNetwork(cls.get_admin_network_group().cidr)]
@@ -1053,7 +968,7 @@ class NetworkManager(object):
 
                 if ng_db.meta.get("notation"):
                     cls.cleanup_network_group(ng_db)
-                Cluster.add_pending_changes(ng_db.cluster, 'networks')
+                objects.Cluster.add_pending_changes(ng_db.cluster, 'networks')
 
     @classmethod
     def update(cls, cluster, network_configuration):

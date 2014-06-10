@@ -40,7 +40,8 @@ class NodeSerializer(BasicSerializer):
         'os_platform',
         'error_type',
         'online',
-        'cluster'
+        'cluster',
+        'network_data'
     )
 
 

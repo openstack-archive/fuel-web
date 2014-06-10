@@ -8,6 +8,7 @@
         "lodash": "1.1.1",
         "autoNumeric": "1.9.12",
         "backbone.stickit": "0.7.0",
+        "ractive": "0.4.0",
         "i18next": "1.7.1",
         "backbone-deep-model": "0.10.4",
         "less": "1.5.1"
@@ -30,6 +31,9 @@
         },
         "backbone.stickit": {
             "js": "backbone.stickit.js"
+        },
+        "ractive": {
+            "js": "ractive.js"
         },
         "i18next": {
             "js": "release/i18next-1.7.1.js"

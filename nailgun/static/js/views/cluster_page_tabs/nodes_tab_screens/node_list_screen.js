@@ -282,7 +282,6 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
     });
 
     AssignRolesPanel = Backbone.View.extend({
-        template: _.template(assignRolesPanelTemplate),
         className: 'roles-panel',
         handleChanges: function() {
             this.nodes = new models.Nodes(this.screen.nodes.where({checked: true}));
@@ -430,20 +429,18 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 onSet: function(value) {
                     role.set('indeterminate', false);
                     return value;
-                },
-                attributes: [{
-                    name: 'disabled',
-                    observe: 'disabled'
-                },{
-                    name: 'indeterminate',
-                    observe: 'indeterminate'
-                }]
+                }
             };
-            bindings['.role-conflict.' + role.get('name')] = 'conflict';
-            return this.stickit(role, bindings);
+            this.stickit(role, bindings);
         },
         render: function() {
-            this.$el.html(this.template({roles: this.collection})).i18n();
+            var ractive = new Ractive({
+                el: this.$el,
+                template: assignRolesPanelTemplate,
+                adapt: ['Backbone'],
+                data: {roles: this.collection}
+            });
+            this.$el.i18n();
             this.collection.each(this.stickitRole, this);
             this.checkForConflicts();
             return this;

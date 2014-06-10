@@ -175,6 +175,9 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
                 }, this);
                 return Backbone.sync('update', node.interfaces, {url: _.result(node, 'url') + '/interfaces'});
             }, this))
+            .done(function() {
+                app.page.removeFinishedNetworkTasks();
+            })
             .always(_.bind(this.checkForChanges, this))
             .fail(function() {
                 utils.showErrorDialog({title: 'Interfaces configuration'});

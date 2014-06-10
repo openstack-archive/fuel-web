@@ -806,6 +806,8 @@ class BaseTestCase(TestCase):
         if not isinstance(node1, dict) or not isinstance(node2, dict):
             if isinstance(node1, list):
                 newpath = path[:]
+                node1 = sorted(node1)
+                node2 = sorted(node2)
                 for i, keys in enumerate(izip(node1, node2)):
                     newpath.append(str(i))
                     self.datadiff(keys[0], keys[1], newpath)

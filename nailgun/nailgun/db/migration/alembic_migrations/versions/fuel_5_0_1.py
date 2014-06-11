@@ -150,7 +150,7 @@ def downgrade():
     )
 
     op.drop_constraint(
-        'pending_release_id',
+        'fk_pending_release_id',
         'clusters',
         type_='foreignkey'
     )

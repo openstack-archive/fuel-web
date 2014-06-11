@@ -18,7 +18,6 @@
   "Mode": {
     "mode": {
       "type": "radio",
-      "value": "ha_compact",
       "bind": "cluster:mode",
       "values": [
         {
@@ -53,17 +52,51 @@
           "label": "dialog.create_cluster_wizard.compute.vcenter",
           "description": "dialog.create_cluster_wizard.compute.vcenter_description",
           "warnings": {
-             "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.vcenter_warning",
              "Mode.mode == 'ha_compact' and Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.ha_vcenter_warning"
           }
         }
       ]
+    },
+    "host_ip": {
+      "type": "text",
+      "label": "dialog.create_cluster_wizard.compute.vcenter_ip",
+      "description": "dialog.create_cluster_wizard.compute.vcenter_ip_description",
+      "bind": "settings:vcenter.host_ip.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      }
+    },
+    "vc_user": {
+      "type": "text",
+      "label": "dialog.create_cluster_wizard.compute.vcenter_username",
+      "description": "dialog.create_cluster_wizard.compute.vcenter_username_description",
+      "bind": "settings:vcenter.vc_user.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      }
+    },
+    "vc_password": {
+      "type": "password",
+      "label": "dialog.create_cluster_wizard.compute.vcenter_password",
+      "description": "dialog.create_cluster_wizard.compute.vcenter_password_description",
+      "bind": "settings:vcenter.vc_password.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      }
+    },
+    "cluster": {
+      "type": "text",
+      "label": "dialog.create_cluster_wizard.compute.vcenter_cluster",
+      "description": "dialog.create_cluster_wizard.compute.vcenter_cluster_description",
+      "bind": "settings:vcenter.cluster.value",
+      "restrictions": {
+        "Compute.hypervisor != 'vcenter'": null
+      }
     }
   },
   "Network": {
     "manager": {
       "type": "radio",
-      "value": "nova-network",
       "values": [
         {
           "data": "nova-network",
@@ -100,7 +133,6 @@
   "Storage": {
     "cinder": {
       "type": "radio",
-      "value": "default",
       "values": [
         {
           "data": "default",
@@ -123,7 +155,6 @@
     },
     "glance": {
       "type": "radio",
-      "value": "default",
       "values": [
         {
           "data": "default",
@@ -144,7 +175,6 @@
   "AdditionalServices": {
     "sahara": {
       "type": "checkbox",
-      "value": false,
       "label": "dialog.create_cluster_wizard.additional.install_sahara",
       "description": "dialog.create_cluster_wizard.additional.install_sahara_description",
       "bind": "settings:additional_components.sahara.value",
@@ -152,7 +182,6 @@
     },
     "murano": {
       "type": "checkbox",
-      "value": false,
       "label": "dialog.create_cluster_wizard.additional.install_murano",
       "description": "dialog.create_cluster_wizard.additional.install_murano_description",
       "bind": "settings:additional_components.murano.value",
@@ -163,7 +192,6 @@
     },
     "ceilometer": {
       "type": "checkbox",
-      "value": false,
       "label": "dialog.create_cluster_wizard.additional.install_ceilometer",
       "description": "dialog.create_cluster_wizard.additional.install_ceilometer_description",
       "bind": "settings:additional_components.ceilometer.value",

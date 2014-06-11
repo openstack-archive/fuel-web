@@ -39,7 +39,8 @@
                 "system": "System",
                 "memory": "Memory",
                 "disks": "Disks",
-                "interfaces": "Interfaces"
+                "interfaces": "Interfaces",
+                "raid": "Raid Controller"
             },
             "cluster": {
                 "status": {
@@ -464,6 +465,7 @@
                 "show_node": {
                     "manufacturer_label": "Manufacturer",
                     "mac_address_label": "MAC Address",
+                    "controller": "Controller",
                     "fqdn_label": "FQDN",
                     "ssh_console": "SSH console",
                     "network_configuration_button": "Configure Interfaces",

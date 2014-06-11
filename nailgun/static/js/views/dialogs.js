@@ -750,7 +750,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                 var summary = '';
                 try {
                     if (group == 'system') {
-                        summary = (meta.system.manufacturer || '') + ' ' + (meta.system.product || '');
+                        summary = (meta.system.manufacturer || '') + ' ' + (meta.system.product || '') + meta.raid.controllers.length;
                     } else if (group == 'memory') {
                         if (_.isArray(meta.memory.devices) && meta.memory.devices.length) {
                             var sizes = _.groupBy(_.pluck(meta.memory.devices, 'size'), utils.showMemorySize);
@@ -758,6 +758,19 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                             summary += ', ' + utils.showMemorySize(meta.memory.total) + ' ' + $.t('dialog.show_node.total');
                         } else {
                             summary = utils.showMemorySize(meta.memory.total) + ' ' + $.t('dialog.show_node.total');
+                        }
+                    } else if (group == 'raid') {
+                        var i = 1;
+                        if (meta.raid.controllers.length > 0) {
+                            _.each(meta.raid.controllers, function(cntr) {
+                                //summary += cntr.model;
+                                if (i == meta.raid.controllers.length) {
+                                    //summary += '.';
+                                } else {
+                                    //summary += ', ';
+                                }
+                                i++;
+                            });
                         }
                     } else if (group == 'disks') {
                         summary = meta.disks.length + ' ';

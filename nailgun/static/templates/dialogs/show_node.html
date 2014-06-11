@@ -15,13 +15,28 @@
     <div class="accordion" id="nodeDetailsAccordion">
       <% var meta = node.get('meta') %>
       <% var groupOrder = ['system', 'cpu', 'memory', 'disks', 'interfaces'] %>
+      <% var idxController = -1 %>
+
       <% var groups = _.sortBy(_.keys(meta), function(group) {return _.indexOf(groupOrder, group)}) %>
+
+      <% try { %>
+        <% if (meta['raid'].controllers.length > 0) {%>
+          <% for (var i = 0; i < meta['raid'].controllers.length; i++) { %>
+            <% groups.push('raid'); %>
+          <% }; %>
+        <% }; %>
+      <% } catch(e) {} %>
+
       <% _.each(groups, function(group) { %>
         <% var groupEntries = meta[group] %>
+        <% if (group == 'raid') { groupEntries = groupEntries.controllers[idxController]; idxController++;  }; %>
         <div class="accordion-group">
           <div class="accordion-heading">
             <div class="accordion-toggle" data-group="<%- group %>">
               <%- $.t('node_details.' + group, {defaultValue: group}) %>
+              <% if (group == 'raid') { %>
+                <%= ' ' + idxController %>
+              <% }; %>
               <span><%- showSummary(meta, group) %></span>
               <i class="icon-expand pull-right"></i>
             </div>

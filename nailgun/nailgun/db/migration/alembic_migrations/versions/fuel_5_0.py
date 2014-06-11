@@ -29,6 +29,27 @@ import sqlalchemy as sa
 
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.db.sqlalchemy.models.fields import LowercaseString
+from nailgun.utils.migration import drop_enum
+
+ENUMS = (
+    'bond_mode',
+    'cluster_grouping',
+    'cluster_mode',
+    'cluster_net_manager',
+    'cluster_status',
+    'license_type',
+    'net_l23_provider',
+    'net_provider',
+    'network_group_name',
+    'node_error_type',
+    'node_status',
+    'notif_topic',
+    'notif_status',
+    'possible_changes',
+    'release_state',
+    'segmentation_type',
+    'task_name',
+    'task_status')
 
 
 def upgrade():
@@ -434,3 +455,4 @@ def downgrade():
     op.drop_table('releases')
     op.drop_table('capacity_log')
     op.drop_table('red_hat_accounts')
+    map(drop_enum, ENUMS)

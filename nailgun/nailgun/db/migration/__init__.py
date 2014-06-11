@@ -78,6 +78,10 @@ def do_upgrade_head():
     do_alembic_command("upgrade", "head")
 
 
+def do_downgrade_base():
+    do_alembic_command("downgrade", "base")
+
+
 def action_migrate_alembic(params):
     global ALEMBIC_CONFIG
     ALEMBIC_CONFIG.params = params

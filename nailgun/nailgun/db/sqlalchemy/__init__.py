@@ -15,8 +15,12 @@
 #    under the License.
 
 import contextlib
-from sqlalchemy.orm import scoped_session, sessionmaker
+
 from sqlalchemy import create_engine
+from sqlalchemy import schema
+
+from sqlalchemy.engine import reflection
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm.query import Query
 
 from nailgun.settings import settings
@@ -58,7 +62,34 @@ def syncdb():
 def dropdb():
     from nailgun.db import migration
     from nailgun.db.sqlalchemy.models.base import Base
-    Base.metadata.drop_all(bind=engine)
+    conn = engine.connect()
+    trans = conn.begin()
+
+    inspector = reflection.Inspector.from_engine(engine)
+
+    tbs = []
+    all_fks = []
+
+    for table_name in inspector.get_table_names():
+        fks = []
+        for fk in inspector.get_foreign_keys(table_name):
+            if not fk['name']:
+                continue
+            fks.append(
+                schema.ForeignKeyConstraint((), (), name=fk['name'])
+            )
+        t = schema.Table(table_name, Base.metadata, *fks, extend_existing=True)
+        tbs.append(t)
+        all_fks.extend(fks)
+
+    for fkc in all_fks:
+        conn.execute(schema.DropConstraint(fkc))
+
+    for table in tbs:
+        conn.execute(schema.DropTable(table))
+
+    trans.commit()
+    #Base.metadata.drop_all(bind=engine)
     migration.drop_migration_meta(engine)
 
 

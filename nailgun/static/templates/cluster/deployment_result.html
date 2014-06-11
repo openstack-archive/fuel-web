@@ -1,6 +1,6 @@
 <% if (task) { %>
   <% if (task.match({status: 'ready'})) { %>
-    <% var warningPanelClass = task.match({name: 'deploy'}) ? 'global-success' : 'globalalert' %>
+    <% var warningPanelClass = task.match({name: ['deploy', 'update']}) ? 'global-success' : 'globalalert' %>
     <div class="alert alert-block <%= warningPanelClass %> alert-success task-result">
       <button type="button" class="close">×</button>
       <h4 data-i18n="common.success"></h4>

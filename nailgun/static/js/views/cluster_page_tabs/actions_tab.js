@@ -18,25 +18,84 @@ define(
     'models',
     'views/common',
     'views/dialogs',
-    'text!templates/cluster/actions_tab.html'
+    'text!templates/cluster/actions_tab.html',
+    'text!templates/cluster/actions_rename.html',
+    'text!templates/cluster/actions_reset.html',
+    'text!templates/cluster/actions_delete.html',
+    'text!templates/cluster/actions_update.html'
 ],
-function(models, commonViews, dialogViews, actionsTabTemplate) {
+function(models, commonViews, dialogViews, actionsTabTemplate, renameEnvironmentTemplate, resetEnvironmentTemplate, deleteEnvironmentTemplate, updateEnvironmentTemplate) {
     'use strict';
 
-    var ActionsTab = commonViews.Tab.extend({
+    var ActionsTab, Action, RenameEnvironmentAction, ResetEnvironmentAction, DeleteEnvironmentAction, UpdateEnvironmentAction;
+
+    ActionsTab = commonViews.Tab.extend({
         template: _.template(actionsTabTemplate),
-        events: {
-            'click .apply-name-btn': 'applyNewClusterName',
-            'keydown .rename-cluster-form input': 'onClusterNameInputKeydown',
-            'click .delete-cluster-btn': 'deleteCluster',
-            'click .reset-environment-btn': 'resetEnvironment'
+        initialize: function(options) {
+            _.defaults(this, options);
         },
-        applyNewClusterName: function() {
-            var name = $.trim(this.$('.rename-cluster-form input').val());
+        render: function() {
+            this.tearDownRegisteredSubViews();
+            this.$el.html(this.template()).i18n();
+            var actions = [
+                RenameEnvironmentAction,
+                ResetEnvironmentAction,
+                DeleteEnvironmentAction,
+                UpdateEnvironmentAction
+            ];
+            _.each(actions, function(ActionConstructor) {
+                var actionView = new ActionConstructor({model: this.model});
+                this.registerSubView(actionView);
+                this.$('.environment-actions').append(actionView.render().el);
+            }, this);
+            return this;
+        }
+    });
+
+    Action = Backbone.View.extend({
+        className: 'span4 action-item-placeholder',
+        events: {
+            'click .action-btn:not([disabled])': 'applyAction'
+        },
+        isLocked: function() {
+            return !!this.model.tasks({group: 'deployment', status: 'running'}).length;
+        },
+        getDescription: function(action) {
+            var task = this.model.task({group: 'deployment', status: 'running'});
+            if (task) {
+                if (_.contains(task.get('name'), action)) { return 'repeated_' + action + '_disabled'; }
+                return action + '_disabled_for_deploying_cluster';
+            }
+            if ((action == 'reset' && this.model.get('status') == 'new') || (action == 'update' && this.model.get('status') != 'operational')) {
+                return action + '_disabled_for_new_cluster';
+            }
+            return action + '_environment_description';
+        },
+        initialize:  function(options) {
+            _.defaults(this, options);
+            this.model.on('change:status', this.render, this);
+            this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
+                task.on('change:status', this.render, this);
+            });
+        },
+        render: function() {
+            this.$el.html(this.template({cluster: this.model, locked: this.isLocked()})).i18n();
+            return this;
+        }
+    });
+
+    RenameEnvironmentAction = Action.extend({
+        template: _.template(renameEnvironmentTemplate),
+        events: {
+            'click .action-btn': 'applyAction',
+            'keydown input[name=cluster_name]': 'onClusterNameInputKeydown'
+        },
+        applyAction: function() {
+            var name = $.trim(this.$('input[name=cluster_name]').val());
             if (name != this.model.get('name')) {
                 var deferred = this.model.save({name: name}, {patch: true, wait: true});
                 if (deferred) {
-                    var controls = this.$('.rename-cluster-form input, .rename-cluster-form button');
+                    var controls = this.$('input, button');
                     controls.attr('disabled', true);
                     deferred
                         .fail(_.bind(function(response) {
@@ -51,32 +110,123 @@ function(models, commonViews, dialogViews, actionsTabTemplate) {
             }
         },
         showValidationError: function(model, error) {
-            this.$('.rename-cluster-form input[type=text]').addClass('error');
+            this.$('input[name=cluster_name]').addClass('error');
             this.$('.text-error').text(_.values(error).join('; ')).show();
         },
         onClusterNameInputKeydown: function(e) {
-            this.$('.rename-cluster-form input[type=text]').removeClass('error');
+            this.$('input[name=cluster_name]').removeClass('error');
             this.$('.text-error').hide();
         },
-        deleteCluster: function() {
-            this.registerSubView(new dialogViews.RemoveClusterDialog({model: this.model})).render();
-        },
-        resetEnvironment: function() {
-            this.registerSubView(new dialogViews.ResetEnvironmentDialog({model: this.model})).render();
-        },
         initialize: function(options) {
-            _.defaults(this, options);
-            this.model.on('change:name change:status', this.render, this);
+            this.constructor.__super__.initialize.apply(this);
+            this.model.on('change:name', this.render, this);
             this.model.on('invalid', this.showValidationError, this);
-            this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
-                task.on('change:status', this.render, this);
-            });
+        }
+    });
+
+    ResetEnvironmentAction = Action.extend({
+        action: 'reset',
+        template: _.template(resetEnvironmentTemplate),
+        applyAction: function() {
+            this.registerSubView(new dialogViews.ResetEnvironmentDialog({model: this.model, action: 'reset'})).render();
+        },
+        isLocked: function() {
+            return this.model.get('status') == 'new' || this.constructor.__super__.isLocked.apply(this);
         },
         render: function() {
             this.$el.html(this.template({
                 cluster: this.model,
-                isResetDisabled: this.model.get('status') == 'new' || this.model.task({group: 'deployment', status: 'running'})
+                isResetDisabled: this.isLocked(),
+                descriptionKey: this.getDescription(this.action)})).i18n();
+            return this;
+        }
+    });
+
+    DeleteEnvironmentAction = Action.extend({
+        template: _.template(deleteEnvironmentTemplate),
+        applyAction: function() {
+            this.registerSubView(new dialogViews.RemoveClusterDialog({model: this.model})).render();
+        }
+    });
+
+    UpdateEnvironmentAction = Action.extend({
+        className: 'span12 action-item-placeholder action-update',
+        template: _.template(updateEnvironmentTemplate),
+        stickitAction: function() {
+            var bindings = {
+                '.action-btn': {
+                    attributes: [{
+                        name: 'disabled',
+                        observe: 'pending_release_id',
+                        onGet: function() {
+                            return (this.action == 'update' && !this.releases.length) || this.isLocked();
+                        }
+                    }]
+                }
+            };
+            if (this.action == 'update') {
+                bindings['select[name=update_release]'] = {
+                    observe: 'pending_release_id',
+                    selectOptions: {
+                        collection:function() {
+                            return this.releases.map(function(release) {
+                                return {value: release.id, label: release.get('name') + ' (' + release.get('version') + ')'};
+                            });
+                        }
+                    },
+                    visible: function() {
+                        return this.releases.length && !this.isLocked();
+                    }
+                };
+            }
+            this.stickit(this.model, bindings);
+        },
+        applyAction: function() {
+            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action})).render();
+        },
+        getReleasesForUpdate: function() {
+            this.releases = new models.Releases();
+            var releaseId = this.model.get('release_id');
+            var operatingSystem =  this.model.get('release').get('operating_system');
+            var version = this.model.get('release').get('version');
+            this.releases.parse = function(response) {
+                return _.filter(response, function(release) {
+                    return _.contains(release.can_update_from_versions, version) && release.operating_system == operatingSystem && release.id != releaseId;
+                });
+            };
+            this.releases.deferred = this.releases.fetch();
+            this.releases.deferred.done(_.bind(this.render, this));
+        },
+        isLocked: function() {
+            return this.model.get('status') != 'operational' || this.constructor.__super__.isLocked.apply(this);
+        },
+        initialize:  function(options) {
+            this.constructor.__super__.initialize.apply(this);
+            this.action = this.model.get('status') == 'update_error' ? 'rollback' : 'update';
+            if (this.action == 'update') {
+                this.getReleasesForUpdate();
+            }
+        },
+        getDescription: function() {
+            if (this.action == 'update' && this.model.get('status') == 'operational' && !this.releases.length) {
+                return 'no_releases_to_update_message';
+            }
+            if (this.action == 'rollback') {
+                return 'rollback_message';
+            }
+            return this.constructor.__super__.getDescription.call(this, this.action);
+        },
+        render: function() {
+            this.$el.html(this.template({
+                action: this.action,
+                cluster: this.model,
+                releases: this.releases,
+                locked: this.isLocked(),
+                descriptionKey: this.getDescription()
             })).i18n();
+            this.stickitAction();
+            // Need to set pending_release_id cluster attr
+            this.$('select[name=update_release]').trigger('change');
             return this;
         }
     });

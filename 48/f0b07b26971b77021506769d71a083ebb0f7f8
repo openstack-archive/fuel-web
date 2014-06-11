@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Nastya Urlapova <aurlapova@mirantis.com>
+Workflow+1: Nastya Urlapova <aurlapova@mirantis.com>
+Code-Review+1: Dmitry Shulyak <dshulyak@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 11 Jun 2014 13:54:17 +0000
+Reviewed-on: https://review.openstack.org/97915
+Project: stackforge/fuel-web
+Branch: refs/heads/master

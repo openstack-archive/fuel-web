@@ -4,9 +4,12 @@
  %>
   <li class="pull-right deployment-progress-box <%= taskName %>">
     <% if (!_.contains(infiniteProgressTasks, taskName)) { %>
-      <div class="deployment-control-item-box">
-        <button class="btn btn-danger stop-deployment-btn" title="<%- $.t('cluster_page.stop_deployment_button') %>"><i class="icon-cancel-circle"></i></button>
-      </div>
+      <!--  Stop action is not available for 'update' task right now. The feature is coming soon -->
+      <% if (taskName != 'update') { %>
+        <div class="deployment-control-item-box">
+          <button class="btn btn-danger stop-deployment-btn" title="<%- $.t('cluster_page.stop_deployment_button') %>"><i class="icon-cancel-circle"></i></button>
+        </div>
+      <% } %>
       <div class="deployment-control-item-box"><div class="deploying-progress-text-box percentage"></div></div>
     <% } %>
     <div class="deployment-control-item-box"><div class="progress progress-<%= _.contains(infiniteProgressTasks, taskName) ? 'warning' : 'success' %> progress-striped active"><div class="bar"></div></div></div>

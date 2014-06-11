@@ -53,8 +53,13 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         getReleaseSetupTask: function(status) {
             return this.tasks.findTask({group: 'release_setup', status: status || 'running', release: this.model.get('release').id});
         },
-        removeFinishedNetworkTasks: function(tasks, removeSilently) {
-            tasks = tasks || this.model.tasks({group: 'network'});
+        removeFinishedNetworkTasks: function(removeSilently) {
+            return this.removeFinishedTasks(this.model.tasks({group: 'network'}), removeSilently);
+        },
+        removeFinishedDeploymentTasks: function(removeSilently) {
+            return this.removeFinishedTasks(this.model.tasks({group: 'deployment'}), removeSilently);
+        },
+        removeFinishedTasks: function(tasks, removeSilently) {
             var requests = [];
             _.each(tasks, function(task) {
                 if (task.get('status') != 'running') {

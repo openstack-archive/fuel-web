@@ -1,0 +1,10 @@
+<form class="environment-action-form" onsubmit="return false">
+  <h4 data-i18n="cluster_page.actions_tab.rename_environment"></h4>
+  <div class="action-item-controls">
+    <div class="action-body">
+      <input type="text" name="cluster_name" maxlength="50" value="<%- cluster.get('name') %>" />
+      <div class="text-error hide"></div>
+    </div>
+    <button class="btn btn-success action-btn rename-environment-btn"><span data-i18n="common.rename_button"></span></button>
+  </div>
+</form>

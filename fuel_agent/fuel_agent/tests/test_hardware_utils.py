@@ -1,0 +1,324 @@
+# Copyright 2014 Mirantis, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+
+import mock
+from oslotest import base as test_base
+
+from fuel_agent import hardware_utils as hu
+from fuel_agent import utils
+
+
+class TestHardwareUtils(test_base.BaseTestCase):
+
+    @mock.patch.object(utils, 'execute')
+    def test_parse_dmidecode(self, exec_mock):
+        exec_mock.return_value = ["""
+System Slot Information
+    Designation: PCIEX16_1
+    ID: 1
+    Bus Address: 0000:00:01.0
+    Characteristics:
+        3.3 V is provided
+        PME signal is supported
+
+System Slot Information
+    Type: 32-bit PCI Express
+    ID: 3
+    Characteristics:
+        Opening is shared
+    Bus Address: 0000:00:1c.4
+
+
+"""]
+
+        expected = [{"designation": "PCIEX16_1",
+                     "id": "1",
+                     "characteristics": ["3.3 V is provided",
+                                         "PME signal is supported"],
+                     "bus address": "0000:00:01.0"},
+                    {"type": "32-bit PCI Express",
+                     "id": "3",
+                     "characteristics": ["Opening is shared"],
+                     "bus address": "0000:00:1c.4"}]
+
+        self.assertEqual(expected, hu.parse_dmidecode("fake_type"))
+        exec_mock.assert_called_once_with("dmidecode", "-q", "--type",
+                                          "fake_type")
+
+    @mock.patch.object(utils, 'execute')
+    def test_parse_lspci(self, exec_mock):
+        exec_mock.return_value = ["""Slot:   07:00.0
+Class:  PCI bridge
+Vendor: ASMedia Technology Inc.
+Device: ASM1083/1085 PCIe to PCI Bridge
+Rev:    01
+ProgIf: 01
+
+Slot:   09:00.0
+Class:  IDE interface
+Vendor: Marvell Technology Group Ltd.
+Device: 88SE6121 SATA II / PATA Controller
+SVendor:    ASUSTeK Computer Inc.
+SDevice:    Device 82a2
+Rev:    b2
+ProgIf: 8f
+
+"""]
+
+        expected = [{'class': 'PCI bridge',
+                     'device': 'ASM1083/1085 PCIe to PCI Bridge',
+                     'progif': '01',
+                     'rev': '01',
+                     'slot': '07:00.0',
+                     'vendor': 'ASMedia Technology Inc.'},
+                    {'class': 'IDE interface',
+                     'device': '88SE6121 SATA II / PATA Controller',
+                     'progif': '8f',
+                     'rev': 'b2',
+                     'sdevice': 'Device 82a2',
+                     'slot': '09:00.0',
+                     'svendor': 'ASUSTeK Computer Inc.',
+                     'vendor': 'Marvell Technology Group Ltd.'}]
+
+        self.assertEqual(expected, hu.parse_lspci())
+        exec_mock.assert_called_once_with('lspci', '-vmm', '-D')
+
+    @mock.patch.object(utils, 'execute')
+    def test_parse_simple_kv(self, exec_mock):
+        exec_mock.return_value = ["""driver: r8169
+version: 2.3LK-NAPI
+firmware-version: rtl_nic/rtl8168e-2.fw
+bus-info: 0000:06:00.0
+supports-statistics: yes
+supports-test: no
+supports-eeprom-access: no
+supports-register-dump: yes
+"""]
+
+        expected = {'driver': 'r8169',
+                    'version': '2.3LK-NAPI',
+                    'firmware-version': 'rtl_nic/rtl8168e-2.fw',
+                    'bus-info': '0000:06:00.0',
+                    'supports-statistics': 'yes',
+                    'supports-test': 'no',
+                    'supports-eeprom-access': 'no',
+                    'supports-register-dump': 'yes'}
+
+        self.assertEqual(expected, hu.parse_simple_kv('fake', 'cmd'))
+        exec_mock.assert_called_once_with('fake', 'cmd')
+
+    @mock.patch.object(utils, 'execute')
+    def test_udevreport(self, mock_exec):
+        # should run udevadm info OS command
+        # in order to get udev properties for a device
+        mock_exec.return_value = (
+            'DEVLINKS=\'/dev/disk/by-id/fakeid1 /dev/disk/by-id/fakeid2\'\n'
+            'DEVNAME=\'/dev/fake\'\n'
+            'DEVPATH=\'/devices/fakepath\'\n'
+            'DEVTYPE=\'disk\'\n'
+            'MAJOR=\'11\'\n'
+            'MINOR=\'0\'\n'
+            'ID_BUS=\'fakebus\'\n'
+            'ID_MODEL=\'fakemodel\'\n'
+            'ID_SERIAL_SHORT=\'fakeserial\'\n'
+            'ID_WWN=\'fakewwn\'\n'
+            'ID_CDROM=\'1\'\n'
+            'ANOTHER=\'another\'\n',
+            ''
+        )
+        expected = {
+            'DEVLINKS': ['/dev/disk/by-id/fakeid1', '/dev/disk/by-id/fakeid2'],
+            'DEVNAME': '/dev/fake',
+            'DEVPATH': '/devices/fakepath',
+            'DEVTYPE': 'disk',
+            'MAJOR': '11',
+            'MINOR': '0',
+            'ID_BUS': 'fakebus',
+            'ID_MODEL': 'fakemodel',
+            'ID_SERIAL_SHORT': 'fakeserial',
+            'ID_WWN': 'fakewwn',
+            'ID_CDROM': '1'
+        }
+        self.assertEqual(expected, hu.udevreport('/dev/fake'))
+        mock_exec.assert_called_once_with('udevadm',
+                                          'info',
+                                          '--query=property',
+                                          '--export',
+                                          '--name=/dev/fake',
+                                          check_exit_code=[0])
+
+    @mock.patch.object(utils, 'execute')
+    def test_blockdevreport(self, mock_exec):
+        # should run blockdev OS command
+        # in order to get block device properties
+        cmd = ['blockdev', '--getsz', '--getro', '--getss', '--getpbsz',
+               '--getsize64', '--getiomin', '--getioopt', '--getra',
+               '--getalignoff', '--getmaxsect', '/dev/fake']
+        mock_exec.return_value = (
+            '625142448\n0\n512\n4096\n320072933376\n4096\n0\n256\n0\n1024',
+            ''
+        )
+        expected = {
+            'sz': '625142448',
+            'ro': '0',
+            'ss': '512',
+            'pbsz': '4096',
+            'size64': '320072933376',
+            'iomin': '4096',
+            'ioopt': '0',
+            'ra': '256',
+            'alignoff': '0',
+            'maxsect': '1024'
+        }
+        self.assertEqual(expected, hu.blockdevreport('/dev/fake'))
+        mock_exec.assert_called_once_with(*cmd, check_exit_code=[0])
+
+    @mock.patch('six.moves.builtins.open')
+    def test_extrareport(self, mock_open):
+        # should read some files from sysfs e.g. /sys/block/fake/removable
+        # in order to get some device properties
+        def with_side_effect(arg):
+            mock_with = mock.MagicMock()
+            mock_with.__exit__.return_value = None
+            mock_file = mock.Mock()
+            if arg == '/sys/block/fake/removable':
+                mock_file.read.return_value = '0\n'
+            elif arg == '/sys/block/fake/device/state':
+                mock_file.read.return_value = 'running\n'
+            elif arg == '/sys/block/fake/device/timeout':
+                mock_file.read.return_value = '30\n'
+            mock_with.__enter__.return_value = mock_file
+            return mock_with
+        mock_open.side_effect = with_side_effect
+        expected = {'removable': '0', 'state': 'running', 'timeout': '30'}
+        self.assertEqual(expected, hu.extrareport('/dev/fake'))
+
+    @mock.patch.object(hu, 'blockdevreport')
+    @mock.patch.object(hu, 'udevreport')
+    def test_is_disk_uspec_bspec_none(self, mock_ureport, mock_breport):
+        # should call udevreport if uspec is None
+        # should call blockdevreport if bspec is None
+        # should return True if uspec and bspec are empty
+        mock_ureport.return_value = {}
+        mock_breport.return_value = {}
+        self.assertTrue(hu.is_disk('/dev/fake'))
+        mock_ureport.assert_called_once_with('/dev/fake')
+        mock_breport.assert_called_once_with('/dev/fake')
+
+    @mock.patch.object(hu, 'udevreport')
+    def test_is_disk_uspec_none(self, mock_ureport):
+        # should call udevreport if uspec is None but bspec is not None
+        bspec = {'key': 'value'}
+        mock_ureport.return_value = {}
+        hu.is_disk('/dev/fake', bspec=bspec)
+        mock_ureport.assert_called_once_with('/dev/fake')
+
+    @mock.patch.object(hu, 'blockdevreport')
+    def test_is_disk_bspec_none(self, mock_breport):
+        # should call blockdevreport if bspec is None but uspec is not None
+        uspec = {'key': 'value'}
+        mock_breport.return_value = {}
+        hu.is_disk('/dev/fake', uspec=uspec)
+        mock_breport.assert_called_once_with('/dev/fake')
+
+    @mock.patch.object(hu, 'blockdevreport')
+    def test_is_disk_cdrom(self, mock_breport):
+        # should return False if udev ID_CDROM is set to 1
+        mock_breport.return_value = {}
+        uspec = {
+            'ID_CDROM': '1'
+        }
+        self.assertFalse(hu.is_disk('/dev/fake', uspec=uspec))
+
+    @mock.patch.object(hu, 'blockdevreport')
+    def test_is_disk_partition(self, mock_breport):
+        # should return False if udev DEVTYPE is partition
+        mock_breport.return_value = {}
+        uspec = {
+            'DEVTYPE': 'partition'
+        }
+        self.assertFalse(hu.is_disk('/dev/fake', uspec=uspec))
+
+    @mock.patch.object(hu, 'blockdevreport')
+    def test_is_disk_major(self, mock_breport):
+        # should return False if udev MAJOR is not in a list of
+        # major numbers which are used for disks
+        # look at kernel/Documentation/devices.txt
+        mock_breport.return_value = {}
+        valid_majors = [3, 8, 65, 66, 67, 68, 69, 70, 71, 104, 105,
+                        106, 107, 108, 109, 110, 111, 202, 252, 253]
+        for major in (set(range(1, 261)) - set(valid_majors)):
+            uspec = {
+                'MAJOR': str(major)
+            }
+            self.assertFalse(hu.is_disk('/dev/fake', uspec=uspec))
+
+    @mock.patch.object(hu, 'udevreport')
+    def test_is_disk_readonly(self, mock_ureport):
+        # should return False if device is read only
+        mock_ureport.return_value = {}
+        bspec = {
+            'ro': '1'
+        }
+        self.assertFalse(hu.is_disk('/dev/fake', bspec=bspec))
+
+    @mock.patch.object(hu, 'is_disk')
+    @mock.patch.object(hu, 'extrareport')
+    @mock.patch.object(hu, 'blockdevreport')
+    @mock.patch.object(hu, 'udevreport')
+    @mock.patch.object(utils, 'execute')
+    def test_list_block_devices(self, mock_exec, mock_ureport, mock_breport,
+                  mock_ereport, mock_isdisk):
+        # should run blockdev --report command
+        # in order to get a list of block devices
+        # should call report methods to get device info
+        # should call is_disk method to filter out
+        # those block devices which are not disks
+        mock_exec.return_value = (
+            'RO    RA   SSZ   BSZ   StartSec            Size   Device\n'
+            'rw   256   512  4096          0    320072933376   /dev/fake\n'
+            'rw   256   512  4096       2048      7998537728   /dev/fake1\n'
+            'rw   256   512   512          0      1073741312   /dev/sr0\n',
+            ''
+        )
+
+        def isdisk_side_effect(arg, uspec=None, bspec=None):
+            if arg == '/dev/fake':
+                return True
+            elif arg in ('/dev/fake1', '/dev/sr0'):
+                return False
+        mock_isdisk.side_effect = isdisk_side_effect
+        mock_ureport.return_value = {'key0': 'value0'}
+        mock_breport.return_value = {'key1': 'value1'}
+        mock_ereport.return_value = {'key2': 'value2'}
+
+        expected = [{
+            'device': '/dev/fake',
+            'startsec': '0',
+            'size': 320072933376,
+            'uspec': {'key0': 'value0'},
+            'bspec': {'key1': 'value1'},
+            'espec': {'key2': 'value2'}
+        }]
+        self.assertEqual(hu.list_block_devices(), expected)
+        mock_exec.assert_called_once_with('blockdev', '--report',
+                                          check_exit_code=[0])
+        self.assertEqual(mock_ureport.call_args_list, [mock.call('/dev/fake'),
+            mock.call('/dev/fake1'), mock.call('/dev/sr0')])
+        self.assertEqual(mock_breport.call_args_list, [mock.call('/dev/fake'),
+            mock.call('/dev/fake1'), mock.call('/dev/sr0')])
+        self.assertEqual(mock_ereport.call_args_list, [mock.call('/dev/fake'),
+            mock.call('/dev/fake1'), mock.call('/dev/sr0')])

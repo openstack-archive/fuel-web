@@ -24,12 +24,13 @@ define(
     'text!templates/dialogs/remove_cluster.html',
     'text!templates/dialogs/stop_deployment.html',
     'text!templates/dialogs/reset_environment.html',
+    'text!templates/dialogs/update_environment.html',
     'text!templates/dialogs/error_message.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
     'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
 
     var views = {};
@@ -128,6 +129,7 @@ function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemp
         },
         deployCluster: function() {
             this.$('.btn').addClass('disabled');
+            app.page.removeFinishedDeploymentTasks();
             var task = new models.Task();
             task.save({}, {url: _.result(this.model, 'url') + '/changes', type: 'PUT'})
                 .done(_.bind(function() {
@@ -200,6 +202,7 @@ function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemp
         },
         resetEnvironment: function() {
             this.$('.reset-environment-btn').attr('disabled', true);
+            app.page.removeFinishedDeploymentTasks();
             var task = new models.Task();
             task.save({}, {url: _.result(this.model, 'url') + '/reset', type: 'PUT'})
                 .done(_.bind(function() {
@@ -207,6 +210,36 @@ function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemp
                     app.page.deploymentTaskStarted();
                 }, this))
                 .fail(_.bind(this.displayError, this));
+        }
+    });
+
+    views.UpdateEnvironmentDialog = views.Dialog.extend({
+        template: _.template(updateEnvironmentDialogTemplate),
+        events: {
+            'click .update-environment-btn:not(:disabled)': 'updateEnvironment'
+        },
+        updateEnvironment: function() {
+            this.$('.update-environment-btn').attr('disabled', true);
+            var deferred = this.model.save({
+                pending_release_id: this.action == 'update' ? this.model.get('pending_release_id') : this.model.get('release_id')
+            }, {patch: true, wait: true});
+            if (deferred) {
+                deferred.done(_.bind(function() {
+                    app.page.removeFinishedDeploymentTasks();
+                    var task = new models.Task();
+                    task.save({}, {url: _.result(this.model, 'url') + '/update', type: 'PUT'})
+                        .done(_.bind(function() {
+                            this.$el.modal('hide');
+                            app.page.deploymentTaskStarted();
+                        }, this))
+                        .fail(_.bind(this.displayError, this));
+                }, this))
+                .fail(_.bind(this.displayError, this));
+            }
+        },
+        render: function() {
+            this.constructor.__super__.render.call(this, {action: this.action});
+            return this;
         }
     });
 

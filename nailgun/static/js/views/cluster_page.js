@@ -55,6 +55,13 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         removeFinishedNetworkTasks: function(tasks, removeSilently) {
             tasks = tasks || this.model.tasks({group: 'network'});
+            return this.removeFinishedTasks(tasks, removeSilently);
+        },
+        removeFinishedDeploymentTasks: function(tasks, removeSilently) {
+            tasks = tasks || this.model.tasks({group: 'deployment'});
+            return this.removeFinishedTasks(tasks, removeSilently);
+        },
+        removeFinishedTasks: function(tasks, removeSilently) {
             var requests = [];
             _.each(tasks, function(task) {
                 if (task.get('status') != 'running') {

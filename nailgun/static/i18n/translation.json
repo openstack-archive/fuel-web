@@ -14,6 +14,8 @@
                 "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
                 "cancel_button": "Cancel",
+                "update_button": "Update",
+                "rollback_button": "Rollback",
                 "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
                 "size": {
@@ -234,8 +236,16 @@
                     "reset_environment_description": "Enables you to modify the settings for the environment and redeploy.",
                     "reset_environment_warning": "This action will reset all existing nodes to their pre-deployment state, deleting your existing environment.",
                     "reset_disabled_for_new_cluster": "Reset Environment is not available for an environment not yet deployed.",
+                    "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed.",
                     "repeated_reset_disabled": "The current environment is already being reset.",
-                    "reset_disabled_for_deploying_cluster": "Reset Environment is not available for an environment still being deployed. Use Stop Deployment to stop the deployment process."
+                    "update_environment": "Update Environment",
+                    "update_environment_description": "Enables you to update the environment to chosen release.",
+                    "update_disabled_for_new_cluster": "Update Environment is not available for an environment not yet deployed.",
+                    "update_disabled_for_deploying_cluster": "Update Environment is not available for an environment still being deployed.",
+                    "repeated_update_disabled": "The current environment is already being updated.",
+                    "rollback_environment": "Rollback Environment",
+                    "no_releases_to_update_message": "You already have the latest release installed.",
+                    "rollback_message": "Update Environment failed. You can only rollback your environment."
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -508,6 +518,14 @@
                 "reset_environment": {
                     "title": "Reset Environment",
                     "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state."
+                },
+                "update_environment": {
+                    "title": "Update Environment",
+                    "text": "Are you sure you want to update the environment?"
+                },
+                "rollback_environment": {
+                    "title": "Rollback Environment",
+                    "text": "Are you sure you want to rollback the environment?"
                 },
                 "error_occured": {
                     "alert_text": "A server error has occured. Please contact the administrators."

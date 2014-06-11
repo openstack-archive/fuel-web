@@ -57,8 +57,7 @@ def syncdb():
 
 def dropdb():
     from nailgun.db import migration
-    from nailgun.db.sqlalchemy.models.base import Base
-    Base.metadata.drop_all(bind=engine)
+    migration.do_downgrade_base()
     migration.drop_migration_meta(engine)
 
 

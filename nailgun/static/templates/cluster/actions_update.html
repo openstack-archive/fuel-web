@@ -1,0 +1,18 @@
+<form class="environment-action-form" onsubmit="return false">
+  <h4 data-i18n="cluster_page.actions_tab.update_environment"></h4>
+  <div class="action-item-controls">
+    <div class="action-body">
+      <% if (action == 'rollback' || !(releases.deferred && releases.deferred.state() == 'pending')) { %>
+        <p class="action-item-description <%= locked ? 'unavailable' : '' %>" data-i18n="cluster_page.actions_tab.<%= descriptionKey %>"></p>
+      <% } else { %>
+        <div class="progress-bar description">
+          <div class="progress progress-striped progress-success active"><div class="bar"></div></div>
+        </div>
+      <% } %>
+    </div>
+    <% if (action == 'update') { %>
+      <select name="update_release"></select>
+    <% } %>
+    <button class="btn btn-<%= action == 'update' ? 'success' : 'danger' %> action-btn update-environment-btn"><span data-i18n="common.<%- action %>_button"></span></button>
+  </div>
+</form>

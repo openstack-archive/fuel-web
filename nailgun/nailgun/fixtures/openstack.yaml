@@ -713,3 +713,16 @@
         cobbler:
           profile:
             generator_arg: "ubuntu_1204_x86_64"
+- pk: 3
+  extend: *full_release
+  fields:
+    name: "123"
+    version: "2014.2"
+    can_update_from_versions: ["2014.1"]
+    operating_system: "Ubuntu"
+    description: "This option will install the OpenStack Icehouse packages using Ubuntu as a base operating system. With high availability features built in, you are getting a robust, enterprise-grade OpenStack deployment."
+    attributes_metadata:
+      generated:
+        cobbler:
+          profile:
+            generator_arg: "ubuntu_1204_x86_64"

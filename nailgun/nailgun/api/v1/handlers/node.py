@@ -22,6 +22,9 @@ from datetime import datetime
 
 import web
 
+from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import subqueryload_all
+
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content_json
@@ -60,14 +63,12 @@ class NodeCollectionHandler(CollectionHandler):
     validator = NodeValidator
     collection = objects.NodeCollection
     eager = (
-        'cluster',
-        'nic_interfaces',
-        'nic_interfaces.assigned_networks_list',
-        'bond_interfaces',
-        'bond_interfaces.assigned_networks_list',
-        'role_list',
-        'pending_role_list',
-        'ip_addrs'
+        joinedload('cluster'),
+        joinedload('role_list'),
+        joinedload('pending_role_list'),
+        subqueryload_all('nic_interfaces.assigned_networks_list'),
+        subqueryload_all('bond_interfaces.assigned_networks_list'),
+        subqueryload_all('ip_addrs.network_data')
     )
 
     @content_json

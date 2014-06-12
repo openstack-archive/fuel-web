@@ -23,7 +23,6 @@ import collections
 from itertools import ifilter
 
 from sqlalchemy import and_, not_
-from sqlalchemy.orm import joinedload
 
 from nailgun.objects.serializers.base import BasicSerializer
 
@@ -301,9 +300,7 @@ class NailgunCollection(object):
         """
         use_iterable = iterable or cls.all(yield_per=yield_per)
         if fields:
-            return use_iterable.options(
-                *[joinedload(f) for f in fields]
-            )
+            return use_iterable.options(*fields)
         return use_iterable
 
     @classmethod

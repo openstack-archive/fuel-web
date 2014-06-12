@@ -269,6 +269,10 @@ class Environment(object):
 
         return node
 
+    def create_nodes(self, count, *args, **kwargs):
+        """Helper to generate specific number of nodes."""
+        return [self.create_node(*args, **kwargs) for _ in xrange(count)]
+
     def create_nodes_w_interfaces_count(self,
                                         nodes_count, if_count=2, **kwargs):
         """Create nodes_count nodes with if_count interfaces each.

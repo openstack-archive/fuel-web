@@ -22,6 +22,9 @@ import traceback
 
 from datetime import datetime
 
+from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import subqueryload_all
+
 from nailgun import consts
 
 from nailgun.objects.serializers.node import NodeSerializer
@@ -603,3 +606,20 @@ class NodeCollection(NailgunCollection):
 
     #: Single Node object class
     single = Node
+
+    @classmethod
+    def eager_nodes_handlers(cls, iterable):
+        """Eager load objects instances that is used in nodes handler.
+
+        :param iterable: iterable (SQLAlchemy query)
+        :returns: iterable (SQLAlchemy query)
+        """
+        options = (
+            joinedload('cluster'),
+            joinedload('role_list'),
+            joinedload('pending_role_list'),
+            subqueryload_all('nic_interfaces.assigned_networks_list'),
+            subqueryload_all('bond_interfaces.assigned_networks_list'),
+            subqueryload_all('ip_addrs.network_data')
+        )
+        return cls.eager_base(iterable, options)

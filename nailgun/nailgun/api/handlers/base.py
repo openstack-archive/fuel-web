@@ -308,7 +308,7 @@ class CollectionHandler(BaseHandler):
         """:returns: Collection of JSONized REST objects.
         :http: * 200 (OK)
         """
-        q = self.collection.eager(self.eager, None)
+        q = self.collection.eager(None, self.eager)
         return self.collection.to_json(q)
 
     @content_json

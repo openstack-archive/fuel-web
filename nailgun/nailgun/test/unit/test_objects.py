@@ -195,3 +195,12 @@ class TestNodeObject(BaseIntegrationTest):
             objects.Node.update_by_agent(node_db, copy.deepcopy(data))
 
             self.assertEqual(node_db.status, status)
+
+    def test_eager_nodes_handlers(self):
+        """Test verifies that custom handler works and returns correct
+        number of nodes.
+        """
+        nodes_count = 10
+        self.env.create_nodes(nodes_count)
+        nodes_db = objects.NodeCollection.eager_nodes_handlers(None)
+        self.assertEqual(nodes_db.count(), nodes_count)

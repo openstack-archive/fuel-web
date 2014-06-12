@@ -771,8 +771,26 @@ class NetworkManager(object):
         """Returns dict with admin network."""
         return {
             'name': 'admin',
-            'dev': node.admin_interface.name
+            'dev': cls.get_admin_interface(node).name
         }
+
+    @classmethod
+    def get_admin_interface(cls, node):
+        try:
+            return cls._get_interface_by_network_name(
+                node, 'fuelweb_admin')
+        except errors.CanNotFindInterface:
+            logger.debug(u'Cannot find interface with assigned admin '
+                         'network group on %s', node.full_name)
+
+        for interface in node.interfaces:
+            ip_addr = interface.ip_addr
+            if cls.is_ip_belongs_to_admin_subnet(ip_addr):
+                return interface
+
+        logger.warning(u'Cannot find admin interface for node '
+                       'return first interface: "%s"', node.full_name)
+        return node.interfaces[0]
 
     @classmethod
     def _get_interface_by_network_name(cls, node, network_name):

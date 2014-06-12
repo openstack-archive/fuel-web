@@ -253,21 +253,32 @@ class NailgunCollection(object):
             raise TypeError("First argument should be iterable")
 
     @classmethod
-    def eager(cls, iterable, fields, yield_per=100):
+    def eager_base(cls, iterable, options):
         """Eager load linked object instances (SQLAlchemy FKs).
         In case if iterable=None applies to all object instances
 
         :param iterable: iterable (SQLAlchemy query)
-        :param fields: list of links (model FKs) to eagerload
-        :param yield_per: SQLAlchemy's yield_per() clause
+        :param options: list of sqlalchemy eagerload types
         :returns: iterable (SQLAlchemy query)
         """
-        use_iterable = iterable or cls.all(yield_per=yield_per)
-        if fields:
-            return use_iterable.options(
-                *[joinedload(f) for f in fields]
-            )
+        use_iterable = iterable or cls.all()
+        if options:
+            return use_iterable.options(*options)
         return use_iterable
+
+    @classmethod
+    def eager(cls, iterable, fields):
+        """Eager load linked object instances (SQLAlchemy FKs).
+        By default joinedload will be applied to every field.
+        If you want to use custom eagerload method - use eager_base
+        In case if iterable=None applies to all object instances
+
+        :param iterable: iterable (SQLAlchemy query)
+        :param fields: list of links (model FKs) to eagerload
+        :returns: iterable (SQLAlchemy query)
+        """
+        options = [joinedload(field) for field in fields]
+        return cls.eager_base(iterable, options)
 
     @classmethod
     def count(cls, iterable=None):

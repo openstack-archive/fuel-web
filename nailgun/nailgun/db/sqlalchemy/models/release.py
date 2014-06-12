@@ -50,7 +50,8 @@ class Release(Base):
     id = Column(Integer, primary_key=True)
     name = Column(Unicode(100), nullable=False)
     version = Column(String(30), nullable=False)
-    can_update_from_versions = Column(JSON, default=[], nullable=False)
+    can_update_from_versions = Column(JSON, default=[],
+                                      nullable=False, server_default='[]')
     description = Column(Unicode)
     operating_system = Column(String(50), nullable=False)
     state = Column(

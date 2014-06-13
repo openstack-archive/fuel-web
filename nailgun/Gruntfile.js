@@ -49,7 +49,8 @@ module.exports = function(grunt) {
                 src: [
                     'static/js/**/*.js',
                     '!static/js/libs/**',
-                    '!static/js/expression_parser.js'
+                    '!static/js/expression_parser.js',
+                    '!static/js/test/**'
                 ],
                 directives: {
                     predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
@@ -142,6 +143,11 @@ module.exports = function(grunt) {
                     moduleType: 'js'
                 }
             }
+        },
+        karma: {
+            unit: {
+                configFile: 'karma.conf.js'
+            }
         }
     });
 
@@ -155,6 +161,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
     grunt.loadNpmTasks('grunt-debug-task');
+    grunt.loadNpmTasks('grunt-karma');
     grunt.registerTask('trimstatic', ['clean', 'cleanempty']);
     grunt.registerTask('build', ['bower', 'less', 'requirejs', 'trimstatic', 'revision', 'replace']);
     grunt.registerTask('default', ['build']);

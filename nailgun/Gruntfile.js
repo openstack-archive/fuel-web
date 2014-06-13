@@ -142,6 +142,11 @@ module.exports = function(grunt) {
                     moduleType: 'js'
                 }
             }
+        },
+        karma: {
+            unit: {
+                configFile: 'karma.conf.js'
+            }
         }
     });
 
@@ -155,6 +160,7 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-jslint');
     grunt.loadNpmTasks('grunt-bower-task');
     grunt.loadNpmTasks('grunt-debug-task');
+    grunt.loadNpmTasks('grunt-karma');
     grunt.registerTask('trimstatic', ['clean', 'cleanempty']);
     grunt.registerTask('build', ['bower', 'less', 'requirejs', 'trimstatic', 'revision', 'replace']);
     grunt.registerTask('default', ['build']);

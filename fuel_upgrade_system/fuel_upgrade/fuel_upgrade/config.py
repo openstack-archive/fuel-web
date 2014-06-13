@@ -56,9 +56,9 @@ def build_config():
     :returns: Config object
     """
     config = Config(make_config_path('config.yaml'))
-    config.current_version = read_yaml_config(
-        config.current_fuel_version_path)
-    config.new_version = read_yaml_config(
-        make_config_path('version.yaml'))
+
+    config.current_version = read_yaml_config(config.current_fuel_version_path)
+    config.new_version = read_yaml_config(make_config_path('version.yaml'))
+    config.astute = read_yaml_config(config.current_fuel_astute_path)
 
     return config

@@ -1,0 +1,13 @@
+Verified+2: Jenkins
+Code-Review+2: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Workflow+1: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Code-Review+1: Dmitry Shulyak <dshulyak@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: Mark Maglana <mmaglana@gmail.com>
+Code-Review+1: Vern Hart <v-openstack@vern.com>
+Code-Review+1: Robert Bridgeman <bkbrawler04@gmail.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 13 Jun 2014 16:57:27 +0000
+Reviewed-on: https://review.openstack.org/98003
+Project: stackforge/fuel-web
+Branch: refs/heads/master

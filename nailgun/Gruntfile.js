@@ -143,6 +143,11 @@ module.exports = function(grunt) {
                     moduleType: 'js'
                 }
             }
+        },
+        karma: {
+            unit: {
+                configFile: 'karma.conf.js'
+            }
         }
     });
 

@@ -74,6 +74,12 @@ class BaseTestCase(TestCase):
         conf.current_version['VERSION']['release'] = '0'
 
         conf.openstack['releases'] = 'releases.json'
+
+        conf.astute = {
+            'ADMIN_NETWORK': {
+                'ipaddress': '0.0.0.0'
+            }
+        }
         return conf
 
     def mock_open(self, text):

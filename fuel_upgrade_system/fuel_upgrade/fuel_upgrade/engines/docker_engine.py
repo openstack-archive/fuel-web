@@ -16,6 +16,7 @@
 
 import logging
 import os
+import re
 import time
 
 from copy import deepcopy
@@ -437,6 +438,59 @@ class DockerUpgrader(UpgradeEngine):
             logger.debug(u'Stop container: {0}'.format(container))
 
             self.stop_container(container['Id'])
+
+        public_ports = self._get_docker_container_public_ports(
+            containers_to_stop)
+        self.clean_docker_iptables_rules(public_ports)
+
+    def _get_docker_container_public_ports(self, containers):
+        """Returns public ports
+
+        :param containers: list of dicts with information about
+                           containers which have `Ports` list
+                           with items where exist `PublicPort`
+                           field
+        :returns: list of public ports
+        """
+        container_ports = []
+        for container in containers:
+            container_ports.extend(container['Ports'])
+
+        return [container_port['PublicPort']
+                for container_port in container_ports]
+
+    def clean_docker_iptables_rules(self, ports):
+        """Sometimes when we run docker stop
+        (version dc9c28f/0.10.0) it doesn't clean
+        iptables rules, as result when we run new
+        container on the same port we have two rules
+        with the same port but with different IPs,
+        we have to clean this rules to prevent services
+        unavailability.
+
+        Example of the problem:
+          $ iptables -t nat -S
+          ...
+          -A DOCKER -p tcp -m tcp --dport 443 -j DNAT \
+            --to-destination 172.17.0.7:443
+          -A DOCKER -p tcp -m tcp --dport 443 -j DNAT \
+            --to-destination 172.17.0.3:443
+
+        :param ports: list of ports to clean up
+        """
+        rules_to_deletion = []
+        patterns = [re.compile(
+            '^-A DOCKER .+ --dport {0} '
+            '-j DNAT --to-destination .+'.format(port)) for port in ports]
+
+        for rule in utils.exec_cmd_iterator('iptables -t nat -S'):
+            for pattern in patterns:
+                if pattern.match(rule):
+                    rules_to_deletion.append(rule)
+
+        for rule in rules_to_deletion:
+            # Remove -A (add) prefix and use -D (delete) instead
+            utils.exec_cmd('iptables -t nat -D {0}'.format(rule[2:]))
 
     def stop_container(self, container_id):
         """Stop docker container

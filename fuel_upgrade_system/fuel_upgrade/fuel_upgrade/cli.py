@@ -25,9 +25,9 @@ from fuel_upgrade.config import build_config
 from fuel_upgrade import errors
 from fuel_upgrade.upgrade import UpgradeManager
 
+from fuel_upgrade.engines.docker_engine import DockerInitializer
+from fuel_upgrade.engines.docker_engine import DockerUpgrader
 from fuel_upgrade.engines.openstack import OpenStackUpgrader
-from fuel_upgrade.upgrade import DockerInitializer
-from fuel_upgrade.upgrade import DockerUpgrader
 
 
 #: A dict with supported systems.

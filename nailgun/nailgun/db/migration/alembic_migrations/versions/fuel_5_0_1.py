@@ -83,7 +83,8 @@ def upgrade():
         sa.Column(
             'can_update_from_versions',
             JSON(),
-            nullable=False
+            nullable=False,
+            server_default='[]'
         )
     )
     op.add_column(

@@ -2,7 +2,7 @@ Fuel Development Environment
 ============================
 
 Basic OS for Fuel development is Ubuntu Linux. Setup instructions below
-assume Ubuntu 13.04, most of them should be applicable to other Ubuntu
+assume Ubuntu 12.04, most of them should be applicable to other Ubuntu
 and Debian versions, too.
 
 Each subsequent section below assumes that you have followed the steps
@@ -24,6 +24,68 @@ Source code of OpenStack Fuel can be found on Stackforge::
     git clone https://github.com/stackforge/fuel-library
     git clone https://github.com/stackforge/fuel-docs
 
+
+.. _building-fuel-iso:
+
+Building the Fuel ISO
+---------------------
+
+Executing these steps in an Ubuntu 12.04 environment will allow you to
+build a Fuel ISO as quickly as possible::
+
+    apt-get install git
+    git clone https://github.com/stackforge/fuel-main
+    cd fuel-main
+    ./prepare-build-env.sh
+    make iso
+
+Alternatively, you can follow these steps to manually prepare your Fuel
+ISO build environment on Ubuntu 12.04 or newer (excluding newest 14.04):
+
+#. ISO build process requires sudo permissions, allow yourself to run
+   commands as root user without request for a password::
+
+    echo "`whoami` ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
+
+#. Install software::
+
+    sudo apt-get update
+    sudo apt-get install apt-transport-https
+    echo deb http://mirror.yandex.ru/mirrors/docker/ docker main | sudo tee /etc/apt/sources.list.d/docker.list
+    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+    sudo apt-get update
+    sudo apt-get install lxc-docker
+    sudo apt-get update
+    sudo apt-get remove nodejs nodejs-legacy npm
+    sudo apt-get install software-properties-common python-software-properties
+    sudo add-apt-repository -y ppa:chris-lea/node.js
+    sudo apt-get update
+    sudo apt-get install build-essential make git ruby ruby-dev rubygems debootstrap createrepo \
+    python-setuptools yum yum-utils libmysqlclient-dev isomd5sum \
+    python-nose libvirt-bin python-ipaddr python-paramiko python-yaml \
+    python-pip kpartx extlinux unzip genisoimage nodejs multistrap \
+    lrzip python-daemon
+    sudo gem install bundler -v 1.2.1
+    sudo gem install builder
+    sudo pip install xmlbuilder jinja2
+    sudo npm install -g grunt-cli
+
+#. If you haven't already done so, get the source code::
+
+    git clone https://github.com/stackforge/fuel-main
+
+#. Now you can build the Fuel ISO image::
+
+    cd fuel-main
+    make iso
+
+#. To build an ISO image from custom branches of fuel, astute, nailgun
+   or ostf-tests, edit the "Repos and versions" section of config.mk.
+
+#. To build an ISO image from custom gerrit patches on review, edit the
+   "Gerrit URLs and commits" section of config.mk, e.g. for
+   https://review.openstack.org/#/c/63732/8 (id:63732, patch:8) set
+   FUELLIB_GERRIT_COMMIT?=refs/changes/32/63732/8
 
 Nailgun (Fuel-Web)
 ------------------
@@ -60,66 +122,6 @@ Astute
 
     cd fuel-astute
     bundle exec rspec spec/integration/mcollective_spec.rb
-
-.. _building-fuel-iso:
-
-Building the Fuel ISO
----------------------
-
-The following steps are required to build the Fuel ISO images on Ubuntu
-12.10 or newer (excluding newest 14.04):
-
-#. Setup Docker repository using these instruction http://docs.docker.io/installation/ubuntulinux/
-
-#. Install software::
-
-    sudo apt-get update
-    sudo apt-get remove nodejs nodejs-legacy
-    sudo apt-get install software-properties-common
-    sudo add-apt-repository ppa:chris-lea/node.js
-    sudo apt-get update
-    sudo apt-get install build-essential make git ruby ruby-dev rubygems debootstrap createrepo
-    sudo apt-get install python-setuptools yum yum-utils libmysqlclient-dev isomd5sum
-    sudo apt-get install python-nose libvirt-bin python-ipaddr python-paramiko python-yaml
-    sudo apt-get install python-pip kpartx extlinux unzip genisoimage nodejs multistrap
-    sudo sh -c "echo deb http://mirror.yandex.ru/mirrors/docker/ docker main > /etc/apt/sources.list.d/docker.list"
-    sudo apt-get update
-    sudo apt-get install lxc-docker lrzip
-    sudo service docker start
-    sudo gem install bundler -v 1.2.1
-    sudo gem install builder
-    sudo apt-get remove python-daemon python-lockfile
-    sudo pip install xmlbuilder jinja2 lockfile==0.8 python-daemon==1.5.5
-    sudo npm install -g grunt-cli
-
-#. (alternative) If you have completed the instructions in the previous
-   sections of Fuel development environment setup guide, the list of
-   additional packages required to build the ISO becomes shorter::
-
-    sudo apt-get install ruby-dev ruby-builder bundler libmysqlclient-dev
-    sudo apt-get install yum-utils kpartx extlinux genisoimage isomd5sum
-
-#. ISO build process requires sudo permissions, allow yourself to run
-   commands as root user without request for a password::
-
-    echo "`whoami` ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
-
-#. If you haven't already done so, get the source code::
-
-    git clone https://github.com/stackforge/fuel-main
-
-#. Now you can build the Fuel ISO image::
-
-    cd fuel-main
-    make iso
-
-#. To build an ISO image from custom branches of fuel, astute, nailgun
-   or ostf-tests, edit the "Repos and versions" section of config.mk.
-
-#. To build an ISO image from custom gerrit patches on review, edit the
-   "Gerrit URLs and commits" section of config.mk, e.g. for
-   https://review.openstack.org/#/c/63732/8 (id:63732, patch:8) set
-   FUELLIB_GERRIT_COMMIT?=refs/changes/32/63732/8
 
 Running Fuel Puppet Modules Unit Tests
 --------------------------------------
@@ -200,7 +202,7 @@ in required format.
   -f - Documentation format [html,signlehtml,latexpdf,pdf,epub]
 
 For example, if you want to build HTML documentation you can just
-use this thispt like this:
+use this script, like this:
 ::
 
   ./build-docs.sh -f html -o

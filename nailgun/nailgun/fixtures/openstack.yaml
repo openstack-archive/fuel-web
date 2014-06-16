@@ -209,6 +209,71 @@
             description: "vCenter cluster name"
             weight: 40
             type: "text"
+        nsx_plugin:
+          metadata:
+            toggleable: true
+            enabled: false
+            label: "VMware NSX"
+            weight: 20
+          use_nsx:
+            value: true
+            label: ""
+            description: ""
+            weight: 10
+            type: "hidden"
+          nsx_username:
+            value: "admin"
+            label: "NSX username"
+            description: "NSX administrator's username"
+            weight: 20
+            type: "text"
+          nsx_password:
+            value: ""
+            label: "NSX password"
+            description: "Password for Administrator"
+            weight: 30
+            type: "password"
+          transport_zone_uuid:
+            value: ""
+            label: "Transport zone UUID"
+            description: "UUID of the pre-existing default NSX Transport zone"
+            weight: 40
+            type: "text"
+          l3_gw_service_uuid:
+            value: ""
+            label: "L3 service UUID"
+            description: "UUID for the default L3 gateway service to use with this cluster"
+            weight: 50
+            type: "text"
+          nsx_controllers:
+            value: "10.30.30.2"
+            label: "NSX controller endpoint"
+            description: "One or more IP[:port] addresses of NSX controller node, separated by comma (e.g. 10.30.30.2:443,192.168.110.254:8080)"
+            weight: 60
+            type: "text"
+          packages_url:
+            value: "http://10.20.0.2:8080/"
+            label: "URL to NSX bits"
+            description: "Specify URL to NSX specific packages"
+            weight: 70
+            type: "text"
+          connector_type:
+            value: "stt"
+            values:
+              - data: "gre"
+                label: "GRE"
+              - data: "ipsec_gre"
+                label: "GRE over IPSec"
+              - data: "stt"
+                label: "STT"
+              - data: "ipsec_stt"
+                label: "STT over IPSec"
+              - data: "bridge"
+                label: "Bridge"
+            label: "NSX connector type"
+            description: "The default network transport type to use (stt, gre, bridge, ipsec_gre, or ipsec_stt)"
+            weight: 80
+            type: "radio"
         common:
           metadata:
             label: "Common"

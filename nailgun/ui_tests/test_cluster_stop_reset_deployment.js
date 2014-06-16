@@ -164,6 +164,7 @@ casper.then(function() {
     this.test.assertSelectorDisappears('.deployment-control .deploy-btn', 'Deploy changes button disappears');
     this.test.assertSelectorAppears('.deployment-control .progress-striped', 'Reset progress bar appears');
     this.test.assertSelectorDisappears('.deployment-control .progress-striped', 'Reset progress bar disappears', 60000);
+    this.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
     this.then(function() {
         this.test.assertExists('.deployment-control .deploy-btn:not(.disabled)', 'Deploy changes button is enabled again');
         this.test.assertExists('.alert-success', 'Success reset message appears');

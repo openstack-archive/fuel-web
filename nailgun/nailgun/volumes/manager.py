@@ -318,6 +318,10 @@ class DisksFormatConvertor(object):
             ]
         '''
         volumes_info = []
+
+        if len(node.meta["disks"]) == 0:
+            return volumes_info
+
         for space in get_node_spaces(node):
             # Here we calculate min_size of nodes
             min_size = node.volume_manager.expand_generators(

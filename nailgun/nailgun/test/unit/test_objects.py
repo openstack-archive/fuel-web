@@ -241,3 +241,85 @@ class TestNodeObject(BaseIntegrationTest):
             objects.Node.update_by_agent(node_db, copy.deepcopy(data))
 
             self.assertEqual(node_db.status, status)
+
+    def test_node_roles_to_pending_roles(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {'role': 'controller'}
+            ]
+        )
+        node_db = self.env.nodes[0]
+        node = objects.Node.get_by_uid(node_db.id, fail_if_not_found=True)
+        self.assertEquals(['controller'], node.roles)
+        self.assertEquals([], node.pending_roles)
+        # Checking roles moved
+        objects.Node.move_roles_to_pending_roles(node)
+        self.assertEquals([], node.roles)
+        self.assertEquals(['controller'], node.pending_roles)
+        # Checking second moving has no affect
+        objects.Node.move_roles_to_pending_roles(node)
+        self.assertEquals([], node.roles)
+        self.assertEquals(['controller'], node.pending_roles)
+
+    def test_objects_order_by(self):
+        self.env.create(
+            cluster_kwargs={},
+            nodes_kwargs=[
+                {'role': 'z'},
+                {'role': 'a'},
+                {'role': 'b'},
+                {'role': 'controller'},
+                {'role': 'controller'},
+                {'role': 'controller'},
+                {'role': 'controller'},
+                {'role': 'controller'}
+            ]
+        )
+
+        # Checking nothing to be sorted
+        nodes = objects.NodeCollection.order_by(None, 'id')
+        self.assertEquals(None, nodes)
+
+        iterable = ['b', 'a']
+        nodes = objects.NodeCollection.order_by(iterable, ())
+        self.assertEquals(iterable, nodes)
+
+        # Checking query ASC ordering applied
+        q_nodes = objects.NodeCollection.filter_by(None)
+        nodes = objects.NodeCollection.order_by(q_nodes, 'id').all()
+        self.assertListEqual(nodes, sorted(nodes, key=lambda x: x.id))
+        # Checking query DESC ordering applied
+        q_nodes = objects.NodeCollection.filter_by(None)
+        nodes = objects.NodeCollection.order_by(q_nodes, '-id').all()
+        self.assertListEqual(
+            nodes,
+            sorted(nodes, key=lambda x: x.id, reverse=True)
+        )
+
+        # Checking iterable ASC ordering applied
+        nodes = objects.NodeCollection.filter_by(None).all()
+        ordered_nodes = objects.NodeCollection.order_by(nodes, 'role')
+        self.assertListEqual(
+            ordered_nodes,
+            sorted(nodes, key=lambda x: x.role)
+        )
+
+        # Checking iterable DESC ordering applied
+        nodes = objects.NodeCollection.filter_by(None).all()
+        ordered_nodes = objects.NodeCollection.order_by(nodes, '-id')
+        self.assertListEqual(
+            ordered_nodes,
+            sorted(nodes, key=lambda x: x.id, reverse=True)
+        )
+
+        # Checking order by number of fields
+        nodes = objects.NodeCollection.filter_by(None).all()
+        ordered_nodes = objects.NodeCollection.order_by(nodes, ('-id', 'role'))
+        self.assertListEqual(
+            ordered_nodes,
+            sorted(
+                sorted(nodes, key=lambda x: x.id, reverse=True),
+                key=lambda x: x.role
+            )
+        )

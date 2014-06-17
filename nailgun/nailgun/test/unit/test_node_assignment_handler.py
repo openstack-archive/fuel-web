@@ -138,3 +138,21 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         )
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(node.pending_deletion, True)
+
+    def test_assigment_with_invalid_cluster(self):
+        node = self.env.create_node(api=False)
+
+        resp = self.app.post(
+            reverse(
+                'NodeAssignmentHandler',
+                kwargs={'cluster_id': '9999'}
+            ),
+            jsonutils.dumps([{
+                'id': node.id,
+                'roles': ['controller']
+            }]),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+
+        self.assertEquals(404, resp.status_code)

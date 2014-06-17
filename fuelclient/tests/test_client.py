@@ -236,3 +236,13 @@ class TestFiles(BaseTestCase):
             self.assertTrue(os.path.exists(
                 os.path.join(self.temp_directory, path)
             ))
+
+
+class TestDeployChanges(BaseTestCase):
+
+    def test_deploy_changes_no_failure(self):
+        self.load_data_to_nailgun_server()
+        env_create = "env create --name=test --release=1"
+        add_node = "--env-id=1 node set --node 1 --role=controller"
+        deploy_changes = "deploy-changes --env 1"
+        self.run_cli_commands((env_create, add_node, deploy_changes))

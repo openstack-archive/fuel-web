@@ -16,13 +16,13 @@
 
 import mock
 
+from fuel_upgrade.engines.docker_engine import DockerUpgrader
 from fuel_upgrade import errors
-from fuel_upgrade.upgrade import DockerUpgrader
 
 from fuel_upgrade.tests.base import BaseTestCase
 
 
-@mock.patch('fuel_upgrade.upgrade.utils.exec_cmd')
+@mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd')
 class TestDockerUpgrader(BaseTestCase):
 
     def setUp(self):
@@ -31,13 +31,13 @@ class TestDockerUpgrader(BaseTestCase):
         # class decorator, it's the reason why
         # we have to do it explicitly
         self.docker_patcher = mock.patch(
-            'fuel_upgrade.upgrade.docker.Client')
+            'fuel_upgrade.engines.docker_engine.docker.Client')
         self.docker_mock_class = self.docker_patcher.start()
         self.docker_mock = mock.MagicMock()
         self.docker_mock_class.return_value = self.docker_mock
 
         self.supervisor_patcher = mock.patch(
-            'fuel_upgrade.upgrade.SupervisorClient')
+            'fuel_upgrade.engines.docker_engine.SupervisorClient')
         self.supervisor_class = self.supervisor_patcher.start()
         self.supervisor_mock = mock.MagicMock()
         self.supervisor_class.return_value = self.supervisor_mock
@@ -51,7 +51,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.docker_patcher.stop()
         self.supervisor_patcher.stop()
 
-    @mock.patch('fuel_upgrade.upgrade.time.sleep')
+    @mock.patch('fuel_upgrade.engines.docker_engine.time.sleep')
     def test_run_with_retries(self, sleep, _):
         image_name = 'test_image'
         retries_count = 3
@@ -125,7 +125,8 @@ class TestDockerUpgrader(BaseTestCase):
         self.assertEquals(
             self.docker_mock.stop.call_args_list, [((3, 10),), ((4, 10),)])
 
-    @mock.patch('fuel_upgrade.upgrade.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.engines.docker_engine.os.path.exists',
+                return_value=True)
     def test_upload_images(self, _, exec_mock):
         self.upgrader.new_release_images = [
             {'docker_image': 'image1'},
@@ -277,10 +278,13 @@ class TestDockerUpgrader(BaseTestCase):
         self.assertRaises(errors.DatabaseDumpError, self.upgrader.save_db)
 
     @mock.patch(
-        'fuel_upgrade.upgrade.utils.file_contains_lines', returns_value=True)
+        'fuel_upgrade.engines.docker_engine.utils.file_contains_lines',
+        returns_value=True)
     @mock.patch(
-        'fuel_upgrade.upgrade.os.path.exists', side_effect=[False, True])
-    @mock.patch('fuel_upgrade.upgrade.os.remove')
+        'fuel_upgrade.engines.docker_engine.os.path.exists',
+        side_effect=[False, True])
+    @mock.patch(
+        'fuel_upgrade.engines.docker_engine.os.remove')
     def test_save_db_removes_file_in_case_of_error(
             self, remove_mock, _, __, ___):
         self.upgrader.exec_cmd_in_container = mock.MagicMock(
@@ -292,10 +296,12 @@ class TestDockerUpgrader(BaseTestCase):
 
         self.called_once(remove_mock)
 
-    @mock.patch('fuel_upgrade.upgrade.os.path.exists',
-                return_value=True)
-    @mock.patch('fuel_upgrade.upgrade.utils.file_contains_lines',
-                returns_value=True)
+    @mock.patch(
+        'fuel_upgrade.engines.docker_engine.os.path.exists',
+        return_value=True)
+    @mock.patch(
+        'fuel_upgrade.engines.docker_engine.utils.file_contains_lines',
+        returns_value=True)
     def test_verify_postgres_dump(self, file_contains_mock, exists_mock, __):
         self.upgrader.verify_postgres_dump()
 

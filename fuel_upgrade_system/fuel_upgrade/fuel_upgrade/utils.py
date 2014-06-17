@@ -38,7 +38,6 @@ def exec_cmd(cmd):
     in log.
 
     :param cmd: shell command
-    :raises: ExecutedErrorNonZeroExitCode
     """
     logger.debug(u'Execute command "{0}"'.format(cmd))
     child = subprocess.Popen(
@@ -50,13 +49,44 @@ def exec_cmd(cmd):
     for line in child.stdout:
         logger.debug(line.rstrip())
 
-    child.wait()
-    return_code = child.returncode
+    _wait_and_check_exit_code(cmd, child)
 
-    if return_code != 0:
+
+def exec_cmd_iterator(cmd):
+    """Execute command with logging.
+
+    :param cmd: shell command
+    :returns: generator where yeach item
+              is line from stdout
+    """
+    logger.debug(u'Execute command "{0}"'.format(cmd))
+    child = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True)
+
+    logger.debug(u'Stdout and stderr of command "{0}":'.format(cmd))
+    for line in child.stdout:
+        logger.debug(line.rstrip())
+        yield line
+
+    _wait_and_check_exit_code(cmd, child)
+
+
+def _wait_and_check_exit_code(cmd, child):
+    """Wait for child and check it's exit code
+
+    :param cmd: command
+    :param child: object which returned by subprocess.Popen
+    :raises: ExecutedErrorNonZeroExitCode
+    """
+    child.wait()
+    exit_code = child.returncode
+
+    if exit_code != 0:
         raise errors.ExecutedErrorNonZeroExitCode(
             u'Shell command executed with "{0}" '
-            'exit code: {1} '.format(return_code, cmd))
+            'exit code: {1} '.format(exit_code, cmd))
 
     logger.debug(u'Command "{0}" successfully executed'.format(cmd))
 

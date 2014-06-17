@@ -25,6 +25,7 @@ from fuel_upgrade.tests.base import BaseTestCase
 from fuel_upgrade import utils
 from fuel_upgrade.utils import create_dir_if_not_exists
 from fuel_upgrade.utils import exec_cmd
+from fuel_upgrade.utils import exec_cmd_iterator
 from fuel_upgrade.utils import get_request
 from fuel_upgrade.utils import topological_sorting
 from fuel_upgrade.utils import wait_for_true
@@ -64,6 +65,35 @@ class TestUtils(BaseTestCase):
                 'Shell command executed with "{0}" '
                 'exit code: {1} '.format(return_code, cmd),
                 exec_cmd, cmd)
+
+    def test_exec_cmd_iterator_executes_sucessfuly(self):
+        cmd = 'some command'
+
+        process_mock = self.make_process_mock()
+        with patch.object(
+                subprocess, 'Popen', return_value=process_mock) as popen_mock:
+            for line in exec_cmd_iterator(cmd):
+                self.assertTrue(line.startswith('Stdout line '))
+
+        popen_mock.assert_called_once_with(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True)
+
+    def test_exec_cmd_iterator_raises_error_in_case_of_non_zero_exit_code(
+            self):
+        cmd = 'some command'
+        return_code = 1
+
+        process_mock = self.make_process_mock(return_code=return_code)
+        with patch.object(subprocess, 'Popen', return_value=process_mock):
+            with self.assertRaisesRegexp(
+                    errors.ExecutedErrorNonZeroExitCode,
+                    'Shell command executed with "{0}" '
+                    'exit code: {1} '.format(return_code, cmd)):
+                for line in exec_cmd_iterator(cmd):
+                    self.assertTrue(line.startswith('Stdout line '))
 
     def test_get_request(self):
         url = 'http://some-url.com/path'

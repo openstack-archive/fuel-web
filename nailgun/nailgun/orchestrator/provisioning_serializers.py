@@ -94,6 +94,9 @@ class ProvisioningSerializer(object):
                 'mco_password': settings.MCO_PASSWORD,
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
+                'mlnx_vf_num': cluster_attrs['neutron_mellanox']['vf_num'],
+                'mlnx_plugin_mode': cluster_attrs['neutron_mellanox']['plugin'],
+                'mlnx_iser_enabled': cluster_attrs['storage']['iser'],
                 'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')}}
 
         orchestrator_data = objects.Release.get_orchestrator_data_dict(

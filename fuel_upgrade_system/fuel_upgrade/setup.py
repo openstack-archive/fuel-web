@@ -63,6 +63,7 @@ setup(
     install_requires=REQUIREMENTS,
     dependency_links=DEPENDENCIES,
     include_package_data=True,
+    package_data={'': ['*.yaml']},
     entry_points={
         'console_scripts': [
             'fuel-upgrade = fuel_upgrade.cli:main'

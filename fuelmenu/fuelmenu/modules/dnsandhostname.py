@@ -231,6 +231,10 @@ is accessible"}
             log.error("%s" % (responses))
             return False
 
+        #convert commas to spaces
+        responses['DNS_UPSTREAM'] =
+            responses['DNS_UPSTREAM'].replace(',', ' ')
+
         self.save(responses)
         #Update network details so we write correct IP address
         self.getNetwork()
@@ -271,10 +275,9 @@ is accessible"}
             etchosts.close()
         #Write dnsmasq upstream server
         with open('/etc/dnsmasq.upstream', 'w') as f:
-            nameservers = responses['DNS_UPSTREAM'].replace(',', ' ')
             f.write("search %s\n" % responses['DNS_SEARCH'])
             f.write("domain %s\n" % responses['DNS_DOMAIN'])
-            f.write("nameserver %s\n" % nameservers)
+            f.write("nameserver %s\n" % responses['DNS_UPSTREAM'])
         f.close()
 
         return True

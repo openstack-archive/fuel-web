@@ -648,7 +648,7 @@ class DockerUpgrader(UpgradeEngine):
             new_image['name'] = self.make_image_name(image['id'])
             new_image['type'] = image['type']
             new_image['docker_image'] = os.path.join(
-                self.update_path,
+                self.update_path, 'images',
                 image['id'] + '.' + self.config.images_extension)
             new_image['docker_file'] = os.path.join(
                 self.update_path, image['id'])

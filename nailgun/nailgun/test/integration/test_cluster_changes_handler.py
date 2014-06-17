@@ -271,6 +271,9 @@ class TestHandlers(BaseIntegrationTest):
                         'kernel_params': n.kernel_params,
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                    'mlnx_vf_num': "16",
+                    'mlnx_plugin_mode': "disabled",
+                    'mlnx_iser_enabled': False,
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -670,6 +673,9 @@ class TestHandlers(BaseIntegrationTest):
                         'kernel_params': n.kernel_params,
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                    'mlnx_vf_num': "16",
+                    'mlnx_plugin_mode': "disabled",
+                    'mlnx_iser_enabled': False,
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(

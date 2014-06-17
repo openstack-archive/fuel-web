@@ -126,14 +126,22 @@ class NodeAction(Action):
         else:
             nodes = map(Node, params.node)
             for env_id, _nodes in groupby(nodes, attrgetter("env_id")):
-                list_of_nodes = list(_nodes)
-                Environment(env_id).unassign(list_of_nodes)
-                self.serializer.print_to_output(
+                list_of_nodes = [ n.id for n in _nodes]
+                if env_id:
+                    Environment(env_id).unassign(list_of_nodes)
+                    self.serializer.print_to_output(
+                        {},
+                        "Nodes with ids {0} were removed "
+                        "from environment with id {1}."
+                        .format(list_of_nodes, env_id)
+                    )
+                else:
+                    self.serializer.print_to_output(
                     {},
-                    "Nodes with ids {0} were removed "
-                    "from environment with id {1}."
-                    .format(list_of_nodes, env_id)
-                )
+                    "Nodes with ids {0} aren't added to "
+                    "any environment."
+                    .format(list_of_nodes)
+                    )
 
     @check_all("node")
     @check_any("default", "download", "upload")

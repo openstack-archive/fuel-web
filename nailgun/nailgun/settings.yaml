@@ -633,6 +633,8 @@ DUMP:
       - type: file
         path: /etc/astute.yaml
       - type: file
+        path: /var/log/puppet.log
+      - type: file
         path: /root/ceph*
       - type: file
         path: /root/anaconda*

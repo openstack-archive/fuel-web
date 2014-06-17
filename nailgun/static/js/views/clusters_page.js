@@ -41,9 +41,11 @@ function(models, utils, commonViews, dialogViews, wizard, clustersPageTemplate, 
             var clustersView = new ClusterList({collection: this.collection});
             this.registerSubView(clustersView);
             this.$('.cluster-list').html(clustersView.render().el);
-            var registerTrialView = new RegisterTrial();
-            this.registerSubView(registerTrialView);
-            this.$('.page-title').before(registerTrialView.render().el);
+            if (app.version.get('mirantis') == 'yes' && !localStorage.trialRemoved) {
+                var registerTrialView = new RegisterTrial();
+                this.registerSubView(registerTrialView);
+                this.$('.page-title').before(registerTrialView.render().el);
+            }
             return this;
         }
     });
@@ -168,10 +170,8 @@ function(models, utils, commonViews, dialogViews, wizard, clustersPageTemplate, 
             this.remove();
         },
         render: function() {
-            if (app.version.get('mirantis') == 'yes' && !localStorage.trialRemoved) {
-                this.$el.html(this.template()).i18n();
-                this.stickit(this.fuelKey);
-            }
+            this.$el.html(this.template()).i18n();
+            this.stickit(this.fuelKey);
             return this;
         }
     });

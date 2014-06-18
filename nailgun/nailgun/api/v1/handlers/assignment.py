@@ -104,8 +104,8 @@ class NodeUnassignmentHandler(BaseHandler):
                 node.pending_roles = []
                 node.cluster_id = None
                 node.pending_addition = False
-                objects.Node.get_network_manager(
-                    node
-                ).clear_assigned_networks(node)
+                netmanager = objects.Node.get_network_manager(node)
+                netmanager.clear_assigned_networks(node)
+                netmanager.clear_bond_configuration(node)
             else:
                 node.pending_deletion = True

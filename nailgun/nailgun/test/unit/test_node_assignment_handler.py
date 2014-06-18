@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun.db.sqlalchemy.models import NodeBondInterface
+
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -156,3 +158,34 @@ class TestAssignmentHandlers(BaseIntegrationTest):
         )
 
         self.assertEquals(404, resp.status_code)
+
+
+class TestClusterStateUnassigment(BaseIntegrationTest):
+
+    def test_delete_bond_and_networks_state_on_unassigmnet(self):
+        """Test verifies that
+        1. bond configuration will be deleted
+        2. network unassigned from node interfaces
+        when node unnasigned from cluster
+        """
+        cluster = self.env.create(
+            nodes_kwargs=[{}]
+        )
+        node = self.env.nodes[0]
+        node.bond_interfaces.append(
+            NodeBondInterface(name='ovs-bond0',
+                              slaves=node.nic_interfaces))
+        self.db.flush()
+        resp = self.app.post(
+            reverse(
+                'NodeUnassignmentHandler',
+                kwargs={'cluster_id': cluster['id']}
+            ),
+            jsonutils.dumps([{'id': node.id}]),
+            headers=self.default_headers
+        )
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(node.bond_interfaces, [])
+        for interface in node.interfaces:
+            self.assertEqual(interface.assigned_networks_list, [])

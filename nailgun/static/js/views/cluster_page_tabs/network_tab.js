@@ -116,7 +116,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                                 this.calculateButtonsState();
                                 this.model.fetch();
                                 this.model.fetchRelated('tasks').done(_.bind(function() {
-                                    this.page.removeFinishedNetworkTasks(null, true);
+                                    this.page.removeFinishedNetworkTasks(true);
                                 }, this));
                             }, this));
                         } else {
@@ -215,7 +215,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             this.$('.verification-control').html(verificationView.render().el);
             this.showVerificationErrors();
             if (this.hasChanges()) {
-                this.page.removeFinishedNetworkTasks(this.model.tasks({group: 'network'}), true);
+                this.page.removeFinishedNetworkTasks(true);
             }
         },
         showVerificationErrors: function() {

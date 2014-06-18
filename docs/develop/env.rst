@@ -1,22 +1,34 @@
 Fuel Development Environment
 ============================
 
-Basic OS for Fuel development is Ubuntu Linux. Setup instructions below
-assume Ubuntu 13.04, most of them should be applicable to other Ubuntu
-and Debian versions, too.
+If you are modifying or augmenting the Fuel source code or if you
+need to build a Fuel ISO from the latest branch, you will need
+an environment with the necessary packages installed.  This page
+lays out the steps you will need to follow in order to prepare
+the development environment, test the individual components of
+Fuel, and build the ISO which will be used to deploy your
+Fuel master node.
+
+The basic operating system for Fuel development is Ubuntu Linux.
+The setup instructions below assume Ubuntu 12.04 though most of
+them should be applicable to other Ubuntu and Debian versions, too.
 
 Each subsequent section below assumes that you have followed the steps
 described in all preceding sections. By the end of this document, you
-should be able to run and test all key components of Fuel, build Fuel
-master node installation ISO, and generate documentation.
+should be able to run and test all key components of Fuel, build the
+Fuel master node installation ISO, and generate documentation.
 
 .. _getting-source:
 
 Getting the Source Code
 -----------------------
 
-Source code of OpenStack Fuel can be found on Stackforge::
+Source code of OpenStack Fuel can be found on Stackforge.
+Follow these steps to clone the repositories for each of
+the Fuel components:
+::
 
+    apt-get install git
     git clone https://github.com/stackforge/fuel-main
     git clone https://github.com/stackforge/fuel-web
     git clone https://github.com/stackforge/fuel-astute
@@ -25,13 +37,120 @@ Source code of OpenStack Fuel can be found on Stackforge::
     git clone https://github.com/stackforge/fuel-docs
 
 
+.. _building-fuel-iso:
+
+Building the Fuel ISO
+---------------------
+
+The "fuel-main" repository is the only one required in order
+to build the Fuel ISO.  The make script then downloads the
+additional components (Fuel Library, Nailgun, Astute and OSTF).
+Unless otherwise specified in the makefile, the master branch of
+each respective repo is used to build the ISO.
+
+The basic steps to build the Fuel ISO from trunk in an
+Ubuntu 12.04 environment are:
+::
+
+    apt-get install git
+    git clone https://github.com/stackforge/fuel-main
+    cd fuel-main
+    ./prepare-build-env.sh
+    make iso
+
+If you want to build an ISO using a specific commit or repository,
+you will need to modify the "Repos and versions" section in the
+config.mk file found in the fuel-main repo before executing "make
+iso". For example, this would build a Fuel ISO against the v5.0
+tag of Fuel:
+::
+
+    # Repos and versions
+    FUELLIB_COMMIT?=tags/5.0
+    NAILGUN_COMMIT?=tags/5.0
+    ASTUTE_COMMIT?=tags/5.0
+    OSTF_COMMIT?=tags/5.0
+
+    FUELLIB_REPO?=https://github.com/stackforge/fuel-library.git
+    NAILGUN_REPO?=https://github.com/stackforge/fuel-web.git
+    ASTUTE_REPO?=https://github.com/stackforge/fuel-astute.git
+    OSTF_REPO?=https://github.com/stackforge/fuel-ostf.git
+
+To build an ISO image from custom gerrit patches on review, edit the
+"Gerrit URLs and commits" section of config.mk, e.g. for
+https://review.openstack.org/#/c/63732/8 (id:63732, patch:8) set:
+::
+
+   FUELLIB_GERRIT_COMMIT?=refs/changes/32/63732/8
+
+If you are building Fuel from an older branch that does not contain the
+"prepare-build-env.sh" script, you can follow these steps to prepare
+your Fuel ISO build environment on Ubuntu 12.04 or newer (excluding
+newest 14.04):
+
+#. ISO build process requires sudo permissions, allow yourself to run
+   commands as root user without request for a password::
+
+    echo "`whoami` ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
+
+#. Install software::
+
+    sudo apt-get update
+    sudo apt-get install apt-transport-https
+    echo deb http://mirror.yandex.ru/mirrors/docker/ docker main | sudo tee /etc/apt/sources.list.d/docker.list
+    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+    sudo apt-get update
+    sudo apt-get install lxc-docker
+    sudo apt-get update
+    sudo apt-get remove nodejs nodejs-legacy npm
+    sudo apt-get install software-properties-common python-software-properties
+    sudo add-apt-repository -y ppa:chris-lea/node.js
+    sudo apt-get update
+    sudo apt-get install build-essential make git ruby ruby-dev rubygems debootstrap createrepo \
+    python-setuptools yum yum-utils libmysqlclient-dev isomd5sum \
+    python-nose libvirt-bin python-ipaddr python-paramiko python-yaml \
+    python-pip kpartx extlinux unzip genisoimage nodejs multistrap \
+    lrzip python-daemon
+    sudo gem install bundler -v 1.2.1
+    sudo gem install builder
+    sudo pip install xmlbuilder jinja2
+    sudo npm install -g grunt-cli
+
+#. If you haven't already done so, get the source code::
+
+    git clone https://github.com/stackforge/fuel-main
+
+#. Now you can build the Fuel ISO image::
+
+    cd fuel-main
+    make iso
+
 Nailgun (Fuel-Web)
 ------------------
-See :ref:`nailgun-development`
+
+Nailgun is the heart of Fuel project. It implements a REST API as well
+as deployment data management. It manages disk volume configuration data,
+network configuration data and any other environment specific data
+necessary for a successful deployment of OpenStack. It provides the
+required orchestration logic for provisioning and
+deployment of the OpenStack components and nodes in the right order.
+Nailgun uses a SQL database to store its data and an AMQP service to
+interact with workers.
+
+Requirements for preparing the nailgun development environment, along
+with information on how to modify and test nailgun can be found in
+the Nailgun Development Instructions document: :ref:`nailgun-development`
 
 
 Astute
-----------------
+------
+
+Astute is the Fuel component that represents Nailgun's workers, and
+its function is to run actions according to the instructions provided
+from Nailgun. Astute provides a layer which encapsulates all the details
+about interaction with a variety of services such as Cobbler, Puppet,
+shell scripts, etc. and provides a universal asynchronous interface to
+those services.
 
 #. Astute can be found in fuel-astute repository
 
@@ -61,68 +180,13 @@ Astute
     cd fuel-astute
     bundle exec rspec spec/integration/mcollective_spec.rb
 
-.. _building-fuel-iso:
-
-Building the Fuel ISO
----------------------
-
-The following steps are required to build the Fuel ISO images on Ubuntu
-12.10 or newer (excluding newest 14.04):
-
-#. Setup Docker repository using these instruction http://docs.docker.io/installation/ubuntulinux/
-
-#. Install software::
-
-    sudo apt-get update
-    sudo apt-get remove nodejs nodejs-legacy
-    sudo apt-get install software-properties-common
-    sudo add-apt-repository ppa:chris-lea/node.js
-    sudo apt-get update
-    sudo apt-get install build-essential make git ruby ruby-dev rubygems debootstrap createrepo
-    sudo apt-get install python-setuptools yum yum-utils libmysqlclient-dev isomd5sum
-    sudo apt-get install python-nose libvirt-bin python-ipaddr python-paramiko python-yaml
-    sudo apt-get install python-pip kpartx extlinux unzip genisoimage nodejs multistrap
-    sudo sh -c "echo deb http://mirror.yandex.ru/mirrors/docker/ docker main > /etc/apt/sources.list.d/docker.list"
-    sudo apt-get update
-    sudo apt-get install lxc-docker lrzip
-    sudo service docker start
-    sudo gem install bundler -v 1.2.1
-    sudo gem install builder
-    sudo apt-get remove python-daemon python-lockfile
-    sudo pip install xmlbuilder jinja2 lockfile==0.8 python-daemon==1.5.5
-    sudo npm install -g grunt-cli
-
-#. (alternative) If you have completed the instructions in the previous
-   sections of Fuel development environment setup guide, the list of
-   additional packages required to build the ISO becomes shorter::
-
-    sudo apt-get install ruby-dev ruby-builder bundler libmysqlclient-dev
-    sudo apt-get install yum-utils kpartx extlinux genisoimage isomd5sum
-
-#. ISO build process requires sudo permissions, allow yourself to run
-   commands as root user without request for a password::
-
-    echo "`whoami` ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
-
-#. If you haven't already done so, get the source code::
-
-    git clone https://github.com/stackforge/fuel-main
-
-#. Now you can build the Fuel ISO image::
-
-    cd fuel-main
-    make iso
-
-#. To build an ISO image from custom branches of fuel, astute, nailgun
-   or ostf-tests, edit the "Repos and versions" section of config.mk.
-
-#. To build an ISO image from custom gerrit patches on review, edit the
-   "Gerrit URLs and commits" section of config.mk, e.g. for
-   https://review.openstack.org/#/c/63732/8 (id:63732, patch:8) set
-   FUELLIB_GERRIT_COMMIT?=refs/changes/32/63732/8
-
 Running Fuel Puppet Modules Unit Tests
 --------------------------------------
+
+If you are modifying any puppet modules used by Fuel, or including
+additional modules, you can use the PuppetLabs RSpec Helper
+to run the unit tests for any individual puppet module.  Follow
+these steps to install the RSpec Helper:
 
 #. Install PuppetLabs RSpec Helper::
 
@@ -200,7 +264,7 @@ in required format.
   -f - Documentation format [html,signlehtml,latexpdf,pdf,epub]
 
 For example, if you want to build HTML documentation you can just
-use this thispt like this:
+use the following script, like this:
 ::
 
   ./build-docs.sh -f html -o

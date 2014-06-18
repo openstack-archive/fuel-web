@@ -120,7 +120,7 @@ class TestUtils(BaseTestCase):
         }
 
         order = topological_sorting(graph)
-        self.assertEquals(order, ['A', 'C', 'B', 'G', 'D', 'E'])
+        self.assertEquals(order, ['A', 'B', 'C', 'G', 'D', 'E'])
 
     def test_topological_sorting_raises_cycle_dependencies_error(self):
         graph = {

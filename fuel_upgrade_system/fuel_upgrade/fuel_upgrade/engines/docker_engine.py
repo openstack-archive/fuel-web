@@ -342,7 +342,7 @@ class DockerUpgrader(UpgradeEngine):
         """
         graph = {}
         for container in containers:
-            graph[container['id']] = list(set(
+            graph[container['id']] = sorted(set(
                 container.get('volumes_from', []) +
                 [link['id'] for link in container.get('links', [])]))
 

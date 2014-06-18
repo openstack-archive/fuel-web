@@ -48,7 +48,7 @@ class TestStopDeployment(BaseIntegrationTest):
         self._wait_for_threads()
         super(TestStopDeployment, self).tearDown()
 
-    @fake_tasks(recover_nodes=False)
+    @fake_tasks(recover_nodes=False, tick_interval=1)
     def test_stop_deployment(self):
         supertask = self.env.launch_deployment()
         deploy_task_uuid = supertask.uuid

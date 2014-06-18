@@ -1,0 +1,85 @@
+<div class="modal-header">
+  <button type="button" class="close" data-dismiss="modal">×</button>
+  <h3>Create Virtual Drive.</h3>
+</div>
+
+<div class="modal-body">
+
+    <h3>Type:</h3>
+    <select data-id="type">
+        <option></option>
+        <% if (raid.model == 'nwd') { %>
+            <option>NytroWarpDrive</option>
+        <% } else { %>
+            <option>Virtual Drive</option>
+            <% if (raid.type == "ssd" || raid.type == "nytro") { %>
+                <% if (raid.model == 'nmr') { %>
+                    <option>NytroCache</option>
+                <% } else if (raid.model == 'lmr') { %>
+                    <option>CacheCade</option>
+                <% }; %>
+            <% }; %>
+            <option data-type="hs">HotSpare</option>
+        <% }; %>
+    </select>
+
+    <div id="vdoptions" style="display: none;">
+        <h3>Name:</h3>
+        <input type="text" data-id="name">
+        <% lenDrive = raid.drive.length; %>
+        <h3>Raid Level:</h3>
+        <select id="drive" data-id="drive">
+            <% _.each(raidLvl, function(obj) { %>
+                <% if (obj.count <= lenDrive) { %>
+                    <option><%= obj.lvl %></option>
+                <% }; %>
+            <% }); %>
+        </select>
+        <h4>Strip Size:</h4>
+        <select data-id="stripsize">
+            <% for (var i=8; i<=1024; i*=2) { %>
+                <option data-type="<%= i %>"><%= i %></option>
+            <% }; %>
+        </select>
+        <h4>CacheVD</h4>
+        <input type="checkbox" data-id="cachevd">
+    </div>
+
+    <div id="cacheoptions" style="display: none;">
+        <h3>Raid Level:</h3>
+        <select id="cache" data-id="cache">
+            <% _.each(raidLvl, function(obj) { %>
+                <% if (obj.count <= lenDrive && obj.count <= 4 && obj.lvl != 5 && obj.lvl != 6) { %>
+                    <option><%= obj.lvl %></option>
+                <% }; %>
+            <% }); %>
+        </select>
+    </div>
+
+    <div id="wcoptions" style="display: none;">
+        <h4>Write Cache:</h4>
+        <select data-id="wc">
+            <option data-type="wb">wb</option>
+            <option data-type="wt">wt</option>
+        </select>
+    </div>
+
+    <div id="hsoptions" style="display: none;">
+        <h3>Drive groups:</h3>
+        <input type="text" data-id="dgs">
+    </div>
+
+    <div id="vwdoptions" style="display: none;">
+        <select id="overprovision" data-id="overprovision">
+            <option>nom</option>
+            <option>perf</option>
+            <option>cap</option>
+        </select>
+    </div>
+
+</div>
+
+<div class="modal-footer">
+  <button class="btn" data-dismiss="modal" data-i18n="common.cancel_button"></button>
+  <button class="btn btn-success btn-create-raid" data-i18n="common.create_raid_button" data-dismiss="modal" disabled=""></button>
+</div>

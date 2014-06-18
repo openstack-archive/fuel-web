@@ -36,9 +36,10 @@ define(
     'text!templates/dialogs/error_message.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
-    'text!templates/dialogs/delete_nodes.html'
+    'text!templates/dialogs/delete_nodes.html',
+    'text!templates/dialogs/create_raid.html'
 ],
-function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, simpleMessageTemplate, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, clusterModePaneTemplate, clusterComputePaneTemplate, clusterNetworkPaneTemplate, clusterStoragePaneTemplate, clusterAdditionalServicesPaneTemplate, clusterReadyPaneTemplate, rhelCredentialsDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, errorMessageTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate, createRaidTemplate) {
     'use strict';
 
     var views = {};
@@ -891,6 +892,147 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         render: function() {
             this.constructor.__super__.render.call(this, {nodes: this.nodes});
+            return this;
+        }
+    });
+
+    views.CreateRaidDialog = views.Dialog.extend({
+        template: _.template(createRaidTemplate),
+        events: {
+            'change': 'changeItem',
+            'click .btn-create-raid': 'addTask'
+        },
+        addTask: function(e) {
+            var selectObj = document.getElementsByTagName('select');
+            var nwdrive = {
+                'action': "create_nwd",
+                'raid_idx': 0,
+                'ctrl_id': 0,
+                'options': {
+                    'level': ""
+                }
+            };
+            var cache = {
+                'action': "create_cachecade",
+                'raid_idx': null,
+                'raid_lvl': null,
+                'ctrl_id': null,
+                'phys_devices': [],
+                'eid': null,
+                'options': {
+                    'write_cache': null,
+                    'assignvds': null
+                }
+            };
+            var hotspare = {
+                'action': "add_hotspare",
+                'raid_idx': 0,
+                'ctrl_id': 0,
+                'phys_devices': [],
+                'eid': null,
+                'options': {
+                    'dgs': []
+                }
+            };
+            var task = {
+                'name': "",
+                'action': "create",
+                'phys_devices': [],
+                'eid': null,
+                'raid_idx': null,
+                'ctrl_id': null,
+                'raid_lvl': null,
+                'options': {
+                    'write_cache': null,
+                    'strip_size': null,
+                    'cachevd': false
+                }
+            };
+            _.each(this.raid.drive, function(disk) {
+                if (task.eid == null) task.eid = disk.enclosure;
+                task.phys_devices.push(disk.slot);
+            });
+            _.each(selectObj, function(obj) {
+                if ($(obj).data('id') == "drive") {
+                    task.raid_lvl = obj.options[obj.selectedIndex].text;
+                }
+                if ($(obj).data('id') == "wc") {
+                    task.options.write_cache = obj.options[obj.selectedIndex].text;
+                }
+                if ($(obj).data('id') == "stripsize") {
+                    task.options.strip_size = obj.options[obj.selectedIndex].text;
+                }
+            });
+            selectObj = document.getElementsByTagName('input');
+            _.each(selectObj, function(obj) {
+                if ($(obj).data('id') == "name") {
+                    task.name = obj.value ? obj.value : "raid_null";
+                }
+                if ($(obj).data('id') == "cachevd") {
+                    task.options.cachevd = obj.checked;
+                }
+            });
+            var raid_idx = 0;
+            _.each(this.controller.physical_drives, function(pd){
+                if (pd.drive_group != null) {
+                    raid_idx = (raid_idx <= pd.drive_group) ? (parseInt(pd.drive_group, 10) + 1) : raid_idx;
+                }
+            });
+            task.raid_idx = raid_idx;
+            this.controller.tasks.push(task);
+            this.dis.trigger("CloseView");
+            //task.save({}, {url: _.result(this.model, 'url') + '/changes', type: 'PUT'})
+        },
+        changeItem: function(e) {
+            this.$('.btn-create-raid').attr('disabled', false);
+            $('#vdoptions').hide();
+            $('#cacheoptions').hide();
+            $('#wcoptions').hide();
+            $('#hsoptions').hide();
+            $('#vwdoptions').hide();
+            var selectObj = document.getElementsByTagName('select');
+            var typeObj = "";
+            _.each(selectObj, function(obj) {
+                if ($(obj).data('id') == "type") {
+                    typeObj = obj;
+                }
+            });
+            var typeText = typeObj.options[typeObj.selectedIndex].text;
+            if (typeText == "Virtual Drive") {
+                $('#vdoptions').show();
+                $('#wcoptions').show();
+            }
+            if (typeText == "NytroCache" || typeText == "CacheCade") {
+                $('#cacheoptions').show();
+                $('#wcoptions').show();
+                $('#hsoptions').show();
+            }
+            if (typeText == "HotSpare") {
+                $('#hsoptions').show();
+            }
+            if (typeText == "NytroWarpDrive") {
+                $('#vwdoptions').show();
+            }
+            if (typeText == "") {
+                this.$('.btn-create-raid').attr('disabled', true);
+            }
+
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+        },
+        render: function() {
+            var raidLvl = [
+                {"lvl": 0, "count": 1},
+                {"lvl": 1, "count": 2},
+                {"lvl": 5, "count": 3},
+                {"lvl": 6, "count": 4},
+                {"lvl": 10, "count": 4},
+                {"lvl": 50, "count": 6},
+                {"lvl": 60, "count": 8}
+            ];
+            this.constructor.__super__.render.call(this, {nodes: this.nodes, cluster: this.model, raid: this.raid, raidLvl: raidLvl});
+            this.$('.btn-create-raid').attr('disabled', true);
             return this;
         }
     });

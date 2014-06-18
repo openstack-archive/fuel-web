@@ -12,6 +12,7 @@
                 "delete_button": "Delete",
                 "stop_button": "Stop",
                 "reset_button": "Reset",
+                "create_raid_button": "Create Virtual Drive",
                 "save_settings_button": "Save Settings",
                 "cancel_button": "Cancel",
                 "apply_changes_button": "Apply Changes",

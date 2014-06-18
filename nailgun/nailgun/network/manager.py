@@ -377,6 +377,11 @@ class NetworkManager(object):
         db().flush()
 
     @classmethod
+    def clear_bond_configuration(cls, node):
+        for bond in node.bond_interfaces:
+            db().delete(bond)
+
+    @classmethod
     def get_default_networks_assignment(cls, node):
         """Return default Networks-to-NICs assignment for given node based on
         networks metadata
@@ -786,9 +791,8 @@ class NetworkManager(object):
             logger.debug(u'Cannot find interface with assigned admin '
                          'network group on %s', node.full_name)
 
-        for interface in node.interfaces:
-            ip_addr = interface.ip_addr
-            if cls.is_ip_belongs_to_admin_subnet(ip_addr):
+        for interface in node.nic_interfaces:
+            if cls.is_ip_belongs_to_admin_subnet(interface.ip_addr):
                 return interface
 
         logger.warning(u'Cannot find admin interface for node '

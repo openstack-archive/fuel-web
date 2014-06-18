@@ -22,57 +22,115 @@ from fuel_upgrade.tests.base import BaseTestCase
 
 
 class TestOpenStackUpgrader(BaseTestCase):
+    releases_sample = '''
+        [{
+            "name": "releases name",
+            "version": "2014.1",
+
+            "orchestrator_data": {
+                "repo_metadata": {
+                    "nailgun": "http://{master_ip}:8080/path/to/repo",
+                },
+                "puppet_manifests_source": "rsync://{master_ip}:/some/path",
+                "puppet_modules_source": "rsync://{master_ip}:/some/path"
+            }
+        }]
+    '''
+
     def setUp(self):
         """Create upgrader with mocked data.
         """
         with mock.patch(
             'fuel_upgrade.engines.openstack.io.open',
-            self.mock_open('[{ "name": "release name", "version": "2014" }]')
+            self.mock_open(self.releases_sample)
         ):
             self.upgrader = OpenStackUpgrader(
                 '/tmp/update_src', self.fake_config
             )
 
+    def test_constructor_load_releases(self):
+        self.assertEqual(len(self.upgrader.releases), 1)
+
+    def test_constructor_update_conf(self):
+        orchestrator_data = self.upgrader.releases[0]['orchestrator_data']
+
+        self.assertEqual(
+            orchestrator_data['repo_metadata']['nailgun'],
+            'http://0.0.0.0:8080/path/to/repo')
+
+        self.assertEqual(
+            orchestrator_data['puppet_manifests_source'],
+            'rsync://0.0.0.0:/some/path')
+
+        self.assertEqual(
+            orchestrator_data['puppet_modules_source'],
+            'rsync://0.0.0.0:/some/path')
+
     @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.create_notification')
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_repos')
     @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.create_release')
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_puppets')
     @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
-        return_value=[])
-    def prepare_successful_state(self, mock_cr, mock_cn, _, releases_count=2):
-        self.upgrader.releases = [
-            self.upgrader.releases[0] for i in range(releases_count)
-        ]
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')
+    def test_upgrade(self, i_releases, i_puppets, i_repos):
         self.upgrader.upgrade()
 
-        self.assertTrue(mock_cr.called)
-        self.assertTrue(mock_cn.called)
+        self.assertTrue(i_repos.called)
+        self.assertTrue(i_puppets.called)
+        self.assertTrue(i_releases.called)
 
-        for type_ in ('release', 'notification'):
-            self.assertEqual(
-                len(self.upgrader._rollback_ids[type_]), releases_count)
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_repos')
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_puppets')
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')
+    def test_upgrade_with_errors(self, i_releases, i_puppets, i_repos):
+        class MyException(Exception):
+            pass
 
-    def prepare_unsuccessful_state(self, releases_count=2):
-        self.upgrader.releases = [
-            self.upgrader.releases[0] for i in range(releases_count)
-        ]
+        i_puppets.side_effect = MyException('Folder does no exist')
 
-        for i in range(releases_count / 2):
-            self.upgrader._rollback_ids['release'].append(i)
+        self.assertRaises(MyException, self.upgrader.upgrade)
 
-        for i in range(releases_count / 4):
-            self.upgrader._rollback_ids['notification'].append(i)
+        self.assertTrue(i_repos.called)
+        self.assertTrue(i_puppets.called)
+        self.assertFalse(i_releases.called)
 
-    def test_load_releases(self):
-        with mock.patch(
-            'fuel_upgrade.engines.openstack.io.open',
-            self.mock_open(
-                '[{ "name": "release name" }, { "name": "another release"}]'
-            )
-        ):
-            upgrader = OpenStackUpgrader('/tmp/update_src', self.fake_config)
-            self.assertEqual(len(upgrader.releases), 2)
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_repos')
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_puppets')
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_releases')
+    def test_rollback(self, r_releases, r_puppets, r_repos):
+        self.upgrader.rollback()
+
+        self.assertTrue(r_repos.called)
+        self.assertTrue(r_puppets.called)
+        self.assertTrue(r_releases.called)
+
+    @mock.patch('fuel_upgrade.engines.openstack.utils.copytree')
+    def test_install_repos(self, copytree):
+        self.upgrader.install_repos()
+
+        copytree.assert_any_call(
+            self.upgrader.config.openstack['repos']['centos']['src'],
+            self.upgrader.config.openstack['repos']['centos']['dst'])
+        copytree.assert_any_call(
+            self.upgrader.config.openstack['repos']['ubuntu']['src'],
+            self.upgrader.config.openstack['repos']['ubuntu']['dst'])
+
+    @mock.patch('fuel_upgrade.engines.openstack.utils.copytree')
+    def test_install_puppets(self, copytree):
+        self.upgrader.install_puppets()
+
+        copytree.assert_any_call(
+            self.upgrader.config.openstack['puppets']['modules']['src'],
+            self.upgrader.config.openstack['puppets']['modules']['dst'])
+        copytree.assert_any_call(
+            self.upgrader.config.openstack['puppets']['manifests']['src'],
+            self.upgrader.config.openstack['puppets']['manifests']['dst'])
 
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.create_notification')
@@ -81,12 +139,12 @@ class TestOpenStackUpgrader(BaseTestCase):
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
         return_value=[])
-    def test_successful_upgrade(self, _, mock_cr, mock_cn):
+    def test_install_releases(self, _, mock_cr, mock_cn):
         # test one release
         mock_cr.return_value = {'id': '1'}
         mock_cn.return_value = {'id': '100'}
 
-        self.upgrader.upgrade()
+        self.upgrader.install_releases()
 
         self.assertTrue(mock_cr.called)
         self.assertTrue(mock_cn.called)
@@ -94,16 +152,6 @@ class TestOpenStackUpgrader(BaseTestCase):
         for type_ in ('release', 'notification'):
             self.assertEqual(len(self.upgrader._rollback_ids[type_]), 1)
 
-        # test multiple releases
-        self.upgrader.releases.append(self.upgrader.releases[0])
-        self.upgrader.upgrade()
-
-        self.assertTrue(mock_cr.called)
-        self.assertTrue(mock_cn.called)
-
-        for type_ in ('release', 'notification'):
-            self.assertEqual(len(self.upgrader._rollback_ids[type_]), 2)
-
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.create_notification')
     @mock.patch(
@@ -111,61 +159,83 @@ class TestOpenStackUpgrader(BaseTestCase):
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
         return_value=[])
-    def test_unsuccessful_upgrade(self, _, mock_cr, mock_cn):
+    def test_install_releases_with_errors(self, _, mock_cr, mock_cn):
         mock_cr.return_value = {'id': '1'}
         mock_cn.side_effect = requests.exceptions.HTTPError('Something wrong')
 
-        self.assertRaises(requests.exceptions.HTTPError, self.upgrader.upgrade)
+        self.assertRaises(
+            requests.exceptions.HTTPError, self.upgrader.install_releases)
         self.assertTrue(mock_cr.called)
         self.assertTrue(mock_cn.called)
 
         self.assertEqual(len(self.upgrader._rollback_ids['release']), 1)
         self.assertEqual(len(self.upgrader._rollback_ids['notification']), 0)
 
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.remove_notification')
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.remove_release')
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
-        return_value=[])
-    def test_partial_rollback(self, _, mock_rr, mock_rn):
-        self.prepare_unsuccessful_state()
+    @mock.patch('fuel_upgrade.engines.openstack.utils.rmtree')
+    def test_remove_repos(self, rmtree):
+        self.upgrader.remove_repos()
 
-        self.upgrader.rollback()
+        rmtree.assert_any_call(
+            self.upgrader.config.openstack['repos']['centos']['dst'])
+        rmtree.assert_any_call(
+            self.upgrader.config.openstack['repos']['ubuntu']['dst'])
 
-        self.assertTrue(mock_rr.called)
-        self.assertFalse(mock_rn.called)
+    @mock.patch('fuel_upgrade.engines.openstack.utils.rmtree')
+    def test_remove_puppets(self, rmtree):
+        self.upgrader.remove_puppets()
 
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.remove_notification')
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.remove_release')
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
-        return_value=[])
-    def test_full_rollback(self, _, mock_rr, mock_rn):
-        self.prepare_successful_state()
-
-        self.upgrader.rollback()
-
-        self.assertTrue(mock_rr.called)
-        self.assertTrue(mock_rn.called)
+        rmtree.assert_any_call(
+            self.upgrader.config.openstack['puppets']['modules']['dst'])
+        rmtree.assert_any_call(
+            self.upgrader.config.openstack['puppets']['manifests']['dst'])
 
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.remove_notification')
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.remove_release')
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.NailgunClient.get_releases',
-        return_value=[])
-    def test_rollback_with_errors(self, _, mock_rr, mock_rn):
-        self.prepare_successful_state(releases_count=2)
+    def test_remove_releases(self, r_release, r_notification):
+        self.upgrader._rollback_ids['release'] = [1, 3]
+        self.upgrader._rollback_ids['notification'] = [2, 4]
 
-        mock_rr.side_effect = requests.exceptions.HTTPError('Something wrong')
-        mock_rn.side_effect = requests.exceptions.HTTPError('Something wrong')
+        self.upgrader.remove_releases()
 
-        self.upgrader.rollback()
+        r_release.assert_has_calls([
+            mock.call(3),
+            mock.call(1)])
+        r_notification.assert_has_calls([
+            mock.call(4),
+            mock.call(2)])
 
-        self.called_times(mock_rr, 2)
-        self.called_times(mock_rn, 2)
+    def test_get_unique_releases(self):
+        releases = [
+            {
+                'name': 'Ubuntu',
+                'version': 'A',
+            },
+            {
+                'name': 'Centos',
+                'version': 'A',
+            },
+        ]
+
+        existing_releases = [
+            {
+                'name': 'Ubuntu',
+                'version': 'A',
+            },
+            {
+                'name': 'Centos',
+                'version': 'B',
+            },
+        ]
+
+        expected_releases = [
+            {
+                'name': 'Centos',
+                'version': 'A',
+            },
+        ]
+
+        self.assertEqual(
+            self.upgrader._get_unique_releases(releases, existing_releases),
+            expected_releases)

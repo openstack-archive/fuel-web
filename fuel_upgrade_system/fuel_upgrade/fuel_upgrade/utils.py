@@ -237,3 +237,18 @@ def copy(from_path, to_path):
     """
     logger.debug(u'Copy file from {0} to {1}'.format(from_path, to_path))
     shutil.copy(from_path, to_path)
+
+
+def copytree(source, destination, overwrite=True):
+    """Copy a given source directory to destination folder.
+    """
+    logger.debug(u'Copy folder from %s to %s', source, destination)
+
+    if overwrite and os.path.exists(destination):
+        shutil.rmtree(destination)
+    shutil.copytree(source, destination, symlinks=True)
+
+
+def rmtree(source, ignore_errors=True):
+    logger.debug(u'Removing %s', source)
+    shutil.rmtree(source, ignore_errors=ignore_errors)

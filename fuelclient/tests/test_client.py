@@ -17,9 +17,6 @@
 
 import os
 
-from shutil import rmtree
-from tempfile import mkdtemp
-
 from tests.base import BaseTestCase
 
 
@@ -142,13 +139,6 @@ class TestCharset(BaseTestCase):
 
 class TestFiles(BaseTestCase):
 
-    def setUp(self):
-        super(TestFiles, self).setUp()
-        self.temp_directory = mkdtemp()
-
-    def tearDown(self):
-        rmtree(self.temp_directory)
-
     def test_file_creation(self):
         self.load_data_to_nailgun_server()
         self.run_cli_commands((
@@ -236,3 +226,16 @@ class TestFiles(BaseTestCase):
             self.assertTrue(os.path.exists(
                 os.path.join(self.temp_directory, path)
             ))
+
+
+class TestDownloadUploadNodeAttributes(BaseTestCase):
+
+    def test_upload_download_interfaces(self):
+        cmd = "node --node-id 1 --network"
+        self.run_cli_commands((self.download_command(cmd),
+                              self.upload_command(cmd)))
+
+    def test_upload_download_disks(self):
+        cmd = "node --node-id 1 --disk"
+        self.run_cli_commands((self.download_command(cmd),
+                              self.upload_command(cmd)))

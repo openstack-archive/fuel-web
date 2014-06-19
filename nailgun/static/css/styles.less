@@ -1041,6 +1041,7 @@ label {cursor: default;}
 // Global alerts
 // -------------------------
 
+
 .globalalert, .global-error, .global-success, .global-info {
   background-color: rgba(0, 0, 0, 0.1);
   border: none;
@@ -1053,6 +1054,14 @@ label {cursor: default;}
   > p {
     font-style: italic;
     > a { color: #00aeef; }
+  }
+  > .close {
+      color: #6a7d98;
+      opacity: 1;
+      text-shadow: 0 1px 0 #000000;
+      &:hover {
+        color: #94a9c2;
+      }
   }
 }
 

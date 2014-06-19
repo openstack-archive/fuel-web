@@ -271,10 +271,10 @@ is accessible"}
             etchosts.close()
         #Write dnsmasq upstream server
         with open('/etc/dnsmasq.upstream', 'w') as f:
-            nameservers = responses['DNS_UPSTREAM'].replace(',', ' ')
             f.write("search %s\n" % responses['DNS_SEARCH'])
             f.write("domain %s\n" % responses['DNS_DOMAIN'])
-            f.write("nameserver %s\n" % nameservers)
+            for upstream_dns in responses['DNS_UPSTREAM'].split(','):
+                f.write("nameserver %s\n" % upstream_dns)
         f.close()
 
         return True

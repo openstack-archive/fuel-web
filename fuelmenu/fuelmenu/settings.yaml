@@ -15,4 +15,20 @@ ADMIN_NETWORK:
   static_pool_end: "10.20.0.120"
   dhcp_pool_start: "10.20.0.130"
   dhcp_pool_end: "10.20.0.254"
+astute:
+  password: naily
+  user: naily
+cobbler:
+  password: cobbler
+  user: cobbler
+mcollective:
+  password: mcollective
+  user: mcollective
+postgres:
+  nailgun_dbname: nailgun
+  nailgun_user: nailgun
+  nailgun_password: nailgun
+  ostf_dbname: ostf
+  ostf_user: ostf
+  ostf_password: ostf
 

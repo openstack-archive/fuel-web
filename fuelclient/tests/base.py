@@ -28,10 +28,10 @@ logging.getLogger("CliTest.ExecutionLog").setLevel(logging.DEBUG)
 
 
 class CliExectutionResult:
-    def __init__(self, process_handle):
+    def __init__(self, process_handle, out, err):
         self.return_code = process_handle.returncode
-        self.stdout = process_handle.stdout.read()
-        self.stderr = process_handle.stderr.read()
+        self.stdout = out
+        self.stderr = err
 
     @property
     def has_errors(self):
@@ -82,7 +82,7 @@ class BaseTestCase(TestCase):
             shell=True
         )
         print("Running " + " ".join(args))
-        handle.wait()
+        handle.communicate()
 
     def run_cli_command(self, command_line, check_errors=False):
         modified_env = os.environ.copy()
@@ -96,13 +96,13 @@ class BaseTestCase(TestCase):
             shell=True,
             env=modified_env
         )
-        process_handle.wait()
-        result = CliExectutionResult(process_handle)
+        out, err = process_handle.communicate()
+        result = CliExectutionResult(process_handle, out, err)
         log.debug("command_args: '%s',stdout: '%s', stderr: '%s'",
-                  command_args[0], result.stdout, result.stderr)
+                  command_args[0], out, err)
         if not check_errors:
             if not result.is_return_code_zero or result.has_errors:
-                self.fail()
+                self.fail(err)
         return result
 
     def run_cli_commands(self, command_lines, **kwargs):

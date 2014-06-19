@@ -606,7 +606,6 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         renderNode: function(node) {
             var nodeView = new Node({
                 node: node,
-                renameable: !this.nodeList.screen.isLocked(),
                 group: this
             });
             this.registerSubView(nodeView);
@@ -733,6 +732,12 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                     observe: ['pending_addition', 'pending_deletion', 'pending_roles'],
                     onGet: 'formatNodeButtonIcon'
                 }]
+            },
+            '.name p': {
+                observe: ['name', 'mac'],
+                onGet: function(values) {
+                    return values[0] || values[1];
+                }
             }
         },
         sortRoles: function(roles) {
@@ -815,16 +820,17 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             }
         },
         startNodeRenaming: function() {
-            if (!this.renameable || this.renaming) {return;}
-            $('html').off(this.eventNamespace);
-            $('html').on(this.eventNamespace, _.after(2, _.bind(function(e) {
-                if (!$(e.target).closest(this.$('.name input')).length) {
+            $('html').on(this.eventNamespace, _.bind(function(e) {
+                // FIXME: 'node-renameable' class usage should be revised
+                if ($(e.target).hasClass('node-name') || $(e.target).hasClass('node-renameable')) {
+                    e.preventDefault();
+                } else {
                     this.endNodeRenaming();
                 }
-            }, this)));
+            }, this));
             this.renaming = true;
             this.render();
-            this.$('.name input').focus();
+            this.$('.node-name').focus();
         },
         endNodeRenaming: function() {
             $('html').off(this.eventNamespace);
@@ -832,9 +838,9 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             this.render();
         },
         applyNewNodeName: function() {
-            var name = $.trim(this.$('.name input').val());
+            var name = $.trim(this.$('.node-name').val());
             if (name && name != this.node.get('name')) {
-                this.$('.name input').attr('disabled', true);
+                this.$('.node-name').attr('disabled', true);
                 this.screen.nodes.get(this.node.id).save({name: name}, {patch: true, wait: true}).always(_.bind(this.endNodeRenaming, this));
             } else {
                 this.endNodeRenaming();
@@ -918,7 +924,6 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             this.$el.html(this.template(_.extend({
                 node: this.node,
                 renaming: this.renaming,
-                renameable: this.renameable,
                 edit: this.screen instanceof this.screen.EditNodesScreen,
                 locked: this.screen.isLocked()
             }, this.templateHelpers))).i18n();

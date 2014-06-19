@@ -24,14 +24,14 @@ import subprocess
 import sys
 
 logging.basicConfig(stream=sys.stderr)
-logging.getLogger("CliTest.ExecutionLog").setLevel(logging.DEBUG)
+log = logging.getLogger("CliTest.ExecutionLog").setLevel(logging.DEBUG)
 
 
 class CliExectutionResult:
-    def __init__(self, process_handle):
+    def __init__(self, process_handle, out, err):
         self.return_code = process_handle.returncode
-        self.stdout = process_handle.stdout.read()
-        self.stderr = process_handle.stderr.read()
+        self.stdout = out
+        self.stderr = err
 
     @property
     def has_errors(self):
@@ -78,17 +78,19 @@ class BaseTestCase(TestCase):
     @staticmethod
     def run_command(*args):
         handle = subprocess.Popen(
-            [" ".join(args + (">/dev/null", "2>&1"))],
+            [" ".join(args)],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             shell=True
         )
-        print("Running " + " ".join(args))
-        handle.wait()
+        log.debug("Running " + " ".join(args))
+        out, err = handle.communicate()
+        log.debug("Finished command with {0} - {1}".format(out, err))
 
     def run_cli_command(self, command_line, check_errors=False):
         modified_env = os.environ.copy()
         modified_env["LISTEN_PORT"] = "8003"
         command_args = [" ".join((self.fuel_path, command_line))]
-        log = logging.getLogger("CliTest.ExecutionLog")
         process_handle = subprocess.Popen(
             command_args,
             stdout=subprocess.PIPE,
@@ -96,13 +98,13 @@ class BaseTestCase(TestCase):
             shell=True,
             env=modified_env
         )
-        process_handle.wait()
-        result = CliExectutionResult(process_handle)
+        out, err = process_handle.communicate()
+        result = CliExectutionResult(process_handle, out, err)
         log.debug("command_args: '%s',stdout: '%s', stderr: '%s'",
-                  command_args[0], result.stdout, result.stderr)
+                  command_args[0], out, err)
         if not check_errors:
             if not result.is_return_code_zero or result.has_errors:
-                self.fail()
+                self.fail(err)
         return result
 
     def run_cli_commands(self, command_lines, **kwargs):

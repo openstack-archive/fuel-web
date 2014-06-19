@@ -20,6 +20,7 @@ except ImportError:
 
 import logging
 import os
+import shutil
 import subprocess
 import sys
 
@@ -61,6 +62,16 @@ class BaseTestCase(TestCase):
 
     def setUp(self):
         self.reload_nailgun_server()
+        self.temp_directory = shutil.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_directory)
+
+    def upload_command(self, cmd):
+        return "{0} --upload -dir {1}".format(cmd, self.temp_directory)
+
+    def downdload_command(self, cmd):
+        return "{0} --download -dir {1}".format(cmd, self.temp_directory)
 
     @classmethod
     def reload_nailgun_server(cls):

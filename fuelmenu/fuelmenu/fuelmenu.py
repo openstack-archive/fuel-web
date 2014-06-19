@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import itertools
 import logging
 import operator
 from optparse import OptionParser
@@ -61,8 +62,7 @@ class Loader(object):
             modobj = clsobj(self.parent)
 
             # add the module to the list
-            if modobj.visible:
-                self.modlist.append(modobj)
+            self.modlist.append(modobj)
         # sort modules
         self.modlist.sort(key=operator.attrgetter('priority'))
         for module in self.modlist:
@@ -82,7 +82,7 @@ class FuelSetup(object):
         self.managediface = "eth0"
         #Set to true to move all settings to end
         self.globalsave = True
-        self.version = self.getVersion("/etc/nailgun/version.yaml")
+        self.version = self.getVersion("/etc/fuel/version.yaml")
         self.main()
         self.choices = []
 
@@ -190,8 +190,13 @@ class FuelSetup(object):
         if len(self.children) == 0:
             import sys
             sys.exit(1)
+        #Build list of choices excluding visible
+        self.visiblechoices = []
+        for child, choice in zip(self.children, self.choices):
+            if child.visible:
+                self.visiblechoices.append(choice)
 
-        self.menuitems = self.menu(u'Menu', self.choices)
+        self.menuitems = self.menu(u'Menu', self.visiblechoices)
         menufill = urwid.Filler(self.menuitems, 'top', 40)
         self.menubox = urwid.BoxAdapter(menufill, 40)
 
@@ -252,8 +257,8 @@ class FuelSetup(object):
         self.mainloop = urwid.MainLoop(self.frame, palette, self.screen,
                                        unhandled_input=unhandled)
         #Initialize each module completely before any events are handled
-        for child in reversed(self.choices):
-            self.setChildScreen(name=child)
+        for child in reversed(self.children):
+            self.setChildScreen(name=child.name)
         #Prepare DNS for resolution
         dnsobj = self.children[int(self.choices.index("DNS & Hostname"))]
         dnsobj.setEtcResolv()
@@ -275,8 +280,13 @@ class FuelSetup(object):
     def global_save(self):
         #Runs save function for every module
         for module, modulename in zip(self.children, self.choices):
+            #Run invisible modules. They may not have screen methods
             if not module.visible:
-                continue
+                try:
+                    module.apply(None)
+                except Exception as e:
+                    log.error("Unable to save module %s: %s" % (modulename, e))
+                    continue
             else:
                 try:
                     log.info("Checking and applying module: %s"
@@ -304,6 +314,7 @@ def setup():
 
 
 def save_only(iface):
+    from common import pwgen
     import common.network as network
     import netifaces
     #Calculate and set Static/DHCP pool fields
@@ -339,6 +350,18 @@ def save_only(iface):
             "ADMIN_NETWORK/dhcp_pool_end": dynamic_end,
             "ADMIN_NETWORK/static_pool_start": static_start,
             "ADMIN_NETWORK/static_pool_end": static_end,
+            "astute/user": "naily",
+            "astute/password": pwgen.password(),
+            "cobbler/user": "cobbler",
+            "cobbler/password": pwgen.password(),
+            "mcollective/user": "mcollective",
+            "mcollective/password": pwgen.password(),
+            "postgres/nailgun_dbname": "nailgun",
+            "postgres/nailgun_user": "nailgun",
+            "postgres/nailgun_password": pwgen.password(),
+            "postgres/ostf_dbname": "ostf",
+            "postgres/ostf_user": "ostf",
+            "postgres/ostf_password": pwgen.password(),
         }
     newsettings = dict()
     for setting in settings.keys():

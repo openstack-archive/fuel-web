@@ -1,7 +1,0 @@
-mnbs_internal_interface=eth0
-mnbs_internal_ipaddress=10.20.0.2
-mnbs_internal_netmask=255.255.255.0
-mnbs_static_pool_start=10.20.0.130
-mnbs_static_pool_end=10.20.0.250
-mnbs_dhcp_pool_start=10.20.0.10
-mnbs_dhcp_pool_end=10.20.0.120

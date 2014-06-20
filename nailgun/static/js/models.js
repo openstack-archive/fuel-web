@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['utils', 'deepModel'], function(utils) {
+define(['utils', 'deepModel', 'localstorage'], function(utils) {
     'use strict';
 
     var models = {};
@@ -708,8 +708,13 @@ define(['utils', 'deepModel'], function(utils) {
     });
 
     models.OSTFClusterMetadata = Backbone.Model.extend({
-        constructorName: 'TestRun',
+        constructorName: 'OSTFClusterMetadata',
         urlRoot: '/api/ostf'
+    });
+
+    models.OSTFCredentials = Backbone.Model.extend({
+        constructorName: 'OSTFCredentials',
+        localStorage: new Backbone.LocalStorage('OSTFCredentials')
     });
 
     models.FuelKey = Backbone.Model.extend({

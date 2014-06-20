@@ -238,7 +238,7 @@ function(require, utils, models, simpleMessageTemplate, discardChangesDialogTemp
             }
         },
         render: function() {
-            this.constructor.__super__.render.call(this, {action: this.action});
+            this.constructor.__super__.render.call(this, {cluster: this.model, action: this.action, releases:  this.releases});
             return this;
         }
     });

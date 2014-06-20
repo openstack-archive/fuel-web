@@ -3,9 +3,15 @@
   <h3 data-i18n="dialog.update_environment.title"></h3>
 </div>
 <div class="modal-body">
-    <div data-i18n="dialog.<%- action %>_environment.text"></div>
+  <% var releaseToUpdate = releases.findWhere({id: cluster.get('pending_release_id')}); %>
+  <% if (action == 'update' && (_.contains(cluster.get('release').get('can_update_from_versions'), releaseToUpdate.get('version'))) ) { %>
+    <!-- Warnings -->
+    <div class="alert alert-warning" data-i18n="dialog.<%= action %>_environment.downgrade_warning"></div>
+  <% } else { %>
+    <div data-i18n="dialog.<%= action %>_environment.text"></div>
+  <% }%>
 </div>
 <div class="modal-footer">
   <button class="btn" data-dismiss="modal" data-i18n="common.cancel_button"></button>
-  <button class="btn btn-<%= action == 'update' ? 'success' : 'danger' %> update-environment-btn" data-i18n="common.<%- action %>_button"></button>
+  <button class="btn btn-<%= action == 'update' ? 'success' : 'danger' %> update-environment-btn" data-i18n="common.<%= action %>_button"></button>
 </div>

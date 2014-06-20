@@ -2,7 +2,7 @@
   <h4 data-i18n="cluster_page.actions_tab.update_environment"></h4>
   <div class="action-item-controls">
     <div class="action-body">
-      <% if (action == 'rollback' || !(releases.deferred && releases.deferred.state() == 'pending')) { %>
+      <% if (action == 'rollback' || releases) { %>
         <p class="action-item-description <%= locked ? 'unavailable' : '' %>" data-i18n="cluster_page.actions_tab.<%= descriptionKey %>"></p>
       <% } else { %>
         <div class="progress-bar description">

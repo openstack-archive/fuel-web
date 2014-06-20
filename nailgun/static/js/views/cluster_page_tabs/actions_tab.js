@@ -155,6 +155,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
     UpdateEnvironmentAction = Action.extend({
         className: 'span12 action-item-placeholder action-update',
         template: _.template(updateEnvironmentTemplate),
+        releasesForUpdate: [],
         stickitAction: function() {
             var bindings = {
                 '.action-btn': {
@@ -162,7 +163,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
                         name: 'disabled',
                         observe: 'pending_release_id',
                         onGet: function() {
-                            return (this.action == 'update' && !this.releases.length) || this.isLocked();
+                            return (this.action == 'update' && !this.releasesForUpdate.length) || this.isLocked();
                         }
                     }]
                 }
@@ -172,33 +173,39 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
                     observe: 'pending_release_id',
                     selectOptions: {
                         collection:function() {
-                            return this.releases.map(function(release) {
-                                return {value: release.id, label: release.get('name') + ' (' + release.get('version') + ')'};
+                            if (this.releases.length) {
+                                var releaseId = this.model.get('release_id');
+                                var operatingSystem =  this.model.get('release').get('operating_system');
+                                var version = this.model.get('release').get('version');
+                                var releasesForDowngrade = this.model.get('release').get('can_update_from_versions');
+                                this.releasesForUpdate = _.filter(this.releases.map(function(release) {
+                                    return {id: release.id, name: release.get('name'), version: release.get('version'), can_update_from_versions: release.get('can_update_from_versions'), operating_system: release.get('operating_system')};
+                                }), function(release) {
+                                    return (_.contains(releasesForDowngrade, release.version) || _.contains(release.can_update_from_versions, version)) && release.operating_system == operatingSystem && release.id != releaseId;
+                                });
+                            }
+                            return this.releasesForUpdate.map(function(release) {
+                                return {value: release.id, label: release.name + ' (' + release.version + ')'};
                             });
                         }
                     },
                     visible: function() {
-                        return this.releases.length && !this.isLocked();
+                        return this.releasesForUpdate.length && !this.isLocked();
                     }
                 };
             }
             this.stickit(this.model, bindings);
         },
         applyAction: function() {
-            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action})).render();
+            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action, releases:  this.releases})).render();
         },
         getReleasesForUpdate: function() {
-            this.releases = new models.Releases();
-            var releaseId = this.model.get('release_id');
-            var operatingSystem =  this.model.get('release').get('operating_system');
-            var version = this.model.get('release').get('version');
-            this.releases.parse = function(response) {
-                return _.filter(response, function(release) {
-                    return _.contains(release.can_update_from_versions, version) && release.operating_system == operatingSystem && release.id != releaseId;
-                });
-            };
-            this.releases.deferred = this.releases.fetch();
-            this.releases.deferred.done(_.bind(this.render, this));
+            this.releases = this.model.releasesList || new models.Releases();
+            if (!this.releases.length) {
+                this.model.releasesList = this.releases;
+                this.releases.deferred = this.releases.fetch();
+                this.releases.deferred.done(_.bind(this.render, this));
+            }
         },
         isLocked: function() {
             return this.model.get('status') != 'operational' || this.constructor.__super__.isLocked.apply(this);
@@ -206,6 +213,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
         initialize:  function(options) {
             this.constructor.__super__.initialize.apply(this);
             this.action = this.model.get('status') == 'update_error' ? 'rollback' : 'update';
+            this.model.on('change:release', this.stickitAction, this);
             if (this.action == 'update') {
                 this.getReleasesForUpdate();
             }

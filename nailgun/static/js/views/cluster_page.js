@@ -175,6 +175,12 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         initialize: function(options) {
             _.defaults(this, options);
             this.model.on('change:name', this.onNameChange, this);
+            this.model.on('change:release_id', function() {
+                var release = new models.Release({id: this.model.get('release_id')});
+                release.fetch().done(_.bind(function(){
+                    this.model.set({release: release});
+                }, this));
+            }, this);
             this.scheduleUpdate();
             this.eventNamespace = 'unsavedchanges' + this.activeTab;
             $(window).on('beforeunload.' + this.eventNamespace, _.bind(this.onBeforeunloadEvent, this));

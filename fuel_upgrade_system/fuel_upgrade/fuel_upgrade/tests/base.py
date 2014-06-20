@@ -20,11 +20,13 @@ except ImportError:
     # Required for python 2.6
     from unittest2.case import TestCase
 
-import mock
-import requests
+import os
 
 from copy import deepcopy
 from StringIO import StringIO
+
+import mock
+import requests
 
 from fuel_upgrade import config
 
@@ -66,8 +68,9 @@ class BaseTestCase(TestCase):
     @property
     def fake_config(self):
         conf = config.Config(config.make_config_path('config.yaml'))
-        conf.new_version = config.read_yaml_config(
-            config.make_config_path('version.yaml'))
+        version_yaml = os.path.join(
+            os.path.dirname(__file__), 'fake_upgrade/config/version.yaml')
+        conf.new_version = config.read_yaml_config(version_yaml)
         conf.current_version = deepcopy(conf.new_version)
 
         conf.new_version['VERSION']['release'] = '9999'

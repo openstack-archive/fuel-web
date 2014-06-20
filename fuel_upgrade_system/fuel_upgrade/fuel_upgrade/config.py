@@ -44,7 +44,7 @@ class Config(object):
         self._config[name] = value
 
 
-def build_config():
+def build_config(update_path):
     """Builds config
 
     We cannot use plain yaml based config
@@ -53,12 +53,14 @@ def build_config():
     This method generates additional properties
     for configuration data from config.yaml
 
+    :param update_path: path to directory with ugprade data
     :returns: Config object
     """
     config = Config(make_config_path('config.yaml'))
 
     config.current_version = read_yaml_config(config.current_fuel_version_path)
-    config.new_version = read_yaml_config(make_config_path('version.yaml'))
+    config.new_version = read_yaml_config(
+        config.new_version_yaml_path_template.format(update_path=update_path))
     config.astute = read_yaml_config(config.current_fuel_astute_path)
 
     return config

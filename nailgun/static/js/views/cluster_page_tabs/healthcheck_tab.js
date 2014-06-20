@@ -33,7 +33,16 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         updateInterval: 3000,
         events: {
             'click .run-tests-btn:not(:disabled)': 'runTests',
-            'click .stop-tests-btn:not(:disabled)': 'stopTests'
+            'click .stop-tests-btn:not(:disabled)': 'stopTests',
+            'click span.add-on': 'showPassword'
+        },
+        showPassword: function(e) {
+            var input = this.$(e.currentTarget).prev();
+            if (input.attr('disabled')) {
+                return;
+            }
+            input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
+            this.$(e.currentTarget).find('i').toggle();
         },
         getNumberOfCheckedTests: function() {
             return this.tests.where({checked: true}).length;
@@ -82,38 +91,41 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             var testruns = new models.TestRuns(),
                 oldTestruns = new models.TestRuns();
             _.each(this.subViews, function(subView) {
-                var selectedTests = subView.tests.where({checked: true});
-                if (selectedTests.length) {
-                    var selectedTestIds = _.pluck(selectedTests, 'id');
-                    var currentTestrun = new models.TestRun({
-                        testset: subView.testset.id,
-                        metadata: {
-                            config: {},
-                            cluster_id: this.model.id
-                        },
-                        tests: selectedTestIds
-                    });
-                    var currentTestForReRun  = new models.TestRun({
-                        id: subView.testrun.id,
-                        tests: selectedTestIds,
-                        status: 'restarted'
-                    });
-                    if (this.testruns.length != 0) {
-                        if (this.testruns.where({testset: subView.testset.id}).length) {
-                            oldTestruns.add(currentTestForReRun);
-                        } else {
-                            testruns.add(currentTestrun);
-                        }
+                var selectedTestIds = _.pluck(subView.tests.where({checked: true}), 'id');
+                if (selectedTestIds.length) {
+                    this.credentials.save();
+                    var addCredentials = _.bind(function(obj) {
+                        obj.ostf_os_access_creds = {
+                            ostf_os_username:this.credentials.get('username'),
+                            ostf_os_tenant_name: this.credentials.get('tenant'),
+                            ostf_os_password: this.credentials.get('password')
+                        };
+                        return obj;
+                    }, this);
+                    var testrunConfig = {tests: selectedTestIds};
+                    if (this.testruns.where({testset: subView.testset.id}).length) {
+                        _.extend(testrunConfig, addCredentials({
+                            id: subView.testrun.id,
+                            status: 'restarted'
+                        }));
+                        oldTestruns.add(new models.TestRun(testrunConfig));
                     } else {
-                        testruns.add(currentTestrun);
+                        _.extend(testrunConfig, {
+                            testset: subView.testset.id,
+                            metadata: addCredentials({
+                                config: {},
+                                cluster_id: this.model.id
+                            })
+                        });
+                        testruns.add(new models.TestRun(testrunConfig));
                     }
                 }
             }, this);
             var requests = [];
-            if (testruns.models.length) {
+            if (testruns.length) {
                 requests.push(Backbone.sync('create', testruns));
             }
-            if (oldTestruns.models.length) {
+            if (oldTestruns.length) {
                 requests.push(Backbone.sync('update', oldTestruns));
             }
             $.when.apply($, requests).done(_.bind(this.update, this));
@@ -203,6 +215,8 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 }
             }
             this.testruns.on('sync', this.updateTestRuns, this);
+            this.credentials = new models.OSTFCredentials({id: 1});
+            this.credentials.fetch().always(_.bind(this.render, this));
         },
         initStickitBindings: function() {
             var visibleBindings = {
@@ -237,10 +251,18 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 }
             };
             this.stickit(this.selectAllCheckbox, bindings);
+            this.stickit(this.credentials, {
+                '.credentials [name=password]': 'password',
+                '.credentials [name=username]': 'username',
+                '.credentials [name=tenant]': 'tenant'
+            });
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({cluster: this.model})).i18n();
+            this.$el.html(this.template({
+                cluster: this.model,
+                locked: this.isLocked()
+            })).i18n();
             if (this.testsets.deferred.state() != 'pending') {
                 this.$('.testsets').html('');
                 this.testsets.each(function(testset) {

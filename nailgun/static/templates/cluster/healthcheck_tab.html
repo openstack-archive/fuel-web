@@ -19,6 +19,49 @@
     </div>
   <% } %>
 
+  <div class="fieldset-group wrapper credentials">
+    <legend class="openstack-settings"><%- $.t("cluster_page.healthcheck_tab.credentials") %></legend>
+    <div class="settings-group">
+      <div class="parameter-box clearfix">
+        <div class="openstack-sub-title parameter-name">
+          <%- $.t("cluster_page.healthcheck_tab.username_label") %>
+        </div>
+        <div class="parameter-control ">
+          <input type="text" name="username" value="" class="" <%= locked ? 'disabled' : '' %>>
+        </div>
+        <div class="parameter-description description">
+          <%- $.t("cluster_page.healthcheck_tab.username_description") %>
+        </div>
+        <div class="parameter-description validation-error hide"></div>
+      </div>
+      <div class="parameter-box clearfix">
+        <div class="openstack-sub-title parameter-name">
+          <%- $.t("cluster_page.healthcheck_tab.password_label") %>
+        </div>
+        <div class="parameter-control input-append">
+          <input type="password" name="password" value="" class="input-append" <%= locked ? 'disabled' : '' %>>
+          <span class="add-on"><i class="icon-eye"></i><i class="icon-eye-off hide"></i></span>
+        </div>
+        <div class="parameter-description description">
+          <%- $.t("cluster_page.healthcheck_tab.password_description") %>
+        </div>
+        <div class="parameter-description validation-error hide"></div>
+      </div>
+      <div class="parameter-box clearfix">
+        <div class="openstack-sub-title parameter-name">
+          <%- $.t("cluster_page.healthcheck_tab.tenant_label") %>
+        </div>
+        <div class="parameter-control">
+          <input type="text" value="" name="tenant" class="" <%= locked ? 'disabled' : '' %>>
+        </div>
+        <div class="parameter-description description">
+          <%- $.t("cluster_page.healthcheck_tab.tenant_description") %>
+        </div>
+        <div class="parameter-description validation-error hide"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="testsets">
     <div class="progress-bar">
       <div class="progress progress-striped progress-success active"><div class="bar"></div></div>

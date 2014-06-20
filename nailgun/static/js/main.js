@@ -40,7 +40,8 @@ requirejs.config({
         styles: 'js/styles',
         models: 'js/models',
         collections: 'js/collections',
-        views: 'js/views'
+        views: 'js/views',
+        localstorage: "js/libs/custom/backbone.localStorage"
     },
     shim: {
         underscore: {

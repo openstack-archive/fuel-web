@@ -342,7 +342,9 @@
                     "not_available_alert": "OSTF server is not available.",
                     "expected_duration": "Expected Duration",
                     "actual_duration": "Actual Duration",
-                    "status": "Status"
+                    "status": "Status",
+                    "password_label": "Password for Administrator",
+                    "password_description": "In case of password change input an actual one here"
                 },
                 "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",

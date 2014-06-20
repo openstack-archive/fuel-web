@@ -33,7 +33,16 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         updateInterval: 3000,
         events: {
             'click .run-tests-btn:not(:disabled)': 'runTests',
-            'click .stop-tests-btn:not(:disabled)': 'stopTests'
+            'click .stop-tests-btn:not(:disabled)': 'stopTests',
+            'click span.add-on': 'showPassword'
+        },
+        showPassword: function(e) {
+            var input = this.$(e.currentTarget).prev();
+            if (input.attr('disabled')) {
+                return;
+            }
+            input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
+            this.$(e.currentTarget).find('i').toggle();
         },
         getNumberOfCheckedTests: function() {
             return this.tests.where({checked: true}).length;
@@ -85,19 +94,27 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 var selectedTests = subView.tests.where({checked: true});
                 if (selectedTests.length) {
                     var selectedTestIds = _.pluck(selectedTests, 'id');
-                    var currentTestrun = new models.TestRun({
-                        testset: subView.testset.id,
-                        metadata: {
-                            config: {},
-                            cluster_id: this.model.id
-                        },
-                        tests: selectedTestIds
-                    });
-                    var currentTestForReRun  = new models.TestRun({
+                    var metaDataObject = {
+                        config: {},
+                        cluster_id: this.model.id
+                    };
+                    var currentTestForReRunConfig = {
                         id: subView.testrun.id,
                         tests: selectedTestIds,
                         status: 'restarted'
+                    };
+//                    FIXME: fix when backend done
+                    var passwordValue = this.$('input[type=password]').val();
+                    if (passwordValue) {
+                        metaDataObject['password'] = passwordValue;
+                        currentTestForReRunConfig['password'] = passwordValue;
+                    }
+                    var currentTestrun = new models.TestRun({
+                        testset: subView.testset.id,
+                        metadata: metaDataObject,
+                        tests: selectedTestIds
                     });
+                    var currentTestForReRun  = new models.TestRun(currentTestForReRunConfig);
                     if (this.testruns.length != 0) {
                         if (this.testruns.where({testset: subView.testset.id}).length) {
                             oldTestruns.add(currentTestForReRun);

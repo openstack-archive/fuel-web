@@ -1,10 +1,10 @@
 <div class="footer-box">
-  <% if (isMirantis) { %>-
+  <% if (_.contains(version.get('feature_groups'), 'mirantis')) { %>
     <a href="http://www.mirantis.com" target="_blank" class="footer-logo"></a>
     <div class="footer-copyright pull-left" data-i18n="common.copyright"></div>
   <% } %>
-  <% if (version) { %>
-    <div class="footer-version pull-right">Version: <%- version || '' %></div>
+  <% if (version.get('release')) { %>
+    <div class="footer-version pull-right">Version: <%- version.get('release') %></div>
   <% } %>
   <div class="footer-lang pull-right">
     <div class="dropdown dropup">

@@ -41,7 +41,7 @@ function(models, utils, commonViews, dialogViews, wizard, clustersPageTemplate, 
             var clustersView = new ClusterList({collection: this.collection});
             this.registerSubView(clustersView);
             this.$('.cluster-list').html(clustersView.render().el);
-            if (app.version.get('mirantis') == 'yes' && !localStorage.trialRemoved) {
+            if (_.contains(app.version.get('feature_groups'), 'mirantis') && !localStorage.trialRemoved) {
                 var registerTrialView = new RegisterTrial();
                 this.registerSubView(registerTrialView);
                 this.$('.page-title').before(registerTrialView.render().el);

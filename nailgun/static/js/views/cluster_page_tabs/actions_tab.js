@@ -72,7 +72,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
             }
             return action + '_environment_description';
         },
-        initialize:  function(options) {
+        initialize: function(options) {
             _.defaults(this, options);
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
@@ -152,17 +152,20 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
         }
     });
 
+    var releases = new models.Releases();
     UpdateEnvironmentAction = Action.extend({
         className: 'span12 action-item-placeholder action-update',
         template: _.template(updateEnvironmentTemplate),
+        releases: releases,
         stickitAction: function() {
+            var releasesForUpdate = this.getReleasesForUpdate() || [];
             var bindings = {
                 '.action-btn': {
                     attributes: [{
                         name: 'disabled',
                         observe: 'pending_release_id',
                         onGet: function() {
-                            return (this.action == 'update' && !this.releases.length) || this.isLocked();
+                            return (this.action == 'update' && !releasesForUpdate.length) || this.isLocked();
                         }
                     }]
                 }
@@ -172,46 +175,48 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
                     observe: 'pending_release_id',
                     selectOptions: {
                         collection:function() {
-                            return this.releases.map(function(release) {
+                            return releasesForUpdate.map(function(release) {
                                 return {value: release.id, label: release.get('name') + ' (' + release.get('version') + ')'};
                             });
                         }
                     },
                     visible: function() {
-                        return this.releases.length && !this.isLocked();
+                        return releasesForUpdate.length && !this.isLocked();
                     }
                 };
             }
             this.stickit(this.model, bindings);
         },
         applyAction: function() {
-            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action})).render();
+            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action, releases: releases})).render();
         },
         getReleasesForUpdate: function() {
-            this.releases = new models.Releases();
-            var releaseId = this.model.get('release_id');
-            var operatingSystem =  this.model.get('release').get('operating_system');
-            var version = this.model.get('release').get('version');
-            this.releases.parse = function(response) {
-                return _.filter(response, function(release) {
-                    return _.contains(release.can_update_from_versions, version) && release.operating_system == operatingSystem && release.id != releaseId;
+            if (releases.length) {
+                var releaseId = this.model.get('release_id');
+                var operatingSystem = this.model.get('release').get('operating_system');
+                var version = this.model.get('release').get('version');
+                var releasesForDowngrade = this.model.get('release').get('can_update_from_versions');
+                return releases.filter(function(release) {
+                    return (_.contains(releasesForDowngrade, release.get('version')) || _.contains(release.get('can_update_from_versions'), version)) && release.get('operating_system') == operatingSystem && release.get('id') != releaseId;
                 });
-            };
-            this.releases.deferred = this.releases.fetch();
-            this.releases.deferred.done(_.bind(this.render, this));
+            }
         },
         isLocked: function() {
             return this.model.get('status') != 'operational' || this.constructor.__super__.isLocked.apply(this);
         },
-        initialize:  function(options) {
+        initialize: function(options) {
             this.constructor.__super__.initialize.apply(this);
             this.action = this.model.get('status') == 'update_error' ? 'rollback' : 'update';
+            this.model.on('change:release', this.stickitAction, this);
             if (this.action == 'update') {
-                this.getReleasesForUpdate();
+                if (!releases.length) {
+                    releases.deferred = releases.fetch();
+                    releases.deferred.done(_.bind(this.render, this));
+                }
             }
         },
         getDescription: function() {
-            if (this.action == 'update' && this.model.get('status') == 'operational' && !this.releases.length) {
+            if (this.action == 'update' && this.model.get('status') == 'operational' && !releases.length) {
                 return 'no_releases_to_update_message';
             }
             if (this.action == 'rollback') {
@@ -223,7 +228,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
             this.$el.html(this.template({
                 action: this.action,
                 cluster: this.model,
-                releases: this.releases,
+                releases: releases,
                 locked: this.isLocked(),
                 descriptionKey: this.getDescription()
             })).i18n();

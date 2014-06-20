@@ -185,16 +185,17 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
             this.stickit(this.model, bindings);
         },
         applyAction: function() {
-            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action})).render();
+            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action, releases:  this.releases})).render();
         },
         getReleasesForUpdate: function() {
             this.releases = new models.Releases();
             var releaseId = this.model.get('release_id');
             var operatingSystem =  this.model.get('release').get('operating_system');
             var version = this.model.get('release').get('version');
+            var releasesForDowngrade = this.model.get('release').get('can_update_from_versions');
             this.releases.parse = function(response) {
                 return _.filter(response, function(release) {
-                    return _.contains(release.can_update_from_versions, version) && release.operating_system == operatingSystem && release.id != releaseId;
+                    return (_.contains(releasesForDowngrade, release.version) || _.contains(release.can_update_from_versions, version)) && release.operating_system == operatingSystem && release.id != releaseId;
                 });
             };
             this.releases.deferred = this.releases.fetch();
@@ -205,7 +206,8 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
         },
         initialize:  function(options) {
             this.constructor.__super__.initialize.apply(this);
-            this.action = this.model.get('status') == 'update_error' ? 'rollback' : 'update';
+            var cluster = this.model;
+            this.action = cluster.get('status') == 'update_error' ? 'rollback' : 'update';
             if (this.action == 'update') {
                 this.getReleasesForUpdate();
             }

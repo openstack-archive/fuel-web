@@ -17,16 +17,18 @@ define(
 [
     'utils',
     'models',
+    'view_mixins',
     'views/common',
     'views/dialogs',
     'text!templates/cluster/healthcheck_tab.html',
+    'text!templates/cluster/healthcheck_credentials.html',
     'text!templates/cluster/healthcheck_testset.html',
     'text!templates/cluster/healthcheck_tests.html'
 ],
-function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, healthcheckTestSetTemplate, healthcheckTestsTemplate) {
+function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemplate, credentialsTemplate, healthcheckTestSetTemplate, healthcheckTestsTemplate) {
     'use strict';
 
-    var HealthCheckTab, TestSet, Test;
+    var HealthCheckTab, CredentialsForm, TestSet, Test;
 
     HealthCheckTab = commonViews.Tab.extend({
         template: _.template(healthcheckTabTemplate),
@@ -82,38 +84,43 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             var testruns = new models.TestRuns(),
                 oldTestruns = new models.TestRuns();
             _.each(this.subViews, function(subView) {
-                var selectedTests = subView.tests.where({checked: true});
-                if (selectedTests.length) {
-                    var selectedTestIds = _.pluck(selectedTests, 'id');
-                    var currentTestrun = new models.TestRun({
-                        testset: subView.testset.id,
-                        metadata: {
-                            config: {},
-                            cluster_id: this.model.id
-                        },
-                        tests: selectedTestIds
-                    });
-                    var currentTestForReRun  = new models.TestRun({
-                        id: subView.testrun.id,
-                        tests: selectedTestIds,
-                        status: 'restarted'
-                    });
-                    if (this.testruns.length != 0) {
+                if (subView instanceof TestSet) {
+                    var selectedTestIds = _.pluck(subView.tests.where({checked: true}), 'id');
+                    if (selectedTestIds.length) {
+                        this.credentials.save();
+                        var addCredentials = _.bind(function(obj) {
+                            obj.ostf_os_access_creds = {
+                                ostf_os_username:this.credentials.get('username'),
+                                ostf_os_tenant_name: this.credentials.get('tenant'),
+                                ostf_os_password: this.credentials.get('password')
+                            };
+                            return obj;
+                        }, this);
+                        var testrunConfig = {tests: selectedTestIds};
                         if (this.testruns.where({testset: subView.testset.id}).length) {
-                            oldTestruns.add(currentTestForReRun);
+                            _.extend(testrunConfig, addCredentials({
+                                id: subView.testrun.id,
+                                status: 'restarted'
+                            }));
+                            oldTestruns.add(new models.TestRun(testrunConfig));
                         } else {
-                            testruns.add(currentTestrun);
+                            _.extend(testrunConfig, {
+                                testset: subView.testset.id,
+                                metadata: addCredentials({
+                                    config: {},
+                                    cluster_id: this.model.id
+                                })
+                            });
+                            testruns.add(new models.TestRun(testrunConfig));
                         }
-                    } else {
-                        testruns.add(currentTestrun);
                     }
                 }
             }, this);
             var requests = [];
-            if (testruns.models.length) {
+            if (testruns.length) {
                 requests.push(Backbone.sync('create', testruns));
             }
-            if (oldTestruns.models.length) {
+            if (oldTestruns.length) {
                 requests.push(Backbone.sync('update', oldTestruns));
             }
             $.when.apply($, requests).done(_.bind(this.update, this));
@@ -166,7 +173,9 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             });
             this.selectAllCheckbox.on('change:disabled', _.bind(function(model, value) {
                 _.each(this.subViews, function(testSetView) {
-                    testSetView.selectAllCheckbox.set({disabled: value});
+                    if (testSetView instanceof TestSet) {
+                        testSetView.selectAllCheckbox.set({disabled: value});
+                    }
                 }, this);
                 this.tests.invoke('set', {disabled: value});
             }, this));
@@ -189,8 +198,7 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                     this.scheduleUpdate();
                 }, this)
                 ).fail(_.bind(function() {
-                    this.$('.testsets > .row').hide();
-                    this.$('.testsets > .progress-bar').hide();
+                    this.$('.credentials, .testsets > .row, .testsets > .progress-bar').hide();
                     this.$('.testsets > .error-message').show();
                 }, this)
                 ).always(_.bind(function() {
@@ -203,6 +211,18 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 }
             }
             this.testruns.on('sync', this.updateTestRuns, this);
+            this.testruns.on('change:status', this.renderCredentials, this);
+            this.credentials = new models.OSTFCredentials({id: this.model.id});
+            this.credentials.fetch()
+                .fail(_.bind(function() {
+                    var defaultCredentials = this.model.get('settings').get('access');
+                    this.credentials.set({
+                        username: defaultCredentials.user.value,
+                        password: defaultCredentials.password.value,
+                        tenant: defaultCredentials.tenant.value
+                    });
+                }, this))
+                .always(_.bind(this.renderCredentials, this));
         },
         initStickitBindings: function() {
             var visibleBindings = {
@@ -238,10 +258,17 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
             };
             this.stickit(this.selectAllCheckbox, bindings);
         },
+        renderCredentials: function() {
+            this.$('.credentials').html('');
+            this.credentialsForm = new CredentialsForm({credentials: this.credentials, tab: this});
+            this.registerSubView(this.credentialsForm);
+            this.$('.credentials').append(this.credentialsForm.render().el);
+        },
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({cluster: this.model})).i18n();
             if (this.testsets.deferred.state() != 'pending') {
+                this.renderCredentials();
                 this.$('.testsets').html('');
                 this.testsets.each(function(testset) {
                     var testsetView = new TestSet({
@@ -256,6 +283,25 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 }, this);
             }
             this.initStickitBindings();
+            return this;
+        }
+    });
+
+    CredentialsForm = Backbone.View.extend({
+        className: 'fieldset-group wrapper',
+        template: _.template(credentialsTemplate),
+        mixins: [viewMixins.toggleablePassword],
+        bindings: {
+            'input[name=password]': 'password',
+            'input[name=username]': 'username',
+            'input[name=tenant]': 'tenant'
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+        },
+        render: function() {
+            this.$el.html(this.template({locked: this.tab.isLocked() || this.tab.hasRunningTests()})).i18n();
+            this.stickit(this.credentials);
             return this;
         }
     });

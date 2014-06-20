@@ -557,7 +557,8 @@
                 },
                 "update_environment": {
                     "title": "Update Environment",
-                    "text": "Are you sure you want to update the environment?"
+                    "text": "Are you sure you want to update the environment?",
+                    "downgrade_warning": "Are you sure you want to update the environment to earlier release?"
                 },
                 "rollback_environment": {
                     "title": "Rollback Environment",

@@ -241,7 +241,7 @@ function(require, utils, models, baseDialogTemplate, discardChangesDialogTemplat
             }
         },
         render: function() {
-            this.constructor.__super__.render.call(this, {action: this.action});
+            this.constructor.__super__.render.call(this, {cluster: this.model, action: this.action, isDowngrade: this.isDowngrade});
             return this;
         }
     });

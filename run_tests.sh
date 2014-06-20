@@ -208,7 +208,6 @@ function run_nailgun_tests {
   pushd $ROOT/nailgun >> /dev/null
   # run tests
   tox -epy26 -- -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT || result=1
-  result=$?
   popd >> /dev/null
   return $result
 }
@@ -308,7 +307,6 @@ function run_cli_tests {
     pushd $ROOT/fuelclient >> /dev/null
     # run tests
     tox -epy26 -- -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT || result=1
-    result=$?
     popd >> /dev/null
 
     kill $pid
@@ -398,7 +396,6 @@ function run_flake8 {
   run_flake8_subproject fuel_upgrade_system/fuel_update_downloader && \
   run_flake8_subproject fuel_upgrade_system/fuel_upgrade && \
   run_flake8_subproject shotgun || result=1
-  result=$?
   return $result
 }
 
@@ -408,8 +405,8 @@ function run_flake8 {
 function run_jslint {
   pushd $ROOT/nailgun >> /dev/null
 
-  ${JSLINT}
-  local result=$?
+  local result=0
+  ${JSLINT} || result=1
 
   popd >> /dev/null
   return $result

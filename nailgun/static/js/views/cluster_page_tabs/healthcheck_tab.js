@@ -21,9 +21,10 @@ define(
     'views/dialogs',
     'text!templates/cluster/healthcheck_tab.html',
     'text!templates/cluster/healthcheck_testset.html',
-    'text!templates/cluster/healthcheck_tests.html'
+    'text!templates/cluster/healthcheck_tests.html',
+    'text!templates/cluster/healthcheck_credentials.html'
 ],
-function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, healthcheckTestSetTemplate, healthcheckTestsTemplate) {
+function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, healthcheckTestSetTemplate, healthcheckTestsTemplate, healthcheckCredentialsTemplate) {
     'use strict';
 
     var HealthCheckTab, TestSet, Test;
@@ -33,7 +34,16 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         updateInterval: 3000,
         events: {
             'click .run-tests-btn:not(:disabled)': 'runTests',
-            'click .stop-tests-btn:not(:disabled)': 'stopTests'
+            'click .stop-tests-btn:not(:disabled)': 'stopTests',
+            'click span.add-on': 'showPassword'
+        },
+        showPassword: function(e) {
+            var input = this.$(e.currentTarget).prev();
+            if (input.attr('disabled')) {
+                return;
+            }
+            input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
+            this.$(e.currentTarget).find('i').toggle();
         },
         getNumberOfCheckedTests: function() {
             return this.tests.where({checked: true}).length;
@@ -79,25 +89,31 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
         },
         runTests: function() {
             this.disableControls(true);
+
             var testruns = new models.TestRuns(),
                 oldTestruns = new models.TestRuns();
             _.each(this.subViews, function(subView) {
                 var selectedTests = subView.tests.where({checked: true});
                 if (selectedTests.length) {
                     var selectedTestIds = _.pluck(selectedTests, 'id');
-                    var currentTestrun = new models.TestRun({
-                        testset: subView.testset.id,
-                        metadata: {
-                            config: {},
-                            cluster_id: this.model.id
-                        },
-                        tests: selectedTestIds
-                    });
-                    var currentTestForReRun  = new models.TestRun({
+                    var metaDataObject = {
+                        config: {},
+                        cluster_id: this.model.id
+                    };
+                    var currentTestForReRunConfig = {
                         id: subView.testrun.id,
                         tests: selectedTestIds,
                         status: 'restarted'
+                    };
+                    this.credentials.save();
+                    metaDataObject = this.addCredentialsData(metaDataObject);
+                    currentTestForReRunConfig = this.addCredentialsData(currentTestForReRunConfig);
+                    var currentTestrun = new models.TestRun({
+                        testset: subView.testset.id,
+                        metadata: metaDataObject,
+                        tests: selectedTestIds
                     });
+                    var currentTestForReRun  = new models.TestRun(currentTestForReRunConfig);
                     if (this.testruns.length != 0) {
                         if (this.testruns.where({testset: subView.testset.id}).length) {
                             oldTestruns.add(currentTestForReRun);
@@ -117,6 +133,13 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 requests.push(Backbone.sync('update', oldTestruns));
             }
             $.when.apply($, requests).done(_.bind(this.update, this));
+        },
+        addCredentialsData: function(obj) {
+            obj.ostf_os_access_creds = {};
+            obj.ostf_os_access_creds.ostf_os_username = this.credentials.get('username');
+            obj.ostf_os_access_creds.ostf_os_tenant_name = this.credentials.get('tenant');
+            obj.ostf_os_access_creds.ostf_os_password = this.credentials.get('password');
+            return obj;
         },
         stopTests: function() {
             var testruns = new models.TestRuns(this.getActiveTestRuns());
@@ -203,6 +226,12 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 }
             }
             this.testruns.on('sync', this.updateTestRuns, this);
+
+
+        },
+        renderCredentials: function() {
+            var credentialsTemplate = _.template(healthcheckCredentialsTemplate);
+            this.$('.testsets').before(credentialsTemplate(_.extend(this.credentials.toJSON(), {locked: this.isLocked()}))).i18n();
         },
         initStickitBindings: function() {
             var visibleBindings = {
@@ -256,6 +285,21 @@ function(utils, models, commonViews, dialogViews, healthcheckTabTemplate, health
                 }, this);
             }
             this.initStickitBindings();
+            this.credentials = new models.OSTFCredentials({ id: 1 });
+            this.credentials.fetch().always(_.bind(this.renderCredentials, this));
+            var bindings =
+                {
+                    '.credentials [name=password]': {
+                        observe: 'password'
+                    },
+                    '.credentials [name=username]': {
+                        observe: 'username'
+                    },
+                    '.credentials [name=tenant]': {
+                        observe: 'tenant'
+                    }
+                };
+            this.stickit(this.credentials, bindings);
             return this;
         }
     });

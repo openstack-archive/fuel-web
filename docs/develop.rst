@@ -7,6 +7,7 @@ Development Documentation
    :maxdepth: 3
    :numbered:
 
+   develop/quick_start
    develop/architecture
    develop/sequence
    develop/env

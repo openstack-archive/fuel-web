@@ -79,6 +79,7 @@ Setup for Web UI Tests
     ./run_tests.sh --jslint
     ./run_tests.sh --webui
 
+.. _running-nailgun-in-fake-mode:
 
 Running Nailgun in Fake Mode
 ----------------------------
@@ -115,7 +116,7 @@ Running the Fuel System Tests
 -----------------------------
 
 For fuel-devops configuration info please refer to
-`Devops Guide <../devops.html>`_ article.
+:doc:`Devops Guide </devops>` article.
 
 #. Run the integration test::
 

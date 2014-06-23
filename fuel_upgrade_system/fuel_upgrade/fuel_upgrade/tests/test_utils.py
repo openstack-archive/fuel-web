@@ -341,3 +341,8 @@ class TestUtils(BaseTestCase):
         utils.copy_if_does_not_exist('from', 'to')
         exists_mock.assert_called_once_with('to')
         copy_mock.assert_called_once_with('from', 'to')
+
+    @mock.patch('fuel_upgrade.utils.os.rename')
+    def test_rename(self, rename_mock):
+        utils.rename('source', 'destination')
+        rename_mock.assert_called_once_with('source', 'destination')

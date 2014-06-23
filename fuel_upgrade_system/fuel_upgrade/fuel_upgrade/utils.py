@@ -302,10 +302,12 @@ def rename(source, destination):
 
 
 def dict_merge(a, b):
-    '''recursively merges dict's. not just simple a['key'] = b['key'], if
-    both a and bhave a key who's value is a dict then dict_merge is called
-    on both values and the result stored in the returned dictionary.
-    '''
+    """Recursively merges two given dictionaries.
+
+    :param a: a first dict
+    :param b: a second dict
+    :returns: a result dict (merge result of a and b)
+    """
     if not isinstance(b, dict):
         return deepcopy(b)
     result = deepcopy(a)
@@ -318,6 +320,12 @@ def dict_merge(a, b):
 
 
 def load_fixture(fileobj, loader=None):
+    """Loads a fixture from a given `fileobj` and process it with
+    our extended markup that provides an inherit feature.
+
+    :param fileobj: a file-like object with fixture
+    :para, loader: a fixture loader; use default one if None
+    """
     # a key that's used to mark some item as abstract
     pk_key = 'pk'
 
@@ -447,3 +455,35 @@ def compare_version(v1, v2):
         return -1
     else:
         return 1
+
+
+def get_required_size_for_actions(actions, update_path):
+    """Returns a size on disk that will be required for completing
+    a given actions list.
+
+    :param actions: a list of actions
+    :returns: a size
+    """
+    rv = {}
+
+    for action in actions:
+        # copy / copy_from_update case
+        if action['name'] in ('copy', 'copy_from_update'):
+            src = action['from']
+            if action['name'] == 'copy_from_update':
+                src = os.path.join(update_path, src)
+
+            if os.path.isdir(action['to']):
+                dst = action['to']
+            else:
+                dst = os.path.dirname(action['to'])
+
+            if dst not in rv:
+                rv[dst] = 0
+
+            if os.path.isdir(src):
+                rv[dst] += dir_size(src)
+            else:
+                rv[dst] += files_size(src)
+
+    return rv

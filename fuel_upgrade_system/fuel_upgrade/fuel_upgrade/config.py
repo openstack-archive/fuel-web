@@ -485,23 +485,29 @@ def config(update_path):
     # to source directory that's passed as a command line argument.
     openstack = {
         'releases': join(update_path, 'config/openstack.yaml'),
-        'puppets': {
-            'manifests': {
-                'src': join(update_path, 'puppet/manifests'),
-                'dst': join('/etc/puppet', new_version, 'manifests')},
 
-            'modules': {
-                'src': join(update_path, 'puppet/modules'),
-                'dst': join('/etc/puppet', new_version, 'modules')}},
-
-        'repos': {
-            'centos': {
-                'src': join(update_path, 'repos/centos'),
-                'dst': join('/var/www/nailgun', new_version, 'centos')},
-
-            'ubuntu': {
-                'src': join(update_path, 'repos/ubuntu'),
-                'dst': join('/var/www/nailgun', new_version, 'ubuntu')}}}
+        'actions': [
+            {
+                'name': 'copy',
+                'from': join(update_path, 'puppet', 'manifests'),
+                'to': join('/etc/puppet', new_version, 'manifests'),
+            },
+            {
+                'name': 'copy',
+                'from': join(update_path, 'puppet', 'modules'),
+                'to': join('/etc/puppet', new_version, 'modules'),
+            },
+            {
+                'name': 'copy',
+                'from': join(update_path, 'repos', 'centos'),
+                'to': join('/var/www/nailgun', new_version, 'centos'),
+            },
+            {
+                'name': 'copy',
+                'from': join(update_path, 'repos/ubuntu'),
+                'to': join('/var/www/nailgun', new_version, 'ubuntu'),
+            }
+        ]}
 
     # Config for host system upgarde engine
     host_system = {
@@ -523,7 +529,33 @@ def config(update_path):
 
     # Config for bootstrap upgrade
     bootstrap = {
-        'src': join(update_path, 'bootstrap/'),
-        'dst': '/var/www/nailgun/bootstrap/'}
+        'actions': [
+            {
+                'name': 'move',
+                'from': '/var/www/nailgun/bootstrap/initramfs.img',
+                'to': '/var/www/nailgun/bootstrap/{0}_initramfs.img'.format(
+                    current_version,
+                ),
+                'overwrite': False,
+            },
+            {
+                'name': 'move',
+                'from': '/var/www/nailgun/bootstrap/linux',
+                'to': '/var/www/nailgun/bootstrap/{0}_linux'.format(
+                    current_version,
+                ),
+                'overwrite': False,
+            },
+            {
+                'name': 'copy',
+                'from': join(update_path, 'bootstrap', 'initramfs.img'),
+                'to': '/var/www/nailgun/bootstrap/',
+            },
+            {
+                'name': 'copy',
+                'from': join(update_path, 'bootstrap', 'linux'),
+                'to': '/var/www/nailgun/bootstrap/',
+            }
+        ]}
 
     return locals()

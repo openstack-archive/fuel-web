@@ -23,6 +23,7 @@ import six
 
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade.nailgun_client import NailgunClient
+from fuel_upgrade.actions import ActionManager
 from fuel_upgrade import utils
 
 
@@ -65,30 +66,13 @@ class OpenStackUpgrader(UpgradeEngine):
         )
 
         self._update_conf()
-        self._reset_rollback_ids()
+        self._reset_state()
 
-    @property
-    def required_free_space(self):
-        """Required free space to run upgrade
-
-        * size of puppet manifests
-        * size of repositories
-
-        :returns: dict where key is path to directory
-                  and value is required free space
-        """
-
-        calculated_spaces = {}
-
-        spaces = [self.config.openstack['repos']['centos'],
-                  self.config.openstack['repos']['ubuntu'],
-                  self.config.openstack['puppets']['modules'],
-                  self.config.openstack['puppets']['manifests']]
-
-        for space in spaces:
-            calculated_spaces[space['dst']] = utils.dir_size(space['src'])
-
-        return calculated_spaces
+        #: an action manager that is used to install puppets/repos
+        self.action_manager = ActionManager(
+            self.config.openstack['actions'],
+            base_path=self.update_path
+        )
 
     def _update_conf(self):
         """Update some conf data:
@@ -102,19 +86,13 @@ class OpenStackUpgrader(UpgradeEngine):
                 return os.path.join(self.update_path, path)
             return path
 
-        # fix repos paths
-        for os_ in ('centos', 'ubuntu'):
-            repo = self.config.openstack['repos'][os_]
+        for action in self.config.openstack['actions']:
+            if action['name'] == 'copy_from_update':
+                action['base'] = self.update_path
 
-            for name in ('src', 'dst'):
-                repo[name] = fixpath(repo[name].format(**self._meta))
-
-        # fix puppets paths
-        for puppet in ('modules', 'manifests'):
-            puppet = self.config.openstack['puppets'][puppet]
-
-            for name in ('src', 'dst'):
-                puppet[name] = fixpath(puppet[name].format(**self._meta))
+            for attr in ('from', 'to'):
+                if attr in action:
+                    action[attr] = action[attr].format(**self._meta)
 
         # bulding valid repo paths
         for release in self.releases:
@@ -144,10 +122,11 @@ class OpenStackUpgrader(UpgradeEngine):
                 data['puppet_modules_source'].format(**self._meta)
 
     def upgrade(self):
+        self._reset_state()
+
         logger.info('Starting upgrading...')
 
-        self.install_repos()
-        self.install_puppets()
+        self.action_manager.do()
         self.install_releases()
 
         logger.info('upgrade is done!')
@@ -156,48 +135,11 @@ class OpenStackUpgrader(UpgradeEngine):
         logger.info('Starting rollbacking...')
 
         self.remove_releases()
-        self.remove_puppets()
-        self.remove_repos()
+        self.action_manager.undo()
 
         logger.info('rollback is done!')
 
-    def install_repos(self):
-        logger.info('Installing repositories...')
-
-        for os_ in ('centos', 'ubuntu'):
-            utils.copytree(
-                self.config.openstack['repos'][os_]['src'],
-                self.config.openstack['repos'][os_]['dst'],
-            )
-
-    def remove_repos(self):
-        logger.info('Removing repositories...')
-
-        for os_ in ('centos', 'ubuntu'):
-            utils.rmtree(
-                self.config.openstack['repos'][os_]['dst']
-            )
-
-    def install_puppets(self):
-        logger.info('Installing puppets...')
-
-        for puppet in ('modules', 'manifests'):
-            utils.copytree(
-                self.config.openstack['puppets'][puppet]['src'],
-                self.config.openstack['puppets'][puppet]['dst'],
-            )
-
-    def remove_puppets(self):
-        logger.info('Removing puppets...')
-
-        for puppet in ('modules', 'manifests'):
-            utils.rmtree(
-                self.config.openstack['puppets'][puppet]['dst']
-            )
-
     def install_releases(self):
-        self._reset_rollback_ids()
-
         # check releases for existing in nailgun side
         releases = self._get_unique_releases(
             self.releases, self.nailgun.get_releases())
@@ -247,7 +189,7 @@ class OpenStackUpgrader(UpgradeEngine):
             ) as exc:
                 logger.exception(six.text_type(exc))
 
-    def _reset_rollback_ids(self):
+    def _reset_state(self):
         """Remove rollback IDs from the arrays.
         """
         #: a list of ids that have to be removed in case of rollback
@@ -270,3 +212,9 @@ class OpenStackUpgrader(UpgradeEngine):
 
         unique = lambda r: (r['name'], r['version']) not in existing_releases
         return [r for r in releases if unique(r)]
+
+    @property
+    def required_free_space(self):
+        return utils.get_required_size_for_actions(
+            self.config.openstack['actions'], self.update_path
+        )

@@ -71,11 +71,12 @@ class BaseTestCase(TestCase):
     def fake_config(self, _, __, ___):
         update_path = '/tmp/upgrade_path'
         conf = config.build_config(update_path)
-        conf.openstack['releases'] = 'releases.json'
 
-        conf.bootstrap = {
-            'src': 'bootstrap/',
-            'dst': '/var/www/nailgun/bootstrap'}
+        conf.astute = {
+            'ADMIN_NETWORK': {
+                'ipaddress': '0.0.0.0'
+            }
+        }
 
         return conf
 

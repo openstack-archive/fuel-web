@@ -26,57 +26,23 @@ class TestBootstrapUpgrader(BaseTestCase):
         self.upgrader = BootstrapUpgrader(self.fake_config)
 
     def test_constructor(self):
+        self.assertEqual(len(self.upgrader._action_manager._actions), 4)
 
-        self.assertEqual(
-            len(self.upgrader._bootstraps),
-            len(BootstrapUpgrader.bootstraps))
-
-        for file_ in BootstrapUpgrader.bootstraps:
-            self.assertTrue(file_ in self.upgrader._bootstraps)
-
-        for file_ in self.upgrader._bootstraps:
-            self.assertTrue(
-                self.upgrader._bootstraps[file_]['src'].endswith(file_))
-            self.assertTrue(
-                self.upgrader._bootstraps[file_]['dst'].endswith(file_))
-            self.assertTrue(
-                self.upgrader._bootstraps[file_]['backup'].endswith(file_))
-
-            self.assertTrue(
-                '0' in self.upgrader._bootstraps[file_]['backup'])
-
-    @mock.patch('fuel_upgrade.engines.bootstrap.utils.copy')
-    def test_upgrade(self, utils_copy):
-        self.upgrader.backup = mock.Mock()
-
+    def test_upgrade(self):
+        self.upgrader._action_manager.do = mock.Mock()
         self.upgrader.upgrade()
 
-        self.called_once(self.upgrader.backup)
-        self.called_times(utils_copy, len(self.upgrader._bootstraps))
+        self.called_once(self.upgrader._action_manager.do)
 
-        for key in self.upgrader._bootstraps:
-            utils_copy.assert_any_call(
-                self.upgrader._bootstraps[key]['src'],
-                self.upgrader._bootstraps[key]['dst'])
-
-    @mock.patch('fuel_upgrade.engines.bootstrap.utils.remove_if_exists')
-    @mock.patch('fuel_upgrade.engines.bootstrap.utils.copy')
-    def test_rollback(self, utils_copy, utils_remove):
+    def test_rollback(self):
+        self.upgrader._action_manager.undo = mock.Mock()
         self.upgrader.rollback()
 
-        self.called_times(utils_remove, len(self.upgrader._bootstraps))
-        self.called_times(utils_copy, len(self.upgrader._bootstraps))
+        self.called_once(self.upgrader._action_manager.undo)
 
-        for key in self.upgrader._bootstraps:
-            utils_remove.assert_any_call(
-                self.upgrader._bootstraps[key]['dst'])
-
-            utils_copy.assert_any_call(
-                self.upgrader._bootstraps[key]['backup'],
-                self.upgrader._bootstraps[key]['dst'])
-
-    @mock.patch('fuel_upgrade.engines.bootstrap.utils.rename')
-    def test_backup(self, utils_rename):
-        self.upgrader.backup()
-
-        self.called_times(utils_rename, len(self.upgrader._bootstraps))
+    @mock.patch('fuel_upgrade.utils.files_size', return_value=42)
+    def test_required_free_space(self, _):
+        result = self.upgrader.required_free_space
+        self.assertEqual(result, {
+            '/var/www/nailgun/bootstrap': 84,
+        })

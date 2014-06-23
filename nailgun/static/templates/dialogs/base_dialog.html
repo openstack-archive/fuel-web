@@ -1,0 +1,17 @@
+<div class="modal-header">
+  <button type="button" class="close" data-dismiss="modal">&times;</button>
+  <h3><%- title %></h3>
+</div>
+<div class="modal-body">
+  <div class="<%= error ? 'text-error' : 'text-info' %>">
+    <%- message %>
+    <% if (logsLink) { %>
+      <div>
+        <a class="no-leave-check" href="<%- logsLink %>" target="_blank" data-i18n="common.see_logs"></a>
+      </div>
+    <% }%>
+  </div>
+</div>
+<div class="modal-footer">
+  <button class="btn node-modal-close" data-dismiss="modal" data-i18n="common.close_button"></button>
+</div>

@@ -271,7 +271,7 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                                 this.$el.modal('hide');
                             }, this))
                             .fail(_.bind(function() {
-                                this.displayErrorMessage({message: $.t('dialog.create_cluster_wizard.configuration_failed_warning')});
+                                this.displayError({message: $.t('dialog.create_cluster_wizard.configuration_failed_warning')});
                             }, this));
                     }, this))
                     .fail(_.bind(function(response) {
@@ -279,10 +279,12 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                             this.$('.wizard-footer button').prop('disabled', false);
                             this.panesModel.set('activePaneIndex', 0);
                             cluster.trigger('invalid', cluster, {name: response.responseText});
-                        } else if (response.status == 400) {
-                            this.displayErrorMessage({message: response.responseText});
                         } else {
-                            this.displayError();
+                            var options = {
+                                title: $.t('dialog.create_cluster_wizard.create_cluster_error.title'),
+                                message: response.status == 400 ? response.responseText : undefined
+                            };
+                            this.displayError(options);
                         }
                     }, this));
             }

@@ -13,6 +13,7 @@
                 "stop_button": "Stop",
                 "reset_button": "Reset",
                 "save_settings_button": "Save Settings",
+                "close_button": "Close",
                 "cancel_button": "Cancel",
                 "update_button": "Update",
                 "rollback_button": "Rollback",
@@ -31,7 +32,7 @@
                 "important": "Important",
                 "success": "Success",
                 "error": "Error",
-                "see_logs": "see the logs",
+                "see_logs": "See the logs",
                 "copyright": "Copyright © 2013-2014 Mirantis. All rights reserved."
             },
             "node_details": {
@@ -167,6 +168,11 @@
                             "lacp-balance-tcp": "LACP Balance TCP"
                         },
                         "drag_and_drop_description": "You can drag and drop logical networks between interfaces",
+                        "configuration_error": {
+                            "title": "Interfaces Configuration Error",
+                            "saving_warning": "Unable to apply changes",
+                            "load_defaults_warning": "Unable to load default configuration"
+                        },
                         "validation": {
                             "too_many_untagged_networks": "Untagged networks can not be assigned to the same interface"
                         }
@@ -178,7 +184,12 @@
                         "volume_groups": "Volume Groups",
                         "total_space": "Total Space",
                         "unallocated": "Unallocated",
-                        "use_all_allowed_space": "Use All Allowed Space"
+                        "use_all_allowed_space": "Use All Allowed Space",
+                        "configuration_error": {
+                            "title": "Disks Configuration Error",
+                            "saving_warning": "Unable to apply changes",
+                            "load_defaults_warning": "Unable to load default configuration"
+                        }
                     },
                     "node_management_panel": {
                         "group_by": "Group By",
@@ -186,10 +197,12 @@
                         "filter_placeholder": "Node name/mac",
                         "edit_roles_button": "Edit Roles",
                         "add_nodes_button": "Add Nodes",
-                        "cant_configure_disks": "Unable to configure disks",
-                        "cant_configure_interfaces": "Unable to configure interfaces",
-                        "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
-                        "interfaces_configuration_warning": "Only undeployed nodes with an identical number of network interfaces can be configured together in the same action."
+                        "node_management_error": {
+                            "title": "Node Management Error",
+                            "saving_warning": "Unable to apply changes",
+                            "disks_configuration_warning": "Only nodes with identical disk capacities can be configured together in the same action.",
+                            "interfaces_configuration_warning": "Only undeployed nodes with an identical number of network interfaces can be configured together in the same action."
+                        }
                     },
                     "node": {
                         "status": {
@@ -220,11 +233,20 @@
                     "mongo_restriction": "The environment already has deployed MongoDB nodes.",
                     "incompatible_roles_warning" : "This role cannot be combined with the other roles already selected.",
                     "new_controllers_in_ha_mode_restriction": "New controllers cannot be added to an operational environment.",
+                    "node_deletion_error": {
+                        "title": "Node Deletion Error",
+                        "node_deletion_warning": "Unable to delete nodes"
+                    },
                     "no_filtered_nodes_warning": "There are no nodes found matching the filter value.",
                     "filtered_nodes_count":"__filteredNodesCount__ of __count__ node",
                     "filtered_nodes_count_plural": "__filteredNodesCount__ of __count__ nodes"
                 },
                 "settings_tab": {
+                    "settings_error": {
+                        "title": "OpenStack Settings Configuration Error",
+                        "load_defaults_warning": "Unable to load default configuration",
+                        "saving_warning": "Unable to apply changes"
+                    },
                     "title": "OpenStack Settings"
                 },
                 "actions_tab": {
@@ -245,7 +267,10 @@
                     "repeated_update_disabled": "The current environment is already being updated.",
                     "rollback_environment": "Rollback Environment",
                     "no_releases_to_update_message": "You already have the latest release installed.",
-                    "rollback_message": "Update Environment failed. You can only rollback your environment."
+                    "rollback_message": "Update Environment failed. You can only rollback your environment.",
+                    "rename_error": {
+                        "title": "Unable to Rename the Environment"
+                    }
                 },
                 "network_tab": {
                     "title": "Network Settings",
@@ -264,6 +289,10 @@
                         "step_3": "3. Nodes listeners register test frames from other nodes",
                         "step_4": "4. Send DHCP discover messages on all available ports.",
                         "success_alert": "Verification succeeded. Your network is configured correctly.",
+                        "verification_error": {
+                            "title": "Network Verification Error",
+                            "start_verification_warning": "Unable to start network verification"
+                        },
                         "fail_alert": "Verification failed.",
                         "node_name": "Node Name",
                         "node_mac_address": "Node MAC address",
@@ -442,6 +471,9 @@
                         "console": "console.",
                         "deploy": "Deploy Changes",
                         "env": "Environments"
+                    },
+                    "create_cluster_error": {
+                        "title" : "OpenStack Environment Creation Error"
                     }
                 },
                 "dismiss_settings": {
@@ -513,7 +545,11 @@
                 "stop_deployment": {
                     "title": "Stop Deployment",
                     "text": "Are you sure you want to stop this deployment? Any progress will be lost and nodes will be reset to their pre-deployment state.",
-                    "provisioning_warning": "Are you sure you want to stop this deployment? Any progress on nodes not yet provisioned will be lost and those nodes will be reset to their pre-deployment state."
+                    "provisioning_warning": "Are you sure you want to stop this deployment? Any progress on nodes not yet provisioned will be lost and those nodes will be reset to their pre-deployment state.",
+                    "stop_deployment_error": {
+                        "title": "Stop Deployment Error",
+                        "stop_deployment_warning": "Unable to stop deployment"
+                    }
                 },
                 "reset_environment": {
                     "title": "Reset Environment",
@@ -527,8 +563,9 @@
                     "title": "Rollback Environment",
                     "text": "Are you sure you want to rollback the environment?"
                 },
-                "error_occured": {
-                    "alert_text": "A server error has occured. Please contact the administrators."
+                "error_dialog": {
+                    "title": "Error",
+                    "warning": "A server error has occured. Please contact the administrators."
                 }
             }
         }

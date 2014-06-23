@@ -171,13 +171,57 @@ class TestUtils(BaseTestCase):
             lambda: False,
             timeout=0)
 
+    @mock.patch('fuel_upgrade.utils.os.path.isfile', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=False)
     @mock.patch('fuel_upgrade.utils.shutil.copy')
-    def test_copy(self, copy_mock):
+    def test_copy_file(self, copy_mock, _, __):
+        from_path = '/from_path.txt'
+        to_path = '/to_path.txt'
+
+        utils.copy(from_path, to_path)
+        copy_mock.assert_called_once_with(from_path, to_path)
+
+    @mock.patch('fuel_upgrade.utils.os.path.isfile', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=True)
+    @mock.patch('fuel_upgrade.utils.shutil.copy')
+    def test_copy_file_to_dir(self, copy_mock, _, __):
+        from_path = '/from_path.txt'
+        to_path = '/to_path'
+
+        utils.copy(from_path, to_path)
+        copy_mock.assert_called_once_with(from_path, '/to_path/from_path.txt')
+
+    @mock.patch('fuel_upgrade.utils.os.path.isfile', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=False)
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.shutil.copy')
+    def test_copy_file_do_not_overwrite(self, copy_mock, _, __, ___):
+        from_path = '/from_path.txt'
+        to_path = '/to_path.txt'
+
+        utils.copy(from_path, to_path, overwrite=False)
+        self.method_was_not_called(copy_mock)
+
+    @mock.patch('fuel_upgrade.utils.os.path.isfile', return_value=False)
+    @mock.patch('fuel_upgrade.utils.shutil.copytree')
+    def test_copy_dir(self, copy_mock, _):
         from_path = '/from_path'
         to_path = '/to_path'
 
         utils.copy(from_path, to_path)
-        copy_mock.assert_called_once_with(from_path, to_path)
+        copy_mock.assert_called_once_with(from_path, to_path, symlinks=True)
+
+    @mock.patch('fuel_upgrade.utils.os.path.isfile', return_value=False)
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.shutil.copytree')
+    @mock.patch('fuel_upgrade.utils.shutil.rmtree')
+    def test_copy_dir_overwrite(self, rm_mock, copy_mock, _, __):
+        from_path = '/from_path'
+        to_path = '/to_path'
+
+        utils.copy(from_path, to_path)
+        rm_mock.assert_called_once_with(to_path, ignore_errors=True)
+        copy_mock.assert_called_once_with(from_path, to_path, symlinks=True)
 
     def test_file_contains_lines_returns_true(self):
         with mock.patch(
@@ -341,3 +385,29 @@ class TestUtils(BaseTestCase):
         utils.copy_if_does_not_exist('from', 'to')
         exists_mock.assert_called_once_with('to')
         copy_mock.assert_called_once_with('from', 'to')
+
+    @mock.patch('fuel_upgrade.utils.os.rename')
+    def test_rename(self, rename_mock):
+        utils.rename('source', 'destination')
+        rename_mock.assert_called_once_with('source', 'destination')
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=False)
+    @mock.patch('fuel_upgrade.utils.os.remove')
+    def test_remove_file(self, remove_mock, _, __):
+        utils.remove('path')
+        remove_mock.assert_called_once_with('path')
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
+    @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=False)
+    @mock.patch('fuel_upgrade.utils.os.remove')
+    def test_remove_file_does_not_exist(self, remove_mock, _, __):
+        utils.remove('path')
+        self.method_was_not_called(remove_mock)
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=True)
+    @mock.patch('fuel_upgrade.utils.shutil.rmtree')
+    def test_remove_dir(self, remove_mock, _, __):
+        utils.remove('path')
+        remove_mock.assert_called_once_with('path', ignore_errors=True)

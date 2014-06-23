@@ -71,3 +71,7 @@ class NotEnoughFreeSpaceOnDeviceError(FuelUpgradeException):
 
 class WrongVersionError(FuelUpgradeException):
     pass
+
+
+class UnsupportedActionTypeError(FuelUpgradeException):
+    pass

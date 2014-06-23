@@ -397,22 +397,23 @@ containers:
 openstack:
   releases: config/openstack.yaml
 
-  puppets:
-    manifests:
-      src: puppet/manifests
-      dst: /etc/puppet/{version}/manifests
+  actions:
+    - name: copy_from_update
+      from: puppet/manifests
+      to:   /etc/puppet/{version}/manifests
 
-    modules:
-      src: puppet/modules
-      dst: /etc/puppet/{version}/modules
+    - name: copy_from_update
+      from: puppet/modules
+      to:   /etc/puppet/{version}/modules
 
-  repos:
-    centos:
-      src: repos/centos
-      dst: /var/www/nailgun/{version}/centos
-    ubuntu:
-      src: repos/ubuntu
-      dst: /var/www/nailgun/{version}/ubuntu
+    - name: copy_from_update
+      from: repos/centos
+      to:   /var/www/nailgun/{version}/centos
+
+    - name: copy_from_update
+      from: repos/ubuntu
+      to:   /var/www/nailgun/{version}/ubuntu
+
 
 
 host_system:
@@ -422,6 +423,23 @@ host_system:
   repo_path: '{update_path}/repos/centos/x86_64'
 
 
+
 bootstrap:
-  src: 'bootstrap/'
-  dst: '/var/www/nailgun/bootstrap/'
+  actions:
+    - name: move
+      from: /var/www/nailgun/bootstrap/initramfs.img
+      to:   /var/www/nailgun/bootstrap/5.1_initramfs.img
+      overwrite: false
+
+    - name: move
+      from: /var/www/nailgun/bootstrap/linux
+      to:   /var/www/nailgun/bootstrap/5.1_linux
+      overwrite: false
+
+    - name: copy_from_update
+      from: bootstrap/initramfs.img
+      to:   /var/www/nailgun/bootstrap/
+
+    - name: copy_from_update
+      from: bootstrap/linux
+      to:   /var/www/nailgun/bootstrap/

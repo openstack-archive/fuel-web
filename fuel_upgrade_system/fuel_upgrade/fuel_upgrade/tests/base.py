@@ -76,17 +76,37 @@ class BaseTestCase(TestCase):
         conf.new_version = '9999'
         conf.current_version = '0'
 
-        conf.openstack['releases'] = 'releases.json'
-
         conf.astute = {
             'ADMIN_NETWORK': {
                 'ipaddress': '0.0.0.0'
             }
         }
 
+        conf.openstack = {
+            'releases': 'releases.json',
+
+            'actions': [
+                {
+                    'name': 'copy_from_update',
+                    'from': 'puppet/manifests',
+                    'to': '/etc/puppet/{version}/manifests',
+                },
+                {
+                    'name': 'copy_from_update',
+                    'from': 'repos/centos',
+                    'to': '/var/www/nailgun/{version}/centos',
+                }
+            ]
+        }
+
         conf.bootstrap = {
-            'src': 'bootstrap/',
-            'dst': '/var/www/nailgun/bootstrap',
+            'actions': [
+                {
+                    'name': 'copy_from_update',
+                    'from': 'bootstrap/initramfs.img',
+                    'to': '/var/www/nailgun/bootstrap/initramfs.img',
+                }
+            ],
         }
 
         return conf

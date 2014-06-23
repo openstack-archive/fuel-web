@@ -214,7 +214,7 @@ class TestCheckers(BaseTestCase):
 
     @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
     def test_ostf_checker_returns_true(self, get_mock):
-        get_mock.return_value = [None, 404]
+        get_mock.return_value = [None, 200]
         self.assert_checker_true(checker.OSTFChecker)
 
     @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')

@@ -124,10 +124,10 @@ class OSTFChecker(BaseChecker):
         return 'ostf'
 
     def check(self):
-        _, code = self.safe_get('http://{host}:{port}/ostf/not_found'.format(
+        _, code = self.safe_get('http://{host}:{port}/'.format(
             **self.endpoints['ostf']))
 
-        return code == 404
+        return code == 200
 
 
 class RabbitChecker(BaseChecker):

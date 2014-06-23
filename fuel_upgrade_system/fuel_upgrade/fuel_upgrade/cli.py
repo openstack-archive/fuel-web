@@ -97,11 +97,11 @@ def run_upgrade(args):
 
     upgrade_manager = UpgradeManager(
         args.src,
-        build_config(),
+        build_config(args.src),
         upgraders_to_use,
         args.no_rollback,
-        args.no_checker,
-    )
+        args.no_checker)
+
     upgrade_manager.run()
 
 

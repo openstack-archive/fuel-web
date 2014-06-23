@@ -67,7 +67,6 @@ class DockerUpgrader(UpgradeEngine):
         self.stop_fuel_containers()
         self.create_containers()
         self.stop_fuel_containers()
-        self.clean_iptables_rules()
         self.generate_configs()
         self.switch_to_new_configs()
 
@@ -78,13 +77,22 @@ class DockerUpgrader(UpgradeEngine):
     def rollback(self):
         """Method which contains rollback logic
         """
+        self.switch_version_file_to_previous_version()
         self.supervisor.switch_to_previous_configs()
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
         self.supervisor.restart_and_wait()
 
-    def clean_iptables_rules(self):
-        pass
+    def switch_version_file_to_previous_version(self):
+        """Switch version.yaml symlink to previous version
+        """
+        logger.info(u'Switch current version file to previous version')
+        previous_version_path = self.config.fuel_version_path_template.format(
+            version=self.config.current_version['VERSION']['release'])
+
+        utils.symlink(
+            previous_version_path,
+            self.config.current_fuel_version_path)
 
     def before_upgrade_actions(self):
         """Run before upgrade actions
@@ -156,15 +164,13 @@ class DockerUpgrader(UpgradeEngine):
         * and creates symlink to /etc/fuel/version.yaml
         """
         logger.info(u'Run post upgrade actions')
-        version_yaml_from_upgrade = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '../version.yaml'))
-        base_config_dir = os.path.join(
-            self.config.fuel_config_path,
-            self.config.new_version['VERSION']['release'])
-        new_version_path = '{0}/version.yaml'.format(
-            base_config_dir)
+        version_yaml_from_upgrade = \
+            self.config.new_version_yaml_path_template.format(
+                update_path=os.path.abspath(self.update_path))
+        new_version_path = self.config.fuel_version_path_template.format(
+            version=self.config.new_version['VERSION']['release'])
 
-        utils.create_dir_if_not_exists(base_config_dir)
+        utils.create_dir_if_not_exists(os.path.dirname(new_version_path))
         utils.copy(version_yaml_from_upgrade, new_version_path)
         utils.symlink(new_version_path, self.config.current_fuel_version_path)
 

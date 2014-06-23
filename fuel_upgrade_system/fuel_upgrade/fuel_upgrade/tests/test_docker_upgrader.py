@@ -105,12 +105,22 @@ class TestDockerUpgrader(BaseTestCase):
 
     def test_rollback(self, _):
         self.upgrader.stop_fuel_containers = mock.MagicMock()
+        self.upgrader.switch_version_file_to_previous_version = \
+            mock.MagicMock()
         self.upgrader.rollback()
 
         self.called_times(self.upgrader.stop_fuel_containers, 1)
         self.called_once(self.supervisor_mock.switch_to_previous_configs)
         self.called_once(self.supervisor_mock.stop_all_services)
         self.called_once(self.supervisor_mock.restart_and_wait)
+        self.called_once(self.upgrader.switch_version_file_to_previous_version)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.symlink')
+    def test_switch_version_file_to_previous_version(self, symlink_mock, _):
+        self.upgrader.switch_version_file_to_previous_version()
+        symlink_mock.assert_called_once_with(
+            '/etc/fuel/0/version.yaml',
+            '/etc/fuel/version.yaml')
 
     def test_stop_fuel_containers(self, _):
         non_fuel_images = [

@@ -82,6 +82,25 @@ define(['require', 'expression_parser'], function(require, ExpressionParser) {
                 modelPaths: ExpressionParser.yy.modelPaths
             };
         },
+        expandRestriction: function(restriction) {
+            var result = {
+                action: 'disable',
+                message: null
+            };
+            if (_.isString(restriction)) {
+                result.condition = restriction;
+            } else if (_.isPlainObject(restriction)) {
+                if (_.has(restriction, 'condition')) {
+                    _.extend(result, restriction);
+                } else {
+                    result.condition = _.keys(restriction)[0];
+                    result.message = _.values(restriction)[0];
+                }
+            } else {
+                throw new Error('Invalid restriction format');
+            }
+            return result;
+        },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;
             var dialogViews = require('views/dialogs'); // avoid circular dependencies

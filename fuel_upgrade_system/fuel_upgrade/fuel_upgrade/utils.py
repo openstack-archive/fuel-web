@@ -254,14 +254,88 @@ def copy_if_does_not_exist(from_path, to_path):
     copy(from_path, to_path)
 
 
-def copy(from_path, to_path):
-    """Copy file, override if exists
+def copy(source, destination, overwrite=True, symlinks=True):
+    """Copy a given file or directory from one place to another.
 
-    :param from_path: src path
-    :param to_path: dst path
+    Both `source` and `destination` should be a path to either file or
+    directory. In case `source` is a path to file, the `destination` could
+    be a path to directory.
+
+    :param source: copy from
+    :param destination: copy to
+    :param overwrite: overwrite destination if True
+    :param symlinks: resolve symlinks if True
     """
-    logger.debug(u'Copy file from {0} to {1}'.format(from_path, to_path))
-    shutil.copy(from_path, to_path)
+    logger.debug(
+        u'Copying "%s" -> "%s" [overwrite=%d symlinks=%d]',
+        source, destination, overwrite, symlinks)
+
+    if os.path.isdir(source):
+        copy_dir(source, destination, overwrite, symlinks)
+    else:
+        copy_file(source, destination, overwrite)
+
+
+def copy_file(source, destination, overwrite=True):
+    """Copy a given source file to a given destination.
+
+    :param source: copy from
+    :param destination: copy to
+    :param overwrite: overwrite destination if True
+    """
+    logger.debug(
+        u'Copying "%s" -> "%s" [overwrite=%d]',
+        source, destination, overwrite)
+
+    # tranform destinatio to path/to/file, not path/to/dir
+    if os.path.isdir(destination):
+        basename = os.path.basename(source)
+        destination = os.path.join(destination, basename)
+
+    # copy only if overwrite is true or destination doesn't exist
+    if overwrite or not os.path.exists(destination):
+        shutil.copy(source, destination)
+    else:
+        logger.debug('Skip copying process')
+
+
+def copy_dir(source, destination, overwrite=True, symlinks=True):
+    """Copy a given directory to a given destination.
+
+    :param source: copy from
+    :param destination: copy to
+    :param overwrite: overwrite destination if True
+    :param symlinks: resolve symlinks if True
+    """
+    logger.debug(
+        u'Copying "%s" -> "%s" [overwrite=%d symlinks=%d]',
+        source, destination, overwrite, symlinks)
+
+    if overwrite or not os.path.exists(destination):
+        if os.path.exists(destination):
+            # we need remove destination folder for prevent
+            # copytree conflicts
+            remove(destination, ignore_errors=True)
+        shutil.copytree(source, destination, symlinks=True)
+    else:
+        logger.debug('Skip copying process')
+
+
+def remove(path, ignore_errors=True):
+    """Remove a given path, no matter what it is: file or directory.
+
+    :param path: a file or directory to remove
+    :param ignore_errors: ignore some errors and non existense if True
+    """
+    logger.debug(u'Removing "%s"', path)
+
+    if ignore_errors and not os.path.exists(path):
+        return
+
+    if os.path.isdir(path):
+        shutil.rmtree(path, ignore_errors=ignore_errors)
+    else:
+        os.remove(path)
 
 
 def copytree(source, destination, overwrite=True):
@@ -289,7 +363,7 @@ def rmtree(source, ignore_errors=True):
         shutil.rmtree(source, ignore_errors=ignore_errors)
 
 
-def rename(source, destination):
+def rename(source, destination, overwrite=True):
     """Rename some source into a given destination.
 
     In Unix terms, it's a move operation.
@@ -297,15 +371,21 @@ def rename(source, destination):
     :param str source: a source to be renamed
     :param str destination: rename to
     """
-    logger.debug(u'Renaming %s to %s', source, destination)
-    os.rename(source, destination)
+    logger.debug(
+        u'Renaming "%s" -> "%s" [overwrite=%d]',
+        source, destination, overwrite)
+
+    if overwrite or not os.path.exists(destination):
+        os.rename(source, destination)
 
 
 def dict_merge(a, b):
-    '''recursively merges dict's. not just simple a['key'] = b['key'], if
-    both a and bhave a key who's value is a dict then dict_merge is called
-    on both values and the result stored in the returned dictionary.
-    '''
+    """Recursively merges two given dictionaries.
+
+    :param a: a first dict
+    :param b: a second dict
+    :returns: a result dict (merge result of a and b)
+    """
     if not isinstance(b, dict):
         return deepcopy(b)
     result = deepcopy(a)
@@ -318,6 +398,12 @@ def dict_merge(a, b):
 
 
 def load_fixture(fileobj, loader=None):
+    """Loads a fixture from a given `fileobj` and process it with
+    our extended markup that provides an inherit feature.
+
+    :param fileobj: a file-like object with fixture
+    :para, loader: a fixture loader; use default one if None
+    """
     # a key that's used to mark some item as abstract
     pk_key = 'pk'
 
@@ -447,3 +533,34 @@ def compare_version(v1, v2):
         return -1
     else:
         return 1
+
+
+def get_required_size_for_actions(actions, update_path):
+    """Returns a size on disk that will be required for completing
+    a given actions list.
+
+    :param actions: a list of actions
+    :returns: a size
+    """
+    rv = {}
+
+    for action in actions:
+        # copy / copy_from_update case
+        if action['name'] in ('copy', 'copy_from_update'):
+            src = action['from']
+            if action['name'] == 'copy_from_update':
+                src = os.path.join(update_path, src)
+
+            dst = action['to']
+            if not os.path.isdir(dst):
+                dst = os.path.dirname(dst)
+
+            if dst not in rv:
+                rv[dst] = 0
+
+            if os.path.isdir(src):
+                rv[dst] += dir_size(src)
+            else:
+                rv[dst] += files_size(src)
+
+    return rv

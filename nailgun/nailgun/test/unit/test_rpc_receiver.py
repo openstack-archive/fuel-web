@@ -27,7 +27,7 @@ class TestUtils(BaseTestCase):
         self.db.add(task)
         self.db.commit()
         task_by_uuid = TaskHelper.get_task_by_uuid(task.uuid)
-        self.assertEquals(task.uuid, task_by_uuid.uuid)
+        self.assertEqual(task.uuid, task_by_uuid.uuid)
 
     def test_get_task_by_uuid_raises_error(self):
         self.assertRaises(errors.CannotFindTask,

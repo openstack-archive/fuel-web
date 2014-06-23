@@ -254,7 +254,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         self.assertRaises(
             errors.NetworkCheckError,
             checker.neutron_check_l3_addresses_not_match_subnet_and_broadcast)
-        self.assertEquals(len(checker.err_msgs), 2)
+        self.assertEqual(len(checker.err_msgs), 2)
 
     def test_check_network_classes_exclude_loopback(self):
         checker = NetworkCheck(self.task, {})
@@ -270,7 +270,7 @@ class TestNetworkCheck(BaseIntegrationTest):
             checker.networks = [{'id': 1, 'cidr': network, 'name': 'fake'}]
             self.assertRaises(errors.NetworkCheckError,
                               checker.check_network_classes_exclude_loopback)
-        self.assertEquals(mocked_db.call_count, 4)
+        self.assertEqual(mocked_db.call_count, 4)
 
     @patch.object(helpers, 'db')
     def test_check_network_addresses_not_match_subnet_and_broadcast(self,
@@ -328,7 +328,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker = NetworkCheck(FakeTask(cluster_db), {})
         checker.check_bond_slaves_speeds()
 
-        self.assertEquals(checker.err_msgs, [])
+        self.assertEqual(checker.err_msgs, [])
         bond_if1 = node.NodeBondInterface()
         bond_if2 = node.NodeBondInterface()
 
@@ -343,7 +343,7 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker.cluster.nodes[0].bond_interfaces = [bond_if1, bond_if2]
 
         checker.check_bond_slaves_speeds()
-        self.assertEquals(len(checker.err_msgs), 2)
+        self.assertEqual(len(checker.err_msgs), 2)
 
     def test_check_configuration_neutron(self):
         checker = NetworkCheck(self.task, {})

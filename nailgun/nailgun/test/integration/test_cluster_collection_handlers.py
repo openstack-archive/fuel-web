@@ -41,9 +41,9 @@ class TestHandlers(BaseIntegrationTest):
             reverse('ClusterCollectionHandler'),
             headers=self.default_headers
         )
-        self.assertEquals(200, resp.status_code)
+        self.assertEqual(200, resp.status_code)
         response = jsonutils.loads(resp.body)
-        self.assertEquals([], response)
+        self.assertEqual([], response)
 
     def test_cluster_create(self):
         release_id = self.env.create_release(api=False).id
@@ -55,7 +55,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(201, resp.status_code)
+        self.assertEqual(201, resp.status_code)
 
     def test_cluster_create_no_ip_addresses(self):
         """In this test we check that no error is occured
@@ -100,7 +100,7 @@ class TestHandlers(BaseIntegrationTest):
                 del net1[f]
                 del net2[f]
 
-        self.assertEquals(cluster1_nets, cluster2_nets)
+        self.assertEqual(cluster1_nets, cluster2_nets)
 
     def test_cluster_creation_same_networks(self):
         cluster1_id = self.env.create_cluster(api=True)["id"]
@@ -116,7 +116,7 @@ class TestHandlers(BaseIntegrationTest):
         cluster1_nets = sorted(cluster1_nets, key=lambda n: n['vlan_start'])
         cluster2_nets = sorted(cluster2_nets, key=lambda n: n['vlan_start'])
 
-        self.assertEquals(cluster1_nets, cluster2_nets)
+        self.assertEqual(cluster1_nets, cluster2_nets)
 
     def test_if_cluster_creates_correct_networks(self):
         release = Release()
@@ -147,7 +147,7 @@ class TestHandlers(BaseIntegrationTest):
             }),
             headers=self.default_headers
         )
-        self.assertEquals(201, resp.status_code)
+        self.assertEqual(201, resp.status_code)
         nets = self.db.query(NetworkGroup).filter(
             not_(NetworkGroup.name == "fuelweb_admin")
         ).all()
@@ -198,6 +198,6 @@ class TestHandlers(BaseIntegrationTest):
         nets = jsonutils.loads(self.env.nova_networks_get(cluster['id']).body)
 
         resp = self.env.nova_networks_put(cluster['id'], nets)
-        self.assertEquals(202, resp.status_code)
+        self.assertEqual(202, resp.status_code)
         task = jsonutils.loads(resp.body)
-        self.assertEquals(task['status'], 'ready')
+        self.assertEqual(task['status'], 'ready')

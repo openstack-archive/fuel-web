@@ -59,13 +59,13 @@ class TestStopDeployment(BaseIntegrationTest):
                 uuid=deploy_task_uuid
             ).first()
         )
-        self.assertEquals(self.cluster.status, "stopped")
-        self.assertEquals(stop_task.progress, 100)
+        self.assertEqual(self.cluster.status, "stopped")
+        self.assertEqual(stop_task.progress, 100)
 
         for n in self.cluster.nodes:
-            self.assertEquals(n.online, False)
-            self.assertEquals(n.roles, [])
-            self.assertNotEquals(n.pending_roles, [])
+            self.assertEqual(n.online, False)
+            self.assertEqual(n.roles, [])
+            self.assertNotEqual(n.pending_roles, [])
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
@@ -76,7 +76,7 @@ class TestStopDeployment(BaseIntegrationTest):
         for n in args[1]["args"]["nodes"]:
             self.assertIn("admin_ip", n)
             n_db = objects.Node.get_by_uid(n["uid"])
-            self.assertEquals(
+            self.assertEqual(
                 n["admin_ip"],
                 objects.Node.get_network_manager(
                     n_db
@@ -96,5 +96,5 @@ class TestStopDeployment(BaseIntegrationTest):
                 uuid=provision_task_uuid
             ).first()
         )
-        self.assertEquals(self.cluster.status, "stopped")
-        self.assertEquals(stop_task.progress, 100)
+        self.assertEqual(self.cluster.status, "stopped")
+        self.assertEqual(stop_task.progress, 100)

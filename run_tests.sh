@@ -86,6 +86,8 @@ FUELCLIENT_XUNIT=${FUELCLIENT_XUNIT:-"$ROOT/fuelclient.xml"}
 FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-"$ROOT/fuelupgrade.xml"}
 FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-"$ROOT/fuelupgradedownloader.xml"}
 SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
+UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
+FUELCLIENT_SERVER_PORT=${FUELCLIENT_SERVER_PORT:-8003}
 
 # disabled/enabled flags that are setted from the cli.
 # used for manipulating run logic.
@@ -219,7 +221,7 @@ function run_nailgun_tests {
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_webui_tests {
   local COMPRESSED_STATIC_DIR=/tmp/static_compressed
-  local SERVER_PORT=5544
+  local SERVER_PORT=$UI_SERVER_PORT
   local TESTS_DIR=$ROOT/nailgun/ui_tests
   local TESTS=$TESTS_DIR/test_*.js
 
@@ -286,7 +288,7 @@ function run_webui_tests {
 # It is supposed that nailgun server is up and working.
 # We are going to pass nailgun url to test runner.
 function run_cli_tests {
-  local SERVER_PORT=8003
+  local SERVER_PORT=$FUELCLIENT_SERVER_PORT
   local TESTS=$ROOT/fuelclient/tests
 
   if [ $# -ne 0 ]; then
@@ -306,7 +308,7 @@ function run_cli_tests {
 
     pushd $ROOT/fuelclient >> /dev/null
     # run tests
-    tox -epy26 -- -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT || result=1
+    LISTEN_PORT=$SERVER_PORT tox -epy26 -- -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT || result=1
     popd >> /dev/null
 
     kill $pid

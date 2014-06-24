@@ -1,0 +1,12 @@
+{%- if pagename != "search" %}
+<h3>Quick search</h3>
+<form class="navbar-search pull-right" style="margin-bottom:-3px;" action="{{ pathto('search') }}" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <input type="submit" value="Go" />
+  <input type="hidden" name="check_keywords" value="yes" />
+  <input type="hidden" name="area" value="default" />
+  <p class="searchtip" style="font-size: 90%">
+  Enter search terms or a module, class or function name.
+  </p>
+</form>
+{%- endif %}

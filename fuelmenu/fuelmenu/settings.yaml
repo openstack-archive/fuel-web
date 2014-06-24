@@ -15,4 +15,3 @@ ADMIN_NETWORK:
   static_pool_end: "10.20.0.120"
   dhcp_pool_start: "10.20.0.130"
   dhcp_pool_end: "10.20.0.254"
-

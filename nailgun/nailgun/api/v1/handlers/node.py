@@ -59,16 +59,6 @@ class NodeCollectionHandler(CollectionHandler):
 
     validator = NodeValidator
     collection = objects.NodeCollection
-    eager = (
-        'cluster',
-        'nic_interfaces',
-        'nic_interfaces.assigned_networks_list',
-        'bond_interfaces',
-        'bond_interfaces.assigned_networks_list',
-        'role_list',
-        'pending_role_list',
-        'ip_addrs'
-    )
 
     @content_json
     def GET(self):
@@ -79,7 +69,7 @@ class NodeCollectionHandler(CollectionHandler):
         :http: * 200 (OK)
         """
         cluster_id = web.input(cluster_id=None).cluster_id
-        nodes = self.collection.eager(None, self.eager)
+        nodes = self.collection.eager_nodes_handlers(None)
 
         if cluster_id == '':
             nodes = nodes.filter_by(cluster_id=None)
@@ -110,7 +100,7 @@ class NodeCollectionHandler(CollectionHandler):
 
         # we need eagerload everything that is used in render
         nodes = self.collection.filter_by_id_list(
-            self.collection.eager(None, self.eager),
+            self.collection.eager_nodes_handlers(None),
             nodes_updated
         )
         return self.collection.to_json(nodes)

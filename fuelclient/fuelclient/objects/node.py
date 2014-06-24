@@ -77,11 +77,6 @@ class Node(BaseObject):
 
     def upload_node_attribute(self, attributes_type, attributes):
         url = self.get_attribute_url(attributes_type)
-        if attributes_type == "interfaces":
-            attributes = [{
-                "interfaces": attributes,
-                "id": self.id
-            }]
         return self.connection.put_request(
             url,
             attributes

@@ -27,6 +27,11 @@ import fabric.api
 from shotgun.utils import execute
 from shotgun.utils import is_local
 
+# please look at utils.fabric_monkey_patch docstring
+# for more information
+from shotgun import utils
+utils.fabric_monkey_patch()
+
 
 logger = logging.getLogger(__name__)
 

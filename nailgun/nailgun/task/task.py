@@ -704,7 +704,7 @@ class DumpTask(object):
 
         # render cobbler coonection data in dump settings
         # NOTE: we no need user/password for cobbler
-        dump_conf['dump']['local']['objects'].append({
+        dump_conf['dump']['master']['objects'].append({
             'type': 'xmlrpc',
             'server': settings.COBBLER_URL,
             'methods': [
@@ -723,7 +723,7 @@ class DumpTask(object):
 
         # here we try to filter out sensitive data from logs
         rh_accounts = db().query(RedHatAccount).all()
-        for num, obj in enumerate(dump_conf['dump']['local']['objects']):
+        for num, obj in enumerate(dump_conf['dump']['master']['objects']):
             if obj['type'] == 'subs' and obj['path'] == '/var/log/remote':
                 for fieldname in ("username", "password"):
                     for fieldvalue in [getattr(acc, fieldname)

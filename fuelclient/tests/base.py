@@ -102,7 +102,6 @@ class BaseTestCase(TestCase):
 
     def run_cli_command(self, command_line, check_errors=False):
         modified_env = os.environ.copy()
-        modified_env["LISTEN_PORT"] = "8003"
         command_args = [" ".join((self.fuel_path, command_line))]
         process_handle = subprocess.Popen(
             command_args,

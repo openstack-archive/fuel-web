@@ -50,12 +50,13 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
                     if (this.screen.keepScrollPosition && this.scrollPositions[this.screen.constructorName]) {
                         $(window).scrollTop(this.scrollPositions[this.screen.constructorName]);
                     }
+                    this.registerSubView(this.screen);
                 }, this));
             } else {
                 this.screen = new NewScreenView(options);
                 this.$el.html(this.screen.render().el);
+                this.registerSubView(this.screen);
             }
-            this.registerSubView(this.screen);
         },
         initialize: function(options) {
             _.defaults(this, options);

@@ -219,7 +219,8 @@ function run_nailgun_tests {
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_webui_tests {
   local COMPRESSED_STATIC_DIR=/tmp/static_compressed
-  local SERVER_PORT=5544
+  local BASE_SERVER_PORT=802
+  local SERVER_PORT=$BASE_SERVER_PORT${BUILD_EXECUTOR:-0}
   local TESTS_DIR=$ROOT/nailgun/ui_tests
   local TESTS=$TESTS_DIR/test_*.js
 
@@ -286,7 +287,8 @@ function run_webui_tests {
 # It is supposed that nailgun server is up and working.
 # We are going to pass nailgun url to test runner.
 function run_cli_tests {
-  local SERVER_PORT=8003
+  local BASE_SERVER_PORT=801
+  local SERVER_PORT=$BASE_SERVER_PORT${BUILD_EXECUTOR:-0}
   local TESTS=$ROOT/fuelclient/tests
 
   if [ $# -ne 0 ]; then

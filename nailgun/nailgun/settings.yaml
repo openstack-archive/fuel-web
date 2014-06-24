@@ -532,24 +532,7 @@ DUMP:
       - address: localhost
         ssh-key: /root/.ssh/id_rsa
 
-      objects:
-      - type: dir
-        path: /var/log/nailgun
-      - type: dir
-        path: /var/log/astute
-      - type: dir
-        path: /var/log/cobbler
-      - type: dir
-        path: /var/log/puppet
-      - type: subs
-        path: /var/log/remote
-        subs: {}
-      - type: file
-        path: /var/log/ostf.log
-      - type: file
-        path: /var/log/ostf-stdout.log
-      - type: file
-        path: /var/log/docker
+      objects: []
 
     master:
       hosts: []
@@ -617,14 +600,8 @@ DUMP:
         path: /root/*.log
       - type: file
         path: /etc/cobbler*
-      - type: file
-        path: /var/log/fuelmenu.log
       - type: dir
-        path: /var/log/docker-logs
-      - type: file
-        path: /var/log/docker-*.log
-      - type: file
-        path: /var/log/puppet/bootstrap_admin_node.log
+        path: /var/log
 
     slave:
       hosts: []

@@ -559,7 +559,7 @@ begin
   if [404, 400].include? put_res.status
     post_res = agent.post
     if post_res.status == 201
-      new_id = JSON.parse(post_res.body)[0]['id']
+      new_id = JSON.parse(post_res.body)['id']
     else
       logger.error post_res.body
       exit 1

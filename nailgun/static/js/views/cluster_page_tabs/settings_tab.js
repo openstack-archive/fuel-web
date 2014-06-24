@@ -46,6 +46,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             this.$('.btn, input, select').attr('disabled', true);
         },
         isLocked: function() {
+//            return false;
             return this.model.task({group: 'deployment', status: 'running'}) || !this.model.isAvailableForSettingsChanges();
         },
         applyChanges: function() {
@@ -112,9 +113,19 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                         attributes: [{
                             name: 'disabled',
                             observe: [groupName + '.metadata.enabled', settingPath + '.disabled'],
-                            onGet: _.bind(function(value) {
+                            onGet: _.bind(function(value, config) {
                                 var isSettingGroupActive = value[0];
                                 var isSettingDisabled = value[1];
+
+                                console.log(arguments);
+                                console.log(value);
+
+                                if (_.contains(config.observe, 'additional_components.ceilometer.disabled'))
+                                {
+                                    return false;
+                                }
+//                                return false;
+
                                 return this.isLocked() || isSettingGroupActive === false || isSettingDisabled;
                             }, this)
                         }]
@@ -139,6 +150,8 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
         },
         checkDependentSettings: function(settingPath, callback, composeListeners) {
             var disabled = false;
+            console.log('check depend settings');
+            console.log(this.settings);
             _.each(this.settings.attributes, function(group, groupName) {
                 if (!this.settings.get(groupName + '.metadata.visible')) { return; }
                 _.each(group, function(setting, settingName) {
@@ -228,6 +241,7 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
                     return this.settings.get(setting + '.metadata.weight');
                 }, this));
                 _.each(sortedSettings, this.renderSettingGroup, this);
+                console.log(this.settings.attributes);
                 this.composeBindings();
                 this.settings.isValid();
                 this.calculateButtonsState();
@@ -247,6 +261,8 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
             });
             this.initialSettings = new models.Settings();
             this.settings = this.model.get('settings');
+            console.log('initialize');
+            console.log(this.settings);
             this.settings.on('invalid', function(model, errors) {
                 _.each(errors, function(error) {
                     var input = this.$('input[name="' + error.field + '"]');

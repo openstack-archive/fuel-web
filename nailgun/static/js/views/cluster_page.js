@@ -145,7 +145,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             }
         },
         deploymentTaskStarted: function() {
-            $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).done(_.bind(function() {
+            $.when(this.model.fetchRelated('tasks')).done(_.bind(function() {
                 // FIXME: hack to prevent "Deploy" button flashing after deployment is finished
                 this.model.set({changes: []}, {silent: true});
                 this.scheduleUpdate();

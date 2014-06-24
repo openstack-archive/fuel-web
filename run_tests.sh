@@ -437,6 +437,7 @@ function run_flake8 {
   run_flake8_subproject network_checker && \
   run_flake8_subproject fuel_upgrade_system/fuel_update_downloader && \
   run_flake8_subproject fuel_upgrade_system/fuel_upgrade && \
+  run_flake8_subproject fuel_development && \
   run_flake8_subproject shotgun || result=1
   return $result
 }

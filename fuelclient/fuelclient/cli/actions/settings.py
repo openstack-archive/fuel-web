@@ -43,7 +43,7 @@ class SettingsAction(Action):
 
     def upload(self, params):
         """To upload settings for some environment from some directory:
-                fuel --env 1 settings --upload --dir path/to/derectory
+                fuel --env 1 settings --upload --dir path/to/directory
         """
         env = Environment(params.env)
         settings_data = env.read_settings_data(
@@ -55,7 +55,7 @@ class SettingsAction(Action):
 
     def default(self, params):
         """To download default settings for some environment in some directory:
-                fuel --env 1 settings --default --dir path/to/derectory
+                fuel --env 1 settings --default --dir path/to/directory
         """
         env = Environment(params.env)
         default_data = env.get_default_settings_data()

@@ -47,7 +47,7 @@ class NetworkAction(Action):
     def upload(self, params):
         """To upload network configuration from some
            directory for some environment:
-                fuel --env 1 network --upload --dir path/to/derectory
+                fuel --env 1 network --upload --dir path/to/directory
         """
         env = Environment(params.env)
         network_data = env.read_network_data(
@@ -62,7 +62,7 @@ class NetworkAction(Action):
     def verify(self, params):
         """To verify network configuration from some directory
            for some environment:
-                fuel --env 1 network --verify --dir path/to/derectory
+                fuel --env 1 network --verify --dir path/to/directory
         """
         env = Environment(params.env)
         response = env.verify_network()

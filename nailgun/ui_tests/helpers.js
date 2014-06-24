@@ -13,7 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-var baseUrl = 'http://127.0.0.1:5544/';
+var system = require('system');
+var port = system.env.SERVER_PORT || 5544;
+
+var baseUrl = 'http://127.0.0.1:' + port + '/';
 
 casper.on('page.error', function(msg) {
     casper.echo(msg, 'ERROR');

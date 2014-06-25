@@ -165,7 +165,7 @@ contained class.::
 
 This example is a bit more complex. Let's see what it does.
 
-Class *example::server::service* is **parameterized** and can accept one 
+Class *example::server::service* is **parametrized** and can accept one 
 parameter - port to which server process should bind to. It also uses a popular 
 "smart defaults" hack. This class inherits the params class and uses its values 
 default only if no port parameter is provided. In this case, you can't use 

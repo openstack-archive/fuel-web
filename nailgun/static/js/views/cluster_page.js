@@ -28,11 +28,12 @@ define(
     'text!templates/cluster/page.html',
     'text!templates/cluster/customization_message.html',
     'text!templates/cluster/deployment_result.html',
-    'text!templates/cluster/deployment_control.html'
+    'text!templates/cluster/deployment_control.html',
+    'text!templates/cluster/cluster_release_info.html'
 ],
-function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
+function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate, clusterInfoTemplate) {
     'use strict';
-    var ClusterPage, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
+    var ClusterPage, ClusterInfo, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
 
     ClusterPage = commonViews.Page.extend({
         navbarActiveElement: 'clusters',
@@ -46,9 +47,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),
         events: {
-            'click .task-result .close': 'dismissTaskResult',
-            'click .rollback': 'discardChanges',
-            'click .deploy-btn:not(.disabled)': 'onDeployRequest'
+            'click .task-result .close': 'dismissTaskResult'
         },
         getReleaseSetupTask: function(status) {
             return this.tasks.findTask({group: 'release_setup', status: status || 'running', release: this.model.get('release').id});
@@ -77,9 +76,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 task.destroy();
             }
         },
-        discardChanges: function() {
-            this.registerSubView(new dialogViews.DiscardChangesDialog({model: this.model})).render();
-        },
         displayChanges: function() {
             this.registerSubView(new dialogViews.DisplayChangesDialog({model: this.model})).render();
         },
@@ -89,16 +85,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         onNameChange: function() {
             this.updateBreadcrumbs();
             this.updateTitle();
-        },
-        onDeployRequest: function() {
-            if (_.result(this.tab, 'hasChanges')) {
-                this.discardSettingsChanges({cb: _.bind(function() {
-                    this.tab.revertChanges();
-                    this.displayChanges();
-                }, this)});
-            } else {
-                this.displayChanges();
-            }
         },
         onTabLeave: function(e) {
             var href = $(e.currentTarget).attr('href');
@@ -194,6 +180,9 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 activeTab: this.activeTab
             })).i18n();
             var options = {model: this.model, page: this};
+            this.clusterInfo = new ClusterInfo(options);
+            this.registerSubView(this.clusterInfo);
+            this.$('.cluster-info').html(this.clusterInfo.render().el);
             this.clusterCustomizationMessage = new ClusterCustomizationMessage(options);
             this.registerSubView(this.clusterCustomizationMessage);
             this.$('.customization-message').html(this.clusterCustomizationMessage.render().el);
@@ -218,6 +207,40 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 this.registerSubView(this.tab);
             }
 
+            return this;
+        }
+    });
+
+    ClusterInfo = Backbone.View.extend({
+        className: 'container',
+        template: _.template(clusterInfoTemplate),
+        bindings: {
+            '.name': 'name',
+            '.status span': 'status',
+            '.status': {
+                attributes:[{
+                    observe: 'status',
+                    name: 'class',
+                    onGet: function(value) {
+                        return _.contains(['error', 'update_error'], value) ? 'status error' : 'status';
+                    }
+                }]
+            },
+            '.mode span': {
+                observe: 'mode',
+                onGet: function(value) {
+                    return $.t('cluster.mode.' + value);
+                }
+            }
+        },
+        initialize: function(options) {
+            _.defaults(this, options);
+            this.model.get('nodes').on('resize', this.render, this);
+        },
+        render: function() {
+            this.$el.html(this.template({nodesLength: this.model.get('nodes').length})).i18n();
+            this.stickit();
+            this.stickit(this.model.get('release'), {'.release span': 'name'});
             return this;
         }
     });
@@ -254,7 +277,22 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
     DeploymentControl = Backbone.View.extend({
         template: _.template(deploymentControlTemplate),
         events: {
-            'click .stop-deployment-btn': 'stopDeployment'
+            'click .stop-deployment-btn': 'stopDeployment',
+            'click .deploy-btn:not(.disabled)': 'onDeployRequest',
+            'click .rollback': 'discardChanges'
+        },
+        discardChanges: function() {
+            this.page.registerSubView(new dialogViews.DiscardChangesDialog({model: this.page.model})).render();
+        },
+        onDeployRequest: function() {
+            if (_.result(this.page.tab, 'hasChanges')) {
+                this.page.discardSettingsChanges({cb: _.bind(function() {
+                    this.page.tab.revertChanges();
+                    this.page.displayChanges();
+                }, this)});
+            } else {
+                this.page.displayChanges();
+            }
         },
         stopDeployment: function() {
             this.registerSubView(new dialogViews.StopDeploymentDialog({model: this.model})).render();

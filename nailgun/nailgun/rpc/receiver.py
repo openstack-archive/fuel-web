@@ -22,6 +22,7 @@ import traceback
 from sqlalchemy import or_
 
 from nailgun import consts
+from nailgun.network import checker_vlans
 from nailgun import notifier
 from nailgun import objects
 from nailgun.settings import settings
@@ -646,130 +647,8 @@ class NailgunReceiver(object):
 
     @classmethod
     def verify_networks_resp(cls, **kwargs):
-        logger.info(
-            "RPC method verify_networks_resp received: %s" %
-            jsonutils.dumps(kwargs)
-        )
-        task_uuid = kwargs.get('task_uuid')
-        nodes = kwargs.get('nodes')
-        error_msg = kwargs.get('error')
-        status = kwargs.get('status')
-        progress = kwargs.get('progress')
-
-        # We simply check that each node received all vlans for cluster
-        task = TaskHelper.get_task_by_uuid(task_uuid)
-
-        result = []
-        #  We expect that 'nodes' contains all nodes which we test.
-        #  Situation when some nodes not answered must be processed
-        #  in orchestrator early.
-        if nodes is None:
-            # If no nodes in kwargs then we update progress or status only.
-            pass
-        elif isinstance(nodes, list):
-            cached_nodes = task.cache['args']['nodes']
-            node_uids = [str(n['uid']) for n in nodes]
-            cached_node_uids = [str(n['uid']) for n in cached_nodes]
-            forgotten_uids = set(cached_node_uids) - set(node_uids)
-
-            if forgotten_uids:
-                absent_nodes = db().query(Node).filter(
-                    Node.id.in_(forgotten_uids)
-                ).all()
-                absent_node_names = []
-                for n in absent_nodes:
-                    if n.name:
-                        absent_node_names.append(n.name)
-                    else:
-                        absent_node_names.append('id: %s' % n.id)
-                if not error_msg:
-                    error_msg = 'Node(s) {0} didn\'t return data.'.format(
-                        ', '.join(absent_node_names)
-                    )
-                status = 'error'
-            else:
-                error_nodes = []
-                for node in nodes:
-                    cached_nodes_filtered = filter(
-                        lambda n: str(n['uid']) == str(node['uid']),
-                        cached_nodes
-                    )
-
-                    if not cached_nodes_filtered:
-                        logger.warning(
-                            "verify_networks_resp: arguments contain node "
-                            "data which is not in the task cache: %r",
-                            node
-                        )
-                        continue
-
-                    cached_node = cached_nodes_filtered[0]
-
-                    for cached_network in cached_node['networks']:
-                        received_networks_filtered = filter(
-                            lambda n: n['iface'] == cached_network['iface'],
-                            node.get('networks', [])
-                        )
-
-                        if received_networks_filtered:
-                            received_network = received_networks_filtered[0]
-                            absent_vlans = list(
-                                set(cached_network['vlans']) -
-                                set(received_network['vlans'])
-                            )
-                        else:
-                            logger.warning(
-                                "verify_networks_resp: arguments don't contain"
-                                " data for interface: uid=%s iface=%s",
-                                node['uid'], cached_network['iface']
-                            )
-                            absent_vlans = cached_network['vlans']
-
-                        if absent_vlans:
-                            data = {'uid': node['uid'],
-                                    'interface': cached_network['iface'],
-                                    'absent_vlans': absent_vlans}
-                            node_db = db().query(Node).get(node['uid'])
-                            if node_db:
-                                data['name'] = node_db.name
-                                db_nics = filter(
-                                    lambda i:
-                                    i.name == cached_network['iface'],
-                                    node_db.interfaces
-                                )
-                                if db_nics:
-                                    data['mac'] = db_nics[0].mac
-                                else:
-                                    logger.warning(
-                                        "verify_networks_resp: can't find "
-                                        "interface %r for node %r in DB",
-                                        cached_network['iface'], node_db.id
-                                    )
-                                    data['mac'] = 'unknown'
-                            else:
-                                logger.warning(
-                                    "verify_networks_resp: can't find node "
-                                    "%r in DB",
-                                    node['uid']
-                                )
-
-                            error_nodes.append(data)
-
-                if error_nodes:
-                    result = error_nodes
-                    status = 'error'
-        else:
-            error_msg = (error_msg or
-                         'verify_networks_resp: argument "nodes"'
-                         ' have incorrect type')
-            status = 'error'
-            logger.error(error_msg)
-        if status not in ('ready', 'error'):
-            TaskHelper.update_task_status(task_uuid, status, progress,
-                                          error_msg, result)
-        else:
-            TaskHelper.update_verify_networks(task_uuid, status, progress,
-                                              error_msg, result)
+        checker = checker_vlans.Check(kwargs)
+        checker.run()
 
     @classmethod
     def check_dhcp_resp(cls, **kwargs):

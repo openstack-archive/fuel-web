@@ -365,6 +365,7 @@ def save_only(iface):
             "postgres/ostf_dbname": "ostf",
             "postgres/ostf_user": "ostf",
             "postgres/ostf_password": pwgen.password(),
+            "FUEL_ACCESS/password" : "admin",
         }
     newsettings = dict()
     for setting in settings.keys():

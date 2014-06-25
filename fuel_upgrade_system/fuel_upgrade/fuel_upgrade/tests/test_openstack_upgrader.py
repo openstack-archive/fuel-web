@@ -24,16 +24,19 @@ from fuel_upgrade.tests.base import BaseTestCase
 class TestOpenStackUpgrader(BaseTestCase):
     releases_sample = '''
         [{
+          "pk": 1,
+          "fields": {
             "name": "releases name",
             "version": "2014.1",
 
             "orchestrator_data": {
-                "repo_metadata": {
-                    "nailgun": "http://{master_ip}:8080/path/to/repo",
-                },
-                "puppet_manifests_source": "rsync://{master_ip}:/some/path",
-                "puppet_modules_source": "rsync://{master_ip}:/some/path"
+              "repo_metadata": {
+                "nailgun": "http://{master_ip}:8080/path/to/repo",
+              },
+              "puppet_manifests_source": "rsync://{master_ip}:/some/path",
+              "puppet_modules_source": "rsync://{master_ip}:/some/path"
             }
+          }
         }]
     '''
 

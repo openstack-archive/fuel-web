@@ -1,0 +1,16 @@
+<div class="cluster-name-box">
+    <div class="cluster-name-placeholder">
+        <div class="name-box">
+            <div class="name"><%- name %></div>
+            <div class="node-list-name-count">(<%- $.t('common.node', {count: nodes_length}) %>)</div>
+            <div class="clearfix"></div>
+        </div>
+        <div class="cluster-status-placeholder">
+            <span class="cluster-status-item"><strong><%- $.t('release_page.release_name') %>: </strong><%- release_name %></span>
+            <span class="cluster-status-item status"><strong><%- $.t('release_page.release_status') %>: </strong><%- release_status %></span>
+            <span class="cluster-status-item"><strong><%- $.t('dialog.create_cluster_wizard.mode.title') %>:</strong> <%- $.t('cluster.mode.' + mode) %></span>
+        </div>
+    </div>
+    <div class="cluster-deploy-placeholder deployment-control">
+    </div>
+</div>

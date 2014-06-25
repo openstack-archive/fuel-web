@@ -28,9 +28,10 @@ define(
     'text!templates/cluster/page.html',
     'text!templates/cluster/customization_message.html',
     'text!templates/cluster/deployment_result.html',
-    'text!templates/cluster/deployment_control.html'
+    'text!templates/cluster/deployment_control.html',
+    'text!templates/cluster/cluster_release_info.html'
 ],
-function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate) {
+function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate, releaseInfoTemplate) {
     'use strict';
     var ClusterPage, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
 
@@ -46,9 +47,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),
         events: {
-            'click .task-result .close': 'dismissTaskResult',
-            'click .rollback': 'discardChanges',
-            'click .deploy-btn:not(.disabled)': 'onDeployRequest'
+            'click .task-result .close': 'dismissTaskResult'
         },
         getReleaseSetupTask: function(status) {
             return this.tasks.findTask({group: 'release_setup', status: status || 'running', release: this.model.get('release').id});
@@ -76,9 +75,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             if (task) {
                 task.destroy();
             }
-        },
-        discardChanges: function() {
-            this.registerSubView(new dialogViews.DiscardChangesDialog({model: this.model})).render();
         },
         displayChanges: function() {
             this.registerSubView(new dialogViews.DisplayChangesDialog({model: this.model})).render();
@@ -194,9 +190,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.deploymentResult = new DeploymentResult(options);
             this.registerSubView(this.deploymentResult);
             this.$('.deployment-result').html(this.deploymentResult.render().el);
-            this.deploymentControl = new DeploymentControl(options);
-            this.registerSubView(this.deploymentControl);
-            this.$('.deployment-control').html(this.deploymentControl.render().el);
+
 
             var tabs = {
                 'nodes': NodesTab,
@@ -212,6 +206,18 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 this.registerSubView(this.tab);
             }
 
+            var releaseTpl = _.template(releaseInfoTemplate);
+            app.breadcrumbs.$el.append(releaseTpl({
+                name: this.model.get('name'),
+                nodes_length: this.model.get('nodes').length,
+                release_name: this.model.get('release').get('name'),
+                release_status: this.model.get('release').get('state'),
+                mode: this.model.get('mode')
+            }));
+            this.deploymentControl = new DeploymentControl(options);
+            this.registerSubView(this.deploymentControl);
+            this.$('.deployment-control').html(this.deploymentControl.render().el);
+            app.breadcrumbs.$('.deployment-control').html(this.deploymentControl.render().el);
             return this;
         }
     });
@@ -248,7 +254,22 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
     DeploymentControl = Backbone.View.extend({
         template: _.template(deploymentControlTemplate),
         events: {
-            'click .stop-deployment-btn': 'stopDeployment'
+            'click .stop-deployment-btn': 'stopDeployment',
+            'click .deploy-btn:not(.disabled)': 'onDeployRequest',
+            'click .rollback': 'discardChanges'
+        },
+        discardChanges: function() {
+            this.page.registerSubView(new dialogViews.DiscardChangesDialog({model: this.page.model})).render();
+        },
+        onDeployRequest: function() {
+            if (_.result(this.page.tab, 'hasChanges')) {
+                this.page.discardSettingsChanges({cb: _.bind(function() {
+                    this.page.tab.revertChanges();
+                    this.page.displayChanges();
+                }, this)});
+            } else {
+                this.page.displayChanges();
+            }
         },
         stopDeployment: function() {
             this.registerSubView(new dialogViews.StopDeploymentDialog({model: this.model})).render();

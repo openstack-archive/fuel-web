@@ -2,7 +2,7 @@
   var taskName = task.get('name');
   var infiniteProgressTasks = ['stop_deployment', 'reset_environment'];
  %>
-  <li class="pull-right deployment-progress-box <%= taskName %>">
+  <div class="pull-right deployment-progress-box <%= taskName %>">
     <% if (!_.contains(infiniteProgressTasks, taskName)) { %>
       <!--  Stop action is not available for 'update' task right now. The feature is coming soon -->
       <% if (taskName != 'update') { %>
@@ -14,9 +14,9 @@
     <% } %>
     <div class="deployment-control-item-box"><div class="progress progress-<%= _.contains(infiniteProgressTasks, taskName) ? 'warning' : 'success' %> progress-striped active"><div class="bar"></div></div></div>
     <div class="progress-bar-description"><%- $.t('cluster_page.' + taskName, {defaultValue: ''}) %></div>
-  </li>
+  </div>
 <% } else { %>
-  <li class="pull-right deployment-control-box">
+  <div class="pull-right deployment-control-box">
     <% var releaseAvailable = cluster.get('release').get('state') == 'available' %>
     <div class="deployment-control-item-box"><button class="deploy-btn <%= releaseAvailable && (cluster.hasChanges() || cluster.needsRedeployment()) && cluster.get('nodes').reject({status: 'ready'}).length ? '' : 'disabled' %>"><i class="icon-upload-cloud"></i> <%- $.t('cluster_page.deploy_changes') %></button></div>
     <div class="deployment-control-item-box">
@@ -24,5 +24,5 @@
         <button class="btn rollback" role="button" title="<%- $.t('cluster_page.discard_changes') %>"><i class="icon-back-in-time"></i></button>
       <% } %>
     </div>
-  </li>
+  </div>
 <% } %>

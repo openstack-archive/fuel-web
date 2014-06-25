@@ -142,41 +142,41 @@ function run_tests {
     if [ $no_jslint_checks -ne 1 ];  then jslint_checks=1;  fi
   fi
 
-  # Run all enabled tests
-  if [ $flake8_checks -eq 1 ]; then
-    echo "Starting Flake8 tests..."
-    run_flake8 || errors+=" flake8_checks"
-  fi
+  # # Run all enabled tests
+  # if [ $flake8_checks -eq 1 ]; then
+  #   echo "Starting Flake8 tests..."
+  #   run_flake8 || errors+=" flake8_checks"
+  # fi
 
-  if [ $nailgun_tests -eq 1 ]; then
-    echo "Starting Nailgun tests..."
-    run_nailgun_tests || errors+=" nailgun_tests"
-  fi
+  # if [ $nailgun_tests -eq 1 ]; then
+  #   echo "Starting Nailgun tests..."
+  #   run_nailgun_tests || errors+=" nailgun_tests"
+  # fi
 
   if [ $webui_tests -eq 1 ]; then
     echo "Starting WebUI tests..."
     run_webui_tests || errors+=" webui_tests"
   fi
 
-  if [ $cli_tests -eq 1 ]; then
-    echo "Starting Fuel client tests..."
-    run_cli_tests || errors+=" cli_tests"
-  fi
+  # if [ $cli_tests -eq 1 ]; then
+  #   echo "Starting Fuel client tests..."
+  #   run_cli_tests || errors+=" cli_tests"
+  # fi
 
-  if [ $upgrade_system -eq 1 ]; then
-    echo "Starting upgrade system tests..."
-    run_upgrade_system_tests || errors+=" upgrade_system_tests"
-  fi
+  # if [ $upgrade_system -eq 1 ]; then
+  #   echo "Starting upgrade system tests..."
+  #   run_upgrade_system_tests || errors+=" upgrade_system_tests"
+  # fi
 
-  if [ $shotgun_tests -eq 1 ]; then
-    echo "Starting Shotgun tests..."
-    run_shotgun_tests || errors+=" shotgun_tests"
-  fi
+  # if [ $shotgun_tests -eq 1 ]; then
+  #   echo "Starting Shotgun tests..."
+  #   run_shotgun_tests || errors+=" shotgun_tests"
+  # fi
 
-  if [ $jslint_checks -eq 1 ]; then
-    echo "Starting JSLint tests..."
-    run_jslint || errors+=" jslint_checks"
-  fi
+  # if [ $jslint_checks -eq 1 ]; then
+  #   echo "Starting JSLint tests..."
+  #   run_jslint || errors+=" jslint_checks"
+  # fi
 
   # print failed tests
   if [ -n "$errors" ]; then
@@ -243,7 +243,7 @@ function run_webui_tests {
 
   # run js testcases
   create_settings_yaml $COMPRESSED_STATIC_DIR/settings.yaml $COMPRESSED_STATIC_DIR
-  local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
+  local server_log=`mktemp /tmp/DEBUG_WEBUI.test_nailgun_ui_server.XXXX`
   local result=0
 
   for testcase in $TESTS; do
@@ -271,7 +271,7 @@ function run_webui_tests {
 
   done
 
-  rm $server_log
+  # rm $server_log
   popd >> /dev/null
 
   return $result

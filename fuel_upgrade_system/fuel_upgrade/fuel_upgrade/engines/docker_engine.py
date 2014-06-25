@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import glob
 import logging
 import os
 import re
@@ -56,6 +57,8 @@ class DockerUpgrader(UpgradeEngine):
         self.new_release_containers = self.make_new_release_containers_list()
         self.pg_dump_path = os.path.join(
             self.working_directory, 'pg_dump_all.sql')
+        self.cobbler_config_path = self.config.cobbler_config_path.format(
+            working_directory=self.working_directory)
         self.upgrade_verifier = FuelUpgradeVerify(self.config)
 
     def upgrade(self):
@@ -98,6 +101,7 @@ class DockerUpgrader(UpgradeEngine):
         """Run before upgrade actions
         """
         self.save_db()
+        self.save_cobbler_configs()
 
     def save_db(self):
         """Saves postgresql database into the file
@@ -156,6 +160,44 @@ class DockerUpgrader(UpgradeEngine):
             '-- PostgreSQL database cluster dump complete']
 
         return utils.file_contains_lines(self.pg_dump_path, patterns)
+
+    def save_cobbler_configs(self):
+        """Copy config files from container
+        """
+        container_name = self.make_container_name(
+            'cobbler',
+            self.config.current_version['VERSION']['release'])
+
+        try:
+            utils.exec_cmd('docker cp {0}:{1} {2}'.format(
+                container_name,
+                self.config.cobbler_container_config_path,
+                self.cobbler_config_path))
+        except errors.ExecutedErrorNonZeroExitCode:
+            utils.rmtree(self.cobbler_config_path)
+            raise
+
+        self.verify_cobbler_configs()
+
+    def verify_cobbler_configs(self):
+        """Verify that cobbler config directory
+        contains valid data
+        """
+        configs = glob.glob(
+            self.config.cobbler_config_files_for_verifier.format(
+                cobbler_config_path=self.cobbler_config_path))
+
+        # NOTE(eli): cobbler config directory should
+        # contain at least one file (default.json)
+        if len(configs) < 1:
+            raise errors.WrongCobblerConfigsError(
+                u'Cannot find json files in directory {0}'.format(
+                    self.cobbler_config_path))
+
+        for config in configs:
+            if not utils.check_file_is_valid_json(config):
+                raise errors.WrongCobblerConfigsError(
+                    u'Invalid json config {0}'.format(config))
 
     def post_upgrade_actions(self):
         """Post upgrade actions

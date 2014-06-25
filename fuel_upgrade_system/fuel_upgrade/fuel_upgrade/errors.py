@@ -59,3 +59,7 @@ class UpgradeVerificationError(FuelUpgradeException):
 
 class UnsupportedImageTypeError(FuelUpgradeException):
     pass
+
+
+class WrongCobblerConfigsError(FuelUpgradeException):
+    pass

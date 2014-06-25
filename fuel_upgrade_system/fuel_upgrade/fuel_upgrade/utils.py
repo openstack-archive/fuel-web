@@ -185,8 +185,7 @@ def wait_for_true(check, timeout=60, interval=0.5):
 
 
 def symlink(from_path, to_path):
-    """Create symlink, in remove old
-    if it was created
+    """Create symlink, and remove old if it exists
 
     :param from_path: symlink from
     :param to_path: symlink to
@@ -194,9 +193,18 @@ def symlink(from_path, to_path):
     logger.debug(
         u'Create symlink from "{0}" to "{1}"'.format(from_path, to_path))
 
-    if os.path.exists(to_path):
-        os.remove(to_path)
+    remove_if_exists(to_path)
     os.symlink(from_path, to_path)
+
+
+def remove_if_exists(path):
+    """Removes files if it exists
+
+    :param path: path to file for removal
+    """
+    if os.path.exists(path):
+        logger.debug(u'Remove file "{0}"'.format(path))
+        os.remove(path)
 
 
 def file_contains_lines(file_path, patterns):

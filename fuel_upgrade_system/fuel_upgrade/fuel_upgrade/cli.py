@@ -27,12 +27,14 @@ from fuel_upgrade.upgrade import UpgradeManager
 
 from fuel_upgrade.engines.docker_engine import DockerInitializer
 from fuel_upgrade.engines.docker_engine import DockerUpgrader
+from fuel_upgrade.engines.host_system import HostSystemUpgrader
 from fuel_upgrade.engines.openstack import OpenStackUpgrader
 
 
 #: A dict with supported systems.
 #: The key is used for system option in CLI.
 SUPPORTED_SYSTEMS = {
+    'host-system': HostSystemUpgrader,
     'docker-init': DockerInitializer,
     'docker': DockerUpgrader,
     'openstack': OpenStackUpgrader,

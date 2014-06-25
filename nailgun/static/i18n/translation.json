@@ -139,6 +139,7 @@
                 }
             },
             "cluster_page": {
+                "cluster_status": "Status",
                 "tabs": {
                     "nodes": "Nodes",
                     "network": "Networks",

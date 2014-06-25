@@ -1,0 +1,14 @@
+<div class="cluster-name-box">
+    <div class="cluster-name-placeholder">
+        <div class="name-box">
+            <div class="name"><%- cluster.get('name') %></div>
+            <div class="node-list-name-count">(<%- $.t('common.node', {count: nodes_length}) %>)</div>
+            <div class="clearfix"></div>
+        </div>
+        <div class="cluster-status-placeholder">
+            <span class="cluster-status-item"><strong><%- $.t('release_page.release_name') %>: </strong><%- release_name %></span>
+            <span class="cluster-status-item status <%= _.contains(['error', 'update_error'], cluster.get('status')) ? 'error' : '' %>"><strong><%- $.t('cluster_page.cluster_status') %>: </strong><%- cluster.get('status') %></span>
+            <span class="cluster-status-item"><strong><%- $.t('dialog.create_cluster_wizard.mode.title') %>:</strong> <%- $.t('cluster.mode.' + cluster.get('mode')) %></span>
+        </div>
+    </div>
+</div>

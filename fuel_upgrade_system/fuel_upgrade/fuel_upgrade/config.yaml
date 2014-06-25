@@ -5,8 +5,12 @@ fuel_version_path_template: /etc/fuel/{version}/version.yaml
 new_version_yaml_path_template: '{update_path}/config/version.yaml'
 
 working_directory: /var/lib/fuel_upgrade/
-puppet_modules_dir: puppet_modules
 images_extension: tar
+
+puppet_modules_dir: puppet_modules
+cobbler_container_config_path: '/var/lib/cobbler/config'
+cobbler_config_path: '{working_directory}/cobbler_configs'
+cobbler_config_files_for_verifier: '{cobbler_config_path}/config/systems.d/*.json'
 
 docker:
   url: unix://var/run/docker.sock
@@ -135,6 +139,7 @@ containers:
 
   - id: cobbler
     supervisor_config: True
+    after_container_creation_command: "bash -c 'cp -rn /tmp/upgrade/cobbler_configs/config/* /var/lib/cobbler/config/'"
     from_image: cobbler
     privileged: true
     port_bindings:
@@ -163,6 +168,7 @@ containers:
       - volume_repos
       - volume_ssh_keys
       - volume_fuel_configs
+      - volume_upgrade_directory
 
 
   - id: mcollective

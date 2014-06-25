@@ -249,6 +249,10 @@ def copy(from_path, to_path):
 
 def copytree(source, destination, overwrite=True):
     """Copy a given source directory to destination folder.
+
+    :param str source: copy from
+    :param str destination: copy to
+    :param bool overwrite: overwrite destination directory
     """
     logger.debug(u'Copy folder from %s to %s', source, destination)
 
@@ -258,5 +262,25 @@ def copytree(source, destination, overwrite=True):
 
 
 def rmtree(source, ignore_errors=True):
+    """Remove directory
+
+    :param str source: path to directory
+    :param bool ignore_errors: ignores error if True
+    """
     logger.debug(u'Removing %s', source)
-    shutil.rmtree(source, ignore_errors=ignore_errors)
+    if os.path.exists(source):
+        shutil.rmtree(source, ignore_errors=ignore_errors)
+
+
+def check_file_is_valid_json(path):
+    """Checks if file contains valid json
+
+    :param str path: path to json file
+    :returns: True if valid False if invalid
+    """
+    try:
+        json.load(open(path, 'r'))
+    except (ValueError, IOError):
+        return False
+
+    return True

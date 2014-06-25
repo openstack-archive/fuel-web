@@ -1,6 +1,7 @@
 @import 'fonticon.css';
 @import 'bootstrap.css';
 @import 'retina.less';
+@import 'raid.less';
 
 // Global colors
 // --------------------------------------------------
@@ -1085,6 +1086,10 @@ label.error {
 .tab-healthcheck-normal {.at2x('../img/tab_icons.png', 0px, -180px, 90px);}
 .tab-healthcheck-good   {.at2x('../img/tab_icons.png', -30px, -180px, 90px);}
 .tab-healthcheck-bad    {.at2x('../img/tab_icons.png', -60px, -180px, 90px);}
+
+.tab-raid-normal {.at2x('../img/tab_icons.png', 0px, -240px, 90px);}
+.tab-raid-good   {.at2x('../img/tab_icons.png', -30px, -240px, 90px);}
+.tab-raid-bad    {.at2x('../img/tab_icons.png', -60px, -240px, 90px);}
 
 // Global alerts
 // -------------------------
@@ -3385,3 +3390,8 @@ i.btn-cluster-details {
   margin-left: -380px;
   min-height: 485px;
 }
+
+  .msg-ok {color: @color-msg-ok;}
+  .msg-info {color: @color-msg-info;}
+  .msg-error {color: @color-msg-error;}
+  .msg-warning {color: @color-msg-warning;}

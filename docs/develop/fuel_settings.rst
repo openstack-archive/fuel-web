@@ -6,7 +6,7 @@ Before the start of deployment process Astute uploads all settings, each
 server should have to the file */etc/astute.yaml* placed on every node.
 When Puppet is run facter reads this file entirely into a single fact 
 *$astute_settings_yaml*. Then these settings are parsed by parseyaml function 
-at the very beggining of site.pp file and set as rich data structure called 
+at the very beginning of site.pp file and set as rich data structure called 
 *$fuel_settings*. All of the setting used during node deployment are stored 
 there and can be used anywhere in Puppet code.
 For example, single top level variables are available as 

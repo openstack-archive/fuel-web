@@ -25,7 +25,7 @@ In order to add, test and commit the code necessary to
 implement this feature, these steps were followed:
 
 #. Create a Fuel development environment by following the
-   instructions fround here:
+   instructions found here:
    :doc:`Fuel Development Environment </develop/env>`.
 
 #. In your development environment, prepare your environment
@@ -59,7 +59,7 @@ implement this feature, these steps were followed:
 
 #. When all tests pass you should commit your code, which
    will subject it to further testing via Jenkins and Fuel CI.
-   Be sure to include a good commit message, guidlines can be
+   Be sure to include a good commit message, guidelines can be
    found here: `Git Commit Messages <https://wiki.openstack.org/wiki/GitCommitMessages>`_.::
 
     git commit -a

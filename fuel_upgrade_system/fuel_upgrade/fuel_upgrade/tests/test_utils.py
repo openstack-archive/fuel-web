@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import StringIO
 import subprocess
 import urllib2
 
@@ -211,3 +212,37 @@ class TestUtils(BaseTestCase):
         utils.remove_if_exists(path)
         remove_mock.assert_called_once_with(path)
         exists_mock.assert_called_once_with(path)
+
+    def test_load_fixture(self):
+        fixture = StringIO.StringIO('''
+        - &base
+          fields:
+            a: 1
+            b: 2
+            c: 3
+
+        - pk: 1
+          extend: *base
+          fields:
+            a: 13
+
+        - pk: 2
+          extend: *base
+          fields:
+            d: 42
+        ''')
+        setattr(fixture, 'name', 'some.yaml')
+
+        result = utils.load_fixture(fixture)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0], {
+            'a': 13,
+            'b': 2,
+            'c': 3,
+        })
+        self.assertEqual(result[1], {
+            'a': 1,
+            'b': 2,
+            'c': 3,
+            'd': 42,
+        })

@@ -14,12 +14,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
+from nailgun import consts
+from nailgun import objects
+
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
-
-from nailgun import objects
 
 
 class TestHandlers(BaseIntegrationTest):
@@ -170,3 +173,36 @@ class TestHandlers(BaseIntegrationTest):
         # check there's not create notification
         after_count = get_notifications_count(node_id=node['id'])
         self.assertEqual(before_count, after_count)
+
+    @fake_tasks()
+    def test_interface_changes_for_new_node(self):
+        # Creating cluster with node
+        self.env.create(
+            cluster_kwargs={
+                'name': 'test_name'
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}
+            ]
+        )
+        cluster = self.env.clusters[0]
+
+        def filter_changes(chg_type, chg_list):
+            return filter(lambda x: x.get('name') == chg_type, chg_list)
+
+        changes = filter_changes(
+            consts.CLUSTER_CHANGES.interfaces,
+            cluster['changes']
+        )
+        # Checking interfaces change added after node creation
+        self.assertEquals(1, len(changes))
+
+        deployment_task = self.env.launch_deployment()
+        self.env.wait_ready(deployment_task)
+
+        changes = filter_changes(
+            consts.CLUSTER_CHANGES.interfaces,
+            cluster['changes']
+        )
+        # Checking no interfaces change after deployment
+        self.assertEquals(0, len(changes))

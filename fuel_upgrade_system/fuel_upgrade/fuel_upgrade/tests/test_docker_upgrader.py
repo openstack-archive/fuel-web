@@ -22,7 +22,6 @@ from fuel_upgrade import errors
 from fuel_upgrade.tests.base import BaseTestCase
 
 
-@mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd')
 class TestDockerUpgrader(BaseTestCase):
 
     def setUp(self):
@@ -52,7 +51,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.supervisor_patcher.stop()
 
     @mock.patch('fuel_upgrade.engines.docker_engine.time.sleep')
-    def test_run_with_retries(self, sleep, _):
+    def test_run_with_retries(self, sleep):
         image_name = 'test_image'
         retries_count = 3
         self.docker_mock.wait.return_value = 1
@@ -66,7 +65,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.assertEqual(sleep.call_count, retries_count)
         self.called_once(self.docker_mock.create_container)
 
-    def test_run_without_errors(self, exec_cmd):
+    def test_run_without_errors(self):
         image_name = 'test_image'
         self.docker_mock.wait.return_value = 0
 
@@ -81,7 +80,7 @@ class TestDockerUpgrader(BaseTestCase):
         for method in methods:
             setattr(obj, method, mock.MagicMock())
 
-    def test_upgrade(self, _):
+    def test_upgrade(self):
         mocked_methods = [
             'stop_fuel_containers',
             'upload_images',
@@ -103,7 +102,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(self.supervisor_mock.restart_and_wait)
         self.called_once(self.upgrader.upgrade_verifier.verify)
 
-    def test_rollback(self, _):
+    def test_rollback(self):
         self.upgrader.stop_fuel_containers = mock.MagicMock()
         self.upgrader.switch_version_file_to_previous_version = \
             mock.MagicMock()
@@ -116,13 +115,13 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(self.upgrader.switch_version_file_to_previous_version)
 
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.symlink')
-    def test_switch_version_file_to_previous_version(self, symlink_mock, _):
+    def test_switch_version_file_to_previous_version(self, symlink_mock):
         self.upgrader.switch_version_file_to_previous_version()
         symlink_mock.assert_called_once_with(
             '/etc/fuel/0/version.yaml',
             '/etc/fuel/version.yaml')
 
-    def test_stop_fuel_containers(self, _):
+    def test_stop_fuel_containers(self):
         non_fuel_images = [
             'first_image_1.0', 'second_image_2.0', 'third_image_2.0']
         fuel_images = [
@@ -142,6 +141,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.upgrader.clean_docker_iptables_rules.assert_called_once_with(
             ports)
 
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd')
     @mock.patch('fuel_upgrade.engines.docker_engine.os.path.exists',
                 return_value=True)
     def test_upload_images(self, _, exec_mock):
@@ -155,7 +155,7 @@ class TestDockerUpgrader(BaseTestCase):
             [(('docker load < "image1"',),),
              (('docker load < "image2"',),)])
 
-    def test_create_containers(self, _):
+    def test_create_containers(self):
         self.upgrader.new_release_containers = [
             {'id': 'id1',
              'container_name': 'name1',
@@ -200,28 +200,28 @@ class TestDockerUpgrader(BaseTestCase):
             start_container_calls)
         self.called_once(self.upgrader.run_after_container_creation_command)
 
-    def test_run_after_container_creation_command(self, _):
+    def test_run_after_container_creation_command(self):
         self.upgrader.exec_with_retries = mock.MagicMock()
         self.upgrader.run_after_container_creation_command({
             'after_container_creation_command': 'cmd',
             'container_name': 'name'})
         self.called_once(self.upgrader.exec_with_retries)
 
-    def test_create_container(self, _):
+    def test_create_container(self):
         self.upgrader.create_container(
             'image_name', param1=1, param2=2, ports=[1234])
 
         self.docker_mock.create_container.assert_called_once_with(
             'image_name', param2=2, param1=1, ports=[1234])
 
-    def test_start_container(self, _):
+    def test_start_container(self):
         self.upgrader.start_container(
             {'Id': 'container_id'}, param1=1, param2=2)
 
         self.docker_mock.start.assert_called_once_with(
             'container_id', param2=2, param1=1)
 
-    def test_build_dependencies_graph(self, _):
+    def test_build_dependencies_graph(self):
         containers = [
             {'id': '1', 'volumes_from': ['2'], 'links': [{'id': '3'}]},
             {'id': '2', 'volumes_from': [], 'links': []},
@@ -235,7 +235,7 @@ class TestDockerUpgrader(BaseTestCase):
 
         self.assertEqual(actual_graph, expected_graph)
 
-    def test_get_container_links(self, _):
+    def test_get_container_links(self):
         fake_containers = [
             {'id': 'id1', 'container_name': 'container_name1',
              'links': [{'id': 'id2', 'alias': 'alias2'}]},
@@ -244,16 +244,16 @@ class TestDockerUpgrader(BaseTestCase):
         links = self.upgrader.get_container_links(fake_containers[0])
         self.assertEqual(links, [('container_name2', 'alias2')])
 
-    def test_get_port_bindings(self, _):
+    def test_get_port_bindings(self):
         port_bindings = {'port_bindings': {'53/udp': ['0.0.0.0', 53]}}
         bindings = self.upgrader.get_port_bindings(port_bindings)
         self.assertEqual({'53/udp': ('0.0.0.0', 53)}, bindings)
 
-    def test_get_ports(self, _):
+    def test_get_ports(self):
         ports = self.upgrader.get_ports({'ports': [[53, 'udp'], 100]})
         self.assertEqual([(53, 'udp'), 100], ports)
 
-    def test_generate_configs(self, _):
+    def test_generate_configs(self):
         fake_containers = [
             {'id': 'id1', 'container_name': 'container_name1',
              'supervisor_config': False},
@@ -269,10 +269,11 @@ class TestDockerUpgrader(BaseTestCase):
         self.supervisor_mock.generate_cobbler_config.assert_called_once_with(
             {'service_name': 'cobbler', 'container_name': 'cobbler_container'})
 
-    def test_switch_to_new_configs(self, _):
+    def test_switch_to_new_configs(self):
         self.upgrader.switch_to_new_configs()
         self.supervisor_mock.switch_to_new_configs.called_once()
 
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd')
     def test_exec_cmd_in_container(self, exec_cmd_mock):
         name = 'container_name'
         cmd = 'some command'
@@ -284,12 +285,81 @@ class TestDockerUpgrader(BaseTestCase):
         exec_cmd_mock.assert_called_once_with(
             "lxc-attach --name {0} -- {1}".format(name, cmd))
 
-    def test_save_db(self, _):
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.save_db')
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.save_cobbler_configs')
+    def test_before_upgrade_actions(self, save_cobbler_mock, save_db_mock):
+        self.upgrader.before_upgrade_actions()
+        self.called_once(save_cobbler_mock)
+        self.called_once(save_db_mock)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'utils.exec_cmd')
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.verify_cobbler_configs')
+    def test_save_cobbler_configs(self, verify_mock, exec_cmd_mock):
+        self.upgrader.save_cobbler_configs()
+
+        exec_cmd_mock.assert_called_once_with(
+            'docker cp fuel-core-0-cobbler:/var/lib/cobbler/config '
+            '/var/lib/fuel_upgrade/9999/cobbler_configs')
+        self.called_once(verify_mock)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.rmtree')
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd',
+                side_effect=errors.ExecutedErrorNonZeroExitCode())
+    def test_save_cobbler_configs_removes_dir_in_case_of_error(
+            self, exec_cmd_mock, rm_mock):
+
+        with self.assertRaises(errors.ExecutedErrorNonZeroExitCode):
+            self.upgrader.save_cobbler_configs()
+
+        cobbler_config_path = '/var/lib/fuel_upgrade/9999/cobbler_configs'
+        exec_cmd_mock.assert_called_once_with(
+            'docker cp fuel-core-0-cobbler:/var/lib/cobbler/config '
+            '{0}'.format(cobbler_config_path))
+        rm_mock.assert_called_once_with(cobbler_config_path)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.glob.glob',
+                return_value=['1.json'])
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.'
+                'check_file_is_valid_json')
+    def test_verify_cobbler_configs(self, json_checker_mock, glob_mock):
+        self.upgrader.verify_cobbler_configs()
+        glob_mock.assert_called_once_with(
+            '/var/lib/fuel_upgrade/9999/'
+            'cobbler_configs/config/systems.d/*.json')
+        json_checker_mock.assert_called_once_with('1.json')
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.glob.glob',
+                return_value=[])
+    def test_verify_cobbler_configs_raises_error_if_not_enough_systems(
+            self, glob_mock):
+
+        with self.assertRaises(errors.WrongCobblerConfigsError):
+            self.upgrader.verify_cobbler_configs()
+        self.called_once(glob_mock)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.glob.glob',
+                return_value=['1.json'])
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.'
+                'check_file_is_valid_json', return_value=False)
+    def test_verify_cobbler_configs_raises_error_if_invalid_file(
+            self, json_checker_mock, glob_mock):
+
+        with self.assertRaises(errors.WrongCobblerConfigsError):
+            self.upgrader.verify_cobbler_configs()
+
+        self.called_once(glob_mock)
+        self.called_once(json_checker_mock)
+
+    def test_save_db(self):
         self.upgrader.verify_postgres_dump = mock.MagicMock(return_value=True)
         self.upgrader.exec_cmd_in_container = mock.MagicMock()
         self.upgrader.save_db()
 
-    def test_save_db_failed_verification(self, _):
+    def test_save_db_failed_verification(self):
         self.upgrader.verify_postgres_dump = mock.MagicMock(return_value=False)
         self.upgrader.exec_cmd_in_container = mock.MagicMock()
         self.assertRaises(errors.DatabaseDumpError, self.upgrader.save_db)
@@ -303,7 +373,7 @@ class TestDockerUpgrader(BaseTestCase):
     @mock.patch(
         'fuel_upgrade.engines.docker_engine.os.remove')
     def test_save_db_removes_file_in_case_of_error(
-            self, remove_mock, _, __, ___):
+            self, remove_mock, _, __):
         self.upgrader.exec_cmd_in_container = mock.MagicMock(
             side_effect=errors.ExecutedErrorNonZeroExitCode())
 
@@ -319,7 +389,7 @@ class TestDockerUpgrader(BaseTestCase):
     @mock.patch(
         'fuel_upgrade.engines.docker_engine.utils.file_contains_lines',
         returns_value=True)
-    def test_verify_postgres_dump(self, file_contains_mock, exists_mock, __):
+    def test_verify_postgres_dump(self, file_contains_mock, exists_mock):
         self.upgrader.verify_postgres_dump()
 
         patterns = [
@@ -333,7 +403,7 @@ class TestDockerUpgrader(BaseTestCase):
             self.upgrader.pg_dump_path,
             patterns)
 
-    def test_get_docker_container_public_ports(self, _):
+    def test_get_docker_container_public_ports(self):
         docker_ports_mapping = [
             {'Ports': [
                 {'PublicPort': 514},
@@ -347,6 +417,7 @@ class TestDockerUpgrader(BaseTestCase):
             self.upgrader._get_docker_container_public_ports(
                 docker_ports_mapping))
 
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd')
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd_iterator')
     def test_clean_docker_iptables_rules(
             self, exec_cmd_iterator_mock, exec_cmd_mock):

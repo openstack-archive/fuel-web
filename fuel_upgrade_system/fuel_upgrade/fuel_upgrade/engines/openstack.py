@@ -20,7 +20,6 @@ import os
 
 import requests
 import six
-import yaml
 
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade.nailgun_client import NailgunClient
@@ -57,7 +56,7 @@ class OpenStackUpgrader(UpgradeEngine):
         )
         with io.open(releases_yaml, 'r', encoding='utf-8') as f:
             #: an array with releases information
-            self.releases = yaml.load(f.read())
+            self.releases = utils.load_fixture(f)
 
         #: a nailgun object - api wrapper
         self.nailgun = NailgunClient(

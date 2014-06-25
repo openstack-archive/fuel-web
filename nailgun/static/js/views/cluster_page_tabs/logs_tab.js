@@ -140,7 +140,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
             } else {
                 this.$('select[name=source]').val(this.lastSource);
             }
-            var chosenSourceId = this.lastSource || this.$('select[name=source]').val();
+            var chosenSourceId = this.$('select[name=source]').val();
             if (chosenSourceId) {
                 input.html('').attr('disabled', false);
                 var source = this.sources.get(chosenSourceId);

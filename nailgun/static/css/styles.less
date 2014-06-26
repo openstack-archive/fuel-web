@@ -2300,8 +2300,8 @@ input.error:focus {
 
 .parameter-name {
   .float-mixin;
-  min-width: 170px;
   .box-sizing-mixin;
+  min-width: 120px;
   font-weight: bold;
   margin: 7px 14px 0 0;
   overflow: hidden;
@@ -2328,8 +2328,8 @@ input.error:focus {
 
 .parameter-description {
   .float-mixin;
-  max-width: 550px;
   color: @font-color-light;
+  max-width: 450px;
   .box-sizing-mixin;
   margin-top: 4px;
   &.validation-error { color: @fuel-deep-red; }
@@ -2348,6 +2348,38 @@ input.error:focus {
   display: block;
   color: @font-color-light;
   margin: -6px 20px 8px 46px;
+}
+
+.table-wrapper {
+  display: table;
+  margin-bottom: -5px;
+  > .tablerow-wrapper {
+    display: table-row;
+    height: 40px;
+    .parameter-name {
+      display: table-cell;
+      vertical-align: top;
+      padding: 8px 10px 0 12px;
+      max-width: 180px;
+      float: none;
+    }
+    .parameter-control {
+      display: table-cell;
+      float: none;
+      padding: 5px 10px 0 0;
+      &.input-append {
+        vertical-align: top;
+        padding-top: 3px;
+      }
+    }
+    .parameter-description {
+      display: table-cell;
+      vertical-align: top;
+      padding-top: 8px;
+      max-width: 550px;
+      float: none;
+    }
+  }
 }
 
 legend {

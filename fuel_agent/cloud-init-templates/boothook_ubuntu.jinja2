@@ -1,0 +1,115 @@
+#cloud-boothook
+#!/bin/bash
+
+function add_str_to_file_if_not_exists {
+    file=$1
+    str=$2
+    val=$3
+    if ! grep -q "^ *${str}" $file; then
+        echo $val >> $file
+    fi
+}
+
+# configure udev rules
+
+#udev persistent net
+#TODO: replace with runtime file content injection by sed/echo/cat/etc with
+# content populated within templating time
+
+cloud-init-per instance udev_persistent_net1 /etc/init.d/networking stop
+
+ADMIN_MAC={{ boothook.admin_mac }}
+ADMIN_IF=$(echo {{ boothook.udevrules }} | sed 's/[,=]/\n/g' | grep "$ADMIN_MAC" | cut -d_ -f2 | head -1)
+INSTALL_IF=$(ifconfig | grep "$ADMIN_MAC" | head -1 | cut -d' ' -f1)
+# Check if we do not already have static config (or interface seems unconfigured)
+NETADDR=( $(ifconfig $INSTALL_IF | grep -oP "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}") )
+if [ ! -z "$(grep $ADMIN_IF /etc/network/interfaces.d/ifcfg-$ADMIN_IF | grep dhcp)" ] ; then
+    echo -e "auto $ADMIN_IF\niface $ADMIN_IF inet static\n\taddress ${NETADDR[0]}\n\tnetmask ${NETADDR[2]}\n\tbroadcast ${NETADDR[1]}" > /etc/network/interfaces.d/ifcfg-"$ADMIN_IF"
+fi
+#Add static udev rules
+cloud-init-per instance udev_persistent_net2 echo {{ boothook.udevrules }} | tr ' ' '\n' | grep udevrules | tr '[:upper:]' '[:lower:]' | sed -e 's/udevrules=//g' -e 's/,/\n/g' | sed -e "s/^/SUBSYSTEM==\"net\",\ ACTION==\"add\",\ DRIVERS==\"?*\",\ ATTR{address}==\"/g" -e "s/_/\",\ ATTR{type}==\"1\",\ KERNEL==\"eth*\",\ NAME=\"/g" -e "s/$/\"/g" | tee /etc/udev/rules.d/70-persistent-net.rules
+
+cloud-init-per instance udev_persistent_net3 udevadm control --reload-rules 
+cloud-init-per instance udev_persistent_net4 udevadm trigger --attr-match=subsystem=net 
+cloud-init-per instance udev_persistent_net5 /etc/init.d/networking start
+
+# end of udev
+
+
+# configure black module lists
+# virt-what should be installed
+if [ ! -f /etc/modprobe.d/blacklist-i2c_piix4.conf ]; then
+    ([[ $(virt-what) = "virtualbox" ]] && echo "blacklist i2c_piix4" >> /etc/modprobe.d/blacklist-i2c_piix4.conf || :) && update-initramfs -u -k all
+fi
+
+# other pre-reboot things
+
+cloud-init-per instance set_repos echo 'deb http://{{ boothook.server }}:8080/ubuntu/fuelweb/x86_64 precise main' | tee /etc/apt/sources.list
+
+cloud-init-per instance tune_apt echo 'APT::Get::AllowUnauthenticated 1;' | tee /etc/apt/apt.conf.d/02mirantis-allow-unsigned
+
+### cloud-init-per instance apt-get update | tee /dev/null
+
+# update kernel and firmware if needed
+# apt-sources shoould be configured prior the installation
+
+### cloud-init-per instance update_kernel apt-get -y install linux-image-3.11 linux-headers-3.11
+
+
+cloud-init-per instance conntrack_ipv4 echo nf_conntrack_ipv4 | tee -a /etc/modules
+cloud-init-per instance conntrack_ipv6 echo nf_conntrack_ipv6 | tee -a /etc/modules
+cloud-init-per instance conntrack_max echo "net.nf_conntrack_max=1048576" | tee -a /etc/sysctl.conf
+
+cloud-init-per instance dhclient echo 'supersede routers 0;' | tee /etc/dhcp/dhclient.conf
+
+# ntp sync
+cloud-init-per instance service ntp stop | tee /dev/null
+cloud-init-per instance sync_date ntpdate -t 4 -b {{ boothook.server }}
+cloud-init-per instance sync_hwclock hwclock --systohc
+
+cloud-init-per instance edit_ntp_conf1 sed -i '/^\s*tinker panic/ d' /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf2 sed -i '1 i tinker panic 0' /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf3 echo 0 > /var/lib/ntp/drift
+cloud-init-per instance edit_ntp_conf3 sed -i '/^\s*server/ d' /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf4 echo "server {{ boothook.server }} burst iburst" >> /etc/ntp.conf
+
+cloud-init-per instance removeUseDNS sed -i --follow-symlinks -e '/UseDNS/d' /etc/ssh/sshd_config
+add_str_to_file_if_not_exists /etc/ssh/sshd_config 'UseDNS' 'UseDNS no'
+
+cloud-init-per instance gssapi_disable sed -i -e "/^\s*GSSAPICleanupCredentials yes/d" -e "/^\s*GSSAPIAuthentication yes/d" /etc/ssh/sshd_config
+
+cloud-init-per instance nailgun_agent echo 'flock -w 0 -o /var/lock/agent.lock -c "/opt/nailgun/bin/agent >> /var/log/nailgun-agent.log 2>&1"' | tee /etc/rc.local
+
+# Copying default bash settings to the root directory
+cloud-init-per instance skel_bash cp -f /etc/skel/.bash* /root/
+
+
+
+#===black magic tricks to perform reboot before the rest of cloud-init starts===#
+
+sem=/var/lib/cloud/instance/sem/bootper.reboot.instance
+if [ ! -f "$sem" ]; then
+    printf "$(date +%s)" | tee "$sem"
+    sync
+fi
+
+cloud-init-per instance sleep_time sleep 3
+
+if [ $(( `date +%s` - $(cat $sem) )) -lt 8 ]; then
+    echo "rebooting at `date`" > /var/log/rebooted
+    reboot -f && exit 0
+fi
+
+###################################################
+# the rest will be executed only on the next boot #
+###################################################
+
+# fake reboot command
+cloud-init-per instance reboot reboot -f
+
+#===end of black magic===#
+
+cloud-init-per instance hiera_puppet mkdir -p /etc/puppet /var/lib/hiera
+cloud-init-per instance touch_puppet touch /var/lib/hiera/common.yaml /etc/puppet/hiera.yaml
+
+

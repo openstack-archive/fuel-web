@@ -1,0 +1,4 @@
+config1.attr1 {{ parent.config1.attr1 }}
+config1.attr2 {{ parent.config1.attr2 }}
+config2.attr1 {{ parent.config2.attr1 }}
+config2.attr2 {{ parent.config2.attr2 }}

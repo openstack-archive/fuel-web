@@ -1,0 +1,195 @@
+# Copyright 2014 Mirantis, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import mock
+from oslotest import base as test_base
+
+from fuel_agent import errors
+from fuel_agent.utils import partition_utils as pu
+from fuel_agent.utils import utils
+
+
+class TestPartitionUtils(test_base.BaseTestCase):
+    @mock.patch.object(pu, 'make_label')
+    def test_wipe(self, mock_label):
+        # should run call make_label method
+        # in order to create new empty table which we think
+        # is equivalent to wiping the old one
+        pu.wipe('/dev/fake')
+        mock_label.assert_called_once_with('/dev/fake')
+
+    @mock.patch.object(utils, 'execute')
+    def test_make_label(self, mock_exec):
+        # should run parted OS command
+        # in order to create label on a device
+
+        # gpt by default
+        pu.make_label('/dev/fake')
+        mock_exec.assert_called_once_with(
+            'parted', '-s', '/dev/fake', 'mklabel', 'gpt', check_exit_code=[0])
+        mock_exec.reset_mock()
+
+        # label is set explicitly
+        pu.make_label('/dev/fake', label='msdos')
+        mock_exec.assert_called_once_with(
+            'parted', '-s', '/dev/fake',
+            'mklabel', 'msdos', check_exit_code=[0])
+
+    def test_make_label_wrong_label(self):
+        # should check if label is valid
+        # should raise exception if it is not
+        self.assertRaises(errors.WrongPartitionLabelError,
+                          pu.make_label, '/dev/fake', 'wrong')
+
+    @mock.patch.object(utils, 'execute')
+    def test_set_partition_flag(self, mock_exec):
+        # should run parted OS command
+        # in order to set flag on a partition
+
+        # default state is 'on'
+        pu.set_partition_flag('/dev/fake', 1, 'boot')
+        mock_exec.assert_called_once_with(
+            'parted', '-s', '/dev/fake', 'set', '1', 'boot', 'on',
+            check_exit_code=[0])
+        mock_exec.reset_mock()
+
+        # if state argument is given use it
+        pu.set_partition_flag('/dev/fake', 1, 'boot', state='off')
+        mock_exec.assert_called_once_with(
+            'parted', '-s', '/dev/fake', 'set', '1', 'boot', 'off',
+            check_exit_code=[0])
+
+    @mock.patch.object(utils, 'execute')
+    def test_set_partition_flag_wrong_flag(self, mock_exec):
+        # should check if flag is valid
+        # should raise exception if it is not
+        self.assertRaises(errors.WrongPartitionSchemeError,
+                          pu.set_partition_flag,
+                          '/dev/fake', 1, 'wrong')
+
+    @mock.patch.object(utils, 'execute')
+    def test_set_partition_flag_wrong_state(self, mock_exec):
+        # should check if flag is valid
+        # should raise exception if it is not
+        self.assertRaises(errors.WrongPartitionSchemeError,
+                          pu.set_partition_flag,
+                          '/dev/fake', 1, 'boot', state='wrong')
+
+    @mock.patch.object(pu, 'info')
+    @mock.patch.object(utils, 'execute')
+    def test_make_partition(self, mock_exec, mock_info):
+        # should run parted OS command
+        # in order to create new partition
+        mock_info.return_value = {
+            'parts': [
+                {'begin': 0, 'end': 1000, 'fstype': 'free'},
+            ]
+        }
+        pu.make_partition('/dev/fake', 100, 200, 'primary')
+        mock_exec.assert_called_once_with(
+            'parted',
+            '-a', 'optimal',
+            '-s', '/dev/fake',
+            'unit', 'MiB',
+            'mkpart', 'primary', '100', '200',
+            check_exit_code=[0])
+
+    @mock.patch.object(utils, 'execute')
+    def test_make_partition_wrong_ptype(self, mock_exec):
+        # should check if partition type is one of
+        # 'primary' or 'logical'
+        # should raise exception if it is not
+        self.assertRaises(errors.WrongPartitionSchemeError, pu.make_partition,
+                          '/dev/fake', 200, 100, 'wrong')
+
+    @mock.patch.object(utils, 'execute')
+    def test_make_partition_begin_overlaps_end(self, mock_exec):
+        # should check if begin is less than end
+        # should raise exception if it isn't
+        self.assertRaises(errors.WrongPartitionSchemeError, pu.make_partition,
+                          '/dev/fake', 200, 100, 'primary')
+
+    @mock.patch.object(pu, 'info')
+    @mock.patch.object(utils, 'execute')
+    def test_make_partition_overlaps_other_parts(self, mock_exec, mock_info):
+        # should check if begin or end overlap other partitions
+        # should raise exception if it does
+        mock_info.return_value = {
+            'parts': [
+                {'begin': 0, 'end': 100, 'fstype': 'free'},
+                {'begin': 100, 'end': 200, 'fstype': 'notfree'},
+                {'begin': 200, 'end': 300, 'fstype': 'free'}
+            ]
+        }
+        self.assertRaises(errors.WrongPartitionSchemeError, pu.make_partition,
+                          '/dev/fake', 99, 101, 'primary')
+        self.assertRaises(errors.WrongPartitionSchemeError, pu.make_partition,
+                          '/dev/fake', 100, 200, 'primary')
+        self.assertRaises(errors.WrongPartitionSchemeError, pu.make_partition,
+                          '/dev/fake', 200, 301, 'primary')
+        self.assertEqual(mock_info.call_args_list,
+                         [mock.call('/dev/fake')] * 3)
+
+    @mock.patch.object(pu, 'info')
+    @mock.patch.object(utils, 'execute')
+    def test_remove_partition(self, mock_exec, mock_info):
+        # should run parted OS command
+        # in order to remove partition
+        mock_info.return_value = {
+            'parts': [
+                {
+                    'begin': 1,
+                    'end': 100,
+                    'size': 100,
+                    'num': 1,
+                    'fstype': 'ext2'
+                },
+                {
+                    'begin': 100,
+                    'end': 200,
+                    'size': 100,
+                    'num': 2,
+                    'fstype': 'ext2'
+                }
+            ]
+        }
+        pu.remove_partition('/dev/fake', 1)
+        mock_exec.assert_called_once_with(
+            'parted', '-s', '/dev/fake', 'rm', '1', check_exit_code=[0])
+
+    @mock.patch.object(pu, 'info')
+    @mock.patch.object(utils, 'execute')
+    def test_remove_partition_notexists(self, mock_exec, mock_info):
+        # should check if partition does exist
+        # should raise exception if it doesn't
+        mock_info.return_value = {
+            'parts': [
+                {
+                    'begin': 1,
+                    'end': 100,
+                    'size': 100,
+                    'num': 1,
+                    'fstype': 'ext2'
+                },
+                {
+                    'begin': 100,
+                    'end': 200,
+                    'size': 100,
+                    'num': 2,
+                    'fstype': 'ext2'
+                }
+            ]
+        }
+        self.assertRaises(errors.PartitionNotFoundError, pu.remove_partition,
+                          '/dev/fake', 3)

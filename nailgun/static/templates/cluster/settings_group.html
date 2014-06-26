@@ -20,6 +20,7 @@
   <legend class="openstack-settings"><%- $.t(ns + 'label', {defaultValue: groupMetadata.label || groupName}) %></legend>
 <% } %>
 <div class="settings-group" data-settings-group="<%- groupName %>">
+  <div class="table-wrapper">
   <% var sortedSettings = _.sortBy(_.keys(settings), function(setting) {return settings[setting].weight;}); %>
   <% _.each(sortedSettings, function(settingName) { %>
     <% var setting = settings[settingName]; %>
@@ -34,9 +35,12 @@
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
       </label>
       <div class="global-description description"><%- $.t(ns + settingName + '.description', {defaultValue: setting.description}) %></div>
+      </div>
+      <div class="table-wrapper">
     <% } else if (setting.type == 'radio') { %>
+      </div>
       <legend class="openstack-sub-title"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></legend>
-      <div>
+      <div class="table-wrapper">
       <% _.each(setting.values, function(option) { %>
         <label class="parameter-box clearfix">
           <div class="parameter-control">
@@ -51,10 +55,8 @@
           <%- $.t(ns + settingName + '.values.' + option.data + '.description', {defaultValue: option.description || ' '}) %>
         </div>
       <% }) %>
-      </div>
-      <div class="parameter-spacer"></div>
     <% } else if (setting.type != 'hidden' && settingName != 'metadata') { %>
-      <div class="parameter-box clearfix">
+      <div class="parameter-box clearfix tablerow-wrapper">
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
         <div class="parameter-control <%= setting.type == 'password' ? 'input-append' : '' %>">
           <input type="<%= setting.type %>" class="<%= setting.type == 'password' ? 'input-append' : '' %>" name="<%- groupName + '.' + settingName %>" value="" <%= disabled %> />
@@ -69,4 +71,5 @@
       </div>
     <% } %>
   <% }) %>
+  </div>
 </div>

@@ -1,0 +1,181 @@
+[
+    {
+        "name": "sda",
+        "extra": [
+            "disk/by-id/scsi-SATA_VBOX_HARDDISK_VBee80dc58-8e22baee",
+            "disk/by-id/ata-VBOX_HARDDISK_VBee80dc58-8e22baee"
+        ],
+        "free_space": 64971,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "type": "lvm_meta_pool",
+                "size": 0
+            },
+            {
+                "size": 19438,
+                "type": "pv",
+                "lvm_meta_size": 64,
+                "vg": "os"
+            },
+            {
+                "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
+                "name": "cephjournal",
+                "mount": "none",
+                "disk_label": null,
+                "type": "partition",
+                "file_system": "none",
+                "size": 0
+            },
+            {
+                "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
+                "name": "ceph",
+                "mount": "none",
+                "disk_label": null,
+                "type": "partition",
+                "file_system": "none",
+                "size": 0
+            }
+        ],
+        "type": "disk",
+        "id": "sda",
+        "size": 65535
+    },
+    {
+        "name": "sdb",
+        "extra": [
+            "disk/by-id/scsi-SATA_VBOX_HARDDISK_VB56ee87e3-43f55550",
+            "disk/by-id/ata-VBOX_HARDDISK_VB56ee87e3-43f55550"
+        ],
+        "free_space": 64971,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "type": "lvm_meta_pool",
+                "size": 64
+            },
+            {
+                "size": 0,
+                "type": "pv",
+                "lvm_meta_size": 0,
+                "vg": "os"
+            },
+            {
+                "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
+                "name": "cephjournal",
+                "mount": "none",
+                "disk_label": null,
+                "type": "partition",
+                "file_system": "none",
+                "size": 0
+            },
+            {
+                "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
+                "name": "ceph",
+                "mount": "none",
+                "disk_label": null,
+                "type": "partition",
+                "file_system": "none",
+                "size": 64971
+            }
+        ],
+        "type": "disk",
+        "id": "sdb",
+        "size": 65535
+    },
+    {
+        "name": "sdc",
+        "extra": [
+            "disk/by-id/scsi-SATA_VBOX_HARDDISK_VBde174fa3-484e7f65",
+            "disk/by-id/ata-VBOX_HARDDISK_VBde174fa3-484e7f65"
+        ],
+        "free_space": 64971,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "type": "lvm_meta_pool",
+                "size": 64
+            },
+            {
+                "size": 0,
+                "type": "pv",
+                "lvm_meta_size": 0,
+                "vg": "os"
+            },
+            {
+                "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
+                "name": "cephjournal",
+                "mount": "none",
+                "disk_label": null,
+                "type": "partition",
+                "file_system": "none",
+                "size": 0
+            },
+            {
+                "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
+                "name": "ceph",
+                "mount": "none",
+                "disk_label": null,
+                "type": "partition",
+                "file_system": "none",
+                "size": 64971
+            }
+        ],
+        "type": "disk",
+        "id": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0",
+        "size": 65535
+    },
+    {
+        "_allocate_size": "min",
+        "label": "Base System",
+        "min_size": 19374,
+        "volumes": [
+            {
+                "mount": "/",
+                "size": 15360,
+                "type": "lv",
+                "name": "root",
+                "file_system": "ext4"
+            },
+            {
+                "mount": "swap",
+                "size": 4014,
+                "type": "lv",
+                "name": "swap",
+                "file_system": "swap"
+            }
+        ],
+        "type": "vg",
+        "id": "os"
+    }
+]

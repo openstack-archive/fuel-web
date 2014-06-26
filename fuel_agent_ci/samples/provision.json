@@ -1,0 +1,229 @@
+{
+    "profile": "ubuntu_1204_x86_64",
+    "name_servers_search": "\"domain.tld\"",
+    "uid": "1",
+    "interfaces": {
+        "eth2": {
+            "static": "0",
+            "mac_address": "08:00:27:b1:d7:15"
+        },
+        "eth1": {
+            "static": "0",
+            "mac_address": "08:00:27:46:43:60"
+        },
+        "eth0": {
+            "ip_address": "10.20.0.3",
+            "dns_name": "node-1.domain.tld",
+            "netmask": "255.255.255.0",
+            "static": "0",
+            "mac_address": "08:00:27:79:da:80"
+        }
+    },
+    "interfaces_extra": {
+        "eth2": {
+            "onboot": "no",
+            "peerdns": "no"
+        },
+        "eth1": {
+            "onboot": "no",
+            "peerdns": "no"
+        },
+        "eth0": {
+            "onboot": "yes",
+            "peerdns": "no"
+        }
+    },
+    "power_type": "ssh",
+    "power_user": "root",
+    "kernel_options": {
+        "udevrules": "08:00:27:79:da:80_eth0,08:00:27:46:43:60_eth1,08:00:27:b1:d7:15_eth2",
+        "netcfg/choose_interface": "08:00:27:79:da:80"
+    },
+    "power_address": "10.20.0.253",
+    "name_servers": "\"10.20.0.2\"",
+    "ks_meta": {
+        "mco_enable": 1,
+        "mco_vhost": "mcollective",
+        "mco_pskey": "unset",
+        "mco_user": "mcollective",
+        "puppet_enable": 0,
+        "fuel_version": "5.0.1",
+        "install_log_2_syslog": 1,
+        "mco_password": "marionette",
+        "puppet_auto_setup": 1,
+        "puppet_master": "fuel.domain.tld",
+        "mco_auto_setup": 1,
+        "auth_key": "\"\"",
+        "pm_data": {
+            "kernel_params": "console=ttyS0,9600 console=tty0 rootdelay=90 nomodeset",
+            "ks_spaces": [
+                {
+                    "name": "sda",
+                    "extra": [
+                        "disk/by-id/scsi-SATA_VBOX_HARDDISK_VB69050467-b385c7cd",
+                        "disk/by-id/ata-VBOX_HARDDISK_VB69050467-b385c7cd"
+                    ],
+                    "free_space": 64907,
+                    "volumes": [
+                        {
+                            "type": "boot",
+                            "size": 300
+                        },
+                        {
+                            "mount": "/boot",
+                            "size": 200,
+                            "type": "raid",
+                            "file_system": "ext2",
+                            "name": "Boot"
+                        },
+                        {
+                            "type": "lvm_meta_pool",
+                            "size": 0
+                        },
+                        {
+                            "size": 19438,
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "vg": "os"
+                        },
+                        {
+                            "size": 45597,
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "vg": "image"
+                        }
+                    ],
+                    "type": "disk",
+                    "id": "sda",
+                    "size": 65535
+                },
+                {
+                    "name": "sdb",
+                    "extra": [
+                        "disk/by-id/scsi-SATA_VBOX_HARDDISK_VBf2923215-708af674",
+                        "disk/by-id/ata-VBOX_HARDDISK_VBf2923215-708af674"
+                    ],
+                    "free_space": 64907,
+                    "volumes": [
+                        {
+                            "type": "boot",
+                            "size": 300
+                        },
+                        {
+                            "mount": "/boot",
+                            "size": 200,
+                            "type": "raid",
+                            "file_system": "ext2",
+                            "name": "Boot"
+                        },
+                        {
+                            "type": "lvm_meta_pool",
+                            "size": 64
+                        },
+                        {
+                            "size": 0,
+                            "type": "pv",
+                            "lvm_meta_size": 0,
+                            "vg": "os"
+                        },
+                        {
+                            "size": 64971,
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "vg": "image"
+                        }
+                    ],
+                    "type": "disk",
+                    "id": "sdb",
+                    "size": 65535
+                },
+                {
+                    "name": "sdc",
+                    "extra": [
+                        "disk/by-id/scsi-SATA_VBOX_HARDDISK_VB50ee61eb-84e74fdf",
+                        "disk/by-id/ata-VBOX_HARDDISK_VB50ee61eb-84e74fdf"
+                    ],
+                    "free_space": 64907,
+                    "volumes": [
+                        {
+                            "type": "boot",
+                            "size": 300
+                        },
+                        {
+                            "mount": "/boot",
+                            "size": 200,
+                            "type": "raid",
+                            "file_system": "ext2",
+                            "name": "Boot"
+                        },
+                        {
+                            "type": "lvm_meta_pool",
+                            "size": 64
+                        },
+                        {
+                            "size": 0,
+                            "type": "pv",
+                            "lvm_meta_size": 0,
+                            "vg": "os"
+                        },
+                        {
+                            "size": 64971,
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "vg": "image"
+                        }
+                    ],
+                    "type": "disk",
+                    "id": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0",
+                    "size": 65535
+                },
+                {
+                    "_allocate_size": "min",
+                    "label": "Base System",
+                    "min_size": 19374,
+                    "volumes": [
+                        {
+                            "mount": "/",
+                            "size": 15360,
+                            "type": "lv",
+                            "name": "root",
+                            "file_system": "ext4"
+                        },
+                        {
+                            "mount": "swap",
+                            "size": 4014,
+                            "type": "lv",
+                            "name": "swap",
+                            "file_system": "swap"
+                        }
+                    ],
+                    "type": "vg",
+                    "id": "os"
+                },
+                {
+                    "_allocate_size": "all",
+                    "label": "Image Storage",
+                    "min_size": 5120,
+                    "volumes": [
+                        {
+                            "mount": "/var/lib/glance",
+                            "size": 175347,
+                            "type": "lv",
+                            "name": "glance",
+                            "file_system": "xfs"
+                        }
+                    ],
+                    "type": "vg",
+                    "id": "image"
+                }
+            ]
+        },
+        "mco_connector": "rabbitmq",
+        "mco_host": "10.20.0.2"
+    },
+    "name": "node-1",
+    "hostname": "node-1.domain.tld",
+    "slave_name": "node-1",
+    "power_pass": "/root/.ssh/bootstrap.rsa",
+    "netboot_enabled": "1"
+}

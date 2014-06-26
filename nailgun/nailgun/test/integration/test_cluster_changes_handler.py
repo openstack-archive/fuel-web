@@ -162,9 +162,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [700, 600, 500],
-            'cinder': 800,
-            'compute': 800
+            'controller': [600, 500, 400],
+            'cinder': 700,
+            'compute': 700
         }
 
         deployment_info = []
@@ -271,6 +271,8 @@ class TestHandlers(BaseIntegrationTest):
                         'kernel_params': n.kernel_params,
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -325,7 +327,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': settings.PROVISION_METHOD,
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -504,9 +508,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [700, 600, 500],
-            'cinder': 800,
-            'compute': 800
+            'controller': [600, 500, 400],
+            'cinder': 700,
+            'compute': 700
         }
         deployment_info = []
         for node in nodes_db:
@@ -670,6 +674,8 @@ class TestHandlers(BaseIntegrationTest):
                         'kernel_params': n.kernel_params,
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -724,7 +730,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': settings.PROVISION_METHOD,
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -1128,7 +1136,7 @@ class TestHandlers(BaseIntegrationTest):
         if path is None:
             path = []
 
-        # print("Path: {0}".format("->".join(path)))
+        print("Path: {0}".format("->".join(path)))
         if not isinstance(node1, dict) or not isinstance(node2, dict):
             if isinstance(node1, list):
                 newpath = path[:]

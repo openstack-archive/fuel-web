@@ -1,0 +1,31 @@
+name: "fuel_agent_ci"
+
+networks:
+  - name: "net"
+    ip: "10.250.2.1"
+    bridge: "ci"
+    forward: "nat"
+
+dhcp:
+  start: "10.250.2.2"
+  end: "10.250.2.254"
+  hosts:
+    - mac: "52:54:a5:45:65:ae"
+      ip: "10.250.2.20"
+      name: "fuel-agent-ci.domain.tld"
+  bootp:
+    file: "pxelinux.0"
+  network: "net"
+
+tftp:
+  tftp_root: "tftpboot"
+  network: "net"
+
+virtual_machines:
+  - name: "vm"
+    interfaces:
+      - mac: "52:54:a5:45:65:ae"
+        network: "net"
+    disks:
+      - size: "10240"
+    boot: "network"

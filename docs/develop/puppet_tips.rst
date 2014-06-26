@@ -39,24 +39,24 @@ There are also some hacks such are defining resource inside *if !
 defined(Service['apache']) { ... }* block or using **ensure_resource** 
 function from Puppet's stdlib.
 
-Similiar problems often arise then working with configuration files.
-Even using templates doesn't allow several modules to directly edit save
+Similar problems often arise then working with configuration files.
+Even using templates doesn't allow several modules to directly edit same
 file. There are a number of solutions to this starting from using
 configurations directories and snippets if service supports them to
 representing lines or configuration options as resources and managing
 them instead of entire files.
 
 Many services does support configuration directories where you can place
-configuration files snippets. Daemon will read them all, concatinate and
-use like it was a single file. Such services are the most convinient to
-manage with Puppet. You can just separate you configuration mand manage
+configuration files snippets. Daemon will read them all, concatenate and
+use like it was a single file. Such services are the most convenient to
+manage with Puppet. You can just separate you configuration and manage
 its pieces as templates. If your service doesn't know how to work with
 snippets you still can use them. You only need to create parts of your
 configuration file in some directory and then just combine them all
-using simple exec with *cat* command. There is also a speciall *concat*
+using simple exec with *cat* command. There is also a special *concat*
 resource type to make this approach easier. 
 
-Some configuration files could have stamdard structure and can be managed
+Some configuration files could have standard structure and can be managed
 by custom resource types. For example, there is the *ini_file* resource
 type to manage values in compatible configuration as single resources.
 There is also *augeas* resource type that can manage many popular
@@ -133,12 +133,12 @@ of the deployment process.
 
 The most common solution to this issue is **Anchor Pattern**. Anchors are 
 special 'do-nothing' resources found in Puppetlab's stdlib module.
-Anchors can be declared inside top level class and be containd
+Anchors can be declared inside top level class and be contained
 inside as any normal resource. If two anchors was declared they can be
 named as *start* and *end* anchor. All classes, that should be contained
 inside the top-level class can have dependencies with both anchors.
 If a class should go after the start anchor and before the end anchor
-it will be locked between them and will be correctly containd inside
+it will be locked between them and will be correctly contained inside
 the parent class.::
 
   class a {
@@ -268,7 +268,7 @@ Will say 'a' in puppet 2.* and 3.* both. But.::
 
   include 'n1'
 
-Will say 'n1' in puppet 2.6, will say 'n1' and issue *deprication warning* in 
+Will say 'n1' in puppet 2.6, will say 'n1' and issue *deprecation warning* in 
 2.7, and will say 'top' in puppet 3.*
 
 Finding such variable references replacing them with fully qualified names is 

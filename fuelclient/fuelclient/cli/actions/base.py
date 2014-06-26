@@ -12,9 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import requests
+import ConfigParser
 from functools import partial
 from functools import wraps
 from itertools import imap
+from keystoneclient.v2_0 import client
 
 from fuelclient.cli.error import ArgumentException
 from fuelclient.cli.formatting import quote_and_join
@@ -46,7 +49,14 @@ class Action(object):
         """Entry point for all actions subclasses
         """
         APIClient.debug_mode(debug=params.debug)
+        if 'user' in params:
+            user, password = params.get('user')
+            APIClient.user = user
+            APIClient.user = password
+            APIClient.get_token()
+            
         self.serializer = Serializer.from_params(params)
+        self.token = self.get_token(params.get('user'))
         if self.flag_func_map is not None:
             for flag, method in self.flag_func_map:
                 if flag is None or getattr(params, flag):

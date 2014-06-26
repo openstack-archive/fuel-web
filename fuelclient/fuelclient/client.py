@@ -25,12 +25,15 @@ class Client(object):
     """This class handles API requests
     """
 
-    def __init__(self):
+    def __init__(self, user=None, password=None):
         self.debug = False
         path_to_config = "/etc/fuel-client.yaml"
         defaults = {
             "LISTEN_ADDRESS": "127.0.0.1",
-            "LISTEN_PORT": "8000"
+            "LISTEN_PORT": "8000",
+            "KEYSTONE_USER": "admin",
+            "KEYSTONE_PASSWORD": "admin",
+            "KEYSTONE_PORT": "5000"
         }
         if os.path.exists(path_to_config):
             with open(path_to_config, "r") as fh:
@@ -39,8 +42,19 @@ class Client(object):
         else:
             defaults.update(os.environ)
         self.root = "http://{LISTEN_ADDRESS}:{LISTEN_PORT}".format(**defaults)
+        self.keystone_base = "http://{LISTEN_ADDRESS}:{KEYSTONE_PORT}".format(**defaults)
         self.api_root = self.root + "/api/v1/"
         self.ostf_root = self.root + "/ostf/"
+        self.user = user or defaults["KEYSTONE_USER"]
+        self.password = password or defaults["KEYSTONE_PASSWORD"]
+        self.get_token()
+
+    def get_token(self):
+        keystone = client.Client(username=self.user,
+                     password=self.password)
+        raw_token = keystone.get_raw_token_from_identity_service(
+            ''.join([self.keystone_base, 'v3/auth/tokens']))
+        self.token = raw_token.auth_token
 
     def debug_mode(self, debug=False):
         self.debug = debug
@@ -59,6 +73,7 @@ class Client(object):
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         request = urllib2.Request(self.api_root + api)
         request.add_header('Content-Type', 'application/json')
+        request.add_header('HTTP_X_AUTH_TOKEN', self.token)
         request.get_method = lambda: 'DELETE'
         opener.open(request)
         return {}
@@ -74,6 +89,7 @@ class Client(object):
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         request = urllib2.Request(self.api_root + api, data=data_json)
         request.add_header('Content-Type', 'application/json')
+        request.add_header('HTTP_X_AUTH_TOKEN', self.token)
         request.get_method = lambda: 'PUT'
         return json.loads(
             opener.open(request).read()
@@ -88,6 +104,7 @@ class Client(object):
             .format(url)
         )
         request = urllib2.urlopen(url)
+        request.add_header('HTTP_X_AUTH_TOKEN', self.token)
         return json.loads(
             request.read()
         )
@@ -108,6 +125,7 @@ class Client(object):
                 'Content-Type': 'application/json'
             }
         )
+        request.add_header('HTTP_X_AUTH_TOKEN', self.token)
         try:
             response = json.loads(
                 urllib2.urlopen(request)
@@ -124,6 +142,4 @@ class Client(object):
             default_flow_style=False
         )
 
-# This line is single point of instantiation for 'Client' class,
-# which intended to implement Singleton design pattern.
 APIClient = Client()

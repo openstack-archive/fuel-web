@@ -1,0 +1,161 @@
+[
+    {
+        "name": "sda",
+        "extra": [
+            "disk/by-id/scsi-SATA_VBOX_HARDDISK_VB39e72f9e-d0da1fcd",
+            "disk/by-id/ata-VBOX_HARDDISK_VB39e72f9e-d0da1fcd"
+        ],
+        "free_space": 64907,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "type": "lvm_meta_pool",
+                "size": 0
+            },
+            {
+                "size": 19438,
+                "type": "pv",
+                "lvm_meta_size": 64,
+                "vg": "os"
+            },
+            {
+                "size": 45597,
+                "type": "pv",
+                "lvm_meta_size": 64,
+                "vg": "image"
+            }
+        ],
+        "type": "disk",
+        "id": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0",
+        "size": 65535
+    },
+    {
+        "name": "sdb",
+        "extra": [
+            "disk/by-id/scsi-SATA_VBOX_HARDDISK_VB6dbf6500-ae917714",
+            "disk/by-id/ata-VBOX_HARDDISK_VB6dbf6500-ae917714"
+        ],
+        "free_space": 64907,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "type": "lvm_meta_pool",
+                "size": 64
+            },
+            {
+                "size": 0,
+                "type": "pv",
+                "lvm_meta_size": 0,
+                "vg": "os"
+            },
+            {
+                "size": 64971,
+                "type": "pv",
+                "lvm_meta_size": 64,
+                "vg": "image"
+            }
+        ],
+        "type": "disk",
+        "id": "sdb",
+        "size": 65535
+    },
+    {
+        "name": "sdc",
+        "extra": [
+            "disk/by-id/scsi-SATA_VBOX_HARDDISK_VBa023ea88-b207b79c",
+            "disk/by-id/ata-VBOX_HARDDISK_VBa023ea88-b207b79c"
+        ],
+        "free_space": 64907,
+        "volumes": [
+            {
+                "type": "boot",
+                "size": 300
+            },
+            {
+                "mount": "/boot",
+                "size": 200,
+                "type": "raid",
+                "file_system": "ext2",
+                "name": "Boot"
+            },
+            {
+                "type": "lvm_meta_pool",
+                "size": 64
+            },
+            {
+                "size": 0,
+                "type": "pv",
+                "lvm_meta_size": 0,
+                "vg": "os"
+            },
+            {
+                "size": 64971,
+                "type": "pv",
+                "lvm_meta_size": 64,
+                "vg": "image"
+            }
+        ],
+        "type": "disk",
+        "id": "sdc",
+        "size": 65535
+    },
+    {
+        "_allocate_size": "min",
+        "label": "Base System",
+        "min_size": 19374,
+        "volumes": [
+            {
+                "mount": "/",
+                "size": 15360,
+                "type": "lv",
+                "name": "root",
+                "file_system": "ext4"
+            },
+            {
+                "mount": "swap",
+                "size": 4014,
+                "type": "lv",
+                "name": "swap",
+                "file_system": "swap"
+            }
+        ],
+        "type": "vg",
+        "id": "os"
+    },
+    {
+        "_allocate_size": "all",
+        "label": "Image Storage",
+        "min_size": 5120,
+        "volumes": [
+            {
+                "mount": "/var/lib/glance",
+                "size": 175347,
+                "type": "lv",
+                "name": "glance",
+                "file_system": "xfs"
+            }
+        ],
+        "type": "vg",
+        "id": "image"
+    }
+]

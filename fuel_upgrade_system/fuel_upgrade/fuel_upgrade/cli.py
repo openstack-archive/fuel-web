@@ -19,17 +19,38 @@ import sys
 import traceback
 
 from fuel_upgrade.logger import configure_logger
-# TODO(eli): move to config
-logger = configure_logger('/tmp/file.log')
+logger = configure_logger('/var/log/fuel_upgrade.log')
 
+from fuel_upgrade.config import build_config
 from fuel_upgrade import errors
-from fuel_upgrade.upgrade import PuppetUpgrader
-from fuel_upgrade.upgrade import Upgrade
+from fuel_upgrade.upgrade import UpgradeManager
+
+from fuel_upgrade.engines.docker_engine import DockerInitializer
+from fuel_upgrade.engines.docker_engine import DockerUpgrader
+from fuel_upgrade.engines.host_system import HostSystemUpgrader
+from fuel_upgrade.engines.openstack import OpenStackUpgrader
+
+
+#: A dict with supported systems.
+#: The key is used for system option in CLI.
+SUPPORTED_SYSTEMS = {
+    'host-system': HostSystemUpgrader,
+    'docker-init': DockerInitializer,
+    'docker': DockerUpgrader,
+    'openstack': OpenStackUpgrader,
+}
+
+#: A list of tuples of incompatible systems.
+#: That's mean, if two of this systems has appered in user input
+#: we gonna to show error that's impossible to do.
+UNCOMPATIBLE_SYSTEMS = (
+    ('docker-init', 'docker'),
+)
 
 
 def handle_exception(exc):
     if isinstance(exc, errors.FuelUpgradeException):
-        logger.error(exc.message)
+        logger.error(exc)
         sys.exit(-1)
     else:
         traceback.print_exc(exc)
@@ -39,36 +60,51 @@ def handle_exception(exc):
 def parse_args():
     """Parse arguments and return them
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description='fuel-upgrade is an upgrade system for fuel-master node')
 
     parser.add_argument(
-        '--src',
-        help='path to update file',
-        required=True)
-
+        'systems', choices=SUPPORTED_SYSTEMS.keys(), nargs='+',
+        help='systems to upgrade')
     parser.add_argument(
-        '--dst',
-        help='working directory',
-        required=True)
-
+        '--src', required=True, help='path to update file')
     parser.add_argument(
-        '--disable_rollback',
-        help='disable rollabck in case of errors',
-        action='store_false')
+        '--no-checker', action='store_true',
+        help='do not check before upgrade')
+    parser.add_argument(
+        '--no-rollback', action='store_true',
+        help='do not rollback in case of errors')
 
-    return parser.parse_args()
+    rv = parser.parse_args()
+
+    # check input systems for compatibility
+    for uncompatible_systems in UNCOMPATIBLE_SYSTEMS:
+        if all(u_system in rv.systems for u_system in uncompatible_systems):
+            parser.error(
+                'the following systems are incompatible and can not be'
+                'used at the same time: "{0}"'.format(
+                    ', '.join(uncompatible_systems)
+                )
+            )
+
+    return rv
 
 
 def run_upgrade(args):
     """Run upgrade on master node
     """
-    upgrader = Upgrade(
-        args.src,
-        args.dst,
-        PuppetUpgrader(args.src),
-        disable_rollback=args.disable_rollback)
+    upgraders_to_use = [
+        SUPPORTED_SYSTEMS[system] for system in args.systems
+    ]
 
-    upgrader.run()
+    upgrade_manager = UpgradeManager(
+        args.src,
+        build_config(args.src),
+        upgraders_to_use,
+        args.no_rollback,
+        args.no_checker)
+
+    upgrade_manager.run()
 
 
 def main():

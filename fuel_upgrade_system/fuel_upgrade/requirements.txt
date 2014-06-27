@@ -1,2 +1,15 @@
 argparse==1.2.1
 PyYAML==3.10
+Mako==0.9.1
+requests==2.2.1
+six==1.5.2
+
+# We have to use custom version of docker
+# because docker 0.10 changed their api
+# and now volumes_from should be passed
+# on containers starting stage.
+# The patch for docker-py was merged but wasn't released
+# yet https://github.com/dotcloud/docker-py/pull/200
+# It's the reason why we use dependencies from
+# custom branch
+git+https://github.com/rustyrobot/docker-py.git@fixed-volumes#egg=docker-py

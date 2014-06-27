@@ -1,0 +1,45 @@
+#!/bin/bash
+
+CONTAINER_NAME=${container_name}
+ASTUTE_YAML=/etc/fuel/astute.yaml
+
+if [ -z "$CONTAINER_NAME" ]; then
+    echo $usage
+    exit 1
+fi
+
+docker start $CONTAINER_NAME
+
+function is_exist {
+  docker ps | grep -q $CONTAINER_NAME
+  return $?
+}
+
+if ! is_exist $CONTAINER_NAME; then
+    echo "ERROR: $CONTAINER_NAME container does not exist." 1>&2
+    exit 1
+fi
+
+cobbler_ip=$(docker inspect --format='{{.NetworkSettings.IPAddress}}' $CONTAINER_NAME)
+admin_interface=$(grep interface: $ASTUTE_YAML | cut -d':' -f2 | tr -d ' ')
+
+if [ -z "$cobbler_ip" ]; then
+    echo "ERROR: could not retrieve ip address of cobbler container"
+    exit 1
+fi
+
+cat > /etc/sysconfig/dhcrelay << EOF
+# Command line options here
+DHCRELAYARGS=""
+# DHCPv4 only
+INTERFACES="$admin_interface docker0"
+# DHCPv4 only
+DHCPSERVERS="$cobbler_ip"
+EOF
+
+rpm -q dhcp 2>&1 > /dev/null || yum --quiet -y install dhcp
+chkconfig dhcrelay on
+service dhcrelay restart
+
+echo "INFO: Start container $CONTAINER_NAME"
+docker start -a $CONTAINER_NAME

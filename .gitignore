@@ -36,3 +36,5 @@ nailgun/static/css/styles.css
 *.egg-info
 
 fuel-web-venv
+
+.bashrc

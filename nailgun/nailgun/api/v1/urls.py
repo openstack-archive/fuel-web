@@ -196,3 +196,10 @@ _locals = locals()
 
 def app():
     return web.application(urls, _locals)
+
+
+def public_urls():
+    return {r'/nodes/?$': ['POST'],
+            r'/nodes/agent/?$': ['PUT'],
+            r'/version/?$': ['GET']
+            }

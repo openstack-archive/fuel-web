@@ -35,7 +35,7 @@ substitutions = {
     "create": "--create",
     "remove": "--delete",
     "config": "--config",
-    "--roles": "--role"
+    "--roles": "--role",
 }
 
 
@@ -287,6 +287,11 @@ def get_download_arg(help_msg):
 
 def get_list_arg(help_msg):
     return get_boolean_arg("list", flags=("-l",), help=help_msg)
+
+
+def get_update_arg(help_msg):
+    return get_boolean_arg("update",
+                           flags=("--env-update",), help=help_msg)
 
 
 def get_dir_arg(help_msg):

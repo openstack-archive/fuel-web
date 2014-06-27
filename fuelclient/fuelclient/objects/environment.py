@@ -49,16 +49,23 @@ class Environment(BaseObject):
         data = cls.connection.post_request("clusters/", data)
         return cls.init_with_data(data)
 
-    def set(self, name=None, mode=None):
-        data = {}
-        if mode:
+    def set(self, data):
+        if data.get('mode'):
             data["mode"] = "ha_compact" \
-                if mode.lower() == "ha" else "multinode"
-        if name:
-            data["name"] = name
+                if data['mode'].lower() == "ha" else "multinode"
+
         return self.connection.put_request(
             "clusters/{0}/".format(self.id),
             data
+        )
+
+    def update_env(self):
+        from fuelclient.objects.task import Task
+        return Task.init_with_data(
+            self.connection.put_request(
+                "clusters/{0}/update/".format(self.id),
+                {}
+            )
         )
 
     def delete(self):

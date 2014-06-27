@@ -25,12 +25,12 @@ class TestHandlers(BaseTestCase):
     def test_env_action(self):
         #check env help
         help_msgs = ["usage: fuel environment [-h]",
-                     "[--list | --set | --delete | --create]",
+                     "[--list | --set | --delete | --create | --update]",
                      "optional arguments:", "--help", "--list", "--set",
                      "--delete", "--rel", "--env-create",
                      "--create", "--name", "--env-name", "--mode", "--net",
                      "--network-mode", "--nst", "--net-segment-type",
-                     "--deployment-mode"]
+                     "--deployment-mode", "--update", "--env-update"]
         self.check_all_in_msg("env --help", help_msgs)
         #no clusters
         self.check_for_rows_in_table("env")
@@ -41,15 +41,17 @@ class TestHandlers(BaseTestCase):
         #list of tuples (<fuel CLI command>, <expected output of a command>)
         expected_stdout = \
             [(
-                "env create --name=TestEnv --release=1",
+                "env --create --name=TestEnv --release=1",
                 "Environment 'TestEnv' with id=1, mode=ha_compact and "
                 "network-mode=nova_network was created!\n"
             ), (
                 "--env-id=1 env set --name=NewEnv",
-                "Environment with id=1 was renamed to 'NewEnv'.\n"
+                ("Following attributes are changed for "
+                 "the environment: name=NewEnv\n")
             ), (
                 "--env-id=1 env set --mode=multinode",
-                "Mode of environment with id=1 was set to 'multinode'.\n"
+                ("Following attributes are changed for "
+                 "the environment: mode=multinode\n")
             )]
 
         for cmd, msg in expected_stdout:

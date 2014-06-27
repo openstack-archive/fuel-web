@@ -1,6 +1,13 @@
 LISTEN_ADDRESS: "0.0.0.0"
 LISTEN_PORT: "8000"
 DEVELOPMENT: 1
+# Possible options:
+# - none - authentication is disabled
+# - fake - no keystone required, credentials: admin/admin
+# - keystone - authentication enabled.
+AUTHENTICATION_METHOD: "fake"
+# use only if AUTHENTICATION_METHOD is set to "keystone"
+KEYSTONE_ADMIN_TOKEN: "ADMIN"
 
 VERSION:
   release: "5.0"

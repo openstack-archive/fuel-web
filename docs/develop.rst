@@ -12,6 +12,7 @@ Development Documentation
    develop/sequence
    develop/env
    develop/system_tests/tree
+   develop/live_masternode
    develop/nailgun
    develop/module_structure
    develop/fuel_settings

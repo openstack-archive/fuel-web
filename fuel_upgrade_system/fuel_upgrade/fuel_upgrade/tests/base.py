@@ -85,7 +85,7 @@ class BaseTestCase(TestCase):
         }
         return conf
 
-    def mock_open(self, text):
+    def mock_open(self, text, filename='some.yaml'):
         """Mocks builtin open function.
 
         Usage example:
@@ -97,7 +97,9 @@ class BaseTestCase(TestCase):
                 # call some methods that are used open() to read some
                 # stuff internally
         """
-        return mock.MagicMock(return_value=FakeFile(text))
+        fileobj = FakeFile(text)
+        setattr(fileobj, 'name', filename)
+        return mock.MagicMock(return_value=fileobj)
 
     def mock_requests_response(self, status_code, body):
         """Creates a response object with custom status code and body.

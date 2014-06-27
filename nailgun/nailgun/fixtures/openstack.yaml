@@ -113,7 +113,7 @@
           min_size: {generator: "calc_min_vm_size"}
           label: "Virtual Storage"
           volumes:
-            - mount: "{{settings.NOVA_STATE_PATH}}"
+            - mount: "/var/lib/nova"
               type: "lv"
               name: "nova"
               size:
@@ -343,7 +343,7 @@
             generator: "password"
           user_password:
             generator: "password"
-          state_path: "{{settings.NOVA_STATE_PATH}}"
+          state_path: "/var/lib/nova"
         rabbit:
           password:
             generator: "password"
@@ -518,7 +518,7 @@
           min_size: {generator: "calc_min_vm_size"}
           label: "Virtual Storage"
           volumes:
-            - mount: "{{settings.NOVA_STATE_PATH}}"
+            - mount: "/var/lib/nova"
               type: "lv"
               name: "nova"
               size:

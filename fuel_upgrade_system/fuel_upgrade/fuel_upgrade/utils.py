@@ -26,6 +26,7 @@ import urllib2
 from copy import deepcopy
 
 from mako.template import Template
+import yaml
 
 from fuel_upgrade import errors
 
@@ -260,3 +261,55 @@ def copytree(source, destination, overwrite=True):
 def rmtree(source, ignore_errors=True):
     logger.debug(u'Removing %s', source)
     shutil.rmtree(source, ignore_errors=ignore_errors)
+
+
+def dict_merge(a, b):
+    '''recursively merges dict's. not just simple a['key'] = b['key'], if
+    both a and bhave a key who's value is a dict then dict_merge is called
+    on both values and the result stored in the returned dictionary.
+    '''
+    if not isinstance(b, dict):
+        return deepcopy(b)
+    result = deepcopy(a)
+    for k, v in b.iteritems():
+        if k in result and isinstance(result[k], dict):
+            result[k] = dict_merge(result[k], v)
+        else:
+            result[k] = deepcopy(v)
+    return result
+
+
+def load_fixture(fileobj, loader=None):
+    # a key that's used to mark some item as abstract
+    pk_key = 'pk'
+
+    # a key that's used to tell some item inherit data
+    # from an abstract one
+    inherit_key = 'extend'
+
+    # a list of supported loaders; the loader should be a func
+    # that receives a file-like object
+    supported_loaders = {
+        '.json': json.load,
+        '.yaml': yaml.load,
+        '.yml': yaml.load,
+    }
+
+    def extend(obj):
+        if inherit_key in obj:
+            obj[inherit_key] = extend(obj[inherit_key])
+        return dict_merge(obj.get(inherit_key, {}), obj)
+
+    # try to get loader from a given fixture if loader is None
+    if loader is None:
+        _, ext = os.path.splitext(fileobj.name)
+        loader = supported_loaders[ext]
+    fixture = loader(fileobj)
+
+    # render fixture
+    fixture = filter(lambda obj: obj.get(pk_key) is not None, fixture)
+    for i in range(0, len(fixture)):
+        fixture[i] = extend(fixture[i])
+        fixture[i].pop(inherit_key, None)
+
+    return [f['fields'] for f in fixture]

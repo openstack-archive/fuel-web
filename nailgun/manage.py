@@ -57,6 +57,11 @@ def load_run_parsers(subparsers):
         '--fake-tasks-tick-interval', action='store', type=int,
         help='Fake tasks tick interval in seconds'
     )
+    run_parser.add_argument(
+        '--authentication-method', action='store', type=str,
+        help='Choose authentication type',
+        choices=['none', 'fake', 'keystone'],
+    )
 
 
 def load_db_parsers(subparsers):
@@ -230,6 +235,11 @@ def action_run(params):
         param = getattr(params, attr.lower())
         if param is not None:
             settings.update({attr: param})
+
+    if params.authentication_method:
+        auth_method = params.authentication_method
+        settings.update({'AUTHENTICATION_METHOD' : auth_method})
+
     if params.config_file:
         settings.update_from_file(params.config_file)
     from nailgun.app import appstart

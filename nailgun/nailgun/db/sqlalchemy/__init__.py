@@ -62,6 +62,7 @@ def syncdb():
 def dropdb():
     from nailgun.db import migration
     from nailgun.db.sqlalchemy.models.base import Base
+
     conn = engine.connect()
     trans = conn.begin()
 
@@ -93,9 +94,21 @@ def dropdb():
     for table in tbs:
         conn.execute(schema.DropTable(table))
 
+    custom_types = conn.execute(
+        "SELECT n.nspname as schema, t.typname as type "
+        "FROM pg_type t LEFT JOIN pg_catalog.pg_namespace n "
+        "ON n.oid = t.typnamespace "
+        "WHERE (t.typrelid = 0 OR (SELECT c.relkind = 'c' "
+        "FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid)) "
+        "AND NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el "
+        "WHERE el.oid = t.typelem AND el.typarray = t.oid) "
+        "AND     n.nspname NOT IN ('pg_catalog', 'information_schema')"
+    )
+
+    for tp in custom_types:
+        conn.execute("DROP TYPE {0}".format(tp[1]))
+
     trans.commit()
-    # needed to cleanup custom types
-    Base.metadata.drop_all(bind=engine)
     migration.drop_migration_meta(engine)
 
 

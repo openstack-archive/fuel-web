@@ -57,6 +57,11 @@ def load_run_parsers(subparsers):
         '--fake-tasks-tick-interval', action='store', type=int,
         help='Fake tasks tick interval in seconds'
     )
+    run_parser.add_argument(
+        '--authentication-method', action='store', type=str,
+        help='Choose authentication type',
+        choices=['none', 'fake', 'keystone'],
+    )
 
 
 def load_db_parsers(subparsers):
@@ -171,18 +176,22 @@ def action_loaddefault(params):
 def action_syncdb(params):
     from nailgun.db import syncdb
     from nailgun.logger import logger
+    from nailgun.keystonedb import sync_keystone_db
 
     logger.info("Syncing database...")
     syncdb()
+    sync_keystone_db()
     logger.info("Done")
 
 
 def action_dropdb(params):
     from nailgun.db import dropdb
     from nailgun.logger import logger
+    from nailgun.keystonedb import drop_keystone_db
 
     logger.info("Dropping database...")
     dropdb()
+    drop_keystone_db()
     logger.info("Done")
 
 
@@ -230,6 +239,11 @@ def action_run(params):
         param = getattr(params, attr.lower())
         if param is not None:
             settings.update({attr: param})
+
+    if params.authentication_method:
+        auth_method = params.authentication_method
+        settings.update({'AUTHENTICATION_METHOD' : auth_method})
+
     if params.config_file:
         settings.update_from_file(params.config_file)
     from nailgun.app import appstart

@@ -29,6 +29,7 @@ requirejs.config({
         backbone: 'js/libs/custom/backbone',
         stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
         coccyx: 'js/libs/custom/coccyx',
+        cocktail: 'js/libs/bower/cocktail/Cocktail',
         bootstrap: 'js/libs/custom/bootstrap.min',
         text: 'js/libs/bower/requirejs-text/js/text',
         i18next: 'js/libs/bower/i18next/js/i18next-1.7.1',
@@ -40,15 +41,20 @@ requirejs.config({
         styles: 'js/styles',
         models: 'js/models',
         collections: 'js/collections',
-        views: 'js/views'
+        views: 'js/views',
+        view_mixins: 'js/view_mixins'
     },
     shim: {
         underscore: {
             exports: '_'
         },
         backbone: {
-            deps: ['underscore', 'jquery'],
-            exports: 'Backbone'
+            deps: ['underscore', 'jquery', 'cocktail'],
+            exports: 'Backbone',
+            init: function(_, $, Cocktail) {
+                'use strict';
+                Cocktail.patch(Backbone);
+            }
         },
         expression_parser: {
             exports: 'parser'
@@ -95,6 +101,7 @@ require([
     'stickit',
     'deepModel',
     'coccyx',
+    'cocktail',
     'i18next',
     'bootstrap',
     'jquery-checkbox',

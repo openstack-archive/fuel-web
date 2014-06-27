@@ -56,11 +56,8 @@
     <% } else if (setting.type != 'hidden' && settingName != 'metadata') { %>
       <div class="parameter-box clearfix">
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
-        <div class="parameter-control <%= setting.type == 'password' ? 'input-append' : '' %>">
-          <input type="<%= setting.type %>" class="<%= setting.type == 'password' ? 'input-append' : '' %>" name="<%- groupName + '.' + settingName %>" value="" <%= disabled %> />
-          <% if (setting.type == 'password') { %>
-            <span class="add-on"><i class="icon-eye"></i><i class="icon-eye-off hide"></i></span>
-          <% } %>
+        <div class="parameter-control">
+          <input type="<%= setting.type %>" name="<%- groupName + '.' + settingName %>" value="" <%= disabled %> />
         </div>
         <div class="parameter-description description">
           <%- setting.description ? $.t(ns + settingName + '.description', {defaultValue: setting.description}) : '' %>

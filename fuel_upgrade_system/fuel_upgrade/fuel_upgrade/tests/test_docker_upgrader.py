@@ -50,32 +50,6 @@ class TestDockerUpgrader(BaseTestCase):
         self.docker_patcher.stop()
         self.supervisor_patcher.stop()
 
-    @mock.patch('fuel_upgrade.engines.docker_engine.time.sleep')
-    def test_run_with_retries(self, sleep):
-        image_name = 'test_image'
-        retries_count = 3
-        self.docker_mock.wait.return_value = 1
-
-        with self.assertRaises(errors.DockerExecutedErrorNonZeroExitCode):
-            self.upgrader.run(
-                image_name,
-                retry_interval=1,
-                retries_count=retries_count)
-
-        self.assertEqual(sleep.call_count, retries_count)
-        self.called_once(self.docker_mock.create_container)
-
-    def test_run_without_errors(self):
-        image_name = 'test_image'
-        self.docker_mock.wait.return_value = 0
-
-        self.upgrader.run(image_name)
-
-        self.called_once(self.docker_mock.create_container)
-        self.called_once(self.docker_mock.logs)
-        self.called_once(self.docker_mock.start)
-        self.called_once(self.docker_mock.wait)
-
     def mock_methods(self, obj, methods):
         for method in methods:
             setattr(obj, method, mock.MagicMock())

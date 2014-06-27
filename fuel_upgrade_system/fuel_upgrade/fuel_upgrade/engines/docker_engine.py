@@ -562,59 +562,6 @@ class DockerUpgrader(UpgradeEngine):
             self.docker_client.stop(
                 container_id, self.config.docker['stop_container_timeout'])
 
-    def run(self, image_name, **kwargs):
-        """Run container from image, accepts the
-        same parameters as `docker run` command.
-        """
-        retries = [None]
-        retry_interval = kwargs.pop('retry_interval', 0)
-        retries_count = kwargs.pop('retries_count', 0)
-        if retry_interval and retries_count:
-            retries = [retry_interval] * retries_count
-
-        params = deepcopy(kwargs)
-        start_command_keys = [
-            'lxc_conf', 'port_bindings', 'binds',
-            'publish_all_ports', 'links', 'privileged',
-            'dns', 'volumes_from']
-
-        start_params = {}
-        for start_command_key in start_command_keys:
-            start_params[start_command_key] = params.pop(
-                start_command_key, None)
-
-        container = self.create_container(image_name, **params)
-        self.start_container(container, **start_params)
-
-        if not params.get('detach'):
-            for interval in retries:
-                logs = self.docker_client.logs(
-                    container['Id'],
-                    stream=True,
-                    stdout=True,
-                    stderr=True)
-
-                for log_line in logs:
-                    logger.debug(log_line.rstrip())
-
-                exit_code = self.docker_client.wait(container['Id'])
-                if exit_code == 0:
-                    break
-
-                if interval is not None:
-                    logger.warn(u'Failed to run container "{0}": {1}'.format(
-                        container['Id'], start_params))
-                    time.sleep(interval)
-                    self.docker_client.start(container['Id'], **start_params)
-            else:
-                if exit_code > 0:
-                    raise errors.DockerExecutedErrorNonZeroExitCode(
-                        u'Failed to execute migraion command "{0}" '
-                        'exit code {1} container id {2}'.format(
-                            params.get('command'), exit_code, container['Id']))
-
-        return container
-
     def start_container(self, container, **params):
         """Start containers
 

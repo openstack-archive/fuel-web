@@ -14,7 +14,6 @@
 
 from fuelclient.cli.actions.base import Action
 from fuelclient.cli.actions.base import check_all
-from fuelclient.cli.actions.base import check_any
 import fuelclient.cli.arguments as Args
 from fuelclient.cli.arguments import group
 from fuelclient.cli.formatting import format_table
@@ -43,6 +42,9 @@ class EnvironmentAction(Action):
                 Args.get_create_arg(
                     "Create a new environment with "
                     "specific release id and name."
+                ),
+                Args.get_update_arg(
+                    "Update OS to specified release id for given env."
                 )
             ),
             Args.get_release_arg(
@@ -65,6 +67,7 @@ class EnvironmentAction(Action):
             ("create", self.create),
             ("set", self.set),
             ("delete", self.delete),
+            ("update", self.update),
             (None, self.list)
         )
 
@@ -84,8 +87,9 @@ class EnvironmentAction(Action):
             params.net,
             net_segment_type=params.nst
         )
+
         if params.mode:
-            data = env.set(mode=params.mode)
+            data = env.set({'mode': params.mode})
         else:
             data = env.get_fresh_data()
 
@@ -97,24 +101,35 @@ class EnvironmentAction(Action):
         )
 
     @check_all("env")
-    @check_any("name", "mode")
     def set(self, params):
         """For changing environments name, mode
            or network mode exists set action:
                 fuel --env 1 env set --name NewEmvName --mode ha_compact
         """
+        acceptable_params = ('mode', 'name', 'pending_release_id')
+
         env = Environment(params.env, params=params)
-        data = env.set(name=params.name, mode=params.mode)
-        msg_templates = []
-        if params.name:
-            msg_templates.append(
-                "Environment with id={id} was renamed to '{name}'.")
-        if params.mode:
-            msg_templates.append(
-                "Mode of environment with id={id} was set to '{mode}'.")
+
+        # forming message for output and data structure for request body
+        # TODO(aroma): make it less ugly
+        msg_template = ("Following attributes are changed for "
+                        "the environment: {env_attributes}")
+
+        env_attributes = []
+        update_kwargs = dict()
+        for param_name in acceptable_params:
+            attr_value = getattr(params, param_name, None)
+            if attr_value:
+                update_kwargs[param_name] = attr_value
+                env_attributes.append(
+                    ''.join([param_name, '=', str(attr_value)])
+                )
+
+        data = env.set(update_kwargs)
+        env_attributes = ', '.join(env_attributes)
         self.serializer.print_to_output(
             data,
-            "\n".join(msg_templates).format(**data)
+            msg_template.format(env_attributes=env_attributes)
         )
 
     @check_all("env")
@@ -135,7 +150,7 @@ class EnvironmentAction(Action):
                 fuel env
         """
         acceptable_keys = ("id", "status", "name", "mode",
-                           "release_id", "changes")
+                           "release_id", "changes", "pending_release_id")
         data = Environment.get_all_data()
         if params.env:
             data = filter(
@@ -148,4 +163,22 @@ class EnvironmentAction(Action):
                 data,
                 acceptable_keys=acceptable_keys
             )
+        )
+
+    def update(self, params):
+        """Update environment to given OS release
+                fuel env --env 1 --update --release 1
+        """
+        params.pending_release_id = params.release
+        self.set(params)
+
+        env = Environment(params.env, params=params)
+        update_task = env.update_env()
+
+        msg = ("Update process for environment has been started. "
+               "Update task id is {0}".format(update_task.id))
+
+        self.serializer.print_to_output(
+            {},
+            msg
         )

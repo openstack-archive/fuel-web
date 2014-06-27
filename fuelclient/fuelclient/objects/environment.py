@@ -22,6 +22,7 @@ from fuelclient.cli.error import ServerDataException
 from fuelclient.cli.serializers import listdir_without_extensions
 from fuelclient.objects.base import BaseObject
 from fuelclient.objects.task import DeployTask
+from fuelclient.objects.task import Task
 
 
 class Environment(BaseObject):
@@ -49,16 +50,22 @@ class Environment(BaseObject):
         data = cls.connection.post_request("clusters/", data)
         return cls.init_with_data(data)
 
-    def set(self, name=None, mode=None):
-        data = {}
-        if mode:
+    def set(self, data):
+        if data.get('mode'):
             data["mode"] = "ha_compact" \
-                if mode.lower() == "ha" else "multinode"
-        if name:
-            data["name"] = name
+                if data['mode'].lower() == "ha" else "multinode"
+
         return self.connection.put_request(
             "clusters/{0}/".format(self.id),
             data
+        )
+
+    def update_env(self):
+        return Task.init_with_data(
+            self.connection.put_request(
+                "clusters/{0}/update/".format(self.id),
+                {}
+            )
         )
 
     def delete(self):
@@ -322,7 +329,6 @@ class Environment(BaseObject):
         )
 
     def stop(self):
-        from fuelclient.objects.task import Task
         return Task.init_with_data(
             self.connection.put_request(
                 "clusters/{0}/stop_deployment/".format(self.id),
@@ -331,7 +337,6 @@ class Environment(BaseObject):
         )
 
     def reset(self):
-        from fuelclient.objects.task import Task
         return Task.init_with_data(
             self.connection.put_request(
                 "clusters/{0}/reset/".format(self.id),
@@ -346,7 +351,6 @@ class Environment(BaseObject):
             ','.join(map(lambda n: str(n.id), nodes)))
 
     def install_selected_nodes(self, method_type, nodes):
-        from fuelclient.objects.task import Task
         return Task.init_with_data(
             self.connection.put_request(
                 self._get_method_url(method_type, nodes),

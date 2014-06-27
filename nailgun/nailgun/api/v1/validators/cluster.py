@@ -21,6 +21,22 @@ from nailgun.objects import Release
 
 
 class ClusterValidator(BasicValidator):
+
+    @classmethod
+    def _can_update_release(cls, curr_release, pend_release):
+        return any([
+            # redeploy
+            curr_release.id == pend_release.id,
+
+            # update to upper release
+            curr_release.operating_system == pend_release.operating_system
+            and curr_release.version in pend_release.can_update_from_versions,
+
+            # update to lower release
+            curr_release.operating_system == pend_release.operating_system
+            and pend_release.version in curr_release.can_update_from_versions,
+        ])
+
     @classmethod
     def _validate_common(cls, data, instance=None):
         d = cls.validate_json(data)
@@ -44,14 +60,7 @@ class ClusterValidator(BasicValidator):
                 release_id = instance.release_id
             curr_release = Release.get_by_uid(release_id)
 
-            def curr_release_can_be_updated_with_pend_release():
-                return release_id == pend_release_id or (
-                    curr_release.operating_system ==
-                    pend_release.operating_system
-                    and curr_release.version in
-                    pend_release.can_update_from_versions)
-
-            if not curr_release_can_be_updated_with_pend_release():
+            if not cls._can_update_release(curr_release, pend_release):
                 raise errors.InvalidData(
                     "Cannot set pending release as "
                     "it cannot update current release",

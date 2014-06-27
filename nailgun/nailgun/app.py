@@ -28,6 +28,7 @@ from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger
 from nailgun.middleware.http_method_override import \
     HTTPMethodOverrideMiddleware
+from nailgun.middleware.keystone import NailgunAuthProtocol
 from nailgun.middleware.static import StaticMiddleware
 from nailgun.settings import settings
 from nailgun.urls import urls
@@ -52,6 +53,9 @@ def build_middleware(app):
 
     if settings.DEVELOPMENT:
         middleware_list.append(StaticMiddleware)
+
+    if settings.AUTH['AUTHENTICATION_METHOD'] == 'keystone':
+        middleware_list.append(NailgunAuthProtocol)
 
     logger.debug('Initialize middleware: %s' %
                  (map(lambda x: x.__name__, middleware_list)))

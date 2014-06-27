@@ -15,110 +15,109 @@
 #    under the License.
 
 import logging
-import os
-import traceback
 
-from fuel_upgrade.utils import exec_cmd
+import requests
+
+from fuel_upgrade import errors
 
 logger = logging.getLogger(__name__)
 
 
-class PuppetUpgrader(object):
-    """Puppet implementation of upgrader
+class UpgradeManager(object):
+    """Upgrade manager is used to orchestrate upgrading process.
 
-    TODO(eli): exact commands and unit
-    tests will be added later
-    """
-    puppet_modules_dir = 'puppet_modules'
-
-    def __init__(self, update_path):
-        puppet_modules_path = os.path.join(
-            update_path, self.puppet_modules_dir)
-
-        self.puppet_cmd = u'puppet apply --debug --modulepath={0} -e '.format(
-            puppet_modules_path)
-
-    def upgrade(self):
-        exec_cmd(self.puppet_cmd + '"include upgrade"')
-
-    def rollback(self):
-        exec_cmd(self.puppet_cmd + '"include rollback"')
-
-    def backup(self):
-        exec_cmd(self.puppet_cmd + '"include backup"')
-
-
-class Upgrade(object):
-    """Upgrade logic
+    :param source_path: a path to folder with upgrade files
+    :param upgraders: a list with upgrader classes to use; each upgrader
+        must inherit the :class:`BaseUpgrader`
+    :param no_rollback: call :meth:`BaseUpgrader.rollback` method
+        in case of exception during execution
+    :param no_check: do not make opportunity check before upgrades
     """
 
-    def __init__(self,
-                 update_path,
-                 working_dir,
-                 upgrade_engine,
-                 disable_rollback=False):
-
-        logger.debug(
-            u'Create Upgrade object with update path "{0}", '
-            'working directory "{1}", '
-            'upgrade engine "{2}", '
-            'disable rollback is "{3}"'.format(
-                update_path, working_dir,
-                upgrade_engine.__class__.__name__,
-                disable_rollback))
-
-        self.update_path = update_path
-        self.working_dir = working_dir
-        self.upgrade_engine = upgrade_engine
-        self.disable_rollback = disable_rollback
+    def __init__(self, source_path, config, upgraders, no_rollback=True,
+                 no_check=False):
+        self._source_path = source_path
+        self._upgraders = [
+            upgrader(source_path, config) for upgrader in upgraders
+        ]
+        self._rollback = not no_rollback
+        self._check = not no_check
+        self.config = config
 
     def run(self):
+        """Runs consequentially all registered upgraders.
+
+        .. note:: in case of exception the `rollback` method will be called
+        """
         self.before_upgrade()
 
-        try:
-            self.upgrade()
-            self.after_upgrade()
-        except Exception as exc:
-            logger.error(u'Upgrade failed: {0}'.format(exc))
-            logger.error(traceback.format_exc())
-            if not self.disable_rollback:
-                self.rollback()
+        for upgrader in self._upgraders:
+
+            try:
+                logger.debug(
+                    '%s: upgrading...', upgrader.__class__.__name__)
+                upgrader.before_upgrade_actions()
+                upgrader.upgrade()
+                upgrader.post_upgrade_actions()
+
+            except Exception as exc:
+                logger.exception(
+                    '%s: failed to upgrade: "%s"',
+                    upgrader.__class__.__name__, exc)
+
+                if self._rollback:
+                    logger.debug(
+                        '%s: rollbacking...', upgrader.__class__.__name__)
+                    self.rollback()
+
+                raise
+
+        self.after_upgrade_checks()
 
     def before_upgrade(self):
         logger.debug('Run before upgrade actions')
-        self.check_upgrade_opportunity()
-        self.shutdown_services()
-        self.make_backup()
+        if self._check:
+            self.check_upgrade_opportunity()
 
-    def upgrade(self):
-        logger.debug('Run upgrade')
-        self.upgrade_engine.upgrade()
-
-    def after_upgrade(self):
+    def after_upgrade_checks(self):
         logger.debug('Run after upgrade actions')
-        self.run_services()
         self.check_health()
-
-    def make_backup(self):
-        logger.debug('Make backup')
-        self.upgrade_engine.backup()
 
     def check_upgrade_opportunity(self):
         """Sends request to nailgun
         to make sure that there are no
         running tasks
+
+        TODO(eli): move this logic to separate
+        class
         """
-        logger.debug('Check upgrade opportunity')
+        logger.info('Check upgrade opportunity')
+        nailgun = self.config.endpoints['nailgun']
+        tasks_url = 'http://{0}:{1}/api/v1/tasks'.format(
+            nailgun['host'], nailgun['port'])
 
-    def run_services(self):
-        logger.debug('Run services')
+        tasks = requests.get(tasks_url).json()
 
-    def shutdown_services(self):
-        logger.debug('Shutdown services')
+        running_tasks = filter(
+            lambda t: t['status'] == 'running', tasks)
+
+        if running_tasks:
+            tasks_msg = ['id={0} cluster={1} name={2}'.format(
+                t.get('id'),
+                t.get('cluster'),
+                t.get('name')) for t in running_tasks]
+
+            error_msg = 'Cannot run upgrade, tasks are running: {0}'.format(
+                ' '.join(tasks_msg))
+
+            raise errors.CannotRunUpgrade(error_msg)
 
     def check_health(self):
+        # TODO(eli): implementation is required
         logger.debug('Check that upgrade passed correctly')
 
     def rollback(self):
         logger.debug('Run rollback')
-        self.upgrade_engine.rollback()
+
+        for upgrader in reversed(self._upgraders):
+            upgrader.rollback()

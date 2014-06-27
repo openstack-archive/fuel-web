@@ -20,6 +20,31 @@ except ImportError:
     # Required for python 2.6
     from unittest2.case import TestCase
 
+import os
+
+from copy import deepcopy
+from StringIO import StringIO
+
+import mock
+import requests
+
+from fuel_upgrade import config
+
+
+class FakeFile(StringIO):
+    """It's a fake file which returns StringIO
+    when file opens with 'with' statement.
+
+    NOTE(eli): We cannot use mock_open from mock library
+    here, because it hangs when we use 'with' statement,
+    and when we want to read file by chunks.
+    """
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
 
 class BaseTestCase(TestCase):
     """Base class for test cases
@@ -28,4 +53,57 @@ class BaseTestCase(TestCase):
     def method_was_not_called(self, method):
         """Checks that mocked method was not called
         """
-        self.assertEqual(method, 0)
+        self.assertEqual(method.call_count, 0)
+
+    def called_once(self, method):
+        """Checks that mocked method was called once
+        """
+        self.assertEqual(method.call_count, 1)
+
+    def called_times(self, method, count):
+        """Checks that mocked method was called `count` times
+        """
+        self.assertEqual(method.call_count, count)
+
+    @property
+    def fake_config(self):
+        conf = config.Config(config.make_config_path('config.yaml'))
+        version_yaml = os.path.join(
+            os.path.dirname(__file__), 'fake_upgrade/config/version.yaml')
+        conf.new_version = config.read_yaml_config(version_yaml)
+        conf.current_version = deepcopy(conf.new_version)
+
+        conf.new_version['VERSION']['release'] = '9999'
+        conf.current_version['VERSION']['release'] = '0'
+
+        conf.openstack['releases'] = 'releases.json'
+
+        conf.astute = {
+            'ADMIN_NETWORK': {
+                'ipaddress': '0.0.0.0'
+            }
+        }
+        return conf
+
+    def mock_open(self, text):
+        """Mocks builtin open function.
+
+        Usage example:
+
+            with mock.patch(
+                '__builtin__.open',
+                self.mock_open('file content')
+            ):
+                # call some methods that are used open() to read some
+                # stuff internally
+        """
+        return mock.MagicMock(return_value=FakeFile(text))
+
+    def mock_requests_response(self, status_code, body):
+        """Creates a response object with custom status code and body.
+        """
+        rv = requests.Response()
+        rv.status_code = status_code
+        rv.encoding = 'utf-8'
+        rv.raw = FakeFile(body)
+        return rv

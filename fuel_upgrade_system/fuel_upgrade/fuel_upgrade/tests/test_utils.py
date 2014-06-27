@@ -15,13 +15,20 @@
 #    under the License.
 
 import subprocess
+import urllib2
 
 import mock
 from mock import patch
 
 from fuel_upgrade import errors
 from fuel_upgrade.tests.base import BaseTestCase
+from fuel_upgrade import utils
+from fuel_upgrade.utils import create_dir_if_not_exists
 from fuel_upgrade.utils import exec_cmd
+from fuel_upgrade.utils import exec_cmd_iterator
+from fuel_upgrade.utils import get_request
+from fuel_upgrade.utils import topological_sorting
+from fuel_upgrade.utils import wait_for_true
 
 
 class TestUtils(BaseTestCase):
@@ -58,3 +65,149 @@ class TestUtils(BaseTestCase):
                 'Shell command executed with "{0}" '
                 'exit code: {1} '.format(return_code, cmd),
                 exec_cmd, cmd)
+
+    def test_exec_cmd_iterator_executes_sucessfuly(self):
+        cmd = 'some command'
+
+        process_mock = self.make_process_mock()
+        with patch.object(
+                subprocess, 'Popen', return_value=process_mock) as popen_mock:
+            for line in exec_cmd_iterator(cmd):
+                self.assertTrue(line.startswith('Stdout line '))
+
+        popen_mock.assert_called_once_with(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True)
+
+    def test_exec_cmd_iterator_raises_error_in_case_of_non_zero_exit_code(
+            self):
+        cmd = 'some command'
+        return_code = 1
+
+        process_mock = self.make_process_mock(return_code=return_code)
+        with patch.object(subprocess, 'Popen', return_value=process_mock):
+            with self.assertRaisesRegexp(
+                    errors.ExecutedErrorNonZeroExitCode,
+                    'Shell command executed with "{0}" '
+                    'exit code: {1} '.format(return_code, cmd)):
+                for line in exec_cmd_iterator(cmd):
+                    self.assertTrue(line.startswith('Stdout line '))
+
+    def test_get_request(self):
+        url = 'http://some-url.com/path'
+        response = mock.MagicMock()
+        response.read.return_value = '{"key": "value"}'
+        response.getcode.return_value = 200
+
+        with patch.object(
+                urllib2, 'urlopen', return_value=response) as urlopen:
+
+            resp = get_request(url)
+            self.assertEqual(({'key': 'value'}, 200), resp)
+
+        urlopen.assert_called_once_with(url)
+
+    def test_topological_sorting(self):
+        graph = {
+            'D': ['C', 'G'],
+            'E': ['A', 'D'],
+            'A': [],
+            'B': ['A'],
+            'C': ['A'],
+            'G': []
+        }
+
+        order = topological_sorting(graph)
+        self.assertEqual(order, ['A', 'B', 'C', 'G', 'D', 'E'])
+
+    def test_topological_sorting_raises_cycle_dependencies_error(self):
+        graph = {
+            'A': ['C', 'D'],
+            'B': ['A'],
+            'C': ['B'],
+            'D': []
+        }
+
+        self.assertRaisesRegexp(
+            errors.CyclicDependenciesError,
+            "Cyclic dependencies error ",
+            topological_sorting,
+            graph)
+
+    @mock.patch('fuel_upgrade.utils.os.makedirs')
+    def test_create_dir_if_not_exists_does_not_create_dir(self, mock_makedirs):
+        path = 'some_path'
+
+        with mock.patch(
+                'fuel_upgrade.utils.os.path.isdir',
+                return_value=True) as mock_isdir:
+
+            create_dir_if_not_exists(path)
+            mock_isdir.assert_called_once_with(path)
+            self.method_was_not_called(mock_makedirs)
+
+    @mock.patch('fuel_upgrade.utils.os.makedirs')
+    def test_create_dir_if_not_exists(self, mock_makedirs):
+        path = 'some_path'
+        with mock.patch(
+                'fuel_upgrade.utils.os.path.isdir',
+                return_value=False) as mock_isdir:
+
+            create_dir_if_not_exists(path)
+            mock_isdir.assert_called_once_with(path)
+            mock_makedirs.called_once(path)
+
+    def test_wait_for_true_does_not_raise_errors(self):
+        self.assertEqual(wait_for_true(lambda: True, timeout=0), True)
+
+    def test_wait_for_true_raises_timeout_error(self):
+        self.assertRaisesRegexp(
+            errors.TimeoutError,
+            'Failed to execute command with timeout 0',
+            wait_for_true,
+            lambda: False,
+            timeout=0)
+
+    @mock.patch('fuel_upgrade.utils.shutil.copy')
+    def test_copy(self, copy_mock):
+        from_path = '/from_path'
+        to_path = '/to_path'
+
+        utils.copy(from_path, to_path)
+        copy_mock.assert_called_once_with(from_path, to_path)
+
+    def test_file_contains_lines_returns_true(self):
+        with mock.patch(
+                '__builtin__.open',
+                self.mock_open("line 1\n line2\n line3")):
+
+            self.assertTrue(
+                utils.file_contains_lines('/some/path', ['line 1', 'line3']))
+
+    def test_file_contains_lines_returns_false(self):
+        with mock.patch(
+                '__builtin__.open',
+                self.mock_open("line 1\n line2\n line3")):
+
+            self.assertFalse(
+                utils.file_contains_lines('/some/path', ['line 4', 'line3']))
+
+    @mock.patch('fuel_upgrade.utils.os.symlink')
+    @mock.patch('fuel_upgrade.utils.remove_if_exists')
+    def test_symlink(self, remove_if_exists_mock, symlink_mock):
+        from_path = '/tmp/from/path'
+        to_path = '/tmp/to/path'
+        utils.symlink(from_path, to_path)
+
+        symlink_mock.assert_called_once_with(from_path, to_path)
+        remove_if_exists_mock.assert_called_once_with(to_path)
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.remove')
+    def test_remove_if_exists(self, remove_mock, exists_mock):
+        path = '/tmp/some/path'
+        utils.remove_if_exists(path)
+        remove_mock.assert_called_once_with(path)
+        exists_mock.assert_called_once_with(path)

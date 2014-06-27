@@ -11,6 +11,7 @@ Development Documentation
    develop/architecture
    develop/sequence
    develop/env
+   develop/live_masternode
    develop/nailgun
    develop/module_structure
    develop/fuel_settings

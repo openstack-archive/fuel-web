@@ -51,9 +51,11 @@
           "data": "vcenter",
           "label": "dialog.create_cluster_wizard.compute.vcenter",
           "description": "dialog.create_cluster_wizard.compute.vcenter_description",
-          "warnings": {
-             "Mode.mode == 'ha_compact' and Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.compute.ha_vcenter_warning"
-          }
+          "restrictions": [{
+             "condition": "Mode.mode == 'ha_compact' and Compute.hypervisor == 'vcenter'",
+             "action": "none",
+             "message": "dialog.create_cluster_wizard.compute.ha_vcenter_warning"
+          }]
         }
       ]
     },
@@ -62,36 +64,44 @@
       "label": "dialog.create_cluster_wizard.compute.vcenter_ip",
       "description": "dialog.create_cluster_wizard.compute.vcenter_ip_description",
       "bind": "settings:vcenter.host_ip.value",
-      "restrictions": {
-        "Compute.hypervisor != 'vcenter'": null
-      }
+      "restrictions": [{
+        "condition": "Compute.hypervisor != 'vcenter'",
+        "action": "hide",
+        "message": null
+      }]
     },
     "vc_user": {
       "type": "text",
       "label": "dialog.create_cluster_wizard.compute.vcenter_username",
       "description": "dialog.create_cluster_wizard.compute.vcenter_username_description",
       "bind": "settings:vcenter.vc_user.value",
-      "restrictions": {
-        "Compute.hypervisor != 'vcenter'": null
-      }
+      "restrictions":  [{
+        "condition": "Compute.hypervisor != 'vcenter'",
+        "action": "hide",
+        "message": null
+      }]
     },
     "vc_password": {
       "type": "password",
       "label": "dialog.create_cluster_wizard.compute.vcenter_password",
       "description": "dialog.create_cluster_wizard.compute.vcenter_password_description",
       "bind": "settings:vcenter.vc_password.value",
-      "restrictions": {
-        "Compute.hypervisor != 'vcenter'": null
-      }
+      "restrictions":  [{
+        "condition": "Compute.hypervisor != 'vcenter'",
+        "action": "hide",
+        "message": null
+      }]
     },
     "cluster": {
       "type": "text",
       "label": "dialog.create_cluster_wizard.compute.vcenter_cluster",
       "description": "dialog.create_cluster_wizard.compute.vcenter_cluster_description",
       "bind": "settings:vcenter.cluster.value",
-      "restrictions": {
-        "Compute.hypervisor != 'vcenter'": null
-      }
+      "restrictions":  [{
+        "condition": "Compute.hypervisor != 'vcenter'",
+        "action": "hide",
+        "message": null
+      }]
     }
   },
   "Network": {
@@ -108,9 +118,9 @@
         {
           "data": "neutron-gre",
           "label": "dialog.create_cluster_wizard.network.neutr_gre",
-          "restrictions": {
+          "restrictions": [{
             "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
-          },
+          }],
           "bind": [
             {"cluster:net_provider": "neutron"},
             {"cluster:net_segment_type": "gre"}
@@ -119,9 +129,9 @@
         {
           "data": "neutron-vlan",
           "label": "dialog.create_cluster_wizard.network.neutr_vlan",
-          "restrictions": {
+          "restrictions": [{
             "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
-          },
+          }],
           "bind": [
             {"cluster:net_provider": "neutron"},
             {"cluster:net_segment_type": "vlan"}
@@ -142,10 +152,10 @@
         {
           "data": "ceph",
           "label": "dialog.create_cluster_wizard.storage.ceph",
-          "restrictions": {
-            "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert",
-            "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.vcenter_alert"
-          },
+          "restrictions": [
+            {"not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert"},
+            {"Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.vcenter_alert"}
+          ],
           "bind": [
             {"settings:storage.volumes_ceph.value": true},
             {"settings:storage.volumes_lvm.value": false}
@@ -163,10 +173,10 @@
         {
           "data": "ceph",
           "label": "dialog.create_cluster_wizard.storage.ceph",
-          "restrictions": {
-             "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert",
-             "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.vcenter_alert"
-          },
+          "restrictions": [
+            {"not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert"},
+            {"Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.vcenter_alert"}
+          ],
           "bind": [{"settings:storage.images_ceph.value": true}]
         }
       ]
@@ -186,9 +196,9 @@
       "description": "dialog.create_cluster_wizard.additional.install_murano_description",
       "bind": "settings:additional_components.murano.value",
       "weight": 20,
-      "restrictions": {
+      "restrictions": [{
         "Network.manager == 'nova-network'": "dialog.create_cluster_wizard.additional.network_mode_alert"
-      }
+      }]
     },
     "ceilometer": {
       "type": "checkbox",

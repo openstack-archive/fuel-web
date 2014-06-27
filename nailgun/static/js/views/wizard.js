@@ -62,14 +62,14 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                 attributes: [{
                     name: 'disabled',
                     observe: 'activePaneIndex',
-                    onGet: function(value, options) {
+                    onGet: function(value) {
                         return value == 0;
                     }
                 }]
             };
             bindings['.next-pane-btn'] = {
                 observe: 'activePaneIndex',
-                visible: function(value, options) {
+                visible: function(value) {
                     return value != this.panesConstructors.length - 1;
                 },
                 attributes: [{
@@ -79,7 +79,7 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
             };
             bindings['.finish-btn'] = {
                 observe: 'activePaneIndex',
-                visible: function(value, options) {
+                visible: function(value) {
                     return value == this.panesConstructors.length - 1;
                 }
             };
@@ -102,19 +102,16 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
             }, this);
             this.model = new models.WizardModel(this.config);
             this.model.processConfig(this.config);
-            this.buildAttributesConditions('restrictions');
-            this.buildAttributesConditions('warnings');
+            this.buildAttributesConditions();
             this.attachModelListeners();
         },
         attachModelListeners: function() {
             _.each(this.restrictions, function(paneConfig) {
                 _.each(paneConfig, function(paneRestrictions) {
-                    _.each(paneRestrictions, function(restrictionObjects) {
-                        _.each(restrictionObjects, function(message, condition) {
-                            var evaluatedExpression = utils.evaluateExpression(condition, {default: this.model}, {strict: false});
-                            _.each(evaluatedExpression.modelPaths, function(modelPath) {
-                                this.model.on('change:' + modelPath.attribute, this.handleTrackedAttributeChange, this);
-                            }, this);
+                    _.each(paneRestrictions, function(restrictionObject) {
+                        var evaluatedExpression = utils.evaluateExpression(restrictionObject.condition, {default: this.model}, {strict: false});
+                        _.each(evaluatedExpression.modelPaths, function(modelPath) {
+                            this.model.on('change:' + modelPath.attribute, this.handleTrackedAttributeChange, this);
                         }, this);
                     }, this);
                 }, this);
@@ -129,13 +126,11 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                 this.model.restoreDefaultValues(listOfPanesToRestoreDefaults);
             }
         },
-        buildAttributesConditions: function(key) {
-            var attributesConditions = this[key] = {};
+        buildAttributesConditions: function() {
+            var attributesConditions = this['restrictions'] = {};
             function processConditions(config, paneName, attribute) {
-                attributesConditions[paneName][attribute] = _.map(config[key], function(message, condition) {
-                    var result = {};
-                    result[condition] = message;
-                    return result;
+                attributesConditions[paneName][attribute] = _.map(config['restrictions'], function(restriction) {
+                    return utils.expandRestriction(restriction);
                 });
             }
             _.each(this.config, function(paneConfig, paneName) {
@@ -345,7 +340,7 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
                         })));
                         break;
                     case 'radio':
-                        _.each(attributeConfig.values, function(value, valueIndex) {
+                        _.each(attributeConfig.values, function(value) {
                             var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
                             if (shouldBeAdded) {
                                 controlsHtml += (controlTpl(_.extend(attributeConfig, {
@@ -373,15 +368,11 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
         },
         attachWarningListeners: function() {
             var attributesToObserve = [];
-            _.each(['warnings', 'restrictions'], function (key) {
-                _.each(this.wizard[key][this.constructorName], function(paneConfig) {
-                    _.each(paneConfig, function(paneRestrictions) {
-                        _.each(paneRestrictions, function(message, condition) {
-                            var evaluatedExpression = utils.evaluateExpression(condition, {default: this.wizard.model}, {strict: false});
-                            _.each(evaluatedExpression.modelPaths, function(modelPath) {
-                                attributesToObserve.push(modelPath.attribute);
-                            }, this);
-                        }, this);
+            _.each(this.wizard.restrictions[this.constructorName], function(paneConfig) {
+                _.each(paneConfig, function(paneRestriction) {
+                    var evaluatedExpression = utils.evaluateExpression(paneRestriction.condition, {default: this.wizard.model}, {strict: false});
+                    _.each(evaluatedExpression.modelPaths, function(modelPath) {
+                        attributesToObserve.push(modelPath.attribute);
                     }, this);
                 }, this);
             }, this);
@@ -391,28 +382,47 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
         },
         composePaneBindings: function() {
             this.bindings = {};
+            var expandedRestrictions = [];
+            var selectorConfig = {};
             _.each(this.config, function(attributeConfig, attribute) {
                 this.bindings['[name=' + attribute + ']'] = {observe: this.constructorName + '.' + attribute};
                 switch (attributeConfig.type) {
                     case 'radio':
                         _.each(attributeConfig.values, function(value) {
                             if (value.restrictions) {
-                                this.createDisabledBindings(_.keys(value.restrictions), {name: attribute, value: value.data});
+                                expandedRestrictions = this.expandRestrictions(value.restrictions);
+                                this.createActionBindings(_.pluck(expandedRestrictions, 'condition'), _.pluck(expandedRestrictions, 'action')[0], {name: attribute, value: value.data});
                             }
                         }, this);
                         break;
                     case 'checkbox':
+                        if (attributeConfig.restrictions) {
+                            expandedRestrictions = this.expandRestrictions(attributeConfig.restrictions);
+                            selectorConfig = {name: attribute};
+                            this.createActionBindings(_.pluck(expandedRestrictions, 'condition'), _.pluck(expandedRestrictions, 'action')[0], {name: attribute});
+                        }
+                        break;
                     case 'text':
                     case 'password':
                         if (attributeConfig.restrictions) {
-                            this.createDisabledBindings(_.keys(attributeConfig.restrictions), {name: attribute});
+                            expandedRestrictions = this.expandRestrictions(attributeConfig.restrictions);
+                            selectorConfig = {'data-name': attribute};
+//                            this.createActionBindings(_.pluck(expandedRestrictions, 'condition'), _.pluck(expandedRestrictions, 'action')[0], {'data-name': attribute});
                         }
                         break;
                 }
+                this.createActionBindings(_.pluck(expandedRestrictions, 'condition'), _.pluck(expandedRestrictions, 'action')[0], selectorConfig);
             }, this);
             this.stickit(this.wizard.model);
         },
-        createDisabledBindings: function(conditions, selectorOptions) {
+        expandRestrictions: function(restrictions) {
+            var expandedRestrictions =  [];
+            _.each(restrictions, function(restriction) {
+                expandedRestrictions.push(utils.expandRestriction(restriction));
+            }, this);
+            return expandedRestrictions;
+        },
+        createActionBindings: function(conditions, action, selectorOptions) {
             var attributesToObserve = _.map(conditions, function(condition) {
                 var evaluatedExpression = utils.evaluateExpression(condition, {default: this.wizard.model});
                 return _.keys(evaluatedExpression.modelPaths);
@@ -421,17 +431,32 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
             var selector = _.map(selectorOptions, function(value, key) {
                 return '[' + key + '=' + value + ']';
             }, this).join('');
-            this.bindings[selector] = _.extend(this.bindings[selector] || {}, {
-                attributes: [{
-                    name: 'disabled',
-                    observe: attributesToObserve,
-                    onGet: function() {
-                        return _.any(conditions, function(condition) {
-                            return utils.evaluateExpression(condition, {default: this.wizard.model}).value;
-                        }, this);
-                    }
-                }]
-            });
+            switch (action) {
+                case 'disable':
+                    this.bindings[selector] = _.extend(this.bindings[selector] || {}, {
+                        attributes: [{
+                            name: 'disabled',
+                            observe: attributesToObserve,
+                            onGet: function() {
+                                return _.any(conditions, function(condition) {
+                                    return utils.evaluateExpression(condition, {default: this.wizard.model}).value;
+                                }, this);
+                            }
+                        }]
+                    });
+                    break;
+                case 'hide':
+                    this.bindings[selector] = _.extend(this.bindings[selector] || {}, {
+                        observe: attributesToObserve,
+                        visible: true,
+                        onGet: function() {
+                            return !_.any(conditions, function(condition) {
+                                return utils.evaluateExpression(condition, {default: this.wizard.model}).value;
+                            }, this);
+                        }
+                    });
+                    break;
+            }
         },
         processPaneAliases: function() {
             _.each(this.config, function(attributeConfig, attribute) {
@@ -466,16 +491,12 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
         handleWarnings: function() {
             this.$('.alert').remove();
             var messages = [];
-            _.each(['warnings', 'restrictions'], function(key) {
-                _.each(this.wizard[key][this.constructorName], function (paneConfig) {
-                    _.each(paneConfig, function(paneRestrictions) {
-                        _.each(paneRestrictions, function(message, condition) {
-                            var result = utils.evaluateExpression(condition, {default: this.wizard.model}).value;
-                            if (result) {
-                                messages.push(message);
-                            }
-                        }, this);
-                    }, this);
+            _.each(this.wizard.restrictions[this.constructorName], function (paneConfig) {
+                _.each(paneConfig, function(paneRestriction) {
+                    var result = utils.evaluateExpression(paneRestriction.condition, {default: this.wizard.model}).value;
+                    if (result) {
+                        messages.push(paneRestriction.message);
+                    }
                 }, this);
             }, this);
             if (messages.length) {
@@ -534,7 +555,7 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
             }, {validate: true});
             return success;
         },
-        onInputKeydown: function(e) {
+        onInputKeydown: function() {
             this.$('.control-group.error').removeClass('error');
             this.$('.help-inline').html('');
             this.wizard.panesModel.set('invalid', false);

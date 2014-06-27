@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from nailgun.api.v1.handlers import forbid_client_caching
 from nailgun.api.v1.handlers import load_db_driver
 from nailgun.db import engine
+from nailgun.keystonedb import NailgunAuthProtocol
 from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger
 from nailgun.middleware.http_method_override import \
@@ -52,6 +53,9 @@ def build_middleware(app):
 
     if settings.DEVELOPMENT:
         middleware_list.append(StaticMiddleware)
+
+    if settings.AUTH['AUTHENTICATION_METHOD'] == 'keystone':
+        middleware_list.append(NailgunAuthProtocol)
 
     logger.debug('Initialize middleware: %s' %
                  (map(lambda x: x.__name__, middleware_list)))

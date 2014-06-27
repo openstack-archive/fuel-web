@@ -32,4 +32,6 @@ class VersionHandler(BaseHandler):
         """:returns: FUEL/FUELWeb commit SHA, release version.
         :http: * 200 (OK)
         """
-        return settings.VERSION
+        version = settings.VERSION
+        version['auth_required'] = settings.AUTHENTICATION_METHOD in ['fake', 'keystone']
+        return version

@@ -716,7 +716,7 @@ define(['utils', 'deepModel'], function(utils) {
     models.WizardModel = Backbone.DeepModel.extend({
         constructorName: 'WizardModel',
         parseConfig: function(config) {
-             var result = {};
+            var result = {};
             _.each(config, _.bind(function(paneConfig, paneName) {
                 result[paneName] = {};
                 _.each(paneConfig, function(attributeConfig, attribute) {

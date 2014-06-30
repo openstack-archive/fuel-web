@@ -228,8 +228,8 @@ Now we need to write the pxelinux configuration file. It will be located here
     MENU LABEL ^Poweroff
     KERNEL poweroff.com
 
-In APPEND directive you could also add `ksdevice=INTERFACE` and
-`installdrive=DEVICENAME` options to get silent installation without any
+In APPEND directive you could also add `ksdevice=INTERFACE`,
+`installdrive=DEVICENAME` and `forceformat=yes` options to get silent installation without any
 questions from Anaconda Installer. For example:
 
     installdrive=sda ksdevice=eth0

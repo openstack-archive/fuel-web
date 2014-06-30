@@ -18,6 +18,8 @@ import urllib2
 
 import yaml
 
+from keystoneclient import client
+
 from fuelclient.cli.error import exceptions_decorator
 
 
@@ -27,10 +29,14 @@ class Client(object):
 
     def __init__(self):
         self.debug = False
-        path_to_config = "/etc/fuel-client.yaml"
+        self.test_mod = bool(os.environ.get('TEST_MODE', ''))
+        path_to_config = "/etc/fuel/client/config.yaml"
         defaults = {
-            "LISTEN_ADDRESS": "127.0.0.1",
-            "LISTEN_PORT": "8000"
+            "SERVER_ADDRESS": "127.0.0.1",
+            "LISTEN_PORT": "8000",
+            "KEYSTONE_USER": "admin",
+            "KEYSTONE_PASSWORD": "admin",
+            "KEYSTONE_PORT": "5000",
         }
         if os.path.exists(path_to_config):
             with open(path_to_config, "r") as fh:
@@ -38,9 +44,24 @@ class Client(object):
             defaults.update(config)
         else:
             defaults.update(os.environ)
-        self.root = "http://{LISTEN_ADDRESS}:{LISTEN_PORT}".format(**defaults)
+        self.root = "http://{SERVER_ADDRESS}:{LISTEN_PORT}".format(**defaults)
+        self.keystone_base = "http://{SERVER_ADDRESS}:{KEYSTONE_PORT}"\
+            .format(**defaults)
         self.api_root = self.root + "/api/v1/"
         self.ostf_root = self.root + "/ostf/"
+        self.user = defaults["KEYSTONE_USER"]
+        self.password = defaults["KEYSTONE_PASSWORD"]
+        self.client = None
+        self.initialize_client()
+
+    def initialize_client(self):
+        if not self.test_mod:
+            self.client = client.Client(
+                username=self.user,
+                password=self.password,
+                auth_url=self.keystone_base,
+                tenant_name="admin")
+            self.client.authenticate()
 
     def debug_mode(self, debug=False):
         self.debug = debug
@@ -53,12 +74,14 @@ class Client(object):
     def delete_request(self, api):
         """Make DELETE request to specific API with some data
         """
+        token = self.client.auth_token if self.client else ''
         self.print_debug(
             "DELETE {0}".format(self.api_root + api)
         )
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         request = urllib2.Request(self.api_root + api)
         request.add_header('Content-Type', 'application/json')
+        request.add_header('X-Auth-Token', token)
         request.get_method = lambda: 'DELETE'
         opener.open(request)
         return {}
@@ -66,6 +89,7 @@ class Client(object):
     def put_request(self, api, data):
         """Make PUT request to specific API with some data
         """
+        token = self.client.auth_token if self.client else ''
         data_json = json.dumps(data)
         self.print_debug(
             "PUT {0} data={1}"
@@ -74,6 +98,7 @@ class Client(object):
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         request = urllib2.Request(self.api_root + api, data=data_json)
         request.add_header('Content-Type', 'application/json')
+        request.add_header('X-Auth-Token', token)
         request.get_method = lambda: 'PUT'
         return json.loads(
             opener.open(request).read()
@@ -82,19 +107,23 @@ class Client(object):
     def get_request(self, api, ostf=False):
         """Make GET request to specific API
         """
+        token = self.client.auth_token if self.client else ''
         url = (self.ostf_root if ostf else self.api_root) + api
         self.print_debug(
             "GET {0}"
             .format(url)
         )
-        request = urllib2.urlopen(url)
+        opener = urllib2.build_opener(urllib2.HTTPHandler)
+        request = urllib2.Request(url)
+        request.add_header('X-Auth-Token', token)
         return json.loads(
-            request.read()
+            opener.open(request).read()
         )
 
     def post_request(self, api, data, ostf=False):
         """Make POST request to specific API with some data
         """
+        token = self.client.auth_token if self.client else ''
         url = (self.ostf_root if ostf else self.api_root) + api
         data_json = json.dumps(data)
         self.print_debug(
@@ -108,6 +137,7 @@ class Client(object):
                 'Content-Type': 'application/json'
             }
         )
+        request.add_header('X-Auth-Token', token)
         try:
             response = json.loads(
                 urllib2.urlopen(request)

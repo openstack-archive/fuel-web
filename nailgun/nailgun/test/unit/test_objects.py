@@ -484,3 +484,28 @@ class TestTaskObject(BaseIntegrationTest):
                           objects.Task.get_by_uuid,
                           uuid='not_found_uuid',
                           fail_if_not_found=True)
+
+    def test_task_wrong_status_filtered(self):
+        task = Task(name='deploy')
+        self.db.add(task)
+        self.db.flush()
+
+        task_obj = objects.Task.get_by_uuid(task.uuid)
+        self.assertEquals(consts.TASK_STATUSES.running, task_obj.status)
+
+        # Checking correct status is set
+        objects.Task.update(task, {'status': consts.TASK_STATUSES.ready})
+        self.db.flush()
+        task_obj = objects.Task.get_by_uuid(task.uuid)
+        self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
+
+        # Checking wrong statuses are not set
+        objects.Task.update(task, {'status': None})
+        self.db.flush()
+        task_obj = objects.Task.get_by_uuid(task.uuid)
+        self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
+
+        objects.Task.update(task, {'status': 'xxx'})
+        self.db.flush()
+        task_obj = objects.Task.get_by_uuid(task.uuid)
+        self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)

@@ -240,17 +240,20 @@
                 label: "KVM"
                 description: "Choose this type of hypervisor if you run OpenStack on hardware"
                 restrictions:
-                  - "settings:common.libvirt_type.value == 'vcenter'"
+                  - condition: "settings:common.libvirt_type.value == 'vcenter'"
+                    action: 'hide'
               - data: "qemu"
                 label: "QEMU"
                 description: "Choose this type of hypervisor if you run OpenStack on virtual hosts."
                 restrictions:
-                  - "settings:common.libvirt_type.value == 'vcenter'"
+                  - condition: "settings:common.libvirt_type.value == 'vcenter'"
+                    action: 'hide'
               - data: "vcenter"
                 label: "vCenter"
                 description: "Choose this type of hypervisor if you run OpenStack in a vCenter environment."
                 restrictions:
-                  - "settings:common.libvirt_type.value != 'vcenter' or cluster:net_provider == 'neutron'"
+                  - condition: "settings:common.libvirt_type.value != 'vcenter' or cluster:net_provider == 'neutron'"
+                    action: 'hide'
             label: "Hypervisor type"
             weight: 30
             type: "radio"

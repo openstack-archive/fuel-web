@@ -25,10 +25,11 @@ from copy import deepcopy
 import docker
 import requests
 
-from fuel_upgrade.checker import FuelUpgradeVerify
 from fuel_upgrade.engines.base import UpgradeEngine
-from fuel_upgrade import errors
+from fuel_upgrade.health_checker import FuelUpgradeVerify
 from fuel_upgrade.supervisor_client import SupervisorClient
+
+from fuel_upgrade import errors
 from fuel_upgrade import utils
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,28 @@ class DockerUpgrader(UpgradeEngine):
         utils.symlink(
             previous_version_path,
             self.config.current_fuel_version_path)
+
+    @property
+    def required_free_space(self):
+        """Required free space to run upgrade
+
+        * space for docker
+        * several megabytes for configs
+        * reserve several megabytes for working directory
+          where we keep postgresql dump and cobbler configs
+
+        :returns: dict where key is path to directory
+                  and value is required free space
+        """
+        return {
+            self.config.docker['dir']: self._calculate_images_size(),
+            self.config.supervisor['configs_prefix']: 10,
+            self.config.fuel_config_path: 10,
+            self.working_directory: 50}
+
+    def _calculate_images_size(self):
+        images_list = [i['docker_image'] for i in self.new_release_images]
+        return utils.files_size(images_list)
 
     def before_upgrade_actions(self):
         """Run before upgrade actions

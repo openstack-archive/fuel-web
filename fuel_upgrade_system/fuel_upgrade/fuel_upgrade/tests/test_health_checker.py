@@ -19,11 +19,11 @@ import mock
 import requests
 import socket
 
-from fuel_upgrade.checker import BaseChecker
-from fuel_upgrade.checker import FuelUpgradeVerify
+from fuel_upgrade.health_checker import BaseChecker
+from fuel_upgrade.health_checker import FuelUpgradeVerify
 from fuel_upgrade.tests.base import BaseTestCase
 
-from fuel_upgrade import checker
+from fuel_upgrade import health_checker
 from fuel_upgrade import errors
 
 
@@ -47,7 +47,7 @@ class TestBaseChecker(BaseTestCase):
 
         return result
 
-    @mock.patch('fuel_upgrade.checker.requests.get')
+    @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_request_succeed(self, requests_get):
         json_resp = {'attr': 'value'}
         result = mock.MagicMock()
@@ -67,7 +67,7 @@ class TestBaseChecker(BaseTestCase):
         self.assertEquals(resp, json_resp)
         self.assertEquals(status, 200)
 
-    @mock.patch('fuel_upgrade.checker.requests.get')
+    @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_connection_error(self, requests_get):
         requests_get.side_effect = requests.exceptions.ConnectionError()
 
@@ -76,7 +76,7 @@ class TestBaseChecker(BaseTestCase):
         self.assertEquals(resp, None)
         self.assertEquals(status, None)
 
-    @mock.patch('fuel_upgrade.checker.requests.get')
+    @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_timeout_error(self, requests_get):
         requests_get.side_effect = requests.exceptions.Timeout()
 
@@ -85,7 +85,7 @@ class TestBaseChecker(BaseTestCase):
         self.assertEquals(resp, None)
         self.assertEquals(status, None)
 
-    @mock.patch('fuel_upgrade.checker.requests.get')
+    @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_non_json_response(self, requests_get):
         result = mock.MagicMock()
         result.json.side_effect = ValueError()
@@ -103,7 +103,7 @@ class TestBaseChecker(BaseTestCase):
 
         return socket_obj
 
-    @mock.patch('fuel_upgrade.checker.socket.socket')
+    @mock.patch('fuel_upgrade.health_checker.socket.socket')
     def test_check_if_port_open_success(self, socket_mock):
         ip = '127.0.0.1'
         port = 1234
@@ -116,7 +116,7 @@ class TestBaseChecker(BaseTestCase):
         socket_mock.assert_called_once_with(socket.AF_INET, socket.SOCK_STREAM)
         self.assertEquals(result, True)
 
-    @mock.patch('fuel_upgrade.checker.socket.socket')
+    @mock.patch('fuel_upgrade.health_checker.socket.socket')
     def test_check_if_port_open_fail(self, socket_mock):
         socket_obj = self.mock_socket_obj(socket_mock)
         socket_obj.connect_ex.return_value = 1
@@ -124,7 +124,7 @@ class TestBaseChecker(BaseTestCase):
 
         self.assertEquals(result, False)
 
-    @mock.patch('fuel_upgrade.checker.socket.socket')
+    @mock.patch('fuel_upgrade.health_checker.socket.socket')
     def test_check_if_port_open_timeout_exception(self, socket_mock):
         socket_obj = self.mock_socket_obj(socket_mock)
         socket_obj.connect_ex.side_effect = socket.timeout()
@@ -132,7 +132,7 @@ class TestBaseChecker(BaseTestCase):
 
         self.assertEquals(result, False)
 
-    @mock.patch('fuel_upgrade.checker.xmlrpclib.ServerProxy')
+    @mock.patch('fuel_upgrade.health_checker.xmlrpclib.ServerProxy')
     def test_get_xmlrpc(self, xmlrpc_mock):
         server_mock = mock.MagicMock()
         xmlrpc_mock.return_value = server_mock
@@ -142,7 +142,7 @@ class TestBaseChecker(BaseTestCase):
 
         self.assertEquals(result, server_mock)
 
-    @mock.patch('fuel_upgrade.checker.xmlrpclib.ServerProxy')
+    @mock.patch('fuel_upgrade.health_checker.xmlrpclib.ServerProxy')
     def test_get_xmlrpc_connection_error(self, xmlrpc_mock):
         xmlrpc_mock.side_effect = socket.timeout()
         url = 'http://127.0.0.1'
@@ -169,7 +169,7 @@ class TestFuelUpgradeVerify(BaseTestCase):
         for checker in self.checkers:
             checker.check.return_value = return_value # flake8: noqa
 
-    @mock.patch('fuel_upgrade.checker.utils.wait_for_true')
+    @mock.patch('fuel_upgrade.health_checker.utils.wait_for_true')
     def test_verify(self, wait_for_true_mock):
         self.checkers[0].check.return_value = False
 
@@ -202,126 +202,126 @@ class TestCheckers(BaseTestCase):
     def assert_checker_true(self, checker):
         self.assertTrue(checker(self.fake_config.endpoints).check())
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nailgun_checker_returns_true(self, get_mock):
         get_mock.return_value = [None, 200]
-        self.assert_checker_true(checker.NailgunChecker)
+        self.assert_checker_true(health_checker.NailgunChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nailgun_checker_returns_false(self, get_mock):
         get_mock.return_value = [None, 400]
-        self.assert_checker_false(checker.NailgunChecker)
+        self.assert_checker_false(health_checker.NailgunChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_ostf_checker_returns_true(self, get_mock):
         get_mock.return_value = [None, 200]
-        self.assert_checker_true(checker.OSTFChecker)
+        self.assert_checker_true(health_checker.OSTFChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_ostf_checker_returns_false(self, get_mock):
         get_mock.return_value = [None, 500]
-        self.assert_checker_false(checker.OSTFChecker)
+        self.assert_checker_false(health_checker.OSTFChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_rabbit_checker_returns_true(self, get_mock):
         get_mock.return_value = [[1, 2], 200]
-        self.assert_checker_true(checker.RabbitChecker)
+        self.assert_checker_true(health_checker.RabbitChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_rabbit_checker_returns_false_wrong_code(self, get_mock):
         negative_results = [[[1, 2], 500], [[], 200]]
         for result in negative_results:
             get_mock.return_value = result
-            self.assert_checker_false(checker.RabbitChecker)
+            self.assert_checker_false(health_checker.RabbitChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.get_xmlrpc')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.get_xmlrpc')
     def test_cobbler_checker_returns_true(self, xmlrpc_mock):
         server_mock = mock.MagicMock()
         xmlrpc_mock.return_value = server_mock
         server_mock.get_profiles.return_value = [1, 2, 3]
-        self.assert_checker_true(checker.CobblerChecker)
+        self.assert_checker_true(health_checker.CobblerChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.get_xmlrpc')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.get_xmlrpc')
     def test_cobbler_checker_returns_false_profiles_error(self, xmlrpc_mock):
         server_mock = mock.MagicMock()
         xmlrpc_mock.return_value = server_mock
         server_mock.get_profiles.return_value = [1, 2]
-        self.assert_checker_false(checker.CobblerChecker)
+        self.assert_checker_false(health_checker.CobblerChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.get_xmlrpc')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.get_xmlrpc')
     def test_cobbler_checker_returns_false_exception_error(self, xmlrpc_mock):
         server_mock = mock.MagicMock()
         xmlrpc_mock.return_value = server_mock
         server_mock.get_profiles.side_effect = socket.error()
-        self.assert_checker_false(checker.CobblerChecker)
+        self.assert_checker_false(health_checker.CobblerChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.check_if_port_open')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.check_if_port_open')
     def test_socket_checkers_return_true(self, port_checker_mock):
         port_checker_mock.return_value = True
 
-        for socket_checker in [checker.PostgresChecker,
-                               checker.RsyncChecker,
-                               checker.RsyslogChecker]:
+        for socket_checker in [health_checker.PostgresChecker,
+                               health_checker.RsyncChecker,
+                               health_checker.RsyslogChecker]:
             self.assert_checker_true(socket_checker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.check_if_port_open')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.check_if_port_open')
     def test_socket_checkers_return_false(self, port_checker_mock):
         port_checker_mock.return_value = False
 
-        for socket_checker in [checker.PostgresChecker,
-                               checker.RsyncChecker,
-                               checker.RsyslogChecker]:
+        for socket_checker in [health_checker.PostgresChecker,
+                               health_checker.RsyncChecker,
+                               health_checker.RsyslogChecker]:
             self.assert_checker_false(socket_checker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_mcollective_checker_returns_true(self, get_mock):
         result = [{'name': 'mcollective_broadcast'},
                   {'name': 'mcollective_directed'}]
         get_mock.return_value = [result, 200]
-        self.assert_checker_true(checker.MCollectiveChecker)
+        self.assert_checker_true(health_checker.MCollectiveChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_mcollective_checker_returns_false(self, get_mock):
         wrong_results = [[{'name': 'mcollective_broadcast'}], None]
 
         for result in wrong_results:
             get_mock.return_value = [result, 200]
-            self.assert_checker_false(checker.MCollectiveChecker)
+            self.assert_checker_false(health_checker.MCollectiveChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nginx_checker_returns_true(self, get_mock):
         get_mock.return_value = [None, 400]
-        self.assert_checker_true(checker.NginxChecker)
+        self.assert_checker_true(health_checker.NginxChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nginx_checker_returns_false(self, get_mock):
         get_mock.return_value = [None, None]
-        self.assert_checker_false(checker.NginxChecker)
+        self.assert_checker_false(health_checker.NginxChecker)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_integration_postgres_nailgun_nginx_returns_true(self, get_mock):
         get_mock.return_value = [[1, 2], 200]
         self.assert_checker_true(
-            checker.IntegrationCheckerPostgresqlNailgunNginx)
+            health_checker.IntegrationCheckerPostgresqlNailgunNginx)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_integration_postgres_nailgun_nginx_returns_false(self, get_mock):
         negative_results = [[[1, 2], 400], [[], 200]]
         for result in negative_results:
             get_mock.return_value = result
             self.assert_checker_false(
-                checker.IntegrationCheckerPostgresqlNailgunNginx)
+                health_checker.IntegrationCheckerPostgresqlNailgunNginx)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_integration_rabbitmq_astute_nailgun_returns_true(self, get_mock):
         result = [[{'name': 'naily_service'},
                    {'name': 'nailgun'}], 200]
         get_mock.return_value = result
 
         self.assert_checker_true(
-            checker.IntegrationCheckerRabbitMQAstuteNailgun)
+            health_checker.IntegrationCheckerRabbitMQAstuteNailgun)
 
-    @mock.patch('fuel_upgrade.checker.BaseChecker.safe_get')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_integration_rabbitmq_astute_nailgun(self, get_mock):
         negative_results = [
             [None, 200],
@@ -331,4 +331,4 @@ class TestCheckers(BaseTestCase):
         for result in negative_results:
             get_mock.return_value = result
             self.assert_checker_false(
-                checker.IntegrationCheckerRabbitMQAstuteNailgun)
+                health_checker.IntegrationCheckerRabbitMQAstuteNailgun)

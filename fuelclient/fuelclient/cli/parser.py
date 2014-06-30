@@ -44,6 +44,7 @@ class Parser:
         self.generate_actions()
         self.add_version_args()
         self.add_debug_arg()
+        self.add_keystone_credentials_args()
         self.add_serializers_args()
 
     def generate_actions(self):
@@ -99,6 +100,26 @@ class Parser:
             action="store_true",
             help="prints details of all HTTP request",
             default=False
+        )
+
+    def add_keystone_credentials_args(self):
+        self.universal_flags.append("--os-username")
+        self.parser.add_argument(
+            "--os-username",
+            dest="user",
+            action="store",
+            type=str,
+            help="credentials for keystone authentication user",
+            default=None
+        )
+        self.universal_flags.append("--os-password")
+        self.parser.add_argument(
+            "--os-password",
+            dest="password",
+            action="store",
+            type=str,
+            help="credentials for keystone authentication password",
+            default=None
         )
 
     def add_version_args(self):

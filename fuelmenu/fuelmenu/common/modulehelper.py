@@ -110,12 +110,13 @@ class ModuleHelper(object):
             elif defaults[key]["value"] == "label":
                 edits.append(widget.TextLabel(defaults[key]["label"]))
             else:
+                ispassword = "PASSWORD" in key.upper()
                 caption = defaults[key]["label"]
                 default = defaults[key]["value"]
                 tooltip = defaults[key]["tooltip"]
                 edits.append(
                     widget.TextField(key, caption, 23, default, tooltip,
-                                     toolbar))
+                                     toolbar, ispassword=ispassword))
 
         listbox_content = []
         listbox_content.extend(header_content)

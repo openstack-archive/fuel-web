@@ -40,4 +40,17 @@ class UpgradeEngine(object):
         """Rollback all the changes, generally used in case of failed upgrade.
         """
 
-    # TODO(ikalnitsky): should we introduce some `backup` method?
+    @abc.abstractproperty
+    def required_free_space(self):
+        """Required free space for upgarde
+
+        Must return dict where key is path to directory
+        and value is required free space in megabytes.
+
+        Example:
+          {
+            "/var/www/nailgun": 2000,
+            "/var/lib/docker": 5000,
+            "/etc/supervisor.d": 10,
+          }
+        """

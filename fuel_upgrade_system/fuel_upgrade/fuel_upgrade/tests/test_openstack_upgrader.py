@@ -242,3 +242,13 @@ class TestOpenStackUpgrader(BaseTestCase):
         self.assertEqual(
             self.upgrader._get_unique_releases(releases, existing_releases),
             expected_releases)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.dir_size',
+                return_value=5)
+    def test_required_free_space(self, _):
+        self.assertEqual(
+            self.upgrader.required_free_space,
+            {'/etc/puppet/9999/manifests': 5,
+             '/etc/puppet/9999/modules': 5,
+             '/var/www/nailgun/9999/centos': 5,
+             '/var/www/nailgun/9999/ubuntu': 5})

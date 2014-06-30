@@ -113,3 +113,15 @@ class NailgunClient(object):
         # generally, the delete request should returns 204 No Content
         # so we don't want to parse a response as json
         return r.text
+
+    def get_tasks(self):
+        """Retrieve list of tasks from nailgun
+
+        :returns: list of tasks
+        """
+        r = requests.get('{api_url}/tasks'.format(api_url=self.api_url))
+
+        if r.status_code not in (200, ):
+            r.raise_for_status()
+
+        return r.json()

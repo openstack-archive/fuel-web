@@ -413,3 +413,13 @@ class TestDockerUpgrader(BaseTestCase):
               '--to-destination 172.17.0.3:2',),)]
 
         self.assertEquals(exec_cmd_mock.call_args_list, expected_calls)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.files_size',
+                return_value=5)
+    def test_required_free_space(self, _):
+        self.assertEqual(
+            self.upgrader.required_free_space,
+            {'/var/lib/fuel_upgrade/9999': 50,
+             '/var/lib/docker': 5,
+             '/etc/fuel/': 10,
+             '/etc/supervisord.d/': 10})

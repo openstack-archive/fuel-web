@@ -30,6 +30,9 @@ from fuel_upgrade.engines.docker_engine import DockerUpgrader
 from fuel_upgrade.engines.host_system import HostSystemUpgrader
 from fuel_upgrade.engines.openstack import OpenStackUpgrader
 
+from fuel_upgrade.before_upgrade_checker import CheckFreeSpace
+from fuel_upgrade.before_upgrade_checker import CheckNoRunningTasks
+
 
 #: A dict with supported systems.
 #: The key is used for system option in CLI.
@@ -92,17 +95,27 @@ def parse_args():
 
 def run_upgrade(args):
     """Run upgrade on master node
-    """
-    upgraders_to_use = [
-        SUPPORTED_SYSTEMS[system] for system in args.systems
-    ]
 
+    :param args: argparse object
+    """
+    # Initialize config
+    config = build_config(args.src)
+
+    # Initialize upgrade engines
+    upgraders_to_use = [
+        SUPPORTED_SYSTEMS[system](args.src, config)
+        for system in args.systems]
+
+    # Initialize checkers
+    checkers = None
+    if not args.no_checker:
+        checkers = [
+            CheckFreeSpace(upgraders_to_use),
+            CheckNoRunningTasks(config)]
+
+    # Initialize upgrade manager with engines and checkers
     upgrade_manager = UpgradeManager(
-        args.src,
-        build_config(args.src),
-        upgraders_to_use,
-        args.no_rollback,
-        args.no_checker)
+        upgraders_to_use, checkers, args.no_rollback)
 
     upgrade_manager.run()
 

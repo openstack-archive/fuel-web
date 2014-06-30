@@ -17,6 +17,7 @@ docker:
   api_version: '1.10'
   http_timeout: 160
   stop_container_timeout: 10
+  dir: '/var/lib/docker'
 
 image_prefix: fuel/
 container_prefix: fuel-core-

@@ -67,6 +67,29 @@ class OpenStackUpgrader(UpgradeEngine):
         self._update_conf()
         self._reset_rollback_ids()
 
+    @property
+    def required_free_space(self):
+        """Required free space to run upgrade
+
+        * size of puppet manifests
+        * size of repositories
+
+        :returns: dict where key is path to directory
+                  and value is required free space
+        """
+
+        calculated_spaces = {}
+
+        spaces = [self.config.openstack['repos']['centos'],
+                  self.config.openstack['repos']['ubuntu'],
+                  self.config.openstack['puppets']['modules'],
+                  self.config.openstack['puppets']['manifests']]
+
+        for space in spaces:
+            calculated_spaces[space['dst']] = utils.dir_size(space['src'])
+
+        return calculated_spaces
+
     def _update_conf(self):
         """Update some conf data:
 

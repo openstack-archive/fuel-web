@@ -63,3 +63,7 @@ class UnsupportedImageTypeError(FuelUpgradeException):
 
 class WrongCobblerConfigsError(FuelUpgradeException):
     pass
+
+
+class NotEnoughFreeSpaceOnDeviceError(FuelUpgradeException):
+    pass

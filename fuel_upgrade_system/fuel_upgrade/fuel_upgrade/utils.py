@@ -337,3 +337,65 @@ def check_file_is_valid_json(path):
         return False
 
     return True
+
+
+def calculate_free_space(path):
+    """Calculate free space
+
+    :param str path: path to directory for free space calculation
+    :returns: free space in megabytes
+    """
+    # NOTE(eli): to calculate the size of mount point
+    # need to add `/` symbol at the end of the path
+    directory = '{0}/'.format(path)
+    device_info = os.statvfs(directory)
+    return byte_to_megabyte(device_info.f_bsize * device_info.f_bavail)
+
+
+def byte_to_megabyte(byte):
+    """Convert bytes to megabytes
+
+    :param byte: quantity of bytes
+    :returns: megabytes
+    """
+    return byte / 1024 ** 2
+
+
+def find_mount_point(path):
+    """Tries to find mount point of directory
+
+    :param str path: path to
+    :returns: path to mount point
+    """
+    path = os.path.abspath(path)
+    while not os.path.ismount(path):
+        path = os.path.dirname(path)
+
+    return path
+
+
+def files_size(files_list):
+    """Returns size of files
+
+    :param list path: list of files
+    :returns: sum of files sizes
+    """
+    size = sum(
+        os.path.getsize(f) for f in files_list if os.path.isfile(f))
+    return byte_to_megabyte(size)
+
+
+def dir_size(path):
+    """Returns size of file or directory
+
+    :param str path: path to the directory
+    :returns: size of the directory
+    """
+    total_size = 0
+    for dirpath, _, filenames in os.walk(path, followlinks=True):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            if os.path.isfile(fp):
+                total_size += os.path.getsize(fp)
+
+    return byte_to_megabyte(total_size)

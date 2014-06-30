@@ -415,10 +415,9 @@ class TestTaskManagers(BaseIntegrationTest):
         )
 
         supertask = self.env.launch_deployment()
-        self.db.flush()
         self.env.wait_ready(supertask, timeout=5)
-
-        self.assertEqual(self.env.db.query(Node).count(), 1)
+        self.db.flush()
+        self.assertEqual(self.db.query(Node).count(), 1)
         node = self.db.query(Node).first()
         self.assertEqual(node.status, 'discover')
         self.assertEqual(node.cluster_id, None)

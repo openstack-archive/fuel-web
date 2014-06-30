@@ -44,6 +44,7 @@ class Parser:
         self.generate_actions()
         self.add_version_args()
         self.add_debug_arg()
+        self.add_keystone_credentials_args()
         self.add_serializers_args()
 
     def generate_actions(self):
@@ -101,6 +102,20 @@ class Parser:
             default=False
         )
 
+    def add_keystone_credentials_args(self):
+        self.parser.add_argument(
+            "--os-username",
+            dest="user",
+            help="credentials for keystone authentication user",
+            default=None
+        )
+        self.parser.add_argument(
+            "--os-password",
+            dest="password",
+            help="credentials for keystone authentication password",
+            default=None
+        )
+
     def add_version_args(self):
         for args in (get_version_arg(), get_fuel_version_arg()):
             self.parser.add_argument(*args["args"], **args["params"])
@@ -118,6 +133,8 @@ class Parser:
                 self.args.insert(1, flag)
 
         self.move_argument_before_action("--env", )
+        self.move_argument_before_action("--os-username", )
+        self.move_argument_before_action("--os-password", )
 
     def move_argument_before_action(self, argument):
         for arg in self.args:

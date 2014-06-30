@@ -13,6 +13,7 @@
 #    under the License.
 
 from functools import wraps
+from keystoneclient.exceptions import Unauthorized
 import sys
 import urllib2
 
@@ -77,6 +78,8 @@ def handle_exceptions(exc):
         ))
     elif isinstance(exc, urllib2.URLError):
         exit_with_error("Can't connect to Nailgun server!")
+    elif isinstance(exc, Unauthorized):
+        exit_with_error("Unauthorized: need authentication!")
     elif isinstance(exc, FuelClientException):
         exit_with_error(exc.message)
     else:

@@ -272,8 +272,7 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         },
         render: function() {
             this.$el.html(this.template({
-                version: this.version.get('release'),
-                isMirantis: this.version.get('mirantis') == "yes",
+                version: this.version,
                 locales: this.locales,
                 currentLocale: this.getCurrentLocale()
             })).i18n();

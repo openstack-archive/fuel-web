@@ -119,5 +119,7 @@ def flush():
     with contextlib.closing(engine.connect()) as con:
         trans = con.begin()
         for table in reversed(Base.metadata.sorted_tables):
+            key_column_names = map(str, table.primary_key.columns)
+            con.execute(table.select(order_by=key_column_names, for_update=True))
             con.execute(table.delete())
         trans.commit()

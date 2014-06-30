@@ -33,10 +33,10 @@
           </div>
         </div>
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
+        <div class="global-description description"><%- $.t(ns + settingName + '.description', {defaultValue: setting.description}) %></div>
       </label>
-      <div class="global-description description"><%- $.t(ns + settingName + '.description', {defaultValue: setting.description}) %></div>
-      </div>
-      <div class="table-wrapper">
+    </div>
+    <div class="table-wrapper">
     <% } else if (setting.type == 'radio') { %>
       </div>
       <legend class="openstack-sub-title"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></legend>
@@ -50,10 +50,10 @@
             </div>
           </div>
           <div class="parameter-name"><%- $.t(ns + settingName + '.values.' + option.data + '.label', {defaultValue: option.label}) %></div>
+          <div class="global-description description">
+            <%- $.t(ns + settingName + '.values.' + option.data + '.description', {defaultValue: option.description || ' '}) %>
+          </div>
         </label>
-        <div class="global-description description">
-          <%- $.t(ns + settingName + '.values.' + option.data + '.description', {defaultValue: option.description || ' '}) %>
-        </div>
       <% }) %>
     <% } else if (setting.type != 'hidden' && settingName != 'metadata') { %>
       <div class="parameter-box clearfix tablerow-wrapper">

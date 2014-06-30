@@ -310,9 +310,9 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
             _.each(result, function(group, groupName) {
                 result[groupName].metadata = _.omit(group.metadata, 'disabled', 'visible');
                 _.each(group, function(setting, settingName) {
-                    group[settingName] = _.omit(setting, 'disabled', 'hasDependentRole');
+                    group[settingName] = _.omit(setting, 'disabled', 'hasDependentRole', 'visible');
                     _.each(setting.values, function(option, index) {
-                        setting.values[index] = _.omit(option, 'disabled');
+                        setting.values[index] = _.omit(option, 'disabled', 'visible');
                     });
                 });
             }, this);
@@ -327,18 +327,21 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
             };
             var handleRestrictions = function(restrictions) {
                 return _.any(restrictions, function(restriction) {
-                    return utils.evaluateExpression(restriction, configModels).value;
+                    return utils.evaluateExpression(restriction.condition, configModels).value;
                 });
             };
+            var calculateState = function(setting) {
+                var settingRestrictions = _.map(setting.restrictions, utils.expandRestriction);
+                setting.disabled = handleRestrictions(_.where(settingRestrictions, {action: 'disable'}));
+                setting.visible = !handleRestrictions(_.where(settingRestrictions, {action: 'hide'}));
+            };
             _.each(this.attributes, function(group) {
-                group.metadata.visible = !handleRestrictions(group.metadata.restrictions);
+                // group restrictions define group visibility by default
+                group.metadata.visible = !handleRestrictions(_.map(group.metadata.restrictions, utils.expandRestriction));
                 if (!group.metadata.visible) { return; }
                 _.each(group, function(setting) {
-                    setting.disabled = handleRestrictions(setting.restrictions);
-                    if (setting.disabled) { return;}
-                    _.each(setting.values, function(value) {
-                        value.disabled = handleRestrictions(value.restrictions);
-                    });
+                    calculateState(setting);
+                    _.each(setting.values, calculateState);
                 });
             });
         },

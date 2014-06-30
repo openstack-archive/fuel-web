@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
 
 from nailgun.objects.serializers.task import TaskSerializer
 
@@ -245,9 +246,17 @@ class Task(NailgunObject):
                 cluster.pending_release_id = None
 
     @classmethod
+    def _clean_data(cls, data):
+        result = copy.copy(data)
+        if result.get('status') not in consts.TASK_STATUSES:
+            result.pop('status', None)
+        return result
+
+    @classmethod
     def update(cls, instance, data):
         logger.debug("Updating task: %s", instance.uuid)
-        super(Task, cls).update(instance, data)
+        clean_data = cls._clean_data(data)
+        super(Task, cls).update(instance, clean_data)
 
         # this commit is needed because of strange bug
         # with db management in fake threads for testing

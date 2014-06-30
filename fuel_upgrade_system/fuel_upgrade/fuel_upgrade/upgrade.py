@@ -16,10 +16,6 @@
 
 import logging
 
-import requests
-
-from fuel_upgrade import errors
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,15 +30,10 @@ class UpgradeManager(object):
     :param no_check: do not make opportunity check before upgrades
     """
 
-    def __init__(self, source_path, config, upgraders, no_rollback=True,
-                 no_check=False):
-        self._source_path = source_path
-        self._upgraders = [
-            upgrader(source_path, config) for upgrader in upgraders
-        ]
+    def __init__(self, upgraders, checkers, no_rollback=True):
+        self._upgraders = upgraders
+        self._checkers = checkers
         self._rollback = not no_rollback
-        self._check = not no_check
-        self.config = config
 
     def run(self):
         """Runs consequentially all registered upgraders.
@@ -72,49 +63,11 @@ class UpgradeManager(object):
 
                 raise
 
-        self.after_upgrade_checks()
-
     def before_upgrade(self):
         logger.debug('Run before upgrade actions')
-        if self._check:
-            self.check_upgrade_opportunity()
-
-    def after_upgrade_checks(self):
-        logger.debug('Run after upgrade actions')
-        self.check_health()
-
-    def check_upgrade_opportunity(self):
-        """Sends request to nailgun
-        to make sure that there are no
-        running tasks
-
-        TODO(eli): move this logic to separate
-        class
-        """
-        logger.info('Check upgrade opportunity')
-        nailgun = self.config.endpoints['nailgun']
-        tasks_url = 'http://{0}:{1}/api/v1/tasks'.format(
-            nailgun['host'], nailgun['port'])
-
-        tasks = requests.get(tasks_url).json()
-
-        running_tasks = filter(
-            lambda t: t['status'] == 'running', tasks)
-
-        if running_tasks:
-            tasks_msg = ['id={0} cluster={1} name={2}'.format(
-                t.get('id'),
-                t.get('cluster'),
-                t.get('name')) for t in running_tasks]
-
-            error_msg = 'Cannot run upgrade, tasks are running: {0}'.format(
-                ' '.join(tasks_msg))
-
-            raise errors.CannotRunUpgrade(error_msg)
-
-    def check_health(self):
-        # TODO(eli): implementation is required
-        logger.debug('Check that upgrade passed correctly')
+        if self._checkers:
+            for checker in self._checkers:
+                checker.check()
 
     def rollback(self):
         logger.debug('Run rollback')

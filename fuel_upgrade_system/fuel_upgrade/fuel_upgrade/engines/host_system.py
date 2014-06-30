@@ -68,6 +68,18 @@ class HostSystemUpgrader(UpgradeEngine):
         self.repo_path = self.host_system_config['repo_path'].format(
             update_path=self.update_path)
 
+    @property
+    def required_free_space(self):
+        """Required free space to run upgrade
+
+        Requires only several megabytes for
+        repo config.
+
+        :returns: dict where key is path to directory
+                  and value is required free space
+        """
+        return {self.repo_config_path: 10}
+
     def upgrade(self):
         """Run host system upgrade process
         """

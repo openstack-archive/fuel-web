@@ -42,8 +42,13 @@ define(['utils', 'deepModel'], function(utils) {
         constructorName: 'Releases',
         model: models.Release,
         url: '/api/releases',
-        comparator: function(release) {
-            return release.id;
+        comparator: function(release1, release2) {
+            var version1 = release1.get('version'), version2 = release2.get('version');
+            if (version1 == version2) {
+                var name1 = release1.get('name').toLowerCase(), name2 = release2.get('name').toLowerCase();
+                return name1 > name2 ? 1 : name1 < name2 ? -1 : 0;
+            }
+            return version1 < version2 ? 1 : -1;
         }
     });
 

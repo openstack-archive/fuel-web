@@ -118,8 +118,24 @@ class OpenStackUpgrader(UpgradeEngine):
 
         # bulding valid repo paths
         for release in self.releases:
-            data = release['orchestrator_data']
+            if 'ubuntu' == release['operating_system'].lower():
+                repo = 'http://{master_ip}:8080/{version}/ubuntu/x86_64 ' \
+                       'precise main'
+            else:
+                repo = 'http://{master_ip}:8080/{version}/centos/x86_64'
 
+            if 'orchestrator_data' not in release:
+                release['orchestrator_data'] = {
+                    'puppet_manifests_source': (
+                        'rsync://{master_ip}:/puppet/{version}/manifests/'),
+                    'puppet_modules_source': (
+                        'rsync://{master_ip}:/puppet/{version}/modules/'),
+                    'repo_metadata': {
+                        'nailgun': repo,
+                    }
+                }
+
+            data = release['orchestrator_data']
             data['repo_metadata']['nailgun'] = \
                 data['repo_metadata']['nailgun'].format(**self._meta)
             data['puppet_manifests_source'] = \

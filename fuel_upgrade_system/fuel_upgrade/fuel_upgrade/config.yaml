@@ -394,7 +394,7 @@ containers:
 # related settings there. Please keep in mind that all paths are relative
 # to source directory that's passed as a command line argument.
 openstack:
-  releases: config/releases.yaml
+  releases: config/openstack.yaml
 
   puppets:
     manifests:

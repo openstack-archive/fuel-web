@@ -43,7 +43,9 @@ define(['utils', 'deepModel'], function(utils) {
         model: models.Release,
         url: '/api/releases',
         comparator: function(release) {
-            return release.id;
+            return [!!this.find(function(r) {
+                return _.contains(r.get('can_update_from_versions'), release.get('version'));
+            }), release.get('name'), release.id];
         }
     });
 

@@ -2300,8 +2300,8 @@ input.error:focus {
 
 .parameter-name {
   .float-mixin;
-  min-width: 170px;
   .box-sizing-mixin;
+  min-width: 120px;
   font-weight: bold;
   margin: 7px 14px 0 0;
   overflow: hidden;
@@ -2328,7 +2328,6 @@ input.error:focus {
 
 .parameter-description {
   .float-mixin;
-  max-width: 550px;
   color: @font-color-light;
   .box-sizing-mixin;
   margin-top: 4px;
@@ -2350,6 +2349,42 @@ input.error:focus {
   margin: -6px 20px 8px 46px;
 }
 
+.table-wrapper {
+  display: table;
+  margin-bottom: 3px;
+  > .tablerow-wrapper {
+    display: table-row;
+    height:40px;
+    .parameter-name {
+      display: table-cell;
+      vertical-align: top;
+      padding: 3px 10px 0 12px;
+      max-width: 180px;
+      float: none;
+    }
+    .parameter-control {
+      display: table-cell;
+      float: none;
+      padding: 2px 10px 0 0;
+      &.input-append {
+        vertical-align: top;
+        padding-top: 2px;
+        height: 40px;
+      }
+    }
+    .parameter-description {
+      display: table-cell;
+      vertical-align: top;
+      padding-top: 3px;
+      max-width: 550px;
+      float: none;
+    }
+  }
+  > label {
+    margin-top: 0;
+  }
+}
+
 legend {
   &.openstack-settings, &.networks {
     display: block;
@@ -2359,14 +2394,14 @@ legend {
     border-radius: 4px;
     padding: 10px 12px 12px 12px;
     height: 42px;
-    margin-top: 20px;
+    margin-top: 15px;
     .box-sizing-mixin;
     .font-layout-mixin(@font-size-base + 4, @font-color-dark, null, null, 18px);
     .box-sizing-mixin;
   }
   &.openstack-sub-title {
     .font-layout-mixin(@font-size-big-1, null, null, null, 30px);
-    margin: 25px 0px 6px 14px;
+    margin: 10px 0px 6px 14px;
   }
   .toggleable {
     font-size: @font-size-base + 4;

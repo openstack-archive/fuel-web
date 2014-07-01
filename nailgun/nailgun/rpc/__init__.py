@@ -48,7 +48,7 @@ naily_queue = Queue(
 naily_service_exchange = Exchange(
     'naily_service',
     'fanout',
-    durable=False,
+    durable=True,
     auto_delete=True
 )
 

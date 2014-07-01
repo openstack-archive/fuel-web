@@ -2357,25 +2357,29 @@ input.error:focus {
     height:40px;
     .parameter-name {
       display: table-cell;
-      vertical-align: top;
-      padding: 3px 10px 0 12px;
+      word-break: break-all;
+      vertical-align: middle;
+      padding: 0 10px 0 12px;
       max-width: 180px;
       float: none;
     }
     .parameter-control {
       display: table-cell;
+      vertical-align: middle;
       float: none;
-      padding: 2px 10px 0 0;
+      .box-sizing-mixin;
+      padding: 5px 10px 0 0;
+      input[type="text"] { margin-bottom: 5px; }
       &.input-append {
-        vertical-align: top;
-        padding-top: 2px;
-        height: 40px;
+        vertical-align: middle;
+        padding-top: 0;
       }
     }
     .parameter-description {
-      display: table-cell;
-      vertical-align: top;
-      padding-top: 3px;
+      display: table-cell !important;
+      vertical-align: middle;
+      margin-top: 0;
+      padding: 0;
       max-width: 550px;
       float: none;
     }

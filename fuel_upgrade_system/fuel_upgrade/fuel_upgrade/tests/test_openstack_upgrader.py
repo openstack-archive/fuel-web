@@ -28,6 +28,7 @@ class TestOpenStackUpgrader(BaseTestCase):
           "fields": {
             "name": "releases name",
             "version": "2014.1",
+            "operating_system": "CentOS",
 
             "orchestrator_data": {
               "repo_metadata": {
@@ -68,6 +69,45 @@ class TestOpenStackUpgrader(BaseTestCase):
         self.assertEqual(
             orchestrator_data['puppet_modules_source'],
             'rsync://0.0.0.0:/some/path')
+
+    def test_constructor_without_orchestration_data_in_releases(self):
+        releases_sample = '''
+            [{ "pk": 1,
+               "fields": { "name": "releases name",
+                           "version": "2014.1",
+                           "operating_system": "CentOS"
+                         }
+             },
+             { "pk": 2,
+               "fields": { "name": "Ubuntu",
+                           "version": "2014.1",
+                           "operating_system": "Ubuntu"
+                         }
+            }]
+        '''
+        with mock.patch(
+            'fuel_upgrade.engines.openstack.io.open',
+            self.mock_open(releases_sample)
+        ):
+            self.upgrader = OpenStackUpgrader(
+                '/tmp/update_src', self.fake_config
+            )
+
+        orchestrator_data = self.upgrader.releases[0]['orchestrator_data']
+        self.assertEqual(
+            orchestrator_data['repo_metadata']['nailgun'],
+            'http://0.0.0.0:8080/9999/centos/x86_64')
+        self.assertEqual(
+            orchestrator_data['puppet_manifests_source'],
+            'rsync://0.0.0.0:/puppet/9999/manifests/')
+        self.assertEqual(
+            orchestrator_data['puppet_modules_source'],
+            'rsync://0.0.0.0:/puppet/9999/modules/')
+
+        orchestrator_data = self.upgrader.releases[1]['orchestrator_data']
+        self.assertEqual(
+            orchestrator_data['repo_metadata']['nailgun'],
+            'http://0.0.0.0:8080/9999/ubuntu/x86_64 precise main')
 
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_repos')

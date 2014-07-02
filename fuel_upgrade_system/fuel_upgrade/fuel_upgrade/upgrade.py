@@ -45,12 +45,8 @@ class UpgradeManager(object):
         for upgrader in self._upgraders:
 
             try:
-                logger.debug(
-                    '%s: upgrading...', upgrader.__class__.__name__)
-                upgrader.before_upgrade_actions()
+                logger.debug('%s: upgrading...', upgrader.__class__.__name__)
                 upgrader.upgrade()
-                upgrader.post_upgrade_actions()
-
             except Exception as exc:
                 logger.exception(
                     '%s: failed to upgrade: "%s"',

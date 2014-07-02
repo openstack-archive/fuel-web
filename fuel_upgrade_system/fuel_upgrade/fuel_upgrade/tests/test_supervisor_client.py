@@ -27,7 +27,7 @@ class TestSupervisorClient(BaseTestCase):
         self.utils_patcher = mock.patch('fuel_upgrade.supervisor_client.utils')
         self.utils_mock = self.utils_patcher.start()
 
-        self.supervisor = SupervisorClient(self.fake_config)
+        self.supervisor = SupervisorClient(self.fake_config, '0')
         type(self.supervisor).supervisor = mock.PropertyMock()
 
         self.new_version_supervisor_path = '/etc/supervisord.d/9999'

@@ -27,6 +27,14 @@ def read_yaml_config(path):
     return yaml.load(open(path, 'r'))
 
 
+def get_version_from_config(path):
+    """Retrieves version from config file
+
+    :param path: path to config
+    """
+    return read_yaml_config(path)['VERSION']['release']
+
+
 class Config(object):
     """Config object, returns None if field doesn't exist
     """
@@ -58,8 +66,9 @@ def build_config(update_path):
     """
     config = Config(make_config_path('config.yaml'))
 
-    config.current_version = read_yaml_config(config.current_fuel_version_path)
-    config.new_version = read_yaml_config(
+    config.current_version = get_version_from_config(
+        config.current_fuel_version_path)
+    config.new_version = get_version_from_config(
         config.new_version_yaml_path_template.format(update_path=update_path))
     config.astute = read_yaml_config(config.current_fuel_astute_path)
 

@@ -71,14 +71,6 @@ class TestHostSystemUpgrader(BaseTestCase):
         utils_mock.remove_if_exists.assert_called_once_with(
             '/etc/yum.repos.d/9999_nailgun.repo')
 
-    def test_before_upgrade_actions(self):
-        # This method do nothing, check that there are no exceptions
-        self.upgrader.before_upgrade_actions()
-
-    def test_post_upgrade_actions(self):
-        # This method do nothing, check that there are no exceptions
-        self.upgrader.post_upgrade_actions()
-
     def test_required_free_space(self):
         self.assertEqual(
             self.upgrader.required_free_space,

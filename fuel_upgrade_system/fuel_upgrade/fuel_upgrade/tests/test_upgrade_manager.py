@@ -97,13 +97,6 @@ class TestUpgradeManager(BaseTestCase):
 
         self.called_once(upgrader.before_upgrade)
 
-    def test_post_upgrade_actions_is_called(self):
-        upgrader = UpgradeManager(**self.default_args())
-        engine_mock = upgrader._upgraders[0]
-        upgrader.run()
-
-        self.called_once(engine_mock.post_upgrade_actions)
-
     def test_checkers_are_called(self):
         upgrader = UpgradeManager(**self.default_args())
         checkers_mock = upgrader._checkers

@@ -24,6 +24,7 @@ import time
 import urllib2
 
 from copy import deepcopy
+from distutils.version import StrictVersion
 
 from mako.template import Template
 import yaml
@@ -238,6 +239,21 @@ def file_contains_lines(file_path, patterns):
     return True
 
 
+def copy_if_does_not_exist(from_path, to_path):
+    """Copies destination does not exist
+
+    :param from_path: src path
+    :param to_path: dst path
+    """
+    if os.path.exists(to_path):
+        logger.debug(
+            'Skip file copying, because file {0} '
+            'already exists'.format(to_path))
+        return
+
+    copy(from_path, to_path)
+
+
 def copy(from_path, to_path):
     """Copy file, override if exists
 
@@ -399,3 +415,23 @@ def dir_size(path):
                 total_size += os.path.getsize(fp)
 
     return byte_to_megabyte(total_size)
+
+
+def compare_version(v1, v2):
+    """Compare two versions
+
+    :param str v1: version 1
+    :param str v2: version 2
+    :returns: 0 - versions are equal
+              1 - version 1 is higher than version 2
+             -1 - version 2 is higher than version 1
+    """
+    version1 = StrictVersion(v1)
+    version2 = StrictVersion(v2)
+
+    if version1 == version2:
+        return 0
+    elif version1 > version2:
+        return -1
+    else:
+        return 1

@@ -67,3 +67,7 @@ class WrongCobblerConfigsError(FuelUpgradeException):
 
 class NotEnoughFreeSpaceOnDeviceError(FuelUpgradeException):
     pass
+
+
+class WrongVersionError(FuelUpgradeException):
+    pass

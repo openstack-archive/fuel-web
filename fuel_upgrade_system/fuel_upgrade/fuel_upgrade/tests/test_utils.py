@@ -320,3 +320,24 @@ class TestUtils(BaseTestCase):
     def test_files_size(self, _, __):
         path = ['/path/file1', '/path/file2']
         self.assertEqual(utils.files_size(path), 2)
+
+    def test_compare_version(self):
+        self.assertEqual(utils.compare_version('0.1', '0.2'), 1)
+        self.assertEqual(utils.compare_version('0.1', '0.1.5'), 1)
+        self.assertEqual(utils.compare_version('0.2', '0.1'), -1)
+        self.assertEqual(utils.compare_version('0.2', '0.2'), 0)
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.copy')
+    def test_copy_if_does_not_exist_file_exists(self, copy_mock, exists_mock):
+        utils.copy_if_does_not_exist('from', 'to')
+        exists_mock.assert_called_once_with('to')
+        self.method_was_not_called(copy_mock)
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
+    @mock.patch('fuel_upgrade.utils.copy')
+    def test_copy_if_does_not_exist_file_does_not_exist(
+            self, copy_mock, exists_mock):
+        utils.copy_if_does_not_exist('from', 'to')
+        exists_mock.assert_called_once_with('to')
+        copy_mock.assert_called_once_with('from', 'to')

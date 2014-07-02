@@ -32,6 +32,7 @@ from fuel_upgrade.engines.openstack import OpenStackUpgrader
 
 from fuel_upgrade.before_upgrade_checker import CheckFreeSpace
 from fuel_upgrade.before_upgrade_checker import CheckNoRunningTasks
+from fuel_upgrade.before_upgrade_checker import CheckUpgradeVersions
 
 
 #: A dict with supported systems.
@@ -93,6 +94,19 @@ def parse_args():
     return rv
 
 
+def get_engine(engines_list, engine_class):
+    """Retrieves required engine from the list
+
+    :param list engines_list: list of engines
+    :param engine_class: engine class
+    """
+    engines = filter(
+        lambda engine: isinstance(engine, engine_class),
+        engines_list)
+    if engines:
+        return engines[0]
+
+
 def run_upgrade(args):
     """Run upgrade on master node
 
@@ -112,6 +126,11 @@ def run_upgrade(args):
         checkers = [
             CheckFreeSpace(upgraders_to_use),
             CheckNoRunningTasks(config)]
+
+        # NOTE(eli): Include version checker
+        # only if docker upgrader is enabled
+        if get_engine(upgraders_to_use, DockerUpgrader):
+            checkers.append(CheckUpgradeVersions(config))
 
     # Initialize upgrade manager with engines and checkers
     upgrade_manager = UpgradeManager(

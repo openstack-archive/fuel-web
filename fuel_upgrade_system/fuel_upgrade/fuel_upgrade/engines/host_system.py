@@ -57,7 +57,7 @@ class HostSystemUpgrader(UpgradeEngine):
             self.templates_dir, 'nailgun.repo')
 
         #: new version of fuel
-        self.version = self.config.new_version['VERSION']['release']
+        self.version = self.config.new_version
 
         #: path to repository config
         self.repo_config_path = \
@@ -113,11 +113,3 @@ class HostSystemUpgrader(UpgradeEngine):
         """Remove yum repository config
         """
         utils.remove_if_exists(self.repo_config_path)
-
-    def before_upgrade_actions(self):
-        """Nothing to do here for this upgrader
-        """
-
-    def post_upgrade_actions(self):
-        """Nothing to do here for this upgrader
-        """

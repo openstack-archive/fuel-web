@@ -17,17 +17,19 @@ define(
 [
     'utils',
     'models',
+    'view_mixins',
     'views/common',
     'views/dialogs',
     'text!templates/cluster/settings_tab.html',
     'text!templates/cluster/settings_group.html'
 ],
-function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsGroupTemplate) {
+function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplate, settingsGroupTemplate) {
     'use strict';
     var SettingsTab, SettingGroup;
 
     SettingsTab = commonViews.Tab.extend({
         template: _.template(settingsTabTemplate),
+        mixins: [viewMixins.toggleablePassword],
         hasChanges: function() {
             return !_.isEqual(this.settings.toJSON(), this.initialSettings.toJSON());
         },
@@ -272,17 +274,6 @@ function(utils, models, commonViews, dialogViews, settingsTabTemplate, settingsG
     SettingGroup = Backbone.View.extend({
         template: _.template(settingsGroupTemplate),
         className: 'fieldset-group wrapper',
-        events: {
-            'click span.add-on': 'showPassword'
-        },
-        showPassword: function(e) {
-            var input = this.$(e.currentTarget).prev();
-            if (input.attr('disabled')) {
-                return;
-            }
-            input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
-            this.$(e.currentTarget).find('i').toggle();
-        },
         render: function() {
             this.$el.html(this.template(this.options)).i18n();
             return this;

@@ -18,6 +18,7 @@ define(
     'require',
     'utils',
     'models',
+    'view_mixins',
     'views/dialogs',
     'text!templates/dialogs/create_cluster_wizard.html',
     'text!templates/dialogs/create_cluster_wizard/name_and_release.html',
@@ -30,7 +31,7 @@ define(
     'text!templates/dialogs/create_cluster_wizard/text_input.html',
     'text!js/wizard.json'
 ],
-function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate, wizardInfo) {
+function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate, wizardInfo) {
     'use strict';
 
     var views = {};
@@ -299,17 +300,7 @@ function(require, utils, models, dialogs, createClusterWizardTemplate, clusterNa
     views.WizardPane = Backbone.View.extend({
         template: _.template(commonWizardTemplate),
         constructorName: 'WizardPane',
-        events: {
-            'click span.add-on': 'showPassword'
-        },
-        showPassword: function(e) {
-            var input = this.$(e.currentTarget).prev();
-            if (input.attr('disabled')) {
-                return;
-            }
-            input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
-            this.$(e.currentTarget).find('i').toggle();
-        },
+        mixins: [viewMixins.toggleablePassword],
         initialize: function(options) {
             _.defaults(this, options);
             this.attachWarningListeners();

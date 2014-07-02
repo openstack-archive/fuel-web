@@ -61,6 +61,12 @@ class Notification(NailgunObject):
 
     @classmethod
     def create(cls, data):
+        """Creates and returns a notification instance.
+
+        :param data: a dict with notification data
+        :returns: a notification instance in case of notification
+            doesn't exist; otherwise - None
+        """
         topic = data.get("topic")
         node_id = data.get("node_id")
         task_uuid = data.pop("task_uuid", None)
@@ -74,7 +80,6 @@ class Notification(NailgunObject):
         if "datetime" not in data:
             data["datetime"] = datetime.now()
 
-        task = None
         exist = None
         if task_uuid:
             task = Task.get_by_uuid(task_uuid)
@@ -87,13 +92,15 @@ class Notification(NailgunObject):
                 ).first()
 
         if not exist:
-            super(Notification, cls).create(data)
+            notification = super(Notification, cls).create(data)
             logger.info(
                 u"Notification: topic: {0} message: {1}".format(
                     data.get("topic"),
                     data.get("message")
                 )
             )
+            return notification
+        return None
 
     @classmethod
     def to_dict(cls, instance, fields=None):

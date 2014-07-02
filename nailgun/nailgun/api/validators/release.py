@@ -16,7 +16,6 @@
 from sqlalchemy import not_
 
 from nailgun.api.validators.base import BasicValidator
-from nailgun.api.validators.cluster import AttributesValidator
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.errors import errors
@@ -35,16 +34,6 @@ class ReleaseValidator(BasicValidator):
                         "Invalid network data: {0}".format(network),
                         log_message=True
                     )
-        if "attributes_metadata" in d:
-            try:
-                AttributesValidator.validate_fixture(
-                    d["attributes_metadata"]
-                )
-            except Exception as exc:
-                raise errors.InvalidData(
-                    str(exc),
-                    log_message=True
-                )
         if "orchestrator_data" in d:
             if not isinstance(d["orchestrator_data"], dict):
                 raise errors.InvalidData(

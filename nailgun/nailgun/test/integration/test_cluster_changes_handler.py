@@ -162,9 +162,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [700, 600, 500],
-            'cinder': 800,
-            'compute': 800
+            'controller': [600, 600, 500],
+            'cinder': 700,
+            'compute': 700
         }
 
         deployment_info = []
@@ -507,9 +507,9 @@ class TestHandlers(BaseIntegrationTest):
         # Individual attrs calculation and
         # merging with common attrs
         priority_mapping = {
-            'controller': [700, 600, 500],
-            'cinder': 800,
-            'compute': 800
+            'controller': [600, 600, 500],
+            'cinder': 700,
+            'compute': 700
         }
         deployment_info = []
         for node in nodes_db:

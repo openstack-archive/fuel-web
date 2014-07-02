@@ -78,3 +78,8 @@ class TestHostSystemUpgrader(BaseTestCase):
     def test_post_upgrade_actions(self):
         # This method do nothing, check that there are no exceptions
         self.upgrader.post_upgrade_actions()
+
+    def test_required_free_space(self):
+        self.assertEqual(
+            self.upgrader.required_free_space,
+            {'/etc/yum.repos.d/9999_nailgun.repo': 10})

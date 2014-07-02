@@ -100,9 +100,7 @@ define(['utils', 'deepModel'], function(utils) {
         constructorName: 'Clusters',
         model: models.Cluster,
         url: '/api/clusters',
-        comparator: function(cluster) {
-            return cluster.id;
-        }
+        comparator: 'id'
     });
 
     models.Node = Backbone.Model.extend({
@@ -158,9 +156,7 @@ define(['utils', 'deepModel'], function(utils) {
         constructorName: 'Nodes',
         model: models.Node,
         url: '/api/nodes',
-        comparator: function(node) {
-            return node.id;
-        },
+        comparator: 'id',
         hasChanges: function() {
             return !!this.filter(function(node) {
                 return node.get('pending_addition') || node.get('pending_deletion') || node.get('pending_roles').length;
@@ -243,9 +239,7 @@ define(['utils', 'deepModel'], function(utils) {
         toJSON: function(options) {
             return this.pluck('id');
         },
-        comparator: function(task) {
-            return task.id;
-        },
+        comparator: 'id',
         filterTasks: function(filters) {
             return _.flatten(_.map(this.model.prototype.extendGroups(filters), function(name) {
                 return this.filter(function(task) {
@@ -293,9 +287,7 @@ define(['utils', 'deepModel'], function(utils) {
         constructorName: 'Notifications',
         model: models.Notification,
         url: '/api/notifications',
-        comparator: function(notification) {
-            return notification.id;
-        }
+        comparator: 'id'
     });
 
     models.Settings = Backbone.DeepModel.extend({
@@ -396,9 +388,7 @@ define(['utils', 'deepModel'], function(utils) {
         constructorName: 'Disks',
         model: models.Disk,
         url: '/api/nodes/',
-        comparator: function(disk) {
-            return disk.get('name');
-        }
+        comparator: 'name'
     });
 
     models.Volume = Backbone.Model.extend({

@@ -495,7 +495,8 @@
                     "settings_changes": {
                         "attrs": "OpenStack settings.",
                         "networks": "network settings.",
-                        "disks": "disk configuration of the following nodes:"
+                        "disks": "disk configuration of the following nodes:",
+                        "interfaces": "interface configuration of the following nodes:"
                     },
                     "warnings": {
                         "controller": "Environment should have __nodeSize__ controller node",

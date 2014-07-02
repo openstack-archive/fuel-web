@@ -3,8 +3,9 @@ current_fuel_version_path: /etc/fuel/version.yaml
 current_fuel_astute_path: /etc/fuel/astute.yaml
 fuel_version_path_template: /etc/fuel/{version}/version.yaml
 new_version_yaml_path_template: '{update_path}/config/version.yaml'
+from_version_path_template: '{working_directory}/version.yaml'
 
-working_directory: /var/lib/fuel_upgrade/
+working_directory_template: '/var/lib/fuel_upgrade/{version}'
 images_extension: tar
 
 puppet_modules_dir: puppet_modules

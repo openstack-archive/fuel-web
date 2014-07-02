@@ -18,6 +18,7 @@ import mock
 
 from fuel_upgrade.before_upgrade_checker import CheckFreeSpace
 from fuel_upgrade.before_upgrade_checker import CheckNoRunningTasks
+from fuel_upgrade.before_upgrade_checker import CheckUpgradeVersions
 from fuel_upgrade import errors
 from fuel_upgrade.tests.base import BaseTestCase
 
@@ -120,3 +121,42 @@ class TestCheckFreeSpace(BaseTestCase):
         self.assertEqual(
             error_mount_points,
             [{'available': 9, 'path': '/etc', 'size': 100}])
+
+
+class TestCheckUpgradeVersions(BaseTestCase):
+
+    def setUp(self):
+        with mock.patch(
+                'fuel_upgrade.before_upgrade_checker.os.path.exists',
+                return_value=False):
+            self.checker = CheckUpgradeVersions(self.fake_config)
+
+    @mock.patch(
+        'fuel_upgrade.before_upgrade_checker.utils.compare_version',
+        return_value=1)
+    def test_check(self, compare_mock):
+        self.checker.check()
+        compare_mock.assert_called_once_with('0', '9999')
+
+    @mock.patch(
+        'fuel_upgrade.before_upgrade_checker.utils.compare_version',
+        return_value=0)
+    def test_check_same_version_error(self, compare_mock):
+        err_msg = 'Cannot upgrade to the same version of fuel 0 -> 9999'
+        self.assertRaisesRegexp(
+            errors.WrongVersionError,
+            err_msg,
+            self.checker.check)
+        compare_mock.assert_called_once_with('0', '9999')
+
+    @mock.patch(
+        'fuel_upgrade.before_upgrade_checker.utils.compare_version',
+        return_value=-1)
+    def test_check_higher_version_error(self, compare_mock):
+        err_msg = 'Cannot upgrade from higher version of ' +\
+                  'fuel to lower 0 -> 9999'
+        self.assertRaisesRegexp(
+            errors.WrongVersionError,
+            err_msg,
+            self.checker.check)
+        compare_mock.assert_called_once_with('0', '9999')

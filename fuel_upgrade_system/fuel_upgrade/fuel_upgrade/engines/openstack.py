@@ -46,7 +46,7 @@ class OpenStackUpgrader(UpgradeEngine):
         #: a dictionary with meta information that could be used to
         #: format some data (paths, for example)
         self._meta = {
-            'version': self.config.new_version['VERSION']['release'],
+            'version': self.config.new_version,
             'master_ip': self.config.astute['ADMIN_NETWORK']['ipaddress'],
         }
 
@@ -246,16 +246,6 @@ class OpenStackUpgrader(UpgradeEngine):
                 requests.exceptions.HTTPError
             ) as exc:
                 logger.exception(six.text_type(exc))
-
-    def before_upgrade_actions(self):
-        """Nothing to do for this engine.
-        """
-        pass
-
-    def post_upgrade_actions(self):
-        """Nothing to do for this engine.
-        """
-        pass
 
     def _reset_rollback_ids(self):
         """Remove rollback IDs from the arrays.

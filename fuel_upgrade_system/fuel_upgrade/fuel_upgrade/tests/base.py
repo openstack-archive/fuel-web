@@ -73,8 +73,8 @@ class BaseTestCase(TestCase):
         conf.new_version = config.read_yaml_config(version_yaml)
         conf.current_version = deepcopy(conf.new_version)
 
-        conf.new_version['VERSION']['release'] = '9999'
-        conf.current_version['VERSION']['release'] = '0'
+        conf.new_version = '9999'
+        conf.current_version = '0'
 
         conf.openstack['releases'] = 'releases.json'
 

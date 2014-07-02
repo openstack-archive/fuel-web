@@ -60,20 +60,22 @@ class SupervisorClient(object):
     templates_dir = os.path.abspath(
         os.path.join(os.path.dirname(__file__), 'templates'))
 
-    def __init__(self, config):
+    def __init__(self, config, from_version):
         """Create supervisor client
 
         :param config: config object
         """
         self.config = config
+        self.from_version = from_version
+
         self.supervisor_template_path = os.path.join(
             self.templates_dir, 'supervisor.conf')
         self.supervisor_common_template_path = os.path.join(
             self.templates_dir, 'common.conf')
         self.supervisor_config_dir = self.get_config_path(
-            self.config.new_version['VERSION']['release'])
+            self.config.new_version)
         self.previous_supervisor_config_path = self.get_config_path(
-            self.config.current_version['VERSION']['release'])
+            self.from_version)
 
         utils.create_dir_if_not_exists(self.supervisor_config_dir)
         self.supervisor = self.get_supervisor()

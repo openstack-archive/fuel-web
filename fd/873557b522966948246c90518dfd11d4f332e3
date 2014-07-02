@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Workflow+1: Dmitry Borodaenko <dborodaenko@mirantis.com>
+Code-Review+1: Lukasz Oles <loles@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 02 Jul 2014 16:45:46 +0000
+Reviewed-on: https://review.openstack.org/104151
+Project: stackforge/fuel-web
+Branch: refs/heads/master

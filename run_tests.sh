@@ -88,6 +88,9 @@ FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-"$ROOT/fuelupgradedow
 SHOTGUN_XUNIT=${SHOTGUN_XUNIT:-"$ROOT/shotgun.xml"}
 UI_SERVER_PORT=${UI_SERVER_PORT:-5544}
 FUELCLIENT_SERVER_PORT=${FUELCLIENT_SERVER_PORT:-8003}
+TEST_NAILGUN_DB=${TEST_NAILGUN_DB:-nailgun}
+ARTIFACTS=${ARTIFACTS:-`pwd`/test_run}
+mkdir -p $ARTIFACTS
 
 # disabled/enabled flags that are setted from the cli.
 # used for manipulating run logic.
@@ -110,11 +113,9 @@ certain_tests=0
 
 function run_tests {
   run_cleanup
-
   # This variable collects all failed tests. It'll be printed in
   # the end of this function as a small statistic for user.
   local errors=""
-
   # If tests was specified in command line then run only these tests
   if [ $certain_tests -eq 1 ]; then
     for testfile in $testrargs; do
@@ -199,16 +200,20 @@ function run_tests {
 function run_nailgun_tests {
   local TESTS="$ROOT/nailgun/nailgun/test"
   local result=0
+  local artifacts=$ARTIFACTS/nailgun
+  local config=$artifacts/test.yaml
+  prepare_artifacts $artifacts $config
   if [ $# -ne 0 ]; then
     TESTS="$@"
   fi
 
   # prepare database
-  dropdb
-  syncdb
+  dropdb $config
+  syncdb $config false
 
   pushd $ROOT/nailgun >> /dev/null
-  # run tests
+  # # run tests
+  NAILGUN_CONFIG=$config \
   tox -epy26 -- -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT || result=1
   popd >> /dev/null
   return $result
@@ -220,10 +225,13 @@ function run_nailgun_tests {
 #
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_webui_tests {
-  local COMPRESSED_STATIC_DIR=/tmp/static_compressed
   local SERVER_PORT=$UI_SERVER_PORT
   local TESTS_DIR=$ROOT/nailgun/ui_tests
   local TESTS=$TESTS_DIR/test_*.js
+  local artifacts=$ARTIFACTS/webui
+  local config=$artifacts/test.yaml
+  prepare_artifacts $artifacts $config
+  local COMPRESSED_STATIC_DIR=$artifacts/static_compressed
 
   if [ $# -ne 0 ]; then
     TESTS=$@
@@ -242,20 +250,20 @@ function run_webui_tests {
   echo "done"
 
   # run js testcases
-  create_settings_yaml $COMPRESSED_STATIC_DIR/settings.yaml $COMPRESSED_STATIC_DIR
   local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
   local result=0
 
   for testcase in $TESTS; do
 
-    dropdb
-    syncdb true
+    dropdb $config
+    syncdb $config true
 
-    run_server $SERVER_PORT $server_log $COMPRESSED_STATIC_DIR/settings.yaml
+    run_server $SERVER_PORT $server_log $config
     local pid=$!
 
     if [ $pid -ne 0 ]; then
-      SERVER_PORT=$SERVER_PORT ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
+      SERVER_PORT=$SERVER_PORT \
+      ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
       if [ $? -ne 0 ]; then
         result=1
         break
@@ -289,6 +297,9 @@ function run_webui_tests {
 function run_cli_tests {
   local SERVER_PORT=$FUELCLIENT_SERVER_PORT
   local TESTS=$ROOT/fuelclient/tests
+  local artifacts=$ARTIFACTS/cli
+  local config=$artifacts/test.yaml
+  prepare_artifacts $artifacts $config
 
   if [ $# -ne 0 ]; then
     TESTS=$@
@@ -297,17 +308,18 @@ function run_cli_tests {
   local server_log=`mktemp /tmp/test_nailgun_cli_server.XXXX`
   local result=0
 
-  dropdb
-  syncdb true
+  dropdb $config
+  syncdb $config true
 
-  run_server $SERVER_PORT $server_log ""
+  run_server $SERVER_PORT $server_log $config
   local pid=$!
 
   if [ $pid -ne 0 ]; then
 
     pushd $ROOT/fuelclient >> /dev/null
     # run tests
-    LISTEN_PORT=$SERVER_PORT tox -epy26 -- -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT || result=1
+    NAILGUN_CONFIG=$config LISTEN_PORT=$SERVER_PORT \
+    tox -epy26 -- -vv $testropts $TESTS --xunit-file $FUELCLIENT_XUNIT || result=1
     popd >> /dev/null
 
     kill $pid
@@ -428,11 +440,12 @@ function run_cleanup {
 #   $1 -- insert default data into database if true
 function syncdb {
   pushd $ROOT/nailgun >> /dev/null
+  local config=$1
+  local defaults=$2
+  NAILGUN_CONFIG=$config tox -evenv -- python manage.py syncdb > /dev/null
 
-  tox -evenv -- python manage.py syncdb > /dev/null
-
-  if [[ $# -ne 0 && $1 = true ]]; then
-    tox -evenv -- python manage.py loaddefault > /dev/null
+  if [[ $# -ne 0 && $defaults = true ]]; then
+    NAILGUN_CONFIG=$config tox -evenv -- python manage.py loaddefault > /dev/null
   fi
 
   popd >> /dev/null
@@ -441,8 +454,8 @@ function syncdb {
 
 function dropdb {
   pushd $ROOT/nailgun >> /dev/null
-
-  tox -evenv -- python manage.py dropdb > /dev/null
+  local config=$1
+  NAILGUN_CONFIG=$config tox -evenv -- python manage.py dropdb > /dev/null
 
   popd >> /dev/null
 }
@@ -499,15 +512,31 @@ function run_server {
   return $pid
 }
 
-
-# Arguments:
-#
-#   $1 -- path to settings to be saved
-#   $2 -- path to compressed static dir
-function create_settings_yaml {
-  echo -e "DEVELOPMENT: 1\nSTATIC_DIR: '$2'\nTEMPLATE_DIR: '$2'" > "$1"
+function prepare_artifacts {
+  local artifacts=$1
+  local config=$2
+  mkdir -p $artifacts
+  create_settings_yaml $config $artifacts
 }
 
+function create_settings_yaml {
+  local config_path=$1
+  local artifacts_path=$2
+  cat > $config_path <<EOL
+DEVELOPMENT: 1
+STATIC_DIR: ${artifacts_path}/static_compressed
+TEMPLATE_DIR: ${artifacts_path}/static_compressed
+DATABASE:
+  name: ${TEST_NAILGUN_DB}
+  engine: "postgresql"
+  host: "localhost"
+  port: "5432"
+  user: "nailgun"
+  passwd: "nailgun"
+API_LOG: ${artifacts_path}/api.log
+APP_LOG: ${artifacts_path}/app.log
+EOL
+}
 
 # Detect test runner for a given testfile and then run the test with
 # this runner.

@@ -371,7 +371,13 @@
                     "not_available_alert": "OSTF server is not available.",
                     "expected_duration": "Expected Duration",
                     "actual_duration": "Actual Duration",
-                    "status": "Status"
+                    "status": "Status",
+                    "password_label": "Password",
+                    "password_description": "Password for Administrator",
+                    "username_label": "Username",
+                    "username_description": "Username for Administrator",
+                    "tenant_label": "Tenant",
+                    "tenant_description": "Tenant (project) name for Administrator"
                 },
                 "discard_changes": "Discard Changes",
                 "deploy_changes": "Deploy Changes",

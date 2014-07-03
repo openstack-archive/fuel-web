@@ -24,10 +24,9 @@ class UpgradeEngine(object):
     The main purpose of this class is to declare interface, which must be
     respected by all upgraders.
     """
-    def __init__(self, source_path, config):
+    def __init__(self, config):
         """Extract some base parameters and save it internally.
         """
-        self.update_path = source_path
         self.config = config
 
     @abc.abstractmethod

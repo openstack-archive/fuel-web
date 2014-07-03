@@ -126,10 +126,7 @@ class TestCheckFreeSpace(BaseTestCase):
 class TestCheckUpgradeVersions(BaseTestCase):
 
     def setUp(self):
-        with mock.patch(
-                'fuel_upgrade.before_upgrade_checker.os.path.exists',
-                return_value=False):
-            self.checker = CheckUpgradeVersions(self.fake_config)
+        self.checker = CheckUpgradeVersions(self.fake_config)
 
     @mock.patch(
         'fuel_upgrade.before_upgrade_checker.utils.compare_version',

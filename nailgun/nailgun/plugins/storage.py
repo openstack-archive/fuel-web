@@ -32,6 +32,7 @@ class PluginStorage(object):
     type_mappings = {
         "node_id": Integer,
         "disk_id": String,
+        "cluster_id": Integer,
         "name": String,
         #"data": JSON
     }

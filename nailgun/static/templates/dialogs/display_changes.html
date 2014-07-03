@@ -3,6 +3,14 @@
   <h3 data-i18n="dialog.display_changes.title"></h3>
 </div>
 <div class="modal-body display-changes-dialog">
+  
+  <% if (cluster.get('status') == 'new' || cluster.needsRedeployment()) { %>
+    <div class="deploy-task-notice">
+        <i class="icon-attention"></i>
+        <span data-i18n="dialog.display_changes.<%= cluster.get('status') == 'new' ? 'locked_settings_alert' : 'redeployment_needed' %>"></span>
+    </div>
+    <hr class="slim">
+  <% } %>
 
   <!-- Changes list -->
   <% var nodes = cluster.get('nodes') %>
@@ -54,13 +62,6 @@
   <% } %>
 
   <!-- Warnings -->
-  <% if (cluster.needsRedeployment()) { %>
-    <hr class="slim">
-    <div class="deploy-task-notice">
-        <i class="icon-attention"></i>
-        <span data-i18n="dialog.display_changes.redeployment_needed"></span>
-    </div>
-  <% } %>
   <%
     // define restrictions
     var restrictions = [];

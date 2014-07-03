@@ -43,14 +43,11 @@ class HostSystemUpgrader(UpgradeEngine):
         self.host_system_config = self.config.host_system
 
         #: path to puppet manifests
-        self.manifest_path = \
-            self.host_system_config['manifest_path'].format(
-                update_path=self.update_path)
+        self.manifest_path = self.host_system_config['manifest_path']
 
         #: path to puppet modules
-        self.puppet_modules_path = \
-            self.host_system_config['puppet_modules_path'].format(
-                update_path=self.update_path)
+        self.puppet_modules_path = self.host_system_config[
+            'puppet_modules_path']
 
         #: path to repo template
         self.repo_template_path = os.path.join(
@@ -60,13 +57,10 @@ class HostSystemUpgrader(UpgradeEngine):
         self.version = self.config.new_version
 
         #: path to repository config
-        self.repo_config_path = \
-            self.host_system_config['repo_config_path'].format(
-                version=self.version)
+        self.repo_config_path = self.host_system_config['repo_config_path']
 
         #: path to local repository
-        self.repo_path = self.host_system_config['repo_path'].format(
-            update_path=self.update_path)
+        self.repo_path = self.host_system_config['repo_path']
 
     @property
     def required_free_space(self):

@@ -24,10 +24,8 @@ from fuel_upgrade.tests.base import BaseTestCase
 
 class TestHostSystemUpgrader(BaseTestCase):
 
-    upgrade_path = '/tmp/upgrade_path'
-
     def setUp(self):
-        self.upgrader = HostSystemUpgrader(self.upgrade_path, self.fake_config)
+        self.upgrader = HostSystemUpgrader(self.fake_config)
 
     @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.update_repo')

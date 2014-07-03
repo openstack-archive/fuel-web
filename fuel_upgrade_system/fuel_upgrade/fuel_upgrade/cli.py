@@ -28,6 +28,7 @@ from fuel_upgrade.upgrade import UpgradeManager
 from fuel_upgrade.engines.docker_engine import DockerInitializer
 from fuel_upgrade.engines.docker_engine import DockerUpgrader
 from fuel_upgrade.engines.host_system import HostSystemUpgrader
+from fuel_upgrade.engines.bootstrap import BootstrapUpgrader
 from fuel_upgrade.engines.openstack import OpenStackUpgrader
 
 from fuel_upgrade.before_upgrade_checker import CheckFreeSpace
@@ -41,6 +42,7 @@ SUPPORTED_SYSTEMS = {
     'host-system': HostSystemUpgrader,
     'docker-init': DockerInitializer,
     'docker': DockerUpgrader,
+    'bootstrap': BootstrapUpgrader,
     'openstack': OpenStackUpgrader,
 }
 

@@ -688,6 +688,94 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         merged with common attributes
         """
         node_attrs = {'network_scheme': cls.generate_network_scheme(node)}
+        node_attrs = cls.mellanox_settings(node_attrs, node)
+        return node_attrs
+
+    @classmethod
+    def mellanox_settings(cls, node_attrs, node):
+        """Serialize mellanox node attrs, then it will be
+        merged with common attributes, if mellanox plugin or iSER storage
+        enabled.
+        """
+        # Get Mellanox data
+        neutron_mellanox_data =  \
+            node.cluster.attributes.editable\
+            .get('neutron_mellanox', {})
+
+        # Get storage data
+        storage_data = node.cluster.attributes.editable.get('storage', {})
+
+        # Get network manager
+        nm = objects.Node.get_network_manager(node)
+
+        # Init mellanox dict
+        node_attrs['neutron_mellanox'] = {}
+
+        # Find Physical port for VFs generation
+        if 'plugin' in neutron_mellanox_data and \
+           neutron_mellanox_data['plugin']['value'] == 'ethernet':
+            node_attrs = cls.set_mellanox_ml2_config(node_attrs, node, nm)
+
+        # Fix network scheme to have physical port for RDMA if iSER enabled
+        if 'iser' in storage_data and storage_data['iser']['value']:
+            node_attrs = cls.fix_iser_port(node_attrs, node, nm)
+
+        return node_attrs
+
+    @classmethod
+    def set_mellanox_ml2_config(cls, node_attrs, node, nm):
+        """Change the yaml file to include the required configurations
+        for ml2 mellanox mechanism driver.
+        should be called only in case of mellanox SR-IOV plugin usage.
+        """
+        # Set physical port for SR-IOV virtual functions
+        node_attrs['neutron_mellanox']['physical_port'] = \
+            nm.get_node_network_by_netname(node.id, 'private')['dev']
+
+        return node_attrs
+
+    @classmethod
+    def fix_iser_port(cls, node_attrs, node, nm):
+        """Change the iser port to eth_iser probed (VF on the HV) interface
+        instead of br-storage. that change is made due to RDMA
+        (Remote Direct Memory Access) limitation of working with physical
+        interfaces.
+        """
+        # Set a new unique name for iSER virtual port
+        iser_new_name = 'eth_iser0'
+
+        # Add iSER extra params to astute.yaml
+        node_attrs['neutron_mellanox']['storage_parent'] = \
+            nm.get_node_network_by_netname(node.id, 'storage')['dev']
+        node_attrs['neutron_mellanox']['iser_interface_name'] = iser_new_name
+
+        # Get VLAN if exists
+        storage_vlan = \
+            nm.get_node_network_by_netname(node.id, 'storage').get('vlan')
+
+        if storage_vlan:
+            vlan_name = "vlan%s" % storage_vlan
+
+            # Set storage rule to iSER interface vlan interface
+            node_attrs['network_scheme']['roles']['storage'] = vlan_name
+
+            # Set iSER interface vlan interface
+            node_attrs['network_scheme']['interfaces'][vlan_name] = \
+                {'L2': {'vlan_splinters': 'off'}}
+            node_attrs['network_scheme']['endpoints'][vlan_name] = \
+                node_attrs['network_scheme']['endpoints'].pop('br-storage', {})
+            node_attrs['network_scheme']['endpoints'][vlan_name]['vlandev'] = \
+                iser_new_name
+        else:
+
+            # Set storage rule to iSER port
+            node_attrs['network_scheme']['roles']['storage'] = iser_new_name
+
+            # Set iSER endpoint with br-storage parameters
+            node_attrs['network_scheme']['endpoints'][iser_new_name] = \
+                node_attrs['network_scheme']['endpoints'].pop('br-storage', {})
+            node_attrs['network_scheme']['interfaces'][iser_new_name] = \
+                {'L2': {'vlan_splinters': 'off'}}
 
         return node_attrs
 

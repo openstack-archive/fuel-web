@@ -282,10 +282,15 @@ class TestCheckers(BaseTestCase):
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_mcollective_checker_returns_false(self, get_mock):
-        wrong_results = [[{'name': 'mcollective_broadcast'}], None]
+        wrong_results = [
+            [[{'name': 'mcollective_broadcast'},
+              {'name': 'mcollective_directed'}], 400],
+            [[{'name': 'mcollective_broadcast'}], 200],
+            [None, 200],
+            [['str', None], 200]]
 
         for result in wrong_results:
-            get_mock.return_value = [result, 200]
+            get_mock.return_value = result
             self.assert_checker_false(health_checker.MCollectiveChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')

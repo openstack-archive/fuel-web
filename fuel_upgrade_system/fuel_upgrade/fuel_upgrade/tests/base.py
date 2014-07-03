@@ -83,6 +83,12 @@ class BaseTestCase(TestCase):
                 'ipaddress': '0.0.0.0'
             }
         }
+
+        conf.bootstrap = {
+            'src': 'bootstrap/',
+            'dst': '/var/www/nailgun/bootstrap',
+        }
+
         return conf
 
     def mock_open(self, text, filename='some.yaml'):

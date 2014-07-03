@@ -289,6 +289,18 @@ def rmtree(source, ignore_errors=True):
         shutil.rmtree(source, ignore_errors=ignore_errors)
 
 
+def rename(source, destination):
+    """Rename some source into a given destination.
+
+    In Unix terms, it's a move operation.
+
+    :param str source: a source to be renamed
+    :param str destination: rename to
+    """
+    logger.debug(u'Renaming %s to %s', source, destination)
+    os.rename(source, destination)
+
+
 def dict_merge(a, b):
     '''recursively merges dict's. not just simple a['key'] = b['key'], if
     both a and bhave a key who's value is a dict then dict_merge is called

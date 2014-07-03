@@ -420,3 +420,8 @@ host_system:
   puppet_modules_path: '{update_path}/puppet/modules/'
   repo_config_path: '/etc/yum.repos.d/{version}_nailgun.repo'
   repo_path: '{update_path}/repos/centos/x86_64'
+
+
+bootstrap:
+  src: 'bootstrap/'
+  dst: '/var/www/nailgun/bootstrap/'

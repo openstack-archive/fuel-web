@@ -25,6 +25,7 @@ from copy import deepcopy
 import docker
 import requests
 
+from fuel_upgrade.config import get_version_from_config
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade.health_checker import FuelUpgradeVerify
 from fuel_upgrade.supervisor_client import SupervisorClient
@@ -42,9 +43,8 @@ class DockerUpgrader(UpgradeEngine):
     def __init__(self, *args, **kwargs):
         super(DockerUpgrader, self).__init__(*args, **kwargs)
 
-        self.working_directory = os.path.join(
-            self.config.working_directory,
-            self.config.new_version['VERSION']['release'])
+        self.working_directory = self.config.working_directory_template.format(
+            version=self.config.new_version)
 
         utils.create_dir_if_not_exists(self.working_directory)
 
@@ -53,7 +53,6 @@ class DockerUpgrader(UpgradeEngine):
             version=self.config.docker['api_version'],
             timeout=self.config.docker['http_timeout'])
 
-        self.supervisor = SupervisorClient(self.config)
         self.new_release_images = self.make_new_release_images_list()
         self.new_release_containers = self.make_new_release_containers_list()
         self.pg_dump_path = os.path.join(
@@ -62,19 +61,31 @@ class DockerUpgrader(UpgradeEngine):
             working_directory=self.working_directory)
         self.upgrade_verifier = FuelUpgradeVerify(self.config)
 
+        self.from_version_path = self.config.from_version_path_template.format(
+            working_directory=self.working_directory)
+        self.save_current_version_file()
+        self.from_version = get_version_from_config(self.from_version_path)
+        self.supervisor = SupervisorClient(self.config, self.from_version)
+
     def upgrade(self):
         """Method with upgarde logic
         """
+        # Preapre env for upgarde
+        self.save_db()
+        self.save_cobbler_configs()
+
+        # Run upgrade
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
         self.upload_images()
         self.stop_fuel_containers()
         self.create_containers()
         self.stop_fuel_containers()
+
+        # Update configs and run new services
         self.generate_configs()
         self.switch_to_new_configs()
-
-        # Reload configs and run new services
+        self.switch_version_to_new()
         self.supervisor.restart_and_wait()
         self.upgrade_verifier.verify()
 
@@ -92,7 +103,7 @@ class DockerUpgrader(UpgradeEngine):
         """
         logger.info(u'Switch current version file to previous version')
         previous_version_path = self.config.fuel_version_path_template.format(
-            version=self.config.current_version['VERSION']['release'])
+            version=self.from_version)
 
         utils.symlink(
             previous_version_path,
@@ -120,11 +131,18 @@ class DockerUpgrader(UpgradeEngine):
         images_list = [i['docker_image'] for i in self.new_release_images]
         return utils.files_size(images_list)
 
-    def before_upgrade_actions(self):
-        """Run before upgrade actions
+    def save_current_version_file(self):
+        """Save current version in working
+        directory if it was not saved during
+        previous run.
+
+        This action is important in case
+        when upgrade script was interrupted
+        after symlinking of version.yaml file.
         """
-        self.save_db()
-        self.save_cobbler_configs()
+        utils.copy_if_does_not_exist(
+            self.config.current_fuel_version_path,
+            self.from_version_path)
 
     def save_db(self):
         """Saves postgresql database into the file
@@ -151,8 +169,7 @@ class DockerUpgrader(UpgradeEngine):
             return
 
         container_name = self.make_container_name(
-            'postgres',
-            self.config.current_version['VERSION']['release'])
+            'postgres', self.from_version)
 
         try:
             self.exec_cmd_in_container(
@@ -188,8 +205,7 @@ class DockerUpgrader(UpgradeEngine):
         """Copy config files from container
         """
         container_name = self.make_container_name(
-            'cobbler',
-            self.config.current_version['VERSION']['release'])
+            'cobbler', self.from_version)
 
         try:
             utils.exec_cmd('docker cp {0}:{1} {2}'.format(
@@ -222,8 +238,8 @@ class DockerUpgrader(UpgradeEngine):
                 raise errors.WrongCobblerConfigsError(
                     u'Invalid json config {0}'.format(config))
 
-    def post_upgrade_actions(self):
-        """Post upgrade actions
+    def switch_version_to_new(self):
+        """Switches version.yaml file to new version
 
         * creates new version yaml file
         * and creates symlink to /etc/fuel/version.yaml
@@ -233,7 +249,7 @@ class DockerUpgrader(UpgradeEngine):
             self.config.new_version_yaml_path_template.format(
                 update_path=os.path.abspath(self.update_path))
         new_version_path = self.config.fuel_version_path_template.format(
-            version=self.config.new_version['VERSION']['release'])
+            version=self.config.new_version)
 
         utils.create_dir_if_not_exists(os.path.dirname(new_version_path))
         utils.copy(version_yaml_from_upgrade, new_version_path)
@@ -650,7 +666,7 @@ class DockerUpgrader(UpgradeEngine):
         :returns: name of the container
         """
         if version is None:
-            version = self.config.new_version['VERSION']['release']
+            version = self.config.new_version
 
         return u'{0}{1}-{2}'.format(
             self.config.container_prefix, version, container_id)
@@ -697,7 +713,7 @@ class DockerUpgrader(UpgradeEngine):
         return u'{0}{1}_{2}'.format(
             self.config.image_prefix,
             image['id'],
-            self.config.new_version['VERSION']['release'])
+            self.config.new_version)
 
     def _check_image_type(self, image_type):
         """Check if image type is valid

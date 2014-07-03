@@ -16,12 +16,14 @@
 
 import abc
 import logging
+import os
 
 import six
 
 from fuel_upgrade import errors
 from fuel_upgrade import utils
 
+from fuel_upgrade.config import get_version_from_config
 from fuel_upgrade.nailgun_client import NailgunClient
 
 logger = logging.getLogger(__name__)
@@ -172,3 +174,52 @@ class CheckFreeSpace(BaseBeforeUpgradeChecker):
             ', '.join(devices_msg))
 
         raise errors.NotEnoughFreeSpaceOnDeviceError(err_msg)
+
+
+class CheckUpgradeVersions(BaseBeforeUpgradeChecker):
+    """Checks that it is possible to upgarde from
+    current version to new one.
+
+    :param config: config object
+    """
+
+    def __init__(self, config):
+        working_directory = config.working_directory_template.format(
+            version=config.new_version)
+        from_version_path = config.from_version_path_template.format(
+            working_directory=working_directory)
+
+        #: version of fuel which user wants to upgrade from
+        self.from_version = config.current_version
+        # NOTE(eli): If this file exists, then user
+        # already ran this upgrade script which was
+        # for some reasons interrupted
+        if os.path.exists(from_version_path):
+            self.from_version = get_version_from_config(from_version_path)
+            logger.debug('Retrieve version from {0}, '
+                         'version is {1}'.format(
+                             from_version_path, self.from_version))
+
+        #: version of fuel which user wants to upgrade to
+        self.to_version = config.new_version
+
+    def check(self):
+        """Compares two versions previous and new
+
+        :raises: WrongVersionError
+        """
+        logger.info('Check upgrade versions')
+
+        result = utils.compare_version(self.from_version, self.to_version)
+        err_msg = None
+        if result == 0:
+            err_msg = 'Cannot upgrade to the same version of fuel ' \
+                      '{0} -> {1}'.format(
+                          self.from_version, self.to_version)
+        elif result == -1:
+            err_msg = 'Cannot upgrade from higher version of fuel ' \
+                      'to lower {0} -> {1}'.format(
+                          self.from_version, self.to_version)
+
+        if err_msg:
+            raise errors.WrongVersionError(err_msg)

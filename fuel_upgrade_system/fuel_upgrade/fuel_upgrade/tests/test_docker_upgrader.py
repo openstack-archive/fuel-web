@@ -42,9 +42,12 @@ class TestDockerUpgrader(BaseTestCase):
         self.supervisor_class.return_value = self.supervisor_mock
 
         self.update_path = '/tmp/new_update'
-        with mock.patch('os.makedirs'):
-            self.upgrader = DockerUpgrader(self.update_path, self.fake_config)
-            self.upgrader.upgrade_verifier = mock.MagicMock()
+        with mock.patch('fuel_upgrade.engines.docker_engine.utils'):
+            with mock.patch('fuel_upgrade.engines.docker_engine.'
+                            'get_version_from_config', return_value='0'):
+                self.upgrader = DockerUpgrader(
+                    self.update_path, self.fake_config)
+                self.upgrader.upgrade_verifier = mock.MagicMock()
 
     def tearDown(self):
         self.docker_patcher.stop()
@@ -57,10 +60,13 @@ class TestDockerUpgrader(BaseTestCase):
     def test_upgrade(self):
         mocked_methods = [
             'stop_fuel_containers',
+            'save_db',
+            'save_cobbler_configs',
             'upload_images',
             'create_containers',
             'generate_configs',
-            'switch_to_new_configs']
+            'switch_to_new_configs',
+            'switch_version_to_new']
 
         self.mock_methods(self.upgrader, mocked_methods)
         self.upgrader.upgrade()
@@ -260,15 +266,6 @@ class TestDockerUpgrader(BaseTestCase):
             "lxc-attach --name {0} -- {1}".format(name, cmd))
 
     @mock.patch('fuel_upgrade.engines.docker_engine.'
-                'DockerUpgrader.save_db')
-    @mock.patch('fuel_upgrade.engines.docker_engine.'
-                'DockerUpgrader.save_cobbler_configs')
-    def test_before_upgrade_actions(self, save_cobbler_mock, save_db_mock):
-        self.upgrader.before_upgrade_actions()
-        self.called_once(save_cobbler_mock)
-        self.called_once(save_db_mock)
-
-    @mock.patch('fuel_upgrade.engines.docker_engine.'
                 'utils.exec_cmd')
     @mock.patch('fuel_upgrade.engines.docker_engine.'
                 'DockerUpgrader.verify_cobbler_configs')
@@ -423,3 +420,23 @@ class TestDockerUpgrader(BaseTestCase):
              '/var/lib/docker': 5,
              '/etc/fuel/': 10,
              '/etc/supervisord.d/': 10})
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_save_current_version_file(self, mock_utils):
+        self.upgrader.save_current_version_file()
+        mock_utils.copy_if_does_not_exist.assert_called_once_with(
+            '/etc/fuel/version.yaml',
+            '/var/lib/fuel_upgrade/9999/version.yaml')
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_switch_version_to_new(self, mock_utils):
+        self.upgrader.switch_version_to_new()
+
+        mock_utils.create_dir_if_not_exists.assert_called_once_with(
+            '/etc/fuel/9999')
+        mock_utils.copy.assert_called_once_with(
+            '/tmp/new_update/config/version.yaml',
+            '/etc/fuel/9999/version.yaml')
+        mock_utils.symlink.assert_called_once_with(
+            '/etc/fuel/9999/version.yaml',
+            '/etc/fuel/version.yaml')

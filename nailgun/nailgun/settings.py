@@ -14,7 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os.path
+import os
 
 import yaml
 
@@ -40,6 +40,10 @@ class NailgunSettings(object):
                 break
         else:
             logger.error("'version.yaml' config file is not found")
+
+        test_config = os.environ.get('NAILGUN_CONFIG')
+        if test_config:
+            settings_files.append(test_config)
 
         self.config = {}
         for sf in settings_files:

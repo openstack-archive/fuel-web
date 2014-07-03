@@ -21,10 +21,7 @@ from itertools import groupby
 
 from netaddr import IPNetwork
 from sqlalchemy import and_
-from sqlalchemy import or_
-from sqlalchemy.orm import joinedload
 
-import math
 import six
 
 from nailgun import objects

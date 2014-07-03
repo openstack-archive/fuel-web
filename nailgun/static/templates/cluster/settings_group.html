@@ -55,6 +55,21 @@
           </div>
         </label>
       <% }) %>
+    <% } else if (setting.type == 'dropdown') { %>
+      <div class="parameter-box clearfix tablerow-wrapper">
+        <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
+        <div class="parameter-control">
+          <select name="<%- groupName + '.' + settingName %>" <%= disabled %>>
+            <% _.each(setting.values, function(option) { %>
+              <option value="<%- option.data %>"><%- option.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="parameter-description description">
+          <%- setting.description ? $.t(ns + settingName + '.description', {defaultValue: setting.description}) : '' %>
+        </div>
+        <div class="parameter-description validation-error"></div>
+      </div>
     <% } else if (setting.type != 'hidden' && settingName != 'metadata') { %>
       <div class="parameter-box clearfix tablerow-wrapper">
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>

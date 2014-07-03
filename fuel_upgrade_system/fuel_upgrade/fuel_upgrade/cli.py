@@ -24,6 +24,7 @@ logger = configure_logger('/var/log/fuel_upgrade.log')
 from fuel_upgrade.config import build_config
 from fuel_upgrade import errors
 from fuel_upgrade.upgrade import UpgradeManager
+from fuel_upgrade.checker_manager import CheckerManager
 
 from fuel_upgrade.engines.docker_engine import DockerInitializer
 from fuel_upgrade.engines.docker_engine import DockerUpgrader
@@ -43,6 +44,21 @@ SUPPORTED_SYSTEMS = {
     'docker': DockerUpgrader,
     'openstack': OpenStackUpgrader,
 }
+
+
+#: Mapping of checkers to upgrade engines
+CHECKERS_MAPPING = {
+    DockerUpgrader: [
+        CheckUpgradeVersions,
+        CheckFreeSpace,
+        CheckNoRunningTasks],
+    OpenStackUpgrader: [
+        CheckFreeSpace,
+        CheckNoRunningTasks],
+    HostSystemUpgrader: [
+        CheckFreeSpace],
+    DockerInitializer: []}
+
 
 #: A list of tuples of incompatible systems.
 #: That's mean, if two of this systems has appered in user input
@@ -126,22 +142,18 @@ def run_upgrade(args):
         for system in args.systems]
 
     # Initialize checkers
-    checkers = None
     if not args.no_checker:
-        checkers = [
-            CheckFreeSpace(upgraders_to_use),
-            CheckNoRunningTasks(config)]
+        checker_manager = CheckerManager(
+            CHECKERS_MAPPING,
+            upgraders_to_use,
+            config)
 
-        # NOTE(eli): Include version checker
-        # only if docker upgrader is enabled
-        if is_engine_in_list(upgraders_to_use, DockerUpgrader):
-            checkers.append(CheckUpgradeVersions(config))
+        checker_manager.check()
 
     # Initialize upgrade manager with engines and checkers
-    upgrade_manager = UpgradeManager(
-        upgraders_to_use, checkers, args.no_rollback)
+    upgrade_manager = UpgradeManager(upgraders_to_use, args.no_rollback)
 
-    upgrade_manager.run()
+    # upgrade_manager.run()
 
 
 def main():

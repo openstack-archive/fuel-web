@@ -50,13 +50,8 @@ class BootstrapUpgrader(UpgradeEngine):
 
         for file_ in self.bootstraps:
             self._bootstraps[file_] = {
-                'src': os.path.join(
-                    self.update_path, self.config.bootstrap['src'], file_
-                ),
-
-                'dst': os.path.join(
-                    self.config.bootstrap['dst'], file_
-                ),
+                'src': os.path.join(self.config.bootstrap['src'], file_),
+                'dst': os.path.join(self.config.bootstrap['dst'], file_),
 
                 'backup': os.path.join(
                     self.config.bootstrap['dst'], '{0}_{1}'.format(

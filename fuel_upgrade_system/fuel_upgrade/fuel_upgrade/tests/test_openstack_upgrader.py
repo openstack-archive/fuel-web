@@ -45,12 +45,9 @@ class TestOpenStackUpgrader(BaseTestCase):
         """Create upgrader with mocked data.
         """
         with mock.patch(
-            'fuel_upgrade.engines.openstack.io.open',
-            self.mock_open(self.releases_sample)
-        ):
-            self.upgrader = OpenStackUpgrader(
-                '/tmp/update_src', self.fake_config
-            )
+                'fuel_upgrade.engines.openstack.io.open',
+                self.mock_open(self.releases_sample)):
+            self.upgrader = OpenStackUpgrader(self.fake_config)
 
     def test_constructor_load_releases(self):
         self.assertEqual(len(self.upgrader.releases), 1)
@@ -89,9 +86,7 @@ class TestOpenStackUpgrader(BaseTestCase):
             'fuel_upgrade.engines.openstack.io.open',
             self.mock_open(releases_sample)
         ):
-            self.upgrader = OpenStackUpgrader(
-                '/tmp/update_src', self.fake_config
-            )
+            self.upgrader = OpenStackUpgrader(self.fake_config)
 
         orchestrator_data = self.upgrader.releases[0]['orchestrator_data']
         self.assertEqual(

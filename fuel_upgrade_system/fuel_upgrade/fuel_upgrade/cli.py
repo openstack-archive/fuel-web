@@ -121,10 +121,11 @@ def run_upgrade(args):
     """
     # Initialize config
     config = build_config(args.src)
+    logger.debug('Configuration data: {0}'.format(config))
 
     # Initialize upgrade engines
     upgraders_to_use = [
-        SUPPORTED_SYSTEMS[system](args.src, config)
+        SUPPORTED_SYSTEMS[system](config)
         for system in args.systems]
 
     # Initialize checkers

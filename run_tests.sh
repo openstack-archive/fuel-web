@@ -22,6 +22,8 @@ function usage {
   echo ""
   echo "  -n, --nailgun               Run NAILGUN both unit and integration tests"
   echo "  -N, --no-nailgun            Don't run NAILGUN tests"
+  echo "  -a, --plugins               Run PLUGINS tests"
+  echo "  -A, --no-plugins            Don't run PLUGINS tests"
   echo "  -w, --webui                 Run WEB-UI tests"
   echo "  -W, --no-webui              Don't run WEB-UI tests"
   echo "  -c, --cli                   Run FUELCLIENT tests"
@@ -49,6 +51,8 @@ function process_options {
       -h|--help) usage;;
       -n|--nailgun) nailgun_tests=1;;
       -N|--no-nailgun) no_nailgun_tests=1;;
+      -a|--plugins) plugins_tests=1;;
+      -A|--no-plugins) no_plugins_tests=1;;
       -w|--webui) webui_tests=1;;
       -W|--no-webui) no_webui_tests=1;;
       -c|--cli) cli_tests=1;;
@@ -82,6 +86,7 @@ testropts="--with-timer --timer-warning=10 --timer-ok=2 --timer-top-n=10"
 
 # nosetest xunit options
 NAILGUN_XUNIT=${NAILGUN_XUNIT:-"$ROOT/nailgun.xml"}
+PLUGINS_XUNIT=${PLUGINS_XUNIT:-"$ROOT/plugins.xml"}
 FUELCLIENT_XUNIT=${FUELCLIENT_XUNIT:-"$ROOT/fuelclient.xml"}
 FUELUPGRADE_XUNIT=${FUELUPGRADE_XUNIT:-"$ROOT/fuelupgrade.xml"}
 FUELUPGRADEDOWNLOADER_XUNIT=${FUELUPGRADEDOWNLOADER_XUNIT:-"$ROOT/fuelupgradedownloader.xml"}
@@ -93,6 +98,8 @@ FUELCLIENT_SERVER_PORT=${FUELCLIENT_SERVER_PORT:-8003}
 # used for manipulating run logic.
 nailgun_tests=0
 no_nailgun_tests=0
+plugins_tests=0
+no_plugins_tests=0
 webui_tests=0
 no_webui_tests=0
 cli_tests=0
@@ -126,6 +133,7 @@ function run_tests {
 
   # Enable all tests if none was specified skipping all explicitly disabled tests.
   if [[ $nailgun_tests -eq 0 && \
+      $plugins_tests -eq 0 && \
       $webui_tests -eq 0 && \
       $cli_tests -eq 0 && \
       $upgrade_system -eq 0 && \
@@ -134,6 +142,7 @@ function run_tests {
       $jslint_checks -eq 0 ]]; then
 
     if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
+    if [ $no_plugins_tests -ne 1 ];  then plugins_tests=1;  fi
     if [ $no_webui_tests -ne 1 ];    then webui_tests=1;    fi
     if [ $no_cli_tests -ne 1 ];      then cli_tests=1;      fi
     if [ $no_upgrade_system -ne 1 ]; then upgrade_system=1; fi
@@ -151,6 +160,11 @@ function run_tests {
   if [ $nailgun_tests -eq 1 ]; then
     echo "Starting Nailgun tests..."
     run_nailgun_tests || errors+=" nailgun_tests"
+  fi
+
+  if [ $plugins_tests -eq 1 ]; then
+    echo "Starting Plugins tests..."
+    run_plugins_tests || errors+=" plugins_tests"
   fi
 
   if [ $webui_tests -eq 1 ]; then
@@ -210,6 +224,32 @@ function run_nailgun_tests {
   pushd $ROOT/nailgun >> /dev/null
   # run tests
   tox -epy26 -- -vv $testropts $TESTS --xunit-file $NAILGUN_XUNIT || result=1
+  popd >> /dev/null
+  return $result
+}
+
+# Run tests specified in plugins.
+#
+# Arguments:
+#
+#   $@ -- tests to be run; with no arguments all tests will be run
+#
+# It is supposed that we prepare database (run DBMS and create schema)
+# before running tests.
+function run_plugins_tests {
+  local TESTS="$ROOT/plugins/*"
+  local result=0
+  if [ $# -ne 0 ]; then
+    TESTS="$@"
+  fi
+
+  # prepare database
+  dropdb
+  syncdb
+
+  pushd $ROOT/nailgun >> /dev/null
+  # run tests
+  tox -eplugins -v -- -vv $testropts $TESTS --xunit-file $PLUGINS_XUNIT || result=1
   popd >> /dev/null
   return $result
 }

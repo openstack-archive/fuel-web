@@ -109,7 +109,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
                     var settingPath = groupName + '.' + settingName;
-                    bindings['input[name="' + settingPath + '"]'] = {
+                    bindings['[name="' + settingPath + '"]'] = {
                         observe: [settingPath + '.value', settingPath + '.visible'],
                         onGet: function(settingData) {
                             return settingData[0];

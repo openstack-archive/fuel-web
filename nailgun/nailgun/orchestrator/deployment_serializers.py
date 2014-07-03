@@ -688,6 +688,64 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         merged with common attributes
         """
         node_attrs = {'network_scheme': cls.generate_network_scheme(node)}
+        node_attrs = cls.mellanox_settings(node_attrs, node)
+        return node_attrs
+
+    @classmethod
+    def mellanox_settings(cls, node_attrs, node):
+        """Serialize mellanox node attrs, then it will be
+        merged with common attributes, if mellanox plugin or iSER storage
+        enabled.
+        """
+        # Get Mellanox data
+        neutron_mellanox_data =  \
+            node.cluster.attributes.editable\
+            .get('neutron_mellanox', {})
+
+        # Get storage data
+        storage_data = node.cluster.attributes.editable.get('storage', {})
+
+        # Get network manager
+        nm = objects.Node.get_network_manager(node)
+
+        # Init mellanox dict
+        node_attrs['neutron_mellanox'] = {}
+
+        # Find Physical port for VFs generation
+        if neutron_mellanox_data['plugin']['value'] == 'ethernet':
+            node_attrs['neutron_mellanox']['physical_port'] = \
+                nm.get_node_network_by_netname(node.id, "private")['dev']
+
+        # Fix network scheme to have physical port for RDMA if iSER enabled
+        if storage_data["iser"]["value"]:
+            node_attrs = cls.fix_iser_port(node_attrs, node, nm)
+
+        return node_attrs
+
+    @classmethod
+    def fix_iser_port(cls, node_attrs, node, nm):
+        """Change the iser port to eth_iser probed (VF on the HV) interface
+        instead of br-storage. that change is made due to RDMA
+        (Remote Direct Memory Access) limitation of working with physical
+        interfaces.
+        """
+
+        # Set a new unique name for iSER virtual port
+        iser_new_name = "eth_iser0"
+
+        # Add iSER extra params to astute.yaml
+        node_attrs['neutron_mellanox']['storage_parent'] = \
+            nm.get_node_network_by_netname(node.id, "storage")['dev']
+        node_attrs['neutron_mellanox']['iser_interface_name'] = iser_new_name
+
+        # Set storage rule to iSER port
+        node_attrs['network_scheme']['roles']['storage'] = iser_new_name
+
+        # Set iSER endpoint with br-storage parameters
+        node_attrs['network_scheme']['endpoints'][iser_new_name] = \
+            node_attrs['network_scheme']['endpoints'].pop("br-storage", None)
+        node_attrs['network_scheme']['interfaces'][iser_new_name] = \
+            {'L2': {'vlan_splinters': "off"}}
 
         return node_attrs
 

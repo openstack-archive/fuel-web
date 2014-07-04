@@ -99,6 +99,27 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         },
         composeBindings: function() {
             var bindings = {};
+            var visibleFn = function($el, isVisible) {
+                $el.toggleClass('hide', !isVisible);
+                if (isVisible) {
+                    $el.tooltip();
+                }
+            };
+            var composeAttentionIconBindings = function(observe) {
+                return {
+                    observe: observe,
+                    visible: function(value) {
+                        return value[0];
+                    },
+                    visibleFn: visibleFn,
+                    attributes: [{
+                        name: 'title',
+                        onGet: function(value) {
+                            return value[1];
+                        }
+                    }]
+                };
+            };
             _.each(this.settings.attributes, function(group, groupName) {
                 if (group.metadata.toggleable) {
                     bindings['input[name="' + groupName + '.enabled' + '"]'] = {
@@ -112,7 +133,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                         }]
                     };
                 }
-                bindings['div[data-settings-group="' + groupName + '"]'] = {
+                bindings['[data-group="' + groupName + '"]'] = {
                     observe: groupName + '.metadata.visible',
                     visible: true,
                     visibleFn: function($el, isVisible) {
@@ -126,6 +147,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     }
                     return groupData.enabled === false || groupData.disabled;
                 }, this);
+                bindings['legend[data-group="' + groupName + '"] .icon-attention'] = composeAttentionIconBindings([groupName + '.metadata.disabled', groupName + '.metadata.warning']);
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
                     var settingPath = groupName + '.' + settingName;
@@ -152,6 +174,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                             }, this)
                         }]
                     };
+                    bindings['[data-setting="' + settingName + '"] .openstack-sub-title .icon-attention'] = composeAttentionIconBindings([settingPath + '.disabled', settingPath + '.warning']);
                     _.each(setting.values, function(option, index) {
                         bindings['input[name="' + settingPath + '"][value="' + option.data + '"]'] = {
                             observe: [settingPath + '.visible', settingPath + '.values'],
@@ -172,6 +195,19 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                                     var values = value[2];
                                     return this.isLocked() || isGroupDisabled(groupName) || isSettingDisabled || values[index].disabled;
                                 }, this)
+                            }]
+                        };
+                        bindings['[data-setting="' + settingName + '"][data-option="' + option.data + '"] .icon-attention'] = {
+                            observe: settingPath + '.values',
+                            visible: function() {
+                                return option.disabled;
+                            },
+                            visibleFn: visibleFn,
+                            attributes: [{
+                                name: 'title',
+                                onGet: function() {
+                                    return option.warning;
+                                }
                             }]
                         };
                     }, this);
@@ -208,7 +244,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 var processedValues = _.without(_.pluck(processedSetting.values, 'data'), processedSetting[valueAttribute]) || [!processedSetting[valueAttribute]];
                 var configModels = _.cloneDeep(this.configModels);
                 configModels.settings = new models.Settings(this.settings.toJSON().editable);
-                return _.every(checkedSettings, function(setting) {
+                return _.pluck(_.filter(checkedSettings, function(setting) {
                     return _.every(_.filter(setting.restrictions, isDependent), function(restriction) {
                         var suitableValues = _.filter(processedValues, function(value) {
                             configModels.settings.get(settingPath)[valueAttribute] = value;
@@ -216,9 +252,20 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                         });
                         return !suitableValues.length;
                     });
-                });
+                }), 'label');
             }
-            return false;
+            return [];
+        },
+        checkRestrictions: function(restrictions) {
+            var result = {disabled: false, warning: null};
+            _.each(restrictions, function(restriction) {
+                if (this.handleRestriction(restriction)) {
+                    result.disabled = true;
+                    result.warning = restriction.warning;
+                }
+                return !result.warning;
+            }, this);
+            return result;
         },
         calculateSettingState: function(groupName, settingName) {
             var settingPath = groupName + '.' + settingName;
@@ -228,11 +275,24 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     return utils.evaluateExpression(restriction.condition, this.configModels).value;
                 }, this);
             }, this);
-            this.settings.set(settingPath + '.disabled', setting.hasDependentRole || checkRestrictions(setting, 'disable') || this.checkDependentSettings(groupName, settingName));
+            var dependentSettings = this.checkActiveDependentSettings(groupName, settingName);
+            var settingRestrictionsCheck = checkRestrictions(setting, 'disable');
+            var warning = settingRestrictionsCheck.warning;
+            if (!warning) {
+                if (setting.dependentRoles.length) {
+                    warning = $.t('cluster_page.settings_tab.dependent_role_warning', {roles: setting.dependentRoles.join(', ')});
+                } else if (dependentSettings.length) {
+                    warning = $.t('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', ')});
+                }
+            }
+            this.settings.set(settingPath + '.disabled', !!setting.dependentRoles.length || settingRestrictionsCheck.disabled || !!dependentSettings.length);
+            this.settings.set(settingPath + '.warning', warning);
             this.settings.set(settingPath + '.visible', !checkRestrictions(setting, 'hide'));
             _.each(setting.values, function(value, index) {
                 var values = _.cloneDeep(setting.values);
-                values[index].disabled = checkRestrictions(values[index], 'disable');
+                var valueRestrictionsCheck = checkRestrictions(values[index], 'disable');
+                values[index].disabled = valueRestrictionsCheck.disabled;
+                values[index].warning = valueRestrictionsCheck.warning;
                 values[index].visible = !checkRestrictions(values[index], 'hide');
                 this.settings.set(settingPath + '.values', values);
             }, this);
@@ -263,7 +323,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         checkDependentRoles: function(groupName, settingName) {
             var settingPath = groupName + '.' + settingName;
             var rolesData = this.model.get('release').get('roles_metadata');
-            this.settings.get(settingPath).hasDependentRole = _.any(this.model.get('release').get('roles'), function(role) {
+            this.settings.get(settingPath).dependentRoles = _.filter(this.model.get('release').get('roles'), function(role) {
                 var roleDependencies = _.map(rolesData[role].depends, utils.expandRestriction);
                 var hasSatisfiedDependencies = _.any(roleDependencies, function(dependency) {
                     var evaluatedDependency = utils.evaluateExpression(dependency.condition, this.configModels);

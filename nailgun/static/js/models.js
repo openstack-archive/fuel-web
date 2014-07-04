@@ -308,16 +308,16 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
         toJSON: function(options) {
             var result = this.constructor.__super__.toJSON.call(this, options);
             _.each(result, function(group, groupName) {
-                var metadata = _.omit(group.metadata, 'disabled', 'visible');
+                var metadata = _.omit(group.metadata, 'disabled', 'visible', 'warning');
                 if (_.isEmpty(metadata)) {
                     delete result[groupName].metadata;
                 } else {
                     result[groupName].metadata = metadata;
                 }
                 _.each(group, function(setting, settingName) {
-                    group[settingName] = _.omit(setting, 'disabled', 'hasDependentRole', 'visible');
+                    group[settingName] = _.omit(setting, 'disabled', 'dependentRoles', 'visible', 'warning');
                     _.each(setting.values, function(option, index) {
-                        setting.values[index] = _.omit(option, 'disabled', 'visible');
+                        setting.values[index] = _.omit(option, 'disabled', 'visible', 'warning');
                     });
                 });
             }, this);

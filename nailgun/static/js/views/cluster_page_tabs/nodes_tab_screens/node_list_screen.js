@@ -869,6 +869,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 .done(_.bind(function() {
                     this.screen.tab.model.fetch();
                     this.screen.tab.model.fetchRelated('nodes');
+                    app.navbar.refresh();
                     app.page.removeFinishedNetworkTasks();
                 }, this))
                 .fail(function() {utils.showErrorDialog({title: $.t('dialog.discard_changes.cant_discard')});});

@@ -217,13 +217,15 @@ class MCollectiveChecker(BaseChecker):
             auth=(self.endpoints['rabbitmq_mcollective']['user'],
                   self.endpoints['rabbitmq_mcollective']['password']))
 
-        if not exchanges:
+        if code != 200 or not isinstance(exchanges, list):
             return False
 
+        exchanges = filter(lambda e: isinstance(e, dict), exchanges)
+
         mcollective_broadcast = filter(
-            lambda e: e['name'] == 'mcollective_broadcast', exchanges)
+            lambda e: e.get('name') == 'mcollective_broadcast', exchanges)
         mcollective_directed = filter(
-            lambda e: e['name'] == 'mcollective_directed', exchanges)
+            lambda e: e.get('name') == 'mcollective_directed', exchanges)
 
         return mcollective_directed and mcollective_broadcast
 

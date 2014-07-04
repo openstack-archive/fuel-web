@@ -43,6 +43,7 @@ class TestVersionHandler(BaseIntegrationTest):
                 "nailgun_sha": "12345",
                 "astute_sha": "Unknown build",
                 "fuellib_sha": "Unknown build",
-                "ostf_sha": "Unknown build"
+                "ostf_sha": "Unknown build",
+                "auth_required": False
             }
         )

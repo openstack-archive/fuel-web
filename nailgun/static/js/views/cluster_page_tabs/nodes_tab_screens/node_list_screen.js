@@ -123,7 +123,9 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             }, this);
             if (this instanceof this.AddNodesScreen || this instanceof this.EditNodesScreen) {
                 this.nodes.on('change:pending_roles', this.actualizePendingRoles, this);
-                this.model.on('change:status', _.bind(function() {app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});}, this));
+                this.model.on('change:status', function() {
+                    app.navigate('#cluster/' + this.model.id + '/nodes', {trigger: true});
+                }, this);
             }
             this.nodes.on('change', this.actualizeFilteredNode, this);
             this.scheduleUpdate();

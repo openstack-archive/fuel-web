@@ -625,6 +625,8 @@ DUMP:
         path: /var/log/docker-*.log
       - type: file
         path: /var/log/puppet/bootstrap_admin_node.log
+      - type: file
+        path: /var/log/fuel_upgrade.log
 
     slave:
       hosts: []

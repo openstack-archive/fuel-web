@@ -2,8 +2,8 @@
 <% var ns = "cluster_page.settings_tab." + groupName + "." %>
 <% var groupMetadata = settings.metadata || {} %>
 
-<% if (groupMetadata.toggleable) { %>
-  <legend class="openstack-settings">
+<legend class="openstack-settings" data-group="<%- groupName %>">
+  <% if (groupMetadata.toggleable) { %>
     <label class="toggleable">
       <div class="tumbler">
         <div class="parameter-control">
@@ -15,24 +15,28 @@
       </div>
       <%- $.t(ns + 'label', {defaultValue: groupMetadata.label || groupName}) %>
     </label>
-  </legend>
-<% } else { %>
-  <legend class="openstack-settings"><%- $.t(ns + 'label', {defaultValue: groupMetadata.label || groupName}) %></legend>
-<% } %>
-<div class="settings-group" data-settings-group="<%- groupName %>">
+  <% } else { %>
+    <%- $.t(ns + 'label', {defaultValue: groupMetadata.label || groupName}) %>
+    <i class="icon-attention text-warning hide" data-toggle="tooltip" title=""></i>
+  <% } %>
+</legend>
+<div class="settings-group">
   <div class="table-wrapper">
   <% var sortedSettings = _.sortBy(_.keys(settings), function(setting) {return settings[setting].weight;}); %>
   <% _.each(sortedSettings, function(settingName) { %>
     <% var setting = settings[settingName]; %>
     <% if (setting.type == 'checkbox') { %>
-      <label class="parameter-box clearfix">
+      <label class="parameter-box clearfix" data-setting="<%- settingName %>">
         <div class="parameter-control">
           <div class="custom-tumbler">
             <input type="checkbox" name="<%- groupName + '.' + settingName %>" <%= disabled %> />
             <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
           </div>
         </div>
-        <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
+        <div class="openstack-sub-title parameter-name">
+          <%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %>
+          <i class="icon-attention text-warning hide" data-toggle="tooltip" title=""></i>
+        </div>
         <div class="global-description description"><%- $.t(ns + settingName + '.description', {defaultValue: setting.description}) %></div>
       </label>
     </div>
@@ -42,22 +46,28 @@
       <legend class="openstack-sub-title"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></legend>
       <div class="table-wrapper">
       <% _.each(setting.values, function(option) { %>
-        <label class="parameter-box clearfix">
+        <label class="parameter-box clearfix" data-setting="<%- settingName %>" data-option="<%- option.data %>">
           <div class="parameter-control">
             <div class="custom-tumbler">
               <input type="radio" name="<%- groupName + '.' + settingName %>" value="<%- option.data %>" <%= disabled %> />
               <!-- [if !IE |(gte IE 9)]> --><span>&nbsp;</span><!-- <![endif] -->
             </div>
           </div>
-          <div class="parameter-name"><%- $.t(ns + settingName + '.values.' + option.data + '.label', {defaultValue: option.label}) %></div>
+          <div class="parameter-name">
+            <%- $.t(ns + settingName + '.values.' + option.data + '.label', {defaultValue: option.label}) %>
+            <i class="icon-attention text-warning hide" data-toggle="tooltip" title=""></i>
+          </div>
           <div class="global-description description">
             <%- $.t(ns + settingName + '.values.' + option.data + '.description', {defaultValue: option.description || ' '}) %>
           </div>
         </label>
       <% }) %>
     <% } else if (setting.type != 'hidden' && settingName != 'metadata') { %>
-      <div class="parameter-box clearfix tablerow-wrapper">
-        <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
+      <div class="parameter-box clearfix tablerow-wrapper" data-setting="<%- settingName %>">
+        <div class="openstack-sub-title parameter-name">
+          <%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %>
+          <i class="icon-attention text-warning hide" data-toggle="tooltip" title=""></i>
+        </div>
         <div class="parameter-control">
           <input type="<%= setting.type %>" name="<%- groupName + '.' + settingName %>" value="" <%= disabled %> />
         </div>

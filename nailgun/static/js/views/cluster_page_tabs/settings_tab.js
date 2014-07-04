@@ -98,6 +98,16 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         },
         composeBindings: function() {
             var bindings = {};
+            var composeAttentionIconBindings = function(observe) {
+                return {
+                    observe: observe,
+                    visible: true,
+                    visibleFn: function($el, isVisible) {
+                        $el.toggleClass('hide', !isVisible);
+                    },
+                    attributes: [{name: 'title'}]
+                };
+            };
             _.each(this.settings.attributes, function(group, groupName) {
                 if (group.metadata.toggleable) {
                     bindings['input[name="' + groupName + '.enabled' + '"]'] = {
@@ -111,13 +121,14 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                         }]
                     };
                 }
-                bindings['div[data-settings-group="' + groupName + '"]'] = {
+                bindings['[data-group="' + groupName + '"]'] = {
                     observe: groupName + '.metadata.visible',
                     visible: true,
                     visibleFn: function($el, isVisible) {
                         $el.parents('.fieldset-group').toggle(isVisible);
                     }
                 };
+                bindings['legend[data-group="' + groupName + '"] .icon-attention'] = composeAttentionIconBindings(groupName + '.metadata.warning');
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
                     var settingPath = groupName + '.' + settingName;
@@ -140,6 +151,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                             }, this)
                         }]
                     };
+                    bindings['[data-setting="' + settingName + '"] .icon-attention'] = composeAttentionIconBindings(settingPath + '.warning');
                     _.each(setting.values, function(option, index) {
                         bindings['input[name="' + settingPath + '"][value="' + option.data + '"]'] = {
                             observe: settingPath + '.visible',
@@ -160,6 +172,11 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                                 }, this)
                             }]
                         };
+                        bindings['[data-setting="' + settingName + '"][data-option="' + option.data + '"] .icon-attention'] = _.defaults({
+                            visible: function() {
+                                return Boolean(option.warning);
+                            }
+                        }, composeAttentionIconBindings(settingPath + '.values'));
                     }, this);
                 }, this);
             }, this);
@@ -169,9 +186,9 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             var isDependent = function(restriction) {
                 return _.contains(restriction.condition, 'settings:' + settingPath + '.value');
             };
-            return _.any(this.settings.attributes, function(group, groupName) {
-                if (!group.metadata.visible) { return false; }
-                return _.any(group, function(setting, settingName) {
+            return _.compact(_.flatten(_.map(this.settings.attributes, function(group, groupName) {
+                if (!group.metadata.visible) { return; }
+                return _.pluck(_.filter(group, function(setting, settingName) {
                     if (groupName + '.' + settingName == settingPath) { return false; }
                     var hasDependentOption = _.any(setting.values, function(value) {
                         var valueRestrictions = _.where(_.map(value.restrictions, utils.expandRestriction), {action: 'disable'});
@@ -179,8 +196,8 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     });
                     var settingRestrictions = _.where(_.map(setting.restrictions, utils.expandRestriction), {action: 'disable'});
                     return hasDependentOption || (setting.value === true && _.any(settingRestrictions, isDependent));
-                });
-            });
+                }), 'label');
+            })));
         },
         handleRestriction: function(restriction) {
             return utils.evaluateExpression(restriction.condition, this.configModels).value;
@@ -189,20 +206,64 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             var settingPath = groupName + '.' + settingName;
             var setting = this.settings.get(settingPath);
             var settingRestrictions = _.map(setting.restrictions, utils.expandRestriction);
-            this.settings.set(settingPath + '.disabled', setting.hasDependentRole || _.any(_.where(settingRestrictions, {action: 'disable'}), this.handleRestriction, this) || this.checkActiveDependentSettings(settingPath));
+            var hasSatisfiedRestrictions = false, warning;
+            _.each(_.where(settingRestrictions, {action: 'disable'}), function(restriction) {
+                if (this.handleRestriction(restriction)) {
+                    hasSatisfiedRestrictions = true;
+                    warning = restriction.warning;
+                    return !warning;
+                }
+            }, this);
+            var dependentSettings = this.checkActiveDependentSettings(settingPath);
+            if (!warning) {
+                if (setting.dependentRoles.length) {
+                    warning = $.t('cluster_page.settings_tab.dependent_role_warning', {roles: setting.dependentRoles.join(', ')});
+                } else if (dependentSettings.length) {
+                    warning = $.t('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', ')});
+                }
+            }
+            if (!warning && hasSatisfiedRestrictions) {
+                warning = $.t('cluster_page.settings_tab.satisfied_restrictions');
+            }
+            this.settings.set(settingPath + '.warning', warning);
+            this.settings.set(settingPath + '.disabled', setting.dependentRoles.length || hasSatisfiedRestrictions || dependentSettings.length);
             this.settings.set(settingPath + '.visible', !_.any(_.where(settingRestrictions, {action: 'hide'}), this.handleRestriction, this));
             _.each(setting.values, function(value, index) {
                 var values = _.cloneDeep(setting.values);
                 var valueRestrictions = _.map(values[index].restrictions, utils.expandRestriction);
-                values[index].disabled = _.any(_.where(valueRestrictions, {action: 'disable'}), this.handleRestriction, this);
+                var optionHasSatisfiedRestrictions = false, optionWarning;
+                _.each(_.where(valueRestrictions, {action: 'disable'}), function(restriction) {
+                    if (this.handleRestriction(restriction)) {
+                        optionHasSatisfiedRestrictions = true;
+                        optionWarning = restriction.warning;
+                        return !optionWarning;
+                    }
+                }, this);
+                if (!optionWarning && optionHasSatisfiedRestrictions) {
+                    warning = $.t('cluster_page.settings_tab.option_satisfied_restrictions');
+                }
+                values[index].warning = optionWarning;
+                values[index].disabled = optionHasSatisfiedRestrictions;
                 values[index].visible = !_.any(_.where(valueRestrictions, {action: 'hide'}), this.handleRestriction, this);
                 this.settings.set(settingPath + '.values', values);
             }, this);
         },
         calculateGroupState: function(groupName) {
             var groupRestrictions = _.map(this.settings.get(groupName + '.metadata.restrictions'), utils.expandRestriction);
+            var hasSatisfiedRestrictions = false, warning;
+            _.each(_.where(groupRestrictions, {action: 'disable'}), function(restriction) {
+                if (this.handleRestriction(restriction)) {
+                    hasSatisfiedRestrictions = true;
+                    warning = restriction.warning;
+                    return !warning;
+                }
+            }, this);
+            if (!warning && hasSatisfiedRestrictions) {
+                warning = $.t('cluster_page.settings_tab.group_satisfied_restrictions');
+            }
             this.settings.set(groupName + '.metadata.visible', !_.any(_.where(groupRestrictions, {action: 'hide'}), this.handleRestriction, this));
-            this.settings.set(groupName + '.metadata.disabled', _.any(_.where(groupRestrictions, {action: 'disable'}), this.handleRestriction, this));
+            this.settings.set(groupName + '.metadata.disabled', hasSatisfiedRestrictions);
+            this.settings.set(groupName + '.metadata.warning', warning);
         },
         composeListeners: function(groupName, settingName) {
             if (!settingName) { // compose listeners for setting group
@@ -239,7 +300,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             var settingPath = groupName + '.' + settingName;
             var setting = this.settings.get(settingPath);
             var rolesData = this.model.get('release').get('roles_metadata');
-            setting.hasDependentRole = _.any(this.model.get('release').get('roles'), function(role) {
+            setting.dependentRoles = _.filter(this.model.get('release').get('roles'), function(role) {
                 var hasSatisfiedDependencies = _.any(rolesData[role].depends, function(dependency) {
                     var dependencyValue = dependency.condition['settings:' + settingPath + '.value'];
                     return !_.isUndefined(dependencyValue) && dependencyValue == setting.value;
@@ -324,6 +385,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         className: 'fieldset-group wrapper',
         render: function() {
             this.$el.html(this.template(this.options)).i18n();
+            this.$el.tooltip();
             return this;
         }
     });

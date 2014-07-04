@@ -688,7 +688,9 @@
             weight: 20
             type: "checkbox"
             restrictions:
-              - "settings:storage.volumes_lvm.value == true or settings:common.libvirt_type.value == 'vcenter'"
+              - condition: "settings:storage.volumes_lvm.value == true"
+                warning: "volumes_lvm is enabled"
+              - condition: "settings:common.libvirt_type.value == 'vcenter'"
           images_ceph:
             value: false
             label: "Ceph RBD for images (Glance)"

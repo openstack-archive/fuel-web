@@ -231,11 +231,12 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             };
             nodes.sync('update', nodes)
                 .done(_.bind(function() {
-                    this.cluster.fetch();
-                    app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
-                    app.navbar.refresh();
-                    app.page.removeFinishedNetworkTasks();
-                    app.page.deploymentControl.render();
+                    $.when(this.cluster.fetch(), this.cluster.fetchRelated('nodes')).always(_.bind(function() {
+                        app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
+                        app.navbar.refresh();
+                        app.page.removeFinishedNetworkTasks();
+                        app.page.deploymentControl.render();
+                    }, this));
                 }, this))
                 .fail(_.bind(function() {
                     this.$('.btn-apply').prop('disabled', false);

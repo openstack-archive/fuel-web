@@ -438,7 +438,7 @@
                         "vcenter_password": "Password",
                         "vcenter_password_description": "vCenter admin password",
                         "vcenter_cluster": "Cluster",
-                        "vcenter_cluster_description": "vCenter cluster name"
+                        "vcenter_cluster_description": "vCenter cluster name. If you have multiple clusters, use comma separated names."
                     },
                     "network": {
                         "title": "Network",

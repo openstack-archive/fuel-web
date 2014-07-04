@@ -17,6 +17,7 @@
 import re
 
 from nailgun.api.v1 import urls as api_urls
+from nailgun.fake_keystone import validate_token
 from nailgun.settings import settings
 
 from keystoneclient.middleware import auth_token
@@ -29,15 +30,13 @@ def public_urls():
         urls['{0}{1}'.format('/api', url)] = methods
     urls["/$"] = ['GET']
     urls["/static"] = ['GET']
+    urls["/keystone"] = ['POST']
     return urls
 
 
-class NailgunAuthProtocol(auth_token.AuthProtocol):
-    """A wrapper on Keystone auth_token middleware.
-
-    Does not perform verification of authentication tokens
-    for public routes in the API.
-
+class SkipAuthMixin(object):
+    """Mixin which skips verification of authentication tokens for public
+    routes in the API.
     """
     def __init__(self, app):
         self.public_api_routes = {}
@@ -47,10 +46,9 @@ class NailgunAuthProtocol(auth_token.AuthProtocol):
         except re.error as e:
             msg = 'Cannot compile public API routes: {0}'.format(e)
 
-            auth_token.LOG.error(msg)
             raise Exception(error_msg=msg)
 
-        super(NailgunAuthProtocol, self).__init__(app, settings.AUTH)
+        super(SkipAuthMixin, self).__init__(app, settings.AUTH)
 
     def __call__(self, env, start_response):
         path = env.get('PATH_INFO', '/')
@@ -68,4 +66,30 @@ class NailgunAuthProtocol(auth_token.AuthProtocol):
 
         if env['is_public_api']:
             return self.app(env, start_response)
-        return super(NailgunAuthProtocol, self).__call__(env, start_response)
+        return super(SkipAuthMixin, self).__call__(env, start_response)
+
+
+class FakeAuthProtocol(object):
+    """Auth protocol for fake mode.
+    """
+    def __init__(self, app, conf):
+        self.app = app
+
+    def __call__(self, env, start_response):
+        if validate_token(env.get('HTTP_X_AUTH_TOKEN', '')):
+            return self.app(env, start_response)
+        else:
+            start_response('401 Unauthorized', [])
+            return ''
+
+
+class NailgunKeystoneAuthMiddleware(SkipAuthMixin, auth_token.AuthProtocol):
+    """Auth middleware for keystone.
+    """
+    pass
+
+
+class NailgunFakeKeystoneAuthMiddleware(SkipAuthMixin, FakeAuthProtocol):
+    """Auth middleware for fake mode.
+    """
+    pass

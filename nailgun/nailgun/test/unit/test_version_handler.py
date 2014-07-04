@@ -44,6 +44,6 @@ class TestVersionHandler(BaseIntegrationTest):
                 "astute_sha": "Unknown build",
                 "fuellib_sha": "Unknown build",
                 "ostf_sha": "Unknown build",
-                "auth_required": False
+                "auth_required": True,
             }
         )

@@ -13,6 +13,7 @@
 #    under the License.
 
 import json
+import logging
 import os
 import urllib2
 
@@ -21,6 +22,13 @@ import yaml
 from keystoneclient import client as auth_client
 
 from fuelclient.cli.error import exceptions_decorator
+from fuelclient.logs import NullHandler
+
+
+# configure logging to silent all logs
+# and prevent issues in keystoneclient logging
+logger = logging.getLogger()
+logger.addHandler(NullHandler())
 
 
 class Client(object):
@@ -29,7 +37,6 @@ class Client(object):
 
     def __init__(self):
         self.debug = False
-        self.test_mod = bool(os.environ.get('TEST_MODE', ''))
         path_to_config = "/etc/fuel/client/config.yaml"
         defaults = {
             "SERVER_ADDRESS": "127.0.0.1",
@@ -73,10 +80,9 @@ class Client(object):
 
     def auth_status(self):
         self.auth_required = False
-        if not self.test_mod:
-            request = urllib2.urlopen(''.join([self.api_root, 'version']))
-            self.auth_required = json.loads(
-                request.read()).get('auth_required', False)
+        request = urllib2.urlopen(''.join([self.api_root, 'version']))
+        self.auth_required = json.loads(
+            request.read()).get('auth_required', False)
 
     def update_own_password(self, new_pass):
         if self.auth_token:
@@ -84,7 +90,7 @@ class Client(object):
                 self.password, new_pass)
 
     def initialize_keystone_client(self):
-        if not self.test_mod and self.auth_required:
+        if self.auth_required:
             self.keystone_client = auth_client.Client(
                 username=self.user,
                 password=self.password,

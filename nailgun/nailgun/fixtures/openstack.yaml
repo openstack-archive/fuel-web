@@ -320,7 +320,8 @@
                 label: "vCenter"
                 description: "Choose this type of hypervisor if you run OpenStack in a vCenter environment."
                 restrictions:
-                  - "settings:common.libvirt_type.value != 'vcenter' or cluster:net_provider == 'neutron'"
+                  - condition: "settings:common.libvirt_type.value != 'vcenter' or cluster:net_provider == 'neutron'"
+                    message: "Not KVM"
             label: "Hypervisor type"
             weight: 30
             type: "radio"

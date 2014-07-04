@@ -310,9 +310,9 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
             _.each(result, function(group, groupName) {
                 result[groupName].metadata = _.omit(group.metadata, 'disabled', 'visible');
                 _.each(group, function(setting, settingName) {
-                    group[settingName] = _.omit(setting, 'disabled', 'hasDependentRole', 'visible');
+                    group[settingName] = _.omit(setting, 'disabled', 'hasDependentRole', 'visible', 'warning');
                     _.each(setting.values, function(option, index) {
-                        setting.values[index] = _.omit(option, 'disabled', 'visible');
+                        setting.values[index] = _.omit(option, 'disabled', 'visible', 'warning');
                     });
                 });
             }, this);

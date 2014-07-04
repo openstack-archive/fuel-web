@@ -133,6 +133,17 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                             }, this)
                         }]
                     };
+                    bindings['.parameter-box.' + settingPath + ' .description'] = {
+                        observe: [settingPath + '.description', settingPath + '.warning'],
+                        update: function($el, settingData) {
+                            if (settingData[1]) {
+                                $el.html('<span class="error"></span>');
+                                $el.find('span').text($.t('cluster_page.settings_tab.' + settingData[1]));
+                            } else {
+                                $el.text($.t('cluster_page.settings_tab.' + settingPath + '.description', {defaultValue: settingData[0]}))
+                            }
+                        }
+                    };
                     _.each(setting.values, function(option, index) {
                         bindings['input[name="' + settingPath + '"][value="' + option.data + '"]'] = {
                             observe: settingPath + '.visible',
@@ -152,6 +163,16 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                                     return this.isLocked() || isSettingGroupActive === false || isSettingDisabled || settingValues[index].disabled;
                                 }, this)
                             }]
+                        };
+                        bindings['.parameter-box.' + settingPath + '.' + option.data + ' .description'] = {
+                            observe: settingPath + '.values',
+                            onGet: function(values) {
+                                var value = values[index];
+                                if (value.warning) {
+                                    return $.t('cluster_page.settings_tab.' + value.warning);
+                                }
+                                return $.t('cluster_page.settings_tab.' + settingPath + '.values.' + value.data + '.description', {defaultValue: value.description});
+                            }
                         };
                     }, this);
                 }, this);
@@ -181,12 +202,29 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 return utils.evaluateExpression(restriction.condition, this.configModels).value;
             }, this);
             var settingRestrictions = _.map(setting.restrictions, utils.expandRestriction);
-            this.settings.set(settingPath + '.disabled', setting.hasDependentRole || _.any(_.where(settingRestrictions, {action: 'disable'}), handleRestriction) || this.checkActiveDependentSettings(settingPath));
+            var hasActiveDependentSettings = this.checkActiveDependentSettings(settingPath);
+            var hasSatisfiedRestrictions = _.any(_.where(settingRestrictions, {action: 'disable'}), handleRestriction);
+            var warning = null;
+            if (setting.hasDependentRole) {
+                warning = 'dependent_role_warning';
+            } else if (hasActiveDependentSettings) {
+                warning = 'dependent_settings_warning';
+            } else if (hasSatisfiedRestrictions) {
+                warning = 'satisfied_restrictions';
+            }
+            this.settings.set(settingPath + '.warning', warning);
+            this.settings.set(settingPath + '.disabled', setting.hasDependentRole || hasSatisfiedRestrictions || hasActiveDependentSettings);
             this.settings.set(settingPath + '.visible', !_.any(_.where(settingRestrictions, {action: 'hide'}), handleRestriction));
             _.each(setting.values, function(value, index) {
                 var values = _.cloneDeep(setting.values);
                 var valueRestrictions = _.map(values[index].restrictions, utils.expandRestriction);
-                values[index].disabled = _.any(_.where(valueRestrictions, {action: 'disable'}), handleRestriction);
+                var optionHasSatisfiedRestrictions = _.any(_.where(valueRestrictions, {action: 'disable'}), handleRestriction);
+                var optionWarning = null;
+                if (optionHasSatisfiedRestrictions) {
+                    optionWarning = 'option_satisfied_restrictions';
+                }
+                values[index].optionWarning = optionWarning;
+                values[index].disabled = optionHasSatisfiedRestrictions;
                 values[index].visible = !_.any(_.where(valueRestrictions, {action: 'hide'}), handleRestriction);
                 this.settings.set(settingPath + '.values', values);
             }, this);

@@ -25,7 +25,7 @@
   <% _.each(sortedSettings, function(settingName) { %>
     <% var setting = settings[settingName]; %>
     <% if (setting.type == 'checkbox') { %>
-      <label class="parameter-box clearfix">
+      <label class="parameter-box clearfix <%- groupName %> <%- settingName %>">
         <div class="parameter-control">
           <div class="custom-tumbler">
             <input type="checkbox" name="<%- groupName + '.' + settingName %>" <%= disabled %> />
@@ -33,7 +33,7 @@
           </div>
         </div>
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
-        <div class="global-description description"><%- $.t(ns + settingName + '.description', {defaultValue: setting.description}) %></div>
+        <div class="global-description description"></div>
       </label>
     </div>
     <div class="table-wrapper">
@@ -42,7 +42,7 @@
       <legend class="openstack-sub-title"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></legend>
       <div class="table-wrapper">
       <% _.each(setting.values, function(option) { %>
-        <label class="parameter-box clearfix">
+        <label class="parameter-box clearfix <%- groupName %> <%- settingName %> <%- option.data %>">
           <div class="parameter-control">
             <div class="custom-tumbler">
               <input type="radio" name="<%- groupName + '.' + settingName %>" value="<%- option.data %>" <%= disabled %> />
@@ -56,14 +56,12 @@
         </label>
       <% }) %>
     <% } else if (setting.type != 'hidden' && settingName != 'metadata') { %>
-      <div class="parameter-box clearfix tablerow-wrapper">
+      <div class="parameter-box clearfix tablerow-wrapper <%- groupName %> <%- settingName %>">
         <div class="openstack-sub-title parameter-name"><%- $.t(ns + settingName + '.label', {defaultValue: setting.label}) %></div>
         <div class="parameter-control">
           <input type="<%= setting.type %>" name="<%- groupName + '.' + settingName %>" value="" <%= disabled %> />
         </div>
-        <div class="parameter-description description">
-          <%- setting.description ? $.t(ns + settingName + '.description', {defaultValue: setting.description}) : '' %>
-        </div>
+        <div class="parameter-description description"></div>
         <div class="parameter-description validation-error"></div>
       </div>
     <% } %>

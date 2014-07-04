@@ -336,10 +336,7 @@ define(['utils', 'deepModel'], function(utils) {
                 setting.visible = !handleRestrictions(setting, 'hide');
             };
             _.each(this.attributes, function(group) {
-                if (!group.metadata) {
-                    group.metadata = {};
-                }
-                calculateState(group.metadata);
+                group.metadata = group.metadata || {};
                 _.each(group, function(setting) {
                     calculateState(setting);
                     _.each(setting.values, calculateState);

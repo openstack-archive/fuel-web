@@ -99,6 +99,20 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         },
         composeBindings: function() {
             var bindings = {};
+            var visibleFn = function($el, isVisible) {
+                $el.toggleClass('hide', !isVisible);
+                if (isVisible) {
+                    $el.tooltip('destroy').tooltip();
+                }
+            };
+            var composeAttentionIconBindings = function(observe) {
+                return {
+                    observe: observe,
+                    visible: true,
+                    visibleFn: visibleFn,
+                    attributes: [{name: 'title'}]
+                };
+            };
             _.each(this.settings.attributes, function(group, groupName) {
                 if (group.metadata.toggleable) {
                     bindings['input[name="' + groupName + '.enabled' + '"]'] = {
@@ -112,11 +126,11 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                         }]
                     };
                 }
-                bindings['div[data-settings-group="' + groupName + '"]'] = {
+                bindings['[data-group="' + groupName + '"]'] = {
                     observe: groupName + '.metadata.visible',
                     visible: true,
                     visibleFn: function($el, isVisible) {
-                        $el.parents('.fieldset-group').toggle(isVisible);
+                        $el.parents('.fieldset-group').toggleClass('hide', !isVisible);
                     }
                 };
                 var isGroupDisabled = _.bind(function(groupName) {
@@ -126,6 +140,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     }
                     return groupData.enabled === false || groupData.disabled;
                 }, this);
+                bindings['legend[data-group="' + groupName + '"] .icon-attention'] = composeAttentionIconBindings(groupName + '.metadata.warning');
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
                     var settingPath = groupName + '.' + settingName;
@@ -152,6 +167,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                             }, this)
                         }]
                     };
+                    bindings['[data-setting="' + settingName + '"] .openstack-sub-title .icon-attention'] = composeAttentionIconBindings(settingPath + '.warning');
                     _.each(setting.values, function(option, index) {
                         bindings['input[name="' + settingPath + '"][value="' + option.data + '"]'] = {
                             observe: [settingPath + '.visible', settingPath + '.values'],
@@ -172,6 +188,19 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                                     var values = value[2];
                                     return this.isLocked() || isGroupDisabled(groupName) || isSettingDisabled || values[index].disabled;
                                 }, this)
+                            }]
+                        };
+                        bindings['[data-setting="' + settingName + '"] [data-option="' + option.data + '"] .icon-attention'] = {
+                            observe: settingPath + '.values',
+                            visible: function(value) {
+                                return value[index].warning;
+                            },
+                            visibleFn: visibleFn,
+                            attributes: [{
+                                name: 'title',
+                                onGet: function(value) {
+                                    return value[index].warning;
+                                }
                             }]
                         };
                     }, this);
@@ -208,7 +237,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 var processedValues = _.without(_.pluck(processedSetting.values, 'data'), processedSetting[valueAttribute]) || [!processedSetting[valueAttribute]];
                 var configModels = _.cloneDeep(this.configModels);
                 configModels.settings = new models.Settings(this.settings.toJSON().editable);
-                return _.every(checkedSettings, function(setting) {
+                return _.pluck(_.filter(checkedSettings, function(setting) {
                     return _.every(_.filter(setting.restrictions, isDependent), function(restriction) {
                         var suitableValues = _.filter(processedValues, function(value) {
                             configModels.settings.get(settingPath)[valueAttribute] = value;
@@ -216,24 +245,42 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                         });
                         return !suitableValues.length;
                     });
-                });
+                }), 'label');
             }
-            return false;
+            return [];
         },
         calculateSettingState: function(groupName, settingName) {
             var settingPath = groupName + '.' + settingName;
             var setting = this.settings.get(settingPath);
             var checkRestrictions = _.bind(function(setting, action) {
-                return _.any(_.where(setting.restrictions, {action: action}), function(restriction) {
-                    return utils.evaluateExpression(restriction.condition, this.configModels).value;
+                var disabled = false, warnings = [];
+                _.each(_.where(setting.restrictions, {action: action}), function(restriction) {
+                    if (utils.evaluateExpression(restriction.condition, this.configModels).value) {
+                        disabled = true;
+                        warnings.push(restriction.message);
+                    }
                 }, this);
+                return {result: disabled, warning: _.compact(warnings).join(' ')};
             }, this);
-            this.settings.set(settingPath + '.disabled', setting.hasDependentRole || checkRestrictions(setting, 'disable') || this.checkDependentSettings(groupName, settingName));
-            this.settings.set(settingPath + '.visible', !checkRestrictions(setting, 'hide'));
+            var dependentSettings = this.checkDependentSettings(groupName, settingName);
+            var settingRestrictionsCheck = checkRestrictions(setting, 'disable');
+            var warning = settingRestrictionsCheck.warning;
+            if (!warning) {
+                if (setting.dependentRoles.length) {
+                    warning = $.t('cluster_page.settings_tab.dependent_role_warning', {roles: setting.dependentRoles.join(', ')});
+                } else if (dependentSettings.length) {
+                    warning = $.t('cluster_page.settings_tab.dependent_settings_warning', {settings: dependentSettings.join(', ')});
+                }
+            }
+            this.settings.set(settingPath + '.disabled', settingRestrictionsCheck.result || !!setting.dependentRoles.length || !!dependentSettings.length);
+            this.settings.set(settingPath + '.warning', warning);
+            this.settings.set(settingPath + '.visible', !checkRestrictions(setting, 'hide').result);
             _.each(setting.values, function(value, index) {
                 var values = _.cloneDeep(setting.values);
-                values[index].disabled = checkRestrictions(values[index], 'disable');
-                values[index].visible = !checkRestrictions(values[index], 'hide');
+                var valueRestrictionsCheck = checkRestrictions(values[index], 'disable');
+                values[index].disabled = valueRestrictionsCheck.result;
+                values[index].warning = valueRestrictionsCheck.warning;
+                values[index].visible = !checkRestrictions(values[index], 'hide').result;
                 this.settings.set(settingPath + '.values', values);
             }, this);
         },
@@ -263,7 +310,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         checkDependentRoles: function(groupName, settingName) {
             var settingPath = groupName + '.' + settingName;
             var rolesData = this.model.get('release').get('roles_metadata');
-            this.settings.get(settingPath).hasDependentRole = _.any(this.model.get('release').get('roles'), function(role) {
+            this.settings.get(settingPath).dependentRoles = _.filter(this.model.get('release').get('roles'), function(role) {
                 var roleDependencies = _.map(rolesData[role].depends, utils.expandRestriction);
                 var hasSatisfiedDependencies = _.any(roleDependencies, function(dependency) {
                     var evaluatedDependency = utils.evaluateExpression(dependency.condition, this.configModels);

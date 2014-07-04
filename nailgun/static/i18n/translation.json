@@ -446,7 +446,8 @@
                         "hypervisor_alert": "Neutron is not available with __Compute.hypervisor__ as a compute option.",
                         "nova_network": "Nova-Network",
                         "neutr_gre": "Neutron with GRE segmentation",
-                        "neutr_vlan": "Neutron with VLAN segmentation"
+                        "neutr_vlan": "Neutron with VLAN segmentation",
+                        "neutr_nsx": "Neutron with VMware NSX plugin"
                     },
                     "storage": {
                         "title": "Storage Backends",

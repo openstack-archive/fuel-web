@@ -244,6 +244,20 @@ class NginxChecker(BaseChecker):
 
         return nailgun_code is not None and nginx_code is not None
 
+class KeystoneChecker(BaseChecker):
+    @property
+    def checker_name(self):
+        return 'keystone'
+
+    def check(self):
+        keystone = self.check_if_port_open(
+            self.endpoints['keystone']['host'],
+            self.endpoints['keystone']['port'])
+        keystone_admin = self.check_if_port_open(
+            self.endpoints['keystone_admin']['host'],
+            self.endpoints['keystone_admin']['port'])
+        return keystone and keystone_admin
+
 
 class IntegrationCheckerPostgresqlNailgunNginx(BaseChecker):
 

@@ -23,9 +23,7 @@ from fuel_upgrade.tests.base import BaseTestCase
 class TestBootstrapUpgrader(BaseTestCase):
 
     def setUp(self):
-        self.upgrader = BootstrapUpgrader(
-            '/path/to/update', self.fake_config
-        )
+        self.upgrader = BootstrapUpgrader(self.fake_config)
 
     def test_constructor(self):
 

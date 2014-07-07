@@ -30,7 +30,6 @@ class TestUpgradeManager(BaseTestCase):
 
         default = {
             'upgraders': [mock.Mock()],
-            'checkers': [mock.Mock(), mock.Mock()],
             'no_rollback': False}
 
         default.update(kwargs)
@@ -92,18 +91,3 @@ class TestUpgradeManager(BaseTestCase):
 
         engine_mock.upgrade.assert_called_once_with()
         self.method_was_not_called(engine_mock.rollback)
-
-    def test_before_upgrade_is_called(self):
-        upgrader = UpgradeManager(**self.default_args())
-        upgrader.before_upgrade = mock.Mock()
-        upgrader.run()
-
-        self.called_once(upgrader.before_upgrade)
-
-    def test_checkers_are_called(self):
-        upgrader = UpgradeManager(**self.default_args())
-        checkers_mock = upgrader._checkers
-        upgrader.before_upgrade()
-
-        for checker_mock in checkers_mock:
-            self.called_once(checker_mock.check)

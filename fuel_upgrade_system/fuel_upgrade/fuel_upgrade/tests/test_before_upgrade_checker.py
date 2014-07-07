@@ -61,23 +61,18 @@ class TestCheckNoRunningTasks(BaseTestCase):
 class TestCheckFreeSpace(BaseTestCase):
 
     def setUp(self):
-        engine1 = mock.MagicMock(
-            required_free_space={
-                '/var/lib/docker': 10})
+        context = mock.MagicMock()
+        context.required_free_spaces = [
+            {'/var/lib/docker': 10},
+            {'/etc/fuel': 10, '/vat/www': 10},
+            None]
 
-        engine2 = mock.MagicMock(
-            required_free_space={
-                '/etc/fuel': 10,
-                '/vat/www': 10})
-
-        engine3 = mock.MagicMock(required_free_space=None)
-
-        self.engines = [engine1, engine2, engine3]
+        self.context = context
 
     @mock.patch('fuel_upgrade.before_upgrade_checker.utils.'
                 'calculate_free_space')
     def test_check(self, calculate_free_space_mock, find_mount_point_mock):
-        checker = CheckFreeSpace(self.engines)
+        checker = CheckFreeSpace(self.context)
         checker.check()
 
         self.called_times(find_mount_point_mock, 3)
@@ -88,7 +83,7 @@ class TestCheckFreeSpace(BaseTestCase):
     def test_check_raises_errors(
             self, calculate_free_space_mock, find_mount_point_mock):
 
-        checker = CheckFreeSpace(self.engines)
+        checker = CheckFreeSpace(self.context)
         err_msg = "Not enough free space on device: " +\
             "device /etc (required 10MB, available 9MB, not enough 1MB), " +\
             "device /var (required 20MB, available 9MB, not enough 11MB)"
@@ -105,7 +100,7 @@ class TestCheckFreeSpace(BaseTestCase):
     def test_space_required_for_mount_points(
             self, calculate_free_space_mock, find_mount_point_mock):
 
-        checker = CheckFreeSpace(self.engines)
+        checker = CheckFreeSpace(self.context)
         mount_points = checker.space_required_for_mount_points()
 
         self.assertEqual(mount_points, {'/etc': 10, '/var': 20})
@@ -115,7 +110,7 @@ class TestCheckFreeSpace(BaseTestCase):
     def test_list_of_error_mount_points(
             self, calculate_free_space_mock, find_mount_point_mock):
 
-        checker = CheckFreeSpace(self.engines)
+        checker = CheckFreeSpace(self.context)
         error_mount_points = checker.list_of_error_mount_points({
             '/etc': 100, '/var': 2})
         self.assertEqual(
@@ -126,7 +121,8 @@ class TestCheckFreeSpace(BaseTestCase):
 class TestCheckUpgradeVersions(BaseTestCase):
 
     def setUp(self):
-        self.checker = CheckUpgradeVersions(self.fake_config)
+        context = mock.MagicMock(config=self.fake_config)
+        self.checker = CheckUpgradeVersions(context)
 
     @mock.patch(
         'fuel_upgrade.before_upgrade_checker.utils.compare_version',

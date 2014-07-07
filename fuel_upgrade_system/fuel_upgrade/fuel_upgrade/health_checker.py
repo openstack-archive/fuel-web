@@ -245,6 +245,29 @@ class NginxChecker(BaseChecker):
         return nailgun_code is not None and nginx_code is not None
 
 
+class KeystoneChecker(BaseChecker):
+    @property
+    def checker_name(self):
+        return 'keystone'
+
+    def check(self):
+        keystone = self.check_if_port_open(
+            self.endpoints['keystone']['host'],
+            self.endpoints['keystone']['port'])
+        keystone_admin = self.check_if_port_open(
+            self.endpoints['keystone_admin']['host'],
+            self.endpoints['keystone_admin']['port'])
+        if keystone and keystone_admin:
+            _, code = self.safe_get(
+                'http://{host}:{port}/v2.0'.format(
+                **self.endpoints['keystone']))
+            _, admin_code = self.safe_get(
+                'http://{host}:{port}/v2.0'.format(
+                **self.endpoints['keystone_admin']))
+            return code == 200 and admin_code == 200
+        return False
+
+
 class IntegrationCheckerPostgresqlNailgunNginx(BaseChecker):
 
     @property
@@ -302,6 +325,7 @@ class FuelUpgradeVerify(object):
                 RsyncChecker,
                 RsyslogChecker,
                 MCollectiveChecker,
+                KeystoneChecker,
                 NginxChecker,
                 IntegrationCheckerPostgresqlNailgunNginx,
                 IntegrationCheckerRabbitMQAstuteNailgun]

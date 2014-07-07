@@ -56,10 +56,10 @@ UNCOMPATIBLE_SYSTEMS = (
 
 def handle_exception(exc):
     if isinstance(exc, errors.FuelUpgradeException):
-        logger.error(exc)
+        logger.exception(exc)
         sys.exit(-1)
     else:
-        traceback.print_exc(exc)
+        logger.exception(exc)
         sys.exit(-1)
 
 

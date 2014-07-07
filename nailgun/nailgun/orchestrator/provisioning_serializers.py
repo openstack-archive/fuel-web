@@ -41,6 +41,7 @@ class ProvisioningSerializer(object):
                 'username': settings.COBBLER_USER,
                 'password': settings.COBBLER_PASSWORD,
                 'master_ip': settings.MASTER_IP,
+                'provision_method': settings.PROVISION_METHOD,
             },
             'nodes': serialized_nodes}
 
@@ -94,7 +95,18 @@ class ProvisioningSerializer(object):
                 'mco_password': settings.MCO_PASSWORD,
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
-                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')}}
+                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                'timezone': settings.TIMEZONE,
+                'master_ip': settings.MASTER_IP}}
+
+        # FIXME(kozhukalov) these ugly lines must be replaced by mature scheme
+        # which will include image database model related to the node model
+        if settings.PROVISION_METHOD == 'image':
+            distrib = cluster_attrs['cobbler']['profile'].split('_')[0]
+            serialized_node['ks_meta']['image_uri'] = \
+                'http://%s/image/%s.img' % (settings.MASTER_IP, distrib)
+            serialized_node['ks_meta']['image_format'] = 'ext4'
+            serialized_node['ks_meta']['image_container'] = 'raw'
 
         orchestrator_data = objects.Release.get_orchestrator_data_dict(
             node.cluster.release)

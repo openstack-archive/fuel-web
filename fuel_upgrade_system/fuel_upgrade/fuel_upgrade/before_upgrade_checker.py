@@ -45,8 +45,8 @@ class CheckNoRunningTasks(BaseBeforeUpgradeChecker):
                    returns dict with nailgun host and port
     """
 
-    def __init__(self, config):
-        nailgun = config.endpoints['nailgun']
+    def __init__(self, context):
+        nailgun = context.config.endpoints['nailgun']
         self.nailgun_client = NailgunClient(nailgun['host'], nailgun['port'])
 
     def check(self):
@@ -79,10 +79,8 @@ class CheckFreeSpace(BaseBeforeUpgradeChecker):
     :param list upgraders: list of upgarde engines
     """
 
-    def __init__(self, upgraders):
-        self.required_spaces = [
-            upgarde.required_free_space
-            for upgarde in upgraders]
+    def __init__(self, context):
+        self.required_spaces = context.required_free_spaces
 
     def check(self):
         """Check free space
@@ -181,7 +179,8 @@ class CheckUpgradeVersions(BaseBeforeUpgradeChecker):
     :param config: config object
     """
 
-    def __init__(self, config):
+    def __init__(self, context):
+        config = context.config
         #: version of fuel which user wants to upgrade from
         self.from_version = config.from_version
         #: version of fuel which user wants to upgrade to

@@ -41,6 +41,7 @@ class ProvisioningSerializer(object):
                 'username': settings.COBBLER_USER,
                 'password': settings.COBBLER_PASSWORD,
                 'master_ip': settings.MASTER_IP,
+                'provision_method': settings.PROVISION_METHOD,
             },
             'nodes': serialized_nodes}
 
@@ -94,7 +95,9 @@ class ProvisioningSerializer(object):
                 'mco_password': settings.MCO_PASSWORD,
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
-                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')}}
+                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                'timezone': settings.TIMEZONE,
+                'master_ip': settings.MASTER_IP}}
 
         orchestrator_data = objects.Release.get_orchestrator_data_dict(
             node.cluster.release)

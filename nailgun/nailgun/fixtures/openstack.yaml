@@ -209,9 +209,9 @@
             description: "vCenter cluster name. If you have multiple clusters, use comma separated names."
             weight: 40
             type: "text"
-          regex:
-            source: '^([\d\w_-]+[ ]*[\d\w_-]+)(,[\d\w_-]+[ ]*[\d\w_-]+)*$'
-            error: "Invalid clusters list"
+            regex:
+              source: '^([\d\w_-]+[ ]*[\d\w_-]+)(,[\d\w_-]+[ ]*[\d\w_-]+)*$'
+              error: "Invalid clusters list"
         nsx_plugin:
           metadata:
             toggleable: true

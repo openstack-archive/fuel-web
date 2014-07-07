@@ -31,8 +31,13 @@ class UpgradeManager(object):
     """
 
     def __init__(self, upgraders, checkers, no_rollback=True):
+        #: a list of upgraders to use
         self._upgraders = upgraders
+        #: a list of used upgraders (needs by rollback feature)
+        self._used_upgraders = []
+        #: a list of checkers to use
         self._checkers = checkers
+        #: should we make rollback in case of error?
         self._rollback = not no_rollback
 
     def run(self):
@@ -42,10 +47,12 @@ class UpgradeManager(object):
         """
         self.before_upgrade()
 
+        logger.info('*** START UPGRADING')
         for upgrader in self._upgraders:
 
             try:
                 logger.debug('%s: upgrading...', upgrader.__class__.__name__)
+                self._used_upgraders.append(upgrader)
                 upgrader.upgrade()
             except Exception as exc:
                 logger.exception(
@@ -53,11 +60,12 @@ class UpgradeManager(object):
                     upgrader.__class__.__name__, exc)
 
                 if self._rollback:
-                    logger.debug(
-                        '%s: rollbacking...', upgrader.__class__.__name__)
                     self.rollback()
 
+                logger.error('*** UPGRADE FAILED')
                 raise
+
+        logger.info('*** UPGRADE DONE SUCCESSFULLY')
 
     def before_upgrade(self):
         logger.debug('Run before upgrade actions')
@@ -68,5 +76,7 @@ class UpgradeManager(object):
     def rollback(self):
         logger.debug('Run rollback')
 
-        for upgrader in reversed(self._upgraders):
+        while self._used_upgraders:
+            upgrader = self._used_upgraders.pop()
+            logger.debug('%s: rollbacking...', upgrader.__class__.__name__)
             upgrader.rollback()

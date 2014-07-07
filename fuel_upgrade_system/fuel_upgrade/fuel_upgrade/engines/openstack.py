@@ -218,7 +218,7 @@ class OpenStackUpgrader(UpgradeEngine):
                          release['version'])
             response = self.nailgun.create_notification({
                 'topic': 'release',
-                'message': 'New release avaialble: {0} ({1})'.format(
+                'message': 'New release available: {0} ({1})'.format(
                     release['name'],
                     release['version'],
                 ),

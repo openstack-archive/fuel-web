@@ -305,6 +305,25 @@ class TestCheckers(BaseTestCase):
         get_mock.return_value = [None, None]
         self.assert_checker_false(health_checker.NginxChecker)
 
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.check_if_port_open')
+    def test_keystone_port_returns_false(self, port_checker_mock):
+        port_checker_mock.return_value = False
+        self.assert_checker_false(health_checker.KeystoneChecker)
+
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.check_if_port_open')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
+    def test_keystone_checker_returns_true(self, get_mock, port_checker_mock):
+        port_checker_mock.return_value = True
+        get_mock.return_value = [{}, 200]
+        self.assert_checker_true(health_checker.KeystoneChecker)
+
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.check_if_port_open')
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
+    def test_keystone_checker_returns_false(self, get_mock, port_checker_mock):
+        port_checker_mock.return_value = True
+        get_mock.return_value = [{}, 400]
+        self.assert_checker_false(health_checker.KeystoneChecker)
+
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_integration_postgres_nailgun_nginx_returns_true(self, get_mock):
         get_mock.return_value = [[1, 2], 200]

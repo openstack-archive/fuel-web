@@ -22,21 +22,17 @@ logger = logging.getLogger(__name__)
 class UpgradeManager(object):
     """Upgrade manager is used to orchestrate upgrading process.
 
-    :param source_path: a path to folder with upgrade files
     :param upgraders: a list with upgrader classes to use; each upgrader
         must inherit the :class:`BaseUpgrader`
     :param no_rollback: call :meth:`BaseUpgrader.rollback` method
         in case of exception during execution
-    :param no_check: do not make opportunity check before upgrades
     """
 
-    def __init__(self, upgraders, checkers, no_rollback=True):
+    def __init__(self, upgraders, no_rollback=True):
         #: a list of upgraders to use
         self._upgraders = upgraders
         #: a list of used upgraders (needs by rollback feature)
         self._used_upgraders = []
-        #: a list of checkers to use
-        self._checkers = checkers
         #: should we make rollback in case of error?
         self._rollback = not no_rollback
 
@@ -45,9 +41,8 @@ class UpgradeManager(object):
 
         .. note:: in case of exception the `rollback` method will be called
         """
-        self.before_upgrade()
-
         logger.info('*** START UPGRADING')
+
         for upgrader in self._upgraders:
 
             try:
@@ -66,12 +61,6 @@ class UpgradeManager(object):
                 raise
 
         logger.info('*** UPGRADE DONE SUCCESSFULLY')
-
-    def before_upgrade(self):
-        logger.debug('Run before upgrade actions')
-        if self._checkers:
-            for checker in self._checkers:
-                checker.check()
 
     def rollback(self):
         logger.debug('Run rollback')

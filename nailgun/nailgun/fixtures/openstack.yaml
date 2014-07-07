@@ -178,7 +178,8 @@
             label: "vCenter"
             weight: 20
             restrictions:
-              - "settings:common.libvirt_type.value != 'vcenter'"
+              - condition: "settings:common.libvirt_type.value != 'vcenter'"
+                action: "hide"
           use_vcenter:
             value: true
             label: ""
@@ -219,7 +220,8 @@
             label: "VMware NSX"
             weight: 20
             restrictions:
-              - "cluster:net_provider != 'neutron'"
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
           nsx_username:
             value: "admin"
             label: "NSX username"

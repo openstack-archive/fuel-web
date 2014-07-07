@@ -46,9 +46,9 @@ class TestUpgradeManager(BaseTestCase):
         engine_mock.upgrade.assert_called_once_with()
         engine_mock.rollback.assert_called_once_with()
 
-    def test_run_rollback_for_all_engines(self):
+    def test_run_rollback_for_used_engines(self):
         upgrader = UpgradeManager(**self.default_args(
-            upgraders=[mock.Mock(), mock.Mock()],
+            upgraders=[mock.Mock(), mock.Mock(), mock.Mock()],
         ))
         upgrader._upgraders[1].upgrade.side_effect = Exception('Failed')
 
@@ -59,6 +59,9 @@ class TestUpgradeManager(BaseTestCase):
 
         self.called_once(upgrader._upgraders[1].upgrade)
         self.called_once(upgrader._upgraders[1].rollback)
+
+        self.method_was_not_called(upgrader._upgraders[2].upgrade)
+        self.method_was_not_called(upgrader._upgraders[2].rollback)
 
     def test_run_upgrade_for_all_engines(self):
         upgrader = UpgradeManager(**self.default_args(

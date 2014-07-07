@@ -305,6 +305,22 @@ class TestCheckers(BaseTestCase):
         get_mock.return_value = [None, None]
         self.assert_checker_false(health_checker.NginxChecker)
 
+
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
+    def test_keystone_checker_returns_true(self, get_mock):
+        get_mock.return_value = [{}, 200]
+        self.assert_checker_true(health_checker.KeystoneChecker)
+
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
+    def test_keystone_checker_returns_false(self, get_mock):
+        negative_results = [
+            [{}, 400],
+            [None, None]]
+
+        for result in negative_results:
+            get_mock.return_value = result
+            self.assert_checker_false(health_checker.KeystoneChecker)
+
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_integration_postgres_nailgun_nginx_returns_true(self, get_mock):
         get_mock.return_value = [[1, 2], 200]

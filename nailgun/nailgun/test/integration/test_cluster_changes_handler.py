@@ -290,8 +290,14 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP
                 }
             }
+            if n.cluster.release.provision_metadata.get('method') == 'image':
+                pnd['ks_meta']['image_data'] = \
+                    n.cluster.release.provision_metadata['image_data']
+
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
                 cluster_db.release)
             if orchestrator_data:
@@ -344,7 +350,11 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method':
+                        cluster_db.release.provision_metadata.get(
+                            'method', 'cobbler'),
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -715,8 +725,14 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP
                 }
             }
+            if n.cluster.release.provision_metadata.get('method') == 'image':
+                pnd['ks_meta']['image_data'] = \
+                    n.cluster.release.provision_metadata['image_data']
+
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
                 cluster_db.release)
             if orchestrator_data:
@@ -769,7 +785,11 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method':
+                        cluster_db.release.provision_metadata.get(
+                            'method', 'cobbler'),
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args

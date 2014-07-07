@@ -30,6 +30,7 @@ class TestConfigDriveScheme(test_base.BaseTestCase):
         expected = [
             'what_%s.jinja2' % self.cd_scheme._profile,
             'what_%s.jinja2' % self.cd_scheme._profile.split('_')[0],
+            'what_%s.jinja2' % self.cd_scheme._profile.split('-')[0],
             'what.jinja2'
         ]
         self.assertEqual(expected, actual)

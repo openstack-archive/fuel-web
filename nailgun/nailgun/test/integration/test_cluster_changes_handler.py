@@ -290,8 +290,14 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP
                 }
             }
+            if settings.PROVISION_METHOD == 'image':
+                pnd['ks_meta']['image_data'] = \
+                    n.cluster.release.images_metadata[
+                        cluster_attrs['cobbler']['profile']]
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
                 cluster_db.release)
             if orchestrator_data:
@@ -344,7 +350,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': settings.PROVISION_METHOD,
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -715,8 +723,14 @@ class TestHandlers(BaseIntegrationTest):
                     'mlnx_vf_num': "16",
                     'mlnx_plugin_mode': "disabled",
                     'mlnx_iser_enabled': False,
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP
                 }
             }
+            if settings.PROVISION_METHOD == 'image':
+                pnd['ks_meta']['image_data'] = \
+                    n.cluster.release.images_metadata[
+                        cluster_attrs['cobbler']['profile']]
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
                 cluster_db.release)
             if orchestrator_data:
@@ -769,7 +783,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': settings.PROVISION_METHOD,
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args

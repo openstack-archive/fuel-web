@@ -69,6 +69,7 @@ class Release(Base):
     modes_metadata = Column(JSON, default={})
     roles_metadata = Column(JSON, default={})
     wizard_metadata = Column(JSON, default={})
+    images_metadata = Column(JSON, default={})
     is_deployable = Column(Boolean, default=True, nullable=False)
 
     role_list = relationship(

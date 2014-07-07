@@ -56,6 +56,7 @@ class ProvisioningSerializer(object):
                 'username': settings.COBBLER_USER,
                 'password': settings.COBBLER_PASSWORD,
                 'master_ip': settings.MASTER_IP,
+                'provision_method': settings.PROVISION_METHOD
             }}
 
     @classmethod
@@ -84,7 +85,6 @@ class ProvisioningSerializer(object):
             'slave_name': objects.Node.make_slave_name(node),
             'hostname': node.fqdn,
             'power_pass': cls.get_ssh_key_path(node),
-
             'profile': cluster_attrs['cobbler']['profile'],
             'power_type': 'ssh',
             'power_user': 'root',
@@ -112,7 +112,15 @@ class ProvisioningSerializer(object):
                 'mco_password': settings.MCO_PASSWORD,
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
-                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')}}
+                'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                'timezone': settings.TIMEZONE,
+                'master_ip': settings.MASTER_IP,
+            }}
+
+        if settings.PROVISION_METHOD == 'image':
+            serialized_node['ks_meta']['image_data'] = \
+                node.cluster.release.images_metadata[
+                    cluster_attrs['cobbler']['profile']]
 
         orchestrator_data = objects.Release.get_orchestrator_data_dict(
             node.cluster.release)

@@ -27,6 +27,7 @@ down_revision = '52924111f7d8'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.utils.migration import upgrade_release_set_deployable_false
 
 
@@ -52,6 +53,14 @@ def upgrade_schema():
             server_default='true',
         )
     )
+    op.add_column(
+        'releases',
+        sa.Column(
+            'images_metadata',
+            JSON(),
+            nullable=True
+        )
+    )
 
 
 def upgrade_data():
@@ -64,6 +73,7 @@ def upgrade_data():
 
 def downgrade_schema():
     op.drop_column('releases', 'is_deployable')
+    op.drop_column('releases', 'images_metadata')
 
 
 def downgrade_data():

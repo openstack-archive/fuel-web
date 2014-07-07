@@ -511,6 +511,26 @@
         cobbler:
           profile:
             generator: "identical"
+    images_metadata:
+      ubuntu_1204_x86_64:
+        /:
+          uri: "http://{{settings.MASTER_IP}}/targetimages/ubuntu_1204_x86_64.img.gz"
+          format: "ext4"
+          container: "gzip"
+        /boot:
+          uri: "http://{{settings.MASTER_IP}}/targetimages/ubuntu_1204_x86_64-boot.img.gz"
+          format: "ext2"
+          container: "gzip"
+      centos_65_x86_64:
+        /:
+          uri: "http://{{settings.MASTER_IP}}/targetimages/centos_65_x86_64.img.gz"
+          format: "ext4"
+          container: "gzip"
+        /boot:
+          uri: "http://{{settings.MASTER_IP}}/targetimages/centos_65_x86_64-boot.img.gz"
+          format: "ext2"
+          container: "gzip"
+
 - &full_release
   extend: *base_release
   fields:

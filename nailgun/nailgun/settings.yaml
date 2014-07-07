@@ -80,6 +80,15 @@ COBBLER_URL: "http://localhost/cobbler_api"
 COBBLER_USER: "cobbler"
 COBBLER_PASSWORD: "cobbler"
 
+# This parameter is used to chose between two possible provisioning methods
+# image based and cobbler native method. This must be one of "cobbler" or "image"
+PROVISION_METHOD: "cobbler"
+
+# This parameter is used in provisioning serializer. Timezone is one of
+# provisioning data fields which is used by cloud-init to set timezone on
+# target nodes. Flow is settings.yaml -> astute -> fuel_agent -> cloud-init.
+TIMEZONE: "America/Los_Angeles"
+
 NOVA_STATE_PATH: "/var/lib/nova"
 
 TRUNCATE_LOG_ENTRIES: 100

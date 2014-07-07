@@ -42,6 +42,11 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         update: function() {
             this.nodes.fetch().always(_.bind(this.scheduleUpdate, this));
         },
+        revertChanges: function() {
+            this.nodes.each(function(node) {
+                node.set({pending_roles: this.initialNodes.get(node.id).get('pending_roles')}, {silent: true});
+            }, this);
+        },
         calculateApplyButtonState: function() {
             this.applyChangesButton.set('disabled', !this.hasChanges());
         },
@@ -259,9 +264,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             app.navigate('#cluster/' + this.cluster.id + '/nodes/edit/' + utils.serializeTabOptions({nodes: _.pluck(this.nodes.where({checked: true}), 'id')}), {trigger: true});
         },
         goToNodesList: function() {
-            this.nodes.each(_.bind(function(node) {
-                node.set({pending_roles: this.screen.initialNodes.get(node.id).get('pending_roles')}, {silent: true});
-            }, this));
+            this.screen.revertChanges();
             app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
         },
         clearFilter: function() {

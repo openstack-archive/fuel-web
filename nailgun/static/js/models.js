@@ -336,9 +336,7 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
                 setting.visible = !handleRestrictions(_.where(settingRestrictions, {action: 'hide'}));
             };
             _.each(this.attributes, function(group) {
-                // group restrictions define group visibility by default
-                group.metadata.visible = !handleRestrictions(_.map(group.metadata.restrictions, utils.expandRestriction));
-                if (!group.metadata.visible) { return; }
+                calculateState(group.metadata);
                 _.each(group, function(setting) {
                     calculateState(setting);
                     _.each(setting.values, calculateState);
@@ -348,7 +346,7 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
         validate: function(attrs) {
             var errors = [];
             _.each(attrs, function(group, groupName) {
-                if (!group.metadata.visible) { return; }
+                if (group.metadata.disabled || !group.metadata.visible) { return; }
                 _.each(group, function(setting, settingName) {
                     if (!(setting.regex && setting.regex.source) || setting.disabled) { return; }
                     var regExp = new RegExp(setting.regex.source);

@@ -671,6 +671,14 @@
             weight: 40
             type: "checkbox"
         storage:
+          volumes_vmdk:
+            value: false
+            label: "VMware vCenter for volumes (Cinder)"
+            description: "Configures Cinder to store volumes via VMware vCenter."
+            weight: 15
+            type: "checkbox"
+            restrictions:
+              - "settings:storage.volumes_lvm.value == false or settings:common.libvirt_type.value == 'vcenter'"
           volumes_ceph:
             value: false
             label: "Ceph RBD for volumes (Cinder)"

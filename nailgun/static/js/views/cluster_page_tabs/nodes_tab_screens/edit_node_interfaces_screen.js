@@ -82,7 +82,9 @@ function(utils, models, EditNodeScreen, editNodeInterfacesScreenTemplate, nodeIn
             return _.uniq(speeds).length > 1 || !_.compact(speeds).length;
         },
         bondingAvailable: function() {
-            return !this.isLocked() && this.model.get('net_provider') == 'neutron';
+            var iserDisabled =  this.model.get('settings').get('storage.iser.value') != true;
+            var mellanoxSriovDisabled = this.model.get('settings').get('neutron_mellanox.plugin.value') != "ethernet";
+            return !this.isLocked() && this.model.get('net_provider') == 'neutron' && iserDisabled && mellanoxSriovDisabled;
         },
         updateBondingControlsState: function() {
             var checkedInterfaces = this.interfaces.filter(function(ifc) {return ifc.get('checked') && !ifc.isBond();});

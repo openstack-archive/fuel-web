@@ -219,7 +219,8 @@
             label: "VMware NSX"
             weight: 20
             restrictions:
-              - "cluster:net_provider != 'neutron'"
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
           nsx_username:
             value: "admin"
             label: "NSX username"

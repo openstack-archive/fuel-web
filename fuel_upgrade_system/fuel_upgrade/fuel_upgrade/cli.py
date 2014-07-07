@@ -16,13 +16,11 @@
 
 import argparse
 import sys
-import traceback
 
 from fuel_upgrade.logger import configure_logger
 logger = configure_logger('/var/log/fuel_upgrade.log')
 
 from fuel_upgrade.config import build_config
-from fuel_upgrade import errors
 from fuel_upgrade.upgrade import UpgradeManager
 
 from fuel_upgrade.engines.bootstrap import BootstrapUpgrader
@@ -55,12 +53,8 @@ UNCOMPATIBLE_SYSTEMS = (
 
 
 def handle_exception(exc):
-    if isinstance(exc, errors.FuelUpgradeException):
-        logger.error(exc)
-        sys.exit(-1)
-    else:
-        traceback.print_exc(exc)
-        sys.exit(-1)
+    logger.exception(exc)
+    sys.exit(-1)
 
 
 def parse_args():

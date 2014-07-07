@@ -91,8 +91,8 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         },
         onSettingChange: function() {
             this.$('input.error').removeClass('error');
-            this.$('.description').show();
-            this.$('.validation-error').hide();
+            this.$('.parameter-description').removeClass('hide');
+            this.$('.validation-error').addClass('hide');
             this.settings.isValid();
             this.calculateButtonsState();
         },
@@ -264,8 +264,9 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             this.settings.on('invalid', function(model, errors) {
                 _.each(errors, function(error) {
                     var input = this.$('input[name="' + error.field + '"]');
-                    input.addClass('error').parent().siblings('.validation-error').text(error.message).show();
-                    input.parent().siblings('.description').hide();
+                    input.addClass('error');
+                    input.parent().siblings('.description').addClass('hide');
+                    input.parent().siblings('.validation-error').text(error.message).removeClass('hide');
                 }, this);
             }, this);
             (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {

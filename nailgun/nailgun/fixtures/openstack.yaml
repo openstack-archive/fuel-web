@@ -647,19 +647,19 @@
                 description: "Do not install Mellanox Neutron plugin"
               - data: "drivers_only"
                 label: "Ethernet Drivers only"
-                description: "If selected, Mellanox Ethernet drivers will be installed, without using the Mellanox Neutron plugin"
+                description: "If selected, Mellanox Ethernet drivers will be installed, to support networking over Mellanox card, without using the Mellanox Neutron plugin"
                 restrictions:
                   - "settings:common.libvirt_type.value != 'kvm'"
               - data: "ethernet"
                 label: "Ethernet SR-IOV"
                 description: "If selected, Mellanox Ethernet plugin will be installed, Accelerated hypervisor mode using SR-IOV, enable bare metal performance over VMs"
                 restrictions:
-                  - "settings:common.libvirt_type.value != 'kvm'"
+                  - "settings:common.libvirt_type.value != 'kvm' or cluster:net_provider != 'neutron'"
           vf_num:
             value: "16"
             label: "Virtual functions number"
             description: "Number of virtual functions (virtual NICs) to create"
-            weight: 10
+            weight: 65
             type: "text"
             restrictions:
               - "settings:neutron_mellanox.plugin.value != 'ethernet'"
@@ -715,7 +715,7 @@
           iser:
             value: false
             label: "iSER protocol for volumes (Cinder)"
-            description: "High performance storage: Cinder volumes over ISER protocol (iscsi over RDMA)."
+            description: "High performance storage: Cinder volumes over ISER protocol (iSCSI over RDMA). This feature requires SR-IOV capabilities on the storage network Card, and will change the storage port to a virtual port on the Hypervisor."
             weight: 20
             type: "checkbox"
             restrictions:

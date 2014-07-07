@@ -271,6 +271,8 @@ class TestHandlers(BaseIntegrationTest):
                         'kernel_params': n.kernel_params,
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -325,7 +327,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': settings.PROVISION_METHOD,
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -670,6 +674,8 @@ class TestHandlers(BaseIntegrationTest):
                         'kernel_params': n.kernel_params,
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
+                    'timezone': settings.TIMEZONE,
+                    'master_ip': settings.MASTER_IP
                 }
             }
             orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -724,7 +730,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': settings.PROVISION_METHOD,
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args

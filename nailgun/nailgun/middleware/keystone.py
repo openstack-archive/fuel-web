@@ -45,8 +45,7 @@ class SkipAuthMixin(object):
                 self.public_api_routes[re.compile(route_tpl)] = methods
         except re.error as e:
             msg = 'Cannot compile public API routes: {0}'.format(e)
-
-            raise Exception(error_msg=msg)
+            raise Exception(msg)
 
         super(SkipAuthMixin, self).__init__(app, settings.AUTH)
 

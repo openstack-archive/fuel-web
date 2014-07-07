@@ -175,6 +175,14 @@ def config(update_path):
             'port': 514,
             'host': '127.0.0.1'},
 
+        'keystone': {
+            'port': 5000,
+            'host': '127.0.0.1'},
+
+        'keystone_admin': {
+            'port': 35357,
+            'host': '127.0.0.1'},
+
         'rabbitmq': {
             'user': 'naily',
             'password': 'naily',
@@ -254,6 +262,11 @@ def config(update_path):
          'type': 'fuel',
          'docker_image': join(update_path, 'images', 'rsyslog.tar'),
          'docker_file': join(update_path, 'rsyslog')},
+
+        {'id': 'keystone',
+         'type': 'fuel',
+         'docker_image': join(update_path, 'images', 'keystone.tar'),
+         'docker_file': join(update_path, 'keystone')},
 
         {'id': 'busybox',
          'type': 'base',
@@ -348,6 +361,20 @@ def config(update_path):
              '514': ['0.0.0.0', 514],
              '514/udp': ['0.0.0.0', 514]},
          'ports': [[514, 'udp'], 514],
+         'volumes_from': [
+             'volume_logs',
+             'volume_repos',
+             'volume_fuel_configs']},
+
+        {'id': 'keystone',
+         'supervisor_config': True,
+         'from_image': 'keystone',
+         'port_bindings': {
+             '5000': ['0.0.0.0', 5000],
+             '35357': ['0.0.0.0', 35357]},
+         'ports': [5000, 35357],
+         'links': [
+             {'id': 'postgres', 'alias': 'postgres'}],
          'volumes_from': [
              'volume_logs',
              'volume_repos',

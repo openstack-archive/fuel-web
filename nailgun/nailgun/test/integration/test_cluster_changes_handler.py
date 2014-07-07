@@ -325,7 +325,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': settings.PROVISION_METHOD,
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
@@ -724,7 +726,9 @@ class TestHandlers(BaseIntegrationTest):
                         'url': settings.COBBLER_URL,
                         'username': settings.COBBLER_USER,
                         'password': settings.COBBLER_PASSWORD,
-                        'master_ip': settings.MASTER_IP},
+                        'master_ip': settings.MASTER_IP,
+                        'provision_method': settings.PROVISION_METHOD,
+                    },
                     'nodes': provision_nodes}}}
 
         args, kwargs = nailgun.task.manager.rpc.cast.call_args

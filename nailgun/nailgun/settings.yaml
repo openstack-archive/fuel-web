@@ -73,6 +73,9 @@ COBBLER_URL: "http://localhost/cobbler_api"
 COBBLER_USER: "cobbler"
 COBBLER_PASSWORD: "cobbler"
 
+# Must be one of "cobbler" or "image"
+PROVISION_METHOD: "cobbler"
+
 NOVA_STATE_PATH: "/var/lib/nova"
 
 TRUNCATE_LOG_ENTRIES: 100

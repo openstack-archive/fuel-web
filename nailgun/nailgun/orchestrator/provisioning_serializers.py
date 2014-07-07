@@ -41,6 +41,7 @@ class ProvisioningSerializer(object):
                 'username': settings.COBBLER_USER,
                 'password': settings.COBBLER_PASSWORD,
                 'master_ip': settings.MASTER_IP,
+                'provision_method': settings.PROVISION_METHOD,
             },
             'nodes': serialized_nodes}
 

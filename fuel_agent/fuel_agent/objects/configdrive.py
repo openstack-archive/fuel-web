@@ -93,5 +93,6 @@ class ConfigDriveScheme(object):
         return [
             '%s_%s.jinja2' % (what, self._profile),
             '%s_%s.jinja2' % (what, self._profile.split('_')[0]),
+            '%s_%s.jinja2' % (what, self._profile.split('-')[0]),
             '%s.jinja2' % what
         ]

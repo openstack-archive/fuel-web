@@ -118,6 +118,7 @@ class Nailgun(object):
         return self._get_partition_count('ceph')
 
     def partition_scheme(self):
+        LOG.debug('--- Preparing partition scheme ---')
         data = self.partition_data()
         ks_spaces_validator.validate(data)
         partition_scheme = objects.PartitionScheme()
@@ -126,21 +127,38 @@ class Nailgun(object):
         journals_left = ceph_osds
         ceph_journals = self._num_ceph_journals()
 
+        LOG.debug('Looping over all disks in provision data')
         for disk in self.ks_disks:
+            LOG.debug('Processing disk %s' % disk['name'])
+            LOG.debug('Adding gpt table on disk %s' % disk['name'])
             parted = partition_scheme.add_parted(
                 name=self._disk_dev(disk), label='gpt')
             # we install bootloader on every disk
+            LOG.debug('Adding bootloader stage0 on disk %s' % disk['name'])
             parted.install_bootloader = True
             # legacy boot partition
+            LOG.debug('Adding bios_grub partition on disk %s: size=24' %
+                      disk['name'])
             parted.add_partition(size=24, flags=['bios_grub'])
             # uefi partition (for future use)
+            LOG.debug('Adding UEFI partition on disk %s: size=200' %
+                      disk['name'])
             parted.add_partition(size=200)
 
+            LOG.debug('Looping over all volumes on disk %s' % disk['name'])
             for volume in disk['volumes']:
+                LOG.debug('Processing volume: '
+                          'name=%s type=%s size=%s mount=%s vg=%s' %
+                          (volume.get('name'), volume.get('type'),
+                           volume.get('size'), volume.get('mount'),
+                           volume.get('vg')))
                 if volume['size'] <= 0:
+                    LOG.debug('Volume size is zero. Skipping.')
                     continue
 
                 if volume.get('name') == 'cephjournal':
+                    LOG.debug('Volume seems to be a CEPH journal volume. '
+                              'Special procedure is supposed to be applied.')
                     # We need to allocate a journal partition for each ceph OSD
                     # Determine the number of journal partitions we need on
                     # each device
@@ -164,30 +182,49 @@ class Nailgun(object):
                     for i in range(0, end):
                         journals_left -= 1
                         if volume['type'] == 'partition':
+                            LOG.debug('Adding CEPH journal partition on '
+                                      'disk %s: size=%s' %
+                                      (disk['name'], size))
                             prt = parted.add_partition(size=size)
+                            LOG.debug('Partition name: %s' % prt.name)
                             if 'partition_guid' in volume:
+                                LOG.debug('Setting partition GUID: %s' %
+                                          volume['partition_guid'])
                                 prt.set_guid(volume['partition_guid'])
                     continue
 
                 if volume['type'] in ('partition', 'pv', 'raid'):
+                    LOG.debug('Adding partition on disk %s: size=%s' %
+                              (disk['name'], volume['size']))
                     prt = parted.add_partition(size=volume['size'])
+                    LOG.debug('Partition name: %s' % prt.name)
 
                 if volume['type'] == 'partition':
                     if 'partition_guid' in volume:
+                        LOG.debug('Setting partition GUID: %s' %
+                                  volume['partition_guid'])
                         prt.set_guid(volume['partition_guid'])
 
                     if 'mount' in volume and volume['mount'] != 'none':
+                        LOG.debug('Adding file system on partition: '
+                                  'mount=%s type=%s' %
+                                  (volume['mount'],
+                                   volume.get('file_system', 'xfs')))
                         partition_scheme.add_fs(
                             device=prt.name, mount=volume['mount'],
                             fs_type=volume.get('file_system', 'xfs'),
                             fs_label=self._getlabel(volume.get('disk_label')))
 
                 if volume['type'] == 'pv':
+                    LOG.debug('Creating pv on partition: pv=%s vg=%s' %
+                              (prt.name, volume['vg']))
                     partition_scheme.vg_attach_by_name(
                         pvname=prt.name, vgname=volume['vg'])
 
                 if volume['type'] == 'raid':
                     if 'mount' in volume and volume['mount'] != 'none':
+                        LOG.debug('Attaching partition to RAID '
+                                  'by its mount point %s' % volume['mount'])
                         partition_scheme.md_attach_by_mount(
                             device=prt.name, mount=volume['mount'],
                             fs_type=volume.get('file_system', 'xfs'),
@@ -195,29 +232,45 @@ class Nailgun(object):
 
             # this partition will be used to put there configdrive image
             if partition_scheme.configdrive_device() is None:
+                LOG.debug('Adding configdrive partition on disk %s: size=20' %
+                          disk['name'])
                 parted.add_partition(size=20, configdrive=True)
 
+        LOG.debug('Looping over all volume groups in provision data')
         for vg in self.ks_vgs:
+            LOG.debug('Processing vg %s' % vg['id'])
+            LOG.debug('Looping over all logical volumes in vg %s' % vg['id'])
             for volume in vg['volumes']:
+                LOG.debug('Processing lv %s' % volume['name'])
                 if volume['size'] <= 0:
+                    LOG.debug('Lv size is zero. Skipping.')
                     continue
 
                 if volume['type'] == 'lv':
+                    LOG.debug('Adding lv to vg %s: name=%s, size=%s' %
+                              (vg['id'], volume['name'], volume['size']))
                     lv = partition_scheme.add_lv(name=volume['name'],
                                                  vgname=vg['id'],
                                                  size=volume['size'])
 
                     if 'mount' in volume and volume['mount'] != 'none':
+                        LOG.debug('Adding file system on lv: '
+                                  'mount=%s type=%s' %
+                                  (volume['mount'],
+                                   volume.get('file_system', 'xfs')))
                         partition_scheme.add_fs(
                             device=lv.device_name, mount=volume['mount'],
                             fs_type=volume.get('file_system', 'xfs'),
                             fs_label=self._getlabel(volume.get('disk_label')))
 
+        LOG.debug('Appending kernel parameters: %s' %
+                  self.data['ks_meta']['pm_data']['kernel_params'])
         partition_scheme.append_kernel_params(
             self.data['ks_meta']['pm_data']['kernel_params'])
         return partition_scheme
 
     def configdrive_scheme(self):
+        LOG.debug('--- Preparing configdrive scheme ---')
         data = self.data
         configdrive_scheme = objects.ConfigDriveScheme()
 
@@ -226,6 +279,8 @@ class Nailgun(object):
                        data['kernel_options']['netcfg/choose_interface']),
             [dict(name=name, **spec) for name, spec
              in data['interfaces'].iteritems()])[0]
+
+        LOG.debug('Adding common parameters')
         configdrive_scheme.set_common(
             ssh_auth_key=data['ks_meta']['auth_key'],
             hostname=data['hostname'],
@@ -242,10 +297,12 @@ class Nailgun(object):
             timezone=data['ks_meta']['timezone'],
         )
 
+        LOG.debug('Adding puppet parameters')
         configdrive_scheme.set_puppet(
             master=data['ks_meta']['puppet_master']
         )
 
+        LOG.debug('Adding mcollective parameters')
         configdrive_scheme.set_mcollective(
             pskey=data['ks_meta']['mco_pskey'],
             vhost=data['ks_meta']['mco_vhost'],
@@ -255,10 +312,12 @@ class Nailgun(object):
             connector=data['ks_meta']['mco_connector']
         )
 
+        LOG.debug('Setting configdrive profile %s' % data['profile'])
         configdrive_scheme.set_profile(profile=data['profile'])
         return configdrive_scheme
 
     def image_scheme(self, partition_scheme):
+        LOG.debug('--- Preparing image scheme ---')
         data = self.data
         image_scheme = objects.ImageScheme()
         # We assume for every file system user may provide a separate
@@ -266,10 +325,16 @@ class Nailgun(object):
         # /, /boot, /var/lib file systems then we will try to get images
         # for all those mount points. Images data are to be defined
         # at provision.json -> ['ks_meta']['image_data']
+        LOG.debug('Looping over all file systems in partition scheme')
         for fs in partition_scheme.fss:
+            LOG.debug('Processing fs %s' % fs.mount)
             if fs.mount not in data['ks_meta']['image_data']:
+                LOG.debug('There is no image for fs %s. Skipping.' % fs.mount)
                 continue
             image_data = data['ks_meta']['image_data'][fs.mount]
+            LOG.debug('Adding image for fs %s: uri=%s format=%s container=%s' %
+                      (fs.mount, image_data['uri'],
+                       image_data['format'], image_data['container']))
             image_scheme.add_image(
                 uri=image_data['uri'],
                 target_device=fs.device,

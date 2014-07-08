@@ -30,6 +30,8 @@ from fuel_upgrade.engines.docker_engine import DockerUpgrader
 from fuel_upgrade.engines.host_system import HostSystemUpgrader
 from fuel_upgrade.engines.openstack import OpenStackUpgrader
 
+from fuel_upgrade.pre_upgrade_hooks.manager import PreUpgradeHookManager
+
 
 #: A dict with supported systems.
 #: The key is used for system option in CLI.
@@ -124,9 +126,12 @@ def run_upgrade(args):
         checker_manager = CheckerManager(upgraders_to_use, config)
         checker_manager.check()
 
+    # Initialize pre upgrade hooks manager
+    hook_manager = PreUpgradeHookManager(upgraders_to_use, config)
+    hook_manager.run()
+
     # Initialize upgrade manager with engines and checkers
     upgrade_manager = UpgradeManager(upgraders_to_use, args.no_rollback)
-
     upgrade_manager.run()
 
 

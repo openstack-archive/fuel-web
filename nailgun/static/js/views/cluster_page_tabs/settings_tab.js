@@ -275,9 +275,10 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     cluster: this.model,
                     settings: this.settings,
                     networking_parameters: this.model.get('networkConfiguration').get('networking_parameters'),
+                    version: app.version,
                     default: this.settings
                 };
-                this.settings.processRestrictions(this.model);
+                this.settings.processRestrictions(this.configModels);
                 _.each(this.settings.attributes, function(group, groupName) {
                     if (!group.metadata.visible) { return; }
                     _.each(group, function(setting, settingName) {

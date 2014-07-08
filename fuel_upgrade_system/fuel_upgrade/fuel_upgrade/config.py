@@ -532,29 +532,44 @@ def config(update_path):
         'actions': [
             {
                 'name': 'move',
-                'from': '/var/www/nailgun/bootstrap/initramfs.img',
-                'to': '/var/www/nailgun/bootstrap/{0}_initramfs.img'.format(
+                'from': '/var/www/nailgun/bootstrap',
+                'to': '/var/www/nailgun/{0}_bootstrap'.format(
                     from_version,
                 ),
-                'overwrite': False,
+                'overwrite': False,  # it's danger to overwrite versioned files
+                'undo': [],          # don't undo this action
             },
             {
-                'name': 'move',
-                'from': '/var/www/nailgun/bootstrap/linux',
-                'to': '/var/www/nailgun/bootstrap/{0}_linux'.format(
+                'name': 'symlink',
+                'from': '/var/www/nailgun/{0}_bootstrap'.format(
                     from_version,
                 ),
-                'overwrite': False,
+                'to': '/var/www/nailgun/bootstrap',
+                'undo': [],          # don't undo this action
             },
             {
                 'name': 'copy',
-                'from': join(update_path, 'bootstrap', 'initramfs.img'),
-                'to': '/var/www/nailgun/bootstrap/',
+                'from': join(update_path, 'bootstrap'),
+                'to': '/var/www/nailgun/{0}_bootstrap'.format(
+                    new_version,
+                ),
             },
             {
-                'name': 'copy',
-                'from': join(update_path, 'bootstrap', 'linux'),
-                'to': '/var/www/nailgun/bootstrap/',
+                'name': 'symlink',
+                'from': '/var/www/nailgun/{0}_bootstrap'.format(
+                    new_version,
+                ),
+                'to': '/var/www/nailgun/bootstrap',
+                'undo': [
+                    {
+                        'name': 'symlink',
+                        'from': '/var/www/nailgun/{0}_bootstrap'.format(
+                            from_version,
+                        ),
+                        'to': '/var/www/nailgun/bootstrap',
+                        'undo': [],
+                    }
+                ],
             }
         ]}
 

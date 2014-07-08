@@ -40,9 +40,10 @@ class TestBootstrapUpgrader(BaseTestCase):
 
         self.called_once(self.upgrader._action_manager.undo)
 
-    @mock.patch('fuel_upgrade.utils.files_size', return_value=42)
-    def test_required_free_space(self, _):
+    @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=True)
+    @mock.patch('fuel_upgrade.utils.dir_size', return_value=42)
+    def test_required_free_space(self, _, __):
         result = self.upgrader.required_free_space
         self.assertEqual(result, {
-            '/var/www/nailgun/bootstrap': 84,
+            '/var/www/nailgun/9999_bootstrap': 42,
         })

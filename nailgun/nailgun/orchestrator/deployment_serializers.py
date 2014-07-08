@@ -699,6 +699,13 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         if cluster.release.operating_system == 'RHEL':
             attrs['amqp'] = {'provider': 'qpid-rh'}
 
+        cluster_attrs = cluster.attributes.editable
+        if 'nsx_plugin' in cluster_attrs and \
+                cluster_attrs['nsx_plugin']['metadata']['enabled']:
+            attrs['server'] = {
+                'core_plugin': 'vmware',
+            }
+
         return attrs
 
     @classmethod

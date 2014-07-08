@@ -2,6 +2,7 @@
 @import 'bootstrap.css';
 @import 'retina.less';
 
+
 // Global colors
 // --------------------------------------------------
 
@@ -11,6 +12,7 @@
 @fuel-black-color: #333333;
 @fuel-base-color: #999999;
 @fuel-body-color: #39444F;
+
 
 /* Light colors */
 @fuel-light-1: @fuel-base-color + #111111; /* #AAAAAA */
@@ -1296,7 +1298,7 @@ label {cursor: default;}
   margin-top: 200px;
   .width-height-mixin(100%, 90px);
   background: url(../img/cloud-loader.gif) no-repeat top center;
-  &.layout-loaded {margin-top: 108px;}
+  &.layout-loaded {margin-top: 88px;}
 }
 
 .progress-bar {
@@ -3458,4 +3460,90 @@ i.btn-cluster-details {
   width: 760px;
   margin-left: -380px;
   min-height: 485px;
+}
+
+
+/**  Login **/
+.login-placeholder {
+  .position(absolute, @top: 0px, @left: 0px);
+  .width-height-mixin;
+  min-height: 100%;
+}
+
+.login-box {
+  position: relative;
+  .width-height-mixin(500px, 400px);
+  background-color: @fuel-white-color;
+  .border-radius-mixin(18px);
+  margin: 10% auto 0;
+  .box-shadow-mixin(0 1px 1px rgba(0,0,0,.5));
+}
+
+.login-logo-circle {
+  .width-height-mixin(160px, 160px);
+  background-color: @fuel-white-color;
+  .position(relative, @top: -80px);
+  border-radius: 80px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.login-logo {
+  background: url(../img/fuel-big-logo.png) repeat scroll 0 0 rgba(0, 0, 0, 0);
+  .position(relative, @top: -240px, @left: 156px);
+  .width-height-mixin(200px, 260px);
+  margin-bottom: -220px;
+}
+
+.login-fields-box {
+  height: 276px;
+  overflow: hidden;
+  padding-top: 4px;
+}
+
+.login-fields-box {
+  > .form-horizontal .control-group {
+    > label {
+      width: 114px;
+      font-size: @font-size-big-2 + 2;
+      padding-top: 5px;
+      > i { color: @fuel-base-color;}
+    }
+    > .controls {
+      margin-left: 120px;
+      > button { width: 160px; }
+    }
+  }
+}
+
+.login-error-auth {
+  margin: 5px 0px 20px;
+  height: 20px;
+  overflow: hidden;
+}
+
+.login-language-box {
+  margin-top: 40px;
+  margin-left: 180px;
+}
+
+.login-copyrights {
+  margin-top: 20px;
+}
+.login-copyrights > p {
+  .indent-mixin;
+  .font-layout-mixin(@font-size: @font-size-small-2, @color: @fuel-light-3, @line-height: 18px );
+}
+
+.user-info-box {
+  .font-layout-mixin(@font-size: @font-size-small-2, @font-weight: bold, @color: @fuel-white-color, @text-shadow: 0 1px 0 #000000);
+  text-align: right;
+  margin: 2px;
+  height: 20px;
+  overflow: hidden;
+  & a {
+      margin-left: 12px;
+      color: @fuel-dark-blue;
+      font-weight: bold;
+  }
 }

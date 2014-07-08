@@ -177,6 +177,9 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                     node: this.chosenNodeId,
                     source: this.chosenSourceId,
                     level: this.chosenLevel
+                },
+                headers: {
+                    'X-Auth-Token': app.keystoneClient.token
                 }
             };
             _.extend(options, callbacks);

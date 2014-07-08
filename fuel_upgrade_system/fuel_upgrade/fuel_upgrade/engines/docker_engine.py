@@ -25,7 +25,7 @@ from copy import deepcopy
 import docker
 import requests
 
-from fuel_upgrade.config import get_version_from_config
+from fuel_upgrade.config import from_fuel_version
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade.health_checker import FuelUpgradeVerify
 from fuel_upgrade.supervisor_client import SupervisorClient
@@ -43,8 +43,7 @@ class DockerUpgrader(UpgradeEngine):
     def __init__(self, *args, **kwargs):
         super(DockerUpgrader, self).__init__(*args, **kwargs)
 
-        self.working_directory = self.config.working_directory_template.format(
-            version=self.config.new_version)
+        self.working_directory = self.config.working_directory
 
         utils.create_dir_if_not_exists(self.working_directory)
 
@@ -61,10 +60,10 @@ class DockerUpgrader(UpgradeEngine):
             working_directory=self.working_directory)
         self.upgrade_verifier = FuelUpgradeVerify(self.config)
 
-        self.from_version_path = self.config.from_version_path_template.format(
-            working_directory=self.working_directory)
+        self.from_version_path = self.config.from_version_path
         self.save_current_version_file()
-        self.from_version = get_version_from_config(self.from_version_path)
+        self.from_version = from_fuel_version(
+            self.from_version_path, self.config.current_fuel_version_path)
         self.supervisor = SupervisorClient(self.config, self.from_version)
 
     def upgrade(self):
@@ -102,8 +101,7 @@ class DockerUpgrader(UpgradeEngine):
         """Switch version.yaml symlink to previous version
         """
         logger.info(u'Switch current version file to previous version')
-        previous_version_path = self.config.fuel_version_path_template.format(
-            version=self.from_version)
+        previous_version_path = self.config.previous_version_path
 
         utils.symlink(
             previous_version_path,
@@ -245,11 +243,8 @@ class DockerUpgrader(UpgradeEngine):
         * and creates symlink to /etc/fuel/version.yaml
         """
         logger.info(u'Run post upgrade actions')
-        version_yaml_from_upgrade = \
-            self.config.new_version_yaml_path_template.format(
-                update_path=os.path.abspath(self.update_path))
-        new_version_path = self.config.fuel_version_path_template.format(
-            version=self.config.new_version)
+        version_yaml_from_upgrade = self.config.new_upgrade_version_path
+        new_version_path = self.config.new_version_path
 
         utils.create_dir_if_not_exists(os.path.dirname(new_version_path))
         utils.copy(version_yaml_from_upgrade, new_version_path)
@@ -307,7 +302,7 @@ class DockerUpgrader(UpgradeEngine):
                 port_bindings=self.get_port_bindings(container),
                 links=links,
                 volumes_from=volumes_from,
-                binds=self.get_container_binds(container),
+                binds=container.get('binds'),
                 privileged=container.get('privileged', False))
 
             if container.get('after_container_creation_command'):
@@ -401,22 +396,6 @@ class DockerUpgrader(UpgradeEngine):
                     container_link['alias']))
 
         return links
-
-    def get_container_binds(self, container):
-        """For some bindings we have to pass non hardcoded directory
-        as a parameter, e.g. `working_directory` which consists of
-        base path and version.
-        """
-        binds = container.get('binds')
-        if binds:
-            rendered_binds = {}
-            for index, bind in binds.items():
-                rendered_binds[index.format(
-                    working_directory=self.working_directory)] = bind
-
-            return rendered_binds
-
-        return binds
 
     @classmethod
     def build_dependencies_graph(cls, containers):
@@ -681,11 +660,8 @@ class DockerUpgrader(UpgradeEngine):
             new_image = deepcopy(image)
             new_image['name'] = self.make_image_name(image['id'])
             new_image['type'] = image['type']
-            new_image['docker_image'] = os.path.join(
-                self.update_path, 'images',
-                image['id'] + '.' + self.config.images_extension)
-            new_image['docker_file'] = os.path.join(
-                self.update_path, image['id'])
+            new_image['docker_image'] = image['docker_image']
+            new_image['docker_file'] = image['docker_file']
 
             new_images.append(new_image)
 

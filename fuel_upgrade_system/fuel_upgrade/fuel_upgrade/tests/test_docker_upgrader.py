@@ -41,12 +41,10 @@ class TestDockerUpgrader(BaseTestCase):
         self.supervisor_mock = mock.MagicMock()
         self.supervisor_class.return_value = self.supervisor_mock
 
-        self.update_path = '/tmp/new_update'
         with mock.patch('fuel_upgrade.engines.docker_engine.utils'):
             with mock.patch('fuel_upgrade.engines.docker_engine.'
-                            'get_version_from_config', return_value='0'):
-                self.upgrader = DockerUpgrader(
-                    self.update_path, self.fake_config)
+                            'from_fuel_version', return_value='0'):
+                self.upgrader = DockerUpgrader(self.fake_config)
                 self.upgrader.upgrade_verifier = mock.MagicMock()
 
     def tearDown(self):
@@ -435,7 +433,7 @@ class TestDockerUpgrader(BaseTestCase):
         mock_utils.create_dir_if_not_exists.assert_called_once_with(
             '/etc/fuel/9999')
         mock_utils.copy.assert_called_once_with(
-            '/tmp/new_update/config/version.yaml',
+            '/tmp/upgrade_path/config/version.yaml',
             '/etc/fuel/9999/version.yaml')
         mock_utils.symlink.assert_called_once_with(
             '/etc/fuel/9999/version.yaml',

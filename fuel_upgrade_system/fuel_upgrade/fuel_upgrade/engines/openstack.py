@@ -50,10 +50,8 @@ class OpenStackUpgrader(UpgradeEngine):
             'master_ip': self.config.astute['ADMIN_NETWORK']['ipaddress'],
         }
 
-        releases_yaml = os.path.join(
-            self.update_path,
-            self.config.openstack['releases']
-        )
+        releases_yaml = self.config.openstack['releases']
+
         with io.open(releases_yaml, 'r', encoding='utf-8') as f:
             #: an array with releases information
             self.releases = utils.load_fixture(f)

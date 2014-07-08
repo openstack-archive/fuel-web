@@ -33,6 +33,7 @@ from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
+from nailgun.objects import Cluster
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 from nailgun.volumes import manager as volume_manager
@@ -698,6 +699,12 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         if cluster.release.operating_system == 'RHEL':
             attrs['amqp'] = {'provider': 'qpid-rh'}
+
+        cluster_attrs = Cluster.get_attributes(cluster).editable
+        if 'nsx_plugin' in cluster_attrs and \
+                cluster_attrs['nsx_plugin']['metadata']['enabled']:
+            server_attrs = attrs.setdefault('server', {})
+            server_attrs['core_plugin'] = 'vmware'
 
         return attrs
 

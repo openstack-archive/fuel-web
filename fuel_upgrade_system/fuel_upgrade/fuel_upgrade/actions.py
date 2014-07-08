@@ -22,6 +22,7 @@ import six
 from fuel_upgrade.utils import copy
 from fuel_upgrade.utils import remove
 from fuel_upgrade.utils import rename
+from fuel_upgrade.utils import symlink
 
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,10 @@ class Action(object):
 
     The interface is clear and no need to be commented.
     """
+    def __init__(self, *args, **kwargs):
+        # declare custom undo action, not a default one
+        if 'undo' in kwargs:
+            self.undo = ActionManager(kwargs['undo']).do
 
     @abc.abstractmethod
     def do(self):
@@ -57,6 +62,8 @@ class Copy(Action):
     """
 
     def __init__(self, **kwargs):
+        super(Copy, self).__init__(**kwargs)
+
         self._from = kwargs['from']
         self._to = kwargs['to']
         self._overwrite = kwargs.get('overwrite', True)
@@ -76,28 +83,6 @@ class Copy(Action):
         remove(destination, ignore_errors=True)
 
 
-class CopyFromUpdate(Action):
-    """The action extends a regular copy action and adds an additional
-    `base_path` argument that'll be prefixed to `from` param.
-
-    :param from: copy from
-    :param to: save to
-    :param overwrite: overwrite a destination if True
-    :param symlinks: resolve symlinks if True
-    :param base_path: a path that will be prefixed to from path
-    """
-
-    def __init__(self, **kwargs):
-        kwargs['from'] = os.path.join(kwargs['base_path'], kwargs['from'])
-        self.copy = Copy(**kwargs)
-
-    def do(self):
-        self.copy.do()
-
-    def undo(self):
-        self.copy.undo()
-
-
 class Move(Action):
     """Move action provides a way to move stuff from one place to another.
 
@@ -107,6 +92,8 @@ class Move(Action):
     """
 
     def __init__(self, **kwargs):
+        super(Move, self).__init__(**kwargs)
+
         self._from = kwargs['from']
         self._to = kwargs['to']
         self._overwrite = kwargs.get('overwrite', True)
@@ -118,7 +105,29 @@ class Move(Action):
         rename(self._to, self._from, self._overwrite)
 
 
-class ActionManager(object):
+class Symlink(Action):
+    """Symlink action provides a way to make a symbolic link to some resource.
+
+    :param from: a path to origin resource
+    :param to: a path to link
+    :param overwrite: overwrite link if True
+    """
+
+    def __init__(self, **kwargs):
+        super(Symlink, self).__init__(**kwargs)
+
+        self._from = kwargs['from']
+        self._to = kwargs['to']
+        self._overwrite = kwargs.get('overwrite', True)
+
+    def do(self):
+        symlink(self._from, self._to, self._overwrite)
+
+    def undo(self):
+        remove(self._to)
+
+
+class ActionManager(Action):
     """The action manager is designed to manage actions, run it or
     rollback based on action description.
 
@@ -129,11 +138,11 @@ class ActionManager(object):
     #: a list of supported actions
     supported_actions = {
         'copy': Copy,
-        'copy_from_update': CopyFromUpdate,
         'move': Move,
+        'symlink': Symlink,
     }
 
-    def __init__(self, actions, **context):
+    def __init__(self, actions):
         #: a list of actions to execute
         self._actions = []
 
@@ -142,10 +151,8 @@ class ActionManager(object):
 
         # convert some input action description to class instances
         for action in actions:
-            kwargs = dict(action, **context)
-
             action_class = self.supported_actions[action['name']]
-            self._actions.append(action_class(**kwargs))
+            self._actions.append(action_class(**action))
 
     def do(self):
         """Performs actions saving in history."""

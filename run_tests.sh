@@ -251,8 +251,7 @@ function run_webui_tests {
     dropdb
     syncdb true
 
-    run_server $SERVER_PORT $server_log $COMPRESSED_STATIC_DIR/settings.yaml
-    local pid=$!
+    local pid=`run_server $SERVER_PORT $server_log $COMPRESSED_STATIC_DIR/settings.yaml`
 
     if [ $pid -ne 0 ]; then
       SERVER_PORT=$SERVER_PORT ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
@@ -300,9 +299,7 @@ function run_cli_tests {
   dropdb
   syncdb true
 
-  run_server $SERVER_PORT $server_log ""
-  local pid=$!
-
+  local pid=`run_server $SERVER_PORT $server_log ""`
   if [ $pid -ne 0 ]; then
 
     pushd $ROOT/fuelclient >> /dev/null
@@ -471,8 +468,7 @@ function run_server {
   pushd $ROOT/nailgun >> /dev/null
 
   # kill old server instance if exists
-  local filter="manage.py.*run.*--port=$SERVER_PORT"
-  local pid=`ps aux | grep "$filter" | grep -v grep | awk '{ print $2 }'`
+  local pid=`lsof -ti tcp:$SERVER_PORT`
   if [ -n "$pid" ]; then
     kill $pid
     sleep 5
@@ -480,23 +476,20 @@ function run_server {
 
   # run new server instance
   tox -evenv -- $RUN_SERVER >> $SERVER_LOG 2>&1 &
-  local pid=`ps aux | grep "$filter" | grep -v grep | awk '{ print $2 }'`
 
   # wait for server availability
   which nc > /dev/null
   if [ $? -eq 0 ]; then
     for i in {1..50}; do
-      nc -vz localhost $SERVER_PORT 2> /dev/null
-      if [ $? -eq 0 ]; then break; fi
+      http_code=`curl -s -w %{http_code} -o /dev/null -I http://0.0.0.0:$SERVER_PORT/`
+      if [ http_code = 200 ]; then break; fi
       sleep 0.1
     done
   else
     sleep 5
   fi
-
   popd >> /dev/null
-
-  return $pid
+  echo `lsof -ti tcp:$SERVER_PORT`
 }
 
 

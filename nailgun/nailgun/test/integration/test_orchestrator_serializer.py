@@ -1011,3 +1011,47 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
             fact['puppet_manifests_source'],
             'rsync://10.20.0.2/puppet/release/5.0/manifests'
         )
+
+
+class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
+
+    def setUp(self):
+        super(TestNSXOrchestratorSerializer, self).setUp()
+        self.cluster = self.create_env('ha_compact')
+
+    def create_env(self, mode, segment_type='gre'):
+        cluster = self.env.create(
+            cluster_kwargs={
+                'mode': mode,
+                'net_provider': 'neutron',
+                'net_segment_type': segment_type
+            })
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        nsx_attrs = cluster_db.attributes.editable.setdefault('nsx_plugin', {})
+        nsx_attrs.setdefault('metadata', {})['enabled'] = True
+        self.db.commit()
+        cluster_db = self.db.query(Cluster).get(luster['id'])
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        return cluster_db
+
+    def test_serialize_node(self):
+        node = self.env.create_node(
+            api=True, cluster_id=self.cluster.id, pending_addition=True)
+
+        objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+
+        node_db = self.db.query(Node).get(node['id'])
+        serialized_data = self.serializer.serialize_node(node_db, 'controller')
+
+        q_settings = serialized_data['quantum_settings']
+        self.assertIn('server', q_settings)
+        self.assertIn('core_plugin', q_settings['server'])
+        self.assertEqual(q_settings['server']['core_plugin'], 'vmware')
+        self.assertIn('dhcp_agent', q_settings)
+        self.assertIn('enable_isolated_metadata', q_settings['dhcp_agent'])
+        self.assertEqual(q_settings['dhcp_agent']['enable_isolated_metadata'],
+                         True)
+        self.assertIn('enable_metadata_network', q_settings['dhcp_agent'])
+        self.assertEqual(q_settings['dhcp_agent']['enable_metadata_network'],
+                         True)

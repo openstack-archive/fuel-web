@@ -117,9 +117,17 @@ class NeutronManager(NetworkManager):
 
     @classmethod
     def generate_l3(cls, cluster):
-        return {
+        l3 =  {
             "use_namespaces": True
         }
+        attrs = cluster.attributes.editable
+        if 'nsx_plugin' in attrs and \
+                attrs['nsx_plugin']['metadata']['enabled']:
+            dhcp_attrs = l3.setdefault('dhcp_agent', {})
+            dhcp_attrs['enable_isolated_metadata'] = True
+            dhcp_attrs['enable_metadata_network'] = True
+
+        return l3
 
     @classmethod
     def generate_vlan_ids_list(cls, data, cluster, ng):

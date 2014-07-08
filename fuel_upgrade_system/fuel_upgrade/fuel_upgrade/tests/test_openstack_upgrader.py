@@ -105,70 +105,37 @@ class TestOpenStackUpgrader(BaseTestCase):
             'http://0.0.0.0:8080/9999/ubuntu/x86_64 precise main')
 
     @mock.patch(
-        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_repos')
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_puppets')
-    @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')
-    def test_upgrade(self, i_releases, i_puppets, i_repos):
+    def test_upgrade(self, i_releases):
+        self.upgrader.action_manager.do = mock.Mock()
         self.upgrader.upgrade()
 
-        self.assertTrue(i_repos.called)
-        self.assertTrue(i_puppets.called)
-        self.assertTrue(i_releases.called)
+        self.called_once(self.upgrader.action_manager.do)
+        self.called_once(i_releases)
 
     @mock.patch(
-        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_repos')
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_puppets')
-    @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')
-    def test_upgrade_with_errors(self, i_releases, i_puppets, i_repos):
+    def test_upgrade_with_errors(self, i_releases):
         class MyException(Exception):
             pass
 
-        i_puppets.side_effect = MyException('Folder does no exist')
+        self.upgrader.action_manager.do = mock.Mock()
+        self.upgrader.action_manager.do.side_effect = \
+            MyException('Folder does no exist')
 
         self.assertRaises(MyException, self.upgrader.upgrade)
 
-        self.assertTrue(i_repos.called)
-        self.assertTrue(i_puppets.called)
-        self.assertFalse(i_releases.called)
+        self.called_once(self.upgrader.action_manager.do)
+        self.method_was_not_called(i_releases)
 
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_repos')
-    @mock.patch(
-        'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_puppets')
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_releases')
-    def test_rollback(self, r_releases, r_puppets, r_repos):
+    def test_rollback(self, r_releases):
+        self.upgrader.action_manager.undo = mock.Mock()
         self.upgrader.rollback()
 
-        self.assertTrue(r_repos.called)
-        self.assertTrue(r_puppets.called)
-        self.assertTrue(r_releases.called)
-
-    @mock.patch('fuel_upgrade.engines.openstack.utils.copytree')
-    def test_install_repos(self, copytree):
-        self.upgrader.install_repos()
-
-        copytree.assert_any_call(
-            self.upgrader.config.openstack['repos']['centos']['src'],
-            self.upgrader.config.openstack['repos']['centos']['dst'])
-        copytree.assert_any_call(
-            self.upgrader.config.openstack['repos']['ubuntu']['src'],
-            self.upgrader.config.openstack['repos']['ubuntu']['dst'])
-
-    @mock.patch('fuel_upgrade.engines.openstack.utils.copytree')
-    def test_install_puppets(self, copytree):
-        self.upgrader.install_puppets()
-
-        copytree.assert_any_call(
-            self.upgrader.config.openstack['puppets']['modules']['src'],
-            self.upgrader.config.openstack['puppets']['modules']['dst'])
-        copytree.assert_any_call(
-            self.upgrader.config.openstack['puppets']['manifests']['src'],
-            self.upgrader.config.openstack['puppets']['manifests']['dst'])
+        self.called_once(r_releases)
+        self.called_once(self.upgrader.action_manager.undo)
 
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.create_notification')
@@ -208,24 +175,6 @@ class TestOpenStackUpgrader(BaseTestCase):
 
         self.assertEqual(len(self.upgrader._rollback_ids['release']), 1)
         self.assertEqual(len(self.upgrader._rollback_ids['notification']), 0)
-
-    @mock.patch('fuel_upgrade.engines.openstack.utils.rmtree')
-    def test_remove_repos(self, rmtree):
-        self.upgrader.remove_repos()
-
-        rmtree.assert_any_call(
-            self.upgrader.config.openstack['repos']['centos']['dst'])
-        rmtree.assert_any_call(
-            self.upgrader.config.openstack['repos']['ubuntu']['dst'])
-
-    @mock.patch('fuel_upgrade.engines.openstack.utils.rmtree')
-    def test_remove_puppets(self, rmtree):
-        self.upgrader.remove_puppets()
-
-        rmtree.assert_any_call(
-            self.upgrader.config.openstack['puppets']['modules']['dst'])
-        rmtree.assert_any_call(
-            self.upgrader.config.openstack['puppets']['manifests']['dst'])
 
     @mock.patch(
         'fuel_upgrade.engines.openstack.NailgunClient.remove_notification')
@@ -278,12 +227,16 @@ class TestOpenStackUpgrader(BaseTestCase):
             self.upgrader._get_unique_releases(releases, existing_releases),
             expected_releases)
 
-    @mock.patch('fuel_upgrade.engines.docker_engine.utils.dir_size',
-                return_value=5)
-    def test_required_free_space(self, _):
-        self.assertEqual(
-            self.upgrader.required_free_space,
-            {'/etc/puppet/9999/manifests': 5,
-             '/etc/puppet/9999/modules': 5,
-             '/var/www/nailgun/9999/centos': 5,
-             '/var/www/nailgun/9999/ubuntu': 5})
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.utils.os.path.isdir',
+        return_value=True)
+    @mock.patch(
+        'fuel_upgrade.engines.openstack.utils.dir_size', return_value=42)
+    def test_required_free_space(self, _, __):
+        result = self.upgrader.required_free_space
+        self.assertEqual(result, {
+            '/etc/puppet/9999/manifests': 42,
+            '/etc/puppet/9999/modules': 42,
+            '/var/www/nailgun/9999/centos': 42,
+            '/var/www/nailgun/9999/ubuntu': 42,
+        })

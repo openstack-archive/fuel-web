@@ -318,13 +318,7 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
             }, this);
             return {editable: result};
         },
-        processRestrictions: function(cluster) {
-            var configModels = {
-                cluster: cluster,
-                networking_parameters: cluster.get('networkConfiguration').get('networking_parameters'),
-                settings: this,
-                default: this
-            };
+        processRestrictions: function(configModels) {
             var handleRestrictions = function(restrictions) {
                 return _.any(restrictions, function(restriction) {
                     return utils.evaluateExpression(restriction.condition, configModels).value;

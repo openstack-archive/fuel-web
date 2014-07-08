@@ -523,7 +523,8 @@
                     "changed": "Changed",
                     "deleted": "Deleted",
                     "deploy": "Deploy",
-                    "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed."
+                    "redeployment_needed": "Some nodes have an error status after deployment. Redeployment is needed.",
+                    "locked_settings_alert": "Please note that environment settings and node configuration will be locked after deployment."
                 },
                 "show_node": {
                     "manufacturer_label": "Manufacturer",

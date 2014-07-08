@@ -174,12 +174,6 @@
             weight: 20
             type: "password"
         vcenter:
-          metadata:
-            label: "vCenter"
-            weight: 20
-            restrictions:
-              - condition: "settings:common.libvirt_type.value != 'vcenter'"
-                action: "hide"
           use_vcenter:
             value: true
             label: ""

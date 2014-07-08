@@ -208,7 +208,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         calculateGroupState: function(groupName) {
             var groupRestrictions = _.map(this.settings.get(groupName + '.metadata.restrictions'), utils.expandRestriction);
             this.settings.set(groupName + '.metadata.visible', !_.any(_.where(groupRestrictions, {action: 'hide'}), this.handleRestriction, this));
-            this.settings.set(groupName + '.metadata.disabled', !_.any(_.where(groupRestrictions, {action: 'disable'}), this.handleRestriction, this));
+            this.settings.set(groupName + '.metadata.disabled', _.any(_.where(groupRestrictions, {action: 'disable'}), this.handleRestriction, this));
         },
         composeListeners: function(groupName, settingName) {
             if (!settingName) { // compose listeners for setting group
@@ -310,6 +310,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     this.composeListeners(groupName);
                     this.calculateGroupState(groupName);
                     _.each(group, function(setting, settingName) {
+                        if (settingName == 'metadata') {return;}
                         this.composeListeners(groupName, settingName);
                         this.checkDependentRoles(groupName, settingName);
                         this.calculateSettingState(groupName, settingName);

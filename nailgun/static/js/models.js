@@ -308,7 +308,12 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
         toJSON: function(options) {
             var result = this.constructor.__super__.toJSON.call(this, options);
             _.each(result, function(group, groupName) {
-                result[groupName].metadata = _.omit(group.metadata, 'disabled', 'visible');
+                var metadata = _.omit(group.metadata, 'disabled', 'visible');
+                if (_.isEmpty(metadata)) {
+                    delete result[groupName].metadata;
+                } else {
+                    result[groupName].metadata = metadata;
+                }
                 _.each(group, function(setting, settingName) {
                     group[settingName] = _.omit(setting, 'disabled', 'hasDependentRole', 'visible');
                     _.each(setting.values, function(option, index) {
@@ -330,6 +335,9 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
                 setting.visible = !handleRestrictions(_.where(settingRestrictions, {action: 'hide'}));
             };
             _.each(this.attributes, function(group) {
+                if (!group.metadata) {
+                    group.metadata = {};
+                }
                 calculateState(group.metadata);
                 _.each(group, function(setting) {
                     calculateState(setting);
@@ -340,7 +348,7 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
         validate: function(attrs) {
             var errors = [];
             _.each(attrs, function(group, groupName) {
-                if (group.metadata.disabled || !group.metadata.visible) { return; }
+                if (group.metadata && (group.metadata.disabled || !group.metadata.visible)) { return; }
                 _.each(group, function(setting, settingName) {
                     if (!(setting.regex && setting.regex.source) || setting.disabled) { return; }
                     var regExp = new RegExp(setting.regex.source);

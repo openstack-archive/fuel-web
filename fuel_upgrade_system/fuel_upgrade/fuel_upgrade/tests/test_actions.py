@@ -15,16 +15,16 @@ class TestActionManager(BaseTestCase):
                 'to': 'to_path',
             },
             {
-                'name': 'copy_from_update',
+                'name': 'move',
                 'from': 'from_path',
                 'to': 'to_path',
             },
             {
-                'name': 'move',
+                'name': 'symlink',
                 'from': 'from_path',
                 'to': 'to_path',
             }
-        ], base_path='bla-bla')
+        ])
 
     def test_constructor(self):
         self.assertEqual(len(self.manager._actions), 3)
@@ -33,9 +33,9 @@ class TestActionManager(BaseTestCase):
         self.assertTrue(
             isinstance(self.manager._actions[0], actions.Copy))
         self.assertTrue(
-            isinstance(self.manager._actions[1], actions.CopyFromUpdate))
+            isinstance(self.manager._actions[1], actions.Move))
         self.assertTrue(
-            isinstance(self.manager._actions[2], actions.Move))
+            isinstance(self.manager._actions[2], actions.Symlink))
 
     def test_do(self):
         self.assertEqual(len(self.manager._history), 0)
@@ -61,6 +61,34 @@ class TestActionManager(BaseTestCase):
             self.called_once(action.undo)
 
         self.assertEqual(len(self.manager._history), 0)
+
+    def test_complex_undo(self):
+        self.action = actions.Copy(**{
+            'from': 'path/to/src',
+            'to': 'path/to/dst',
+            'undo': [
+                {
+                    'name': 'move',
+                    'from': 'one',
+                    'to': 'two',
+                },
+                {
+                    'name': 'copy',
+                    'from': 'one',
+                    'to': 'two',
+                }
+            ]
+        })
+        self.assertTrue(
+            isinstance(self.action.undo.__self__, actions.ActionManager))
+        self.assertEqual(len(self.action.undo.im_self._actions), 2)
+
+        mocks = [mock.Mock(), mock.Mock()]
+        self.action.undo.im_self._actions = mocks
+        self.action.undo()
+
+        for action in mocks:
+            self.called_once(action.do)
 
 
 class TestCopyAction(BaseTestCase):
@@ -94,29 +122,6 @@ class TestCopyAction(BaseTestCase):
         remove.assert_called_once_with('path/to/dst', ignore_errors=True)
 
 
-class TestCopyFromUpdateAction(BaseTestCase):
-
-    def setUp(self):
-        self.action = actions.CopyFromUpdate(**{
-            'from': 'path/to/src',
-            'to': 'path/to/dst',
-            'base_path': '/root',
-        })
-
-    def test_constructor(self):
-        self.assertEqual(self.action.copy._from, '/root/path/to/src')
-
-    def test_do(self):
-        self.action.copy.do = mock.Mock()
-        self.action.do()
-        self.called_once(self.action.copy.do)
-
-    def test_undo(self):
-        self.action.copy.undo = mock.Mock()
-        self.action.undo()
-        self.called_once(self.action.copy.undo)
-
-
 class TestMoveAction(BaseTestCase):
 
     def setUp(self):
@@ -135,3 +140,22 @@ class TestMoveAction(BaseTestCase):
     def test_undo(self, rename):
         self.action.undo()
         rename.assert_called_once_with('path/to/dst', 'path/to/src', False)
+
+
+class TestSymlinkAction(BaseTestCase):
+
+    def setUp(self):
+        self.action = actions.Symlink(**{
+            'from': 'path/to/src',
+            'to': 'path/to/dst',
+        })
+
+    @mock.patch('fuel_upgrade.actions.symlink')
+    def test_do(self, symlink):
+        self.action.do()
+        symlink.assert_called_once_woth('path/to/src', 'path/to/dst', True)
+
+    @mock.patch('fuel_upgrade.actions.remove')
+    def test_undo(self, remove):
+        self.action.undo()
+        remove.assert_called_once_woth('path/to/dst')

@@ -186,17 +186,23 @@ def wait_for_true(check, timeout=60, interval=0.5):
         time.sleep(interval)
 
 
-def symlink(from_path, to_path):
-    """Create symlink, and remove old if it exists
+def symlink(source, destination, overwrite=True):
+    """Creates a symbolic link to the resource.
 
-    :param from_path: symlink from
-    :param to_path: symlink to
+    :param source: symlink from
+    :param destination: symlink to
+    :param overwrite: overwrite a destination if True
     """
     logger.debug(
-        u'Create symlink from "{0}" to "{1}"'.format(from_path, to_path))
+        u'Symlinking "%s" -> "%s" [overwrite=%d]',
+        source, destination, overwrite)
 
-    remove_if_exists(to_path)
-    os.symlink(from_path, to_path)
+    if overwrite or not os.path.exists(destination):
+        if os.path.exists(destination):
+            remove(destination)
+        os.symlink(source, destination)
+    else:
+        logger.debug('Skip symlinking process')
 
 
 def remove_if_exists(path):
@@ -332,24 +338,10 @@ def remove(path, ignore_errors=True):
     if ignore_errors and not os.path.exists(path):
         return
 
-    if os.path.isdir(path):
+    if os.path.isdir(path) and not os.path.islink(path):
         shutil.rmtree(path, ignore_errors=ignore_errors)
     else:
         os.remove(path)
-
-
-def copytree(source, destination, overwrite=True):
-    """Copy a given source directory to destination folder.
-
-    :param str source: copy from
-    :param str destination: copy to
-    :param bool overwrite: overwrite destination directory
-    """
-    logger.debug(u'Copy folder from %s to %s', source, destination)
-
-    if overwrite and os.path.exists(destination):
-        shutil.rmtree(destination)
-    shutil.copytree(source, destination, symlinks=True)
 
 
 def rmtree(source, ignore_errors=True):
@@ -546,10 +538,8 @@ def get_required_size_for_actions(actions, update_path):
 
     for action in actions:
         # copy / copy_from_update case
-        if action['name'] in ('copy', 'copy_from_update'):
+        if action['name'] == 'copy':
             src = action['from']
-            if action['name'] == 'copy_from_update':
-                src = os.path.join(update_path, src)
 
             dst = action['to']
             if not os.path.isdir(dst):

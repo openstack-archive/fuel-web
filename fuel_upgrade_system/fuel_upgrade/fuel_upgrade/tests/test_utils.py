@@ -252,15 +252,27 @@ class TestUtils(BaseTestCase):
             self.assertFalse(
                 utils.file_contains_lines('/some/path', ['line 4', 'line3']))
 
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.symlink')
-    @mock.patch('fuel_upgrade.utils.remove_if_exists')
-    def test_symlink(self, remove_if_exists_mock, symlink_mock):
+    @mock.patch('fuel_upgrade.utils.remove')
+    def test_symlink(self, remove_mock, symlink_mock, _):
         from_path = '/tmp/from/path'
         to_path = '/tmp/to/path'
         utils.symlink(from_path, to_path)
 
         symlink_mock.assert_called_once_with(from_path, to_path)
-        remove_if_exists_mock.assert_called_once_with(to_path)
+        remove_mock.assert_called_once_with(to_path)
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
+    @mock.patch('fuel_upgrade.utils.os.symlink')
+    @mock.patch('fuel_upgrade.utils.remove')
+    def test_symlink_no_exist(self, remove_mock, symlink_mock, _):
+        from_path = '/tmp/from/path'
+        to_path = '/tmp/to/path'
+        utils.symlink(from_path, to_path)
+
+        symlink_mock.assert_called_once_with(from_path, to_path)
+        self.method_was_not_called(remove_mock)
 
     @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.remove')
@@ -408,6 +420,14 @@ class TestUtils(BaseTestCase):
     @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=False)
     @mock.patch('fuel_upgrade.utils.os.remove')
     def test_remove_file(self, remove_mock, _, __):
+        utils.remove('path')
+        remove_mock.assert_called_once_with('path')
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.islink', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.remove')
+    def test_remove_link_to_dir(self, remove_mock, _, __, ___):
         utils.remove('path')
         remove_mock.assert_called_once_with('path')
 

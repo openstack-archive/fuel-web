@@ -26,7 +26,6 @@ from nailgun import objects
 
 from nailgun.api.v1.handlers.base import content_json
 from nailgun.api.v1.validators.notification import NotificationValidator
-from nailgun.db import db
 
 
 class NotificationHandler(SingleHandler):
@@ -53,7 +52,6 @@ class NotificationCollectionHandler(CollectionHandler):
         notifications_updated = []
         for nd in data:
             notif = self.collection.single.get_by_uid(nd["id"])
-            notif.update(nd)
+            self.collection.single.update(notif, nd)
             notifications_updated.append(notif)
-            db().add(notif)
         return self.collection.to_json(notifications_updated)

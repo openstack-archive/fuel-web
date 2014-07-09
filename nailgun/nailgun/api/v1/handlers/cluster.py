@@ -32,8 +32,6 @@ from nailgun.api.v1.handlers.base import content_json
 
 from nailgun.api.v1.validators.cluster import AttributesValidator
 from nailgun.api.v1.validators.cluster import ClusterValidator
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.logger import logger
 from nailgun.task.manager import ApplyChangesTaskManager
 from nailgun.task.manager import ClusterDeletionManager
@@ -57,7 +55,7 @@ class ClusterHandler(SingleHandler):
                * 400 (failed to execute cluster deletion process)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(self.single.model, obj_id)
+        cluster = self.get_object_or_404(self.single, obj_id)
         task_manager = ClusterDeletionManager(cluster_id=cluster.id)
         try:
             logger.debug('Trying to execute cluster deletion task')
@@ -128,7 +126,7 @@ class ClusterAttributesHandler(BaseHandler):
                * 404 (cluster not found in db)
                * 500 (cluster has no attributes)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
@@ -144,7 +142,7 @@ class ClusterAttributesHandler(BaseHandler):
                * 404 (cluster not found in db)
                * 500 (cluster has no attributes)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
 
@@ -168,7 +166,7 @@ class ClusterAttributesHandler(BaseHandler):
                * 404 (cluster not found in db)
                * 500 (cluster has no attributes)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
 
         if not cluster.attributes:
             raise self.http(500, "No attributes found!")
@@ -201,7 +199,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
                * 404 (cluster not found in db)
                * 500 (cluster has no attributes)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         attrs = cluster.release.attributes_metadata.get("editable")
         if not attrs:
             raise self.http(500, "No attributes found!")
@@ -216,7 +214,7 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
                * 500 (cluster has no attributes)
         """
         cluster = self.get_object_or_404(
-            Cluster,
+            objects.Cluster,
             cluster_id,
             log_404=(
                 "warning",
@@ -233,7 +231,6 @@ class ClusterAttributesDefaultsHandler(BaseHandler):
         cluster.attributes.editable = cluster.release.attributes_metadata.get(
             "editable"
         )
-        db().commit()
         objects.Cluster.add_pending_changes(cluster, "attributes")
 
         logger.debug('ClusterAttributesDefaultsHandler:'
@@ -252,5 +249,5 @@ class ClusterGeneratedData(BaseHandler):
         :http: * 200 (OK)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         return cluster.attributes.generated

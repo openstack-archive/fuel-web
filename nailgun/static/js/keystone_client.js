@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['jquery'], function($) {
+define(['jquery', 'underscore'], function($, _) {
     'use strict';
 
     function KeystoneClient(url, options) {

@@ -29,7 +29,9 @@ from nailgun.test.base import fake_tasks
 class TestStopDeployment(BaseIntegrationTest):
 
     def setUp(self):
+        print("1")
         super(TestStopDeployment, self).setUp()
+        print("2")
         self.env.create(
             nodes_kwargs=[
                 {"name": "First",
@@ -39,6 +41,7 @@ class TestStopDeployment(BaseIntegrationTest):
                  "pending_addition": True}
             ]
         )
+        print("3")
         self.cluster = self.env.clusters[0]
         self.controller = self.env.nodes[0]
         self.compute = self.env.nodes[1]

@@ -79,7 +79,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
         :http: * 200 (OK)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
@@ -95,7 +95,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
             ]
 
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
 
         self.check_if_network_configuration_locked(cluster)

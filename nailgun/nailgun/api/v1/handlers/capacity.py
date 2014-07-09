@@ -22,11 +22,10 @@ import tempfile
 
 import web
 
+from nailgun import objects
+
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content_json
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import CapacityLog
-from nailgun.objects import Task
 from nailgun.task.manager import GenerateCapacityLogTaskManager
 
 
@@ -79,12 +78,9 @@ class CapacityLogHandler(BaseHandler):
         "report"
     )
 
-    model = CapacityLog
-
     @content_json
     def GET(self):
-        capacity_log = db().query(CapacityLog).\
-            order_by(CapacityLog.datetime.desc()).first()
+        capacity_log = objects.CapacityLog.get_latest()
         if not capacity_log:
             raise self.http(404)
         return self.render(capacity_log)
@@ -99,14 +95,13 @@ class CapacityLogHandler(BaseHandler):
         manager = GenerateCapacityLogTaskManager()
         task = manager.execute()
 
-        raise self.http(202, Task.to_json(task))
+        raise self.http(202, objects.Task.to_json(task))
 
 
 class CapacityLogCsvHandler(BaseHandler):
 
     def GET(self):
-        capacity_log = db().query(CapacityLog).\
-            order_by(CapacityLog.datetime.desc()).first()
+        capacity_log = objects.CapacityLog.get_latest()
         if not capacity_log:
             raise self.http(404)
 

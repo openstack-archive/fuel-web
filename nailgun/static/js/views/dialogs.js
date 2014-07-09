@@ -18,6 +18,7 @@ define(
     'require',
     'utils',
     'models',
+    'view_mixins',
     'text!templates/dialogs/base_dialog.html',
     'text!templates/dialogs/discard_changes.html',
     'text!templates/dialogs/display_changes.html',
@@ -27,9 +28,10 @@ define(
     'text!templates/dialogs/update_environment.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
-    'text!templates/dialogs/delete_nodes.html'
+    'text!templates/dialogs/delete_nodes.html',
+    'text!templates/dialogs/change_password.html'
 ],
-function(require, utils, models, baseDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
+function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate, changePasswordTemplate) {
     'use strict';
 
     var views = {};
@@ -406,6 +408,39 @@ function(require, utils, models, baseDialogTemplate, discardChangesDialogTemplat
         render: function() {
             this.constructor.__super__.render.call(this, {nodes: this.nodes});
             return this;
+        }
+    });
+
+    views.ChangePasswordDialog = views.Dialog.extend({
+        template: _.template(changePasswordTemplate),
+        mixins: [viewMixins.toggleablePassword],
+        events: {
+            'click .btn-change-password': 'changePassword',
+            'keydown [name=current_password]': 'onCurrentPasswordChange',
+            'keydown': 'onInputKeydown'
+        },
+        changePassword: function() {
+            this.$('.btn-change-password').attr('disabled', true);
+            var currentPassword = this.$('[name=current_password]').val();
+            var newPassword = this.$('[name=new_password]').val();
+            app.keystoneClient.changePassword(currentPassword, newPassword)
+                .done(_.bind(function() {
+                    app.user.set({password: app.keystoneClient.password});
+                    this.$el.modal('hide');
+                }, this))
+                .fail(_.bind(function() {
+                    this.$('[name=current_password]').focus().addClass('error').parent().siblings('.validation-error').show();
+                    this.$('.btn-change-password').attr('disabled', false);
+                }, this));
+        },
+        onCurrentPasswordChange: function(e) {
+            this.$(e.currentTarget).removeClass('error').parent().siblings('.validation-error').hide();
+        },
+        onInputKeydown: function(e) {
+            if (e.which == 13) {
+                e.preventDefault();
+                this.changePassword();
+            }
         }
     });
 

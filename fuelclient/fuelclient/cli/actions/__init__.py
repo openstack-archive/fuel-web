@@ -30,6 +30,7 @@ from fuelclient.cli.actions.role import RoleAction
 from fuelclient.cli.actions.settings import SettingsAction
 from fuelclient.cli.actions.snapshot import SnapshotAction
 from fuelclient.cli.actions.task import TaskAction
+from fuelclient.cli.actions.user import UserAction
 
 actions_tuple = (
     ReleaseAction,
@@ -45,7 +46,8 @@ actions_tuple = (
     NetworkAction,
     TaskAction,
     SnapshotAction,
-    HealthCheckAction
+    HealthCheckAction,
+    UserAction
 )
 
 actions = dict(

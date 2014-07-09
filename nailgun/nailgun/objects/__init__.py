@@ -32,3 +32,5 @@ from nailgun.objects.notification import NotificationCollection
 
 from nailgun.objects.node import Node
 from nailgun.objects.node import NodeCollection
+
+from nailgun.objects.capacity import CapacityLog

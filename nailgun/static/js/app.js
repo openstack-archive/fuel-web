@@ -82,7 +82,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                     }
                     if (version.get('auth_required') && !this.authExempt) {
                         // add keystone token to headers
-                        return keystoneClient.updateToken()
+                        return keystoneClient.authenticate()
                             .fail(function() {
                                 app.logout();
                             })
@@ -100,7 +100,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
 
                 if (version.get('auth_required')) {
                     _.extend(keystoneClient, this.user.pick('username', 'password'));
-                    keystoneClient.updateToken()
+                    keystoneClient.authenticate()
                         .done(function() {
                             app.user.set({authenticated: true});
                         })
@@ -149,6 +149,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                 this.user.set('authenticated', false);
                 this.user.unset('username');
                 this.user.unset('password');
+                delete app.keystoneClient.userId;
                 delete app.keystoneClient.username;
                 delete app.keystoneClient.password;
                 delete app.keystoneClient.token;

@@ -41,7 +41,7 @@ function(commonViews, loginPageTemplate) {
             var keystoneClient = app.keystoneClient;
             keystoneClient.username = this.$('input[name=username]').val();
             keystoneClient.password = this.$('input[name=password]').val();
-            keystoneClient.updateToken({force: true})
+            keystoneClient.authenticate({force: true})
                 .done(_.bind(function() {
                     app.user.set({
                         authenticated: true,

@@ -2315,10 +2315,6 @@ input.error:focus {
   }
 }
 
-.show-password .parameter-name {
-  font-weight: normal;
-}
-
 .modal .parameter-name {
   cursor: pointer;
 }
@@ -3111,14 +3107,14 @@ form.create-cluster-form {
   font-size: @font-size-small-2;
 }
 
-label.show-password {
-  clear: both;
-  margin-left: 120px;
-  margin-bottom: 30px;
-}
-
 input.input-append {
   width: 175px;
+}
+
+.parameter-control.input-append .add-on {
+  .icon-eye, .icon-eye-off {
+    cursor: pointer;
+  }
 }
 
 // OpenStack Health Check
@@ -3542,8 +3538,14 @@ i.btn-cluster-details {
   height: 20px;
   overflow: hidden;
   & a {
-      margin-left: 12px;
-      color: @fuel-dark-blue;
-      font-weight: bold;
+    margin-left: 12px;
+    color: @fuel-blue-smoke;
+    font-weight: bold;
+    cursor: pointer;
   }
+}
+
+.change-password-form {
+  margin: 0;
+  .parameter-name { width: 130px; }
 }

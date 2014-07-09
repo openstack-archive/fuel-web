@@ -2,6 +2,7 @@
   <% if (version.get('auth_required') && user.get('authenticated')) { %>
     <i class="icon-user"></i>
     <%- user.get('username') %>
+    <a class="change-password"><%- $.t('common.change_password') %></a>
     <a href="#logout"><%- $.t('common.logout') %></a>
   <% } %>
 </div>

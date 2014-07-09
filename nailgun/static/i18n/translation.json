@@ -34,6 +34,7 @@
                 "error": "Error",
                 "see_logs": "See the logs",
                 "copyright": "Copyright © 2013-2014 Mirantis. All rights reserved.",
+                "change_password": "Change password",
                 "logout": "Logout"
             },
             "node_details": {
@@ -584,6 +585,12 @@
                 "error_dialog": {
                     "title": "Error",
                     "warning": "A server error has occured. Please contact the administrators."
+                },
+                "change_password": {
+                    "title": "Change Password",
+                    "current_password": "Current password",
+                    "new_password": "New password",
+                    "wrong_current_password": "Wrong password"
                 }
             }
         }

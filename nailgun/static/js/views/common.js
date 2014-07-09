@@ -58,6 +58,13 @@ function(utils, models, dialogViews, navbarTemplate, nodesStatsTemplate, notific
         template: _.template(navbarTemplate),
         updateInterval: 20000,
         notificationsDisplayCount: 5,
+        events: {
+            'click .change-password': 'showChangePasswordDialog'
+        },
+        showChangePasswordDialog: function(e) {
+            e.preventDefault();
+            this.registerSubView(new dialogViews.ChangePasswordDialog()).render();
+        },
         setActive: function(url) {
             this.elements.each(function(element) {
                 element.set({active: element.get('url') == '#' + url});

@@ -24,7 +24,7 @@ define(['jquery'], function($) {
     }
 
     _.extend(KeystoneClient.prototype, {
-        updateToken: function(options) {
+        authenticate: function(options) {
             options = options || {};
             if (this.tokenUpdateRequest) {
                 return this.tokenUpdateRequest;
@@ -50,6 +50,7 @@ define(['jquery'], function($) {
                 data: JSON.stringify(data)
             }).then(_.bind(function(result, state, deferred) {
                 try {
+                    this.userId = result.access.user.id;
                     this.token = result.access.token.id;
                     this.tokenUpdateTime = new Date();
                     return deferred;
@@ -62,6 +63,30 @@ define(['jquery'], function($) {
                 delete this.tokenUpdateRequest;
             }, this));
             return this.tokenUpdateRequest;
+        },
+        changePassword: function(currentPassword, newPassword) {
+            var data = {
+                user: {
+                    password: newPassword,
+                    original_password: currentPassword
+                }
+            };
+            return $.ajax(this.url + '/v2.0/OS-KSCRUD/users/' + this.userId, {
+                type: 'PATCH',
+                dataType: 'json',
+                contentType: 'application/json',
+                headers: {'X-Auth-Token': this.token},
+                data: JSON.stringify(data)
+            }).then(_.bind(function(result, state, deferred) {
+                try {
+                    this.password = newPassword;
+                    this.token = result.access.token.id;
+                    this.tokenUpdateTime = new Date();
+                    return deferred;
+                } catch(e) {
+                    return $.Deferred().reject();
+                }
+            }, this));
         }
     });
 

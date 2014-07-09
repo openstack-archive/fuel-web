@@ -122,13 +122,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     if (settingName == 'metadata') {return;}
                     var settingPath = groupName + '.' + settingName;
                     bindings['input[name="' + settingPath + '"]'] = {
-                        observe: [settingPath + '.value', settingPath + '.visible'],
-                        onGet: function(settingData) {
-                            return settingData[0];
-                        },
-                        onSet: function(value) {
-                            return [value, setting.visible];
-                        },
+                        observe: settingPath + '.value',
                         visible: function() {
                             return setting.visible;
                         },
@@ -208,7 +202,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         calculateGroupState: function(groupName) {
             var groupRestrictions = _.map(this.settings.get(groupName + '.metadata.restrictions'), utils.expandRestriction);
             this.settings.set(groupName + '.metadata.visible', !_.any(_.where(groupRestrictions, {action: 'hide'}), this.handleRestriction, this));
-            this.settings.set(groupName + '.metadata.disabled', !_.any(_.where(groupRestrictions, {action: 'disable'}), this.handleRestriction, this));
+            this.settings.set(groupName + '.metadata.disabled', _.any(_.where(groupRestrictions, {action: 'disable'}), this.handleRestriction, this));
         },
         composeListeners: function(groupName, settingName) {
             if (!settingName) { // compose listeners for setting group
@@ -310,6 +304,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     this.composeListeners(groupName);
                     this.calculateGroupState(groupName);
                     _.each(group, function(setting, settingName) {
+                        if (settingName == 'metadata') {return;}
                         this.composeListeners(groupName, settingName);
                         this.checkDependentRoles(groupName, settingName);
                         this.calculateSettingState(groupName, settingName);
@@ -317,6 +312,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 }, this);
                 this.settings.on('change', this.onSettingChange, this);
             }, this));
+            this.settings.on('sync', function(settings) { settings.processRestrictions(this.configModels); }, this);
             if (this.loading.state() == 'pending') {
                 this.loading.done(_.bind(this.render, this));
             }

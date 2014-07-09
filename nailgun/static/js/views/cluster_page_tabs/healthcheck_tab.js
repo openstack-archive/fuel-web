@@ -244,7 +244,9 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                     observe: 'checked',
                     onSet: _.bind(function(value) {
                         _.each(this.subViews, function(testSetView) {
-                            testSetView.selectAllCheckbox.set({checked: value});
+                            if (testSetView instanceof TestSet) {
+                                testSetView.selectAllCheckbox.set({checked: value});
+                            }
                         });
                         this.tests.invoke('set', {checked: value});
                     }, this),

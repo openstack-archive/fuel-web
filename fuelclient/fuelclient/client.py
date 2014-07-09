@@ -49,13 +49,32 @@ class Client(object):
             "http://{SERVER_ADDRESS}:{LISTEN_PORT}/keystone/v2.0"
             .format(**defaults)
         )
+        self.keystone_url = (
+            "http://{SERVER_ADDRESS}:{KEYSTONE_PORT}/v2.0"
+            .format(**defaults)
+        )
         self.api_root = self.root + "/api/v1/"
         self.ostf_root = self.root + "/ostf/"
         self.auth_status()
         self.user = defaults["KEYSTONE_USER"]
-        self.password = defaults["KEYSTONE_PASSWORD"]
+        self.password = defaults["KEYSTONE_PASS"]
         self.keystone_client = None
         self.initialize_keystone_client()
+
+    @property
+    def auth_token(self):
+        if self.keystone_client:
+            if not self.keystone_client.auth_token:
+                self.keystone_client.authenticate()
+            return self.keystone_client.auth_token
+        return ''
+
+    @property
+    def user_id(self):
+        if self.keystone_client and not self.keystone_client.auth_token:
+            self.keystone_client.authenticate()
+            return self.keystone_client.user_id
+        return ''
 
     def auth_status(self):
         self.auth_required = False
@@ -64,6 +83,29 @@ class Client(object):
             self.auth_required = json.loads(
                 request.read()).get('auth_required', False)
 
+    def update_own_password(self, new_pass):
+        if self.keystone_client:
+            api = "/OS-KSCRUD/users/%s" % self.user_id
+            data = {
+                "user": {
+                    "password": new_pass,
+                    "original_password": self.password
+                }
+            }
+            url = ''.join([self.keystone_url, api])
+            data_json = json.dumps(data)
+            opener = urllib2.build_opener(urllib2.HTTPHandler)
+            request = urllib2.Request(
+                url=url,
+                data=data_json,
+                headers={
+                    'Content-Type': 'application/json'
+                }
+            )
+            request.add_header('X-Auth-Token', self.auth_token)
+            request.get_method = lambda: 'PATCH'
+            opener.open(request)
+
     def initialize_keystone_client(self):
         if not self.test_mod and self.auth_required:
             self.keystone_client = auth_client.Client(
@@ -71,7 +113,6 @@ class Client(object):
                 password=self.password,
                 auth_url=self.keystone_base,
                 tenant_name="admin")
-            self.keystone_client.authenticate()
 
     def debug_mode(self, debug=False):
         self.debug = debug
@@ -84,14 +125,13 @@ class Client(object):
     def delete_request(self, api):
         """Make DELETE request to specific API with some data
         """
-        token = self.keystone_client.auth_token if self.keystone_client else ''
         self.print_debug(
             "DELETE {0}".format(self.api_root + api)
         )
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         request = urllib2.Request(self.api_root + api)
         request.add_header('Content-Type', 'application/json')
-        request.add_header('X-Auth-Token', token)
+        request.add_header('X-Auth-Token', self.auth_token)
         request.get_method = lambda: 'DELETE'
         opener.open(request)
         return {}
@@ -99,7 +139,6 @@ class Client(object):
     def put_request(self, api, data):
         """Make PUT request to specific API with some data
         """
-        token = self.keystone_client.auth_token if self.keystone_client else ''
         data_json = json.dumps(data)
         self.print_debug(
             "PUT {0} data={1}"
@@ -108,7 +147,7 @@ class Client(object):
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         request = urllib2.Request(self.api_root + api, data=data_json)
         request.add_header('Content-Type', 'application/json')
-        request.add_header('X-Auth-Token', token)
+        request.add_header('X-Auth-Token', self.auth_token)
         request.get_method = lambda: 'PUT'
         return json.loads(
             opener.open(request).read()
@@ -117,7 +156,6 @@ class Client(object):
     def get_request(self, api, ostf=False):
         """Make GET request to specific API
         """
-        token = self.keystone_client.auth_token if self.keystone_client else ''
         url = (self.ostf_root if ostf else self.api_root) + api
         self.print_debug(
             "GET {0}"
@@ -125,7 +163,7 @@ class Client(object):
         )
         opener = urllib2.build_opener(urllib2.HTTPHandler)
         request = urllib2.Request(url)
-        request.add_header('X-Auth-Token', token)
+        request.add_header('X-Auth-Token', self.auth_token)
         return json.loads(
             opener.open(request).read()
         )
@@ -133,7 +171,6 @@ class Client(object):
     def post_request(self, api, data, ostf=False):
         """Make POST request to specific API with some data
         """
-        token = self.keystone_client.auth_token if self.keystone_client else ''
         url = (self.ostf_root if ostf else self.api_root) + api
         data_json = json.dumps(data)
         self.print_debug(
@@ -147,7 +184,7 @@ class Client(object):
                 'Content-Type': 'application/json'
             }
         )
-        request.add_header('X-Auth-Token', token)
+        request.add_header('X-Auth-Token', self.auth_token)
         try:
             response = json.loads(
                 urllib2.urlopen(request)

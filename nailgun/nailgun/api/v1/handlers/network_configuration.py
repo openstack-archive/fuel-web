@@ -35,13 +35,11 @@ from nailgun.api.v1.validators.network \
 from nailgun.api.v1.validators.network \
     import NovaNetworkConfigurationValidator
 
-from nailgun.db.sqlalchemy.models import Cluster
-
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.errors import errors
 from nailgun.logger import logger
-from nailgun.objects import Task
 from nailgun.openstack.common import jsonutils
 from nailgun.task.manager import CheckNetworksTaskManager
 from nailgun.task.manager import VerifyNetworksTaskManager
@@ -79,7 +77,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
         :http: * 200 (OK)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
@@ -95,7 +93,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
             ]
 
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
 
         self.check_if_network_configuration_locked(cluster)
@@ -103,7 +101,7 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
-        if task.status != 'error':
+        if task.status != consts.TASK_STATUSES.error:
             try:
                 if 'networks' in data:
                     self.validator.validate_networks_update(
@@ -120,14 +118,14 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
                 ).update(cluster, data)
             except Exception as exc:
                 # set task status to error and update its corresponding data
-                data = {'status': 'error',
+                data = {'status': consts.TASK_STATUSES.error,
                         'progress': 100,
                         'message': six.text_type(exc)}
                 objects.Task.update(task, data)
 
                 logger.error(traceback.format_exc())
 
-        raise self.http(202, Task.to_json(task))
+        raise self.http(202, objects.Task.to_json(task))
 
 
 class NeutronNetworkConfigurationHandler(ProviderHandler):
@@ -144,7 +142,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         :http: * 200 (OK)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
         return self.serializer.serialize_for_cluster(cluster)
 
@@ -155,7 +153,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
             data["networks"] = [
                 n for n in data["networks"] if n.get("name") != "fuelweb_admin"
             ]
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
 
         self.check_if_network_configuration_locked(cluster)
@@ -163,7 +161,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
         task_manager = CheckNetworksTaskManager(cluster_id=cluster.id)
         task = task_manager.execute(data)
 
-        if task.status != 'error':
+        if task.status != consts.TASK_STATUSES.error:
 
             try:
                 if 'networks' in data:
@@ -189,7 +187,7 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
 
                 logger.error(traceback.format_exc())
 
-        raise self.http(202, Task.to_json(task))
+        raise self.http(202, objects.Task.to_json(task))
 
 
 class NetworkConfigurationVerifyHandler(ProviderHandler):
@@ -205,7 +203,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
                * 200 (network verification task started)
                * 404 (cluster not found in db)
         """
-        cluster = self.get_object_or_404(Cluster, cluster_id)
+        cluster = self.get_object_or_404(objects.Cluster, cluster_id)
         self.check_net_provider(cluster)
         raise self.http(202, self.launch_verify(cluster))
 
@@ -229,7 +227,7 @@ class NetworkConfigurationVerifyHandler(ProviderHandler):
             task = task_manager.execute(data, vlan_ids)
         except errors.CantRemoveOldVerificationTask:
             raise self.http(400, "You cannot delete running task manually")
-        return Task.to_json(task)
+        return objects.Task.to_json(task)
 
 
 class NovaNetworkConfigurationVerifyHandler(NetworkConfigurationVerifyHandler):

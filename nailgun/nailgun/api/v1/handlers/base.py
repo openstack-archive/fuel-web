@@ -23,9 +23,6 @@ import web
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.db import db
 
-# TODO(enchantner): let's switch to Cluster object in the future
-from nailgun.db.sqlalchemy.models import Cluster
-
 from nailgun.objects.serializers.base import BasicSerializer
 
 from nailgun.errors import errors
@@ -209,42 +206,43 @@ class BaseHandler(object):
             raise
         return valid_data
 
-    def get_object_or_404(self, model, *args, **kwargs):
-        # should be in ('warning', 'Log message') format
-        # (loglevel, message)
-        log_404 = kwargs.pop("log_404") if "log_404" in kwargs else None
-        log_get = kwargs.pop("log_get") if "log_get" in kwargs else None
-        if "id" in kwargs:
-            obj = db().query(model).get(kwargs["id"])
-        elif len(args) > 0:
-            obj = db().query(model).get(args[0])
-        else:
-            obj = db().query(model).filter(**kwargs).all()
-        if not obj:
+    def get_object_or_404(self, obj, *args, **kwargs):
+        """Get object instance by ID
+
+        :http: 404 when not found
+        :returns: object instance
+        """
+        log_404 = kwargs.pop("log_404", None)
+        log_get = kwargs.pop("log_get", None)
+        uid = kwargs.get("id", (args[0] if args else None))
+        if uid is None:
             if log_404:
                 getattr(logger, log_404[0])(log_404[1])
-            raise self.http(404, '{0} not found'.format(model.__name__))
+            raise self.http(404, u'Invalid ID specified')
         else:
+            instance = obj.get_by_uid(uid)
+            if not instance:
+                raise self.http(404, u'{0} not found'.format(obj.__name__))
             if log_get:
                 getattr(logger, log_get[0])(log_get[1])
-        return obj
+        return instance
 
-    def get_objects_list_or_404(self, model, ids):
+    def get_objects_list_or_404(self, obj, ids):
         """Get list of objects
 
         :param model: model object
         :param ids: list of ids
 
         :http: 404 when not found
-        :returns: query object
+        :returns: list of object instances
         """
-        node_query = db.query(model).filter(model.id.in_(ids))
-        objects_count = node_query.count()
 
+        node_query = obj.filter_by_id_list(None, ids)
+        objects_count = obj.count(node_query)
         if len(set(ids)) != objects_count:
-            raise self.http(404, '{0} not found'.format(model.__name__))
+            raise self.http(404, '{0} not found'.format(obj.__name__))
 
-        return node_query
+        return list(node_query)
 
 
 class SingleHandler(BaseHandler):
@@ -258,10 +256,7 @@ class SingleHandler(BaseHandler):
         :http: * 200 (OK)
                * 404 (object not found in db)
         """
-        obj = self.get_object_or_404(
-            self.single.model,
-            obj_id
-        )
+        obj = self.get_object_or_404(self.single, obj_id)
         return self.single.to_json(obj)
 
     @content_json
@@ -270,10 +265,7 @@ class SingleHandler(BaseHandler):
         :http: * 200 (OK)
                * 404 (object not found in db)
         """
-        obj = self.get_object_or_404(
-            self.single.model,
-            obj_id
-        )
+        obj = self.get_object_or_404(self.single, obj_id)
 
         data = self.checked_data(
             self.validator.validate_update,
@@ -289,7 +281,7 @@ class SingleHandler(BaseHandler):
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(
-            self.single.model,
+            self.single,
             obj_id
         )
 
@@ -356,7 +348,7 @@ class DeferredTaskHandler(BaseHandler):
                * 409 (task with such parameters already exists)
         """
         cluster = self.get_object_or_404(
-            Cluster,
+            objects.Cluster,
             cluster_id,
             log_404=(
                 u"warning",

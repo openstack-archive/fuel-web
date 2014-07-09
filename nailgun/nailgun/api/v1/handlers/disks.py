@@ -24,9 +24,6 @@ from nailgun.api.v1.validators.node import NodeDisksValidator
 
 from nailgun import objects
 
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Node
-from nailgun.db.sqlalchemy.models import NodeAttributes
 from nailgun.volumes.manager import DisksFormatConvertor
 
 
@@ -42,7 +39,7 @@ class NodeDisksHandler(BaseHandler):
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
-        node = self.get_object_or_404(Node, node_id)
+        node = self.get_object_or_404(objects.Node, node_id)
         node_volumes = node.attributes.volumes
         return DisksFormatConvertor.format_disks_to_simple(node_volumes)
 
@@ -53,7 +50,7 @@ class NodeDisksHandler(BaseHandler):
                * 400 (invalid disks data specified)
                * 404 (node not found in db)
         """
-        node = self.get_object_or_404(Node, node_id)
+        node = self.get_object_or_404(objects.Node, node_id)
         data = self.checked_data(
             self.validator.validate,
             node=node
@@ -67,15 +64,7 @@ class NodeDisksHandler(BaseHandler):
             )
 
         volumes_data = DisksFormatConvertor.format_disks_to_full(node, data)
-        # For some reasons if we update node attributes like
-        #   node.attributes.volumes = volumes_data
-        # after
-        #   db().commit()
-        # it resets to previous state
-        db().query(NodeAttributes).filter_by(node_id=node_id).update(
-            {'volumes': volumes_data})
-        db().flush()
-        db().refresh(node)
+        objects.Node.set_volumes(node, volumes_data)
 
         return DisksFormatConvertor.format_disks_to_simple(
             node.attributes.volumes)
@@ -91,7 +80,7 @@ class NodeDefaultsDisksHandler(BaseHandler):
         :http: * 200 (OK)
                * 404 (node or its attributes not found in db)
         """
-        node = self.get_object_or_404(Node, node_id)
+        node = self.get_object_or_404(objects.Node, node_id)
         if not node.attributes:
             raise self.http(404)
 
@@ -111,7 +100,7 @@ class NodeVolumesInformationHandler(BaseHandler):
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
-        node = self.get_object_or_404(Node, node_id)
+        node = self.get_object_or_404(objects.Node, node_id)
         if node.cluster is None:
             raise self.http(404, 'Cannot calculate volumes info. '
                                  'Please, add node to an environment.')

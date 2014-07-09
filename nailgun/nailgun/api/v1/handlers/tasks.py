@@ -23,8 +23,7 @@ from nailgun.api.v1.validators.task import TaskValidator
 
 from nailgun.errors import errors
 
-from nailgun.objects import Task
-from nailgun.objects import TaskCollection
+from nailgun import objects
 
 
 """
@@ -36,7 +35,7 @@ class TaskHandler(SingleHandler):
     """Task single handler
     """
 
-    single = Task
+    single = objects.Task
     validator = TaskValidator
 
     def DELETE(self, obj_id):
@@ -45,7 +44,7 @@ class TaskHandler(SingleHandler):
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(
-            self.single.model,
+            self.single,
             obj_id
         )
 
@@ -64,7 +63,7 @@ class TaskCollectionHandler(CollectionHandler):
     """Task collection handler
     """
 
-    collection = TaskCollection
+    collection = objects.TaskCollection
     validator = TaskValidator
 
     @content_json

@@ -26,11 +26,11 @@ import time
 
 import web
 
+from nailgun import consts
+from nailgun import objects
+
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content_json
-from nailgun.db import db
-from nailgun.db.sqlalchemy.models import Node
-from nailgun.objects import Task
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
 from nailgun.task.manager import DumpTaskManager
@@ -143,14 +143,14 @@ class LogEntryCollectionHandler(BaseHandler):
         if log_config['remote'] and not log_config.get('fake'):
             if not user_data.get('node'):
                 raise self.http(400, "'node' must be specified")
-            node = db().query(Node).get(user_data.get('node'))
+            node = objects.Node.get_by_uid(user_data.get('node'))
             if not node:
                 raise self.http(404, "Node not found")
             if not node.ip:
                 logger.error('Node %r has no assigned ip', node.id)
                 raise self.http(500, "Node has no assigned ip")
 
-            if node.status == "discover":
+            if node.status == consts.NODE_STATUSES.discover:
                 ndir = node.ip
             else:
                 ndir = node.fqdn
@@ -287,7 +287,7 @@ class LogPackageHandler(BaseHandler):
             logger.warn(u'DumpTask: error while execution '
                         'dump environment task: {0}'.format(str(exc)))
             raise self.http(400, str(exc))
-        raise self.http(202, Task.to_json(task))
+        raise self.http(202, objects.Task.to_json(task))
 
 
 class LogSourceCollectionHandler(BaseHandler):
@@ -312,7 +312,7 @@ class LogSourceByNodeCollectionHandler(BaseHandler):
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
-        node = self.get_object_or_404(Node, node_id)
+        node = self.get_object_or_404(objects.Node, node_id)
 
         def getpath(x):
             if x.get('fake'):
@@ -321,7 +321,7 @@ class LogSourceByNodeCollectionHandler(BaseHandler):
                 else:
                     return ''
             else:
-                if node.status == "discover":
+                if node.status == consts.NODE_STATUSES.discover:
                     ndir = node.ip
                 else:
                     ndir = node.fqdn

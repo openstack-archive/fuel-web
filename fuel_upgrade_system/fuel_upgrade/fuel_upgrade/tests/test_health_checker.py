@@ -327,11 +327,13 @@ class TestCheckers(BaseTestCase):
             health_checker.IntegrationCheckerRabbitMQAstuteNailgun)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
-    def test_integration_rabbitmq_astute_nailgun(self, get_mock):
+    def test_integration_rabbitmq_astute_nailgun_returns_false(self, get_mock):
         negative_results = [
             [None, 200],
             [[{'name': 'naily_service'}], 200],
-            [[{'name': 'nailgun'}], 200]]
+            [[{'name': 'nailgun'}], 200],
+            [[{'name': 'nailgun'}, {'name': 'naily_service'}], 400],
+            [[{}], 200]]
 
         for result in negative_results:
             get_mock.return_value = result

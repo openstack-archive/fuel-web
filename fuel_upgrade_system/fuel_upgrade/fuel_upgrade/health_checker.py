@@ -272,11 +272,13 @@ class IntegrationCheckerRabbitMQAstuteNailgun(BaseChecker):
             auth=(self.endpoints['rabbitmq']['user'],
                   self.endpoints['rabbitmq']['password']))
 
-        if not exchanges:
+        if code != 200 or not isinstance(exchanges, list):
             return False
 
-        naily = filter(lambda e: e['name'] == 'naily_service', exchanges)
-        nailgun = filter(lambda e: e['name'] == 'nailgun', exchanges)
+        exchanges = filter(lambda e: isinstance(e, dict), exchanges)
+
+        naily = filter(lambda e: e.get('name') == 'naily_service', exchanges)
+        nailgun = filter(lambda e: e.get('name') == 'nailgun', exchanges)
 
         return naily and nailgun
 

@@ -325,7 +325,7 @@ class TestLogs(BaseIntegrationTest):
             "uuid": "00000000-0000-0000-0000-000000000000"
         })
         tm_patcher = patch('nailgun.api.v1.handlers.logs.DumpTaskManager')
-        th_patcher = patch('nailgun.api.v1.handlers.logs.Task')
+        th_patcher = patch('nailgun.api.v1.handlers.logs.objects.Task')
         tm_mocked = tm_patcher.start()
         th_mocked = th_patcher.start()
         tm_instance = tm_mocked.return_value

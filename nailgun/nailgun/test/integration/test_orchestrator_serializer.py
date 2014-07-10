@@ -65,6 +65,14 @@ class OrchestratorSerializerTestBase(BaseIntegrationTest):
         objects.NodeCollection.prepare_for_deployment(cluster.nodes)
         return self.serializer.serialize(cluster, cluster.nodes)
 
+    def _make_data_copy(self, data_to_copy):
+        '''Sqalchemy doesn't track change on composite attribute
+        so we need to create fresh copy of it which will take all
+        needed modifications and will be assigned as new value
+        for that attribute
+        '''
+        return copy.deepcopy(data_to_copy)
+
 
 # TODO(awoodward): multinode deprecation: probably has duplicates
 class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
@@ -544,14 +552,6 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
         return cluster_db
 
-    def _make_data_copy(self, data_to_copy):
-        '''Sqalchemy doesn't track change on composite attribute
-        so we need to create fresh copy of it which will take all
-        needed modifications and will be assigned as new value
-        for that attribute
-        '''
-        return copy.deepcopy(data_to_copy)
-
     def test_vlan_splinters_disabled(self):
         cluster = self._create_cluster_for_vlan_splinters()
         cluster_id = cluster.id
@@ -1013,3 +1013,51 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
             fact['puppet_manifests_source'],
             'rsync://10.20.0.2/puppet/release/5.0/manifests'
         )
+
+
+class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
+
+    def setUp(self):
+        super(TestNSXOrchestratorSerializer, self).setUp()
+        self.cluster = self.create_env('ha_compact')
+
+    def create_env(self, mode, segment_type='gre'):
+        cluster = self.env.create(
+            cluster_kwargs={
+                'mode': mode,
+                'net_provider': 'neutron',
+                'net_segment_type': segment_type
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+            ]
+        )
+
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        editable_attrs = self._make_data_copy(cluster_db.attributes.editable)
+        nsx_attrs = editable_attrs.setdefault('nsx_plugin', {})
+        nsx_attrs.setdefault('metadata', {})['enabled'] = True
+        cluster_db.attributes.editable = editable_attrs
+
+        self.db.commit()
+        cluster_db = self.db.query(Cluster).get(cluster['id'])
+        objects.NodeCollection.prepare_for_deployment(cluster_db.nodes)
+        return cluster_db
+
+    def test_serialize_node(self):
+        serialized_data = self.serializer.serialize(self.cluster,
+                                                    self.cluster.nodes)[0]
+
+        q_settings = serialized_data['quantum_settings']
+        self.assertIn('server', q_settings)
+        self.assertIn('core_plugin', q_settings['server'])
+        self.assertEqual(q_settings['server']['core_plugin'], 'vmware')
+        l3_settings = q_settings['L3']
+        self.assertIn('dhcp_agent', l3_settings)
+        self.assertIn('enable_isolated_metadata', l3_settings['dhcp_agent'])
+        self.assertEqual(l3_settings['dhcp_agent']['enable_isolated_metadata'],
+                         True)
+        self.assertIn('enable_metadata_network', l3_settings['dhcp_agent'])
+        self.assertEqual(l3_settings['dhcp_agent']['enable_metadata_network'],
+                         True)

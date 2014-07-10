@@ -171,7 +171,12 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             };
             return _.any(this.settings.attributes, function(group, groupName) {
                 if (!group.metadata.visible) { return false; }
-                return _.any(group, function(setting, settingName) {
+                var hasDependentGroup = false;
+                if (group.metadata.toggleable) {
+                    var groupRestrictions = _.where(_.map(group.metadata.restrictions, utils.expandRestriction), {action: 'disable'});
+                    hasDependentGroup = _.any(groupRestrictions, isDependent) && group.metadata.enabled;
+                }
+                return hasDependentGroup || _.any(group, function(setting, settingName) {
                     if (groupName + '.' + settingName == settingPath) { return false; }
                     var hasDependentOption = _.any(setting.values, function(value) {
                         var valueRestrictions = _.where(_.map(value.restrictions, utils.expandRestriction), {action: 'disable'});
@@ -217,17 +222,22 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 var collectRestrictions = function(setting) {
                     return _.map(_.compact(_.flatten(_.union(setting.restrictions, _.pluck(setting.values, 'restrictions')))), utils.expandRestriction);
                 };
+                var checkDependency = function(restriction) {
+                    return _.contains(restriction.condition, 'settings:' + settingPath + '.value');
+                };
                 _.each(collectRestrictions(this.settings.get(settingPath)), function(restriction) {
                     var evaluatedRestriction = utils.evaluateExpression(restriction.condition, this.configModels);
                     _.invoke(evaluatedRestriction.modelPaths, 'change', callback);
                 }, this);
                 // handle dependent settings
                 _.each(this.settings.attributes, function(group, groupName) {
+                    var isGroupDependent = _.any(_.map(group.metadata.restrictions, utils.expandRestriction), checkDependency);
+                    if (isGroupDependent && group.metadata.toggleable) {
+                        this.settings.on('change:' + groupName + '.metadata.enabled', callback);
+                    }
                     _.each(group, function(setting, settingName) {
-                        if (groupName + '.' + settingName == settingPath) { return; }
-                        var isDependent = _.any(collectRestrictions(setting), function(restriction) {
-                            return _.contains(restriction.condition, 'settings:' + settingPath + '.value');
-                        });
+                        if (_.contains([groupName + '.' + settingName, 'metadata'], settingPath)) { return; }
+                        var isDependent = _.any(collectRestrictions(setting), checkDependency);
                         if (isDependent) {
                             this.settings.on('change:' + groupName + '.' + settingName + '.value', callback);
                         }

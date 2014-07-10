@@ -42,11 +42,13 @@ class Environment(BaseObject):
             data["net_provider"] = "nova_network"
         else:
             data["net_provider"] = "neutron"
-            if net_segment_type is not None:
-                data["net_segment_type"] = net_segment_type
-            else:
+
+            if not net_segment_type:
                 raise ArgumentException(
                     '"--net-segment-type" must be specified!')
+
+            data["net_segment_type"] = net_segment_type
+
         data = cls.connection.post_request("clusters/", data)
         return cls.init_with_data(data)
 

@@ -18,7 +18,7 @@ import ply.yacc
 from nailgun.errors import errors
 
 tokens = (
-    'NUMBER', 'STRING', 'TRUE', 'FALSE', 'AND', 'OR', 'NOT', 'IN',
+    'NUMBER', 'STRING', 'TRUE', 'FALSE', 'NULL', 'AND', 'OR', 'NOT', 'IN',
     'EQUALS', 'NOT_EQUALS', 'LPAREN', 'RPAREN',
     'MODELPATH',
 )
@@ -48,11 +48,17 @@ def t_FALSE(t):
     return t
 
 
+def t_NULL(t):
+    r'null'
+    t.value = None
+    return t
+
+
 t_AND = r'and'
 t_OR = r'or'
 t_NOT = r'not'
 t_IN = r'in'
-t_MODELPATH = r'\w*?\:[\w\.\-]+'
+t_MODELPATH = r'\w*?\:[\w\.\-]+\??'
 t_EQUALS = r'=='
 t_NOT_EQUALS = r'!='
 t_LPAREN = r'\('
@@ -114,6 +120,7 @@ def p_expression_group(p):
 def p_expression_scalar(p):
     """expression : NUMBER
                   | STRING
+                  | NULL
                   | TRUE
                   | FALSE
     """
@@ -129,10 +136,22 @@ def p_expression_modelpath(p):
     except KeyError:
         raise errors.UnknownModel("Unknown model '%s'" % model_name)
 
+    strict = True
+    if attribute.endswith('?'):
+        strict = False
+        attribute = attribute[:-1]
+
     def get_attribute_value(model, path):
         value = model[path.pop(0)]
         return get_attribute_value(value, path) if len(path) else value
-    p[0] = get_attribute_value(model, attribute.split('.'))
+
+    try:
+        p[0] = get_attribute_value(model, attribute.split('.'))
+    except (KeyError, AttributeError) as e:
+        if strict:
+            raise e
+        else:
+            p[0] = None
 
 
 def p_error(p):

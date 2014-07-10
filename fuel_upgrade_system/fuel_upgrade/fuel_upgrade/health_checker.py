@@ -103,20 +103,6 @@ class BaseChecker(object):
         return server
 
 
-class NailgunChecker(BaseChecker):
-
-    @property
-    def checker_name(self):
-        return 'nailgun'
-
-    def check(self):
-        _, code = self.safe_get(
-            'http://{host}:{port}/api/v1/version'.format(
-                **self.endpoints['nailgun']))
-
-        return code == 200
-
-
 class OSTFChecker(BaseChecker):
 
     @property
@@ -245,6 +231,20 @@ class NginxChecker(BaseChecker):
         return nailgun_code is not None and nginx_code is not None
 
 
+class IntegrationCheckerNginxNailgunChecker(BaseChecker):
+
+    @property
+    def checker_name(self):
+        return 'integration_nginx_nailgun'
+
+    def check(self):
+        _, code = self.safe_get(
+            'http://{host}:{port}/api/v1/version'.format(
+                **self.endpoints['nginx_nailgun']))
+
+        return code == 200
+
+
 class IntegrationCheckerPostgresqlNailgunNginx(BaseChecker):
 
     @property
@@ -294,7 +294,6 @@ class FuelUpgradeVerify(object):
         # Set default checkers
         if checkers is None:
             check_classes = [
-                NailgunChecker,
                 OSTFChecker,
                 RabbitChecker,
                 CobblerChecker,
@@ -303,6 +302,7 @@ class FuelUpgradeVerify(object):
                 RsyslogChecker,
                 MCollectiveChecker,
                 NginxChecker,
+                IntegrationCheckerNginxNailgunChecker,
                 IntegrationCheckerPostgresqlNailgunNginx,
                 IntegrationCheckerRabbitMQAstuteNailgun]
 

@@ -59,8 +59,8 @@ class OpenStackUpgrader(UpgradeEngine):
 
         #: a nailgun object - api wrapper
         self.nailgun = NailgunClient(
-            self.config.endpoints['nailgun']['host'],
-            self.config.endpoints['nailgun']['port'],
+            self.config.endpoints['nginx_nailgun']['host'],
+            self.config.endpoints['nginx_nailgun']['port'],
         )
 
         self._update_conf()

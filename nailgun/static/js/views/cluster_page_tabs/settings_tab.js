@@ -215,7 +215,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 var settingPath = groupName + '.' + settingName;
                 var callback = _.bind(this.calculateSettingState, this, groupName, settingName);
                 var collectRestrictions = function(setting) {
-                    return _.map(_.flatten(_.compact(setting.restrictions, _.pluck(setting.values, 'restrictions'))), utils.expandRestriction);
+                    return _.map(_.compact(_.flatten(_.union(setting.restrictions, _.pluck(setting.values, 'restrictions')))), utils.expandRestriction);
                 };
                 _.each(collectRestrictions(this.settings.get(settingPath)), function(restriction) {
                     var evaluatedRestriction = utils.evaluateExpression(restriction.condition, this.configModels);

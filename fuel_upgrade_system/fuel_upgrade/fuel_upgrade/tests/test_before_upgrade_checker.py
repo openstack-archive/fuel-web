@@ -27,7 +27,8 @@ class TestCheckNoRunningTasks(BaseTestCase):
 
     def setUp(self):
         config = mock.MagicMock()
-        config.endpoints = {'nailgun': {'host': '127.0.0.1', 'port': 1234}}
+        config.endpoints = {
+            'nginx_nailgun': {'host': '127.0.0.1', 'port': 1234}}
         self.config = config
 
     @mock.patch('fuel_upgrade.before_upgrade_checker.NailgunClient.get_tasks',

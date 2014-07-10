@@ -267,7 +267,7 @@ def get_nst_arg(help_msg):
                    action="store",
                    choices=("gre", "vlan"),
                    help_=help_msg,
-                   default=False)
+                   default=None)
 
 
 def get_all_arg(help_msg):

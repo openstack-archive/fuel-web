@@ -367,10 +367,12 @@ button {
 
 h1, h2, h3, h4, h5, h6 {
   .font-layout-mixin(@font-weight: lighter, @font-family: @font-family-headline);
-  &.page-title  {
-    .font-layout-mixin(@color: @fuel-white-color, @text-shadow: @text-shadow-black);
-    display: inline-block;
-  }
+}
+
+.page-title  {
+  .font-layout-mixin(@color: @fuel-white-color, @text-shadow: @text-shadow-black);
+  display: inline-block;
+  margin: 0 0 10px 8px !important;
 }
 
 label {cursor: default;}
@@ -1957,6 +1959,8 @@ label {cursor: default;}
   }
 }
 
+.deployment-result { margin-top: 5px; }
+
 .deployment-control-box {
   border-radius: 4px;
   margin-top: 5px;
@@ -3027,7 +3031,10 @@ form.rhel-license {
 form.create-cluster-form {
   .input-large { width: 330px; }
   select { width: 340px; }
-  .control-label { width: 140px; }
+  .control-label {
+    width: 140px;
+    font-weight: bold;
+  }
   .controls { margin-left: 160px; }
 }
 
@@ -3384,32 +3391,30 @@ input.input-append {
   float: left;
   .name-box {
     .font-layout-mixin(@font-size: 28px, @font-weight: lighter);
-    margin: 8px 8px 0px 8px;
     .name {
-      .float-mixin;
+      float: left;
       height: 34px;
       line-height: 30px;
       max-width: 550px;
       overflow: hidden;
-      color: @fuel-white-color;
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
       word-break: break-all;
+      margin: 0 0 0 8px !important;
     }
   }
 }
 
 .cluster-summary-placeholder {
-  margin: 0px 0px 8px 8px;
+  margin-left: 8px;
   color: @fuel-light-color;
   > div {
     .font-layout-mixin(@font-size: @font-size-small-3, @color: @fuel-light-5);
     display: inline-block;
     margin-right: 12px;
     strong { color: @fuel-light-3; }
+    span { text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35); }
     &.status { text-transform: capitalize; }
     &.error {
       .font-layout-mixin(@font-weight: bold, @color: @fuel-red);
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
     }
   }
 }
@@ -3442,7 +3447,7 @@ i.btn-cluster-details {
   cursor: default;
   .box-sizing-mixin;
   .indent-mixin;
-  margin: 8px 0 0 15px;
+  margin: 7px 0 0 15px;
   .font-layout-mixin(@font-size-big-2, @line-height: 22px);
   color: @fuel-blue-smoke;
   height: 20px;

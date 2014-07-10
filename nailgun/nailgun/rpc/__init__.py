@@ -14,13 +14,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
+import functools
+
 from kombu import Connection
 from kombu import Exchange
 from kombu import Queue
 
+import amqp.exceptions as amqp_exceptions
+
 from nailgun.logger import logger
 from nailgun.openstack.common import jsonutils
 from nailgun.settings import settings
+from nailgun.rpc import utils
 
 creds = (
     ("userid", "guest"),
@@ -80,6 +86,11 @@ def cast(name, message, service=False):
     use_exchange = naily_exchange if not service else naily_service_exchange
     with Connection(conn_str) as conn:
         with conn.Producer(serializer='json') as producer:
-            producer.publish(message,
-                             exchange=use_exchange, routing_key=name,
-                             declare=[use_queue])
+            publish = functools.partial(producer.publish, message,
+                exchange=use_exchange, routing_key=name, declare=[use_queue])
+            try:
+                publish()
+            except amqp_exceptions.PreconditionFailed as e:
+                logger.warning(str(e))
+                utils.delete_exchange(conn, use_exchange)
+                publish()

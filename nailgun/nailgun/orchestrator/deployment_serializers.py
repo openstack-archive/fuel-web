@@ -733,6 +733,12 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         node_attrs['neutron_mellanox']['physical_port'] = \
             nm.get_node_network_by_netname(node.id, 'private')['dev']
 
+        # Set ML2 eswitch section conf
+        ml2_eswitch = {}
+        ml2_eswitch['vnic_type'] = 'hostdev'
+        ml2_eswitch['apply_profile_patch'] = True
+        node_attrs['neutron_mellanox']['ml2_eswitch'] = ml2_eswitch
+
         return node_attrs
 
     @classmethod

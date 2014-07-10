@@ -416,25 +416,28 @@ function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesD
         mixins: [viewMixins.toggleablePassword],
         events: {
             'click .btn-change-password': 'changePassword',
-            'keydown [name=current_password]': 'onCurrentPasswordChange',
+            'keydown input': 'onPasswordChange',
             'keydown': 'onInputKeydown'
         },
         changePassword: function() {
-            this.$('.btn-change-password').attr('disabled', true);
             var currentPassword = this.$('[name=current_password]').val();
             var newPassword = this.$('[name=new_password]').val();
-            app.keystoneClient.changePassword(currentPassword, newPassword)
-                .done(_.bind(function() {
-                    app.user.set({password: app.keystoneClient.password});
-                    this.$el.modal('hide');
-                }, this))
-                .fail(_.bind(function() {
-                    this.$('[name=current_password]').focus().addClass('error').parent().siblings('.validation-error').show();
-                    this.$('.btn-change-password').attr('disabled', false);
-                }, this));
+            if (currentPassword && newPassword) {
+                app.keystoneClient.changePassword(currentPassword, newPassword)
+                    .done(_.bind(function() {
+                        app.user.set({password: app.keystoneClient.password});
+                        this.$el.modal('hide');
+                    }, this))
+                    .fail(_.bind(function() {
+                        this.$('[name=current_password]').focus().addClass('error').parent().siblings('.validation-error').show();
+                    }, this));
+            }
         },
-        onCurrentPasswordChange: function(e) {
+        onPasswordChange: function(e) {
             this.$(e.currentTarget).removeClass('error').parent().siblings('.validation-error').hide();
+            _.defer(_.bind(function() {
+                this.$('.btn-change-password').attr('disabled', !_.all(_.invoke(_.map(this.$('input'), $), 'val')));
+            }, this));
         },
         onInputKeydown: function(e) {
             if (e.which == 13) {

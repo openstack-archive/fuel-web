@@ -151,10 +151,6 @@ def config(update_path):
             'port': 8080,
             'host': '0.0.0.0'},
 
-        'nailgun': {
-            'port': 8001,
-            'host': '127.0.0.1'},
-
         'ostf': {
             'port': 8777,
             'host': '127.0.0.1'},

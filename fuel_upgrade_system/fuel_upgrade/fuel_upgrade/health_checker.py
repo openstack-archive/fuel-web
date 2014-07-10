@@ -112,7 +112,7 @@ class NailgunChecker(BaseChecker):
     def check(self):
         _, code = self.safe_get(
             'http://{host}:{port}/api/v1/version'.format(
-                **self.endpoints['nailgun']))
+                **self.endpoints['nginx_nailgun']))
 
         return code == 200
 

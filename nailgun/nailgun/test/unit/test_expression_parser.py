@@ -39,6 +39,11 @@ class TestExpressionParser(BaseTestCase):
             ('123', 123),
             ('"123"', '123'),
             ("'123'", '123'),
+            # test null
+            ('null', None),
+            ('null == false', False),
+            ('null == true', False),
+            ('null == null', True),
             # test boolean operators
             ('true or false', True),
             ('true and false', False),
@@ -70,6 +75,11 @@ class TestExpressionParser(BaseTestCase):
             ('cluster:mode == "ha_compact" and not ('
                 'settings:common.libvirt_type.value '
                 '!= "{0}")'.format(hypervisor), True),
+            # test nonexistent keys
+            ('cluster:nonexistentkey?', None),
+            ('cluster:nonexistentkey? == null', True),
+            ('cluster:nonexistentkey', AttributeError),
+            ('cluster:mode? == null', False),
         )
 
         for test_case in test_cases:

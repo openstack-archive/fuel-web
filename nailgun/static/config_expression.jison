@@ -5,13 +5,14 @@
 \-?[0-9]+("."[0-9]+)?\b      return 'NUMBER';
 \"(.*?)\"                    return 'STRING';
 \'(.*?)\'                    return 'STRING';
-(True|true)                  return 'TRUE';
-(False|false)                return 'FALSE';
+true                         return 'TRUE';
+false                        return 'FALSE';
+null                         return 'NULL';
 "in"                         return 'IN';
 "and"                        return 'AND';
 "or"                         return 'OR';
 "not"                        return 'NOT';
-(\w*?\:)?[\w\.\-]+           return 'MODELPATH';
+(\w*?\:)?[\w\.\-]+\??        return 'MODELPATH';
 "=="                         return 'EQUALS';
 "!="                         return 'NOT_EQUALS';
 "("                          return 'LPAREN';
@@ -59,12 +60,22 @@ e
         {$$ = true;}
     | FALSE
         {$$ = false;}
+    | NULL
+        {$$ = null;}
     | MODELPATH
         {
+            var strict = yy.options.strict;
+            if (yytext.slice(-1) == '?') {
+                strict = false;
+                yytext = yytext.slice(0, -1);
+            }
             var modelPath = yy.utils.parseModelPath(yytext, yy.models);
             $$ = modelPath.get();
-            if (typeof $$ == 'undefined' && yy.options.strict) {
-                throw new TypeError('Value of ' + yytext + ' is undefined. Set options.strict to false to allow undefined values.');
+            if (typeof $$ == 'undefined') {
+                if (strict) {
+                    throw new TypeError('Value of ' + yytext + ' is undefined. Set options.strict to false to allow undefined values.');
+                }
+                $$ = null;
             }
             yy.modelPaths[yytext] = modelPath;
         }

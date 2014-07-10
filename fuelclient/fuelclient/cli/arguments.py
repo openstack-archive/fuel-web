@@ -181,6 +181,15 @@ def get_env_arg(required=False):
     )
 
 
+def get_new_password_arg():
+    return get_str_arg(
+        "newpass",
+        flags=("--new-pass",),
+        help="new_password",
+        required=False
+    )
+
+
 def get_str_arg(name, **kwargs):
     default_kwargs = {
         "action": "store",
@@ -237,6 +246,10 @@ def get_role_arg(help_msg):
 
 def get_check_arg(help_msg):
     return get_set_type_arg("check", help=help_msg)
+
+
+def get_change_password_arg(help_msg):
+    return get_boolean_arg("change-password", help=help_msg)
 
 
 def get_name_arg(help_msg):

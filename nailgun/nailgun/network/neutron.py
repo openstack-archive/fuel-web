@@ -18,6 +18,7 @@ from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
 from nailgun.network.manager import NetworkManager
+from nailgun.objects import Cluster
 
 
 class NeutronManager(NetworkManager):
@@ -113,6 +114,13 @@ class NeutronManager(NetworkManager):
                 "bridge": "br-prv",
                 "vlan_range": join_range(cluster.network_config.vlan_range)
             }
+
+        # Set non-default ml2 mechanism drivers
+        attrs = Cluster.get_attributes(cluster).editable
+        if 'neutron_mellanox' in attrs and \
+            attrs['neutron_mellanox']['plugin']['value'] == 'ethernet':
+            res['mechanism_drivers'] =  'mlnx,openvswitch'
+
         return res
 
     @classmethod

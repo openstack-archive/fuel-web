@@ -1217,7 +1217,8 @@ label {cursor: default;}
 
 .modal {
   .help-block {
-    .font-layout-mixin(@font-size-small-1, @fuel-dark-2);
+    .font-layout-mixin(@font-size-small-2, @fuel-dark-2);
+    line-height: 14px;
   }
   .wizard-footer {
     bottom: 0;
@@ -1235,16 +1236,16 @@ label {cursor: default;}
 
 .wizard-steps-nav {
   background-color: @fuel-light-5;
-  .float-mixin;
-  width: 25%;
+  position: fixed;
+  width: 200px;
   overflow: hidden;
   height: 370px;
 }
 
 .wizard-steps-content {
-  .float-mixin;
   background-color: @fuel-white-color;
-  width: 75%;
+  margin-left: 200px;
+  height: 366px;
   padding: 15px 20px 20px 20px;
   .box-sizing-mixin;
   .parameter-name { min-width: 0; }
@@ -2297,6 +2298,8 @@ input.error:focus {
   display: block;
 }
 
+
+
 .fieldset-group > div > .parameter-box,
 .fieldset-group > div > div > .parameter-box  {
   margin-left: 12px;
@@ -2341,6 +2344,8 @@ input.error:focus {
 .modal-parameter-description {
   color: @font-color-light;
   margin: 0 0 8px 35px;
+  font-size: @font-size-small-2;
+  line-height: 14px;
 }
 
 .global-description {
@@ -3031,6 +3036,15 @@ div.create-cluster-form {
   .control-group {margin-bottom: 10px;}
   .radio-checkbox-group label {
     margin-right: 20px;
+  }
+}
+
+.control-group {
+  > .parameter-box {
+  display: block;
+  > .parameter-description {
+    font-size: @font-size-small-2;
+    }
   }
 }
 

@@ -367,10 +367,12 @@ button {
 
 h1, h2, h3, h4, h5, h6 {
   .font-layout-mixin(@font-weight: lighter, @font-family: @font-family-headline);
-  &.page-title  {
-    .font-layout-mixin(@color: @fuel-white-color, @text-shadow: @text-shadow-black);
-    display: inline-block;
-  }
+}
+
+.page-title  {
+  .font-layout-mixin(@color: @fuel-white-color, @text-shadow: @text-shadow-black);
+  display: inline-block;
+  margin-left: 8px !important;
 }
 
 label {cursor: default;}
@@ -3370,16 +3372,14 @@ input.input-append {
   float: left;
   .name-box {
     .font-layout-mixin(@font-size: 28px, @font-weight: lighter);
-    margin: 8px 8px 0px 8px;
     .name {
-      .float-mixin;
+      float: left;
       height: 34px;
       line-height: 30px;
       max-width: 550px;
       overflow: hidden;
-      color: @fuel-white-color;
-      text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
       word-break: break-all;
+      margin: 15px 0 0;
     }
   }
 }
@@ -3428,7 +3428,7 @@ i.btn-cluster-details {
   cursor: default;
   .box-sizing-mixin;
   .indent-mixin;
-  margin: 8px 0 0 15px;
+  margin: 22px 0 0 15px;
   .font-layout-mixin(@font-size-big-2, @line-height: 22px);
   color: @fuel-blue-smoke;
   height: 20px;

@@ -68,6 +68,10 @@
     if (cluster.get('nodes').nodesAfterDeploymentWithRole('controller') < size) { restrictions.push('controller'); }
     var isCeilometerEnaled = cluster.get('settings').get('additional_components.ceilometer.value') == true;
     if (isCeilometerEnaled && cluster.get('nodes').nodesAfterDeploymentWithRole('mongo') < size) { restrictions.push('mongo'); }
+    if (isCeilometerEnaled && cluster.get('nodes').nodesAfterDeploymentWithRole('mongo') < 3 && cluster.get('mode') == 'ha_compact')  {
+      restrictions.push('mongo_ha');
+      restrictions = _.without(restrictions, 'mongo');
+  }
 
     // collect warnings
     var warnings = [];

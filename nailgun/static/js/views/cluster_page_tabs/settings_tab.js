@@ -321,8 +321,10 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     }, this);
                 }, this);
                 this.settings.on('change', this.onSettingChange, this);
+                this.settings.on('sync', function(settings) {
+                    settings.processRestrictions(this.configModels);
+                }, this);
             }, this));
-            this.settings.on('sync', function(settings) { settings.processRestrictions(this.configModels); }, this);
             if (this.loading.state() == 'pending') {
                 this.loading.done(_.bind(this.render, this));
             }

@@ -33,6 +33,9 @@ rsyslog:
       *.* @{{ common.master_ip }};LogToMaster
 
 
+#TODO(agordeev):
+#mounts: fill /etc/fstab
+
 # that module's missing in 0.6.3, but existent for >= 0.7.3
 write_files:
  -   content: |

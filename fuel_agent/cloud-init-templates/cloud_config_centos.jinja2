@@ -1,0 +1,105 @@
+#cloud-config
+disable_ec2_metadata: true
+disable_root: false
+
+ssh_authorized_keys:
+  - {{ common.ssh_auth_key }}
+
+# set the locale to a given locale
+# default: en_US.UTF-8
+locale: en_US.UTF-8
+
+timezone: {{ common.timezone }}
+
+hostname: {{ common.hostname }}
+fqdn: {{ common.fqdn }}
+
+# TODO(kozhukalov) name_servers is set as "1.2.3.4,1.2.3.5"
+resolv_conf:
+  nameservers: [ {{ common.name_servers }} ]
+  searchdomains:
+   - {{ common.search_domain }}
+#  domain: {{ domain }}
+#  options:
+#    rotate: true
+#    timeout: 1
+
+
+# add entries to rsyslog configuration
+rsyslog:
+  - filename: 10-log2master.conf
+    content: |
+      $template LogToMaster, "<%%PRI%>1 %$NOW%T%TIMESTAMP:8:$%Z %HOSTNAME% %APP-NAME% %PROCID% %MSGID% -%msg%\n"
+      *.* @{{ common.master_ip }};LogToMaster
+
+
+#TODO(agordeev):
+#mounts: fill /etc/fstab
+
+
+runcmd:
+ - sed -i /etc/rc.d/init.d/mcollective -e 's/\(# chkconfig:\s\+[-0-6]\+\) [0-9]\+ \([0-9]\+\)/\1 81 \2/'
+ - /sbin/chkconfig mcollective on
+
+
+# that module's missing in 0.6.3, but existent for >= 0.7.3
+write_files:
+ -   content: |
+        ---
+        url: {{ common.master_url }}
+     path: /etc/nailgun-agent/config.yaml
+ -   content: target
+     path: /etc/nailgun_systemtype
+
+
+yum_repos:
+    {% for repo in common.ks_repos %}
+        {{ repo.name }}:
+          baseurl: {{ repo.url }}
+          enabled: true
+          gpgcheck: false
+    {% endfor %}
+
+
+mcollective:
+  conf:
+    main_collective: mcollective
+    collectives: mcollective
+    libdir: /usr/share/mcollective/plugins
+    logfile: /var/log/mcollective.log
+    loglevel: debug
+    daemonize: 1
+    #NOTE: direct_addressing is 1 for ubuntu
+    direct_addressing: 1
+    ttl: 4294957
+    securityprovider: psk
+    plugin.psk: {{ mcollective.pskey }}
+    connector: {{ mcollective.connector }}
+    plugin.rabbitmq.vhost: {{ mcollective.vhost }}
+    plugin.rabbitmq.pool.size: 1
+    plugin.rabbitmq.pool.1.host: {{ mcollective.host }}
+    plugin.rabbitmq.pool.1.port: {{ mcollective.port|default(61613) }}
+    plugin.rabbitmq.pool.1.user: {{ mcollective.user }}
+    plugin.rabbitmq.pool.1.password: {{ mcollective.password }}
+    plugin.rabbitmq.heartbeat_interval: 30
+    factsource: yaml
+    plugin.yaml: /etc/mcollective/facts.yaml
+
+
+puppet:
+  conf:
+    main:
+      logdir: /var/log/puppet
+      rundir: /var/run/puppet
+      ssldir: $vardir/ssl
+      pluginsync: true
+    agent:
+      classfile: $vardir/classes.txt
+      localconfig: $vardir/localconfig
+      server: {{ puppet.master }}
+      report: false
+      configtimeout: 600
+
+
+final_message: "YAY! The system is finally up, after $UPTIME seconds"
+

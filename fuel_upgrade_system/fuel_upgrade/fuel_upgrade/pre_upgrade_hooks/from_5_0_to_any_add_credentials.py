@@ -62,7 +62,9 @@ class AddCredentialsHook(PreUpgradeHookBase):
             "nailgun_password": "nailgun",
             "ostf_dbname": "ostf",
             "ostf_user": "ostf",
-            "ostf_password": "ostf"}}
+            "ostf_password": "ostf"},
+        "keystone": {
+            "admin_token": utils.generate_random_string()}}
 
     def check_if_required(self):
         """Checks if it's required to run upgrade

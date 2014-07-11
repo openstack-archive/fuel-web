@@ -444,3 +444,13 @@ class TestUtils(BaseTestCase):
     def test_remove_dir(self, remove_mock, _, __):
         utils.remove('path')
         remove_mock.assert_called_once_with('path', ignore_errors=True)
+
+    @mock.patch('fuel_upgrade.utils.yaml')
+    def test_save_as_yaml(self, yaml_mock):
+        path = '/tmp/path'
+        data = {'a': 'b'}
+        mock_open = self.mock_open('')
+        with mock.patch('__builtin__.open', mock_open):
+            utils.save_as_yaml(path, data)
+
+        yaml_mock.dump.assert_called_once_with(data, default_flow_style=False)

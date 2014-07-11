@@ -554,3 +554,16 @@ def get_required_size_for_actions(actions, update_path):
                 rv[dst] += files_size(src)
 
     return rv
+
+
+def save_as_yaml(path, data):
+    """Saves data as yaml data structure in file
+
+    :param str path: path to file to save data
+    :param data: data to save as yaml
+    """
+    logger.debug('Update file %s with data %s', path, data)
+
+    with open(path, 'w') as f:
+        astute_str = yaml.dump(data, default_flow_style=False)
+        f.write(astute_str)

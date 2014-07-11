@@ -205,12 +205,14 @@ class TestCheckers(BaseTestCase):
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nailgun_checker_returns_true(self, get_mock):
         get_mock.return_value = [None, 200]
-        self.assert_checker_true(health_checker.NailgunChecker)
+        self.assert_checker_true(
+            health_checker.IntegrationCheckerNginxNailgunChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nailgun_checker_returns_false(self, get_mock):
         get_mock.return_value = [None, 400]
-        self.assert_checker_false(health_checker.NailgunChecker)
+        self.assert_checker_false(
+            health_checker.IntegrationCheckerNginxNailgunChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_ostf_checker_returns_true(self, get_mock):

@@ -245,6 +245,21 @@ class IntegrationCheckerNginxNailgunChecker(BaseChecker):
         return code == 200
 
 
+class KeystoneChecker(BaseChecker):
+    @property
+    def checker_name(self):
+        return 'keystone'
+
+    def check(self):
+        _, code = self.safe_get(
+            'http://{host}:{port}/v2.0'.format(
+                **self.endpoints['keystone']))
+        _, admin_code = self.safe_get(
+            'http://{host}:{port}/v2.0'.format(
+                **self.endpoints['keystone_admin']))
+        return code == 200 and admin_code == 200
+
+
 class IntegrationCheckerPostgresqlNailgunNginx(BaseChecker):
 
     @property
@@ -303,6 +318,7 @@ class FuelUpgradeVerify(object):
                 RsyncChecker,
                 RsyslogChecker,
                 MCollectiveChecker,
+                KeystoneChecker,
                 NginxChecker,
                 IntegrationCheckerNginxNailgunChecker,
                 IntegrationCheckerPostgresqlNailgunNginx,

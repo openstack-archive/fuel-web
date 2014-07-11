@@ -454,3 +454,8 @@ class TestUtils(BaseTestCase):
             utils.save_as_yaml(path, data)
 
         yaml_mock.dump.assert_called_once_with(data, default_flow_style=False)
+
+    def test_generate_uuid_string(self):
+        random_string = utils.generate_uuid_string()
+        self.assertEqual(len(random_string), 36)
+        self.assertTrue(isinstance(random_string, str))

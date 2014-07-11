@@ -92,5 +92,9 @@ def cast(name, message, service=False):
                 publish()
             except amqp_exceptions.PreconditionFailed as e:
                 logger.warning(six.text_type(e))
-                utils.delete_entities(conn, use_exchange, use_queue)
+                # (dshulyak) we should drop both exchanges/queues in order
+                # for astute to be able to recover temporary queues
+                utils.delete_entities(
+                    conn, naily_service_exchange, naily_service_queue,
+                    naily_exchange, naily_queue)
                 publish()

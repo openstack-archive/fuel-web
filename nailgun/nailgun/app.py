@@ -28,7 +28,8 @@ from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger
 from nailgun.middleware.http_method_override import \
     HTTPMethodOverrideMiddleware
-from nailgun.middleware.keystone import NailgunAuthProtocol
+from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
+from nailgun.middleware.keystone import NailgunKeystoneAuthMiddleware
 from nailgun.middleware.static import StaticMiddleware
 from nailgun.settings import settings
 from nailgun.urls import urls
@@ -55,7 +56,9 @@ def build_middleware(app):
         middleware_list.append(StaticMiddleware)
 
     if settings.AUTH['AUTHENTICATION_METHOD'] == 'keystone':
-        middleware_list.append(NailgunAuthProtocol)
+        middleware_list.append(NailgunKeystoneAuthMiddleware)
+    elif settings.AUTH['AUTHENTICATION_METHOD'] == 'fake':
+        middleware_list.append(NailgunFakeKeystoneAuthMiddleware)
 
     logger.debug('Initialize middleware: %s' %
                  (map(lambda x: x.__name__, middleware_list)))

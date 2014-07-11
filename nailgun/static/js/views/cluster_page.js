@@ -240,7 +240,12 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         render: function() {
             this.$el.html(this.template({nodesLength: this.model.get('nodes').length})).i18n();
             this.stickit();
-            this.stickit(this.model.get('release'), {'.release span': 'name'});
+            this.stickit(this.model.get('release'), {'.release span': {
+                observe: ['name', 'version'],
+                onGet: function(values) {
+                    return values[0] + ' (' + values[1] + ')';
+                }
+            }});
             return this;
         }
     });

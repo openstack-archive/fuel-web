@@ -57,7 +57,7 @@ class TaskHandler(SingleHandler):
             raise self.http(400, exc.message)
 
         self.single.delete(obj)
-        raise self.http(204, 'No Content')
+        raise self.http(204)
 
 
 class TaskCollectionHandler(CollectionHandler):

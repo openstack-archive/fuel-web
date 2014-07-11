@@ -66,9 +66,16 @@
     // define restrictions
     var restrictions = [];
     if (cluster.get('nodes').nodesAfterDeploymentWithRole('controller') < size) { restrictions.push('controller'); }
-    var isCeilometerEnaled = cluster.get('settings').get('additional_components.ceilometer.value') == true;
-    if (isCeilometerEnaled && cluster.get('nodes').nodesAfterDeploymentWithRole('mongo') < size) { restrictions.push('mongo'); }
-
+    var isCeilometerEnabled = cluster.get('settings').get('additional_components.ceilometer.value') == true;
+    var mongoNodes = cluster.get('nodes').nodesAfterDeploymentWithRole('mongo');
+    if (isCeilometerEnabled) {
+      if (cluster.get('mode') == 'ha_compact' && mongoNodes < 3) {
+         restrictions.push('mongo_ha');
+      }
+      else if (mongoNodes < size) {
+        restrictions.push('mongo');
+      }
+    }
     // collect warnings
     var warnings = [];
     var hypervisor = cluster.get('settings').get('common.libvirt_type.value');

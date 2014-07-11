@@ -197,11 +197,8 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                     this.render();
                     this.scheduleUpdate();
                 }, this)
-                ).fail(_.bind(function() {
-                    this.$('.credentials, .testsets > .row, .testsets > .progress-bar').hide();
-                    this.$('.testsets > .error-message').show();
-                }, this)
                 ).always(_.bind(function() {
+                    this.render();
                     this.disableControls();
                 }, this));
             } else {
@@ -262,15 +259,20 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
         },
         renderCredentials: function() {
             this.$('.credentials').html('');
-            this.credentialsForm = new CredentialsForm({credentials: this.credentials, tab: this});
-            this.registerSubView(this.credentialsForm);
-            this.$('.credentials').append(this.credentialsForm.render().el);
+            this.$('.error-message').hide();
+            if (this.testsets && this.testsets.length > 0) {
+                this.credentialsForm = new CredentialsForm({credentials: this.credentials, tab: this});
+                this.registerSubView(this.credentialsForm);
+                this.$('.credentials').append(this.credentialsForm.render().el);
+            } else {
+                this.$('.error-message').show();
+            }
+            this.$('.testsets > .progress-bar').hide();
         },
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template({cluster: this.model})).i18n();
             if (this.testsets.deferred.state() != 'pending') {
-                this.renderCredentials();
                 this.$('.testsets').html('');
                 this.testsets.each(function(testset) {
                     var testsetView = new TestSet({
@@ -285,6 +287,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 }, this);
             }
             this.initStickitBindings();
+            this.renderCredentials();
             return this;
         }
     });
@@ -399,6 +402,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 testIndex: this.testIndex
             }, this.testset.templateHelpers))).i18n();
             this.initStickitBindings();
+            this.tab.disableControls();
             return this;
         }
     });

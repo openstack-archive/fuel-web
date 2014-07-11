@@ -519,6 +519,7 @@
                         "controller": "Environment should have __nodeSize__ controller node",
                         "controller_plural": "Environment should have __nodeSize__ controller nodes",
                         "mongo": "When Ceilometer is enabled, environment should have Telemetry - MongoDB node",
+                        "mongo_ha": "When Ceilometer is enabled, environment should have at least 3 Telemetry - MongoDB nodes",
                         "compute": "Compute nodes are recommended for deployment"
                     },
                     "changed_task_name": "Changed __item__",

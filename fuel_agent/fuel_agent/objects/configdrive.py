@@ -17,7 +17,8 @@ from fuel_agent import errors
 
 class ConfigDriveCommon(object):
     def __init__(self, ssh_auth_key, hostname, fqdn, name_servers,
-                 search_domain, master_ip, master_url, timezone):
+                 search_domain, master_ip, master_url, udevrules, admin_mac,
+                 admin_ip, admin_mask, admin_iface_name, timezone):
         self.ssh_auth_key = ssh_auth_key
         self.hostname = hostname
         self.fqdn = fqdn
@@ -25,6 +26,11 @@ class ConfigDriveCommon(object):
         self.search_domain = search_domain
         self.master_ip = master_ip
         self.master_url = master_url
+        self.udevrules = udevrules
+        self.admin_mac = admin_mac
+        self.admin_ip = admin_ip
+        self.admin_mask = admin_mask
+        self.admin_iface_name = admin_iface_name
         self.timezone = timezone
 
 

@@ -193,3 +193,41 @@ class TestPartitionUtils(test_base.BaseTestCase):
         }
         self.assertRaises(errors.PartitionNotFoundError, pu.remove_partition,
                           '/dev/fake', 3)
+
+    @mock.patch.object(utils, 'execute')
+    def test_set_gpt_type(self, mock_exec):
+        pu.set_gpt_type('dev', 'num', 'type')
+        mock_exec.assert_called_once_with('sgdisk',
+                                          '--typecode=%s:%s' % ('num', 'type'),
+                                          'dev', check_exit_code=[0])
+
+    @mock.patch.object(utils, 'execute')
+    def test_info(self, mock_exec):
+        mock_exec.return_value = [
+            'BYT;\n'
+            '/dev/fake:476940MiB:scsi:512:4096:msdos:ATA 1BD14;\n'
+            '1:0.03MiB:1.00MiB:0.97MiB:free;\n'
+            '1:1.00MiB:191MiB:190MiB:ext3::boot;\n'
+            '2:191MiB:476939MiB:476748MiB:::lvm;\n'
+            '1:476939MiB:476940MiB:1.02MiB:free;\n'
+        ]
+        expected = {'generic': {'dev': '/dev/fake',
+                                'logical_block': 512,
+                                'model': 'ATA 1BD14',
+                                'physical_block': 4096,
+                                'size': 476940,
+                                'table': 'msdos'},
+
+                    'parts': [{'begin': 1, 'end': 1, 'fstype': 'free',
+                               'num': 1, 'size': 1},
+                              {'begin': 1, 'end': 191, 'fstype': 'ext3',
+                               'num': 1, 'size': 190},
+                              {'begin': 191, 'end': 476939, 'fstype': None,
+                               'num': 2, 'size': 476748},
+                              {'begin': 476939, 'end': 476940,
+                               'fstype': 'free', 'num': 1, 'size': 2}]}
+        actual = pu.info('/dev/fake')
+        self.assertEqual(expected, actual)
+        mock_exec.assert_called_once_with('parted', '-s', '/dev/fake', '-m',
+                                          'unit', 'MiB', 'print', 'free',
+                                          check_exit_code=[0, 1])

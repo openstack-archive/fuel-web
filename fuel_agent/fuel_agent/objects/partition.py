@@ -231,10 +231,10 @@ class PartitionScheme(object):
     def md_attach_by_mount(self, device, mount, spare=False, **kwargs):
         md = self.md_by_mount(mount)
         if not md:
-            md = self.add_md(**kwargs)
+            md = self.add_md()
             fskwargs = {}
             fskwargs['device'] = md.name
-            fskwargs['mount'] = kwargs.pop('mount')
+            fskwargs['mount'] = mount
             fskwargs['fs_type'] = kwargs.pop('fs_type', None)
             fskwargs['fs_options'] = kwargs.pop('fs_options', None)
             fskwargs['fs_label'] = kwargs.pop('fs_label', None)
@@ -292,6 +292,6 @@ class PartitionScheme(object):
     # only if one uses cloud-init with configdrive.
     def configdrive_device(self):
         for parted in self.parteds:
-            for prt in parted.partititons:
+            for prt in parted.partitions:
                 if prt.configdrive:
                     return prt.name

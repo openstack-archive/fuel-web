@@ -67,7 +67,7 @@ class Nailgun(object):
     @property
     def ks_vgs(self):
         vg_filter = lambda x: x['type'] == 'vg'
-        self.ks_vgs = filter(vg_filter, self.partition_data())
+        return filter(vg_filter, self.partition_data())
 
     @property
     def hu_disks(self):
@@ -107,7 +107,7 @@ class Nailgun(object):
         ks_spaces_validator.validate(data)
         partition_scheme = objects.PartitionScheme()
 
-        for disk in enumerate(self.ks_disks):
+        for disk in self.ks_disks:
             parted = partition_scheme.add_parted(
                 name=self._disk_dev(disk), label='gpt')
             # legacy boot partition
@@ -147,7 +147,7 @@ class Nailgun(object):
             if partition_scheme.configdrive_device() is None:
                 parted.add_partition(size=20, configdrive=True)
 
-        for vg in enumerate(self.ks_vgs):
+        for vg in self.ks_vgs:
             for volume in vg['volumes']:
                 if volume['size'] <= 0:
                     continue
@@ -172,7 +172,7 @@ class Nailgun(object):
         admin_interface = filter(
             lambda x: (x['mac_address'] ==
                        data['kernel_options']['netcfg/choose_interface']),
-            [spec.update(name=name) for name, spec
+            [dict(name=name, **spec) for name, spec
              in data['interfaces'].iteritems()])[0]
         configdrive_scheme.set_common(
             ssh_auth_key=data['ks_meta']['auth_key'],
@@ -181,7 +181,7 @@ class Nailgun(object):
             name_servers=data['name_servers'],
             search_domain=data['name_servers_search'],
             master_ip=data['ks_meta']['master_ip'],
-            master_url='http:/%s:8000/api' % self.data['master_ip'],
+            master_url='http://%s:8000/api' % data['ks_meta']['master_ip'],
             udevrules=data['kernel_options']['udevrules'],
             admin_mac=data['kernel_options']['netcfg/choose_interface'],
             admin_ip=admin_interface['ip_address'],
@@ -198,7 +198,7 @@ class Nailgun(object):
             pskey=data['ks_meta']['mco_pskey'],
             vhost=data['ks_meta']['mco_vhost'],
             host=data['ks_meta']['mco_host'],
-            user=data['ks_meta']['mco_host'],
+            user=data['ks_meta']['mco_user'],
             password=data['ks_meta']['mco_password'],
             connector=data['ks_meta']['mco_connector']
         )

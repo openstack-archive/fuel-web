@@ -31,7 +31,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         template: _.template(settingsTabTemplate),
         mixins: [viewMixins.toggleablePassword],
         hasChanges: function() {
-            return !_.isEqual(this.settings.toJSON(), this.initialSettings.toJSON());
+            return !_.isEqual(this.settings.toJSON().editable, this.settings.initialAttributes);
         },
         events: {
             'click .btn-apply-changes:not([disabled])': 'applyChanges',
@@ -53,7 +53,9 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         applyChanges: function() {
             this.disableControls();
             return this.settings.save(null, {patch: true, wait: true})
-                .done(_.bind(this.updateInitialSettings, this))
+                .done(_.bind(function(settings) {
+                    this.settings.initialAttributes = settings.editable;
+                }, this))
                 .always(_.bind(function() {
                     this.render();
                     this.model.fetch();
@@ -73,21 +75,11 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             this.loadInitialSettings();
         },
         loadDefaults: function() {
-            this.disableControls();
-            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'})
-                .fail(function() {
-                    utils.showErrorDialog({
-                        title: $.t('cluster_page.settings_tab.settings_error.title'),
-                        message: $.t('cluster_page.settings_tab.settings_error.load_defaults_warning')
-                    });
-                })
-                .always(_.bind(this.render, this));
-        },
-        updateInitialSettings: function() {
-            this.initialSettings.set(this.settings.attributes);
+            this.settings.set(this.model.get('settingDefaults').attributes);
         },
         loadInitialSettings: function() {
-            this.settings.set(this.initialSettings.attributes);
+            var initialSettingsModel = new models.Settings(this.settings.initialAttributes);
+            this.settings.set(initialSettingsModel.processRestrictions(this.configModels));
         },
         onSettingChange: function() {
             this.$('input.error').removeClass('error');
@@ -118,11 +110,24 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                         $el.parents('.fieldset-group').toggle(isVisible);
                     }
                 };
+                var isGroupDisabled = _.bind(function(groupName) {
+                    var groupData = this.settings.get(groupName + '.metadata');
+                    if (groupData.enabled && (groupData.hasDependentRole || this.checkDependentSettings(groupName, 'metadata'))) {
+                       return false;
+                    }
+                    return groupData.enabled === false || groupData.disabled;
+                }, this);
                 _.each(group, function(setting, settingName) {
                     if (settingName == 'metadata') {return;}
                     var settingPath = groupName + '.' + settingName;
                     bindings['input[name="' + settingPath + '"]'] = {
-                        observe: settingPath + '.value',
+                        observe: [settingPath + '.value', settingPath + '.visible'],
+                        onGet: function(value) {
+                            return value[0];
+                        },
+                        onSet: function(value) {
+                            return [value, setting.visible];
+                        },
                         visible: function() {
                             return setting.visible;
                         },
@@ -131,32 +136,32 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                         },
                         attributes: [{
                             name: 'disabled',
-                            observe: [groupName + '.metadata.enabled', groupName + '.metadata.disabled', settingPath + '.disabled'],
+                            observe: [groupName + '.metadata.*', settingPath + '.disabled'],
                             onGet: _.bind(function(value) {
-                                var isSettingGroupActive = value[0];
-                                var isSettingGroupDisabled = value[1];
-                                var isSettingDisabled = value[2];
-                                return this.isLocked() || isSettingGroupActive === false || isSettingGroupDisabled || isSettingDisabled;
+                                var isSettingDisabled = value[1];
+                                return this.isLocked() || isGroupDisabled(groupName) || isSettingDisabled;
                             }, this)
                         }]
                     };
                     _.each(setting.values, function(option, index) {
                         bindings['input[name="' + settingPath + '"][value="' + option.data + '"]'] = {
-                            observe: settingPath + '.visible',
-                            visible: function() {
-                                return setting.visible && option.visible;
+                            observe: [settingPath + '.visible', settingPath + '.values'],
+                            onGet: function(value) {
+                                return value[1];
+                            },
+                            visible: function(value) {
+                                return setting.visible && value[index].visible;
                             },
                             visibleFn: function($el, isVisible) {
                                 $el.parents('.parameter-box:first').toggleClass('hide', !isVisible);
                             },
                             attributes: [{
                                 name: 'disabled',
-                                observe: [groupName + '.metadata.enabled', settingPath + '.disabled', settingPath + '.values'],
+                                observe: [groupName + '.metadata.*', settingPath + '.disabled', settingPath + '.values'],
                                 onGet: _.bind(function(value) {
-                                    var isSettingGroupActive = value[0];
                                     var isSettingDisabled = value[1];
-                                    var settingValues = value[2];
-                                    return this.isLocked() || isSettingGroupActive === false || isSettingDisabled || settingValues[index].disabled;
+                                    var values = value[2];
+                                    return this.isLocked() || isGroupDisabled(groupName) || isSettingDisabled || values[index].disabled;
                                 }, this)
                             }]
                         };
@@ -165,95 +170,86 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             }, this);
             this.stickit(this.settings, bindings);
         },
-        checkActiveDependentSettings: function(settingPath) {
-            var isDependent = function(restriction) {
-                return _.contains(restriction.condition, 'settings:' + settingPath + '.value');
-            };
+        getValueAttribute: function(settingName) {
+            return settingName == 'metadata' ? 'enabled' : 'value';
+        },
+        checkDependentSettings: function(groupName, settingName) {
+            var settingPath = groupName + '.' + settingName;
+            var initialSetting = this.settings.get(settingPath);
+            var severalSolutions = initialSetting.type != 'checkbox' && !(initialSetting.values && initialSetting.values.length <= 2);
+            var restrictionSample = 'settings:' + settingPath + '.' + this.getValueAttribute(settingName);
             return _.any(this.settings.attributes, function(group, groupName) {
                 if (!group.metadata.visible) { return false; }
-                var hasDependentGroup = false;
-                if (group.metadata.toggleable) {
-                    var groupRestrictions = _.where(_.map(group.metadata.restrictions, utils.expandRestriction), {action: 'disable'});
-                    hasDependentGroup = _.any(groupRestrictions, isDependent) && group.metadata.enabled;
-                }
-                return hasDependentGroup || _.any(group, function(setting, settingName) {
-                    if (groupName + '.' + settingName == settingPath) { return false; }
-                    var hasDependentOption = _.any(setting.values, function(value) {
-                        var valueRestrictions = _.where(_.map(value.restrictions, utils.expandRestriction), {action: 'disable'});
-                        return setting.value == value.data && _.any(valueRestrictions, isDependent);
+                return _.any(group, function(setting, settingName) {
+                    if (groupName + '.' + settingName == settingPath || (settingName == 'metadata' && _.isUndefined(setting.toggleable))) { return false; }
+                    var activeOption = _.find(setting.values, {data: initialSetting.value});
+                    var restrictions = _.where(_.compact(_.union(setting.restrictions, activeOption ? activeOption.restrictions : null)), {action: 'disable'});
+                    var hasDependentRestriction = _.any(restrictions, function(restriction) {
+                        return _.contains(restriction.condition, restrictionSample);
                     });
-                    var settingRestrictions = _.where(_.map(setting.restrictions, utils.expandRestriction), {action: 'disable'});
-                    return hasDependentOption || (setting.value === true && _.any(settingRestrictions, isDependent));
-                });
-            });
-        },
-        handleRestriction: function(restriction) {
-            return utils.evaluateExpression(restriction.condition, this.configModels).value;
+                    var isActive, value = this.getValueAttribute(settingName);
+                    if (settingName == 'metadata' || setting.type == 'checkbox') {
+                        isActive = setting[value] === true;
+                    } else {
+                        isActive = setting[value] != this.model.get('settingDefaults').get(groupName + '.' + settingName + '.' + value);
+                    }
+                    var hasSeveralSolutions = severalSolutions && _.any(restrictions, function(restriction) {
+                        return _.contains(restriction.condition, restrictionSample + ' == ');
+                    });
+                    return hasDependentRestriction && isActive && !hasSeveralSolutions;
+                }, this);
+            }, this);
         },
         calculateSettingState: function(groupName, settingName) {
             var settingPath = groupName + '.' + settingName;
             var setting = this.settings.get(settingPath);
-            var settingRestrictions = _.map(setting.restrictions, utils.expandRestriction);
-            this.settings.set(settingPath + '.disabled', setting.hasDependentRole || _.any(_.where(settingRestrictions, {action: 'disable'}), this.handleRestriction, this) || this.checkActiveDependentSettings(settingPath));
-            this.settings.set(settingPath + '.visible', !_.any(_.where(settingRestrictions, {action: 'hide'}), this.handleRestriction, this));
+            var checkRestrictions = _.bind(function(setting, action) {
+                return _.any(_.where(setting.restrictions, {action: action}), function(restriction) {
+                    return utils.evaluateExpression(restriction.condition, this.configModels).value;
+                }, this);
+            }, this);
+            this.settings.set(settingPath + '.disabled', setting.hasDependentRole || checkRestrictions(setting, 'disable') || this.checkDependentSettings(groupName, settingName));
+            this.settings.set(settingPath + '.visible', !checkRestrictions(setting, 'hide'));
             _.each(setting.values, function(value, index) {
                 var values = _.cloneDeep(setting.values);
-                var valueRestrictions = _.map(values[index].restrictions, utils.expandRestriction);
-                values[index].disabled = _.any(_.where(valueRestrictions, {action: 'disable'}), this.handleRestriction, this);
-                values[index].visible = !_.any(_.where(valueRestrictions, {action: 'hide'}), this.handleRestriction, this);
+                values[index].disabled = checkRestrictions(values[index], 'disable');
+                values[index].visible = !checkRestrictions(values[index], 'hide');
                 this.settings.set(settingPath + '.values', values);
             }, this);
         },
-        calculateGroupState: function(groupName) {
-            var groupRestrictions = _.map(this.settings.get(groupName + '.metadata.restrictions'), utils.expandRestriction);
-            this.settings.set(groupName + '.metadata.visible', !_.any(_.where(groupRestrictions, {action: 'hide'}), this.handleRestriction, this));
-            this.settings.set(groupName + '.metadata.disabled', _.any(_.where(groupRestrictions, {action: 'disable'}), this.handleRestriction, this));
-        },
         composeListeners: function(groupName, settingName) {
-            if (!settingName) { // compose listeners for setting group
-                var groupRestrictions = _.map(this.settings.get(groupName + '.metadata.restrictions'), utils.expandRestriction);
-                _.each(groupRestrictions, function(restriction) {
-                    var evaluatedRestriction = utils.evaluateExpression(restriction.condition, this.configModels);
-                    _.invoke(evaluatedRestriction.modelPaths, 'change', _.bind(this.calculateGroupState, this, groupName));
-                }, this);
-            } else { // compose listeners for setting and setting values
-                var settingPath = groupName + '.' + settingName;
-                var callback = _.bind(this.calculateSettingState, this, groupName, settingName);
-                var collectRestrictions = function(setting) {
-                    return _.map(_.compact(_.flatten(_.union(setting.restrictions, _.pluck(setting.values, 'restrictions')))), utils.expandRestriction);
-                };
-                var checkDependency = function(restriction) {
-                    return _.contains(restriction.condition, 'settings:' + settingPath + '.value');
-                };
-                _.each(collectRestrictions(this.settings.get(settingPath)), function(restriction) {
-                    var evaluatedRestriction = utils.evaluateExpression(restriction.condition, this.configModels);
-                    _.invoke(evaluatedRestriction.modelPaths, 'change', callback);
-                }, this);
-                // handle dependent settings
-                _.each(this.settings.attributes, function(group, groupName) {
-                    var isGroupDependent = _.any(_.map(group.metadata.restrictions, utils.expandRestriction), checkDependency);
-                    if (isGroupDependent && group.metadata.toggleable) {
-                        this.settings.on('change:' + groupName + '.metadata.enabled', callback);
+            var settingPath = groupName + '.' + settingName;
+            var valueAttribute = this.getValueAttribute(settingName);
+            var callback = _.bind(this.calculateSettingState, this, groupName, settingName);
+            var collectRestrictions = function(setting) {
+                return _.compact(_.flatten(_.union(setting.restrictions, _.pluck(setting.values, 'restrictions'))));
+            };
+            _.each(collectRestrictions(this.settings.get(settingPath)), function(restriction) {
+                var evaluatedRestriction = utils.evaluateExpression(restriction.condition, this.configModels);
+                _.invoke(evaluatedRestriction.modelPaths, 'change', callback);
+            }, this);
+            // handle dependent settings
+            _.each(this.settings.attributes, function(group, groupName) {
+                _.each(group, function(setting, settingName) {
+                    if (groupName + '.' + settingName == settingPath) { return; }
+                    var hasDependentRestriction = _.any(collectRestrictions(setting), function(restriction) {
+                        return _.contains(restriction.condition, 'settings:' + settingPath + '.' + valueAttribute);
+                    });
+                    if (hasDependentRestriction) {
+                        this.settings.on('change:' + groupName + '.' + settingName + '.' + this.getValueAttribute(settingName), callback);
                     }
-                    _.each(group, function(setting, settingName) {
-                        if (_.contains([groupName + '.' + settingName, 'metadata'], settingPath)) { return; }
-                        var isDependent = _.any(collectRestrictions(setting), checkDependency);
-                        if (isDependent) {
-                            this.settings.on('change:' + groupName + '.' + settingName + '.value', callback);
-                        }
-                    }, this);
                 }, this);
-            }
+            }, this);
         },
         checkDependentRoles: function(groupName, settingName) {
             var settingPath = groupName + '.' + settingName;
-            var setting = this.settings.get(settingPath);
             var rolesData = this.model.get('release').get('roles_metadata');
-            setting.hasDependentRole = _.any(this.model.get('release').get('roles'), function(role) {
-                var hasSatisfiedDependencies = _.any(rolesData[role].depends, function(dependency) {
-                    var dependencyValue = dependency.condition['settings:' + settingPath + '.value'];
-                    return !_.isUndefined(dependencyValue) && dependencyValue == setting.value;
-                });
+            this.settings.get(settingPath).hasDependentRole = _.any(this.model.get('release').get('roles'), function(role) {
+                var roleDependencies = _.map(rolesData[role].depends, utils.expandRestriction);
+                var hasSatisfiedDependencies = _.any(roleDependencies, function(dependency) {
+                    var evaluatedDependency = utils.evaluateExpression(dependency.condition, this.configModels);
+                    return _.contains(dependency.condition, 'settings:' + settingPath) && evaluatedDependency.value;
+                }, this);
                 var assignedNodes = this.model.get('nodes').filter(function(node) { return node.hasRole(role); });
                 return hasSatisfiedDependencies && assignedNodes.length;
             }, this);
@@ -290,7 +286,6 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
                 task.on('change:status', this.render, this);
             });
-            this.initialSettings = new models.Settings();
             this.settings = this.model.get('settings');
             this.settings.on('invalid', function(model, errors) {
                 _.each(errors, function(error) {
@@ -300,8 +295,17 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     input.parent().siblings('.validation-error').text(error.message).removeClass('hide');
                 }, this);
             }, this);
-            (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {
-                this.updateInitialSettings();
+            if (!this.model.has('settingDefaults')) {
+                var settingDefaults = new models.Settings();
+                settingDefaults.url = _.result(this.model, 'url') + '/attributes/defaults';
+                this.model.set('settingDefaults', settingDefaults);
+            }
+            (this.loading = $.when(
+                this.settings.fetch({cache: true}),
+                this.model.get('settingDefaults').fetch({cache: true}),
+                this.model.get('networkConfiguration').fetch({cache: true}))
+            ).done(_.bind(function() {
+                this.settings.initialAttributes = _.cloneDeep(this.settings.attributes);
                 this.configModels = {
                     cluster: this.model,
                     settings: this.settings,
@@ -309,12 +313,10 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     version: app.version,
                     default: this.settings
                 };
+                this.model.get('settingDefaults').processRestrictions(this.configModels);
                 this.settings.processRestrictions(this.configModels);
                 _.each(this.settings.attributes, function(group, groupName) {
-                    this.composeListeners(groupName);
-                    this.calculateGroupState(groupName);
                     _.each(group, function(setting, settingName) {
-                        if (settingName == 'metadata') {return;}
                         this.composeListeners(groupName, settingName);
                         this.checkDependentRoles(groupName, settingName);
                         this.calculateSettingState(groupName, settingName);

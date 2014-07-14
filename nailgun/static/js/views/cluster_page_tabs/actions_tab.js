@@ -201,7 +201,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
             });
         },
         isLocked: function() {
-            return this.model.get('status') != 'operational' || this.constructor.__super__.isLocked.apply(this);
+            return (this.model.get('status') != 'operational' && this.model.get('status') != 'update_error') || this.constructor.__super__.isLocked.apply(this);
         },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this);

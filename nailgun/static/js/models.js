@@ -306,22 +306,24 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
             return response.editable;
         },
         toJSON: function(options) {
-            var result = this.constructor.__super__.toJSON.call(this, options);
-            _.each(result, function(group, groupName) {
-                var metadata = _.omit(group.metadata, 'disabled', 'visible');
-                if (_.isEmpty(metadata)) {
-                    delete result[groupName].metadata;
-                } else {
-                    result[groupName].metadata = metadata;
-                }
-                _.each(group, function(setting, settingName) {
-                    group[settingName] = _.omit(setting, 'disabled', 'hasDependentRole', 'visible');
-                    _.each(setting.values, function(option, index) {
-                        setting.values[index] = _.omit(option, 'disabled', 'visible');
+            var currentData = this.constructor.__super__.toJSON.call(this, options);
+            if (currentData.initialAttributes) {
+                var result = _.cloneDeep(currentData.initialAttributes);
+                _.each(currentData, function(group, groupName) {
+                    if (groupName == 'initialAttributes') { return; }
+                    _.each(group, function(setting, settingName) {
+                        if (settingName == 'metadata') {
+                            if (!_.isUndefined(setting.toggleable)) {
+                                result[groupName][settingName].enabled = setting.enabled;
+                            }
+                        } else  {
+                            result[groupName][settingName].value = setting.value;
+                        }
                     });
-                });
-            }, this);
-            return {editable: result};
+                }, this);
+                return {editable: result};
+            }
+            return {editable: currentData};
         },
         processRestrictions: function(configModels) {
             var handleRestrictions = function(restrictions) {
@@ -334,7 +336,8 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
                 setting.disabled = handleRestrictions(_.where(settingRestrictions, {action: 'disable'}));
                 setting.visible = !handleRestrictions(_.where(settingRestrictions, {action: 'hide'}));
             };
-            _.each(this.attributes, function(group) {
+            _.each(this.attributes, function(group, groupName) {
+                if (groupName == 'initialAttributes') { return; }
                 if (!group.metadata) {
                     group.metadata = {};
                 }

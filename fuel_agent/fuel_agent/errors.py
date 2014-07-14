@@ -93,3 +93,7 @@ class WrongConfigDriveDataError(BaseError):
 
 class WrongImageDataError(BaseError):
     pass
+
+
+class TemplateWriteError(BaseError):
+    pass

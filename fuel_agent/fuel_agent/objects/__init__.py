@@ -15,6 +15,7 @@
 from fuel_agent.objects.configdrive import ConfigDriveCommon
 from fuel_agent.objects.configdrive import ConfigDriveMcollective
 from fuel_agent.objects.configdrive import ConfigDrivePuppet
+from fuel_agent.objects.configdrive import ConfigDriveScheme
 from fuel_agent.objects.image import Image
 from fuel_agent.objects.image import ImageScheme
 from fuel_agent.objects.partition import Fs

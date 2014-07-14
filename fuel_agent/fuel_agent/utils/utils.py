@@ -18,6 +18,7 @@ import math
 import jinja2
 import stevedore.driver
 
+from fuel_agent import errors
 from fuel_agent.openstack.common import gettextutils as gtu
 from fuel_agent.openstack.common import log as logging
 from fuel_agent.openstack.common import processutils
@@ -67,5 +68,6 @@ def render_and_save(tmpl_dir, tmpl_name, tmpl_data, file_name):
         with open(file_name, 'w') as f:
             f.write(output)
     except Exception:
-        raise Exception('Something goes wrong while trying to save'
-                        'templated data to {0}'.format(file_name))
+        raise errors.TemplateWriteError(
+            'Something goes wrong while trying to save'
+            'templated data to {0}'.format(file_name))

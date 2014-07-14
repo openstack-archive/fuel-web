@@ -17,12 +17,23 @@ import os
 import tempfile
 import testtools
 
+import mock
+import stevedore
+
+from fuel_agent import errors
 from fuel_agent.openstack.common import processutils
 from fuel_agent.utils import utils
 
 
 class ExecuteTestCase(testtools.TestCase):
     """This class is partly based on the same class in openstack/ironic."""
+
+    def setUp(self):
+        super(ExecuteTestCase, self).setUp()
+        fake_driver = stevedore.extension.Extension('fake_driver', None, None,
+                                                    'fake_obj')
+        self.drv_manager = stevedore.driver.DriverManager.make_test_instance(
+            fake_driver)
 
     def test_parse_unit(self):
         self.assertEqual(utils.parse_unit('1.00m', 'm', ceil=True), 1)
@@ -120,3 +131,28 @@ grep foo
         finally:
             os.unlink(tmpfilename)
             os.unlink(tmpfilename2)
+
+    @mock.patch('stevedore.driver.DriverManager')
+    def test_get_driver(self, mock_drv_manager):
+        mock_drv_manager.return_value = self.drv_manager
+        self.assertEqual('fake_obj', utils.get_driver('fake_driver'))
+
+    @mock.patch('jinja2.Environment')
+    @mock.patch('jinja2.FileSystemLoader')
+    @mock.patch('six.moves.builtins.open')
+    def test_render_and_save_fail(self, mock_open, mock_j_lo, mock_j_env):
+        mock_open.side_effect = Exception('foo')
+        self.assertRaises(errors.TemplateWriteError, utils.render_and_save,
+                          'fake_dir', 'fake_tmpl_name', 'fake_data',
+                          'fake_file_name')
+
+    @mock.patch('jinja2.Environment')
+    @mock.patch('jinja2.FileSystemLoader')
+    @mock.patch('six.moves.builtins.open')
+    def test_render_and_save_ok(self, mock_open, mock_j_lo, mock_j_env):
+        mock_render = mock.Mock()
+        mock_render.render.return_value = 'fake_data'
+        mock_j_env.get_template.return_value = mock_render
+        utils.render_and_save('fake_dir', 'fake_tmpl_name', 'fake_data',
+                              'fake_file_name')
+        mock_open.assert_called_once_with('fake_file_name', 'w')

@@ -200,3 +200,10 @@ localhost.localdomain)
         mock_mddisplay.return_value = [{'name': '/dev/md0'}]
         self.assertRaises(
             errors.MDNotFoundError, mu.mdremove, '/dev/md1')
+
+    @mock.patch.object(utils, 'execute')
+    def test_mdclean(self, mock_exec):
+        mu.mdclean('/dev/md0')
+        mock_exec.assert_called_once_with('mdadm', '--zero-superblock',
+                                          '--force', '/dev/md0',
+                                          check_exit_code=[0])

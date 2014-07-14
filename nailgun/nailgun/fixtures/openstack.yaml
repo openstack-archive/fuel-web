@@ -211,11 +211,11 @@
           cluster:
             value: ""
             label: "Cluster"
-            description: "vCenter cluster name. If you have multiple clusters, use comma separated names."
+            description: "vCenter cluster name. If you have multiple clusters, use comma to separate names"
             weight: 40
             type: "text"
             regex:
-              source: '^([\d\w_-]+[ ]*[\d\w_-]+)(,[\d\w_-]+[ ]*[\d\w_-]+)*$'
+              source: '^([^,\ ]+([\ ]*[^,\ ])*)(,[^,\ ]+([\ ]*[^,\ ])*)*$'
               error: "Invalid clusters list"
         nsx_plugin:
           metadata:

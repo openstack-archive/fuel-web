@@ -199,7 +199,9 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                 cluster = new models.Cluster({id: id});
                 var settings = new models.Settings();
                 settings.url = _.result(cluster, 'url') + '/attributes';
-                cluster.set({settings: settings});
+                var settingDefaults = new models.Settings();
+                settingDefaults.url = _.result(cluster, 'url') + '/attributes/defaults';
+                cluster.set({settings: settings, settingDefaults: settingDefaults});
                 tasks = new models.Tasks();
                 tasks.fetch = function(options) {
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));

@@ -254,7 +254,6 @@
                 "settings_tab": {
                     "settings_error": {
                         "title": "OpenStack Settings Configuration Error",
-                        "load_defaults_warning": "Unable to load default configuration",
                         "saving_warning": "Unable to apply changes"
                     },
                     "title": "OpenStack Settings"

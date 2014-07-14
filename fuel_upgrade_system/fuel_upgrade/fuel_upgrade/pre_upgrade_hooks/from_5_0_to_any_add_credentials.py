@@ -64,7 +64,10 @@ class AddCredentialsHook(PreUpgradeHookBase):
             "ostf_user": "ostf",
             "ostf_password": "ostf"},
         "keystone": {
-            "admin_token": utils.generate_uuid_string()}}
+            "admin_token": utils.generate_uuid_string()},
+        "FUEL_ACCESS": {
+            "user": "admin",
+            "password": "admin"}}
 
     def check_if_required(self):
         """Checks if it's required to run upgrade

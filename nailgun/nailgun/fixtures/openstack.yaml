@@ -215,7 +215,7 @@
             weight: 40
             type: "text"
             regex:
-              source: '^([\d\w_-]+[ ]*[\d\w_-]+)(,[\d\w_-]+[ ]*[\d\w_-]+)*$'
+              source: '^([^,\s]+[ \S]*[^,\s])(,[^,\s]+[ \S]*[^,\s])*$'
               error: "Invalid clusters list"
         nsx_plugin:
           metadata:

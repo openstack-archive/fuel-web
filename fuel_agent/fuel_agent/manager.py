@@ -66,7 +66,7 @@ class Manager(object):
     def do_partitioning(self):
         for parted in self.partition_scheme.parteds:
             pu.make_label(parted.name, parted.label)
-            for prt in parted.partititons:
+            for prt in parted.partitions:
                 pu.make_partition(prt.device, prt.begin, prt.end, prt.type)
                 for flag in prt.flags:
                     pu.set_partition_flag(prt.device, prt.count, flag)
@@ -95,6 +95,7 @@ class Manager(object):
         cc_output_path = os.path.join(CONF.tmp_path, 'cloud_config.txt')
         bh_output_path = os.path.join(CONF.tmp_path, 'boothook.txt')
         # NOTE:file should be strictly named as 'user-data'
+        #      the same is for meta-data as well
         ud_output_path = os.path.join(CONF.tmp_path, 'user-data')
         md_output_path = os.path.join(CONF.tmp_path, 'meta-data')
 
@@ -124,7 +125,7 @@ class Manager(object):
             raise errors.WrongPartitionSchemeError(
                 'Error while trying to get configdrive device: '
                 'configdrive device not found')
-        self.image_scheme.add_configdrive_image(
+        self.image_scheme.add_image(
             uri='file://%s' % CONF.config_drive_path,
             target_device=configdrive_device,
             image_format='iso9660',

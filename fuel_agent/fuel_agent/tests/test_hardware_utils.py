@@ -104,6 +104,7 @@ supports-statistics: yes
 supports-test: no
 supports-eeprom-access: no
 supports-register-dump: yes
+
 """]
 
         expected = {'driver': 'r8169',
@@ -202,6 +203,12 @@ supports-register-dump: yes
             return mock_with
         mock_open.side_effect = with_side_effect
         expected = {'removable': '0', 'state': 'running', 'timeout': '30'}
+        self.assertEqual(expected, hu.extrareport('/dev/fake'))
+
+    @mock.patch('six.moves.builtins.open')
+    def test_extrareport_exceptions(self, mock_open):
+        mock_open.side_effect = Exception('foo')
+        expected = {}
         self.assertEqual(expected, hu.extrareport('/dev/fake'))
 
     @mock.patch.object(hu, 'blockdevreport')
@@ -370,4 +377,9 @@ supports-register-dump: yes
         # and if it does not match each other
         uspec1 = {'ID_SERIAL_SHORT': 'fakeserial1'}
         uspec2 = {'ID_SERIAL_SHORT': 'fakeserial2'}
+        self.assertFalse(hu.match_device(uspec1, uspec2))
+
+    def test_match_device_false(self):
+        uspec1 = {'ID_WWN': 'fakewwn1', 'DEVTYPE': 'disk'}
+        uspec2 = {'ID_WWN': 'fakewwn1', 'DEVTYPE': 'partition'}
         self.assertFalse(hu.match_device(uspec1, uspec2))

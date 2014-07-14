@@ -46,7 +46,8 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
             'cobbler',
             'mcollective',
             'postgres',
-            'keystone']
+            'keystone',
+            'FUEL_ACCESS']
 
     def get_hook(self, astute):
         config = self.fake_config
@@ -63,7 +64,8 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
             'cobbler': {},
             'mcollective': {},
             'postgres': {},
-            'keystone': {}})
+            'keystone': {},
+            'FUEL_ACCESS': {}})
 
         self.assertFalse(hook.check_if_required())
 

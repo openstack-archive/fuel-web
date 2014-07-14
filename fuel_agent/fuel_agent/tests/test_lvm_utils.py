@@ -285,3 +285,101 @@ class TestLvmUtils(test_base.BaseTestCase):
         # then raise error if it doesn't
         mock_vgdisplay.return_value = [{'name': 'some'}]
         self.assertRaises(errors.VGNotFoundError, lu.vgremove, 'vgname')
+
+    @mock.patch.object(lu, 'lvdisplay')
+    @mock.patch.object(utils, 'execute')
+    def test_lvremove_ok(self, mock_exec, mock_lvdisplay):
+        mock_lvdisplay.return_value = [{'name': 'lvname'}, {'name': 'some'}]
+        lu.lvremove('lvname')
+        mock_exec.assert_called_once_with('lvremove', '-f', 'lvname',
+                                          check_exit_code=[0])
+
+    @mock.patch.object(lu, 'lvdisplay')
+    @mock.patch.object(utils, 'execute')
+    def test_lvremove_not_found(self, mock_exec, mock_lvdisplay):
+        mock_lvdisplay.return_value = [{'name': 'some'}]
+        self.assertRaises(errors.LVNotFoundError, lu.lvremove, 'lvname')
+
+    @mock.patch.object(lu, 'vgdisplay')
+    @mock.patch.object(lu, 'lvdisplay')
+    @mock.patch.object(utils, 'execute')
+    def test_lvcreate_ok(self, mock_exec, mock_lvdisplay, mock_vgdisplay):
+        mock_vgdisplay.return_value = [{'name': 'vgname', 'free': 2000},
+                                       {'name': 'some'}]
+        mock_lvdisplay.return_value = [{'name': 'some'}]
+        lu.lvcreate('vgname', 'lvname', 1000)
+        mock_exec.assert_called_once_with('lvcreate', '-L', '1000m', '-n',
+                                          'lvname', 'vgname',
+                                          check_exit_code=[0])
+
+    @mock.patch.object(lu, 'vgdisplay')
+    @mock.patch.object(utils, 'execute')
+    def test_lvcreate_not_found(self, mock_exec, mock_vgdisplay):
+        mock_vgdisplay.return_value = [{'name': 'some'}]
+        self.assertRaises(errors.VGNotFoundError, lu.lvcreate, 'vgname',
+                          'lvname', 1)
+
+    @mock.patch.object(lu, 'vgdisplay')
+    @mock.patch.object(utils, 'execute')
+    def test_lvcreate_not_enough_space(self, mock_exec, mock_vgdisplay):
+        mock_vgdisplay.return_value = [{'name': 'vgname', 'free': 1},
+                                       {'name': 'some'}]
+        self.assertRaises(errors.NotEnoughSpaceError, lu.lvcreate, 'vgname',
+                          'lvname', 2)
+
+    @mock.patch.object(lu, 'vgdisplay')
+    @mock.patch.object(lu, 'lvdisplay')
+    @mock.patch.object(utils, 'execute')
+    def test_lvcreate_lv_already_exists(self, mock_exec, mock_lvdisplay,
+                                        mock_vgdisplay):
+        mock_vgdisplay.return_value = [{'name': 'vgname', 'free': 2000},
+                                       {'name': 'some'}]
+        mock_lvdisplay.return_value = [{'name': 'lvname'}]
+        self.assertRaises(errors.LVAlreadyExistsError, lu.lvcreate, 'vgname',
+                          'lvname', 1000)
+
+    @mock.patch.object(utils, 'execute')
+    def test_lvdisplay(self, mock_exec):
+        mock_exec.return_value = [
+            '  lv_name1;1234.12m;vg_name;lv_uuid1\n'
+            '  lv_name2;5678.79m;vg_name;lv_uuid2\n  ']
+        expected_lvs = [{'name': 'lv_name1', 'size': 1235, 'vg': 'vg_name',
+                         'uuid': 'lv_uuid1', 'path': '/dev/vg_name/lv_name1'},
+                        {'name': 'lv_name2', 'size': 5679, 'vg': 'vg_name',
+                         'uuid': 'lv_uuid2', 'path': '/dev/vg_name/lv_name2'}]
+        actual_lvs = lu.lvdisplay()
+        self.assertEqual(expected_lvs, actual_lvs)
+        mock_exec.assert_called_once_with('lvdisplay', '-C', '--noheading',
+                                          '--units', 'm', '--options',
+                                          'lv_name,lv_size,vg_name,lv_uuid',
+                                          '--separator', ';',
+                                          check_exit_code=[0])
+
+    @mock.patch.object(lu, 'pvdisplay')
+    @mock.patch.object(lu, 'vgdisplay')
+    @mock.patch.object(utils, 'execute')
+    def test_vgreduce_ok(self, mock_exec, mock_vgdisplay, mock_pvdisplay):
+        mock_vgdisplay.return_value = [{'name': 'vgname'}, {'name': 'some'}]
+        mock_pvdisplay.return_value = [{'vg': 'vgname', 'name': '/dev/fake1'},
+                                       {'vg': 'vgname', 'name': '/dev/fake2'}]
+        lu.vgreduce('vgname', '/dev/fake1', '/dev/fake2')
+        mock_exec.assert_called_once_with('vgreduce', '-f', 'vgname',
+                                          '/dev/fake1', '/dev/fake2',
+                                          check_exit_code=[0])
+
+    @mock.patch.object(lu, 'vgdisplay')
+    def test_vgreduce_vg_not_found(self, mock_vgdisplay):
+        mock_vgdisplay.return_value = [{'name': 'some'}]
+        self.assertRaises(errors.VGNotFoundError, lu.vgreduce, 'vgname1',
+                          '/dev/fake1', '/dev/fake2')
+
+    @mock.patch.object(lu, 'pvdisplay')
+    @mock.patch.object(lu, 'vgdisplay')
+    @mock.patch.object(utils, 'execute')
+    def test_vgreduce_pv_not_attached(self, mock_exec, mock_vgdisplay,
+                                      mock_pvdisplay):
+        mock_vgdisplay.return_value = [{'name': 'vgname'}, {'name': 'some'}]
+        mock_pvdisplay.return_value = [{'vg': None, 'name': '/dev/fake1'},
+                                       {'vg': None, 'name': '/dev/fake2'}]
+        self.assertRaises(errors.PVNotFoundError, lu.vgreduce, 'vgname',
+                          '/dev/fake1', '/dev/fake2')

@@ -478,6 +478,34 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         renderCustomElements: function() {
             this.$('.control-group').append(this.renderControls({}));
         },
+        onWizardChange: function() {
+            this.$('input.error').removeClass('error');
+            this.$('.parameter-description').removeClass('hide');
+            this.$('.validation-error').addClass('hide');
+            this.wizard.panesModel.set('invalid', false);
+            var errors = this.validateConfig();
+            _.each(errors, _.bind(function(error) {
+                var input = this.$('[name=' + error.field +']');
+                input.addClass('error');
+                input.parent().siblings('.description').addClass('hide');
+                input.parent().siblings('.validation-error').text(error.message).removeClass('hide');
+                this.wizard.panesModel.set('invalid', true);
+            }, this));
+        },
+        validateConfig: function() {
+            var errors = [];
+            _.each(this.config, _.bind(function(attributeConfig, attribute) {
+                if (!(attributeConfig.regex && attributeConfig.regex.source)) { return; }
+                var regExp = new RegExp(attributeConfig.regex.source);
+                if (!this.wizard.model.get(this.constructorName + '.' + attribute).match(regExp)) {
+                    errors.push({
+                        field: attribute,
+                        message: $.t(attributeConfig.regex.error)
+                    });
+                }
+            }, this));
+            return errors.length ? errors : null;
+        },
         render: function() {
             this.$el.html(this.template());
             this.renderCustomElements();
@@ -588,8 +616,14 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
     clusterWizardPanes.Compute = views.WizardPane.extend({
         constructorName: 'Compute',
         title: 'dialog.create_cluster_wizard.compute.title',
+        initialize: function(options) {
+            this.constructor.__super__.initialize.call(this, options);
+            this.wizard.model.on('change:Compute.vc_user change:Compute.vc_password change:Compute.host_ip change:Compute.cluster',
+                this.onWizardChange, this);
+        },
         renderCustomElements: function() {
             this.$('.control-group').append(this.renderControls({hasDescription: true})).i18n();
+            this.onWizardChange();
         }
     });
 

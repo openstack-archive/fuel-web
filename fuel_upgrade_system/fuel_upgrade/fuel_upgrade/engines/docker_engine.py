@@ -321,7 +321,7 @@ class DockerUpgrader(UpgradeEngine):
 
         self.exec_with_retries(
             execute, errors.ExecutedErrorNonZeroExitCode,
-            '', retries=10, interval=3)
+            '', retries=30, interval=4)
 
     def exec_cmd_in_container(self, container_name, cmd):
         """Execute command in running container

@@ -70,6 +70,7 @@ class Parted(object):
                 return 'primary'
             elif len(self.partitions) == 3 and not self.extended:
                 return 'extended'
+            #NOTE(agordeev): how to reach that condition?
             else:
                 return 'logical'
 
@@ -90,7 +91,7 @@ class Parted(object):
         if self.next_type() == 'extended':
             return None
         separator = ''
-        if self.name.find('cciss') >= 0 or self.name.find('loop') >= 0:
+        if 'cciss' in self.name or 'loop' in self.name:
             separator = 'p'
         return '%s%s%s' % (self.name, separator, self.next_count())
 
@@ -212,9 +213,10 @@ class PartitionScheme(object):
         return fs
 
     def add_md(self, **kwargs):
-        kwargs['name'] = kwargs.get('name') or self.md_next_name()
-        kwargs['level'] = kwargs.get('level') or 'mirror'
-        md = Md(**kwargs)
+        mdkwargs = {}
+        mdkwargs['name'] = kwargs.get('name') or self.md_next_name()
+        mdkwargs['level'] = kwargs.get('level') or 'mirror'
+        md = Md(**mdkwargs)
         self.mds.append(md)
         return md
 
@@ -234,7 +236,7 @@ class PartitionScheme(object):
             md = self.add_md(**kwargs)
             fskwargs = {}
             fskwargs['device'] = md.name
-            fskwargs['mount'] = kwargs.pop('mount')
+            fskwargs['mount'] = mount
             fskwargs['fs_type'] = kwargs.pop('fs_type', None)
             fskwargs['fs_options'] = kwargs.pop('fs_options', None)
             fskwargs['fs_label'] = kwargs.pop('fs_label', None)
@@ -248,11 +250,12 @@ class PartitionScheme(object):
             name = '/dev/md%s' % count
             if name not in [md.name for md in self.mds]:
                 return name
-            if count > 127:
+            if count >= 127:
                 raise errors.MDAlreadyExistsError(
                     'Error while generating md name: '
                     'names from /dev/md0 to /dev/md127 seem to be busy, '
                     'try to generate md name manually')
+            count += 1
 
     def vg_by_name(self, vgname):
         found = filter(lambda x: (x.name == vgname), self.vgs)
@@ -292,6 +295,6 @@ class PartitionScheme(object):
     # only if one uses cloud-init with configdrive.
     def configdrive_device(self):
         for parted in self.parteds:
-            for prt in parted.partititons:
+            for prt in parted.partitions:
                 if prt.configdrive:
                     return prt.name

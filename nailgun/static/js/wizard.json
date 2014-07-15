@@ -140,11 +140,14 @@
         {
           "data": "neutron-nsx",
           "label": "dialog.create_cluster_wizard.network.neutr_nsx",
+          "restrictions": [{
+            "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.network.hypervisor_alert"
+          }],
           "bind": [
             {"cluster:net_provider": "neutron"},
             {"cluster:net_segment_type": "gre"}
           ]
-	}
+        }
       ]
     }
   },

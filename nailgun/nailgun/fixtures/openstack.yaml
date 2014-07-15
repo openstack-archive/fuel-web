@@ -216,7 +216,7 @@
             type: "text"
             regex:
               source: '^([^,\ ]+([\ ]*[^,\ ])*)(,[^,\ ]+([\ ]*[^,\ ])*)*$'
-              error: "Invalid clusters list"
+              error: "Invalid cluster list"
         nsx_plugin:
           metadata:
             toggleable: true

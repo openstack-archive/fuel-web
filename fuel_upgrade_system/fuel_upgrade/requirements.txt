@@ -3,6 +3,7 @@ PyYAML==3.10
 Mako==0.9.1
 requests==2.2.1
 six==1.5.2
+python-dateutil==1.5
 
 # We have to use custom version of docker
 # because docker 0.10 changed their api

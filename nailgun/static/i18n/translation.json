@@ -382,6 +382,8 @@
                     "expected_duration": "Expected Duration",
                     "actual_duration": "Actual Duration",
                     "status": "Status",
+                    "provide_credentials": "Provide credentials",
+                    "credentials_description": "If you changed the credentials after deployment, you need to provide new ones to run the checks. The credentials won't be stored anywhere.",
                     "password_label": "Password",
                     "password_description": "Password for Administrator",
                     "username_label": "Username",

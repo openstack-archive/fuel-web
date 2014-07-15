@@ -14,8 +14,8 @@
 
 from functools import wraps
 from keystoneclient.exceptions import Unauthorized
+import requests
 import sys
-import urllib2
 
 
 def exit_with_error(message):
@@ -67,33 +67,28 @@ class ParserException(FuelClientException):
     """
 
 
-def handle_exceptions(exc):
-    """handle_exceptions - exception handling manager.
-    """
-    if isinstance(exc, urllib2.HTTPError):
-        error_body = exc.read()
-        exit_with_error("{0} {1}".format(
-            exc,
-            "({0})".format(error_body or "")
-        ))
-    elif isinstance(exc, urllib2.URLError):
-        exit_with_error("Can't connect to Nailgun server!")
-    elif isinstance(exc, Unauthorized):
-        exit_with_error("Unauthorized: need authentication!")
-    elif isinstance(exc, FuelClientException):
-        exit_with_error(exc.message)
-    else:
-        raise
-
-
 def exceptions_decorator(func):
-    """exceptions_decorator - is decorator which intercepts exceptions and
-    redirects them to handle_exceptions.
+    """Handles HTTP errors and expected exceptions that may occur
+    in methods of APIClient class
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception as exc:
-            handle_exceptions(exc)
+
+        # when server returns to us bad request check that
+        # and print meaningful reason
+        except requests.HTTPError as exc:
+            error_body = exc.response.text
+            exit_with_error("{0} ({1})".format(exc, error_body))
+        except requests.ConnectionError:
+            exit_with_error("Can't connect to Nailgun server!")
+        except Unauthorized:
+            exit_with_error("Unauthorized: need authentication!")
+        except FuelClientException as exc:
+            exit_with_error(exc.message)
+        # not all responses return data
+        except ValueError:
+            return {}
+
     return wrapper

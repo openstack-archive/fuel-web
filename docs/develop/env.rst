@@ -125,6 +125,11 @@ newest 14.04):
     cd fuel-main
     make iso
 
+#. If you encounter issues and need to rebase or start over::
+
+    make clean          #remove build/ directory
+    make deep_clean     #remove build/ and local_mirror/
+
 Nailgun (Fuel-Web)
 ------------------
 

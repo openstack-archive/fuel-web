@@ -3,6 +3,15 @@
     <%- $.t('cluster_page.nodes_tab.configure_disks.title', {count: nodes.length, name: nodes.length && nodes.at(0).get('name')}) %>
   </h3>
 
+  <% if (controllers) { %>
+  <ul class="nav nav-pills">
+    <li class="active"><a class="btn-configure-disks" data-action="disks">Disks</a></li>
+    <% _.each(controllers, function(controller) { %>
+      <li><a data-id="<%= controller.controller_id %>" class="btn-configure-controllers" data-action="controllers"><%= controller.model %>(<%= controller.pci_address %>)</a></li>
+    <% }); %>
+  </ul>
+  <% }; %>
+
   <div class="node-disks">
     <div class="progress-bar">
       <div class="progress progress-striped progress-success active"><div class="bar"></div></div>

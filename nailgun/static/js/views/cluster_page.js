@@ -22,6 +22,7 @@ define(
     'views/cluster_page_tabs/nodes_tab',
     'views/cluster_page_tabs/network_tab',
     'views/cluster_page_tabs/settings_tab',
+    'views/cluster_page_tabs/raid_tab',
     'views/cluster_page_tabs/logs_tab',
     'views/cluster_page_tabs/actions_tab',
     'views/cluster_page_tabs/healthcheck_tab',
@@ -31,7 +32,7 @@ define(
     'text!templates/cluster/deployment_control.html',
     'text!templates/cluster/cluster_release_info.html'
 ],
-function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate, clusterInfoTemplate) {
+function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, RaidTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate, clusterInfoTemplate) {
     'use strict';
     var ClusterPage, ClusterInfo, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
 
@@ -43,7 +44,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         title: function() {
             return this.model.get('name');
         },
-        tabs: ['nodes', 'network', 'settings', 'logs', 'healthcheck', 'actions'],
+        tabs: ['nodes', 'network', 'settings', 'raid', 'logs', 'healthcheck', 'actions'],
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),
         events: {
@@ -197,6 +198,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 'nodes': NodesTab,
                 'network': NetworkTab,
                 'settings': SettingsTab,
+                'raid': RaidTab,
                 'actions': ActionsTab,
                 'logs': LogsTab,
                 'healthcheck': HealthCheckTab

@@ -1,0 +1,414 @@
+.controller-info-block {
+	
+}
+.controller-info-block > li {
+	display: block;
+	width: 33%;
+	float: left;
+	text-align: center;
+	font-weight: 100;
+	color: @fuel-dark-4;
+}
+.controller-info-block > li > b {
+	color: @fuel-black-color;
+	font-weight: 100;
+}
+.raid-block {
+	background-color: @fuel-light-5;
+	border: 1px solid @fuel-base-color;
+	margin-bottom: 20px;
+}
+
+.raid-header {
+	border-bottom: 1px dotted @fuel-base-color;
+	height: 44px;
+	overflow: hidden;
+}
+
+.raid-header > .name {
+	float: left;
+	font-size: @font-size-big-2;
+	color: @fuel-dark-4;
+	padding: 12px;
+	width: 450px;
+}
+.raid-header > .name > input {
+	height: 12px;
+}
+.raid-header > .name > b {
+	font-weight: 100;
+	border-bottom: 1px dotted @fuel-light-1;
+	cursor: pointer;
+}
+.raid-header > .name > b:hover {
+	color: @fuel-dark-blue;
+	border-bottom: 1px dotted @fuel-dark-blue;
+}
+
+.raid-header > .cache {
+	float: left;
+	font-size: @font-size-base;
+	color: @fuel-dark-4;
+	padding: 12px;
+	width: 200px;
+}
+
+.raid-header > .level {
+	float: left;
+	font-size: @font-size-base;
+	color: @fuel-dark-4;
+	padding: 12px;
+	width: 160px;
+}
+
+.raid-header > .button {
+	float: right;
+	padding: 7px;
+	text-align: center;
+}
+
+.raid-body {
+	padding: 0px 10px 0px 10px;
+}
+
+.raid-body > .disks-block {
+	display: block;
+	margin-top: 10px;
+}
+
+.raid-body > .disks-block > .disk-item {
+	width: 100%;
+	height: 62px;
+	overflow: hidden;
+	background-color: @fuel-base-color;
+	margin-bottom: 10px;
+}
+
+.raid-body > .disks-block > .disk-item > .type {
+	height: 60px;
+	overflow: hidden;
+	border: 1px solid @fuel-white-color;
+	margin: 1px;
+	.box-sizing-mixin;
+}
+
+.raid-body > .disks-block > .disk-item > .type > .checkbox-holder {
+	width: 7%;
+	height: 40px;
+	height: 58px;
+	float: left;
+	padding: 12px 0 0 20px;
+	.box-sizing-mixin;
+}
+
+.raid-body > .disks-block > .disk-item > .type > .checkbox-holder > .custom-tumbler > input[type=checkbox] {
+	height: 24px;
+	margin: 0 0 0 -12px;
+	width: 24px;
+}
+
+.disk-item-description {
+	width: 93%;
+	float: left;
+	height: 58px; 
+	padding-top: 10px;
+	.box-sizing-mixin;
+}
+.disk-item-description > .name {
+	color: @fuel-white-color;
+	font-size: @font-size-big-2;
+	margin-left: -7%;
+}
+.disk-item-description > .size {
+	color: @fuel-white-color;
+	font-size: @font-size-base;
+	margin-left: -7%;
+}
+.ssd {
+	background: linear-gradient(to bottom, rgb(135, 172, 188) 0%, rgb(100, 143, 161) 100%) repeat scroll 0% 0% transparent; text-align: center;
+}
+
+.hdd {
+	background: linear-gradient(to bottom, rgb(45, 158, 98) 0%, rgb(37, 131, 78) 100%) repeat scroll 0% 0% transparent; text-align: center;
+}
+.nytro {
+	background: linear-gradient(to bottom, rgb(211, 155, 68) 0%, rgb(183, 124, 32) 100%) repeat scroll 0% 0% transparent; text-align: center;
+}
+.ungroup-block{
+	margin-top: 30px;
+	margin-bottom: 20px;
+}
+
+.input-middle{
+    width: 80px;
+}
+
+.bigicon{
+    image-width: 200%;
+    height: 200%;
+}
+
+.raid-node {
+      display: block;
+      width: 100%;
+      border: 1px solid @fuel-light-2;
+      margin-bottom: 10px;
+      background-color: @fuel-light-5;
+      -webkit-user-select: text;
+      -khtml-user-select: text;
+      -moz-user-select: text;
+      -o-user-select: text;
+      user-select: text;
+}
+
+.raid-node > .raid-node-controller-block > hr {
+      border-color: @fuel-light-2;
+      margin: 0;
+      padding: 0;
+      border-width: 1px 0 0 0;
+}
+
+.raid-node > .raid-node-controller-block > .raid-assembled-block > hr {
+      border-color: #bbbbbb;
+      border-width: 1px 0 0;
+      margin: 0 0 14px -16px;
+      padding: 0;
+}
+
+.raid-node > .closed {
+      display: block;
+      height: 50px;
+      border: 1px solid @fuel-white-color;
+      background-color: @fuel-light-5;
+}
+
+.raid-node > .closed:hover {
+      background-color: @fuel-light-5 - 15%;
+      cursor: pointer;
+}
+
+.raid-node > .open {
+      display: block;
+      height: 50px;
+      border: 1px solid @fuel-white-color;
+      background-color: @fuel-light-5;
+      border-bottom: 1px dotted @fuel-light-2;
+}
+
+.raid-node > .open:hover  {
+      background-color: @fuel-light-5 - 15%;
+      cursor: pointer;
+}
+
+.raid-node > .closed > .name, .raid-node > .open > .name {
+      font-size: @font-size-big-2 + 1;
+      margin: 15px;
+      display: block;
+      float: left;
+      width: 913px;
+      color: @fuel-dark-2;
+}
+
+.raid-node > .closed > .icon, .raid-node > .open > .icon {
+      font-size: @font-size-big-2 + 7;
+      margin-top: 14px;
+      display: block;
+      float: left;
+      width: 20px;
+      color: @fuel-dark-2;
+}
+
+.raid-node-controller-block {
+      margin: 0 20px 20px;
+}
+
+.raid-node-controller-info {
+      display: block;
+      height: 50px;
+      overflow: hidden;
+}
+.raid-node-controller-info > .name {
+      display: block;
+      width: 35%;
+      float: left;
+      font-size: @font-size-big-2 + 4;
+      margin-top: 15px;
+      color: @fuel-dark-4;
+}
+.raid-node-controller-info > .sasaddress {
+      display: block;
+      width: 24%;
+      float: left;
+      font-size: @font-size-small-3 + 1;
+      margin-top: 15px;
+      color: @fuel-dark-3;
+}
+.raid-node-controller-info > .hostinterface {
+      display: block;
+      width: 14%;
+      float: left;
+      font-size: @font-size-small-3 + 1;
+      margin-top: 15px;
+      color: @fuel-dark-3;
+}
+.raid-node-controller-info > .pciaddress {
+      display: block;
+      width: 16%;
+      float: left;
+      font-size: @font-size-small-3 + 1;
+      margin-top: 15px;
+      text-align: right;
+      color: @fuel-dark-3;
+}
+.raid-node-controller-info > .controllerid {
+      display: block;
+      width: 11%;
+      float: left;
+      font-size: @font-size-small-3 + 1;
+      margin-top: 15px;
+      text-align: right;
+      color: @fuel-dark-3;
+}
+.raid-node-controller-virtual-drive-info {
+      display: block;
+      height: 50px;
+      overflow: hidden;
+      font-size: 16px;
+}
+.raid-node-controller-virtual-drive-info > .name {
+      display: block;
+      width: 35%;
+      float: left;
+      font-size: @font-size-big-2 + 4;
+      margin-top: 15px;
+      color: @fuel-dark-4;
+}
+.raid-node-controller-virtual-drive-info > .raidlevel {
+      display: block;
+      width: 8%;
+      float: left;
+      font-size: @font-size-small-3 + 1;
+      margin-top: 15px;
+      color: @fuel-dark-3;
+}
+.raid-node-controller-virtual-drive-info > .size {
+      display: block;
+      width: 10%;
+      float: left;
+      font-size: @font-size-small-3 + 1;
+      margin-top: 15px;
+      text-align: center;
+      color: @fuel-dark-3;
+}
+.raid-node-controller-virtual-drive-info > .state {
+      display: block;
+      width: 19%;
+      float: left;
+      font-size: @font-size-small-3 + 1;
+      margin-top: 15px;
+      text-align: left;
+      color: @fuel-dark-3;
+}
+.raid-node-controller-virtual-drive-info > .flashcaching {
+      display: block;
+      width: 15%;
+      float: left;
+      font-size: @font-size-small-3 + 1;
+      margin-top: 15px;
+      text-align: left;
+      color: @fuel-dark-3;
+}
+.raid-node-controller-virtual-drive-info > .writepolicy {
+      display: block;
+      width: 13%;
+      float: left;
+      font-size: @font-size-small-3 + 1;
+      margin-top: 15px;
+      text-align: left;
+      color: @fuel-dark-3;
+}
+.raid-assembled-block {
+      padding: 6px 0 10px 16px;
+      background-color: @fuel-light-5 - 20%;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) inset;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      .box-sizing-mixin() 
+}
+.raid-assembled-block:hover {
+      background-color: @fuel-light-5 - 40%;
+}
+.unused-drivers-block {
+      padding: 0px 0 10px 16px;
+      margin-bottom: 20px;
+      .box-sizing-mixin() 
+}
+.unused-drivers-block > .name {
+      font-size: @font-size-big-2;
+      margin-bottom: 20px;
+}
+
+.raid-drive-block {
+      width: 15%;
+      margin-right: 1.66%;
+      float: left;
+      min-height: 340px;
+      margin-bottom: 20px;
+      overflow: hidden;
+}
+.raid-drive-block > li {
+      font-size: @font-size-small-2;
+      margin: 0px;
+      padding: 0px;
+      list-style-type: none;
+      line-height: 14px;
+      margin-bottom: 6px;
+      padding: 0px 12px 0px 12px;
+}
+.online, .optimal, .new, .unconfigured_good, .global_hot_spare {
+      color: #008000;
+}
+.offline, .rebuild, .unconfigured_bad, .recovery, .partially_degraded, .degraded {
+      color: #8b0000;
+}
+.drive-hdd {
+      display: block;
+      background: url("../img/drives.png") no-repeat scroll 0px 0px;
+      height: 160px;
+      width: 117px;
+      overflow: hidden;
+      margin-right: auto;
+      margin-left: auto;
+      margin-bottom: 10px;
+}
+.drive-ssd {
+      display: block;
+      background: url("../img/drives.png") no-repeat scroll 0px -160px;
+      height: 160px;
+      width: 117px;
+      overflow: hidden;
+      margin-right: auto;
+      margin-left: auto;
+      margin-bottom: 10px;
+}
+.drive-nytro {
+      display: block;
+      background: url("../img/drives.png") no-repeat scroll 0px -320px;
+      height: 160px;
+      width: 117px;
+      overflow: hidden;
+      margin-right: auto;
+      margin-left: auto;
+      margin-bottom: 10px;
+}
+
+.drive-warpdrive  {
+      display: block;
+      background: url("../img/drives.png") no-repeat scroll 0px -480px;
+      height: 160px;
+      width: 117px;
+      overflow: hidden;
+      margin-right: auto;
+      margin-left: auto;
+      margin-bottom: 10px;
+}

@@ -1,0 +1,127 @@
+<div class="modal-header">
+  <button type="button" class="close" data-dismiss="modal">×</button>
+  <h3>Create Virtual Drive.</h3>
+</div>
+
+<div class="modal-body">
+
+<form class="form-horizontal">
+  <fieldset>
+
+    <div class="control-group">
+    <label class="control-label" for="inputEmail">Type</label>
+    <div class="controls">
+      <select data-id="type">
+       <% if (raid.model == 'nwd') { %>
+            <option>NytroWarpDrive</option>
+        <% } else { %>
+            <% if (raid.type != "nytro") { %>
+                <option>Virtual Drive</option>
+            <% }; %>
+            <% if (raid.type == "ssd") { %>
+                <option>CacheCade</option>
+            <% } %>
+            <% if (raid.type == "nytro") { %>
+                <option>NytroCache</option>
+            <% }; %>
+            <% if (raid.type != "nytro") { %>
+                <option data-type="hs">HotSpare</option>
+            <% }; %>
+        <% }; %>
+     </select>
+    </div>
+   </div>
+
+
+    <div id="vdoptions" style="display: none;">
+    <div class="control-group">
+    <label class="control-label" for="inputEmail">Name</label>
+    <div class="controls">
+      <input type="text" data-id="name" maxlength="15">
+    </div>
+   </div>
+
+    <div class="control-group">
+    <label class="control-label" for="inputEmail">RAID Level</label>
+    <div class="controls">
+      <select class="input-middle" id="drive" data-id="drive">
+        <% _.each(raidLvl, function(obj) { %>
+           <option><%= obj %></option>
+        <% }); %>
+     </select>
+    </div>
+   </div>
+
+    <div class="control-group">
+    <label class="control-label" for="inputEmail">Strip Size</label>
+    <div class="controls">
+      <select class="input-middle" data-id="stripsize">
+       <% for (var i=8; i<=1024; i*=2) { %>
+            <% if (i == 128) { %>
+                <option data-type="<%= i %>" selected="selected"><%= i %></option>
+            <% } else { %>
+                <option data-type="<%= i %>"><%= i %></option>
+            <% } %>
+       <% }; %>
+     </select>
+    </div>
+   </div>
+
+    <div class="control-group">
+    <label class="control-label" for="inputEmail">Enable cache</label>
+    <div class="controls">
+      <label class="checkbox">
+        <input class="enablecache" type="checkbox" data-id="cachevd">
+      </label>
+    </div>
+   </div>
+
+   </div>
+
+
+    <div id="cacheoptions" style="display: none;">
+    <div class="control-group">
+    <label class="control-label" for="inputEmail">RAID Level</label>
+    <div class="controls">
+      <select class="input-middle" id="cache" data-id="cache">
+        <% _.each(cacheLvl, function(obj) { %>
+           <option><%= obj %></option>
+        <% }); %>
+     </select>
+    </div>
+   </div>
+   </div>
+
+  <div id="wcoptions" style="display: none;">
+  <div class="control-group">
+    <label class="control-label" for="inputEmail">Write Cache</label>
+    <div class="controls">
+      <select class="input-middle" data-id="wc">
+       <option data-type="wb">WB</option>
+       <option data-type="wt" selected="selected">WT</option>
+     </select>
+    </div>
+   </div>
+  </div>
+
+  <div id="vwdoptions" style="display: none;">
+  <div class="control-group">
+    <label class="control-label" for="inputEmail">Overprovision level</label>
+    <div class="controls">
+      <select class="input-middle" id="overprovision" data-id="overprovision">
+        <option>nom</option>
+        <option>perf</option>
+        <option>cap</option>
+     </select>
+    </div>
+   </div>
+  </div>
+
+  </fieldset>
+</form>
+</div>
+
+<div class="modal-footer">
+  <button class="btn" data-dismiss="modal" data-i18n="common.cancel_button"></button>
+  <button class="btn btn-success btn-create-raid" data-i18n="common.create_raid_button" data-dismiss="modal"></button>
+</div>

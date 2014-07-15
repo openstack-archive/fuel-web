@@ -128,7 +128,10 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         processRestrictions: function() {
             var restrictions = this.restrictions = {};
             function processConditions(config, paneName, attribute) {
-                restrictions[paneName][attribute] = config.restrictions = _.map(config.restrictions, utils.expandRestriction);
+                var expandedRestrictions = _.map(config.restrictions, utils.expandRestriction);
+                if (!_.isEmpty(expandedRestrictions)) {
+                    restrictions[paneName][attribute] = config.restrictions = expandedRestrictions;
+                }
             }
             _.each(this.config, function(paneConfig, paneName) {
                 restrictions[paneName] = {};

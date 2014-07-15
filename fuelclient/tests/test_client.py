@@ -102,11 +102,13 @@ class TestHandlers(BaseTestCase):
     def test_wrong_credentials(self):
         result = self.run_cli_command("--os-username=a --os-password=a node",
                                       check_errors=True)
-        self.assertEqual(result.stderr,
-        '\n        Unauthorized: need authentication!\n'
-        '        Please provide user and password via client --os-username '
-        '--os-password\n        or modify "KEYSTONE_USER" and "KEYSTONE_PASS" '
-        'in\n        /etc/fuel/client/config.yaml\n')
+        must_be = ('\n            Unauthorized: need authentication!\n       '
+                   '     Please provide user and password via client\n       '
+                   '     --os-username --os-password\n            or modify '
+                   '"KEYSTONE_USER" and "KEYSTONE_PASS" in\n            '
+                   '/etc/fuel/client/config.yaml\n'
+                   )
+        self.assertEqual(result.stderr, must_be)
 
     def test_destroy_node(self):
         self.load_data_to_nailgun_server()
@@ -117,9 +119,9 @@ class TestHandlers(BaseTestCase):
         msg = ("Nodes with id [1] has been deleted from fuel db.\n"
                "You should still delete node from cobbler\n")
         self.check_for_stdout(
-                "node --node 1 --delete-from-db",
-                msg
-            )
+            "node --node 1 --delete-from-db",
+            msg
+        )
 
     def test_for_examples_in_action_help(self):
         actions = (

@@ -349,7 +349,7 @@ class NailgunCollection(object):
             result = use_iterable.filter(
                 field_getter(cls.single.model).in_(list_of_values)
             )
-            result = cls._query_order_by(result, order_by)
+            result = cls.order_by(result, order_by)
             return result
         elif cls._is_iterable(use_iterable):
             return ifilter(

@@ -31,6 +31,7 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
         constructorName: 'EditNodeDisksScreen',
         template: _.template(editNodeDisksScreenTemplate),
         events: {
+            'click .btn-configure-controllers' : 'goToConfigurationScreen',
             'click .btn-defaults': 'loadDefaults',
             'click .btn-revert-changes': 'revertChanges',
             'click .btn-apply:not(:disabled)': 'applyChanges',
@@ -41,6 +42,25 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
             return !this.nodes.reduce(function(result, node) {
                 return result && _.isEqual(volumes, _.pluck(node.disks.toJSON(), 'volumes'));
             }, true);
+        },
+        goToConfigurationScreen: function(e) {
+            var controllers = this.controllers;
+            var controllerID = parseInt($(e.currentTarget).data('id'), 10);
+            _.each(controllers, function(controller) {
+                if (controller.controller_id == controllerID) controller.checked = true;
+            });
+            var nodeID = null;
+            _.each((document.location.href).split(':'), function(id){
+                if (parseInt(id, 10) != NaN) {
+                    nodeID = parseInt(id, 10);
+                }
+            });
+            this.nodes.each(function(node){
+                if (node.id == nodeID)
+                    node.set({checked: true});
+            });
+            var selectedNodesIds = _.pluck(this.nodes.where({checked: true}), 'id').join(',');
+            app.navigate('#cluster/' + this.nodes.at(0).get('cluster') + '/nodes/' + $(e.currentTarget).data('action') + '/' + utils.serializeTabOptions({nodes: selectedNodesIds}), {trigger: true});
         },
         hasValidationErrors: function() {
             var result = false;
@@ -114,6 +134,11 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
             if (this.nodes.length) {
+                try {
+                    this.controllers = this.nodes.at(0).get('meta').raid.controllers;
+                } catch(e) {
+                    this.controllers = [];
+                }
                 this.model.on('change:status', this.revertChanges, this);
                 this.volumes = new models.Volumes([], {url: _.result(this.nodes.at(0), 'url') + '/volumes'});
                 this.loading = $.when.apply($, this.nodes.map(function(node) {
@@ -155,10 +180,49 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
 
             return result;
         },
+        getDiskMetaNameData: function() {
+            var names = [];
+            var controllersMetaData = this.nodes.at(0).get('meta').raid;
+            if (controllersMetaData) {
+                _.each(controllersMetaData.controllers, function(controller) {
+                    var pci = controller.pci_address;
+                    _.each(controller.virtual_drives, function(vd) {
+                        var nwd = (controller.model.indexOf('Nytro WarpDrive') + 1) ? true : false;
+                        names.push({'pci': pci, 'name': vd.name, 'used': false, 'nwd': nwd});
+                    })
+                })
+            }
+            return names;
+        },
         renderDisks: function() {
             this.tearDownRegisteredSubViews();
             this.$('.node-disks').html('');
+            var nameData = this.getDiskMetaNameData();
             this.disks.each(function(disk) {
+                if (nameData) {
+                    var id = disk.get('id').split('-');
+                    var pci = null;
+                    var name = disk.get('name');
+                    if (id.length > 1) {
+                        pci = id[2];
+                        pci = pci.replace('0000', '00');
+                        pci = pci.replace('.', ':');
+                        pci = pci + '0';
+                    }
+                    if (pci) {
+                        for (var i=0; i<nameData.length; i++){
+                            if (nameData[i].pci == pci && !nameData[i].used) {
+                                nameData[i].used = true;
+                                if (nameData[i].name != '' && !(name.indexOf(nameData[i].name) + 1))
+                                    name = nameData[i].name + ' - ' + name;
+                                else if (nameData[i].nwd && !(name.indexOf('Nytro WarpDrive') + 1))
+                                    name = 'Nytro WarpDrive - ' + name;
+                                break;
+                            }
+                        }
+                    }
+                    disk.set({name: name});
+                }
                 var nodeDisk = new NodeDisk({
                     disk: disk,
                     diskMetaData: this.getDiskMetaData(disk),
@@ -171,6 +235,7 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
         render: function() {
             this.$el.html(this.template({
                 nodes: this.nodes,
+                controllers: this.controllers,
                 locked: this.isLocked()
             })).i18n();
             if (this.loading && this.loading.state() != 'pending') {

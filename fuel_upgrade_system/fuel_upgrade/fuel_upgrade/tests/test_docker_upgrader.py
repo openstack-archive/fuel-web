@@ -183,7 +183,11 @@ class TestDockerUpgrader(BaseTestCase):
         self.upgrader.run_after_container_creation_command({
             'after_container_creation_command': 'cmd',
             'container_name': 'name'})
-        self.called_once(self.upgrader.exec_with_retries)
+
+        args, kwargs = self.upgrader.exec_with_retries.call_args
+
+        self.assertEqual(args[1], errors.ExecutedErrorNonZeroExitCode)
+        self.assertEqual(kwargs, {'retries': 30, 'interval': 4})
 
     def test_create_container(self):
         self.upgrader.create_container(

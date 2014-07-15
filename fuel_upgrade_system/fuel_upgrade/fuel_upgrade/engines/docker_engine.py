@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import datetime
+import dateutil.parser
 import glob
 import logging
 import os
@@ -147,25 +149,8 @@ class DockerUpgrader(UpgradeEngine):
         """
         logger.debug(u'Backup database')
 
-        # TODO(eli): Need to rethink this logic
-        # 1. we need to skip it, because in case
-        #    if postgresql container is not runinng
-        #    after rollback, we will not be able to
-        #    take db dump
-        # 2. we should not keep it because in case of
-        #    failed upgrade user can use rollbacked system
-        #    during some time, and then he can run the same
-        #    upgrade again, in this case user will have
-        #    outdated db data
-        #
-        # What we can do here is to make postgresql dump
-        # and keep all dumps with different names. And
-        # restore latest dump.
-        if self.verify_postgres_dump():
-            logger.info('Database backup exists "{0}", '
-                        'do nothing'.format(self.pg_dump_path))
-            return
-
+        now = datetime.datetime.utcnow().isoformat()
+        pg_dump_path = '{0}_{1}'.format(self.pg_dump_path, now)
         container_name = self.make_container_name(
             'postgres', self.from_version)
 
@@ -173,23 +158,46 @@ class DockerUpgrader(UpgradeEngine):
             self.exec_cmd_in_container(
                 container_name,
                 u"su postgres -c 'pg_dumpall --clean' > {0}".format(
-                    self.pg_dump_path))
+                    pg_dump_path))
         except errors.ExecutedErrorNonZeroExitCode:
-            if os.path.exists(self.pg_dump_path):
+            if os.path.exists(pg_dump_path):
                 logger.info(u'Remove postgresql dump file because '
-                            'it failed {0}'.format(self.pg_dump_path))
-                os.remove(self.pg_dump_path)
+                            'it failed {0}'.format(pg_dump_path))
+                os.remove(pg_dump_path)
+
+            logger.info(u'Searching for existing postgresql dump files...')
+            dump_files = glob.glob(self.pg_dump_path + '_*')
+            # Sort list by timestamps in dump file names
+            dump_files.sort(key=lambda x: time.mktime(dateutil.parser.parse(
+                x.split('_', 1)[1]).timetuple()))
+
+            for dump_file in dump_files:
+                if self.verify_postgres_dump(dump_file):
+                    logger.info(u'Found suitable dump file {0}'.format(
+                        dump_file))
+                    if os.path.exists(self.pg_dump_path):
+                        os.remove(self.pg_dump_path)
+                    os.link(dump_file, self.pg_dump_path)
+                    return
+            logger.error(u'No valid dump file was found')
             raise
 
-        if not self.verify_postgres_dump():
+        if self.verify_postgres_dump(pg_dump_path):
+            if os.path.exists(self.pg_dump_path):
+                os.remove(self.pg_dump_path)
+            os.link(pg_dump_path, self.pg_dump_path)
+        else:
             raise errors.DatabaseDumpError(
                 u'Failed to make database dump, {0} file is broken'.format(
-                    self.pg_dump_path))
+                    pg_dump_path))
 
-    def verify_postgres_dump(self):
+    def verify_postgres_dump(self, pg_dump_path=None):
         """Checks that postgresql dump is correct
         """
-        if not os.path.exists(self.pg_dump_path):
+        if not pg_dump_path:
+            pg_dump_path = self.pg_dump_path
+
+        if not os.path.exists(pg_dump_path):
             return False
         patterns = [
             '-- PostgreSQL database cluster dump',
@@ -197,7 +205,7 @@ class DockerUpgrader(UpgradeEngine):
             '-- PostgreSQL database dump complete',
             '-- PostgreSQL database cluster dump complete']
 
-        return utils.file_contains_lines(self.pg_dump_path, patterns)
+        return utils.file_contains_lines(pg_dump_path, patterns)
 
     def save_cobbler_configs(self):
         """Copy config files from container

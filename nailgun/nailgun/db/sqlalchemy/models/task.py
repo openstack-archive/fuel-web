@@ -79,7 +79,6 @@ class Task(Base):
             raise ValueError("Subtask name not specified")
 
         task = Task(name=name, cluster=self.cluster, **kwargs)
-
         self.subtasks.append(task)
-        db().commit()
+        db().flush()
         return task

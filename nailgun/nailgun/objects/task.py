@@ -82,6 +82,7 @@ class Task(NailgunObject):
         # maybe consider using uuid as pk?
         q = db().query(cls.model).filter_by(uuid=uuid)
         if lock_for_update:
+            q = q.order_by('id')
             q = q.with_lockmode('update')
         res = q.first()
 
@@ -259,14 +260,11 @@ class Task(NailgunObject):
         return result
 
     @classmethod
-    def update(cls, instance, data):
+    def update(cls, instance, data, lock_for_update=True):
         logger.debug("Updating task: %s", instance.uuid)
         clean_data = cls._clean_data(data)
         super(Task, cls).update(instance, clean_data)
-
-        # this commit is needed because of strange bug
-        # with db management in fake threads for testing
-        db().commit()
+        db().flush()
 
         if instance.cluster_id:
             logger.debug("Updating cluster status: %s "
@@ -289,3 +287,12 @@ class TaskCollection(NailgunCollection):
         if cluster_id == '':
             return cls.filter_by(None, cluster_id=None)
         return cls.filter_by(None, cluster_id=cluster_id)
+
+    @classmethod
+    def lock_cluster_tasks(cls, cluster_id, names=None):
+        query = cls.get_by_cluster_id(cluster_id)
+        if names is not None:
+            query = cls.filter_by_list(query, 'name', names)
+        query = cls.order_by(query, 'id')
+        query = cls.lock_for_update(query)
+        return query.all()

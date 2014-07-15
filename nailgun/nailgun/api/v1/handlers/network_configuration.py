@@ -35,7 +35,6 @@ from nailgun.api.v1.validators.network \
 from nailgun.api.v1.validators.network \
     import NovaNetworkConfigurationValidator
 
-from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 
 from nailgun import objects
@@ -128,12 +127,6 @@ class NovaNetworkConfigurationHandler(ProviderHandler):
 
                 logger.error(traceback.format_exc())
 
-        #TODO(enchantner): research this behaviour
-        if task.status == 'error':
-            db().rollback()
-        else:
-            db().commit()
-
         raise self.http(202, Task.to_json(task))
 
 
@@ -195,12 +188,6 @@ class NeutronNetworkConfigurationHandler(ProviderHandler):
                 objects.Task.update(task, data)
 
                 logger.error(traceback.format_exc())
-
-        #TODO(enchantner): research this behaviour
-        if task.status == 'error':
-            db().rollback()
-        else:
-            db().commit()
 
         raise self.http(202, Task.to_json(task))
 

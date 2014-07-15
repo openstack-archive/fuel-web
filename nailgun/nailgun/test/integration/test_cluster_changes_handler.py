@@ -35,6 +35,10 @@ from nailgun.volumes import manager
 
 class TestHandlers(BaseIntegrationTest):
 
+    def tearDown(self):
+        self._wait_for_threads()
+        super(TestHandlers, self).tearDown()
+
     @fake_tasks(fake_rpc=False, mock_rpc=False)
     @patch('nailgun.rpc.cast')
     def test_nova_deploy_cast_with_right_args(self, mocked_rpc):

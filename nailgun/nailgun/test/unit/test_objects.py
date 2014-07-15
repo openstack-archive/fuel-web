@@ -71,6 +71,13 @@ class TestObjects(BaseIntegrationTest):
             self.assertEqual(r.name, "A")
             self.assertEqual(r.operating_system, "CentOS")
 
+        iterable_filtered = objects.ReleaseCollection.filter_by(
+            list(),
+            name="A",
+        )
+        self.assertIsInstance(iterable_filtered, ifilter)
+        self.assertEquals(0, len(list(iterable_filtered)))
+
     def test_filter_by_not(self):
         names = cycle('ABCDE')
         os = cycle(['CentOS', 'Ubuntu'])

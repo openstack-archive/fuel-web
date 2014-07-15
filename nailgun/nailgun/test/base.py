@@ -615,6 +615,7 @@ class Environment(object):
                 self.db.refresh(n)
             except Exception:
                 self.nodes.remove(n)
+        self.db.flush()
 
     def refresh_clusters(self):
         for n in self.clusters[:]:

@@ -22,6 +22,10 @@ import time
 from mock import patch
 
 from nailgun import objects
+
+from nailgun.consts import NODE_STATUSES
+from nailgun.consts import TASK_NAMES
+from nailgun.consts import TASK_STATUSES
 from nailgun.settings import settings
 
 from nailgun.db.sqlalchemy.models import Cluster
@@ -47,12 +51,17 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.create(
             nodes_kwargs=[
                 {"pending_addition": True},
-                {"pending_deletion": True, 'status': 'provisioned'},
+                {"pending_deletion": True,
+                 'status': NODE_STATUSES.provisioned},
             ]
         )
         supertask = self.env.launch_deployment()
-        self.assertEqual(supertask.name, 'deploy')
-        self.assertIn(supertask.status, ('running', 'ready'))
+        self.env.refresh_nodes()
+        self.assertEqual(supertask.name, TASK_NAMES.deploy)
+        self.assertIn(
+            supertask.status,
+            (TASK_STATUSES.running, TASK_STATUSES.ready)
+        )
         # we have three subtasks here
         # deletion
         # provision
@@ -60,10 +69,11 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(len(supertask.subtasks), 3)
         # provisioning task has less weight then deployment
         provision_task = filter(
-            lambda t: t.name == 'provision', supertask.subtasks)[0]
+            lambda t: t.name == TASK_NAMES.provision, supertask.subtasks)[0]
         self.assertEqual(provision_task.weight, 0.4)
 
-        self.env.wait_for_nodes_status([self.env.nodes[0]], 'provisioning')
+        wait_nodes = [self.env.nodes[0]]
+        self.env.wait_for_nodes_status(wait_nodes, NODE_STATUSES.provisioning)
         self.env.wait_ready(
             supertask,
             60,
@@ -72,12 +82,13 @@ class TestTaskManagers(BaseIntegrationTest):
                 self.env.clusters[0].name
             )
         )
+        self.env.wait_for_nodes_status(wait_nodes, NODE_STATUSES.ready)
         self.env.refresh_nodes()
         for n in filter(
             lambda n: n.cluster_id == self.env.clusters[0].id,
             self.env.nodes
         ):
-            self.assertEqual(n.status, 'ready')
+            self.assertEqual(n.status, NODE_STATUSES.ready)
             self.assertEqual(n.progress, 100)
 
     @fake_tasks(fake_rpc=False, mock_rpc=False)
@@ -161,7 +172,7 @@ class TestTaskManagers(BaseIntegrationTest):
         supertask = self.env.launch_deployment()
         self.env.wait_error(
             supertask,
-            60,
+            5,
             'Nodes "{0}" are offline. Remove them from environment '
             'and try again.'.format(offline_node.full_name)
         )
@@ -283,7 +294,7 @@ class TestTaskManagers(BaseIntegrationTest):
             headers=self.default_headers
         )
         deploy_uuid = jsonutils.loads(resp.body)['uuid']
-        resp = self.app.delete(
+        self.app.delete(
             reverse(
                 'ClusterHandler',
                 kwargs={'obj_id': cluster_id}),

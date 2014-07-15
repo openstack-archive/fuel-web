@@ -22,9 +22,10 @@ define(
     'views/cluster_page_tabs/nodes_tab_screens/add_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_nodes_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_disks_screen',
+    'views/cluster_page_tabs/nodes_tab_screens/edit_node_controllers_screen',
     'views/cluster_page_tabs/nodes_tab_screens/edit_node_interfaces_screen'
 ],
-function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeInterfacesScreen) {
+function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNodesScreen, EditNodeDisksScreen, EditNodeControllersScreen, EditNodeInterfacesScreen) {
     'use strict';
     var NodesTab;
 
@@ -72,6 +73,7 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
                 'add': AddNodesScreen,
                 'edit': EditNodesScreen,
                 'disks': EditNodeDisksScreen,
+                'controllers': EditNodeControllersScreen,
                 'interfaces': EditNodeInterfacesScreen
             };
             this.changeScreen(screens[options[0]] || screens.list, options.slice(1));

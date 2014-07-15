@@ -1,0 +1,346 @@
+<div class="wrapper">
+
+            <div class="row-fluid page-sub-title" style="display: none">
+                  <h3  class="span8">Storage Status</h3>
+                  <div class="span4">
+                        <button class="btn btn-link  pull-right" style="display: inline-block"><i class="icon-resize-small"></i>Collapse All</button>
+                  </div>
+            </div>
+
+            <div class="row-fluid page-sub-title">
+                  <h3  class="span8">Storage Status</h3>
+                  <div class="span4">
+                        <button class="btn btn-link  pull-right" style="display: inline-block"><i class="icon-resize-full"></i>Expand All</button>
+                  </div>
+            </div>
+
+            <% var unused = 0; %>
+            <% nodes.each(function(node) { %>
+                <% var controllers = []; %>
+                <% try { %>
+                    <% controllers = node.get('meta').raid.controllers; %>
+                <% } catch(e) {} %>
+                <% var error_drives = 0; %>
+                <% _.each(controllers, function(controller) { %>
+                    <% _.each(controller.virtual_drives, function(vd){ %>
+                        <% if (vd.state == 'offline') { %>
+                            <% error_drives++; %>
+                        <% } %>
+                        <% if (vd.state == 'recovery' || vd.state == 'partially_degraded' || vd.state == 'degraded') { %>
+                            <% error_drives++; %>
+                        <% } %>
+                    <% }) %>
+                    <% _.each(controller.physical_drives, function(pd){ %>
+                        <% if (pd.state == 'unconfigured_bad' || pd.state == 'offline') { %>
+                            <% error_drives++; %>
+                        <% } %>
+                    <% }) %>
+                <% }) %>
+
+                <div class="raid-node">
+                  <div class="closed" style="display: block">
+                        <div class="name">
+                            <% if (error_drives > 0) { %>
+                                <i class="icon-attention msg-error"></i>
+                            <% } %>
+                            Node: <%= node.get('name') %>
+                        </div>
+                        <div class="icon"><i class="icon-down-dir"></i></div>
+                  </div>
+                  <div class="open" style="display: none">
+                        <div class="name">
+                            <% if (error_drives > 0) { %>
+                                <i class="icon-attention msg-error"></i>
+                            <% } %>
+                            Node: <%= node.get('name') %>
+                        </div>
+                        <div class="icon"><i class="icon-up-dir"></i></div>
+                  </div>
+
+                  <% var i = 0; %>
+                  <% $.each(controllers, function(i, controller){ %>
+
+                  <div class="raid-node-controller-block" style="display: none">
+                  <% if (i > 0) { %>
+                    <hr>
+                  <% } %>
+                        <div class="raid-node-controller-info">
+                              <div class="name"><%= controller.model %></div>
+                              <div class="sasaddress"><b>SAS Address:</b> <%= controller.sas_address %></div>
+                              <div class="hostinterface"><b>Host Interface:</b> <%= controller.host_interface %></div>
+                              <div class="pciaddress"><b>PCI Address:</b> <%= controller.pci_address %></div>
+                              <div class="controllerid"><b>Controller ID:</b> <%= controller.controller_id %></div>
+                        </div>
+
+                        <% _.each(controller.virtual_drives, function(vd) { %>
+                        <% var raidID = vd.drive_group; %>
+                        <!-- assembled raid -->
+
+                        <% if (vd.state == 'offline') { %>
+                          <div class="raid-assembled-block" style="background-color: #F6C4B2">
+                        <% } else if (vd.state == 'recovery' || vd.state == 'partially_degraded' || vd.state == 'degraded') { %>
+                          <div class="raid-assembled-block" style="background-color: #F6DFB2">
+                        <% } else { %>
+                        <div class="raid-assembled-block">
+                        <% }; %>
+                            <div class="raid-node-controller-virtual-drive-info">
+                                <% var raidLevel; %>
+                                  <% if (controller.model.indexOf('Nytro WarpDrive') + 1 ) { %>
+                                       <% raidLevel = vd.raid_level.toString(); %>
+                                  <% } else { %>
+                                       <% raidLevel = vd.raid_level.toString(); %>
+                                  <% }; %>
+
+                                  <% if ((raidLevel).indexOf('NytroCache') + 1) { %>
+                                    <div class="name"><b>NytroCache - <%= vd.drive_group %></b></div>
+                                    <% raidLevel = raidLevel.split('NytroCache')[1] %>
+                                  <% } else if ((raidLevel).indexOf('CacheCade') + 1) { %>
+                                    <div class="name"><b>CacheCade - <%= vd.drive_group %></b></div>
+                                    <% raidLevel = raidLevel.split('CacheCade')[1] %>
+                                  <% } else if (controller.model.indexOf('Nytro WarpDrive') + 1 ) { %>
+                                    <div class="name"><b>Nytro WarpDrive</b></div>
+                                  <% } else { %>
+                                    <% (vd.name == null) ? vd.name = 'Raid_' + vd.drive_group : vd.name;%>
+                                    <div class="name"><b>Virtual Drive - '<%= vd.name %>'</b></div>
+                                  <% }; %>
+
+                              <div class="raidlevel"><b>Raid level:</b> <%= raidLevel %></div>
+                              <div class="size"><b>Size:</b> <%= showDiskSize(vd.size) %></div>
+                              <% if ((controller.model.indexOf('Nytro WarpDrive') + 1 ) || ((vd.raid_level.toString()).indexOf('CacheCade') + 1) || ((vd.raid_level.toString()).indexOf('NytroCache') + 1)) { } else if (controller.max_cachecade_size) { %>
+                                  <div class="flashcaching">
+                                      <% if (vd.ssd_caching_active) { %>
+                                        <b>Flash Caching:</b> On
+                                      <% } else { %>
+                                        <b>Flash Caching:</b> Off
+                                      <% } %>
+                                  </div>
+                              <% } %>
+
+                              <div class="writepolicy"><b>Write policy:</b> <%= vd.write_cache.toUpperCase() %></div>
+                              <div class="state"><b>State:</b> <b class="<%= vd.state %>"><%= vd.state %></b> </div>
+
+                            </div>
+
+                            <hr>
+
+                              <% _.each(controller.physical_drives, function(pd) { %>
+
+                              <% if (pd.drive_group == raidID) { %>
+
+                                    <% if (pd.medium == 'HDD') { %>
+                                      <div class="raid-drive-block">
+                                          <% if (pd.state == 'unconfigured_bad' || pd.state == 'offline' || pd.state == 'rebuild') { %>
+                                            <div class="drive-hdd"><i class="icon-attention msg-error bigicon"></i></div>
+                                          <% } else { %>
+                                            <div class="drive-hdd"></div>
+                                          <% } %>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>EID:Slot</b> <%= pd.enclosure %>:<%= pd.slot %> </li>
+                                            <li><b>DG:</b> <%= raidID %> </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> <%= pd.medium %> </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+
+                                    <% if (pd.medium == 'SSD') { %>
+                                      <div class="raid-drive-block">
+                                          <% if (pd.state == 'unconfigured_bad' || pd.state == 'offline' || pd.state == 'rebuild') { %>
+                                            <div class="drive-ssd"><i class="icon-attention msg-error bigicon"></i></div>
+                                          <% } else { %>
+                                            <div class="drive-ssd"></div>
+                                          <% } %>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>EID:Slot</b> <%= pd.enclosure %>:<%= pd.slot %> </li>
+                                            <li><b>DG:</b> <%= raidID %> </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> <%= pd.medium %> </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+
+                                    <% if (pd.medium == 'Nytro Flash' || pd.medium == 'NytroSFM') { %>
+                                      <div class="raid-drive-block">
+                                          <% if (pd.state == 'unconfigured_bad' || pd.state == 'offline' || pd.state == 'rebuild') { %>
+                                            <div class="drive-nytro"><i class="icon-attention msg-error bigicon"></i></div>
+                                          <% } else { %>
+                                            <div class="drive-nytro"></div>
+                                          <% } %>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>EID:Slot</b> <%= pd.enclosure %>:<%= pd.slot %> </li>
+                                            <li><b>DG:</b> <%= raidID %> </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> <%= pd.medium %> </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+
+                                    <% if (pd.medium == null) { %>
+                                      <div class="raid-drive-block">
+                                          <% if (pd.state == 'unconfigured_bad' || pd.state == 'offline' || pd.state == 'rebuild') { %>
+                                            <div class="drive-warpdrive"><i class="icon-attention msg-error bigicon"></i></div>
+                                          <% } else { %>
+                                            <div class="drive-warpdrive"></div>
+                                          <% } %>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>Slot</b> <%= pd.slot %> </li>
+                                            <li><b>DG:</b> <%= raidID %> </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> N/A </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+                             <% }; %>
+
+                             <% }); %>
+
+                              <div class="clearfix"></div>
+
+                        </div>
+                        <% }); %>
+
+                        <% var ghs = 0; %>
+                        <% _.each(controller.physical_drives, function(pd) { %>
+                            <% if (pd.state == 'global_hot_spare') { %>
+                                <% ghs++; %>
+                            <% } else if (pd.state == 'unconfigured_good') {unused++;} %>
+                        <% }); %>
+
+                        <% if (ghs > 0) { %>
+                        <div class="raid-assembled-block">
+                            <div class="raid-node-controller-virtual-drive-info">
+                              <div class="name">Global Hot Spare</div>
+                            </div>
+
+                        <% _.each(controller.physical_drives, function(pd) { %>
+
+                        <% if (pd.state == 'global_hot_spare') { %>
+                        <!-- assembled raid -->
+
+
+                                    <% if (pd.medium == 'HDD') { %>
+                                      <div class="raid-drive-block">
+                                            <div class="drive-hdd"></div>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>EID:Slot</b> <%= pd.enclosure %>:<%= pd.slot %> </li>
+                                            <li><b>DG:</b> N/A </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> <%= pd.medium %> </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+
+                                    <% if (pd.medium == 'SSD') { %>
+                                      <div class="raid-drive-block">
+                                            <div class="drive-ssd"></div>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>EID:Slot</b> <%= pd.enclosure %>:<%= pd.slot %> </li>
+                                            <li><b>DG:</b> N/A </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> <%= pd.medium %> </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+
+                        <% } %>
+                        <% }); %>
+                            <div class="clearfix"></div>
+                        </div>
+                        <% } %>
+
+
+                        <!-- free disks -->
+                        <% if (unused > 0) { %>
+                        <% unused = 0 %>
+                        <div class="unused-drivers-block">
+
+                              <div class="name">Unused Drives on <%= controller.model %>(<%= controller.pci_address %>)</div>
+                              <% _.each(controller.physical_drives, function(pd) { %>
+                              <% if (pd.state == 'unconfigured_good') { %>
+
+                                    <% if (pd.medium == 'HDD') { %>
+                                      <div class="raid-drive-block">
+                                          <% if (pd.state == 'unconfigured_bad' || pd.state == 'offline') { %>
+                                            <div class="drive-hdd"><i class="icon-cancel-circle msg-error"></i></div>
+                                          <% } else { %>
+                                            <div class="drive-hdd"></div>
+                                          <% } %>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>EID:Slot</b> <%= pd.enclosure %>:<%= pd.slot %> </li>
+                                            <li><b>DG:</b> null </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> <%= pd.medium %> </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+
+                                    <% if (pd.medium == 'SSD') { %>
+                                      <div class="raid-drive-block">
+                                          <% if (pd.state == 'unconfigured_bad' || pd.state == 'offline') { %>
+                                            <div class="drive-ssd"><i class="icon-cancel-circle msg-error"></i></div>
+                                          <% } else { %>
+                                            <div class="drive-ssd"></div>
+                                          <% } %>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>EID:Slot</b> <%= pd.enclosure %>:<%= pd.slot %> </li>
+                                            <li><b>DG:</b> null </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> <%= pd.medium %> </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+
+                                    <% if (pd.medium == 'Nytro Flash' || pd.medium == 'NytroSFM') { %>
+                                      <div class="raid-drive-block">
+                                          <% if (pd.state == 'unconfigured_bad' || pd.state == 'offline') { %>
+                                            <div class="drive-nytro"><i class="icon-cancel-circle msg-error"></i></div>
+                                          <% } else { %>
+                                            <div class="drive-nytro"></div>
+                                          <% } %>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>EID:Slot</b> <%= pd.enclosure %>:<%= pd.slot %> </li>
+                                            <li><b>DG:</b> null </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> <%= pd.medium %> </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+
+                                    <% if (pd.medium == null) { %>
+                                      <div class="raid-drive-block">
+                                          <% if (pd.state == 'unconfigured_bad' || pd.state == 'offline') { %>
+                                            <div class="drive-warpdrive"><i class="icon-cancel-circle msg-error"></i></div>
+                                          <% } else { %>
+                                            <div class="drive-warpdrive"></div>
+                                          <% } %>
+                                            <li><b>Model:</b> <%= pd.model %> </li>
+                                            <li><b>Interface:</b> <%= pd.interface %></li>
+                                            <li><b>Slot</b> <%= pd.slot %> </li>
+                                            <li><b>DG:</b> null </li>
+                                            <li><b>State:</b> <b class="<%= pd.state %>"><%= pd.state %></b> </li>
+                                            <li><b>Media Type:</b> N/A </li>
+                                            <li><b>Size:</b> <%= showDiskSize(pd.size) %> </li>
+                                      </div>
+                                    <% }; %>
+                             <% }; %>
+                             <% }); %>
+                              <div class="clearfix"></div>
+
+                        </div>
+                        <% }; %>
+
+                  </div>
+                  <% }); %>
+                </div>
+            <% }); %>
+
+</div>

@@ -1,12 +1,18 @@
 <div class="wrapper">
   <div class="row-fluid page-sub-title">
-    <h3 class="span8" data-i18n="cluster_page.healthcheck_tab.title"></h3>
-    <div class="span2">
+    <h3 class="span6" data-i18n="cluster_page.healthcheck_tab.title"></h3>
+    <div class="span2 ostf-controls">
+      <div class="toggle-credentials pull-right <%= isLocked ? 'hide' : '' %>">
+          <i></i>
+          <div data-i18n="cluster_page.healthcheck_tab.provide_credentials"></div>
+      </div>
+    </div>
+    <div class="span2 ostf-controls">
       <label class="checkbox pull-right select-all">
         <input type="checkbox" class="select-all-tumbler"><span data-i18n="common.select_all_button"></span>
       </label>
     </div>
-    <div class="span2">
+    <div class="span2 ostf-controls">
       <button class="btn btn-success pull-right action-btn run-tests-btn" data-i18n="cluster_page.healthcheck_tab.run_tests_button"></button>
       <button class="btn btn-danger pull-right action-btn stop-tests-btn hide" data-i18n="cluster_page.healthcheck_tab.stop_tests_button"></button>
     </div>
@@ -19,7 +25,7 @@
     </div>
   <% } %>
 
-  <div class="credentials"></div>
+  <div class="credentials collapse"></div>
 
   <div class="testsets">
     <div class="progress-bar">

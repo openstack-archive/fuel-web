@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import time
 import urllib2
+import uuid
 
 from copy import deepcopy
 from distutils.version import StrictVersion
@@ -567,3 +568,11 @@ def save_as_yaml(path, data):
     with open(path, 'w') as f:
         astute_str = yaml.dump(data, default_flow_style=False)
         f.write(astute_str)
+
+
+def generate_uuid_string():
+    """Generates uuid string
+
+    :returns: generated uuid
+    """
+    return str(uuid.uuid4())

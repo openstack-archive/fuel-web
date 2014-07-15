@@ -41,7 +41,12 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
 
     def setUp(self):
         super(TestAddCredentialsHook, self).setUp()
-        self.additional_keys = ['astute', 'cobbler', 'mcollective', 'postgres']
+        self.additional_keys = [
+            'astute',
+            'cobbler',
+            'mcollective',
+            'postgres',
+            'keystone']
 
     def get_hook(self, astute):
         config = self.fake_config
@@ -57,7 +62,8 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
             'astute': {},
             'cobbler': {},
             'mcollective': {},
-            'postgres': {}})
+            'postgres': {},
+            'keystone': {}})
 
         self.assertFalse(hook.check_if_required())
 

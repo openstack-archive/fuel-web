@@ -2441,6 +2441,26 @@ legend {
       input { margin: 0; }
     }
   }
+  .credentials-wrapper {
+    &.collapse {
+      visibility: hidden;
+      &.in {
+        visibility: visible;
+      }
+    }
+  }
+  .note { margin-bottom: 10px; }
+}
+
+.toggle-credentials {
+  cursor: pointer;
+  margin-top: 12px;
+  min-width: 130px;
+  div, i { .float-mixin; }
+  div { margin-left: 5px; }
+  &:hover {
+    div { text-decoration: underline; }
+  }
 }
 
 hr.slim {

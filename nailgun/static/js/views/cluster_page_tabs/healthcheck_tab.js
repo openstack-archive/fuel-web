@@ -35,13 +35,17 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
         updateInterval: 3000,
         events: {
             'click .run-tests-btn:not(:disabled)': 'runTests',
-            'click .stop-tests-btn:not(:disabled)': 'stopTests'
+            'click .stop-tests-btn:not(:disabled)': 'stopTests',
+            'click .toggle-credentials': 'toggleCredentialsForm'
         },
         getNumberOfCheckedTests: function() {
             return this.tests.where({checked: true}).length;
         },
         isLocked: function() {
             return this.model.get('status') == 'new' || this.model.task({group: 'deployment', status: 'running'});
+        },
+        toggleCredentialsForm: function(e) {
+            this.credentialsWrapper.set({visible: !this.credentialsWrapper.get('visible')});
         },
         disableControls: function(disable) {
             var disabledState = disable || this.isLocked();
@@ -166,6 +170,9 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 checked: false,
                 disabled: false
             });
+            this.credentialsWrapper = new Backbone.Model({
+                visible: false
+            });
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
                 task.on('change:status', this.render, this);
@@ -230,7 +237,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
             };
             this.stickit(this.runTestsButton, {'.run-tests-btn': _.extend({}, visibleBindings, disabledBindings)});
             this.stickit(this.stopTestsButton, {'.stop-tests-btn':  _.extend({}, visibleBindings, disabledBindings)});
-            var bindings = {
+            var selectAllBindings = {
                 '.select-all-tumbler': {
                     observe: 'checked',
                     onSet: _.bind(function(value) {
@@ -249,7 +256,36 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                     ]
                 }
             };
-            this.stickit(this.selectAllCheckbox, bindings);
+            this.stickit(this.selectAllCheckbox, selectAllBindings);
+            var credentialsWrapperBindings = {
+                '.toggle-credentials' : {
+                    observe: 'visible',
+                    update: function($el, value) {
+                        if (!value) {
+                            $el.html('<i class="icon-plus-circle"></i><div>' + $.t('cluster_page.healthcheck_tab.show_credentials') + '</div>');
+                        } else {
+                            $el.html('<i class="icon-minus-circle"></i><div>' + $.t('cluster_page.healthcheck_tab.hide_credentials') + '</div>');
+                        }
+                    }
+                },
+                '.credentials': {
+                    observe: 'visible',
+                    visible: true,
+                    visibleFn: function($el, isVisible) {
+                        $el.collapse(isVisible ? 'show' : 'hide');
+                    }
+                }
+            };
+            this.stickit(this.credentialsWrapper, credentialsWrapperBindings);
+            var controlsBindings = {
+                '.ostf-controls': {
+                    observe: 'visible',
+                    visible: function() {
+                        return !!this.testsets.length;
+                    }
+                }
+            };
+            this.stickit(this.model, controlsBindings);
         },
         renderCredentials: function() {
             this.$('.credentials').html('');
@@ -261,7 +297,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({cluster: this.model})).i18n();
+            this.$el.html(this.template({cluster: this.model, isVisible: this.credentialsWrapper.get('visible')})).i18n();
             if (this.testsets.deferred.state() != 'pending') {
                 this.$('.testsets').html('');
                 this.testsets.each(function(testset) {
@@ -280,6 +316,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 this.$('.error-message').show();
             }
             this.$('.testsets > .progress-bar').hide();
+            this.$('.credentials').collapse({toggle: false});
             this.initStickitBindings();
             this.renderCredentials();
             return this;

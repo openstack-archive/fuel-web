@@ -128,7 +128,9 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         processRestrictions: function() {
             var restrictions = this.restrictions = {};
             function processConditions(config, paneName, attribute) {
-                restrictions[paneName][attribute] = config.restrictions = _.map(config.restrictions, utils.expandRestriction);
+                if (!_.isEmpty(_.map(config.restrictions, utils.expandRestriction))) {
+                    restrictions[paneName][attribute] = config.restrictions = _.map(config.restrictions, utils.expandRestriction);
+                }
             }
             _.each(this.config, function(paneConfig, paneName) {
                 restrictions[paneName] = {};
@@ -142,6 +144,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                     }
                 }, this);
             }, this);
+            console.log(this.restrictions);
         },
         handlePaneIndexChange: function() {
             this.renderPane(this.panesConstructors[this.panesModel.get('activePaneIndex')]);

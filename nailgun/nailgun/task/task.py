@@ -28,6 +28,7 @@ import nailgun.rpc as rpc
 
 from nailgun import objects
 
+from nailgun.consts import NODE_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
 from nailgun.db.sqlalchemy.models import Cluster
@@ -127,11 +128,11 @@ class DeploymentTask(object):
                 # If reciever for some reasons didn't update
                 # node's status to provisioned when deployment
                 # started, we should do it in nailgun
-                if n.status in ('deploying'):
-                    n.status = 'provisioned'
+                if n.status in (NODE_STATUSES.deploying,):
+                    n.status = NODE_STATUSES.provisioned
                 n.progress = 0
                 db().add(n)
-                db().commit()
+        db().flush()
 
         # here we replace deployment data if user redefined them
         serialized_cluster = task.cluster.replaced_deployment_info or \
@@ -189,7 +190,12 @@ class ProvisionTask(object):
     @classmethod
     def message(cls, task, nodes_to_provisioning):
         logger.debug("ProvisionTask.message(task=%s)" % task.uuid)
-
+        task = objects.Task.get_by_uid(
+            task.id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+        objects.NodeCollection.lock_nodes(nodes_to_provisioning)
         serialized_cluster = task.cluster.replaced_provisioning_info or \
             provisioning_serializers.serialize(
                 task.cluster, nodes_to_provisioning)
@@ -203,6 +209,7 @@ class ProvisionTask(object):
             ).get_admin_network_group_id()
 
             TaskHelper.prepare_syslog_dir(node, admin_net_id)
+        db().commit()
 
         return make_astute_message(
             'provision',
@@ -217,12 +224,11 @@ class ProvisionTask(object):
 class DeletionTask(object):
 
     @classmethod
-    def execute(self, task, respond_to='remove_nodes_resp'):
+    def execute(cls, task, respond_to='remove_nodes_resp'):
         logger.debug("DeletionTask.execute(task=%s)" % task.uuid)
         task_uuid = task.uuid
         logger.debug("Nodes deletion task is running")
         nodes_to_delete = []
-        nodes_to_delete_constant = []
         nodes_to_restore = []
 
         USE_FAKE = settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP
@@ -284,9 +290,18 @@ class DeletionTask(object):
         # and be able to delete node from nodes_to_delete safely
         nodes_to_delete_constant = list(nodes_to_delete)
 
-        for node in nodes_to_delete_constant:
-            node_db = db().query(Node).get(node['id'])
+        # locking nodes
+        nodes_ids = [node['id'] for node in nodes_to_delete_constant]
+        nodes_db = objects.NodeCollection.filter_by_list(
+            None,
+            'id',
+            nodes_ids,
+            order_by='id'
+        )
+        objects.NodeCollection.lock_for_update(nodes_db).all()
 
+        for node in nodes_to_delete_constant:
+            node_db = objects.Node.get_by_uid(node['id'], lock_for_update=True)
             slave_name = objects.Node.make_slave_name(node_db)
             logger.debug("Removing node from database and pending it "
                          "to clean its MBR: %s", slave_name)
@@ -295,9 +310,9 @@ class DeletionTask(object):
                     "Node is not deployed yet,"
                     " can't clean MBR: %s", slave_name)
                 db().delete(node_db)
-                db().commit()
-
+                db().flush()
                 nodes_to_delete.remove(node)
+        db().commit()
 
         msg_delete = make_astute_message(
             'remove_nodes',
@@ -540,7 +555,7 @@ class CheckNetworksTask(object):
             warn_msgs = checker.check_interface_mapping()
             if warn_msgs:
                 task.result = {"warning": warn_msgs}
-                db().commit()
+        db().commit()
 
 
 class CheckBeforeDeploymentTask(object):
@@ -778,7 +793,7 @@ class GenerateCapacityLogTask(object):
         capacity_log = CapacityLog()
         capacity_log.report = capacity_data
         db().add(capacity_log)
-        db().commit()
+        db().flush()
 
         task.result = {'log_id': capacity_log.id}
         task.status = 'ready'

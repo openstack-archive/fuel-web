@@ -271,7 +271,10 @@ class NailgunCollection(object):
         :returns: filtered iterable (SQLAlchemy query)
         """
         map(cls.single.check_field, kwargs.iterkeys())
-        use_iterable = iterable or cls.all(yield_per=yield_per)
+        if iterable is not None:
+            use_iterable = iterable
+        else:
+            use_iterable = cls.all(yield_per=yield_per)
         if cls._is_query(use_iterable):
             return use_iterable.filter_by(**kwargs)
         elif cls._is_iterable(use_iterable):
@@ -349,7 +352,7 @@ class NailgunCollection(object):
             result = use_iterable.filter(
                 field_getter(cls.single.model).in_(list_of_values)
             )
-            result = cls._query_order_by(result, order_by)
+            result = cls.order_by(result, order_by)
             return result
         elif cls._is_iterable(use_iterable):
             return ifilter(

@@ -687,3 +687,13 @@ class NodeCollection(NailgunCollection):
         cls.update_slave_nodes_fqdn(instances)
         for n in instances:
             cls.single.get_network_manager(n).assign_admin_ips(n.id)
+
+    @classmethod
+    def lock_nodes(cls, instances):
+        """Locking nodes instances, fetched before, but required to be locked
+        :param instances: list of nodes
+        :return: list of locked nodes
+        """
+        instances_ids = [instance.id for instance in instances]
+        q = cls.filter_by_list(None, 'id', instances_ids, order_by='id')
+        return cls.lock_for_update(q).all()

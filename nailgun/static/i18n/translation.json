@@ -382,6 +382,8 @@
                     "expected_duration": "Expected Duration",
                     "actual_duration": "Actual Duration",
                     "status": "Status",
+                    "show-credentials": "Show credentials",
+                    "hide-credentials": "Hide credentials",
                     "password_label": "Password",
                     "password_description": "Password for Administrator",
                     "username_label": "Username",

@@ -35,13 +35,17 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
         updateInterval: 3000,
         events: {
             'click .run-tests-btn:not(:disabled)': 'runTests',
-            'click .stop-tests-btn:not(:disabled)': 'stopTests'
+            'click .stop-tests-btn:not(:disabled)': 'stopTests',
+            'click .toggle-credentials': 'toggleCredentialsForm'
         },
         getNumberOfCheckedTests: function() {
             return this.tests.where({checked: true}).length;
         },
         isLocked: function() {
             return this.model.get('status') == 'new' || this.model.task({group: 'deployment', status: 'running'});
+        },
+        toggleCredentialsForm: function(e) {
+            this.credentialsWrapper.set({visible: !this.credentialsWrapper.get('visible')});
         },
         disableControls: function(disable) {
             var disabledState = disable || this.isLocked();
@@ -167,6 +171,9 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 checked: false,
                 disabled: false
             });
+            this.credentialsWrapper = new Backbone.Model({
+                visible: false
+            });
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
                 task.on('change:status', this.render, this);
@@ -255,6 +262,37 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 }
             };
             this.stickit(this.selectAllCheckbox, bindings);
+            var credentialsWrapperBindings = {
+                '.toggle-credentials' : {
+                    observe: 'visible',
+                        visible: function() {
+                        return !!this.testsets.length;
+                    }
+                },
+                '.toggle-credentials div': {
+                    observe: 'visible',
+                        onGet: function(value) {
+                        return value ? $.t('cluster_page.healthcheck_tab.hide-credentials') : $.t('cluster_page.healthcheck_tab.show-credentials');
+                    }
+                },
+                '.toggle-credentials i': {
+                    attributes: [{
+                        name: 'class',
+                        observe: 'visible',
+                        onGet: function(value) {
+                            return value ? 'icon-minus-circle' : 'icon-plus-circle';
+                        }
+                    }]
+                },
+                '.credentials-wrapper': {
+                    observe: 'visible',
+                    visible: true,
+                    visibleFn: function($el, isVisible) {
+                        $el.collapse(isVisible ? 'show' : 'hide');
+                    }
+                }
+            }
+            this.stickit(this.credentialsWrapper, credentialsWrapperBindings);
         },
         renderCredentials: function() {
             this.$('.credentials').html('');
@@ -266,7 +304,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
         },
         render: function() {
             this.tearDownRegisteredSubViews();
-            this.$el.html(this.template({cluster: this.model})).i18n();
+            this.$el.html(this.template({cluster: this.model, isVisible: this.credentialsWrapper.get('visible')})).i18n();
             if (this.testsets.deferred.state() != 'pending') {
                 this.$('.testsets').html('');
                 this.testsets.each(function(testset) {
@@ -285,6 +323,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 this.$('.error-message').show();
             }
             this.$('.testsets > .progress-bar').hide();
+            this.$('.credentials-wrapper').collapse({toggle: false});
             this.initStickitBindings();
             this.renderCredentials();
             return this;

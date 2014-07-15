@@ -127,18 +127,20 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         processRestrictions: function() {
             var restrictions = this.restrictions = {};
-            function processConditions(config, paneName, attribute) {
-                restrictions[paneName][attribute] = config.restrictions = _.map(config.restrictions, utils.expandRestriction);
+            function processControlRestrictions(config, paneName, attribute) {
+                var expandedRestrictions = config.restrictions = _.map(config.restrictions, utils.expandRestriction);
+                restrictions[paneName][attribute] =
+                    _.uniq(_.union(restrictions[paneName][attribute], expandedRestrictions), 'message');
             }
             _.each(this.config, function(paneConfig, paneName) {
                 restrictions[paneName] = {};
                 _.each(paneConfig, function(attributeConfig, attribute) {
                     if (attributeConfig.type == 'radio') {
                         _.each(attributeConfig.values, function(attributeValueConfig) {
-                            processConditions(attributeValueConfig, paneName, attribute);
+                            processControlRestrictions(attributeValueConfig, paneName, attribute);
                         }, this);
                     } else {
-                        processConditions(attributeConfig, paneName, attribute);
+                        processControlRestrictions(attributeConfig, paneName, attribute);
                     }
                 }, this);
             }, this);

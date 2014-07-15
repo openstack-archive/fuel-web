@@ -10,6 +10,7 @@ Nailgun Development Instructions
     development/shell_doc
     development/api_doc
     development/objects
+    development/ui_dependencies
 
 
 Nailgun Customization Instructions

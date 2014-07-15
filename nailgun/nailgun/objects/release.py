@@ -31,6 +31,8 @@ from nailgun.db.sqlalchemy import models
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
+from nailgun.settings import settings
+
 
 class ReleaseOrchestratorData(NailgunObject):
     """ReleaseOrchestratorData object
@@ -181,6 +183,21 @@ class Release(NailgunObject):
 
     @classmethod
     def get_orchestrator_data_dict(cls, instance):
+        os = instance.operating_system.lower()
+        default_orchestrator_data = {
+            "repo_metadata": {
+                "nailgun":
+                    settings.DEFAULT_REPO[os].format(
+                        master_ip=settings.MASTER_IP),
+            },
+            "puppet_modules_source":
+                settings.DEFAULT_PUPPET['modules'].format(
+                    master_ip=settings.MASTER_IP),
+            "puppet_manifests_source":
+                settings.DEFAULT_PUPPET['manifests'].format(
+                    master_ip=settings.MASTER_IP),
+        }
+
         return {
             "repo_metadata":
             instance.orchestrator_data.repo_metadata,
@@ -188,7 +205,7 @@ class Release(NailgunObject):
             instance.orchestrator_data.puppet_modules_source,
             "puppet_manifests_source":
             instance.orchestrator_data.puppet_manifests_source
-        } if instance.orchestrator_data else {}
+        } if instance.orchestrator_data else default_orchestrator_data
 
 
 class ReleaseCollection(NailgunCollection):

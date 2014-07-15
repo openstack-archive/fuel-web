@@ -51,6 +51,7 @@ class TestTaskManagers(BaseIntegrationTest):
             ]
         )
         supertask = self.env.launch_deployment()
+        self.env.refresh_nodes()
         self.assertEqual(supertask.name, 'deploy')
         self.assertIn(supertask.status, ('running', 'ready'))
         # we have three subtasks here

@@ -21,6 +21,8 @@ from nailgun.objects.serializers.network_configuration \
 from nailgun.objects.serializers.network_configuration \
     import NovaNetworkConfigurationSerializer
 
+from nailgun.consts import TASK_NAMES
+from nailgun.consts import TASK_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import Task
@@ -92,25 +94,36 @@ class ApplyChangesTaskManager(TaskManager):
             )
         )
 
-        current_tasks = db().query(Task).filter_by(
+        # locking tasks on cluster
+        names = (
+            TASK_NAMES.deploy,
+            TASK_NAMES.stop_deployment,
+            TASK_NAMES.reset_environment
+        )
+        objects.TaskCollection.lock_cluster_tasks(
+            cluster_id=self.cluster.id, names=names
+        ).all()
+
+        # filtering current deploy tasks
+        current_tasks = objects.TaskCollection.filter_by(
+            None,
             cluster_id=self.cluster.id,
-            name='deploy')
+            name=TASK_NAMES.deploy
+        )
 
         for task in current_tasks:
-            if task.status == "running":
+            if task.status == TASK_STATUSES.running:
+                db().rollback()
                 raise errors.DeploymentAlreadyStarted()
-            elif task.status in ("ready", "error"):
+            elif task.status in (TASK_STATUSES.ready, TASK_STATUSES.error):
                 db().delete(task)
-                db().commit()
+        db().flush()
 
-        obsolete_tasks = db().query(Task).filter_by(
-            cluster_id=self.cluster.id,
-        ).filter(
-            Task.name.in_([
-                'stop_deployment',
-                'reset_environment'
-            ])
-        )
+        obsolete_tasks = objects.TaskCollection.lock_cluster_tasks(
+            self.cluster.id,
+            names=(TASK_NAMES.stop_deployment, TASK_NAMES.reset_environment)
+        ).all()
+
         for task in obsolete_tasks:
             db().delete(task)
         db().commit()
@@ -130,8 +143,8 @@ class ApplyChangesTaskManager(TaskManager):
 
         # Run validation if user didn't redefine
         # provisioning and deployment information
-        if not self.cluster.replaced_provisioning_info \
-           and not self.cluster.replaced_deployment_info:
+        if not self.cluster.replaced_provisioning_info and \
+                not self.cluster.replaced_deployment_info:
             try:
                 self.check_before_deployment(supertask)
             except errors.CheckBeforeDeploymentError:
@@ -140,21 +153,26 @@ class ApplyChangesTaskManager(TaskManager):
         task_deletion, task_provision, task_deployment = None, None, None
 
         if nodes_to_delete:
-            # For more accurate progress calulation
+            # locking nodes before deleting
+            objects.NodeCollection.lock_nodes(nodes_to_delete)
+            # For more accurate progress calculation
             task_weight = 0.4
-            task_deletion = supertask.create_subtask("node_deletion",
+            task_deletion = supertask.create_subtask(TASK_NAMES.node_deletion,
                                                      weight=task_weight)
             logger.debug("Launching deletion task: %s", task_deletion.uuid)
             self._call_silently(task_deletion, tasks.DeletionTask)
 
         if nodes_to_provision:
+            # locking nodes before updating
+            objects.NodeCollection.lock_nodes(nodes_to_provision)
+            # updating nodes
             objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_provision)
             logger.debug("There are nodes to provision: %s",
                          " ".join([n.fqdn for n in nodes_to_provision]))
 
             # For more accurate progress calulation
             task_weight = 0.4
-            task_provision = supertask.create_subtask("provision",
+            task_provision = supertask.create_subtask(TASK_NAMES.provision,
                                                       weight=task_weight)
             provision_message = self._call_silently(
                 task_provision,
@@ -166,15 +184,22 @@ class ApplyChangesTaskManager(TaskManager):
 
             # if failed to generate task message for orchestrator
             # then task is already set to error
-            if task_provision.status == 'error':
+            if task_provision.status == TASK_STATUSES.error:
                 return supertask
 
+            task_provision = objects.Task.get_by_uid(
+                task_provision.id,
+                fail_if_not_found=True,
+                lock_for_update=True
+            )
             task_provision.cache = provision_message
-            db().add(task_provision)
             db().commit()
             task_messages.append(provision_message)
 
         if nodes_to_deploy:
+            # locking nodes before updating
+            objects.NodeCollection.lock_nodes(nodes_to_deploy)
+            # updating nodes
             objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_deploy)
             logger.debug("There are nodes to deploy: %s",
                          " ".join([n.fqdn for n in nodes_to_deploy]))
@@ -188,18 +213,23 @@ class ApplyChangesTaskManager(TaskManager):
 
             # if failed to generate task message for orchestrator
             # then task is already set to error
-            if task_deployment.status == 'error':
+            if task_deployment.status == TASK_STATUSES.error:
                 return supertask
 
+            task_deployment = objects.Task.get_by_uid(
+                task_deployment.id,
+                fail_if_not_found=True,
+                lock_for_update=True
+            )
             task_deployment.cache = deployment_message
-            db().add(task_deployment)
             db().commit()
             task_messages.append(deployment_message)
 
         if nodes_to_provision:
+            objects.NodeCollection.lock_nodes(nodes_to_provision)
             for node in nodes_to_provision:
                 node.status = 'provisioning'
-                db().commit()
+            db().commit()
 
         self.cluster.status = 'deployment'
         db().add(self.cluster)
@@ -266,14 +296,22 @@ class ProvisioningTaskManager(TaskManager):
     def execute(self, nodes_to_provision):
         """Run provisioning task on specified nodes
         """
-        objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_provision)
+        # locking nodes
+        nodes_ids = [node.id for node in nodes_to_provision]
+        nodes = objects.NodeCollection.filter_by_list(
+            None,
+            'id',
+            nodes_ids,
+            order_by='id'
+        )
+        objects.NodeCollection.lock_for_update(nodes).all()
 
+        objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_provision)
         logger.debug('Nodes to provision: {0}'.format(
             ' '.join([n.fqdn for n in nodes_to_provision])))
 
         task_provision = Task(name='provision', cluster=self.cluster)
         db().add(task_provision)
-        db().commit()
 
         provision_message = self._call_silently(
             task_provision,
@@ -301,13 +339,21 @@ class DeploymentTaskManager(TaskManager):
 
     def execute(self, nodes_to_deployment):
 
+        nodes_ids = [node.id for node in nodes_to_deployment]
+        nodes = objects.NodeCollection.filter_by_list(
+            None,
+            'id',
+            nodes_ids,
+            order_by='id'
+        )
+        objects.NodeCollection.lock_for_update(nodes).all()
+
         objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_deployment)
 
         logger.debug('Nodes to deploy: {0}'.format(
             ' '.join([n.fqdn for n in nodes_to_deployment])))
         task_deployment = Task(name='deployment', cluster=self.cluster)
         db().add(task_deployment)
-        db().commit()
 
         deployment_message = self._call_silently(
             task_deployment,
@@ -333,31 +379,56 @@ class DeploymentTaskManager(TaskManager):
 class StopDeploymentTaskManager(TaskManager):
 
     def execute(self):
-        stop_running = db().query(Task).filter_by(
-            cluster=self.cluster,
-            name='stop_deployment'
+        # locking tasks for processing
+        names = (
+            TASK_NAMES.stop_deployment,
+            TASK_NAMES.deployment,
+            TASK_NAMES.provision
+        )
+        objects.TaskCollection.lock_cluster_tasks(
+            self.cluster.id,
+            names=names
+        ).all()
+
+        stop_running = objects.TaskCollection.filter_by(
+            None,
+            cluster_id=self.cluster.id,
+            name=TASK_NAMES.stop_deployment,
+        )
+        stop_running = objects.TaskCollection.order_by(
+            stop_running, 'id'
         ).first()
+
         if stop_running:
-            if stop_running.status == 'running':
+            if stop_running.status == TASK_STATUSES.running:
                 raise errors.StopAlreadyRunning(
                     "Stopping deployment task "
                     "is already launched"
                 )
             else:
                 db().delete(stop_running)
-                db().commit()
+                db().flush()
 
-        deployment_task = db().query(Task).filter_by(
-            cluster=self.cluster,
-            name='deployment',
-            status='running'
+        deployment_task = objects.TaskCollection.filter_by(
+            None,
+            cluster_id=self.cluster.id,
+            name=TASK_NAMES.deployment,
+        )
+        deployment_task = objects.TaskCollection.order_by(
+            deployment_task, 'id'
         ).first()
-        provisioning_task = db().query(Task).filter_by(
-            cluster=self.cluster,
-            name='provision',
-            status='running'
+
+        provisioning_task = objects.TaskCollection.filter_by(
+            None,
+            cluster_id=self.cluster.id,
+            name=TASK_NAMES.provision,
+        )
+        provisioning_task = objects.TaskCollection.order_by(
+            provisioning_task, 'id'
         ).first()
+
         if not deployment_task and not provisioning_task:
+            db().rollback()
             raise errors.DeploymentNotRunning(
                 u"Nothing to stop - deployment is "
                 u"not running on environment '{0}'".format(
@@ -370,7 +441,7 @@ class StopDeploymentTaskManager(TaskManager):
             cluster=self.cluster
         )
         db().add(task)
-        db.commit()
+        db().commit()
         self._call_silently(
             task,
             tasks.StopDeploymentTask,

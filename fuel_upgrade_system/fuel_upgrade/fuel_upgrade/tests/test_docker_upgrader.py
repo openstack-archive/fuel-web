@@ -327,7 +327,9 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(glob_mock)
         self.called_once(json_checker_mock)
 
-    def test_save_db(self):
+    @mock.patch(
+        'fuel_upgrade.engines.docker_engine.os.link')
+    def test_save_db(self, _):
         self.upgrader.verify_postgres_dump = mock.MagicMock(return_value=True)
         self.upgrader.exec_cmd_in_container = mock.MagicMock()
         self.upgrader.save_db()
@@ -341,19 +343,24 @@ class TestDockerUpgrader(BaseTestCase):
         'fuel_upgrade.engines.docker_engine.utils.file_contains_lines',
         returns_value=True)
     @mock.patch(
-        'fuel_upgrade.engines.docker_engine.os.path.exists',
-        side_effect=[False, True])
+        'fuel_upgrade.engines.docker_engine.os.path.exists')
     @mock.patch(
         'fuel_upgrade.engines.docker_engine.os.remove')
     def test_save_db_removes_file_in_case_of_error(
-            self, remove_mock, _, __):
+            self, remove_mock, exists_mock, __):
         self.upgrader.exec_cmd_in_container = mock.MagicMock(
             side_effect=errors.ExecutedErrorNonZeroExitCode())
 
+        exists_mock.return_value = False
         self.assertRaises(
             errors.ExecutedErrorNonZeroExitCode,
             self.upgrader.save_db)
+        self.method_was_not_called(remove_mock)
 
+        exists_mock.return_value = True
+        self.assertRaises(
+            errors.ExecutedErrorNonZeroExitCode,
+            self.upgrader.save_db)
         self.called_once(remove_mock)
 
     @mock.patch(

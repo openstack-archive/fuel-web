@@ -68,7 +68,11 @@
         "condition": "Compute.hypervisor != 'vcenter'",
         "action": "hide",
         "message": null
-      }]
+      }],
+      "regex": {
+        "source": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$",
+        "error": "dialog.create_cluster_wizard.compute.vcenter_ip_warning"
+      }
     },
     "vc_user": {
       "type": "text",
@@ -79,7 +83,11 @@
         "condition": "Compute.hypervisor != 'vcenter'",
         "action": "hide",
         "message": null
-      }]
+      }],
+      "regex": {
+        "source": "\\S",
+        "error": "dialog.create_cluster_wizard.compute.vcenter_user_warning"
+      }
     },
     "vc_password": {
       "type": "password",
@@ -90,7 +98,11 @@
         "condition": "Compute.hypervisor != 'vcenter'",
         "action": "hide",
         "message": null
-      }]
+      }],
+      "regex": {
+        "source": "\\S",
+        "error": "dialog.create_cluster_wizard.compute.vcenter_user_warning"
+      }
     },
     "cluster": {
       "type": "text",
@@ -101,7 +113,11 @@
         "condition": "Compute.hypervisor != 'vcenter'",
         "action": "hide",
         "message": null
-      }]
+      }],
+      "regex": {
+        "source": "^([^,\\ ]+([\\ ]*[^,\\ ])*)(,[^,\\ ]+([\\ ]*[^,\\ ])*)*$",
+        "error": "dialog.create_cluster_wizard.compute.vcenter_cluster_warning"
+      }
     }
   },
   "Network": {

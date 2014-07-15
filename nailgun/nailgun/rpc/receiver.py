@@ -53,8 +53,21 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        for node in nodes:
-            node_db = db().query(Node).get(node['uid'])
+        # locking tasks on cluster
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        objects.TaskCollection.lock_cluster_tasks(task.cluster_id)
+        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True, lock_for_update=True)
+
+        # locking cluster
+        if task.cluster_id is not None:
+            objects.Cluster.get_by_uid(task.cluster_id, fail_if_not_found=True, lock_for_update=True)
+
+        # locking nodes
+        nodes_ids = [node['id'] if 'id' in node else node['uid'] for node in itertools.chain(nodes, error_nodes, inaccessible_nodes)]
+        nodes = objects.NodeCollection.filter_by_list(None, 'id', nodes_ids, order_by='id')
+        nodes = objects.NodeCollection.lock_for_update(nodes).all()
+
+        for node_db in nodes:
             if not node_db:
                 logger.error(
                     u"Failed to delete node '%s': node doesn't exist",
@@ -84,7 +97,7 @@ class NailgunReceiver(object):
             node_db.status = 'error'
             db().add(node_db)
             node['name'] = node_db.name
-        db().commit()
+        db().flush()
 
         success_msg = u"No nodes were removed"
         err_msg = u"No errors occurred"
@@ -104,7 +117,6 @@ class NailgunReceiver(object):
         if not error_msg:
             error_msg = ". ".join([success_msg, err_msg])
 
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
         data = {'status': status, 'progress': progress, 'message': error_msg}
         objects.Task.update(task, data)
 
@@ -116,6 +128,7 @@ class NailgunReceiver(object):
         )
         task_uuid = kwargs.get('task_uuid')
 
+        # in remove_nodes_resp method all objects are already locked
         cls.remove_nodes_resp(**kwargs)
 
         task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
@@ -173,10 +186,12 @@ class NailgunReceiver(object):
         task = objects.Task.get_by_uuid(
             task_uuid,
             fail_if_not_found=True,
-            lock_for_update=True
         )
 
-        # lock cluster for updating so it can't be deleted
+        # locking all cluster tasks
+        objects.TaskCollection.lock_cluster_tasks(task.cluster_id).all()
+
+        # lock cluster
         objects.Cluster.get_by_uid(
             task.cluster_id,
             fail_if_not_found=True,
@@ -268,9 +283,23 @@ class NailgunReceiver(object):
         progress = kwargs.get('progress')
         nodes = kwargs.get('nodes', [])
 
+        task = objects.Task.get_by_uuid(
+            task_uuid,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
+
+        # lock nodes for updating
+        q_nodes = objects.NodeCollection.filter_by_id_list(
+            None,
+            [n['uid'] for n in nodes],
+        )
+        q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
+        objects.NodeCollection.lock_for_update(q_nodes).all()
+
         for node in nodes:
             uid = node.get('uid')
-            node_db = db().query(Node).get(uid)
+            node_db = objects.Node.get_by_uid(node['uid'])
 
             if not node_db:
                 logger.warn('Node with uid "{0}" not found'.format(uid))
@@ -285,9 +314,7 @@ class NailgunReceiver(object):
                 node_db.status = node.get('status')
                 node_db.progress = node.get('progress')
 
-        db().commit()
-
-        task = objects.Task.get_by_uuid(task_uuid, fail_if_not_found=True)
+        db().flush()
         if nodes and not progress:
             progress = TaskHelper.recalculate_provisioning_task_progress(task)
 
@@ -460,12 +487,13 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        # Locking stop task
         task = objects.Task.get_by_uuid(
             task_uuid,
             fail_if_not_found=True,
-            lock_for_update=True
         )
+
+        # locking all cluster tasks
+        objects.TaskCollection.lock_cluster_tasks(task.cluster_id).all()
 
         stopping_task_names = [
             consts.TASK_NAMES.deploy,
@@ -513,6 +541,7 @@ class NailgunReceiver(object):
                 cluster_id=task.cluster_id
             )
             q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
+            q_nodes = objects.NodeCollection.lock_for_update(q_nodes)
 
             # locking Nodes for update
             update_nodes = objects.NodeCollection.lock_for_update(
@@ -605,7 +634,7 @@ class NailgunReceiver(object):
             for n in update_nodes:
                 n.roles, n.pending_roles = n.pending_roles, n.roles
 
-            db().commit()
+            db().flush()
 
             if ia_nodes:
                 cls._notify_inaccessible(
@@ -932,13 +961,13 @@ class NailgunReceiver(object):
         release = db().query(Release).get(release_id)
         release.state = state
         db.add(release)
-        db.commit()
+        db.flush()
 
     @classmethod
     def _download_release_completed(cls, release_id):
         release = db().query(Release).get(release_id)
         release.state = 'available'
-        db().commit()
+        db().flush()
         success_msg = u"Successfully downloaded {0}".format(
             release.name
         )
@@ -952,7 +981,7 @@ class NailgunReceiver(object):
     ):
         release = db().query(Release).get(release_id)
         release.state = 'error'
-        db().commit()
+        db().flush()
         # TODO(NAME): remove this ugly checks
         if error_message != 'Task aborted':
             notifier.notify('error', error_message)

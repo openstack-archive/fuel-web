@@ -807,6 +807,26 @@ define(['utils', 'deepModel'], function(utils) {
             }, this));
             this.set(result);
         },
+        validate: function(attrs, options) {
+            var errors = [];
+            _.each(options.config, function(attributeConfig, attribute) {
+                if (!(attributeConfig.regex && attributeConfig.regex.source)) { return; }
+                var hasNoSatisfiedRestrictions =  _.every(_.reject(attributeConfig.restrictions, {action: 'none'}), function(restriction) {
+                    // this probably will be changed when other controls need validation
+                    return !utils.evaluateExpression(restriction.condition, {default: this}).value;
+                }, this);
+                if (hasNoSatisfiedRestrictions) {
+                    var regExp = new RegExp(attributeConfig.regex.source);
+                    if (!this.get(options.paneName + '.' + attribute).match(regExp)) {
+                        errors.push({
+                            field: attribute,
+                            message: $.t(attributeConfig.regex.error)
+                        });
+                    }
+                }
+            }, this);
+            return errors.length ? errors : null;
+        },
         initialize: function(config) {
             this.defaults = this.parseConfig(config);
         }

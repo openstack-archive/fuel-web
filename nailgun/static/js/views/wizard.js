@@ -307,6 +307,15 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             _.defaults(this, options);
             this.attachWarningListeners();
             this.processPaneAliases();
+            this.wizard.model.on('invalid', function(model, errors) {
+                _.each(errors, function(error) {
+                    var input = this.$('input[name="' + error.field + '"]');
+                    input.addClass('error');
+                    input.parent().siblings('.description').addClass('hide');
+                    input.parent().siblings('.validation-error').text(error.message).removeClass('hide');
+                    this.wizard.panesModel.set('invalid', true);
+                }, this);
+            }, this);
         },
         renderControls: function(config) {
             var controlsHtml = '';
@@ -480,6 +489,27 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         renderCustomElements: function() {
             this.$('.control-group').append(this.renderControls({}));
         },
+        onWizardChange: function(model, changes) {
+            var config = this.config;
+            this.$('input.error').removeClass('error');
+            this.$('.parameter-description').removeClass('hide');
+            this.$('.validation-error').addClass('hide');
+            this.wizard.panesModel.set('invalid', false);
+            _.each(changes, function(value, key) {
+                if (config[key].type == 'radio') {
+                    var attributeConfig = _.where(config[key].values, {data: value})[0];
+                    if (attributeConfig.restrictions.length) {
+                        this.validateAttributes();
+                    }
+                }
+            }, this);
+        },
+        validateAttributes: function() {
+            this.wizard.model.isValid({
+                config: this.config,
+                paneName: this.constructorName
+            });
+        },
         render: function() {
             this.$el.html(this.template());
             this.renderCustomElements();
@@ -590,6 +620,10 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
     clusterWizardPanes.Compute = views.WizardPane.extend({
         constructorName: 'Compute',
         title: 'dialog.create_cluster_wizard.compute.title',
+        initialize: function(options) {
+            this.constructor.__super__.initialize.call(this, options);
+            this.wizard.model.on('change:Compute.*', this.onWizardChange, this);
+        },
         renderCustomElements: function() {
             this.$('.control-group').append(this.renderControls({hasDescription: true})).i18n();
         }

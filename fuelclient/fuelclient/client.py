@@ -15,7 +15,7 @@
 import json
 import logging
 import os
-import urllib2
+import requests
 
 import yaml
 
@@ -78,11 +78,12 @@ class Client(object):
             return self.keystone_client.user_id
         return ''
 
+    @exceptions_decorator
     def auth_status(self):
         self.auth_required = False
-        request = urllib2.urlopen(''.join([self.api_root, 'version']))
-        self.auth_required = json.loads(
-            request.read()).get('auth_required', False)
+        resp = requests.get(''.join([self.api_root, 'version']))
+        resp.raise_for_status()
+        self.auth_required = resp.json().get('auth_required', False)
 
     def update_own_password(self, new_pass):
         if self.auth_token:
@@ -106,37 +107,41 @@ class Client(object):
         if self.debug:
             print(message)
 
+    @exceptions_decorator
     def delete_request(self, api):
         """Make DELETE request to specific API with some data
         """
+        url = self.api_root + api
         self.print_debug(
             "DELETE {0}".format(self.api_root + api)
         )
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
-        request = urllib2.Request(self.api_root + api)
-        request.add_header('Content-Type', 'application/json')
-        request.add_header('X-Auth-Token', self.auth_token)
-        request.get_method = lambda: 'DELETE'
-        opener.open(request)
-        return {}
 
+        headers = {'content-type': 'application/json',
+                   'X-Auth-Token': self.auth_token}
+        resp = requests.delete(url, headers=headers)
+        resp.raise_for_status()
+
+        return resp.json()
+
+    @exceptions_decorator
     def put_request(self, api, data):
         """Make PUT request to specific API with some data
         """
+        url = self.api_root + api
         data_json = json.dumps(data)
         self.print_debug(
             "PUT {0} data={1}"
             .format(self.api_root + api, data_json)
         )
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
-        request = urllib2.Request(self.api_root + api, data=data_json)
-        request.add_header('Content-Type', 'application/json')
-        request.add_header('X-Auth-Token', self.auth_token)
-        request.get_method = lambda: 'PUT'
-        return json.loads(
-            opener.open(request).read()
-        )
 
+        headers = {'content-type': 'application/json',
+                   'X-Auth-Token': self.auth_token}
+        resp = requests.put(url, data=data_json, headers=headers)
+        resp.raise_for_status()
+
+        return resp.json()
+
+    @exceptions_decorator
     def get_request(self, api, ostf=False):
         """Make GET request to specific API
         """
@@ -145,13 +150,14 @@ class Client(object):
             "GET {0}"
             .format(url)
         )
-        opener = urllib2.build_opener(urllib2.HTTPHandler)
-        request = urllib2.Request(url)
-        request.add_header('X-Auth-Token', self.auth_token)
-        return json.loads(
-            opener.open(request).read()
-        )
 
+        headers = {'X-Auth-Token': self.auth_token}
+        resp = requests.get(url, headers=headers)
+        resp.raise_for_status()
+
+        return resp.json()
+
+    @exceptions_decorator
     def post_request(self, api, data, ostf=False):
         """Make POST request to specific API with some data
         """
@@ -161,22 +167,13 @@ class Client(object):
             "POST {0} data={1}"
             .format(url, data_json)
         )
-        request = urllib2.Request(
-            url=url,
-            data=data_json,
-            headers={
-                'Content-Type': 'application/json'
-            }
-        )
-        request.add_header('X-Auth-Token', self.auth_token)
-        try:
-            response = json.loads(
-                urllib2.urlopen(request)
-                .read()
-            )
-        except ValueError:
-            response = {}
-        return response
+
+        headers = {'content-type': 'application/json',
+                   'X-Auth-Token': self.auth_token}
+        resp = requests.post(url, data=data_json, headers=headers)
+        resp.raise_for_status()
+
+        return resp.json()
 
     @exceptions_decorator
     def get_fuel_version(self):

@@ -98,6 +98,14 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
         },
         isAvailableForSettingsChanges: function() {
             return this.get('status') == 'new' || (this.get('status') == 'stopped' && !this.get('nodes').where({status: 'ready'}).length);
+        },
+        updateOSTFCredentials: function() {
+            var accessSettings = this.get('settings').get('access');
+            this.get('ostfCredentials').set({
+                username: accessSettings.user.value,
+                password: accessSettings.password.value,
+                tenant: accessSettings.tenant.value
+            });
         }
     });
 
@@ -716,8 +724,7 @@ define(['utils', 'deepModel', 'localstorage'], function(utils) {
     });
 
     models.OSTFCredentials = Backbone.Model.extend({
-        constructorName: 'OSTFCredentials',
-        localStorage: new Backbone.LocalStorage('OSTFCredentials')
+        constructorName: 'OSTFCredentials'
     });
 
     models.FuelKey = Backbone.Model.extend({

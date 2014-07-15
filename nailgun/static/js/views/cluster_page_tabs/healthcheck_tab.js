@@ -87,7 +87,6 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 if (subView instanceof TestSet) {
                     var selectedTestIds = _.pluck(subView.tests.where({checked: true}), 'id');
                     if (selectedTestIds.length) {
-                        this.credentials.save();
                         var addCredentials = _.bind(function(obj) {
                             obj.ostf_os_access_creds = {
                                 ostf_os_username:this.credentials.get('username'),
@@ -208,17 +207,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
             }
             this.testruns.on('sync', this.updateTestRuns, this);
             this.testruns.on('change:status', this.renderCredentials, this);
-            this.credentials = new models.OSTFCredentials({id: this.model.id});
-            this.credentials.fetch()
-                .fail(_.bind(function() {
-                    var defaultCredentials = this.model.get('settings').get('access');
-                    this.credentials.set({
-                        username: defaultCredentials.user.value,
-                        password: defaultCredentials.password.value,
-                        tenant: defaultCredentials.tenant.value
-                    });
-                }, this))
-                .always(_.bind(this.renderCredentials, this));
+            this.credentials = this.model.get('ostfCredentials');
         },
         initStickitBindings: function() {
             var visibleBindings = {

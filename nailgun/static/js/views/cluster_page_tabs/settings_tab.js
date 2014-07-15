@@ -53,7 +53,10 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         applyChanges: function() {
             this.disableControls();
             return this.settings.save(null, {patch: true, wait: true})
-                .done(_.bind(this.updateInitialSettings, this))
+                .done(_.bind(function() {
+                    this.updateInitialSettings();
+                    this.model.updateOSTFCredentials();
+                }, this))
                 .always(_.bind(function() {
                     this.render();
                     this.model.fetch();

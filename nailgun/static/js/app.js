@@ -210,8 +210,10 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                         networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
                         cluster.set({
                             networkConfiguration: networkConfiguration,
-                            release: new models.Release({id: cluster.get('release_id')})
+                            release: new models.Release({id: cluster.get('release_id')}),
+                            ostfCredentials: new models.OSTFCredentials()
                         });
+                        cluster.updateOSTFCredentials();
                         return cluster.get('release').fetch();
                     }, this))
                     .done(_.bind(render, this))

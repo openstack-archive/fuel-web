@@ -1,0 +1,300 @@
+<div class="wrapper">
+ 
+ 	<!-- sub-tabs -->
+    <ul class="nav nav-pills">
+  		<li><a class="btn-configure-disks" data-action="disks">Disks</a></li>
+        <% _.each(controllers, function(controller) { %>
+        <% if (controller.controller_id == active) { %>
+            <li class="active"><a data-id="<%= controller.controller_id %>" class="btn-configure-controllers" data-action="controllers"><%= controller.model %>(<%= controller.pci_address %>)</a></li>
+        <% } else { %>
+            <li><a data-id="<%= controller.controller_id %>" class="btn-configure-controllers" data-action="controllers"><%= controller.model %>(<%= controller.pci_address %>)</a></li>
+        <% }; %>
+        <% }); %>
+
+	</ul>
+	<!-- sub-tabs -->
+
+
+
+      <!-- Page Article -->
+      <div class="row-fluid page-sub-title">
+            <h3  class="span8"><%= controller.model %>(<%= controller.pci_address %>)</h3>
+            <div class="span4">
+                  <button class="btn btn-success pull-right action-btn run-tests-btn btn-create-raid" style="display: inline-block;" disabled=""><i class="icon-plus"></i>Create Virtual Drive</button>
+            </div>
+      </div>
+
+    <div class="progress-bar" style="display: none">
+      <div class="progress progress-striped progress-success active"><div class="bar"></div></div>
+    </div>
+
+  <div class="raid-window">
+	<!-- controller tech info -->
+	<div class="well">
+            <div class="controller-info-block">
+  		      <li>Product Model: <b><%= controller.model %></b></li>
+                  <li>PCI Address: <b><%= controller.pci_address %></b></li>
+                  <li>Controller ID: <b><%= controller.controller_id %></b></li>
+            </div>
+	</div>
+	<!-- // -->
+
+    <% _.each(controller.virtual_drives, function(vd) { %>
+    <div class="raid-block">
+            <!-- RAID Header -->
+            <div class="raid-header">
+                  <% var raidLevel; %>
+                  <% if (controller.model.indexOf('Nytro WarpDrive') + 1 ) { %>
+                       <% raidLevel = vd.raid_level.toString(); %>
+                  <% } else { %>
+                       <% raidLevel = vd.raid_level.toString(); %>
+                  <% }; %>
+
+                  <% if ((raidLevel).indexOf('NytroCache') + 1) { %>
+                    <div class="name"><b>NytroCache - <%= vd.drive_group %></b></div>
+                    <% raidLevel = raidLevel.split('NytroCache')[1] %>
+                  <% } else if ((raidLevel).indexOf('CacheCade') + 1) { %>
+                    <div class="name"><b>CacheCade - <%= vd.drive_group %></b></div>
+                    <% raidLevel = raidLevel.split('CacheCade')[1] %>
+                  <% } else if (controller.model.indexOf('Nytro WarpDrive') + 1 ) { %>
+                    <div class="name"><b>Nytro WarpDrive</b></div>
+                  <% } else { %>
+                    <% (vd.name == null) ? vd.name = 'Raid_' + vd.drive_group : vd.name;%>
+                    <div class="name"><b>Virtual Drive - '<%= vd.name %>'</b></div>
+                  <% }; %>
+                  <% if ((controller.model.indexOf('Nytro WarpDrive') + 1 ) || ((vd.raid_level.toString()).indexOf('CacheCade') + 1) || ((vd.raid_level.toString()).indexOf('NytroCache') + 1)) { %>
+                  <% } else if (controller.max_cachecade_size) { %>
+                  <div class="cache">
+                      <% if (vd.ssd_caching_active) { %>
+                        Flash Caching: On
+                      <% } else { %>
+                        Flash Caching: Off
+                      <% } %>
+                  </div>
+                  <% } %>
+                  <div class="level">RAID Level <%= raidLevel %></div>
+            </div>
+
+            <!-- RAID Body -->
+            <div class="raid-body">
+
+                        <!-- Disk Item 1 -->
+                        <div class="disks-block">
+
+                              <!-- Disk Item New -->
+                              <% var dg = vd.drive_group %>
+                              <% _.each(controller.physical_drives, function(disk) { %>
+                                    <% if (disk.drive_group == dg) { %>
+                                        <% if (disk.medium == 'HDD') { %>
+                                              <div class="disk-item">
+                                                    <div class="type hdd">
+                                                          <!-- checkbox -->
+                                                          <div class="checkbox-holder"></div>
+                                                          <div class="disk-item-description">
+                                                                <div class="name">HDD Drive</div>
+                                                                <div class="size"><%= showDiskSize(disk.size) %></div>
+                                                          </div>
+                                                    </div>
+                                              </div>
+                                        <% }; %>
+                                        <% if (disk.medium == 'SSD') { %>
+                                              <div class="disk-item">
+                                                    <div class="type ssd">
+                                                          <!-- checkbox -->
+                                                          <div class="checkbox-holder"></div>
+                                                          <div class="disk-item-description">
+                                                                <div class="name">SSD Drive</div>
+                                                                <div class="size"><%= showDiskSize(disk.size) %></div>
+                                                          </div>
+                                                    </div>
+                                              </div>
+                                        <% }; %>
+                                        <% if (disk.medium == 'Nytro Flash' || disk.medium == 'NytroSFM') { %>
+                                              <div class="disk-item">
+                                                    <div class="type nytro">
+                                                          <!-- checkbox -->
+                                                          <div class="checkbox-holder"></div>
+                                                          <div class="disk-item-description">
+                                                                <div class="name">NytroSFM Drive</div>
+                                                                <div class="size"><%= showDiskSize(disk.size) %></div>
+                                                          </div>
+                                                    </div>
+                                              </div>
+                                        <% }; %>
+                                        <% if (disk.medium == null) { %>
+                                              <div class="disk-item">
+                                                    <div class="type ssd">
+                                                          <!-- checkbox -->
+                                                          <div class="checkbox-holder"></div>
+                                                          <div class="disk-item-description">
+                                                                <div class="name">NytroWarpDrive</div>
+                                                                <div class="size"><%= showDiskSize(disk.size) %></div>
+                                                          </div>
+                                                    </div>
+                                              </div>
+                                        <% }; %>
+                                    <% }; %>
+                              <% }); %>
+
+                        </div>
+            </div>
+    </div>
+    <% }); %>
+
+
+    <% _.each(controller.physical_drives, function(disk) { %>
+        <% if (disk.state == 'global_hot_spare') { %>
+        <div class="raid-block">
+                <!-- RAID Header -->
+                <div class="raid-header">
+                      <div class="name"><b>Global Hot Spare</b></div>
+                      <div class="cache">Model: <%= disk.model %></div>
+                      <div class="level">EID: <%= disk.enclosure %> Slot: <%= disk.slot %></div>
+                </div>
+
+                <!-- RAID Body -->
+                <div class="raid-body">
+
+                        <!-- Disk Item 1 -->
+                        <div class="disks-block">
+
+                            <% if (disk.medium == 'HDD') { %>
+                                  <div class="disk-item">
+                                        <div class="type hdd">
+                                              <!-- checkbox -->
+                                              <div class="checkbox-holder"></div>
+                                              <div class="disk-item-description">
+                                                    <div class="name">HDD Drive</div>
+                                                    <div class="size"><%= showDiskSize(disk.size) %></div>
+                                              </div>
+                                        </div>
+                                  </div>
+                            <% }; %>
+                            <% if (disk.medium == 'SSD') { %>
+                                  <div class="disk-item">
+                                        <div class="type ssd">
+                                              <!-- checkbox -->
+                                              <div class="checkbox-holder"></div>
+                                              <div class="disk-item-description">
+                                                    <div class="name">SSD Drive</div>
+                                                    <div class="size"><%= showDiskSize(disk.size) %></div>
+                                              </div>
+                                        </div>
+                                  </div>
+                            <% }; %>
+                        </div>
+                </div>
+        </div>
+        <% }; %>
+    <% }); %>
+
+
+      <!-- ungrouped disks -->
+
+      <!-- RAID block sample 1 -->
+      <div class="ungroup-block">
+
+            <!-- RAID Body -->
+            <div class="raid-body">
+
+                        <!-- Disk Item 1 -->
+                        <div class="disks-block">
+
+                        <% _.each(controller.physical_drives, function(disk) { %>
+
+                        <% if (disk.medium == 'SSD' && disk.state == 'unconfigured_good') { %>
+
+                              <!-- Disk Item New -->
+                              <div class="disk-item">
+                                    <div class="type ssd">
+                                          <!-- checkbox -->
+                                          <div class="checkbox-holder">
+                                                <div class="custom-tumbler">
+                                                      <input data-id="ssd" type="checkbox" data-enclosure='<%= disk.enclosure %>' data-slot='<%= disk.slot %>'>
+                                                      <!-- [if !IE |(gte IE 9)]> -->
+                                                      <span>&nbsp;</span>
+                                                      <!-- <![endif] -->
+                                                </div>
+                                          </div>
+                                          <div class="disk-item-description">
+                                                <div class="name">SSD Drive</div>
+                                                <div class="size"><%= showDiskSize(disk.size) %></div>
+                                          </div>
+                                    </div>
+                              </div>
+                        <% }; %>
+
+                        <% if (disk.medium == null && disk.state == 'unconfigured_good') { %>
+                              <div class="disk-item">
+                                    <div class="type ssd">
+                                          <!-- checkbox -->
+                                          <div class="checkbox-holder"></div>
+                                          <div class="disk-item-description">
+                                                <div class="name">NytroWarpDrive</div>
+                                                <div class="size"><%= showDiskSize(disk.size) %></div>
+                                          </div>
+                                    </div>
+                              </div>
+                        <% }; %>
+
+                        <% if (disk.medium == 'HDD' && disk.state == 'unconfigured_good') { %>
+                              <!-- Disk Item New -->
+                              <div class="disk-item">
+                                    <div class="type hdd">
+                                          <!-- checkbox -->
+                                          <div class="checkbox-holder">
+                                                <div class="custom-tumbler">
+                                                      <input data-id="hdd" type="checkbox" data-enclosure='<%= disk.enclosure %>' data-slot='<%= disk.slot %>'>
+                                                      <!-- [if !IE |(gte IE 9)]> -->
+                                                      <span>&nbsp;</span>
+                                                      <!-- <![endif] -->
+                                                </div>
+                                          </div>
+                                          <div class="disk-item-description">
+                                                <div class="name">HDD Drive</div>
+                                                <div class="size"><%= showDiskSize(disk.size) %></div>
+                                          </div>
+                                    </div>
+                              </div>
+                        <% }; %>
+
+                        <% if ((disk.medium == 'Nytro Flash' || disk.medium == 'NytroSFM') && disk.state == 'unconfigured_good') { %>
+                              <!-- Disk Item New -->
+                              <div class="disk-item">
+                                    <div class="type nytro">
+                                          <!-- checkbox -->
+                                          <div class="checkbox-holder">
+                                                <div class="custom-tumbler">
+                                                      <input data-id="nytro" type="checkbox" data-enclosure='<%= disk.enclosure %>' data-slot='<%= disk.slot %>'>
+                                                      <!-- [if !IE |(gte IE 9)]> -->
+                                                      <span>&nbsp;</span>
+                                                      <!-- <![endif] -->
+                                                </div>
+                                          </div>
+                                          <div class="disk-item-description">
+                                                <div class="name">NytroSFM Drive</div>
+                                                <div class="size"><%= showDiskSize(disk.size) %></div>
+                                          </div>
+                                    </div>
+                              </div>
+
+                        <% }; %>
+                        <% }); %>
+                        </div>
+            </div>
+      </div>
+    </div>
+      <!-- bottom buttons -->
+      <div class="row">
+            <div class="page-control-box">
+                  <div class="back-button pull-left">
+                        <button class="btn btn-return" data-i18n="cluster_page.nodes_tab.back_to_nodes_button"></button>
+                  </div>
+                  <div class="page-control-button-placeholder">
+                        <button class="btn btn-reset">Reset Configuration</button>
+                        <button class="btn btn-defaults btn-load-defaults">Load Defaults</button>
+                        <button class="btn btn-revert-changes">Cancel Changes</button>
+                        <button class="btn btn-success btn-apply btn-apply-changes">Apply</button>
+                  </div>
+            </div>
+      </div>

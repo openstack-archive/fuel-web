@@ -12,6 +12,7 @@
                 "delete_button": "Delete",
                 "stop_button": "Stop",
                 "reset_button": "Reset",
+                "create_raid_button": "Create Virtual Drive",
                 "save_settings_button": "Save Settings",
                 "close_button": "Close",
                 "cancel_button": "Cancel",
@@ -44,7 +45,8 @@
                 "system": "System",
                 "memory": "Memory",
                 "disks": "Disks",
-                "interfaces": "Interfaces"
+                "interfaces": "Interfaces",
+                "raid": "Raid Controller"
             },
             "cluster": {
                 "status": {
@@ -154,7 +156,8 @@
                     "settings": "Settings",
                     "logs": "Logs",
                     "healthcheck": "Health Check",
-                    "actions": "Actions"
+                    "actions": "Actions",
+                    "raid": "Storage"
                 },
                 "nodes_tab": {
                     "roles": "Roles",
@@ -498,6 +501,8 @@
                     "important": "Important",
                     "stay_button": "Stay on page",
                     "leave_button": "Leave page and discard changes",
+                    "still_apply": "Still Apply",
+                    "cancel_button": "Cancel",
                     "default_message": "Settings were modified but not saved. Do you want to discard your changes and leave the page?",
                     "verify_message": "Network verification is in progress. You should save changes or stay on the tab."
                 },
@@ -532,10 +537,11 @@
                 "show_node": {
                     "manufacturer_label": "Manufacturer",
                     "mac_address_label": "MAC Address",
+                    "controller": "Controller",
                     "fqdn_label": "FQDN",
                     "ssh_console": "SSH console",
                     "network_configuration_button": "Configure Interfaces",
-                    "disk_configuration_button": "Configure Disks",
+                    "disk_configuration_button": "Configure Storage",
                     "close_button": "Close",
                     "total": "total",
                     "bytes": "bytes",

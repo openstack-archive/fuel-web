@@ -706,18 +706,6 @@ define(['utils', 'deepModel'], function(utils) {
         urlRoot: '/api/ostf'
     });
 
-    models.OSTFCredentials = Backbone.Model.extend({
-        constructorName: 'OSTFCredentials',
-        update: function(settings) {
-            var accessSettings = settings.get('access');
-            this.set({
-                username: accessSettings.user.value,
-                password: accessSettings.password.value,
-                tenant: accessSettings.tenant.value
-            });
-        }
-    });
-
     models.FuelKey = Backbone.Model.extend({
         constructorName: 'FuelKey',
         urlRoot: '/api/registration/key'

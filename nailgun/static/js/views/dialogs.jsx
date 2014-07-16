@@ -16,9 +16,11 @@
 define(
 [
     'require',
+    'react',
     'utils',
     'models',
     'view_mixins',
+    'jsx!component_mixins',
     'text!templates/dialogs/base_dialog.html',
     'text!templates/dialogs/discard_changes.html',
     'text!templates/dialogs/display_changes.html',
@@ -28,11 +30,12 @@ define(
     'text!templates/dialogs/update_environment.html',
     'text!templates/dialogs/show_node.html',
     'text!templates/dialogs/dismiss_settings.html',
-    'text!templates/dialogs/delete_nodes.html',
-    'text!templates/dialogs/change_password.html'
+    'text!templates/dialogs/delete_nodes.html'
 ],
-function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate, changePasswordTemplate) {
+function(require, React, utils, models, viewMixins, componentMixins, baseDialogTemplate, discardChangesDialogTemplate, displayChangesDialogTemplate, removeClusterDialogTemplate, stopDeploymentDialogTemplate, resetEnvironmentDialogTemplate, updateEnvironmentDialogTemplate, showNodeInfoTemplate, discardSettingsChangesTemplate, deleteNodesTemplate) {
     'use strict';
+
+    var cx = React.addons.classSet;
 
     var views = {};
 
@@ -408,46 +411,92 @@ function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesD
         }
     });
 
-    views.ChangePasswordDialog = views.Dialog.extend({
-        template: _.template(changePasswordTemplate),
-        mixins: [viewMixins.toggleablePassword],
-        events: {
-            'click .btn-change-password': 'changePassword',
-            'keyup input': 'onPasswordChange',
-            'keydown': 'onKeydown'
+    views.ChangePasswordDialog = React.createClass({
+        mixins: [componentMixins.dialogMixin, React.addons.LinkedStateMixin],
+        getDefaultProps: function() {
+            return {
+                title: $.t('dialog.change_password.title')
+            };
+        },
+        getInitialState: function() {
+            return {
+                currentPassword: '',
+                newPassword: '',
+                validationError: false,
+                locked: false
+            };
+        },
+        renderBody: function() {
+            var ns = 'dialog.change_password.';
+            return (
+                <form className="change-password-form">
+                    <div className="parameter-box clearfix">
+                        <div className="parameter-name">{$.t(ns + 'current_password')}</div>
+                        <div className="parameter-control input-append">
+                            <input ref="currentPassword"
+                                onChange={this.handleChange.bind(this, 'currentPassword', true)}
+                                onKeyDown={this.handleKeyDown}
+                                className={cx({'input-append': true, error: this.state.validationError})}
+                                disabled={this.state.locked}
+                                type="password"
+                                maxLength="50" />
+                            <span className="add-on"><i className="icon-eye"/></span>
+                        </div>
+                        <div className="parameter-description validation-error">
+                            {this.state.validationError && $.t('dialog.change_password.wrong_current_password')}
+                        </div>
+                    </div>
+                    <div className="parameter-box clearfix">
+                        <div className="parameter-name">{$.t(ns + 'new_password')}</div>
+                        <div className="parameter-control input-append">
+                            <input ref="newPassword"
+                                onChange={this.handleChange.bind(this, 'newPassword', false)}
+                                onKeyDown={this.handleKeyDown}
+                                className="input-append"
+                                disabled={this.state.locked}
+                                type="password"
+                                maxLength="50" />
+                            <span className="add-on"><i className="icon-eye"/></span>
+                        </div>
+                        <div className="parameter-description validation-error"></div>
+                    </div>
+                </form>
+            );
+        },
+        renderFooter: function() {
+            return [
+                <button key="cancel" className="btn" onClick={this.close} disabled={this.state.locked}>{$.t('common.cancel_button')}</button>,
+                <button key="apply" className="btn btn-success" onClick={this.changePassword} disabled={this.state.locked || !this.isPasswordChangeAvailable()}>{$.t('common.apply_button')}</button>
+            ];
+        },
+        isPasswordChangeAvailable: function() {
+            return !!(this.state.currentPassword && this.state.newPassword);
+        },
+        handleKeyDown: function(e) {
+            if (e.key == 'Enter') {
+                this.changePassword();
+            }
+        },
+        handleChange: function(name, clearError, e) {
+            var newState = {};
+            newState[name] = e.target.value;
+            if (clearError) {
+                newState.validationError = false;
+            }
+            this.setState(newState);
         },
         changePassword: function() {
-            var currentPassword = this.$('[name=current_password]').val(),
-                newPassword = this.$('[name=new_password]').val(),
-                confirmedPassword= this.$('[name=confirm_new_password]').val();
-            if (currentPassword && (newPassword == confirmedPassword)) {
-                app.keystoneClient.changePassword(currentPassword, newPassword)
+            if (this.isPasswordChangeAvailable()) {
+                this.setState({locked: true});
+                app.keystoneClient.changePassword(this.state.currentPassword, this.state.newPassword)
                     .done(_.bind(function() {
                         app.user.set({password: app.keystoneClient.password});
-                        this.$el.modal('hide');
+                        this.close();
                     }, this))
                     .fail(_.bind(function() {
-                        this.$('[name=current_password]').focus().addClass('error').parent().siblings('.validation-error').show();
+                        this.setState({validationError: true, locked: false});
+                        $(this.refs.currentPassword.getDOMNode()).focus();
                     }, this));
-            }
-        },
-        onPasswordChange: function(e) {
-            this.$(e.currentTarget).removeClass('error').parent().siblings('.validation-error').hide();
-            var newPassword = this.$('[name=new_password]'),
-                confirmedPassword = this.$('[name=confirm_new_password]');
-            confirmedPassword.removeClass('error').parent().siblings('.validation-error').hide();
-            if (newPassword.val() != confirmedPassword.val()) {
-                confirmedPassword.addClass('error').parent().siblings('.validation-error').show();
-            }
-            var disabled = (!_.all(_.invoke(_.map(this.$('input'), $), 'val')) || this.$('.validation-error').is(':visible'));
-            _.defer(_.bind(function() {
-                this.$('.btn-change-password').attr('disabled', disabled);
-            }, this));
-        },
-        onKeydown: function(e) {
-            if (e.which == 13) {
-                e.preventDefault();
-                this.changePassword();
             }
         }
     });

@@ -346,6 +346,9 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 });
                 this.$('tbody').append(testView.render().el);
             }, this);
+            var commonDisabledState = this.tab.selectAllCheckbox.get('disabled');
+            this.selectAllCheckbox.set({disabled: commonDisabledState});
+            this.tests.invoke('set', {disabled: commonDisabledState});
         },
         initStickitBindings: function() {
             var bindings = {

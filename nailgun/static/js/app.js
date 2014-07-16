@@ -15,6 +15,7 @@
 **/
 define(
 [
+    'jsx!views/layout',
     'coccyx',
     'js/coccyx_mixins',
     'models',
@@ -29,7 +30,7 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -117,16 +118,26 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
         },
         renderLayout: function() {
             this.content = $('#content');
-            this.navbar = new commonViews.Navbar({elements: [
-                {label: 'environments', url: '#clusters'},
-                {label: 'releases', url:'#releases'},
-                {label: 'support', url:'#support'}
-            ]});
-            this.content.before(this.navbar.render().el);
-            this.breadcrumbs = new commonViews.Breadcrumbs();
-            this.content.before(this.breadcrumbs.render().el);
-            this.footer = new commonViews.Footer();
-            $('#footer').html(this.footer.render().el);
+            this.navbar = new layoutComponents.Navbar({
+                elements: [
+                    {label: 'environments', url: '#clusters'},
+                    {label: 'releases', url:'#releases'},
+                    {label: 'support', url:'#support'}
+                ],
+                model: {
+                    user: this.user,
+                    version: this.version,
+                    statistics: new models.NodesStatistics(),
+                },
+                collection: {
+                    notifications: new models.Notifications()
+                }
+            });
+            this.navbar.mount($('#navbar')[0]);
+            this.breadcrumbs = new layoutComponents.Breadcrumbs();
+            this.breadcrumbs.mount($('#breadcrumbs')[0]);
+            this.footer = new layoutComponents.Footer({model: {version: this.version}});
+            this.footer.mount($('#footer')[0]);
             this.content.find('.loading').addClass('layout-loaded');
         },
         setPage: function(NewPage, options) {

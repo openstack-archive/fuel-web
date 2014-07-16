@@ -19,7 +19,7 @@ define(
     'models',
     'view_mixins',
     'views/common',
-    'views/dialogs',
+    'jsx!views/dialogs',
     'text!templates/cluster/healthcheck_tab.html',
     'text!templates/cluster/healthcheck_credentials.html',
     'text!templates/cluster/healthcheck_testset.html',

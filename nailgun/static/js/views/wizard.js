@@ -19,7 +19,7 @@ define(
     'utils',
     'models',
     'view_mixins',
-    'views/dialogs',
+    'jsx!views/dialogs',
     'text!templates/dialogs/create_cluster_wizard.html',
     'text!templates/dialogs/create_cluster_wizard/name_and_release.html',
     'text!templates/dialogs/create_cluster_wizard/common_wizard_panel.html',

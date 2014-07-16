@@ -18,7 +18,7 @@ define(
     'utils',
     'models',
     'views/common',
-    'views/dialogs',
+    'jsx!views/dialogs',
     'text!templates/cluster/actions_tab.html',
     'text!templates/cluster/actions_rename.html',
     'text!templates/cluster/actions_reset.html',

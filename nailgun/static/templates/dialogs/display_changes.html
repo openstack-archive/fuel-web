@@ -67,13 +67,16 @@
     var restrictions = [];
     if (cluster.get('nodes').nodesAfterDeploymentWithRole('controller') < size) { restrictions.push('controller'); }
     var isCeilometerEnabled = cluster.get('settings').get('additional_components.ceilometer.value') == true;
+    var isExtMongoEnabled = cluster.get('settings').get('additional_components.mongo.value') == true;
     var mongoNodes = cluster.get('nodes').nodesAfterDeploymentWithRole('mongo');
     if (isCeilometerEnabled) {
-      if (cluster.get('mode') == 'ha_compact' && mongoNodes < 3) {
-         restrictions.push('mongo_ha');
-      }
-      else if (mongoNodes < size) {
-        restrictions.push('mongo');
+      if (!isExtMongoEnabled) {
+        if (cluster.get('mode') == 'ha_compact' && mongoNodes < 3) {
+           restrictions.push('mongo_ha');
+        }
+        else if (mongoNodes < size) {
+          restrictions.push('mongo');
+        }
       }
     }
     // collect warnings

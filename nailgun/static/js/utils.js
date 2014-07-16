@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['require', 'expression_parser'], function(require, ExpressionParser) {
+define(['require', 'expression_parser', 'react'], function(require, ExpressionParser, React) {
     'use strict';
 
     var utils = {
@@ -100,6 +100,27 @@ define(['require', 'expression_parser'], function(require, ExpressionParser) {
                 throw new Error('Invalid restriction format');
             }
             return result;
+        },
+        universalMount: function(view, el, parentView) {
+            if (view instanceof Backbone.View) {
+                view.render();
+                if (el) {
+                    $(el).html(view.el);
+                }
+                if (parentView) {
+                    parentView.registerSubView(view);
+                }
+                return view;
+            } else {
+                return React.renderComponent(view, $(el)[0]);
+            }
+        },
+        universalUnmount: function(view) {
+            if (view instanceof Backbone.View) {
+                view.tearDown();
+            } else {
+                React.unmountComponentAtNode(view.getDOMNode().parentNode);
+            }
         },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;

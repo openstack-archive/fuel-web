@@ -206,3 +206,27 @@ class TestHandlers(BaseIntegrationTest):
         )
         # Checking no interfaces change after deployment
         self.assertEquals(0, len(changes))
+
+    def test_update_node_from_agent_in_deploying_state(self):
+        node = self.env.create_node(
+            api=False, status=consts.NODE_STATUSES.deploying)
+
+        ipaddress = '10.0.0.0/8'
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({'id': node.id,
+                             'ip': ipaddress}),
+            headers=self.default_headers)
+
+        self.assertNotEqual(node.ip, ipaddress)
+
+        node.status = consts.NODE_STATUSES.ready
+        self.db.flush()
+
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({'id': node.id,
+                             'ip': ipaddress}),
+            headers=self.default_headers)
+
+        self.assertEqual(node.ip, ipaddress)

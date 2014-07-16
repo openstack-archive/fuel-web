@@ -454,6 +454,12 @@ class Node(NailgunObject):
             )
             meta['disks'] = instance.meta['disks']
 
+        #(dshulyak) do not perform update in case of node in deployment state
+        if instance.status == consts.NODE_STATUSES.deploying:
+            logger.debug(
+                'Deployment is running for node %s, skipping update',
+                instance.id)
+            return instance
         return cls.update(instance, data)
 
     @classmethod

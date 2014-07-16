@@ -46,9 +46,9 @@ function(models, utils, commonViews, dialogViews, wizard, clustersPageTemplate, 
                 this.registerSubView(registerTrialView);
                 this.$('.page-title').before(registerTrialView.render().el);
             }
-            app.footer.$el.toggle(app.user.get('authenticated'));
-            app.breadcrumbs.$el.toggle(app.user.get('authenticated'));
-            app.navbar.$el.toggle(app.user.get('authenticated'));
+            $(app.footer.getDOMNode()).toggle(app.user.get('authenticated'));
+            $(app.breadcrumbs.getDOMNode()).toggle(app.user.get('authenticated'));
+            $(app.navbar.getDOMNode()).toggle(app.user.get('authenticated'));
             return this;
         }
     });

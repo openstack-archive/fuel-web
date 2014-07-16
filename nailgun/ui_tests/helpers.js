@@ -24,6 +24,10 @@ casper.on('page.error', function(msg) {
     casper.echo(msg, 'ERROR');
 });
 
+casper.on('page.initialized', function(msg) {
+    this.loadJsFile('bind-polyfill');
+});
+
 casper.loadPage = function(page) {
     return this.thenOpen(baseUrl + page).waitWhileSelector('#content > .loading');
 }

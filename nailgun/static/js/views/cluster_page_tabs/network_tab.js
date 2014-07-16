@@ -18,7 +18,7 @@ define(
     'utils',
     'models',
     'views/common',
-    'views/dialogs',
+    'jsx!views/dialogs',
     'text!templates/cluster/network_tab.html',
     'text!templates/cluster/network.html',
     'text!templates/cluster/range_field.html',

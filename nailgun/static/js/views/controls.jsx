@@ -36,11 +36,11 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             if (this.isRadioButton()) { return; }
             this.props.onChange(this.props.name, e.target.type == 'checkbox' ? e.target.checked : e.target.value);
         },
-        renderInput: function(type) {
+        renderInput: function(type, className) {
             type = type || this.props.type;
             var radioButton = this.isRadioButton();
             return (<input
-                className={this.getError() && 'error'}
+                className={className + (this.getError() && 'error')}
                 type={type}
                 name={this.props.name}
                 value={this.getValue()}
@@ -54,7 +54,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return (
                 <div className={labelClass + ' enable-selection'}>
                     {radioButton ? radioButton.label : this.props.label}
-                    {!!this.props.warnings.length &&
+                    {this.props.warnings && !!this.props.warnings.length &&
                         <controls.TooltipIcon warnings={this.props.warnings} />
                     }
                 </div>
@@ -83,7 +83,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     <label className='parameter-box'>
                         <div className='parameter-control'>
                             <div className='custom-tumbler'>
-                                {this.renderInput()}
+                                {this.renderInput('checkbox', this.props.cs.inputClass)}
                                 <span>&nbsp;</span>
                             </div>
                         </div>

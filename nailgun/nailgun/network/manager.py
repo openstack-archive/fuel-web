@@ -865,6 +865,18 @@ class NetworkManager(object):
         return 'http://{0}/zabbix'.format(ip)
 
     @classmethod
+    def is_same_network(cls, ipaddress, ipnetwork):
+        """Verifies 
+
+        :param ipaddress: example. 10.0.0.0
+        :type ipaddress: str
+        :param ipnetwork: example. 10.0.0.0/24
+        :type ipnetwork: str
+        :returns: bool
+        """
+        return IPAddr(ipaddress) in IPNetwork(ipnetwork)
+
+    @classmethod
     def is_cidr_intersection(cls, cidr1, cidr2):
         """Checks intersection of two CIDRs (IPNetwork objects)
         """

@@ -18,7 +18,7 @@ define(
     'react',
     'utils',
     'models',
-    'views/dialogs'
+    'jsx!views/dialogs'
 ],
 function(React, utils, models, dialogs) {
     'use strict';

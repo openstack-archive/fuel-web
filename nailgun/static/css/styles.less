@@ -354,6 +354,11 @@ button {
   font-family: @font-family-base;
 }
 
+.cleared {
+  clear: both;
+  padding-top: 20px;
+}
+
 .btn {
   padding: 4px 12px 4px;
 }
@@ -2448,7 +2453,8 @@ legend {
     }
   }
   .note { margin-bottom: 10px; }
-  .settings-group {
+  .settings-group,
+  .healthcheck-group {
     background-color: @fuel-light-5;
     padding: 20px 40px 20px 40px;
     border: 1px dotted @fuel-base-color;
@@ -3164,7 +3170,17 @@ input.input-append {
 .healthcheck-status-stopped, .healthcheck-status-unknown, .healthcheck-status-wait_running {color: @fuel-base-color;}
 .healthcheck-status-success {color: #2e8701;}
 .healthcheck-status-failure, .healthcheck-status-error {color: #890000;}
+.healthcheck {
+  &.credentials {
+    input[name=password] {
+      width: 175px;
+    }
+  }
+}
 
+.healthcheck-title {
+  width: 502px;
+}
 // Cluster toolbar
 // -------------------------
 

@@ -273,10 +273,6 @@ def copy(source, destination, overwrite=True, symlinks=True):
     :param overwrite: overwrite destination if True
     :param symlinks: resolve symlinks if True
     """
-    logger.debug(
-        u'Copying "%s" -> "%s" [overwrite=%d symlinks=%d]',
-        source, destination, overwrite, symlinks)
-
     if os.path.isdir(source):
         copy_dir(source, destination, overwrite, symlinks)
     else:

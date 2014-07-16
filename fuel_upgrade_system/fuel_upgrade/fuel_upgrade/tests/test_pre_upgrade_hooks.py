@@ -22,6 +22,8 @@ from fuel_upgrade.tests.base import BaseTestCase
 from fuel_upgrade.pre_upgrade_hooks.base import PreUpgradeHookBase
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_credentials \
     import AddCredentialsHook
+from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml \
+    import AddVersionsYaml
 from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
 
 
@@ -91,6 +93,33 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
         self.assertTrue(all(
             key in self.additional_keys
             for key in agrs[0][1].keys()))
+
+
+class TestAddVersionsYamlHook(TestPreUpgradeHooksBase):
+
+    def setUp(self):
+        super(TestAddVersionsYamlHook, self).setUp()
+        self.hook = AddVersionsYaml(self.upgraders, self.fake_config)
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml.'
+        'os.path.exists', return_value=False)
+    def test_is_required_returns_true(self, _):
+        self.assertTrue(self.hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml.'
+        'os.path.exists', return_value=True)
+    def test_is_required_returns_false(self, _):
+        self.assertFalse(self.hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml.'
+        'copy')
+    def test_run(self, copy):
+        self.hook.run()
+
+        self.called_times(copy, len(self.hook.versions_yaml))
 
 
 class TestPreUpgradeHookBase(TestPreUpgradeHooksBase):

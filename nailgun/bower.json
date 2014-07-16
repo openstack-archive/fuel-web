@@ -2,6 +2,8 @@
     "name": "fuel-web",
     "dependencies": {
         "jquery": "1.9.1",
+        "react": "0.11.1",
+        "react.backbone": "0.4.0",
         "requirejs": "2.1.9",
         "requirejs-text": "2.0.10",
         "require-css": "0.1.0",
@@ -16,6 +18,9 @@
     "exportsOverride": {
         "jquery": {
             "js": "jquery.js"
+        },
+        "react": {
+            "js": ["JSXTransformer.js", "react-with-addons.js"]
         },
         "requirejs": {
             "js": "require.js"

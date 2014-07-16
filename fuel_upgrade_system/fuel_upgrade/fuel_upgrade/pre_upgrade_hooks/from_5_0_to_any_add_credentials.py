@@ -87,7 +87,7 @@ class AddCredentialsHook(PreUpgradeHookBase):
         astute_config.update(self.config.astute)
 
         # NOTE(eli): Just save file for backup in case
-        # if user want to restore it manually
+        # if user wants to restore it manually
         utils.copy_file(
             self.config.current_fuel_astute_path,
             '{0}_{1}'.format(self.config.current_fuel_astute_path,

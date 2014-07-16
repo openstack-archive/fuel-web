@@ -2360,17 +2360,16 @@ input.error:focus {
 }
 
 .table-wrapper {
-  display: table;
-  margin-bottom: 3px;
+  .indent-mixin;
   > .tablerow-wrapper {
     display: table-row;
     height:40px;
     .parameter-name {
       display: table-cell;
-      word-break: break-all;
+      word-break: break-word !important;
       vertical-align: middle;
       padding: 0 10px 0 12px;
-      max-width: 180px;
+      max-width: 220px;
       float: none;
     }
     .parameter-control {
@@ -2379,7 +2378,9 @@ input.error:focus {
       float: none;
       .box-sizing-mixin;
       padding: 5px 10px 0 0;
-      input[type="text"] { margin-bottom: 5px; }
+      input[type="text"] {
+        margin-bottom: 5px;
+      }
       &.input-append {
         vertical-align: middle;
         padding-top: 0;
@@ -2394,6 +2395,10 @@ input.error:focus {
       float: none;
     }
   }
+  .table-colspan {
+    float: none;
+    margin-left: 0px;
+  }
   > label {
     margin-top: 0;
   }
@@ -2402,7 +2407,7 @@ input.error:focus {
 legend {
   &.openstack-settings, &.networks {
     display: block;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
     background-color: #ececec;
     border: 1px solid #e5e5e5;
     border-radius: 4px;

@@ -195,7 +195,7 @@ class TestHandlers(BaseIntegrationTest):
             cluster['changes']
         )
         # Checking interfaces change added after node creation
-        self.assertEquals(1, len(changes))
+        self.assertEqual(1, len(changes))
 
         deployment_task = self.env.launch_deployment()
         self.env.wait_ready(deployment_task)
@@ -205,7 +205,7 @@ class TestHandlers(BaseIntegrationTest):
             cluster['changes']
         )
         # Checking no interfaces change after deployment
-        self.assertEquals(0, len(changes))
+        self.assertEqual(0, len(changes))
 
     def test_update_node_with_wrong_ip(self):
         node = self.env.create_node(

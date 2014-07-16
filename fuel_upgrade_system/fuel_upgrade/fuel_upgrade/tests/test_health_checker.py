@@ -64,20 +64,20 @@ class TestBaseChecker(BaseTestCase):
             auth=params['auth'],
             timeout=0.5)
 
-        self.assertEquals(resp['body'], json_resp)
-        self.assertEquals(resp['code'], 200)
+        self.assertEqual(resp['body'], json_resp)
+        self.assertEqual(resp['code'], 200)
 
     @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_connection_error(self, requests_get):
         requests_get.side_effect = requests.exceptions.ConnectionError()
         resp = self.make_get_request()
-        self.assertEquals(resp, None)
+        self.assertEqual(resp, None)
 
     @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_timeout_error(self, requests_get):
         requests_get.side_effect = requests.exceptions.Timeout()
         resp = self.make_get_request()
-        self.assertEquals(resp, None)
+        self.assertEqual(resp, None)
 
     @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_non_json_response(self, requests_get):
@@ -90,8 +90,8 @@ class TestBaseChecker(BaseTestCase):
 
         resp = self.make_get_request()
 
-        self.assertEquals(resp['body'], result_txt)
-        self.assertEquals(resp['code'], 400)
+        self.assertEqual(resp['body'], result_txt)
+        self.assertEqual(resp['code'], 400)
 
     def mock_socket_obj(self, socket_mock):
         socket_obj = mock.MagicMock()
@@ -110,7 +110,7 @@ class TestBaseChecker(BaseTestCase):
 
         socket_obj.settimeout.assert_called_once_with(0.5)
         socket_mock.assert_called_once_with(socket.AF_INET, socket.SOCK_STREAM)
-        self.assertEquals(result, True)
+        self.assertEqual(result, True)
 
     @mock.patch('fuel_upgrade.health_checker.socket.socket')
     def test_check_if_port_open_fail(self, socket_mock):
@@ -118,7 +118,7 @@ class TestBaseChecker(BaseTestCase):
         socket_obj.connect_ex.return_value = 1
         result = self.base_checker.check_if_port_open('127.0.0.1', 90)
 
-        self.assertEquals(result, False)
+        self.assertEqual(result, False)
 
     @mock.patch('fuel_upgrade.health_checker.socket.socket')
     def test_check_if_port_open_timeout_exception(self, socket_mock):
@@ -126,7 +126,7 @@ class TestBaseChecker(BaseTestCase):
         socket_obj.connect_ex.side_effect = socket.timeout()
         result = self.base_checker.check_if_port_open('127.0.0.1', 90)
 
-        self.assertEquals(result, False)
+        self.assertEqual(result, False)
 
     @mock.patch('fuel_upgrade.health_checker.xmlrpclib.ServerProxy')
     def test_get_xmlrpc(self, xmlrpc_mock):
@@ -136,7 +136,7 @@ class TestBaseChecker(BaseTestCase):
         result = self.base_checker.get_xmlrpc(url)
         xmlrpc_mock.assert_called_once_with(url)
 
-        self.assertEquals(result, server_mock)
+        self.assertEqual(result, server_mock)
 
     @mock.patch('fuel_upgrade.health_checker.xmlrpclib.ServerProxy')
     def test_get_xmlrpc_connection_error(self, xmlrpc_mock):
@@ -145,7 +145,7 @@ class TestBaseChecker(BaseTestCase):
         result = self.base_checker.get_xmlrpc(url)
         xmlrpc_mock.assert_called_once_with(url)
 
-        self.assertEquals(result, None)
+        self.assertEqual(result, None)
 
 
 class TestFuelUpgradeVerify(BaseTestCase):
@@ -181,13 +181,13 @@ class TestFuelUpgradeVerify(BaseTestCase):
         self.checkers_returns(True)
 
         result = self.verifier.check_if_all_services_ready()
-        self.assertEquals(result, True)
+        self.assertEqual(result, True)
 
     def test_check_if_all_services_ready_returns_false(self):
         self.checkers_returns(False)
 
         result = self.verifier.check_if_all_services_ready()
-        self.assertEquals(result, False)
+        self.assertEqual(result, False)
 
 
 class TestCheckers(BaseTestCase):

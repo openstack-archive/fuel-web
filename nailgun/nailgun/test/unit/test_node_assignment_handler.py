@@ -157,7 +157,7 @@ class TestAssignmentHandlers(BaseIntegrationTest):
             expect_errors=True
         )
 
-        self.assertEquals(404, resp.status_code)
+        self.assertEqual(404, resp.status_code)
 
 
 class TestClusterStateUnassigment(BaseIntegrationTest):

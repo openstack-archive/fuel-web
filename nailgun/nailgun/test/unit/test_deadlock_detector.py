@@ -37,10 +37,10 @@ class TestDeadlockDetector(BaseTestCase):
     def test_no_locks(self):
         len_exp = len(deadlock_detector.context.locks)
         db().query(Node).all()
-        self.assertEquals(len_exp, len(deadlock_detector.context.locks))
+        self.assertEqual(len_exp, len(deadlock_detector.context.locks))
         db().query(Node).all()
         db().query(Cluster).all()
-        self.assertEquals(len_exp, len(deadlock_detector.context.locks))
+        self.assertEqual(len_exp, len(deadlock_detector.context.locks))
 
     def test_lock_same_table(self):
         # Cleaning locks
@@ -50,7 +50,7 @@ class TestDeadlockDetector(BaseTestCase):
         db().query(Node).with_lockmode('update').all()
         db().query(Node).with_lockmode('update').all()
         # Checking only one lock has been added
-        self.assertEquals(1, len(deadlock_detector.context.locks))
+        self.assertEqual(1, len(deadlock_detector.context.locks))
         db().commit()
 
     def test_lock_cleaned_on_commit(self):
@@ -58,14 +58,14 @@ class TestDeadlockDetector(BaseTestCase):
         db().query(Node).with_lockmode('update').all()
         self.assertTrue(len(deadlock_detector.context.locks) > 0)
         db().commit()
-        self.assertEquals(0, len(deadlock_detector.context.locks))
+        self.assertEqual(0, len(deadlock_detector.context.locks))
 
     def test_lock_cleaned_on_rollback(self):
         db().query(Cluster).with_lockmode('update').all()
         db().query(Node).with_lockmode('update').all()
         self.assertTrue(len(deadlock_detector.context.locks) > 0)
         db().rollback()
-        self.assertEquals(0, len(deadlock_detector.context.locks))
+        self.assertEqual(0, len(deadlock_detector.context.locks))
 
     def test_unknown_locks_chain_failed(self):
         db().query(Release).with_lockmode('update').all()
@@ -112,7 +112,7 @@ class TestDeadlockDetector(BaseTestCase):
 
         # Checking locks context isolation from other threads
         try:
-            self.assertEquals(
+            self.assertEqual(
                 len(objects),
                 len(deadlock_detector.context.locks)
             )

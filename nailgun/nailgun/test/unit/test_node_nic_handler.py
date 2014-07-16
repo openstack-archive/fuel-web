@@ -247,7 +247,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         response = jsonutils.loads(resp.body)
-        self.assertNotEquals(response[0]['id'], fake_id)
+        self.assertNotEqual(response[0]['id'], fake_id)
 
     def test_mac_address_should_be_in_lower_case(self):
         meta = self.env.default_metadata()
@@ -260,7 +260,7 @@ class TestHandlers(BaseIntegrationTest):
             headers=self.default_headers)
         self.assertEqual(resp.status_code, 200)
         response = jsonutils.loads(resp.body)
-        self.assertNotEquals(response[0]['mac'], new_mac.lower())
+        self.assertNotEqual(response[0]['mac'], new_mac.lower())
 
     def test_remove_assigned_interface(self):
         def get_nodes():

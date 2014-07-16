@@ -254,16 +254,16 @@ class TestNodeObject(BaseIntegrationTest):
         )
         node_db = self.env.nodes[0]
         node = objects.Node.get_by_uid(node_db.id, fail_if_not_found=True)
-        self.assertEquals(['controller'], node.roles)
-        self.assertEquals([], node.pending_roles)
+        self.assertEqual(['controller'], node.roles)
+        self.assertEqual([], node.pending_roles)
         # Checking roles moved
         objects.Node.move_roles_to_pending_roles(node)
-        self.assertEquals([], node.roles)
-        self.assertEquals(['controller'], node.pending_roles)
+        self.assertEqual([], node.roles)
+        self.assertEqual(['controller'], node.pending_roles)
         # Checking second moving has no affect
         objects.Node.move_roles_to_pending_roles(node)
-        self.assertEquals([], node.roles)
-        self.assertEquals(['controller'], node.pending_roles)
+        self.assertEqual([], node.roles)
+        self.assertEqual(['controller'], node.pending_roles)
 
     def test_objects_order_by(self):
         self.env.create(
@@ -282,11 +282,11 @@ class TestNodeObject(BaseIntegrationTest):
 
         # Checking nothing to be sorted
         nodes = objects.NodeCollection.order_by(None, 'id')
-        self.assertEquals(None, nodes)
+        self.assertEqual(None, nodes)
 
         iterable = ['b', 'a']
         nodes = objects.NodeCollection.order_by(iterable, ())
-        self.assertEquals(iterable, nodes)
+        self.assertEqual(iterable, nodes)
 
         # Checking query ASC ordering applied
         q_nodes = objects.NodeCollection.filter_by(None)
@@ -348,13 +348,13 @@ class TestTaskObject(BaseIntegrationTest):
                 {'roles': ['cinder']}])
 
     def _node_should_be_error_with_type(self, node, error_type):
-        self.assertEquals(node.status, 'error')
-        self.assertEquals(node.error_type, error_type)
-        self.assertEquals(node.progress, 0)
+        self.assertEqual(node.status, 'error')
+        self.assertEqual(node.error_type, error_type)
+        self.assertEqual(node.progress, 0)
 
     def _nodes_should_not_be_error(self, nodes):
         for node in nodes:
-            self.assertEquals(node.status, 'discover')
+            self.assertEqual(node.status, 'discover')
 
     @property
     def cluster(self):
@@ -370,7 +370,7 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'error')
+        self.assertEqual(self.cluster.status, 'error')
         self._node_should_be_error_with_type(self.cluster.nodes[0], 'deploy')
         self._nodes_should_not_be_error(self.cluster.nodes[1:])
 
@@ -382,7 +382,7 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'error')
+        self.assertEqual(self.cluster.status, 'error')
 
     def test_update_nodes_to_error_if_provision_task_failed(self):
         self.cluster.nodes[0].status = 'provisioning'
@@ -394,7 +394,7 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'error')
+        self.assertEqual(self.cluster.status, 'error')
         self._node_should_be_error_with_type(self.cluster.nodes[0],
                                              'provision')
         self._nodes_should_not_be_error(self.cluster.nodes[1:])
@@ -407,7 +407,7 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'operational')
+        self.assertEqual(self.cluster.status, 'operational')
 
     def test_update_if_parent_task_is_ready_all_nodes_should_be_ready(self):
         for node in self.cluster.nodes:
@@ -424,11 +424,11 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task._update_cluster_data(task)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'operational')
+        self.assertEqual(self.cluster.status, 'operational')
 
         for node in self.cluster.nodes:
-            self.assertEquals(node.status, 'ready')
-            self.assertEquals(node.progress, 100)
+            self.assertEqual(node.status, 'ready')
+            self.assertEqual(node.progress, 100)
 
     def test_update_cluster_status_if_task_was_already_in_error_status(self):
         for node in self.cluster.nodes:
@@ -444,12 +444,12 @@ class TestTaskObject(BaseIntegrationTest):
         objects.Task.update(task, data)
         self.db.flush()
 
-        self.assertEquals(self.cluster.status, 'error')
-        self.assertEquals(task.status, 'error')
+        self.assertEqual(self.cluster.status, 'error')
+        self.assertEqual(task.status, 'error')
 
         for node in self.cluster.nodes:
-            self.assertEquals(node.status, 'error')
-            self.assertEquals(node.progress, 0)
+            self.assertEqual(node.status, 'error')
+            self.assertEqual(node.progress, 0)
 
     def test_do_not_set_cluster_to_error_if_validation_failed(self):
         for task_name in ['check_before_deployment', 'check_networks']:
@@ -470,14 +470,14 @@ class TestTaskObject(BaseIntegrationTest):
             objects.Task._update_cluster_data(supertask)
             self.db.flush()
 
-            self.assertEquals(self.cluster.status, 'new')
+            self.assertEqual(self.cluster.status, 'new')
 
     def test_get_task_by_uuid_returns_task(self):
         task = Task(name='deploy')
         self.db.add(task)
         self.db.flush()
         task_by_uuid = objects.Task.get_by_uuid(task.uuid)
-        self.assertEquals(task.uuid, task_by_uuid.uuid)
+        self.assertEqual(task.uuid, task_by_uuid.uuid)
 
     def test_get_task_by_uuid_raises_error(self):
         self.assertRaises(errors.ObjectNotFound,
@@ -491,21 +491,21 @@ class TestTaskObject(BaseIntegrationTest):
         self.db.flush()
 
         task_obj = objects.Task.get_by_uuid(task.uuid)
-        self.assertEquals(consts.TASK_STATUSES.running, task_obj.status)
+        self.assertEqual(consts.TASK_STATUSES.running, task_obj.status)
 
         # Checking correct status is set
         objects.Task.update(task, {'status': consts.TASK_STATUSES.ready})
         self.db.flush()
         task_obj = objects.Task.get_by_uuid(task.uuid)
-        self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
+        self.assertEqual(consts.TASK_STATUSES.ready, task_obj.status)
 
         # Checking wrong statuses are not set
         objects.Task.update(task, {'status': None})
         self.db.flush()
         task_obj = objects.Task.get_by_uuid(task.uuid)
-        self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
+        self.assertEqual(consts.TASK_STATUSES.ready, task_obj.status)
 
         objects.Task.update(task, {'status': 'xxx'})
         self.db.flush()
         task_obj = objects.Task.get_by_uuid(task.uuid)
-        self.assertEquals(consts.TASK_STATUSES.ready, task_obj.status)
+        self.assertEqual(consts.TASK_STATUSES.ready, task_obj.status)

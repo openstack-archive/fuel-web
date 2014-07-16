@@ -338,7 +338,7 @@ class TestDockerUpgrader(BaseTestCase):
                 {'PublicPort': 516},
                 {'PublicPort': 517}]}]
 
-        self.assertEquals(
+        self.assertEqual(
             [514, 515, 516, 517],
             self.upgrader._get_docker_container_public_ports(
                 docker_ports_mapping))
@@ -364,7 +364,7 @@ class TestDockerUpgrader(BaseTestCase):
             (('iptables -t nat -D  DOCKER -p tcp -m tcp --dport 2 -j DNAT '
               '--to-destination 172.17.0.3:2',),)]
 
-        self.assertEquals(exec_cmd_mock.call_args_list, expected_calls)
+        self.assertEqual(exec_cmd_mock.call_args_list, expected_calls)
 
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.files_size',
                 return_value=5)

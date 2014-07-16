@@ -57,45 +57,41 @@ class TestBaseChecker(BaseTestCase):
 
         params = {'url': 'http://url', 'auth': ('user', 'password')}
 
-        resp, status = self.make_get_request(**params)
+        resp = self.make_get_request(**params)
 
         requests_get.assert_called_once_with(
             params['url'],
             auth=params['auth'],
             timeout=0.5)
 
-        self.assertEquals(resp, json_resp)
-        self.assertEquals(status, 200)
+        self.assertEquals(resp['body'], json_resp)
+        self.assertEquals(resp['code'], 200)
 
     @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_connection_error(self, requests_get):
         requests_get.side_effect = requests.exceptions.ConnectionError()
-
-        resp, status = self.make_get_request()
-
+        resp = self.make_get_request()
         self.assertEquals(resp, None)
-        self.assertEquals(status, None)
 
     @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_timeout_error(self, requests_get):
         requests_get.side_effect = requests.exceptions.Timeout()
-
-        resp, status = self.make_get_request()
-
+        resp = self.make_get_request()
         self.assertEquals(resp, None)
-        self.assertEquals(status, None)
 
     @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_non_json_response(self, requests_get):
+        result_txt = 'Text result'
         result = mock.MagicMock()
         result.json.side_effect = ValueError()
         result.status_code = 400
+        result.text.return_value = result_txt
         requests_get.return_value = result
 
-        resp, status = self.make_get_request()
+        resp = self.make_get_request()
 
-        self.assertEquals(resp, None)
-        self.assertEquals(status, 400)
+        self.assertEquals(resp['body'], result_txt)
+        self.assertEquals(resp['code'], 400)
 
     def mock_socket_obj(self, socket_mock):
         socket_obj = mock.MagicMock()
@@ -196,6 +192,8 @@ class TestFuelUpgradeVerify(BaseTestCase):
 
 class TestCheckers(BaseTestCase):
 
+    safe_get_sucess = {'body': {'a': 3}, 'code': 200}
+
     def assert_checker_false(self, checker):
         self.assertFalse(checker(self.fake_config.endpoints).check())
 
@@ -204,34 +202,37 @@ class TestCheckers(BaseTestCase):
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nailgun_checker_returns_true(self, get_mock):
-        get_mock.return_value = [None, 200]
+        get_mock.return_value = self.safe_get_sucess
         self.assert_checker_true(
             health_checker.IntegrationCheckerNginxNailgunChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nailgun_checker_returns_false(self, get_mock):
-        get_mock.return_value = [None, 400]
+        get_mock.return_value = None
         self.assert_checker_false(
             health_checker.IntegrationCheckerNginxNailgunChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_ostf_checker_returns_true(self, get_mock):
-        get_mock.return_value = [None, 200]
+        get_mock.return_value = {'body': None, 'code': 401}
         self.assert_checker_true(health_checker.OSTFChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_ostf_checker_returns_false(self, get_mock):
-        get_mock.return_value = [None, 500]
+        get_mock.return_value = {'body': None, 'code': 500}
         self.assert_checker_false(health_checker.OSTFChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_rabbit_checker_returns_true(self, get_mock):
-        get_mock.return_value = [[1, 2], 200]
+        get_mock.return_value = self.safe_get_sucess
         self.assert_checker_true(health_checker.RabbitChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_rabbit_checker_returns_false_wrong_code(self, get_mock):
-        negative_results = [[[1, 2], 500], [[], 200]]
+        negative_results = [
+            {'body': [1, 2], 'code': 500},
+            {'body': [], 'code': 200}]
+
         for result in negative_results:
             get_mock.return_value = result
             self.assert_checker_false(health_checker.RabbitChecker)
@@ -279,17 +280,24 @@ class TestCheckers(BaseTestCase):
     def test_mcollective_checker_returns_true(self, get_mock):
         result = [{'name': 'mcollective_broadcast'},
                   {'name': 'mcollective_directed'}]
-        get_mock.return_value = [result, 200]
+        get_mock.return_value = {'body': result, 'code': 200}
         self.assert_checker_true(health_checker.MCollectiveChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_mcollective_checker_returns_false(self, get_mock):
         wrong_results = [
-            [[{'name': 'mcollective_broadcast'},
-              {'name': 'mcollective_directed'}], 400],
-            [[{'name': 'mcollective_broadcast'}], 200],
-            [None, 200],
-            [['str', None], 200]]
+            {'body': [{'name': 'mcollective_broadcast'},
+                      {'name': 'mcollective_directed'}],
+             'code': 400},
+
+            {'body': [{'name': 'mcollective_broadcast'}],
+             'code': 200},
+
+            {'body': None,
+             'code': 200},
+
+            {'body': ['str', None],
+             'code': 200}]
 
         for result in wrong_results:
             get_mock.return_value = result
@@ -297,48 +305,57 @@ class TestCheckers(BaseTestCase):
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nginx_checker_returns_true(self, get_mock):
-        get_mock.return_value = [None, 400]
+        get_mock.return_value = {'body': None, 'code': 400}
         self.assert_checker_true(health_checker.NginxChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_nginx_checker_returns_false(self, get_mock):
-        get_mock.return_value = [None, None]
+        get_mock.return_value = None
         self.assert_checker_false(health_checker.NginxChecker)
-
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_keystone_checker_returns_true(self, get_mock):
-        get_mock.return_value = [{}, 200]
+        get_mock.return_value = {'body': {}, 'code': 200}
         self.assert_checker_true(health_checker.KeystoneChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_keystone_checker_returns_false(self, get_mock):
         negative_results = [
-            [{}, 400],
-            [None, None]]
+            {'body': {}, 'code': 400},
+            {'body': None, 'code': None}]
 
         for result in negative_results:
             get_mock.return_value = result
             self.assert_checker_false(health_checker.KeystoneChecker)
 
-    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
-    def test_integration_postgres_nailgun_nginx_returns_true(self, get_mock):
-        get_mock.return_value = [[1, 2], 200]
+    @mock.patch('fuel_upgrade.health_checker.NailgunClient')
+    def test_integration_postgres_nailgun_nginx_returns_true(self, nailgun):
+        nailgun.return_value.get_releases.return_value = [1, 2]
         self.assert_checker_true(
             health_checker.IntegrationCheckerPostgresqlNailgunNginx)
 
-    @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
-    def test_integration_postgres_nailgun_nginx_returns_false(self, get_mock):
-        negative_results = [[[1, 2], 400], [[], 200]]
-        for result in negative_results:
-            get_mock.return_value = result
+    @mock.patch('fuel_upgrade.health_checker.NailgunClient')
+    def test_integration_postgres_nailgun_nginx_empty_list(self, nailgun):
+        nailgun.return_value.get_releases.return_value = []
+        self.assert_checker_false(
+            health_checker.IntegrationCheckerPostgresqlNailgunNginx)
+
+    @mock.patch('fuel_upgrade.health_checker.NailgunClient')
+    def test_integration_postgres_nailgun_nginx_raises_errors(self, nailgun):
+        side_effects = [requests.exceptions.ConnectionError(),
+                        requests.exceptions.Timeout(),
+                        ValueError()]
+
+        for side_effect in side_effects:
+            nailgun.return_value.get_releases.side_effect = side_effect
             self.assert_checker_false(
                 health_checker.IntegrationCheckerPostgresqlNailgunNginx)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_integration_rabbitmq_astute_nailgun_returns_true(self, get_mock):
-        result = [[{'name': 'naily_service'},
-                   {'name': 'nailgun'}], 200]
+        result = {'body': [{'name': 'naily_service'},
+                           {'name': 'nailgun'}],
+                  'code': 200}
         get_mock.return_value = result
 
         self.assert_checker_true(
@@ -347,11 +364,21 @@ class TestCheckers(BaseTestCase):
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_integration_rabbitmq_astute_nailgun_returns_false(self, get_mock):
         negative_results = [
-            [None, 200],
-            [[{'name': 'naily_service'}], 200],
-            [[{'name': 'nailgun'}], 200],
-            [[{'name': 'nailgun'}, {'name': 'naily_service'}], 400],
-            [[{}], 200]]
+            None,
+
+            {'body': None,
+             'code': 200},
+
+            {'body': [{'name': 'naily_service'}],
+             'code': 200},
+
+            {'body': [{'name': 'nailgun'}],
+             'code': 200},
+
+            {'body': [{'name': 'nailgun'}, {'name': 'naily_service'}],
+             'code': 400},
+
+            {'body': [{}], 'code': 200}]
 
         for result in negative_results:
             get_mock.return_value = result

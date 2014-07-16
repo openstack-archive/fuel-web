@@ -47,7 +47,7 @@ class CheckNoRunningTasks(BaseBeforeUpgradeChecker):
 
     def __init__(self, context):
         nailgun = context.config.endpoints['nginx_nailgun']
-        self.nailgun_client = NailgunClient(nailgun['host'], nailgun['port'])
+        self.nailgun_client = NailgunClient(**nailgun)
 
     def check(self):
         """Sends request to nailgun

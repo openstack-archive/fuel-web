@@ -40,6 +40,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             type = type || this.props.type;
             var radioButton = this.isRadioButton();
             return (<input
+                id={this.props.id}
                 className={this.getError() && 'error'}
                 type={type}
                 name={this.props.name}
@@ -54,7 +55,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return (
                 <div className={labelClass + ' enable-selection'}>
                     {radioButton ? radioButton.label : this.props.label}
-                    {!!this.props.warnings.length &&
+                    {(this.props.warnings && this.props.warnings.length) &&
                         <controls.TooltipIcon warnings={this.props.warnings} />
                     }
                 </div>
@@ -79,17 +80,26 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         render: function() {
             return (
-                <div className={this.props.cs.common}>
-                    <label className='parameter-box'>
-                        <div className='parameter-control'>
-                            <div className='custom-tumbler'>
-                                {this.renderInput()}
-                                <span>&nbsp;</span>
-                            </div>
-                        </div>
-                        {this.renderLabel()}
-                        {this.renderDescription()}
-                    </label>
+                <div>
+                    {this.props.controlOnly ?
+                        (<div className='custom-tumbler'>
+                            {this.renderInput()}
+                            <span>&nbsp;</span>
+                        </div>)
+                        :
+                        (<div className={this.props.cs.common}>
+                            <label className='parameter-box'>
+                                <div className='parameter-control'>
+                                    <div className='custom-tumbler'>
+                                        {this.renderInput()}
+                                        <span>&nbsp;</span>
+                                    </div>
+                                </div>
+                                {this.renderLabel()}
+                                {this.renderDescription()}
+                            </label>
+                        </div>)
+                    }
                 </div>
             );
         }
@@ -102,7 +112,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         render: function() {
             return (
-                <div className={this.props.cs.common}>
+                <div className={'select-all ' + this.props.cs.common}>
                     <label className={this.props.cs.label}>
                         {this.renderInput()}
                         <span>&nbsp;</span>

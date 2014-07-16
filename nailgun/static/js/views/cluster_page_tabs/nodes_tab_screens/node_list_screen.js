@@ -17,7 +17,7 @@ define(
 [
     'utils',
     'models',
-    'views/dialogs',
+    'jsx!views/dialogs',
     'views/cluster_page_tabs/nodes_tab_screens/screen',
     'text!templates/cluster/nodes_management_panel.html',
     'text!templates/cluster/assign_roles_panel.html',

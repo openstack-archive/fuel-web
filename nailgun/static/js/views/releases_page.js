@@ -17,7 +17,7 @@ define(
 [
     'utils',
     'views/common',
-    'views/dialogs',
+    'jsx!views/dialogs',
     'text!templates/release/list.html',
     'text!templates/release/release.html'
 ],

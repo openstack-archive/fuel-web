@@ -15,6 +15,7 @@
 **/
 define(
 [
+    'jsx!views/layout',
     'coccyx',
     'js/coccyx_mixins',
     'models',
@@ -29,7 +30,7 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(Footer, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -125,8 +126,11 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
             this.content.before(this.navbar.render().el);
             this.breadcrumbs = new commonViews.Breadcrumbs();
             this.content.before(this.breadcrumbs.render().el);
-            this.footer = new commonViews.Footer();
-            $('#footer').html(this.footer.render().el);
+            this.footer = new Footer({
+                model: {version: this.version},
+                el: $('#footer')
+            });
+            this.footer.mount();
             this.content.find('.loading').addClass('layout-loaded');
         },
         setPage: function(NewPage, options) {

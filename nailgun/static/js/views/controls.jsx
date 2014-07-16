@@ -56,8 +56,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                 className={cx(_.extend({error: !_.isNull(this.validate())}, this.props.cs.input))}
                 type={type}
                 name={this.props.name}
-                defaultValue={radioButton ? radioButton.data : this.props.value}
-                defaultChecked={radioButton ? radioButton.data == this.props.value : this.props.value}
+                value={radioButton ? radioButton.data : this.props.value}
+                checked={radioButton ? radioButton.data == this.props.value : this.props.value}
                 disabled={this.props.disabled}
                 onChange={this.onChange}
                 maxLength={this.props.maxLength}

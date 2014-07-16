@@ -160,7 +160,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                 amountRestrictions: {
                     controller: nodes.nodesAfterDeploymentWithRole('controller') < requiredNodeAmount,
                     compute: !nodes.nodesAfterDeploymentWithRole('compute') && cluster.get('settings').get('common.libvirt_type.value') != 'vcenter',
-                    mongo: cluster.get('settings').get('additional_components.ceilometer.value') && nodes.nodesAfterDeploymentWithRole('mongo') < requiredNodeAmount
+                    mongo: !this.props.cluster.get('settings').get('additional_components.mongo.value') && this.props.cluster.get('settings').get('additional_components.ceilometer.value') && nodes.nodesAfterDeploymentWithRole('mongo') < requiredNodeAmount
                 },
                 areSettingsValid: settings.isValid({models: {
                     cluster: cluster,

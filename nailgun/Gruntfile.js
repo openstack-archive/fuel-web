@@ -15,14 +15,17 @@
  **/
 module.exports = function(grunt) {
     var staticDir = grunt.option('static-dir') || '/tmp/static_compressed';
+    var staticBuildPreparationDir = staticDir + '/_prepare_build';
+    var staticBuildDir = staticDir + '/_build';
+
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
         requirejs: {
             compile: {
                 options: {
                     baseUrl: '.',
-                    appDir: 'static',
-                    dir: staticDir,
+                    appDir: staticBuildPreparationDir + '/static',
+                    dir: staticBuildDir,
                     mainConfigFile: 'static/js/main.js',
                     waitSeconds: 60,
                     optimize: 'uglify2',
@@ -32,7 +35,8 @@ module.exports = function(grunt) {
                     },
                     map: {
                         '*': {
-                            'css': 'require-css'
+                            'css': 'require-css',
+                            'JSXTransformer': 'empty:'
                         }
                     },
                     modules: [
@@ -67,7 +71,7 @@ module.exports = function(grunt) {
         less: {
             all: {
                 src: 'static/css/styles.less',
-                dest: 'static/css/styles.css',
+                dest: staticBuildPreparationDir + '/static/css/styles.css',
             }
         },
         bower: {
@@ -87,20 +91,93 @@ module.exports = function(grunt) {
                 }
             }
         },
+        react: {
+            compile: {
+                files: [
+                    {
+                        expand: true,
+                        src: [staticBuildPreparationDir + '/static/**/*.jsx'],
+                        ext: '.js'
+                    }
+                ]
+            }
+        },
+        copy: {
+            prepare_build: {
+                files: [
+                    {
+                        expand: true,
+                        src: [
+                            'static/**',
+                            '!**/*.less',
+                            '!**/*.js',
+                            '!**/*.jsx',
+                            '!**/*.jison'
+                        ],
+                        dest: staticBuildPreparationDir + '/'
+                    }
+                ]
+            },
+            preprocess_js: {
+                files: [
+                    {
+                        expand: true,
+                        src: [
+                            'static/**/*.js',
+                            'static/**/*.jsx',
+                            '!**/JSXTransformer.js'
+                        ],
+                        dest: staticBuildPreparationDir + '/'
+                    }
+                ],
+                options: {
+                    process: function (content, path) {
+                        content = content.replace(/jsx!/g, '');
+                        if (/\.jsx$/.test(path)) {
+                            content = '/** @jsx React.DOM */\n' + content;
+                        }
+                        return content;
+                    }
+                }
+            },
+            finalize_build: {
+                files: [
+                    {
+                        expand: true,
+                        cwd: staticBuildDir,
+                        src: ['**'],
+                        dest: staticDir
+                    }
+                ],
+                options: {
+                    force: true
+                }
+            }
+        },
         clean: {
             trim: {
                 expand: true,
-                cwd: staticDir,
+                cwd: staticBuildDir,
                 src: [
                     '**/*.js',
                     '!js/main.js',
                     '!js/libs/bower/requirejs/js/require.js',
                     '**/*.css',
-                    '**/*.less',
                     '!css/styles.css',
                     'templates',
                     'i18n'
                 ]
+            },
+            jsx: {
+                expand: true,
+                cwd: staticBuildPreparationDir,
+                src: ['**/*.jsx']
+            },
+            prepare_build: {
+                src: [staticDir]
+            },
+            finalize_build: {
+                src: [staticBuildDir, staticBuildPreparationDir]
             },
             options: {
                 force: true
@@ -109,7 +186,7 @@ module.exports = function(grunt) {
         cleanempty: {
             trim: {
                 expand: true,
-                cwd: staticDir,
+                cwd: staticBuildDir,
                 src: ['**']
             },
             options: {
@@ -120,7 +197,7 @@ module.exports = function(grunt) {
         replace: {
             sha: {
                 src: 'static/index.html',
-                dest: staticDir + '/',
+                dest: staticBuildDir + '/',
                 replacements: [{
                     from: '__COMMIT_SHA__',
                     to: function() {
@@ -148,15 +225,31 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-requirejs');
     grunt.loadNpmTasks('grunt-contrib-less');
     grunt.loadNpmTasks('grunt-contrib-clean');
+    grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-jison');
     grunt.loadNpmTasks('grunt-cleanempty');
     grunt.loadNpmTasks('grunt-text-replace');
     grunt.loadNpmTasks('grunt-git-revision');
     grunt.loadNpmTasks('grunt-jslint');
+    grunt.loadNpmTasks('grunt-react');
     grunt.loadNpmTasks('grunt-bower-task');
     grunt.loadNpmTasks('grunt-debug-task');
-    grunt.registerTask('trimstatic', ['clean', 'cleanempty']);
-    grunt.registerTask('build', ['bower', 'less', 'requirejs', 'trimstatic', 'revision', 'replace']);
+    grunt.registerTask('build', [
+        'bower',
+        'clean:prepare_build',
+        'copy:prepare_build',
+        'copy:preprocess_js',
+        'less',
+        'react',
+        'clean:jsx',
+        'requirejs',
+        'clean:trim',
+        'cleanempty:trim',
+        'revision',
+        'replace',
+        'copy:finalize_build',
+        'clean:finalize_build'
+    ]);
     grunt.registerTask('default', ['build']);
     grunt.task.loadTasks('grunt');
 };

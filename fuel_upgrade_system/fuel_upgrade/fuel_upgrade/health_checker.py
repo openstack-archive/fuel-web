@@ -25,6 +25,8 @@ import six
 from fuel_upgrade import errors
 from fuel_upgrade import utils
 
+from fuel_upgrade.nailgun_client import NailgunClient
+
 logger = logging.getLogger(__name__)
 
 
@@ -59,14 +61,32 @@ class BaseChecker(object):
         :returns: tuple where first item is dict or None in case of error
                   second item is status code or None in case of error
         """
-        try:
+        def get_request():
             result = requests.get(url, auth=auth, timeout=timeout)
-            return result.json(), result.status_code
+
+            try:
+                body = result.json()
+            except ValueError:
+                body = result.text
+
+            return {'body': body, 'code': result.status_code}
+
+        return self.make_safe_request(get_request)
+
+    def make_safe_request(self, method):
+        """Make get request to specified url
+        in case of errors returns None and doesn't
+        raise exceptions
+
+        :param method: callable object
+        :returns: result of method call
+        """
+        try:
+            return method()
         except (requests.exceptions.ConnectionError,
-                requests.exceptions.Timeout):
-            return None, None
-        except ValueError:
-            return None, result.status_code
+                requests.exceptions.Timeout,
+                ValueError):
+            return None
 
     def check_if_port_open(self, ip, port):
         """Checks if port is open
@@ -110,10 +130,10 @@ class OSTFChecker(BaseChecker):
         return 'ostf'
 
     def check(self):
-        _, code = self.safe_get('http://{host}:{port}/'.format(
+        resp = self.safe_get('http://{host}:{port}/'.format(
             **self.endpoints['ostf']))
 
-        return code == 200
+        return resp and resp['code'] == 401
 
 
 class RabbitChecker(BaseChecker):
@@ -123,13 +143,13 @@ class RabbitChecker(BaseChecker):
         return 'rabbitmq'
 
     def check(self):
-        nodes, status_code = self.safe_get(
+        resp = self.safe_get(
             'http://{host}:{port}/api/nodes'.format(
                 **self.endpoints['rabbitmq']),
             auth=(self.endpoints['rabbitmq']['user'],
                   self.endpoints['rabbitmq']['password']))
 
-        return nodes and status_code == 200
+        return resp and resp['code'] == 200 and resp['body']
 
 
 class CobblerChecker(BaseChecker):
@@ -197,16 +217,16 @@ class MCollectiveChecker(BaseChecker):
         return 'mcollective'
 
     def check(self):
-        exchanges, code = self.safe_get(
+        resp = self.safe_get(
             'http://{host}:{port}/api/exchanges'.format(
                 **self.endpoints['rabbitmq_mcollective']),
             auth=(self.endpoints['rabbitmq_mcollective']['user'],
                   self.endpoints['rabbitmq_mcollective']['password']))
 
-        if code != 200 or not isinstance(exchanges, list):
+        if resp and resp['code'] != 200 or not isinstance(resp['body'], list):
             return False
 
-        exchanges = filter(lambda e: isinstance(e, dict), exchanges)
+        exchanges = filter(lambda e: isinstance(e, dict), resp['body'])
 
         mcollective_broadcast = filter(
             lambda e: e.get('name') == 'mcollective_broadcast', exchanges)
@@ -223,12 +243,12 @@ class NginxChecker(BaseChecker):
         return 'nginx'
 
     def check(self):
-        _, nailgun_code = self.safe_get(
+        resp_nailgun = self.safe_get(
             'http://{host}:{port}/'.format(**self.endpoints['nginx_nailgun']))
-        _, nginx_code = self.safe_get(
+        resp_repo = self.safe_get(
             'http://{host}:{port}/'.format(**self.endpoints['nginx_repo']))
 
-        return nailgun_code is not None and nginx_code is not None
+        return resp_nailgun is not None and resp_repo is not None
 
 
 class IntegrationCheckerNginxNailgunChecker(BaseChecker):
@@ -238,26 +258,31 @@ class IntegrationCheckerNginxNailgunChecker(BaseChecker):
         return 'integration_nginx_nailgun'
 
     def check(self):
-        _, code = self.safe_get(
+        resp = self.safe_get(
             'http://{host}:{port}/api/v1/version'.format(
                 **self.endpoints['nginx_nailgun']))
 
-        return code == 200
+        return resp and resp['code'] == 200
 
 
 class KeystoneChecker(BaseChecker):
+
     @property
     def checker_name(self):
         return 'keystone'
 
     def check(self):
-        _, code = self.safe_get(
+        resp_keystone = self.safe_get(
             'http://{host}:{port}/v2.0'.format(
                 **self.endpoints['keystone']))
-        _, admin_code = self.safe_get(
+        resp_admin_keystone = self.safe_get(
             'http://{host}:{port}/v2.0'.format(
                 **self.endpoints['keystone_admin']))
-        return code == 200 and admin_code == 200
+
+        return (resp_keystone and
+                resp_admin_keystone and
+                resp_keystone['code'] == 200 and
+                resp_admin_keystone['code'] == 200)
 
 
 class IntegrationCheckerPostgresqlNailgunNginx(BaseChecker):
@@ -267,11 +292,15 @@ class IntegrationCheckerPostgresqlNailgunNginx(BaseChecker):
         return 'integration_postgres_nailgun_nginx'
 
     def check(self):
-        releases, code = self.safe_get(
-            'http://{host}:{port}/api/v1/releases'.format(
-                **self.endpoints['nginx_nailgun']))
+        nailgun_client = NailgunClient(**self.endpoints['nginx_nailgun'])
 
-        return code == 200 and releases
+        def get_releases():
+            releases = nailgun_client.get_releases()
+            return releases
+
+        releases = self.make_safe_request(get_releases)
+
+        return isinstance(releases, list) and len(releases) > 1
 
 
 class IntegrationCheckerRabbitMQAstuteNailgun(BaseChecker):
@@ -281,16 +310,19 @@ class IntegrationCheckerRabbitMQAstuteNailgun(BaseChecker):
         return 'integration_rabbitmq_astute_nailgun'
 
     def check(self):
-        exchanges, code = self.safe_get(
+        resp = self.safe_get(
             'http://{host}:{port}/api/exchanges'.format(
                 **self.endpoints['rabbitmq']),
             auth=(self.endpoints['rabbitmq']['user'],
                   self.endpoints['rabbitmq']['password']))
 
-        if code != 200 or not isinstance(exchanges, list):
+        if not resp or \
+           not isinstance(resp['body'], list) or \
+           resp['code'] != 200:
+
             return False
 
-        exchanges = filter(lambda e: isinstance(e, dict), exchanges)
+        exchanges = filter(lambda e: isinstance(e, dict), resp['body'])
 
         naily = filter(lambda e: e.get('name') == 'naily_service', exchanges)
         nailgun = filter(lambda e: e.get('name') == 'nailgun', exchanges)

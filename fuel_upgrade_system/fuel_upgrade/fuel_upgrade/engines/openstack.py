@@ -58,10 +58,7 @@ class OpenStackUpgrader(UpgradeEngine):
             self.releases = utils.load_fixture(f)
 
         #: a nailgun object - api wrapper
-        self.nailgun = NailgunClient(
-            self.config.endpoints['nginx_nailgun']['host'],
-            self.config.endpoints['nginx_nailgun']['port'],
-        )
+        self.nailgun = NailgunClient(**self.config.endpoints['nginx_nailgun'])
 
         self._update_conf()
         self._reset_state()

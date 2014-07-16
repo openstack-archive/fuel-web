@@ -28,6 +28,10 @@ requirejs.config({
         keystone_client: 'js/keystone_client',
         lodash: 'js/libs/bower/lodash/js/lodash',
         backbone: 'js/libs/custom/backbone',
+        react: 'js/libs/bower/react/js/react-with-addons',
+        JSXTransformer: 'js/libs/bower/react/js/JSXTransformer',
+        jsx: 'js/libs/custom/jsx',
+        'backbone-react-component': 'js/libs/custom/backbone.react.component',
         stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
         coccyx: 'js/libs/custom/coccyx',
         cocktail: 'js/libs/bower/cocktail/Cocktail',
@@ -50,11 +54,12 @@ requirejs.config({
             exports: '_'
         },
         backbone: {
-            deps: ['underscore', 'jquery', 'cocktail'],
+            deps: ['underscore', 'jquery', 'cocktail', 'react'],
             exports: 'Backbone',
-            init: function(_, $, Cocktail) {
+            init: function(_, $, Cocktail, React) {
                 'use strict';
                 Cocktail.patch(Backbone);
+                Backbone.React = React;
             }
         },
         expression_parser: {
@@ -92,6 +97,9 @@ requirejs.config({
         'jquery-autoNumeric': {
             deps: ['jquery']
         }
+    },
+    jsx: {
+        fileExtension: '.jsx'
     }
 });
 
@@ -102,6 +110,8 @@ require([
     'stickit',
     'deepModel',
     'coccyx',
+    'react',
+    'backbone-react-component',
     'cocktail',
     'i18next',
     'bootstrap',
@@ -110,6 +120,10 @@ require([
     'jquery-ui',
     'jquery-autoNumeric',
     'styles',
+    'text',
+//>>excludeStart("compressed", pragmas.compressed);
+    'jsx',
+//>>excludeEnd("compressed");
     'app'
 ], function() {
     'use strict';

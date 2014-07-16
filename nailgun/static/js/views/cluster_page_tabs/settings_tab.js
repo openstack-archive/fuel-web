@@ -19,7 +19,7 @@ define(
     'models',
     'view_mixins',
     'views/common',
-    'views/dialogs',
+    'jsx!views/dialogs',
     'text!templates/cluster/settings_tab.html',
     'text!templates/cluster/settings_group.html'
 ],

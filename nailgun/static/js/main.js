@@ -28,6 +28,10 @@ requirejs.config({
         keystone_client: 'js/keystone_client',
         lodash: 'js/libs/bower/lodash/js/lodash',
         backbone: 'js/libs/custom/backbone',
+        react: 'js/libs/bower/react/js/react-with-addons',
+        JSXTransformer: 'js/libs/bower/react/js/JSXTransformer',
+        jsx: 'js/libs/custom/jsx',
+        'react.backbone': 'js/libs/bower/react.backbone/react.backbone',
         stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
         coccyx: 'js/libs/custom/coccyx',
         cocktail: 'js/libs/bower/cocktail/Cocktail',
@@ -43,7 +47,8 @@ requirejs.config({
         models: 'js/models',
         collections: 'js/collections',
         views: 'js/views',
-        view_mixins: 'js/view_mixins'
+        view_mixins: 'js/view_mixins',
+        component_mixins: 'js/component_mixins'
     },
     shim: {
         underscore: {
@@ -92,6 +97,9 @@ requirejs.config({
         'jquery-autoNumeric': {
             deps: ['jquery']
         }
+    },
+    jsx: {
+        fileExtension: '.jsx'
     }
 });
 
@@ -102,6 +110,8 @@ require([
     'stickit',
     'deepModel',
     'coccyx',
+    'react',
+    'react.backbone',
     'cocktail',
     'i18next',
     'bootstrap',
@@ -110,6 +120,10 @@ require([
     'jquery-ui',
     'jquery-autoNumeric',
     'styles',
+    'text',
+//>>excludeStart("compressed", pragmas.compressed);
+    'jsx',
+//>>excludeEnd("compressed");
     'app'
 ], function() {
     'use strict';

@@ -68,9 +68,9 @@ function(commonViews, loginPageTemplate) {
                 _.defer(_.bind(function() {
                     this.$('[autofocus]:first').focus();
                 }, this));
-                app.footer.$el.hide();
-                app.breadcrumbs.$el.hide();
-                app.navbar.$el.hide();
+                $(app.footer.getDOMNode()).hide();
+                $(app.breadcrumbs.getDOMNode()).hide();
+                $(app.navbar.getDOMNode()).hide();
             }
             return this;
         }

@@ -958,7 +958,7 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
 
 class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
 
-    def test_repo_and_puppet_data(self):
+    def test_repo_and_puppet_data_w_orch_data(self):
         release_id = self.env.create_release().id
 
         orch_data = {
@@ -1012,6 +1012,39 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
         self.assertEqual(
             fact['puppet_manifests_source'],
             'rsync://10.20.0.2/puppet/release/5.0/manifests'
+        )
+
+    def test_repo_and_puppet_data_wo_orch_data(self):
+        release_id = self.env.create_release().id
+
+        cluster_id = self.env.create(
+            cluster_kwargs={
+                'release_id': release_id
+            },
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}
+            ]
+        )["id"]
+
+        cluster = self.db.query(Cluster).get(cluster_id)
+        objects.NodeCollection.prepare_for_deployment(cluster.nodes)
+        facts = self.serializer.serialize(cluster, cluster.nodes)
+
+        self.assertEqual(1, len(facts))
+        fact = facts[0]
+        self.assertEqual(
+            fact['repo_metadata'],
+            {
+                'nailgun': 'http://127.0.0.1:8080/centos/fuelweb/x86_64'
+            }
+        )
+        self.assertEqual(
+            fact['puppet_modules_source'],
+            'rsync://127.0.0.1:/puppet/modules/'
+        )
+        self.assertEqual(
+            fact['puppet_manifests_source'],
+            'rsync://127.0.0.1:/puppet/manifests/'
         )
 
 

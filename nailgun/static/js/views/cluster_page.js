@@ -18,7 +18,7 @@ define(
     'utils',
     'models',
     'views/common',
-    'views/dialogs',
+    'jsx!views/dialogs',
     'views/cluster_page_tabs/nodes_tab',
     'views/cluster_page_tabs/network_tab',
     'views/cluster_page_tabs/settings_tab',
@@ -180,18 +180,10 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 activeTab: this.activeTab
             })).i18n();
             var options = {model: this.model, page: this};
-            this.clusterInfo = new ClusterInfo(options);
-            this.registerSubView(this.clusterInfo);
-            this.$('.cluster-info').html(this.clusterInfo.render().el);
-            this.clusterCustomizationMessage = new ClusterCustomizationMessage(options);
-            this.registerSubView(this.clusterCustomizationMessage);
-            this.$('.customization-message').html(this.clusterCustomizationMessage.render().el);
-            this.deploymentResult = new DeploymentResult(options);
-            this.registerSubView(this.deploymentResult);
-            this.$('.deployment-result').html(this.deploymentResult.render().el);
-            this.deploymentControl = new DeploymentControl(options);
-            this.registerSubView(this.deploymentControl);
-            this.$('.deployment-control').html(this.deploymentControl.render().el);
+            this.clusterInfo = utils.universalMount(new ClusterInfo(options), this.$('.cluster-info'), this);
+            this.clusterCustomizationMessage = utils.universalMount(new ClusterCustomizationMessage(options), this.$('.customization-message'), this);
+            this.deploymentResult = utils.universalMount(new DeploymentResult(options), this.$('.deployment-result'), this);
+            this.deploymentControl = utils.universalMount(new DeploymentControl(options), this.$('.deployment-control'), this);
 
             var tabs = {
                 'nodes': NodesTab,
@@ -202,9 +194,11 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 'healthcheck': HealthCheckTab
             };
             if (_.has(tabs, this.activeTab)) {
-                this.tab = new tabs[this.activeTab]({model: this.model, tabOptions: this.tabOptions, page: this});
-                this.$('#tab-' + this.activeTab).html(this.tab.render().el);
-                this.registerSubView(this.tab);
+                this.tab = utils.universalMount(
+                    new tabs[this.activeTab]({model: this.model, tabOptions: this.tabOptions, page: this}),
+                    this.$('#tab-' + this.activeTab),
+                    this
+                );
             }
 
             return this;

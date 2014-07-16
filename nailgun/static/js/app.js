@@ -15,6 +15,9 @@
 **/
 define(
 [
+    'react',
+    'utils',
+    'jsx!views/layout',
     'coccyx',
     'js/coccyx_mixins',
     'models',
@@ -23,13 +26,13 @@ define(
     'views/login_page',
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
-    'views/clusters_page',
+    'jsx!views/clusters_page',
     'views/releases_page',
     'views/notifications_page',
     'views/support_page',
     'views/capacity_page'
 ],
-function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -71,7 +74,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
             });
             var version = this.version = new models.FuelVersion();
 
-            version.fetch().done(_.bind(function() {
+            version.fetch().then(_.bind(function() {
                 this.user = new models.User({authenticated: !version.get('auth_required')});
 
                 var originalSync = Backbone.sync;
@@ -126,49 +129,48 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                     return originalSync.call(this, method, model, options);
                 };
 
-                this.renderLayout();
-
                 if (version.get('auth_required')) {
                     _.extend(keystoneClient, this.user.pick('username', 'password'));
-                    keystoneClient.authenticate()
+                    return keystoneClient.authenticate()
                         .done(function() {
                             app.user.set({authenticated: true});
-                        })
-                        .always(function() {
-                            Backbone.history.start();
-                        })
-                        .fail(function() {
-                            app.navigate('#login', {trigger: true});
                         });
-                } else {
-                    Backbone.history.start();
+                }
+                return $.Deferred().resolve();
+            }, this)).always(_.bind(function() {
+                this.renderLayout();
+                Backbone.history.start();
+                if (version.get('auth_required') && !this.user.get('authenticated')) {
+                    app.navigate('#login', {trigger: true});
                 }
             }, this));
         },
         renderLayout: function() {
             this.content = $('#content');
-            this.navbar = new commonViews.Navbar({elements: [
-                {label: 'environments', url: '#clusters'},
-                {label: 'releases', url:'#releases'},
-                {label: 'support', url:'#support'}
-            ]});
-            this.content.before(this.navbar.render().el);
-            this.breadcrumbs = new commonViews.Breadcrumbs();
-            this.content.before(this.breadcrumbs.render().el);
-            this.footer = new commonViews.Footer();
-            $('#footer').html(this.footer.render().el);
+            this.navbar = React.renderComponent(new layoutComponents.Navbar({
+                elements: [
+                    {label: 'environments', url: '#clusters'},
+                    {label: 'releases', url:'#releases'},
+                    {label: 'support', url:'#support'}
+                ],
+                user: this.user,
+                version: this.version,
+                statistics: new models.NodesStatistics(),
+                notifications: new models.Notifications()
+            }), $('#navbar')[0]);
+            this.breadcrumbs = React.renderComponent(new layoutComponents.Breadcrumbs(), $('#breadcrumbs')[0]);
+            this.footer = React.renderComponent(new layoutComponents.Footer({version: this.version}), $('#footer')[0]);
             this.content.find('.loading').addClass('layout-loaded');
         },
         setPage: function(NewPage, options) {
             if (this.page) {
-                this.page.tearDown();
+                utils.universalUnmount(this.page);
             }
-            this.page = new NewPage(options);
-            this.page.updateNavbar();
-            this.page.updateBreadcrumbs();
-            this.page.updateTitle();
-            this.content.html(this.page.render().el);
-
+            this.page = utils.universalMount(new NewPage(options), this.content);
+            this.navbar.setActive(_.result(this.page, 'navbarActiveElement'));
+            this.breadcrumbs.setPath(_.result(this.page, 'breadcrumbsPath'));
+            var newTitle = _.result(this.page, 'title');
+            document.title = $.t('common.title') + (newTitle ? ' - ' + newTitle : '');
         },
         // routes
         login: function() {
@@ -259,7 +261,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                     cluster.get('nodes').deferred = nodes.deferred;
                     cluster.set('tasks', new models.Tasks(tasks.where({cluster: cluster.id})));
                 }, this);
-                this.setPage(ClustersPage, {collection: clusters});
+                this.setPage(ClustersPage, {clusters: clusters});
             }, this));
         },
         listReleases: function() {
@@ -276,7 +278,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
             }, this));
         },
         showNotifications: function() {
-            this.setPage(NotificationsPage, {notifications: app.navbar.notifications});
+            this.setPage(NotificationsPage, {notifications: app.navbar.props.notifications});
         },
         showSupportPage: function() {
             this.setPage(SupportPage);

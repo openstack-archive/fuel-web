@@ -100,6 +100,80 @@ def from_fuel_version(current_version_path, from_version_path):
     return get_version_from_config(current_version_path)
 
 
+def get_endpoints(astute_config):
+    """Returns services endpoints
+
+    :returns: dict where key is the a name of endpoint
+              value is dict with host, port and authentication
+              information
+    """
+    master_ip = astute_config['ADMIN_NETWORK']['ipaddress']
+
+    # Set default user/password because in
+    # 5.0.X releases we didn't have this data
+    # in astute file
+    fuel_access = astute_config.get(
+        'FUEL_ACCESS', {'user': 'admin', 'password': 'admin'})
+    rabbitmq_access = astute_config.get(
+        'astute', {'user': 'naily', 'password': 'naily'})
+    rabbitmq_mcollective_access = astute_config.get(
+        'mcollective', {'user': 'mcollective', 'password': 'marionette'})
+
+    return {
+        'nginx_nailgun': {
+            'port': 8000,
+            'host': '0.0.0.0',
+            'keystone_credentials': {
+                'username': fuel_access['user'],
+                'password': fuel_access['password'],
+                'auth_url': 'http://{0}:5000/v2.0/'.format(master_ip),
+                'tenant_name': 'admin'}},
+
+        'nginx_repo': {
+            'port': 8080,
+            'host': '0.0.0.0'},
+
+        'ostf': {
+            'port': 8777,
+            'host': '127.0.0.1'},
+
+        'cobbler': {
+            'port': 80,
+            'host': '127.0.0.1'},
+
+        'postgres': {
+            'port': 5432,
+            'host': '127.0.0.1'},
+
+        'rsync': {
+            'port': 873,
+            'host': '127.0.0.1'},
+
+        'rsyslog': {
+            'port': 514,
+            'host': '127.0.0.1'},
+
+        'keystone': {
+            'port': 5000,
+            'host': '127.0.0.1'},
+
+        'keystone_admin': {
+            'port': 35357,
+            'host': '127.0.0.1'},
+
+        'rabbitmq': {
+            'user': rabbitmq_access['user'],
+            'password': rabbitmq_access['password'],
+            'port': 15672,
+            'host': '127.0.0.1'},
+
+        'rabbitmq_mcollective': {
+            'port': 15672,
+            'host': '127.0.0.1',
+            'user': rabbitmq_mcollective_access['user'],
+            'password': rabbitmq_mcollective_access['password']}}
+
+
 def config(update_path):
     """Generates configuration data for upgrade
 
@@ -141,54 +215,7 @@ def config(update_path):
         'timeout': 600,
         'interval': 3}
 
-    endpoints = {
-        'nginx_nailgun': {
-            'port': 8000,
-            'host': '0.0.0.0'},
-
-        'nginx_repo': {
-            'port': 8080,
-            'host': '0.0.0.0'},
-
-        'ostf': {
-            'port': 8777,
-            'host': '127.0.0.1'},
-
-        'cobbler': {
-            'port': 80,
-            'host': '127.0.0.1'},
-
-        'postgres': {
-            'port': 5432,
-            'host': '127.0.0.1'},
-
-        'rsync': {
-            'port': 873,
-            'host': '127.0.0.1'},
-
-        'rsyslog': {
-            'port': 514,
-            'host': '127.0.0.1'},
-
-        'keystone': {
-            'port': 5000,
-            'host': '127.0.0.1'},
-
-        'keystone_admin': {
-            'port': 35357,
-            'host': '127.0.0.1'},
-
-        'rabbitmq': {
-            'user': 'naily',
-            'password': 'naily',
-            'port': 15672,
-            'host': '127.0.0.1'},
-
-        'rabbitmq_mcollective': {
-            'port': 15672,
-            'host': '127.0.0.1',
-            'user': 'mcollective',
-            'password': 'marionette'}}
+    endpoints = get_endpoints(astute)
 
     # Configuration data for docker client
     docker = {

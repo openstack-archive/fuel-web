@@ -31,7 +31,6 @@ requirejs.config({
         stickit: 'js/libs/bower/backbone.stickit/js/backbone.stickit',
         coccyx: 'js/libs/custom/coccyx',
         cocktail: 'js/libs/bower/cocktail/Cocktail',
-        localstorage: 'js/libs/bower/backbone.localstorage/backbone.localStorage',
         bootstrap: 'js/libs/custom/bootstrap.min',
         text: 'js/libs/bower/requirejs-text/js/text',
         i18next: 'js/libs/bower/i18next/js/i18next-1.7.1',
@@ -62,9 +61,6 @@ requirejs.config({
             exports: 'parser'
         },
         stickit: {
-            deps: ['backbone']
-        },
-        localstorage: {
             deps: ['backbone']
         },
         deepModel: {
@@ -107,7 +103,6 @@ require([
     'deepModel',
     'coccyx',
     'cocktail',
-    'localstorage',
     'i18next',
     'bootstrap',
     'jquery-checkbox',

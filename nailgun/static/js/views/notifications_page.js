@@ -18,7 +18,7 @@ define(
     'utils',
     'models',
     'views/common',
-    'views/dialogs',
+    'jsx!views/dialogs',
     'text!templates/notifications/list.html'
 ],
 function(utils, models, commonViews, dialogViews, notificationsListTemplate) {

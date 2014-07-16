@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['require', 'expression_parser'], function(require, ExpressionParser) {
+define(['require', 'expression_parser', 'react'], function(require, ExpressionParser, React) {
     'use strict';
 
     var utils = {
@@ -101,9 +101,32 @@ define(['require', 'expression_parser'], function(require, ExpressionParser) {
             }
             return result;
         },
+        universalMount: function(view, el, parentView) {
+            if (view instanceof Backbone.View) {
+                view.render();
+                if (el) {
+                    $(el).html(view.el);
+                }
+                if (parentView) {
+                    parentView.registerSubView(view);
+                }
+                return view;
+            }
+            return React.renderComponent(view, $(el)[0]);
+        },
+        universalUnmount: function(view) {
+            if (view instanceof Backbone.View) {
+                view.tearDown();
+            } else {
+                React.unmountComponentAtNode(view.getDOMNode().parentNode);
+            }
+        },
+        showDialog: function(dialog) {
+            return React.renderComponent(dialog, $('#modal-container')[0]);
+        },
         showErrorDialog: function(options, parentView) {
             parentView = parentView || app.page;
-            var dialogViews = require('views/dialogs'); // avoid circular dependencies
+            var dialogViews = require('jsx!views/dialogs'); // avoid circular dependencies
             var dialog = new dialogViews.Dialog();
             parentView.registerSubView(dialog);
             dialog.render(_.extend({error: true}, options));

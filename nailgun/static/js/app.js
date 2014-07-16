@@ -15,6 +15,8 @@
 **/
 define(
 [
+    'react',
+    'jsx!views/layout',
     'coccyx',
     'js/coccyx_mixins',
     'models',
@@ -29,7 +31,7 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(React, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -117,16 +119,19 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
         },
         renderLayout: function() {
             this.content = $('#content');
-            this.navbar = new commonViews.Navbar({elements: [
-                {label: 'environments', url: '#clusters'},
-                {label: 'releases', url:'#releases'},
-                {label: 'support', url:'#support'}
-            ]});
-            this.content.before(this.navbar.render().el);
-            this.breadcrumbs = new commonViews.Breadcrumbs();
-            this.content.before(this.breadcrumbs.render().el);
-            this.footer = new commonViews.Footer();
-            $('#footer').html(this.footer.render().el);
+            this.navbar = React.renderComponent(new layoutComponents.Navbar({
+                elements: [
+                    {label: 'environments', url: '#clusters'},
+                    {label: 'releases', url:'#releases'},
+                    {label: 'support', url:'#support'}
+                ],
+                user: this.user,
+                version: this.version,
+                statistics: new models.NodesStatistics(),
+                notifications: new models.Notifications()
+            }), $('#navbar')[0]);
+            this.breadcrumbs = React.renderComponent(new layoutComponents.Breadcrumbs(), $('#breadcrumbs')[0]);
+            this.footer = React.renderComponent(new layoutComponents.Footer({version: this.version}), $('#footer')[0]);
             this.content.find('.loading').addClass('layout-loaded');
         },
         setPage: function(NewPage, options) {
@@ -138,7 +143,6 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
             this.page.updateBreadcrumbs();
             this.page.updateTitle();
             this.content.html(this.page.render().el);
-
         },
         // routes
         login: function() {
@@ -246,7 +250,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
             }, this));
         },
         showNotifications: function() {
-            this.setPage(NotificationsPage, {notifications: app.navbar.notifications});
+            this.setPage(NotificationsPage, {notifications: app.navbar.props.notifications});
         },
         showSupportPage: function() {
             this.setPage(SupportPage);

@@ -16,7 +16,7 @@
         },
         "colors": {
           "version": "0.6.2",
-          "from": "colors@~0.6.2"
+          "from": "colors@~0.6.0-1"
         },
         "dateformat": {
           "version": "1.0.2-1.2.3",
@@ -176,7 +176,7 @@
     },
     "grunt-bower-task": {
       "version": "0.4.0",
-      "from": "grunt-bower-task@",
+      "from": "grunt-bower-task@~0.4.0",
       "dependencies": {
         "bower": {
           "version": "1.3.8",
@@ -184,7 +184,7 @@
           "dependencies": {
             "abbrev": {
               "version": "1.0.5",
-              "from": "abbrev@~1.0.4"
+              "from": "abbrev@1"
             },
             "archy": {
               "version": "0.0.2",
@@ -232,7 +232,7 @@
                 },
                 "graceful-fs": {
                   "version": "2.0.3",
-                  "from": "graceful-fs@~2.0.0"
+                  "from": "graceful-fs@~2.0.1"
                 },
                 "intersect": {
                   "version": "0.0.3",
@@ -250,7 +250,7 @@
               "dependencies": {
                 "async": {
                   "version": "0.2.10",
-                  "from": "async@~0.2.6"
+                  "from": "async@~0.2.8"
                 },
                 "graceful-fs": {
                   "version": "2.0.3",
@@ -382,7 +382,7 @@
                   "dependencies": {
                     "esprima": {
                       "version": "1.0.4",
-                      "from": "esprima@~ 1.0.2"
+                      "from": "esprima@~1.0.4"
                     }
                   }
                 },
@@ -481,7 +481,7 @@
               }
             },
             "fstream": {
-              "version": "0.1.28",
+              "version": "0.1.29",
               "from": "fstream@~0.1.22",
               "dependencies": {
                 "inherits": {
@@ -516,7 +516,7 @@
             },
             "glob": {
               "version": "4.0.4",
-              "from": "glob@~4.0.2",
+              "from": "glob@^4.0.4",
               "dependencies": {
                 "inherits": {
                   "version": "2.0.1",
@@ -540,7 +540,7 @@
             },
             "graceful-fs": {
               "version": "3.0.2",
-              "from": "graceful-fs@~3.0.1"
+              "from": "graceful-fs@^3.0.2"
             },
             "handlebars": {
               "version": "1.3.0",
@@ -908,7 +908,7 @@
             },
             "lru-cache": {
               "version": "2.5.0",
-              "from": "lru-cache@~2.5.0"
+              "from": "lru-cache@2"
             },
             "mkdirp": {
               "version": "0.5.0",
@@ -926,7 +926,7 @@
             },
             "nopt": {
               "version": "3.0.1",
-              "from": "nopt@~3.0.0"
+              "from": "nopt@^3.0.0"
             },
             "opn": {
               "version": "0.1.2",
@@ -1093,7 +1093,7 @@
               "from": "rimraf@~2.2.0"
             },
             "semver": {
-              "version": "2.3.1",
+              "version": "2.3.2",
               "from": "semver@~2.3.0"
             },
             "shell-quote": {
@@ -1132,7 +1132,7 @@
                 },
                 "inherits": {
                   "version": "2.0.1",
-                  "from": "inherits@~2.0.1"
+                  "from": "inherits@2"
                 }
               }
             },
@@ -1162,7 +1162,7 @@
                       "dependencies": {
                         "ansi-regex": {
                           "version": "0.2.1",
-                          "from": "ansi-regex@^0.2.1"
+                          "from": "ansi-regex@^0.2.0"
                         }
                       }
                     },
@@ -1172,7 +1172,7 @@
                       "dependencies": {
                         "ansi-regex": {
                           "version": "0.2.1",
-                          "from": "ansi-regex@^0.2.1"
+                          "from": "ansi-regex@^0.2.0"
                         }
                       }
                     },
@@ -1353,6 +1353,10 @@
           "from": "rimraf@~2.2.1"
         }
       }
+    },
+    "grunt-contrib-copy": {
+      "version": "0.5.0",
+      "from": "grunt-contrib-copy@~0.5.0"
     },
     "grunt-contrib-less": {
       "version": "0.8.3",
@@ -1576,7 +1580,7 @@
             },
             "async": {
               "version": "0.2.10",
-              "from": "async@~0.2.8"
+              "from": "async@~0.2.6"
             },
             "glob": {
               "version": "3.2.11",
@@ -1701,6 +1705,177 @@
               }
             }
           }
+        }
+      }
+    },
+    "grunt-react": {
+      "version": "0.8.4",
+      "from": "grunt-react@~0.8.2",
+      "dependencies": {
+        "react-tools": {
+          "version": "0.11.0",
+          "from": "react-tools@^0.11.0",
+          "dependencies": {
+            "commoner": {
+              "version": "0.9.6",
+              "from": "commoner@^0.9.6",
+              "dependencies": {
+                "q": {
+                  "version": "1.0.1",
+                  "from": "q@~1.0.1"
+                },
+                "recast": {
+                  "version": "0.6.3",
+                  "from": "recast@~0.6.0",
+                  "dependencies": {
+                    "esprima": {
+                      "version": "1.1.0-dev-harmony",
+                      "from": "esprima@git+https://github.com/ariya/esprima.git#harmony",
+                      "resolved": "git+https://github.com/ariya/esprima.git#2bb17ef9a45c88e82d72c2c61b7b7af93caef028"
+                    },
+                    "source-map": {
+                      "version": "0.1.32",
+                      "from": "source-map@0.1.32",
+                      "dependencies": {
+                        "amdefine": {
+                          "version": "0.1.0",
+                          "from": "amdefine@>=0.0.4"
+                        }
+                      }
+                    },
+                    "cls": {
+                      "version": "0.1.5",
+                      "from": "cls@~0.1.3"
+                    },
+                    "ast-types": {
+                      "version": "0.4.5",
+                      "from": "ast-types@~0.4.0"
+                    }
+                  }
+                },
+                "commander": {
+                  "version": "2.2.0",
+                  "from": "commander@~2.2.0"
+                },
+                "graceful-fs": {
+                  "version": "2.0.3",
+                  "from": "graceful-fs@~2.0.3"
+                },
+                "glob": {
+                  "version": "3.2.11",
+                  "from": "glob@~3.2.9",
+                  "dependencies": {
+                    "inherits": {
+                      "version": "2.0.1",
+                      "from": "inherits@2"
+                    },
+                    "minimatch": {
+                      "version": "0.3.0",
+                      "from": "minimatch@0.3",
+                      "dependencies": {
+                        "lru-cache": {
+                          "version": "2.5.0",
+                          "from": "lru-cache@2"
+                        },
+                        "sigmund": {
+                          "version": "1.0.0",
+                          "from": "sigmund@~1.0.0"
+                        }
+                      }
+                    }
+                  }
+                },
+                "mkdirp": {
+                  "version": "0.3.5",
+                  "from": "mkdirp@~0.3.5"
+                },
+                "private": {
+                  "version": "0.1.5",
+                  "from": "private@~0.1.2"
+                },
+                "install": {
+                  "version": "0.1.7",
+                  "from": "install@~0.1.7",
+                  "dependencies": {
+                    "whiskey": {
+                      "version": "0.6.13",
+                      "from": "whiskey@0.6.x",
+                      "dependencies": {
+                        "sprintf": {
+                          "version": "0.1.3",
+                          "from": "sprintf@>= 0.1.1"
+                        },
+                        "async": {
+                          "version": "0.9.0",
+                          "from": "async@>= 0.1.18"
+                        },
+                        "magic-templates": {
+                          "version": "0.1.1",
+                          "from": "magic-templates@= 0.1.1"
+                        },
+                        "rimraf": {
+                          "version": "1.0.1",
+                          "from": "rimraf@= 1.0.1"
+                        },
+                        "terminal": {
+                          "version": "0.1.3",
+                          "from": "terminal@= 0.1.3"
+                        },
+                        "gex": {
+                          "version": "0.0.1",
+                          "from": "gex@= 0.0.1"
+                        },
+                        "simplesets": {
+                          "version": "1.1.6",
+                          "from": "simplesets@= 1.1.6"
+                        },
+                        "logmagic": {
+                          "version": "0.1.4",
+                          "from": "logmagic@= 0.1.4"
+                        },
+                        "underscore": {
+                          "version": "1.6.0",
+                          "from": "underscore@>= 1.4.2"
+                        }
+                      }
+                    }
+                  }
+                },
+                "iconv-lite": {
+                  "version": "0.2.11",
+                  "from": "iconv-lite@~0.2.11"
+                }
+              }
+            },
+            "esprima-fb": {
+              "version": "4001.3001.0-dev-harmony-fb",
+              "from": "esprima-fb@^4001.3001.0-dev-harmony-fb"
+            },
+            "jstransform": {
+              "version": "6.0.1",
+              "from": "jstransform@^6.0.1",
+              "dependencies": {
+                "base62": {
+                  "version": "0.1.1",
+                  "from": "base62@0.1.1"
+                },
+                "source-map": {
+                  "version": "0.1.31",
+                  "from": "source-map@0.1.31",
+                  "dependencies": {
+                    "amdefine": {
+                      "version": "0.1.0",
+                      "from": "amdefine@>=0.0.4"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "through": {
+          "version": "2.3.4",
+          "from": "through@~2.3.4"
         }
       }
     },

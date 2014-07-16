@@ -177,6 +177,49 @@
             description: "Password for Administrator"
             weight: 20
             type: "password"
+        external_mongo:
+          metadata:
+            label: "External MongoDB"
+            weight: 20
+            restrictions:
+              - condition: "settings:additional_components.mongo.value == false"
+                action: "hide"
+          hosts_ip:
+            value: ""
+            label: "MongoDB hosts IP"
+            description: "IP Addresses of MongoDB. Use comma to split IPs"
+            weight: 30
+            type: "text"
+            regex:
+              source: '^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?),)*((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
+              error: "Invalid hosts ip sequence"
+          mongo_user:
+            value: "ceilometer"
+            label: "Username"
+            description: "Mongo database username"
+            weight: 30
+            type: "text"
+            regex:
+              source: '^\w+$'
+              error: "Empty username"
+          mongo_password:
+            value: "ceilometer"
+            label: "Password"
+            description: "Mongo database password"
+            weight: 30
+            type: "password"
+            regex:
+              source: '^\S*$'
+              error: "Password contains spaces"
+          mongo_db_name:
+            value: "ceilometer"
+            label: "Database name"
+            description: "Mongo database name"
+            weight: 30
+            type: "text"
+            regex:
+              source: '^\w+$'
+              error: "Invalid database name"
         vcenter:
           metadata:
             label: "vCenter"
@@ -501,8 +544,8 @@
           - ceph-osd
           - zabbix-server
         depends:
-          - condition: "settings:additional_components.ceilometer.value == true"
-            warning: "Ceilometer should be enabled"
+          - condition: "settings:additional_components.ceilometer.value == true and settings:additional_components.mongo.value == false"
+            warning: "Ceilometer should be enabled or you are using external Mongo DB"
       zabbix-server:
         name: "Zabbix Server"
         description: "Zabbix monitoring system server."
@@ -744,6 +787,14 @@
             description: "If selected, Ceilometer component will be installed"
             weight: 40
             type: "checkbox"
+          mongo:
+            value: false
+            label: "Use external Mongo DB"
+            description: "If selected, You can use external Mongo DB as ceilometer backend"
+            weight: 40
+            type: "checkbox"
+            restrictions:
+              - "settings:additional_components.ceilometer.value == false"
         storage:
           volumes_vmdk:
             value: false

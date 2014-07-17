@@ -261,12 +261,29 @@ class NodeValidator(BasicValidator):
 
 class NodeDisksValidator(BasicValidator):
     @classmethod
-    def validate(cls, data):
+    def validate(cls, data, node=None):
         dict_data = cls.validate_json(data)
         cls.validate_schema(dict_data, disks_simple_format_schema)
         cls.at_least_one_disk_exists(dict_data)
         cls.sum_of_volumes_not_greater_than_disk_size(dict_data)
+        # in case of Ubuntu we should allocate OS on one disk only
+        # https://bugs.launchpad.net/fuel/+bug/1308592
+        if node and node.cluster \
+                and node.cluster.release.operating_system == "Ubuntu":
+            cls.os_vg_single_disk(dict_data)
         return dict_data
+
+    @classmethod
+    def os_vg_single_disk(cls, data):
+        os_vg_count = 0
+        for disk in data:
+            for vol in disk["volumes"]:
+                if vol["name"] == "os" and vol["size"] > 0:
+                    os_vg_count += 1
+        if os_vg_count > 1:
+            raise errors.InvalidData(
+                u'Base system should be allocated on one disk only'
+            )
 
     @classmethod
     def at_least_one_disk_exists(cls, data):

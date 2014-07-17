@@ -140,6 +140,27 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         response = self.get(node_db.id)
         self.assertEqual(response, expect_disks)
 
+    def test_os_vg_one_disk_ubuntu(self):
+        self.env.create(
+            release_kwargs={
+                "operating_system": "Ubuntu"
+            },
+            nodes_kwargs=[
+                {"roles": [], "pending_roles": ['controller']}
+            ]
+        )
+        node_db = self.env.nodes[0]
+        disks = self.get(node_db.id)
+        for disk in disks:
+            for vol in disk["volumes"]:
+                if disk["size"] > 100:
+                    vol["size"] = 100 if vol["name"] == "os" else 0
+        resp = self.put(node_db.id, disks, expect_errors=True)
+        self.assertEqual(
+            resp.body,
+            "Base system should be allocated on one disk only"
+        )
+
     def test_recalculates_vg_sizes_when_disks_volumes_size_update(self):
         node_db = self.create_node()
         disks = self.get(node_db.id)

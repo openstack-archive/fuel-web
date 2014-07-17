@@ -54,7 +54,10 @@ class NodeDisksHandler(BaseHandler):
                * 404 (node not found in db)
         """
         node = self.get_object_or_404(Node, node_id)
-        data = self.checked_data()
+        data = self.checked_data(
+            self.validator.validate,
+            node=node
+        )
 
         if node.cluster:
             objects.Cluster.add_pending_changes(

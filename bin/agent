@@ -554,22 +554,21 @@ agent = NodeAgent.new(logger, url)
 agent.update_state
 
 begin
-  put_res = agent.put
-  # nailgun returns 'Invalid MAC specified' for unregistered nodes
-  if [404, 400].include? put_res.status
-    post_res = agent.post
-    if post_res.status == 201
-      new_id = JSON.parse(post_res.body)[0]['id']
-    else
-      logger.error post_res.body
-      exit 1
+  unless File.exist?('/etc/nailgun_uid')
+    resp = agent.post
+    # We must not log 409 as error, after node is provisioned there will be no
+    # /etc/nailgun_uid, it will be created after put request
+    if resp.status == 409
+      resp = agent.put
     end
-  elsif put_res.status == 200
-    new_id = JSON.parse(put_res.body)['id']
   else
-    logger.error put_res.body
+    resp = agent.put
+  end
+  unless [201, 200].include? resp.status
+    logger.error resp.body
     exit 1
   end
+  new_id = JSON.parse(resp.body)['id']
   mc_config = McollectiveConfig.new(logger)
   mc_config.replace_identity(new_id)
   write_data_to_file(logger, '/etc/nailgun_uid', new_id.to_s)

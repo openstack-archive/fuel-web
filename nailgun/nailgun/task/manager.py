@@ -566,23 +566,19 @@ class VerifyNetworksTaskManager(TaskManager):
             # separate if error happened inside nailgun or somewhere
             # in the orchestrator, and UI does it by task name.
             task.name = 'verify_networks'
-
-            dhcp_subtask = objects.task.Task.create_subtask(
-                task, name='check_dhcp',)
-
-            multicast = objects.task.Task.create_subtask(
-                task, name='multicast_verification')
-
-            corosync = self.cluster.attributes['editable']['corosync']
-            group = corosync['group']['value']
-            port = corosync['port']['value']
-            conf = {'group': group, 'port': port}
-
             verify_task = tasks.VerifyNetworksTask(task, vlan_ids)
-            verify_task.add_subtask(tasks.CheckDhcpTask(dhcp_subtask,
-                                                        vlan_ids))
-            verify_task.add_subtask(
-                tasks.MulticastVerificationTask(multicast, conf))
+
+            if tasks.CheckDhcpTask.enabled(self.cluster):
+                dhcp_subtask = objects.task.Task.create_subtask(
+                    task, name='check_dhcp')
+                verify_task.add_subtask(tasks.CheckDhcpTask(
+                    dhcp_subtask, vlan_ids))
+
+            if tasks.MulticastVerificationTask.enabled(self.cluster):
+                multicast = objects.task.Task.create_subtask(
+                    task, name='multicast_verification')
+                verify_task.add_subtask(
+                    tasks.MulticastVerificationTask(multicast))
 
             self._call_silently(task, verify_task)
 

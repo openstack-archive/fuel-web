@@ -122,12 +122,18 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     if (settingName == 'metadata') {return;}
                     var settingPath = groupName + '.' + settingName;
                     bindings['[name="' + settingPath + '"]'] = {
-                        observe: settingPath + '.value',
+                        observe: [settingPath + '.value', settingPath + '.visible'],
+                        onGet: function(value) {
+                            return value[0];
+                        },
+                        onSet: function(value) {
+                            return [value, setting.visible];
+                        },
                         visible: function() {
                             return setting.visible;
                         },
                         visibleFn: function($el, isVisible) {
-                            $el.parents('.parameter-box:first').toggleClass('hide', !isVisible);
+                            $el.parents('.setting-container').toggleClass('hide', !isVisible);
                         },
                         attributes: [{
                             name: 'disabled',
@@ -142,9 +148,12 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     };
                     _.each(setting.values, function(option, index) {
                         bindings['input[name="' + settingPath + '"][value="' + option.data + '"]'] = {
-                            observe: settingPath + '.visible',
-                            visible: function() {
-                                return setting.visible && option.visible;
+                            observe: [settingPath + '.visible', settingPath + '.values'],
+                            onGet: function(value) {
+                                return value[1];
+                            },
+                            visible: function(value) {
+                                return setting.visible && value[index].visible;
                             },
                             visibleFn: function($el, isVisible) {
                                 $el.parents('.parameter-box:first').toggleClass('hide', !isVisible);

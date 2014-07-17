@@ -31,7 +31,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         template: _.template(settingsTabTemplate),
         mixins: [viewMixins.toggleablePassword],
         hasChanges: function() {
-            return !_.isEqual(this.settings.toJSON(), this.initialSettings.toJSON());
+            return !_.isEqual(this.settings.toJSON().editable, this.settings.initialAttributes);
         },
         events: {
             'click .btn-apply-changes:not([disabled])': 'applyChanges',
@@ -73,21 +73,14 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             this.loadInitialSettings();
         },
         loadDefaults: function() {
-            this.disableControls();
-            this.settings.fetch({url: _.result(this.settings, 'url') + '/defaults'})
-                .fail(function() {
-                    utils.showErrorDialog({
-                        title: $.t('cluster_page.settings_tab.settings_error.title'),
-                        message: $.t('cluster_page.settings_tab.settings_error.load_defaults_warning')
-                    });
-                })
-                .always(_.bind(this.render, this));
+            this.settings.set(this.model.get('settingDefaults').attributes);
         },
-        updateInitialSettings: function() {
-            this.initialSettings.set(this.settings.attributes);
+        updateInitialSettings: function(settings) {
+            this.settings.initialAttributes = settings ? settings.editable : this.settings.toJSON().editable;
         },
         loadInitialSettings: function() {
-            this.settings.set(this.initialSettings.attributes);
+            var initialSettingsModel = new models.Settings(this.settings.initialAttributes);
+            this.settings.set(initialSettingsModel.processRestrictions(this.configModels));
         },
         onSettingChange: function() {
             this.$('input.error').removeClass('error');
@@ -183,9 +176,10 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                         return setting.value == value.data && _.any(valueRestrictions, isDependent);
                     });
                     var settingRestrictions = _.where(_.map(setting.restrictions, utils.expandRestriction), {action: 'disable'});
-                    return hasDependentOption || (setting.value === true && _.any(settingRestrictions, isDependent));
-                });
-            });
+                    var isActive = setting.type == 'checkbox' ? setting.value === true : setting.value != this.model.get('settingDefaults').get(groupName + '.' + settingName + '.value');
+                    return hasDependentOption || (isActive && _.any(settingRestrictions, isDependent));
+                }, this);
+            }, this);
         },
         handleRestriction: function(restriction) {
             return utils.evaluateExpression(restriction.condition, this.configModels).value;
@@ -290,7 +284,6 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
                 task.on('change:status', this.render, this);
             });
-            this.initialSettings = new models.Settings();
             this.settings = this.model.get('settings');
             this.settings.on('invalid', function(model, errors) {
                 _.each(errors, function(error) {
@@ -300,8 +293,18 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     input.parent().siblings('.validation-error').text(error.message).removeClass('hide');
                 }, this);
             }, this);
-            (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {
-                this.updateInitialSettings();
+            if (!this.model.has('settingDefaults')) {
+                var settingDefaults = new models.Settings();
+                settingDefaults.url = _.result(this.model, 'url') + '/attributes/defaults';
+                settingDefaults.cacheFor = Infinity;
+                this.model.set('settingDefaults', settingDefaults);
+            }
+            (this.loading = $.when(
+                this.settings.fetch({cache: true}),
+                this.model.get('settingDefaults').fetch({cache: true}),
+                this.model.get('networkConfiguration').fetch({cache: true}))
+            ).done(_.bind(function(settings) {
+                this.updateInitialSettings(settings);
                 this.configModels = {
                     cluster: this.model,
                     settings: this.settings,
@@ -309,6 +312,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     version: app.version,
                     default: this.settings
                 };
+                this.model.get('settingDefaults').processRestrictions(this.configModels);
                 this.settings.processRestrictions(this.configModels);
                 _.each(this.settings.attributes, function(group, groupName) {
                     this.composeListeners(groupName);

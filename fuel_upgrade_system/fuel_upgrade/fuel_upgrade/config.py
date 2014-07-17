@@ -139,7 +139,7 @@ def config(update_path):
         'restart_timeout': 600}
 
     checker = {
-        'timeout': 600,
+        'timeout': 900,
         'interval': 3}
 
     endpoints = {

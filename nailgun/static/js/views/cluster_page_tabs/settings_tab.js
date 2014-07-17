@@ -31,7 +31,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         template: _.template(settingsTabTemplate),
         mixins: [viewMixins.toggleablePassword],
         hasChanges: function() {
-            return !_.isEqual(this.settings.toJSON(), this.initialSettings.toJSON());
+            return !_.isEqual(this.settings.toJSON().editable, this.settings.initialAttributes);
         },
         events: {
             'click .btn-apply-changes:not([disabled])': 'applyChanges',
@@ -83,11 +83,12 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 })
                 .always(_.bind(this.render, this));
         },
-        updateInitialSettings: function() {
-            this.initialSettings.set(this.settings.attributes);
+        updateInitialSettings: function(settings) {
+            this.settings.initialAttributes = settings ? settings.editable : _.cloneDeep(this.settings.attributes);
         },
         loadInitialSettings: function() {
-            this.settings.set(this.initialSettings.attributes);
+            var initialSettingsModel = new models.Settings(this.settings.initialAttributes);
+            this.settings.set(initialSettingsModel.processRestrictions(this.configModels));
         },
         onSettingChange: function() {
             this.$('input.error').removeClass('error');
@@ -299,7 +300,6 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
                 task.on('change:status', this.render, this);
             });
-            this.initialSettings = new models.Settings();
             this.settings = this.model.get('settings');
             this.settings.on('invalid', function(model, errors) {
                 _.each(errors, function(error) {

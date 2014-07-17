@@ -1,0 +1,10 @@
+Verified+2: Jenkins
+Code-Review+2: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Workflow+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Code-Review+1: Julia Aranovich <jkirnosova@mirantis.com>
+Code-Review+1: Alexandra Morozova <astepanchuk@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Thu, 17 Jul 2014 10:58:29 +0000
+Reviewed-on: https://review.openstack.org/107408
+Project: stackforge/fuel-web
+Branch: refs/heads/master

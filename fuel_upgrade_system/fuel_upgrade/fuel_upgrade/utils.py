@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import glob
 import json
 import logging
 import os
@@ -199,11 +200,28 @@ def symlink(source, destination, overwrite=True):
         source, destination, overwrite)
 
     if overwrite or not os.path.exists(destination):
-        if os.path.exists(destination):
-            remove(destination)
+        remove_if_exists(destination)
         os.symlink(source, destination)
     else:
         logger.debug('Skip symlinking process')
+
+
+def hardlink(source, destination, overwrite=True):
+    """Creates a hardlink link to the resource.
+
+    :param source: hardlink from
+    :param destination: hardlink to
+    :param overwrite: overwrite a destination if True
+    """
+    logger.debug(
+        u'Creating hardlink "%s" -> "%s" [overwrite=%d]',
+        source, destination, overwrite)
+
+    if overwrite or not os.path.exists(destination):
+        remove_if_exists(destination)
+        os.link(source, destination)
+    else:
+        logger.debug('Skip hardlink creation process')
 
 
 def remove_if_exists(path):
@@ -572,3 +590,97 @@ def generate_uuid_string():
     :returns: generated uuid
     """
     return str(uuid.uuid4())
+
+
+def verify_postgres_dump(pg_dump_path):
+    """Checks that postgresql dump is correct
+
+    :param str pg_dump_path: path to postgresql dump
+    """
+    if not os.path.exists(pg_dump_path):
+        return False
+
+    patterns = [
+        '-- PostgreSQL database cluster dump',
+        '-- PostgreSQL database dump',
+        '-- PostgreSQL database dump complete',
+        '-- PostgreSQL database cluster dump complete']
+
+    return file_contains_lines(pg_dump_path, patterns)
+
+
+def file_extension(file_path):
+    """Retrieves extension from file name
+
+    :param str file_path: path to the file or file name
+    :returns: file's extension
+    """
+    _, ext = os.path.splitext(file_path)
+    return ext[1:]
+
+
+def file_exists(file_path):
+    """Checks if file exists
+
+    :param str file_path: path to the file
+    :returns: True if file exists
+              False id doesn't
+    """
+    return os.path.exists(file_path)
+
+
+class VersionedFile(object):
+    """Set of methods for versioned files.
+    If `basename` is '/tmp/file.ext' it allows
+    to get and filter list of files with names
+    '/tmp/file.ext.N' where N is integer.
+
+    :param str basename: prefix for versioned files
+    """
+
+    def __init__(self, basename):
+        #: prefix for all versioned files
+        self.basename = basename
+        self._pattern = '{0}.{{0}}'.format(self.basename)
+
+    def next_file_name(self):
+        """Returns free file name
+        If directory has file '/tmp/file.ext.10'
+        method returns file name '/tmp/file.ext.11'.
+        If it does not have any files it returns
+        file name '/tmp/file.ext.0', where '/tmp/file.ext'
+        is example of `basename`
+
+        :returns: file name
+        """
+        return self._pattern.format(self._get_last_number() + 1)
+
+    def sorted_files(self):
+        """Files sorted by extension
+
+        :returns: list of sorted by extension files
+        """
+        return sorted(
+            self._files_with_numeric_extension(),
+            key=lambda f: int(file_extension(f)),
+            reverse=True)
+
+    def _get_last_number(self):
+        """Retrieves last number from file name
+
+        :returns: last file number, if there is no files, returns 0
+        """
+        files = self.sorted_files()
+        if not files:
+            return 0
+
+        return int(file_extension(files[0]))
+
+    def _files_with_numeric_extension(self):
+        """Fiels with numeric extension
+
+        :returns: files which have digit extension
+        """
+        return filter(
+            lambda f: file_extension(f).isdigit(),
+            glob.glob(self._pattern.format('*')))

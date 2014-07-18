@@ -156,6 +156,10 @@ class TestHandlers(BaseTestCase):
             check_errors=True
         )
 
+    def test_get_release_list_without_errors(self):
+        cmd = 'release --list'
+        self.run_cli_command(cmd)
+
 
 class TestUserActions(BaseTestCase):
 

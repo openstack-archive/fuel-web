@@ -62,26 +62,26 @@ def upgrade_release_attributes_50_to_51(attrs_meta):
     if not attrs_meta.get('editable'):
         return attrs_meta
 
-    def depends_to_restrictions(depends):
+    def depends_to_restrictions(depends, restrictions):
         for cond in depends:
             expr = cond.keys()[0]
             restrictions.append(
                 expr + " != " + convert_condition_value(cond[expr]))
 
-    def conflicts_to_restrictions(conflicts):
+    def conflicts_to_restrictions(conflicts, restrictions):
         for cond in conflicts:
             expr = cond.keys()[0]
             restrictions.append(
                 expr + " == " + convert_condition_value(cond[expr]))
 
-    for _, group in attrs_meta.get('editable').iteritems():
-        for _, attr in group.iteritems():
+    for _, group in six.iteritems(attrs_meta.get('editable')):
+        for _, attr in six.iteritems(group):
             restrictions = []
             if attr.get('depends'):
-                depends_to_restrictions(attr['depends'])
+                depends_to_restrictions(attr['depends'], restrictions)
                 attr.pop('depends')
             if attr.get('conflicts'):
-                conflicts_to_restrictions(attr['conflicts'])
+                conflicts_to_restrictions(attr['conflicts'], restrictions)
                 attr.pop('conflicts')
             if restrictions:
                 attr['restrictions'] = restrictions
@@ -89,7 +89,7 @@ def upgrade_release_attributes_50_to_51(attrs_meta):
 
 
 def upgrade_release_roles_50_to_51(roles_meta):
-    for _, role in roles_meta.iteritems():
+    for _, role in six.iteritems(roles_meta):
         if role.get('depends'):
             for depend in role['depends']:
                 if isinstance(depend.get('condition'), dict):

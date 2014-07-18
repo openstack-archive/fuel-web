@@ -361,23 +361,3 @@ def get_task_arg(help_msg):
         "help": help_msg
     }
     return get_arg("task", **default_kwargs)
-
-
-def get_config_arg(help_msg):
-    return get_boolean_arg("config", flags=("-c",), help=help_msg)
-
-
-def get_username_arg(help_msg):
-    return get_str_arg("username", flags=("-U", "--user"), help=help_msg)
-
-
-def get_password_arg(help_msg):
-    return get_str_arg("password", flags=("-P", "--pass"), help=help_msg)
-
-
-def get_satellite_arg(help_msg):
-    return get_str_arg("satellite_server_hostname", help=help_msg)
-
-
-def get_activation_key_arg(help_msg):
-    return get_str_arg("activation_key", help=help_msg)

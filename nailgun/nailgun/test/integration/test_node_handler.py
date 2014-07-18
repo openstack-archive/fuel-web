@@ -206,3 +206,26 @@ class TestHandlers(BaseIntegrationTest):
         )
         # Checking no interfaces change after deployment
         self.assertEquals(0, len(changes))
+
+    def test_update_node_with_wrong_ip(self):
+        node = self.env.create_node(
+            api=False, ip='10.20.0.2',
+            status=consts.NODE_STATUSES.deploying)
+
+        ipaddress = '192.168.0.10'
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({'id': node.id,
+                             'ip': ipaddress}),
+            headers=self.default_headers)
+
+        self.assertNotEqual(node.ip, ipaddress)
+
+        ipaddress = '10.20.0.25'
+        self.app.put(
+            reverse('NodeAgentHandler'),
+            jsonutils.dumps({'id': node.id,
+                             'ip': ipaddress}),
+            headers=self.default_headers)
+
+        self.assertEqual(node.ip, ipaddress)

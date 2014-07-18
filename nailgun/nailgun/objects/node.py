@@ -454,6 +454,16 @@ class Node(NailgunObject):
             )
             meta['disks'] = instance.meta['disks']
 
+        #(dshulyak) change this verification to NODE_STATUSES.deploying
+        # after we will reuse ips from dhcp range
+        netmanager = Cluster.get_network_manager()
+        admin_ng = netmanager.get_admin_network_group()
+        if data.get('ip') and not netmanager.is_same_network(data['ip'],
+                                                             admin_ng.cidr):
+            logger.debug(
+                'Corrupted network data %s, skipping update',
+                instance.id)
+            return instance
         return cls.update(instance, data)
 
     @classmethod

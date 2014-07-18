@@ -114,6 +114,16 @@ class NeutronManager(NetworkManager):
                 "bridge": "br-prv",
                 "vlan_range": join_range(cluster.network_config.vlan_range)
             }
+
+        # Set non-default ml2 configurations
+        attrs = Cluster.get_attributes(cluster).editable
+        if 'neutron_mellanox' in attrs and \
+                attrs['neutron_mellanox']['plugin']['value'] == 'ethernet':
+            res['mechanism_drivers'] = 'mlnx,openvswitch'
+            seg_type = cluster.network_config.segmentation_type
+            res['tenant_network_types'] = '%s' % seg_type
+            res['type_drivers'] = '%s,flat' % seg_type
+
         return res
 
     @classmethod

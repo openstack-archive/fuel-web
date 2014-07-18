@@ -325,15 +325,15 @@ define(['utils', 'deepModel'], function(utils) {
             return {editable: currentSettings};
         },
         processRestrictions: function(configModels) {
-            var handleRestrictions = function(restrictions) {
-                return _.any(restrictions, function(restriction) {
+            var handleRestrictions = function(setting, action) {
+                return _.any(_.where(setting.restrictions, {action: action}), function(restriction) {
                     return utils.evaluateExpression(restriction.condition, configModels).value;
                 });
             };
             var calculateState = function(setting) {
-                var settingRestrictions = _.map(setting.restrictions, utils.expandRestriction);
-                setting.disabled = handleRestrictions(_.where(settingRestrictions, {action: 'disable'}));
-                setting.visible = !handleRestrictions(_.where(settingRestrictions, {action: 'hide'}));
+                setting.restrictions = _.map(setting.restrictions, utils.expandRestriction);
+                setting.disabled = handleRestrictions(setting, 'disable');
+                setting.visible = !handleRestrictions(setting, 'hide');
             };
             _.each(this.attributes, function(group) {
                 if (!group.metadata) {

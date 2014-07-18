@@ -254,7 +254,7 @@ class TestUtils(BaseTestCase):
 
     @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.symlink')
-    @mock.patch('fuel_upgrade.utils.remove')
+    @mock.patch('fuel_upgrade.utils.remove_if_exists')
     def test_symlink(self, remove_mock, symlink_mock, _):
         from_path = '/tmp/from/path'
         to_path = '/tmp/to/path'
@@ -265,14 +265,14 @@ class TestUtils(BaseTestCase):
 
     @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
     @mock.patch('fuel_upgrade.utils.os.symlink')
-    @mock.patch('fuel_upgrade.utils.remove')
+    @mock.patch('fuel_upgrade.utils.remove_if_exists')
     def test_symlink_no_exist(self, remove_mock, symlink_mock, _):
         from_path = '/tmp/from/path'
         to_path = '/tmp/to/path'
         utils.symlink(from_path, to_path)
 
         symlink_mock.assert_called_once_with(from_path, to_path)
-        self.method_was_not_called(remove_mock)
+        self.called_once(remove_mock)
 
     @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.remove')
@@ -459,3 +459,71 @@ class TestUtils(BaseTestCase):
         random_string = utils.generate_uuid_string()
         self.assertEqual(len(random_string), 36)
         self.assertTrue(isinstance(random_string, str))
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.file_contains_lines', returns_value=True)
+    def test_verify_postgres_dump(self, file_contains_mock, exists_mock):
+        pg_dump_path = '/tmp/some/path'
+        utils.verify_postgres_dump(pg_dump_path)
+
+        patterns = [
+            '-- PostgreSQL database cluster dump',
+            '-- PostgreSQL database dump',
+            '-- PostgreSQL database dump complete',
+            '-- PostgreSQL database cluster dump complete']
+
+        exists_mock.assert_called_once_with(pg_dump_path)
+        file_contains_mock.assert_called_once_with(pg_dump_path, patterns)
+
+    def test_file_extension(self):
+        cases = [
+            ('', ''),
+            ('asdf', ''),
+            ('asdf.', ''),
+            ('asdf.txt', 'txt'),
+            ('asdf.txt.trtr', 'trtr')]
+
+        for case in cases:
+            self.assertEqual(utils.file_extension(case[0]), case[1])
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    def test_file_exists_returns_true(self, exists_mock):
+        self.assertTrue(utils.file_exists('path'))
+        exists_mock.assert_called_once_with('path')
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
+    def test_file_exists_returns_false(self, exists_mock):
+        self.assertFalse(utils.file_exists('path'))
+        exists_mock.assert_called_once_with('path')
+
+
+class TestVersionedFile(BaseTestCase):
+
+    def setUp(self):
+        self.path = '/tmp/path.ext'
+        self.versioned_file = utils.VersionedFile(self.path)
+
+    @mock.patch('fuel_upgrade.utils.glob.glob', return_value=[])
+    def test_next_file_name_empty_dir(self, _):
+        self.assertEqual(
+            self.versioned_file.next_file_name(),
+            '{0}.1'.format(self.path))
+
+    @mock.patch('fuel_upgrade.utils.glob.glob',
+                return_value=['/tmp/path.ext',
+                              '/tmp/path.ext.10',
+                              '/tmp/path.ext.6'])
+    def test_next_file_name_with_files(self, _):
+        self.assertEqual(
+            self.versioned_file.next_file_name(),
+            '{0}.11'.format(self.path))
+
+    @mock.patch('fuel_upgrade.utils.glob.glob',
+                return_value=['/tmp/path.ext',
+                              '/tmp/path.ext.10',
+                              '/tmp/path.ext.6'])
+    def test_filter_files(self, _):
+        self.assertEqual(
+            self.versioned_file.filter_files(
+                lambda f: f.startswith('/tmp/path.ext.')),
+            ['/tmp/path.ext.10', '/tmp/path.ext.6'])

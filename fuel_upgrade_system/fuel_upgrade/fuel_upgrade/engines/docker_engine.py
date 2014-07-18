@@ -54,8 +54,6 @@ class DockerUpgrader(UpgradeEngine):
 
         self.new_release_images = self.make_new_release_images_list()
         self.new_release_containers = self.make_new_release_containers_list()
-        self.pg_dump_path = os.path.join(
-            self.working_directory, 'pg_dump_all.sql')
         self.cobbler_config_path = self.config.cobbler_config_path.format(
             working_directory=self.working_directory)
         self.upgrade_verifier = FuelUpgradeVerify(self.config)
@@ -123,7 +121,7 @@ class DockerUpgrader(UpgradeEngine):
             self.config.docker['dir']: self._calculate_images_size(),
             self.config.supervisor['configs_prefix']: 10,
             self.config.fuel_config_path: 10,
-            self.working_directory: 50}
+            self.working_directory: 150}
 
     def _calculate_images_size(self):
         images_list = [i['docker_image'] for i in self.new_release_images]
@@ -146,58 +144,38 @@ class DockerUpgrader(UpgradeEngine):
         """Saves postgresql database into the file
         """
         logger.debug(u'Backup database')
-
-        # TODO(eli): Need to rethink this logic
-        # 1. we need to skip it, because in case
-        #    if postgresql container is not runinng
-        #    after rollback, we will not be able to
-        #    take db dump
-        # 2. we should not keep it because in case of
-        #    failed upgrade user can use rollbacked system
-        #    during some time, and then he can run the same
-        #    upgrade again, in this case user will have
-        #    outdated db data
-        #
-        # What we can do here is to make postgresql dump
-        # and keep all dumps with different names. And
-        # restore latest dump.
-        if self.verify_postgres_dump():
-            logger.info('Database backup exists "{0}", '
-                        'do nothing'.format(self.pg_dump_path))
-            return
-
-        container_name = self.make_container_name(
-            'postgres', self.from_version)
+        pg_dump_path = os.path.join(self.working_directory, 'pg_dump_all.sql')
+        pg_dump_files = utils.VersionedFile(pg_dump_path)
+        pg_dump_tmp_path = pg_dump_files.next_file_name()
 
         try:
+            container_name = self.make_container_name(
+                'postgres', self.from_version)
+
             self.exec_cmd_in_container(
                 container_name,
                 u"su postgres -c 'pg_dumpall --clean' > {0}".format(
-                    self.pg_dump_path))
-        except errors.ExecutedErrorNonZeroExitCode:
-            if os.path.exists(self.pg_dump_path):
-                logger.info(u'Remove postgresql dump file because '
-                            'it failed {0}'.format(self.pg_dump_path))
-                os.remove(self.pg_dump_path)
-            raise
+                    pg_dump_tmp_path))
+        except (errors.ExecutedErrorNonZeroExitCode,
+                errors.CannotFindContainerError) as exc:
+            utils.remove_if_exists(pg_dump_tmp_path)
+            if not utils.file_exists(pg_dump_path):
+                raise
 
-        if not self.verify_postgres_dump():
+            logger.debug(
+                u'Failed to make database dump, '
+                'will be used dump from previous run: %s', exc)
+
+        valid_dumps = pg_dump_files.filter_files(utils.verify_postgres_dump)
+        if valid_dumps:
+            utils.hardlink(valid_dumps[0], pg_dump_path, overwrite=True)
+            # Keep only 3 valid dump files
+            map(utils.remove_if_exists, valid_dumps[3:])
+        else:
             raise errors.DatabaseDumpError(
-                u'Failed to make database dump, {0} file is broken'.format(
-                    self.pg_dump_path))
-
-    def verify_postgres_dump(self):
-        """Checks that postgresql dump is correct
-        """
-        if not os.path.exists(self.pg_dump_path):
-            return False
-        patterns = [
-            '-- PostgreSQL database cluster dump',
-            '-- PostgreSQL database dump',
-            '-- PostgreSQL database dump complete',
-            '-- PostgreSQL database cluster dump complete']
-
-        return utils.file_contains_lines(self.pg_dump_path, patterns)
+                u'Failed to make database dump, there '
+                'are no valid database backup '
+                'files, {0}'.format(pg_dump_path))
 
     def save_cobbler_configs(self):
         """Copy config files from container

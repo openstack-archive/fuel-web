@@ -243,4 +243,6 @@ def downgrade_schema():
 
 
 def downgrade_data():
+    # PLEASE NOTE. It was decided not to downgrade release data (5.1 to 5.0)
+    # because it's not possible in most situations.
     pass

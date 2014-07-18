@@ -89,7 +89,7 @@ def upgrade_release_attributes_50_to_51(attrs_meta):
 
 
 def upgrade_release_roles_50_to_51(roles_meta):
-    for _, role in roles_meta.iteritems():
+    for _, role in six.iteritems(roles_meta):
         if role.get('depends'):
             for depend in role['depends']:
                 if isinstance(depend.get('condition'), dict):

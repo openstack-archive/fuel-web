@@ -202,6 +202,9 @@ def config(update_path):
     cobbler_config_files_for_verifier = join(
         cobbler_config_path, 'config/systems.d/*.json')
 
+    # Keep only 3 latest database files
+    keep_db_backups_count = 3
+
     current_fuel_astute_path = '/etc/fuel/astute.yaml'
     astute = read_yaml_config(current_fuel_astute_path)
 

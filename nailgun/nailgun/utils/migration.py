@@ -15,6 +15,8 @@
 from alembic import op
 import sqlalchemy as sa
 
+import six
+
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
     old_type = sa.Enum(*old_options, name=enum_name)
@@ -48,3 +50,51 @@ def drop_enum(name):
     op.execute(
         u'DROP TYPE {0}'.format(name)
     )
+
+
+def convert_condition_value(val):
+    if isinstance(val, six.string_types):
+        return "'{0}'".format(val)
+    return str(val).lower()
+
+
+def upgrade_release_attributes_50_to_51(attrs_meta):
+    if not attrs_meta.get('editable'):
+        return attrs_meta
+
+    def depends_to_restrictions(depends):
+        for cond in depends:
+            expr = cond.keys()[0]
+            restrictions.append(
+                expr + " != " + convert_condition_value(cond[expr]))
+
+    def conflicts_to_restrictions(conflicts):
+        for cond in conflicts:
+            expr = cond.keys()[0]
+            restrictions.append(
+                expr + " == " + convert_condition_value(cond[expr]))
+
+    for _, group in attrs_meta.get('editable').iteritems():
+        for _, attr in group.iteritems():
+            restrictions = []
+            if attr.get('depends'):
+                depends_to_restrictions(attr['depends'])
+                attr.pop('depends')
+            if attr.get('conflicts'):
+                conflicts_to_restrictions(attr['conflicts'])
+                attr.pop('conflicts')
+            if restrictions:
+                attr['restrictions'] = restrictions
+    return attrs_meta
+
+
+def upgrade_release_roles_50_to_51(roles_meta):
+    for _, role in roles_meta.iteritems():
+        if role.get('depends'):
+            for depend in role['depends']:
+                if isinstance(depend.get('condition'), dict):
+                    cond = depend['condition']
+                    expr = cond.keys()[0]
+                    depend['condition'] = \
+                        expr + " == " + convert_condition_value(cond[expr])
+    return roles_meta

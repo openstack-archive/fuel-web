@@ -39,7 +39,7 @@ class TestMulticastNetworkManager(base.BaseIntegrationTest):
             cluster_id=self.cluster['id'])
         self.db.add(multicast)
         self.db.flush()
-        task.MulticastVerificationTask(multicast, {}).execute()
+        task.MulticastVerificationTask(multicast).execute()
         return multicast
 
     @base.fake_tasks()

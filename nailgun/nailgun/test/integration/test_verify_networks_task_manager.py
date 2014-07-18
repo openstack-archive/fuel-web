@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
 from nailgun.openstack.common import jsonutils
@@ -169,6 +171,28 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(400, resp.status_code)
+
+    @fake_tasks(fake_rpc=False)
+    def test_multicast_enabled_when_corosync_section_present(self, mocked_rpc):
+        self.env.launch_verify_networks()
+        self.assertIn('subtasks', mocked_rpc.call_args[0][1])
+        subtasks = mocked_rpc.call_args[0][1]['subtasks']
+        self.assertEqual(len(subtasks), 2)
+        dhcp_subtask, multicast = subtasks[0], subtasks[1]
+        self.assertEqual(dhcp_subtask['method'], 'check_dhcp')
+        self.assertEqual(multicast['method'], 'multicast_verification')
+
+    @fake_tasks(fake_rpc=False)
+    def test_multicast_disabled_when_corosync_is_not_present(self, mocked_rpc):
+        editable = copy.deepcopy(self.env.clusters[0].attributes.editable)
+        del editable['corosync']
+        self.env.clusters[0].attributes.editable = editable
+        self.env.launch_verify_networks()
+        self.assertIn('subtasks', mocked_rpc.call_args[0][1])
+        subtasks = mocked_rpc.call_args[0][1]['subtasks']
+        self.assertEqual(len(subtasks), 1)
+        dhcp_subtask = subtasks[0]
+        self.assertEqual(dhcp_subtask['method'], 'check_dhcp')
 
 
 class TestVerifyNetworksDisabled(BaseIntegrationTest):

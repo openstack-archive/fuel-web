@@ -475,6 +475,13 @@ class BaseNetworkVerification(object):
         db().commit()
         rpc.cast('naily', message)
 
+    @classmethod
+    def enabled(cls, cluster):
+        """Should be used to verify that subtask is enabled based on
+        cluster configuration
+        """
+        return True
+
 
 class VerifyNetworksTask(BaseNetworkVerification):
 
@@ -498,6 +505,13 @@ class CheckDhcpTask(BaseNetworkVerification):
 
 class MulticastVerificationTask(BaseNetworkVerification):
 
+    def __init__(self, task):
+        corosync = task.cluster.attributes['editable']['corosync']
+        group = corosync['group']['value']
+        port = corosync['port']['value']
+        conf = {'group': group, 'port': port}
+        super(MulticastVerificationTask, self).__init__(task, conf)
+
     def get_message_body(self):
         # multicast verification should be done only for network which
         # corosync uses for communication - management in our case
@@ -505,6 +519,14 @@ class MulticastVerificationTask(BaseNetworkVerification):
             self.task.cluster, 'management')
         return [dict(self.config, iface=nic[1], uid=str(nic[0]))
                 for nic in all_nics]
+
+    @classmethod
+    def enabled(cls, cluster):
+        """Multicast should be enabled only in case 'corosync' section
+        is present in editable attributes, which is not the case if cluster
+        was upgraded from 5.0
+        """
+        return 'corosync' in cluster.attributes['editable']
 
 
 class CheckNetworksTask(object):

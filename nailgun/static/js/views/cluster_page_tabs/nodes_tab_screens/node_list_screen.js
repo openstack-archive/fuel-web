@@ -330,8 +330,8 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             var forbiddenRoles = [];
             var release = this.cluster.get('release');
             _.each(roles, function(role) {
-                forbiddenRoles = _.union(forbiddenRoles, release.get('roles_metadata')[role.get('name')].conflicts);
-            });
+                forbiddenRoles = _.union(forbiddenRoles, this.conflictingRoles[role.get('name')]);
+            }, this);
             return _.uniq(forbiddenRoles);
         },
         checkForConflicts: function(e) {
@@ -451,9 +451,24 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             this.collection.on('change:checked', this.handleChanges, this);
             this.settings = this.cluster.get('settings');
             (this.loading = this.settings.fetch({cache: true})).done(_.bind(function() {
+                    this.parseConflictingRoles();
                     this.checkRolesAvailability();
                     this.checkForConflicts();
             }, this));
+        },
+        parseConflictingRoles: function() {
+            var rolesMetadata = this.cluster.get('release').get('roles_metadata');
+            this.conflictingRoles = {};
+            _.each(rolesMetadata, function(item, name) {
+                var conflicts = item.conflicts;
+                if (conflicts) {
+                    this.conflictingRoles[name] = _.union(this.conflictingRoles[name], conflicts);
+                    _.each(conflicts, function(conflict) {
+                        this.conflictingRoles[conflict] =  this.conflictingRoles[conflict] || [];
+                        this.conflictingRoles[conflict].push(name);
+                    }, this);
+                }
+            }, this);
         },
         stickitRole: function (role) {
             var bindings = {};
@@ -483,6 +498,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         render: function() {
             this.$el.html(this.template({roles: this.collection})).i18n();
             this.collection.each(this.stickitRole, this);
+            this.parseConflictingRoles();
             this.checkForConflicts();
             return this;
         }

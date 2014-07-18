@@ -76,8 +76,11 @@ class NodeCollectionHandler(CollectionHandler):
             nodes = nodes.filter_by(cluster_id=None)
         elif cluster_id:
             nodes = nodes.filter_by(cluster_id=cluster_id)
+        nodes_json = self.collection.to_json(nodes)
+        msg = "Returned nodes {0}".format(nodes_json)
+        logger.debug(msg)
 
-        return self.collection.to_json(nodes)
+        return nodes_json
 
     @content_json
     def PUT(self):
@@ -104,7 +107,11 @@ class NodeCollectionHandler(CollectionHandler):
             self.collection.eager_nodes_handlers(None),
             nodes_updated
         )
-        return self.collection.to_json(nodes)
+
+        nodes_json = self.collection.to_json(nodes)
+        msg = "Updated nodes {0}".format(nodes_json)
+        logger.debug(msg)
+        return nodes_json
 
 
 class NodeAgentHandler(BaseHandler):

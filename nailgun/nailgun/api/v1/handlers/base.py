@@ -330,8 +330,10 @@ class CollectionHandler(BaseHandler):
             new_obj = self.collection.create(data)
         except errors.CannotCreate as exc:
             raise self.http(400, exc.message)
-
-        raise self.http(201, self.collection.single.to_json(new_obj))
+        new_obj_json = self.collection.single.to_json(new_obj)
+        msg = "Object successfully created: {0}".format(new_obj_json)
+        logger.debug(msg)
+        raise self.http(201, new_obj_json)
 
 
 # TODO(enchantner): rewrite more handlers to inherit from this

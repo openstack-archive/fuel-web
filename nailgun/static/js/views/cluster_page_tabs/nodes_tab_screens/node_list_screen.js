@@ -328,10 +328,9 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         },
         getListOfIncompatibleRoles: function(roles) {
             var forbiddenRoles = [];
-            var release = this.cluster.get('release');
             _.each(roles, function(role) {
-                forbiddenRoles = _.union(forbiddenRoles, release.get('roles_metadata')[role.get('name')].conflicts);
-            });
+                forbiddenRoles = _.union(forbiddenRoles, this.conflictingRoles[role.get('name')]);
+            }, this);
             return _.uniq(forbiddenRoles);
         },
         checkForConflicts: function(e) {
@@ -451,9 +450,24 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
             this.collection.on('change:checked', this.handleChanges, this);
             this.settings = this.cluster.get('settings');
             (this.loading = this.settings.fetch({cache: true})).done(_.bind(function() {
+                    this.processConflictingRoles();
                     this.checkRolesAvailability();
                     this.checkForConflicts();
             }, this));
+        },
+        processConflictingRoles: function() {
+            var rolesMetadata = this.cluster.get('release').get('roles_metadata');
+            this.conflictingRoles = {};
+            _.each(rolesMetadata, function(roleData, roleName) {
+                var conflicts = roleData.conflicts;
+                if (conflicts) {
+                    this.conflictingRoles[roleName] = _.uniq(_.union(this.conflictingRoles[roleName], conflicts));
+                    _.each(conflicts, function(conflict) {
+                        this.conflictingRoles[conflict] =  this.conflictingRoles[conflict] || [];
+                        this.conflictingRoles[conflict].push(roleName);
+                    }, this);
+                }
+            }, this);
         },
         stickitRole: function (role) {
             var bindings = {};

@@ -468,11 +468,11 @@ class NetworkDeploymentSerializer(object):
 
     @classmethod
     def network_provider_cluster_attrs(cls, cluster):
-        raise NotImplemented
+        raise NotImplementedError()
 
     @classmethod
     def network_provider_node_attrs(cls, cluster, node):
-        raise NotImplemented
+        raise NotImplementedError()
 
     @classmethod
     def get_net_provider_serializer(cls, cluster):

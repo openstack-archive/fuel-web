@@ -31,6 +31,8 @@ from nailgun.task import helpers
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
 
+from nailgun import consts
+
 
 class TestVerifyNetworks(BaseIntegrationTest):
 
@@ -688,17 +690,17 @@ class TestClusterUpdate(BaseIntegrationTest):
         cluster_id = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
-                {"api": False},
-                {"api": False}]
+                {"api": False, "status": consts.NODE_STATUSES.deploying},
+                {"api": False, "status": consts.NODE_STATUSES.deploying}],
         )['id']
         self.cluster = self.db.query(Cluster).get(cluster_id)
         self.cluster.pending_release_id = self.cluster.release_id
-        self.cluster.status = 'update'
+        self.cluster.status = consts.CLUSTER_STATUSES.update
         self.db.commit()
 
         self.task = Task(
             uuid=str(uuid.uuid4()),
-            name="update",
+            name=consts.TASK_NAMES.update,
             cluster_id=self.cluster.id
         )
         self.db.add(self.task)
@@ -707,53 +709,66 @@ class TestClusterUpdate(BaseIntegrationTest):
     def test_node_deploy_resp_ready(self):
         node1, node2 = self.env.nodes
         kwargs = {'task_uuid': self.task.uuid,
-                  'status': 'ready',
-                  'nodes': [{'uid': node1.id, 'status': 'ready'},
-                            {'uid': node2.id, 'status': 'ready'}]}
+                  'status': consts.TASK_STATUSES.ready,
+                  'nodes': [
+                      {'uid': node1.id, 'status': consts.NODE_STATUSES.ready},
+                      {'uid': node2.id, 'status': consts.NODE_STATUSES.ready}]}
         self.receiver.deploy_resp(**kwargs)
-        self.db.flush()
-        self.db.refresh(node1)
-        self.db.refresh(node2)
-        self.db.refresh(self.task)
-        self.db.refresh(self.cluster)
-        self.assertEqual((node1.status, node2.status),
-                         ("ready", "ready"))
-        self.assertEqual(self.task.status, "ready")
-        self.assertEqual(self.cluster.status, "operational")
+
+        self.assertEqual(
+            (node1.status, node2.status),
+            (consts.NODE_STATUSES.ready, consts.NODE_STATUSES.ready))
+        self.assertEqual(self.task.status, consts.TASK_STATUSES.ready)
+        self.assertEqual(self.cluster.status,
+                         consts.CLUSTER_STATUSES.operational)
         self.assertEqual(self.cluster.pending_release_id, None)
 
     def test_node_deploy_resp_node_error(self):
         node1, node2 = self.env.nodes
         kwargs = {'task_uuid': self.task.uuid,
-                  'nodes': [{'uid': node1.id, 'status': 'ready'},
-                            {'uid': node2.id, 'status': 'error'}]}
+                  'nodes': [
+                      {'uid': node1.id, 'status': consts.NODE_STATUSES.ready},
+                      {'uid': node2.id, 'status': consts.NODE_STATUSES.error}]}
         self.receiver.deploy_resp(**kwargs)
-        self.db.refresh(node1)
-        self.db.refresh(node2)
-        self.db.refresh(self.task)
-        self.db.refresh(self.cluster)
-        self.assertEqual((node1.status, node2.status),
-                         ("ready", "error"))
-        self.assertEqual(self.task.status, "running")
-        self.assertEqual(self.cluster.status, "update")
+
+        self.assertEqual(
+            (node1.status, node2.status),
+            (consts.NODE_STATUSES.ready, consts.NODE_STATUSES.error))
+        self.assertEqual(self.task.status, consts.TASK_STATUSES.running)
+        self.assertEqual(self.cluster.status, consts.CLUSTER_STATUSES.update)
         self.assertEqual(self.cluster.pending_release_id,
                          self.cluster.release_id)
 
     def test_node_deploy_resp_update_error(self):
         node1, node2 = self.env.nodes
         kwargs = {'task_uuid': self.task.uuid,
-                  'status': 'error',
-                  'nodes': [{'uid': node1.id, 'status': 'ready'},
-                            {'uid': node2.id, 'status': 'error'}]}
+                  'status': consts.TASK_STATUSES.error,
+                  'nodes': [
+                      {'uid': node1.id, 'status': consts.NODE_STATUSES.ready},
+                      {'uid': node2.id, 'status': consts.NODE_STATUSES.error}]}
         self.receiver.deploy_resp(**kwargs)
-        self.db.refresh(node1)
-        self.db.refresh(node2)
-        self.db.refresh(self.task)
-        self.db.refresh(self.cluster)
-        self.assertEqual((node1.status, node2.status),
-                         ("ready", "error"))
-        self.assertEqual(self.task.status, "error")
-        self.assertEqual(self.cluster.status, "update_error")
+
+        self.assertEqual(
+            (node1.status, node2.status),
+            (consts.NODE_STATUSES.ready, consts.NODE_STATUSES.error))
+        self.assertEqual(self.task.status, consts.TASK_STATUSES.error)
+        self.assertEqual(self.cluster.status,
+                         consts.CLUSTER_STATUSES.update_error)
+        self.assertEqual(self.cluster.pending_release_id,
+                         self.cluster.release_id)
+
+    def test_node_deploy_resp_update_error_wo_explicit_nodes(self):
+        node1, node2 = self.env.nodes
+        kwargs = {'task_uuid': self.task.uuid,
+                  'status': consts.TASK_STATUSES.error}
+        self.receiver.deploy_resp(**kwargs)
+
+        self.assertEqual(
+            (node1.status, node2.status),
+            (consts.NODE_STATUSES.error, consts.NODE_STATUSES.error))
+        self.assertEqual(self.task.status, consts.TASK_STATUSES.error)
+        self.assertEqual(self.cluster.status,
+                         consts.CLUSTER_STATUSES.update_error)
         self.assertEqual(self.cluster.pending_release_id,
                          self.cluster.release_id)
 

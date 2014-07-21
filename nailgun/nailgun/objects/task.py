@@ -237,6 +237,12 @@ class Task(NailgunObject):
                     cluster,
                     consts.CLUSTER_STATUSES.update_error
                 )
+
+                q_nodes_to_error = \
+                    TaskHelper.get_nodes_to_deployment_error(cluster)
+                cls.__update_nodes_to_error(
+                    q_nodes_to_error, error_type=consts.NODE_ERRORS.deploy)
+
             elif instance.status == consts.TASK_STATUSES.ready:
                 cls.__update_cluster_status(
                     cluster,

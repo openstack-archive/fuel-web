@@ -85,6 +85,7 @@ class BaseChecker(object):
             return method()
         except (requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout,
+                requests.exceptions.HTTPError,
                 ValueError):
             return None
 

@@ -32,6 +32,7 @@ nailgun/static/css/styles.css
 .venv
 .idea
 .DS_Store
+test_run/*
 
 *.egg-info
 

@@ -25,7 +25,7 @@ define([], function() {
                 var input = this.$(e.currentTarget).prev();
                 if (input.attr('disabled')) {return;}
                 input.attr('type', input.attr('type') == 'text' ? 'password' : 'text');
-                this.$(e.currentTarget).find('i').toggle();
+                this.$(e.currentTarget).find('i').toggleClass('hide');
             },
             render: function() {
                 this.$('input[type=password]').each(function() {

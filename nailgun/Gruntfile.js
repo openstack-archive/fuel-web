@@ -44,24 +44,34 @@ module.exports = function(grunt) {
                 }
             }
         },
-        jslint: {
-            client: {
-                src: [
-                    'static/js/**/*.js',
-                    '!static/js/libs/**',
-                    '!static/js/expression_parser.js'
-                ],
-                directives: {
-                    predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
-                    ass: true,
-                    browser: true,
-                    unparam: true,
-                    nomen: true,
-                    eqeq: true,
-                    vars: true,
-                    white: true,
-                    es5: false
-                }
+        jshint: {
+            options: {
+                reporter: require('jshint-stylish'),
+                curly: true,
+                eqeqeq: false,
+                eqnull: false,
+                browser: true,
+                globals: {
+                    jQuery: true
+                },
+                "-W041": false
+            },
+            all: [
+                'static/js/**/*.js',
+                '!static/js/libs/**',
+                '!static/js/coverage/**',
+                '!static/js/expression_parser.js'
+            ],
+            directives: {
+                predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
+                ass: true,
+                browser: true,
+                unparam: true,
+                nomen: true,
+                eqeq: true,
+                vars: true,
+                white: true,
+                es5: false
             }
         },
         less: {
@@ -152,7 +162,8 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-cleanempty');
     grunt.loadNpmTasks('grunt-text-replace');
     grunt.loadNpmTasks('grunt-git-revision');
-    grunt.loadNpmTasks('grunt-jslint');
+    grunt.loadNpmTasks('grunt-contrib-jshint');
+    grunt.loadNpmTasks('grunt-jshint');
     grunt.loadNpmTasks('grunt-bower-task');
     grunt.loadNpmTasks('grunt-debug-task');
     grunt.registerTask('trimstatic', ['clean', 'cleanempty']);

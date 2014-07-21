@@ -19,7 +19,6 @@ import requests
 
 from fuel_upgrade import nailgun_client
 from fuel_upgrade.tests import base
-from keystoneclient import exceptions
 
 
 class TestNailgunClient(base.BaseTestCase):
@@ -115,6 +114,8 @@ class TestNailgunClient(base.BaseTestCase):
 
 class TestNailgunClientWithAuthentification(base.BaseTestCase):
 
+    token = {'access': {'token': {'id': 'auth_token'}}}
+
     def setUp(self):
         self.credentials = {
             'username': 'some_user',
@@ -127,18 +128,17 @@ class TestNailgunClientWithAuthentification(base.BaseTestCase):
             8000,
             keystone_credentials=self.credentials)
 
-    @mock.patch('fuel_upgrade.nailgun_client.KeystoneClient')
+    @mock.patch('fuel_upgrade.nailgun_client.requests.post')
     @mock.patch('fuel_upgrade.nailgun_client.requests.Session')
-    def test_makes_authenticated_requests(self, session, keystone):
-        keystone.return_value.auth_token = 'auth_token'
+    def test_makes_authenticated_requests(self, session, post_mock):
+        post_mock.return_value.json.return_value = self.token
         self.nailgun.request.get('http://some.url/path')
         session.return_value.headers.update.assert_called_once_with(
             {'X-Auth-Token': 'auth_token'})
 
     @mock.patch('fuel_upgrade.nailgun_client.requests.Session')
-    @mock.patch('fuel_upgrade.nailgun_client.KeystoneClient',
-                side_effect=exceptions.ConnectionError('a'))
-    def test_does_not_fail_without_keystone(self, keystone, _):
+    @mock.patch('fuel_upgrade.nailgun_client.requests.post',
+                side_effect=requests.exceptions.HTTPError(''))
+    def test_does_not_fail_without_keystone(self, _, __):
         self.nailgun.request.get('http://some.url/path')
-        keystone.assert_called_once_with(**self.credentials)
         self.assertEqual(self.nailgun.get_token(), None)

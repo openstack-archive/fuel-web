@@ -18,9 +18,6 @@ import json
 import logging
 import requests
 
-from keystoneclient import exceptions
-from keystoneclient.v2_0.client import Client as KeystoneClient
-
 logger = logging.getLogger(__name__)
 
 
@@ -156,9 +153,20 @@ class NailgunClient(object):
             return None
 
         try:
-            keystone_client = KeystoneClient(**self.keystone_credentials)
-            return keystone_client.auth_token
-        except exceptions.ClientException as exc:
-            logger.debug('Cannot initialize keystone client: {0}'.format(exc))
+            auth_data = self.keystone_credentials
+            resp = requests.post(
+                auth_data['auth_url'],
+                headers={'content-type': 'application/json'},
+                data=json.dumps({
+                    'auth': {
+                        'tenantName': auth_data['tenant_name'],
+                        'passwordCredentials': {
+                            'username': auth_data['username'],
+                            'password': auth_data['password']}}})).json()
+
+            return (isinstance(resp, dict) and
+                    resp.get('access', {}).get('token', {}).get('id'))
+        except (ValueError, requests.exceptions.RequestException) as exc:
+            logger.debug('Cannot authenticate in keystone: {0}'.format(exc))
 
         return None

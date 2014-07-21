@@ -700,11 +700,12 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """
         # Get Mellanox data
         neutron_mellanox_data =  \
-            node.cluster.attributes.editable\
+            Cluster.get_attributes(node.cluster).editable\
             .get('neutron_mellanox', {})
 
         # Get storage data
-        storage_data = node.cluster.attributes.editable.get('storage', {})
+        storage_data = \
+            Cluster.get_attributes(node.cluster).editable.get('storage', {})
 
         # Get network manager
         nm = objects.Node.get_network_manager(node)
@@ -761,7 +762,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             nm.get_node_network_by_netname(node, 'storage').get('vlan')
 
         if storage_vlan:
-            vlan_name = "vlan%s" % storage_vlan
+            vlan_name = "vlan{0}".format(storage_vlan)
 
             # Set storage rule to iSER interface vlan interface
             node_attrs['network_scheme']['roles']['storage'] = vlan_name

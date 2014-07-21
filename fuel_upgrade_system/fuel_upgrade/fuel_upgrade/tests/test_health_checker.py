@@ -286,6 +286,7 @@ class TestCheckers(BaseTestCase):
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_mcollective_checker_returns_false(self, get_mock):
         wrong_results = [
+            None,
             {'body': [{'name': 'mcollective_broadcast'},
                       {'name': 'mcollective_directed'}],
              'code': 400},

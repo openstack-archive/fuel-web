@@ -344,6 +344,7 @@ class TestCheckers(BaseTestCase):
     def test_integration_postgres_nailgun_nginx_raises_errors(self, nailgun):
         side_effects = [requests.exceptions.ConnectionError(),
                         requests.exceptions.Timeout(),
+                        requests.exceptions.HTTPError(),
                         ValueError()]
 
         for side_effect in side_effects:

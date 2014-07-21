@@ -688,8 +688,8 @@ class TestClusterUpdate(BaseIntegrationTest):
         cluster_id = self.env.create(
             cluster_kwargs={},
             nodes_kwargs=[
-                {"api": False},
-                {"api": False}]
+                {"api": False, "status": "deploying"},
+                {"api": False, "status": "deploying"}]
         )['id']
         self.cluster = self.db.query(Cluster).get(cluster_id)
         self.cluster.pending_release_id = self.cluster.release_id
@@ -752,6 +752,23 @@ class TestClusterUpdate(BaseIntegrationTest):
         self.db.refresh(self.cluster)
         self.assertEqual((node1.status, node2.status),
                          ("ready", "error"))
+        self.assertEqual(self.task.status, "error")
+        self.assertEqual(self.cluster.status, "update_error")
+        self.assertEqual(self.cluster.pending_release_id,
+                         self.cluster.release_id)
+
+    def test_node_deploy_resp_update_error_wo_explicit_nodes(self):
+        node1, node2 = self.env.nodes
+        kwargs = {'task_uuid': self.task.uuid,
+                  'status': 'error'}
+        self.receiver.deploy_resp(**kwargs)
+        self.db.flush()
+        self.db.refresh(node1)
+        self.db.refresh(node2)
+        self.db.refresh(self.task)
+        self.db.refresh(self.cluster)
+        self.assertEqual((node1.status, node2.status),
+                         ("error", "error"))
         self.assertEqual(self.task.status, "error")
         self.assertEqual(self.cluster.status, "update_error")
         self.assertEqual(self.cluster.pending_release_id,

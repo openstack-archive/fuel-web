@@ -126,7 +126,7 @@ def get_endpoints(astute_config):
             'keystone_credentials': {
                 'username': fuel_access['user'],
                 'password': fuel_access['password'],
-                'auth_url': 'http://{0}:5000/v2.0/'.format(master_ip),
+                'auth_url': 'http://{0}:5000/v2.0/tokens'.format(master_ip),
                 'tenant_name': 'admin'}},
 
         'nginx_repo': {

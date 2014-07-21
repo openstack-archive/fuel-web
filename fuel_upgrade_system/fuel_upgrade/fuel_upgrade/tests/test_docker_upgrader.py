@@ -47,6 +47,8 @@ class TestDockerUpgrader(BaseTestCase):
                 self.upgrader = DockerUpgrader(self.fake_config)
                 self.upgrader.upgrade_verifier = mock.MagicMock()
 
+        self.pg_dump_path = '/var/lib/fuel_upgrade/9999/pg_dump_all.sql'
+
     def tearDown(self):
         self.docker_patcher.stop()
         self.supervisor_patcher.stop()
@@ -327,55 +329,6 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(glob_mock)
         self.called_once(json_checker_mock)
 
-    def test_save_db(self):
-        self.upgrader.verify_postgres_dump = mock.MagicMock(return_value=True)
-        self.upgrader.exec_cmd_in_container = mock.MagicMock()
-        self.upgrader.save_db()
-
-    def test_save_db_failed_verification(self):
-        self.upgrader.verify_postgres_dump = mock.MagicMock(return_value=False)
-        self.upgrader.exec_cmd_in_container = mock.MagicMock()
-        self.assertRaises(errors.DatabaseDumpError, self.upgrader.save_db)
-
-    @mock.patch(
-        'fuel_upgrade.engines.docker_engine.utils.file_contains_lines',
-        returns_value=True)
-    @mock.patch(
-        'fuel_upgrade.engines.docker_engine.os.path.exists',
-        side_effect=[False, True])
-    @mock.patch(
-        'fuel_upgrade.engines.docker_engine.os.remove')
-    def test_save_db_removes_file_in_case_of_error(
-            self, remove_mock, _, __):
-        self.upgrader.exec_cmd_in_container = mock.MagicMock(
-            side_effect=errors.ExecutedErrorNonZeroExitCode())
-
-        self.assertRaises(
-            errors.ExecutedErrorNonZeroExitCode,
-            self.upgrader.save_db)
-
-        self.called_once(remove_mock)
-
-    @mock.patch(
-        'fuel_upgrade.engines.docker_engine.os.path.exists',
-        return_value=True)
-    @mock.patch(
-        'fuel_upgrade.engines.docker_engine.utils.file_contains_lines',
-        returns_value=True)
-    def test_verify_postgres_dump(self, file_contains_mock, exists_mock):
-        self.upgrader.verify_postgres_dump()
-
-        patterns = [
-            '-- PostgreSQL database cluster dump',
-            '-- PostgreSQL database dump',
-            '-- PostgreSQL database dump complete',
-            '-- PostgreSQL database cluster dump complete']
-
-        exists_mock.assert_called_once_with(self.upgrader.pg_dump_path)
-        file_contains_mock.assert_called_once_with(
-            self.upgrader.pg_dump_path,
-            patterns)
-
     def test_get_docker_container_public_ports(self):
         docker_ports_mapping = [
             {'Ports': [
@@ -418,7 +371,7 @@ class TestDockerUpgrader(BaseTestCase):
     def test_required_free_space(self, _):
         self.assertEqual(
             self.upgrader.required_free_space,
-            {'/var/lib/fuel_upgrade/9999': 50,
+            {'/var/lib/fuel_upgrade/9999': 150,
              '/var/lib/docker': 5,
              '/etc/fuel/': 10,
              '/etc/supervisord.d/': 10})
@@ -442,3 +395,103 @@ class TestDockerUpgrader(BaseTestCase):
         mock_utils.symlink.assert_called_once_with(
             '/etc/fuel/9999/version.yaml',
             '/etc/fuel/version.yaml')
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.exec_cmd_in_container')
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_save_db_succeed(self, mock_utils, exec_cmd_mock):
+        with mock.patch('fuel_upgrade.engines.docker_engine.'
+                        'utils.VersionedFile') as version_mock:
+            version_mock.return_value.sorted_files.return_value = [
+                'file1', 'file2']
+            version_mock.return_value.next_file_name.return_value = 'file3'
+
+            self.upgrader.save_db()
+
+        exec_cmd_mock.assert_called_once_with(
+            'fuel-core-0-postgres',
+            "su postgres -c 'pg_dumpall --clean' > file3")
+        mock_utils.hardlink.assert_called_once_with(
+            'file1', self.pg_dump_path, overwrite=True)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.exec_cmd_in_container',
+                side_effect=errors.ExecutedErrorNonZeroExitCode())
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_save_db_error_failed_to_execute_dump_command(self, mock_utils, _):
+        mock_utils.file_exists.return_value = False
+        self.assertRaises(
+            errors.ExecutedErrorNonZeroExitCode,
+            self.upgrader.save_db)
+        mock_utils.file_exists.assert_called_once_with(self.pg_dump_path)
+        self.called_once(mock_utils.remove_if_exists)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.exec_cmd_in_container',
+                side_effect=errors.CannotFindContainerError())
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_save_db_error_failed_because_of_stopped_container(
+            self, mock_utils, exec_cmd_mock):
+        mock_utils.file_exists.return_value = False
+        self.assertRaises(
+            errors.CannotFindContainerError,
+            self.upgrader.save_db)
+        mock_utils.file_exists.assert_called_once_with(self.pg_dump_path)
+        self.called_once(mock_utils.remove_if_exists)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.exec_cmd_in_container')
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_save_db_error_first_dump_is_invalid(self, mock_utils, _):
+        with mock.patch('fuel_upgrade.engines.docker_engine.'
+                        'utils.VersionedFile') as version_mock:
+            version_mock.return_value.filter_files.return_value = []
+            self.assertRaises(errors.DatabaseDumpError, self.upgrader.save_db)
+
+        self.method_was_not_called(mock_utils.hardlink)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.exec_cmd_in_container',
+                side_effect=errors.ExecutedErrorNonZeroExitCode())
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_save_db_second_run_failed_to_execute_dump_command(
+            self, mock_utils, exec_cmd_mock):
+        mock_utils.file_exists.return_value = True
+
+        with mock.patch('fuel_upgrade.engines.docker_engine.'
+                        'utils.VersionedFile') as version_mock:
+            version_mock.return_value.sorted_files.return_value = [
+                'file1', 'file2']
+
+            self.upgrader.save_db()
+
+        mock_utils.file_exists.assert_called_once_with(self.pg_dump_path)
+        self.called_once(mock_utils.remove_if_exists)
+        self.called_once(mock_utils.hardlink)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.exec_cmd_in_container',
+                side_effect=errors.CannotFindContainerError())
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_save_db_second_run_failed_failed_because_of_stopped_container(
+            self, mock_utils, _):
+        mock_utils.file_exists.return_value = True
+        with mock.patch('fuel_upgrade.engines.docker_engine.'
+                        'utils.VersionedFile') as version_mock:
+            version_mock.return_value.sorted_files.return_value = ['file1']
+            self.upgrader.save_db()
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'DockerUpgrader.exec_cmd_in_container')
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_save_db_removes_old_dump_files(self, mock_utils, _):
+        mock_utils.file_exists.return_value = True
+        with mock.patch('fuel_upgrade.engines.docker_engine.'
+                        'utils.VersionedFile') as version_mock:
+            version_mock.return_value.sorted_files.return_value = [
+                'file1', 'file2', 'file3', 'file4', 'file5']
+            self.upgrader.save_db()
+
+        self.assertEqual(
+            mock_utils.remove_if_exists.call_args_list,
+            [(('file4',),), (('file5',),)])

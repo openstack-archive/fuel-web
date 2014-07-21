@@ -59,9 +59,6 @@ function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesD
             });
             this.$el.removeClass().addClass('modal').html(views.Dialog.prototype.template(dialogOptions)).i18n();
         },
-        getResponseText: function(response) {
-            return _.contains([400, 409], response.status) ? response.responseText : '';
-        },
         initialize: function(options) {
             _.defaults(this, options);
         },
@@ -190,7 +187,7 @@ function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesD
                 .fail(_.bind(function(response) {
                     this.displayError({
                         title: $.t('dialog.stop_deployment.stop_deployment_error.title'),
-                        message: this.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
+                        message: utils.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
                     });
                 }, this));
         },

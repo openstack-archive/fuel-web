@@ -241,6 +241,9 @@ define(['require', 'expression_parser'], function(require, ExpressionParser) {
                 var index = _.indexOf(sortOrder, property);
                 return index == -1 ? properties.length : index;
             });
+        },
+        getResponseText: function(response) {
+            return _.contains([400, 409], response.status) ? response.responseText : '';
         }
     };
 

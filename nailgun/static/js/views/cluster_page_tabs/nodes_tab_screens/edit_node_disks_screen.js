@@ -86,11 +86,11 @@ function(utils, models, EditNodeScreen, editNodeDisksScreenTemplate, nodeDisksTe
                     this.model.fetch();
                     this.render();
                 }, this))
-                .fail(_.bind(function() {
+                .fail(_.bind(function(response) {
                     this.checkForChanges();
                     utils.showErrorDialog({
                         title: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.title'),
-                        message: $.t('cluster_page.nodes_tab.configure_disks.configuration_error.saving_warning')
+                        message: utils.getResponseText(response) || $.t('cluster_page.nodes_tab.configure_disks.configuration_error.saving_warning')
                     });
                 }, this));
         },

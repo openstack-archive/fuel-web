@@ -34,8 +34,8 @@ function usage {
   echo "  -S, --no-shotgun            Don't run SHOTGUN tests"
   echo "  -p, --flake8                Run FLAKE8 and HACKING compliance check"
   echo "  -P, --no-flake8             Don't run static code checks"
-  echo "  -j, --jslint                Run JSLINT compliance checks"
-  echo "  -J, --no-jslint             Don't run JSLINT checks"
+  echo "  -j, --jshint                Run JSHINT compliance checks"
+  echo "  -J, --no-jshint             Don't run JSHINT checks"
   echo "  -t, --tests                 Run a given test files"
   echo "  -h, --help                  Print this usage message"
   echo ""
@@ -63,8 +63,8 @@ function process_options {
       -S|--no-shotgun) no_shotgun_tests=1;;
       -p|--flake8) flake8_checks=1;;
       -P|--no-flake8) no_flake8_checks=1;;
-      -j|--jslint) jslint_checks=1;;
-      -J|--no-jslint) no_jslint_checks=1;;
+      -j|--jshint) jshint_checks=1;;
+      -J|--no-jshint) no_jshint_checks=1;;
       -t|--tests) certain_tests=1;;
       -*) testropts="$testropts $arg";;
       *) testrargs="$testrargs $arg"
@@ -78,7 +78,7 @@ TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
 CASPERJS="casperjs"
-JSLINT="grunt jslint"
+JSHINT="grunt jshint"
 
 # test options
 testrargs=
@@ -109,8 +109,8 @@ shotgun_tests=0
 no_shotgun_tests=0
 flake8_checks=0
 no_flake8_checks=0
-jslint_checks=0
-no_jslint_checks=0
+jshint_checks=0
+no_jshint_checks=0
 certain_tests=0
 
 
@@ -138,7 +138,7 @@ function run_tests {
       $upgrade_system -eq 0 && \
       $shotgun_tests -eq 0 && \
       $flake8_checks -eq 0 && \
-      $jslint_checks -eq 0 ]]; then
+      $jshint_checks -eq 0 ]]; then
 
     if [ $no_agent_tests -ne 1 ];  then agent_tests=1;  fi
     if [ $no_nailgun_tests -ne 1 ];  then nailgun_tests=1;  fi
@@ -147,7 +147,7 @@ function run_tests {
     if [ $no_upgrade_system -ne 1 ]; then upgrade_system=1; fi
     if [ $no_shotgun_tests -ne 1 ];  then shotgun_tests=1;  fi
     if [ $no_flake8_checks -ne 1 ];  then flake8_checks=1;  fi
-    if [ $no_jslint_checks -ne 1 ];  then jslint_checks=1;  fi
+    if [ $no_jshint_checks -ne 1 ];  then jshint_checks=1;  fi
   fi
 
   # Run all enabled tests
@@ -186,9 +186,9 @@ function run_tests {
     run_shotgun_tests || errors+=" shotgun_tests"
   fi
 
-  if [ $jslint_checks -eq 1 ]; then
-    echo "Starting JSLint tests..."
-    run_jslint || errors+=" jslint_checks"
+  if [ $jshint_checks -eq 1 ]; then
+    echo "Starting JSHint tests..."
+    run_jshint || errors+=" jshint_checks"
   fi
 
   # print failed tests
@@ -429,13 +429,13 @@ function run_flake8 {
 }
 
 
-# Check javascript files with `jslint`. It's necessary to run it inside
+# Check javascript files with `jshint`. It's necessary to run it inside
 # `nailgun` folder, so we temporary change current dir.
-function run_jslint {
+function run_jshint {
   pushd $ROOT/nailgun >> /dev/null
 
   local result=0
-  ${JSLINT} || result=1
+  ${JSHINT} || result=1
 
   popd >> /dev/null
   return $result

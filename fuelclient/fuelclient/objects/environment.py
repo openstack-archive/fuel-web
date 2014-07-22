@@ -153,6 +153,10 @@ class Environment(BaseObject):
             settings_file_path)
 
     @property
+    def status(self):
+        return self.get_fresh_data()['status']
+
+    @property
     def settings_url(self):
         return "clusters/{0}/attributes".format(self.id)
 

@@ -26,6 +26,12 @@ class HealthCheckAction(Action):
     """
     action_name = "health"
 
+    _allowed_statuses = (
+        'error',
+        'operational',
+        'update_error',
+    )
+
     def __init__(self):
         super(HealthCheckAction, self).__init__()
         self.args = (
@@ -45,6 +51,15 @@ class HealthCheckAction(Action):
                 fuel --env 1 health --check smoke,sanity
         """
         env = Environment(params.env)
+
+        if env.status not in self._allowed_statuses and not params.force:
+            exit_with_error(
+                "Environment is not ready to run health check "
+                "because it is in {0} state. "
+                "Health check is likely to fail because of "
+                "this. Use --force flag to proceed anyway.". format(env.status)
+            )
+
         if env.is_customized and not params.force:
             exit_with_error(
                 "Environment deployment facts were updated. "

@@ -532,34 +532,18 @@ def config(update_path):
                  'bind': '/tmp/upgrade',
                  'ro': True}}}]
 
-    # This node contains settings of OpenStack upgrader. So please keep all
-    # related settings there. Please keep in mind that all paths are relative
-    # to source directory that's passed as a command line argument.
+    # Openstack Upgrader settings. Please note, that "[0-9.-]*" is
+    # a glob pattern for matching our os versions
     openstack = {
-        'releases': join(update_path, 'config', 'openstack.yaml'),
+        'releases': join(update_path, 'releases', '*.yaml'),
 
-        'actions': [
-            {
-                'name': 'copy',
-                'from': join(update_path, 'puppet', 'manifests'),
-                'to': join('/etc/puppet', new_version, 'manifests'),
-            },
-            {
-                'name': 'copy',
-                'from': join(update_path, 'puppet', 'modules'),
-                'to': join('/etc/puppet', new_version, 'modules'),
-            },
-            {
-                'name': 'copy',
-                'from': join(update_path, 'repos', 'centos'),
-                'to': join('/var/www/nailgun', new_version, 'centos'),
-            },
-            {
-                'name': 'copy',
-                'from': join(update_path, 'repos/ubuntu'),
-                'to': join('/var/www/nailgun', new_version, 'ubuntu'),
-            }
-        ]}
+        'puppets': {
+            'src': join(update_path, 'puppet', '[0-9.-]*'),
+            'dst': join('/etc', 'puppet')},
+
+        'repos': {
+            'src': join(update_path, 'repos', '[0-9.-]*'),
+            'dst': join('/var', 'www', 'nailgun')}}
 
     # Config for host system upgarde engine
     host_system = {

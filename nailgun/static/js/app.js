@@ -86,7 +86,7 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                             .fail(function() {
                                 app.logout();
                             })
-                            .then(_.bind(function() {
+                            .always(_.bind(function() {
                                 options = options || {};
                                 options.headers = options.headers || {};
                                 options.headers['X-Auth-Token'] = keystoneClient.token;

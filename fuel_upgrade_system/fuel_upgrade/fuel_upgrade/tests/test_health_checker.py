@@ -214,8 +214,12 @@ class TestCheckers(BaseTestCase):
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_ostf_checker_returns_true(self, get_mock):
-        get_mock.return_value = {'body': None, 'code': 401}
-        self.assert_checker_true(health_checker.OSTFChecker)
+        positive_results = [
+            {'body': None, 'code': 401},
+            {'body': None, 'code': 200}]
+        for result in positive_results:
+            get_mock.return_value = result
+            self.assert_checker_true(health_checker.OSTFChecker)
 
     @mock.patch('fuel_upgrade.health_checker.BaseChecker.safe_get')
     def test_ostf_checker_returns_false(self, get_mock):

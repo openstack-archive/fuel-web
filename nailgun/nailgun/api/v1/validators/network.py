@@ -85,7 +85,7 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
             cluster = db().query(Cluster).get(cluster_id)
             if cluster and cluster.network_config:
                 cfg = cluster.network_config
-                for k in ("segmentation_type",):
+                for k in ("segmentation_type", "net_l23_provider"):
                     if k in np and getattr(cfg, k) != np[k]:
                         raise errors.InvalidData(
                             "Change of '{0}' is prohibited".format(k),

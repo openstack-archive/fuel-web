@@ -134,7 +134,10 @@ class OSTFChecker(BaseChecker):
         resp = self.safe_get('http://{host}:{port}/'.format(
             **self.endpoints['ostf']))
 
-        return resp and resp['code'] == 401
+        # NOTE(eli): 401 response when authorization is enabled
+        # 200 when there is no authorization, remove 200 when
+        # authorization is enabled by default
+        return resp and (resp['code'] == 401 or resp['code'] == 200)
 
 
 class RabbitChecker(BaseChecker):

@@ -193,6 +193,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         goToPane: function(index) {
             this.panesModel.set({
+                invalid: false,
                 activePaneIndex: index,
                 maxAvailablePaneIndex: _.max([this.panesModel.get('maxAvailablePaneIndex'), this.panesModel.get('activePaneIndex'), index])
             });
@@ -207,7 +208,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         onStepClick: function(e) {
             var paneIndex = parseInt($(e.currentTarget).data('pane'), 10);
-            if (this.panesModel.get('activePaneIndex') != this.panesConstructors.length - 1) {
+            if (this.panesModel.get('activePaneIndex') > this.panesConstructors.length - 1) {
                 this.activePane.processPaneData().done(_.bind(function() {
                     this.goToPane(paneIndex);
                 }, this));
@@ -307,6 +308,15 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             _.defaults(this, options);
             this.attachWarningListeners();
             this.processPaneAliases();
+            this.wizard.model.on('invalid', function(model, errors) {
+                _.each(errors, function(error) {
+                    var input = this.$('input[name="' + error.field + '"]');
+                    input.addClass('error');
+                    input.parent().siblings('.description').addClass('hide');
+                    input.parent().siblings('.validation-error').text(error.message).removeClass('hide');
+                    this.wizard.panesModel.set('invalid', true);
+                }, this);
+            }, this);
         },
         renderControls: function(config) {
             var controlsHtml = '';
@@ -436,7 +446,13 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             }, this);
         },
         processPaneData: function() {
-            return $.Deferred().resolve();
+            if (this.wizard.model.isValid({
+                    config: this.config,
+                    paneName: this.constructorName
+                })) {
+                return $.Deferred().resolve();
+            }
+            return $.Deferred().reject();
         },
         buildTranslationParams: function() {
             var result = {};
@@ -479,6 +495,18 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         renderCustomElements: function() {
             this.$('.control-group').append(this.renderControls({}));
+        },
+        onWizardChange: function(model, changes) {
+            this.$('input.error').removeClass('error');
+            this.$('.parameter-description').removeClass('hide');
+            this.$('.validation-error').addClass('hide');
+            this.wizard.panesModel.set('invalid', false);
+            if (this.$('input[type=text], input[type=password]').is(':focus')) {
+                this.wizard.model.isValid({
+                    config: this.config,
+                    paneName: this.constructorName
+                });
+            }
         },
         render: function() {
             this.$el.html(this.template());
@@ -590,6 +618,13 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
     clusterWizardPanes.Compute = views.WizardPane.extend({
         constructorName: 'Compute',
         title: 'dialog.create_cluster_wizard.compute.title',
+        initialize: function(options) {
+            this.constructor.__super__.initialize.call(this, options);
+            this.wizard.model.on('change:Compute.*', this.onWizardChange, this);
+            this.events = _.extend(this.events, {
+                'focus input': 'onWizardChange'
+            });
+        },
         renderCustomElements: function() {
             this.$('.control-group').append(this.renderControls({hasDescription: true})).i18n();
         }

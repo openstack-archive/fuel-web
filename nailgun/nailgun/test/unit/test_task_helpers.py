@@ -98,6 +98,27 @@ class TestTaskHelpers(BaseTestCase):
         computes = self.filter_by_role(nodes, 'compute')
         self.assertEqual(len(computes), 1)
 
+    def test_redeploy_with_critial_roles(self):
+        cluster = self.create_env([
+            {'roles': ['controller'], 'status': 'error'},
+            {'roles': ['controller'], 'status': 'provisioned'},
+            {'roles': ['controller'], 'status': 'provisioned'},
+            {'roles': ['compute', 'cinder'], 'status': 'provisioned'},
+            {'roles': ['compute'], 'status': 'provisioned'},
+            {'roles': ['cinder'], 'status': 'provisioned'}])
+
+        nodes = TaskHelper.nodes_to_deploy(cluster)
+        self.assertEqual(len(nodes), 6)
+
+        controllers = self.filter_by_role(nodes, 'controller')
+        self.assertEqual(len(controllers), 3)
+
+        cinders = self.filter_by_role(nodes, 'cinder')
+        self.assertEqual(len(cinders), 2)
+
+        computes = self.filter_by_role(nodes, 'compute')
+        self.assertEqual(len(computes), 2)
+
     # TODO(aroma): move it to utils testing code
     def test_recalculate_deployment_task_progress(self):
         cluster = self.create_env([

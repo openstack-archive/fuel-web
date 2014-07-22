@@ -864,9 +864,12 @@ Note that Mellanox Hardware and drivers installation are required."
             enabled: false
             label: "VLAN Splinters"
             weight: 50
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
           vswitch:
             value: "disabled"
-            label: "Open VSwitch VLAN Splinters feature (Neutron only)"
+            label: "Open VSwitch VLAN Splinters feature"
             weight: 55
             type: "radio"
             values:

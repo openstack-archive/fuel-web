@@ -864,21 +864,36 @@ Note that Mellanox Hardware and drivers installation are required."
             enabled: false
             label: "VLAN Splinters"
             weight: 50
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
           vswitch:
             value: "disabled"
-            label: "Open VSwitch VLAN Splinters feature (Neutron only)"
+            label: "Open VSwitch VLAN Splinters feature"
             weight: 55
             type: "radio"
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
             values:
               - data: "soft"
                 label: "Enable OVS VLAN splinters soft trunks workaround"
                 description: "Configure OVS to use VLAN splinters workaround with soft trunk detection. This may resolve issues that might be encountered when using VLAN tags with OVS and Neutron on Kernels <3.3 (CentOS)"
+                restrictions:
+                  - condition: "cluster:net_provider != 'neutron'"
+                    action: "hide"
               - data: "hard"
                 label: "Enable OVS VLAN splinters hard trunks workaround"
                 description: "Configure OVS to use VLAN splinters workaround with hard trunk allocation. Offers similar effect as soft trunks workaround, but forces each trunk to be predefined. This may work better than soft trunks especially if you still see network problems using soft trunks"
+                restrictions:
+                  - condition: "cluster:net_provider != 'neutron'"
+                    action: "hide"
               - data: "kernel_lt"
                 label: "EXPERIMENTAL: Use Fedora longterm kernel"
                 description: "Install the Fedora 3.10 longterm kernel instead of the default 2.6.32 kernel. This should remove any need for VLAN Splinters workarounds as the 3.10 kernel has better support for OVS VLANs. This kernel may not work with all hardware platforms, use caution."
+                restrictions:
+                  - condition: "cluster:net_provider != 'neutron'"
+                    action: "hide"
       generated:
         cobbler:
           profile:

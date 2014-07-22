@@ -50,12 +50,7 @@
         {
           "data": "vcenter",
           "label": "dialog.create_cluster_wizard.compute.vcenter",
-          "description": "dialog.create_cluster_wizard.compute.vcenter_description",
-          "restrictions": [{
-             "condition": "Mode.mode == 'ha_compact' and Compute.hypervisor == 'vcenter'",
-             "action": "none",
-             "message": "dialog.create_cluster_wizard.compute.ha_vcenter_warning"
-          }]
+          "description": "dialog.create_cluster_wizard.compute.vcenter_description"
         }
       ]
     },

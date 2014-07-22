@@ -15,6 +15,7 @@
 from fuelclient.cli.actions.base import Action
 import fuelclient.cli.arguments as Args
 from fuelclient.cli.arguments import group
+from fuelclient.cli.error import exit_with_error
 from fuelclient.objects.environment import Environment
 
 
@@ -22,6 +23,9 @@ class NetworkAction(Action):
     """Show or modify network settings of specific environments
     """
     action_name = "network"
+    _blocking_statuses = (
+        "deployment",
+    )
 
     def __init__(self):
         super(NetworkAction, self).__init__()
@@ -65,6 +69,12 @@ class NetworkAction(Action):
                 fuel --env 1 network --verify --dir path/to/directory
         """
         env = Environment(params.env)
+
+        if env.status in self._blocking_statuses:
+            exit_with_error(
+                "Environment is not ready to run network verification task."
+            )
+
         response = env.verify_network()
         print(
             "Verification status is '{status}'. message: {message}"

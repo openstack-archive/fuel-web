@@ -27,9 +27,11 @@ Why python based config?
   and it's hard to create variables nesting more than 1
 """
 
+import glob
 import logging
 import yaml
 
+from os.path import basename
 from os.path import exists
 from os.path import join
 
@@ -172,6 +174,29 @@ def get_endpoints(astute_config):
             'host': '127.0.0.1',
             'user': rabbitmq_mcollective_access['user'],
             'password': rabbitmq_mcollective_access['password']}}
+
+
+def get_host_system(update_path, new_version):
+    openstack_versions = glob.glob(
+        join(update_path, 'puppet', '[0-9.-]*{0}'.format(new_version)))
+    openstack_versions = [
+        basename(v) for v in openstack_versions]
+    openstack_version = sorted(openstack_versions, reverse=True)[0]
+
+    return {
+        'manifest_path': join(
+            update_path, 'puppet', openstack_version,
+            'modules/nailgun/examples/host-only.pp'),
+
+        'puppet_modules_path': join(
+            update_path, 'puppet', openstack_version, 'modules'),
+
+        'repo_config_path': join(
+            '/etc/yum.repos.d',
+            '{0}_nailgun.repo'.format(new_version)),
+
+        'repo_path': join(
+            update_path, 'repos', openstack_version, 'centos/x86_64')}
 
 
 def config(update_path):
@@ -532,52 +557,21 @@ def config(update_path):
                  'bind': '/tmp/upgrade',
                  'ro': True}}}]
 
-    # This node contains settings of OpenStack upgrader. So please keep all
-    # related settings there. Please keep in mind that all paths are relative
-    # to source directory that's passed as a command line argument.
+    # Openstack Upgrader settings. Please note, that "[0-9.-]*" is
+    # a glob pattern for matching our os versions
     openstack = {
-        'releases': join(update_path, 'config', 'openstack.yaml'),
+        'releases': join(update_path, 'releases', '*.yaml'),
 
-        'actions': [
-            {
-                'name': 'copy',
-                'from': join(update_path, 'puppet', 'manifests'),
-                'to': join('/etc/puppet', new_version, 'manifests'),
-            },
-            {
-                'name': 'copy',
-                'from': join(update_path, 'puppet', 'modules'),
-                'to': join('/etc/puppet', new_version, 'modules'),
-            },
-            {
-                'name': 'copy',
-                'from': join(update_path, 'repos', 'centos'),
-                'to': join('/var/www/nailgun', new_version, 'centos'),
-            },
-            {
-                'name': 'copy',
-                'from': join(update_path, 'repos/ubuntu'),
-                'to': join('/var/www/nailgun', new_version, 'ubuntu'),
-            }
-        ]}
+        'puppets': {
+            'src': join(update_path, 'puppet', '[0-9.-]*'),
+            'dst': join('/etc', 'puppet')},
+
+        'repos': {
+            'src': join(update_path, 'repos', '[0-9.-]*'),
+            'dst': join('/var', 'www', 'nailgun')}}
 
     # Config for host system upgarde engine
-    host_system = {
-        'manifest_path': join(
-            update_path,
-            'puppet/modules/nailgun/examples/host-only.pp'),
-
-        'puppet_modules_path': join(
-            update_path,
-            'puppet/modules/'),
-
-        'repo_config_path': join(
-            '/etc/yum.repos.d',
-            '{0}_nailgun.repo'.format(new_version)),
-
-        'repo_path': join(
-            update_path,
-            'repos/centos/x86_64')}
+    host_system = get_host_system(update_path, new_version)
 
     # Config for bootstrap upgrade
     bootstrap = {

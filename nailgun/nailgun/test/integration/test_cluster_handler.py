@@ -31,7 +31,6 @@ class TestHandlers(BaseIntegrationTest):
     def delete(self, cluster_id):
         return self.app.delete(
             reverse('ClusterHandler', kwargs={'obj_id': cluster_id}),
-            '',
             headers=self.default_headers
         )
 
@@ -157,7 +156,7 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(node.status, 'discover')
             self.assertEqual(node.cluster_id, None)
 
-    @fake_tasks()
+    @fake_tasks(recover_offline_nodes=False)
     def test_cluster_deletion_with_offline_nodes(self):
         self.env.create(
             cluster_kwargs={},

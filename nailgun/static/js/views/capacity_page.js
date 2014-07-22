@@ -42,7 +42,9 @@ function(commonViews, models, capacityPageTemplate) {
             } else {
                 this.model = new models.CapacityLog();
                 this.model.deferred = this.model.fetch();
-                this.model.on('sync', this.render, this);
+                this.model.deferred.done(_.bind(function() {
+                    this.render()
+                }, this));
             }
         },
         update: function() {

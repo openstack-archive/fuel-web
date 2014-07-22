@@ -156,6 +156,7 @@
           }],
           "bind": [
             {"cluster:net_provider": "neutron"},
+            {"cluster:net_l23_provider": "nsx"},
             {"cluster:net_segment_type": "gre"}
           ]
         }

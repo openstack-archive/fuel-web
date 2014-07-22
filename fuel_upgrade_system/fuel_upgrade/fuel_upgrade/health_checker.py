@@ -223,7 +223,10 @@ class MCollectiveChecker(BaseChecker):
             auth=(self.endpoints['rabbitmq_mcollective']['user'],
                   self.endpoints['rabbitmq_mcollective']['password']))
 
-        if resp and resp['code'] != 200 or not isinstance(resp['body'], list):
+        if not resp or \
+           not isinstance(resp['body'], list) or \
+           resp['code'] != 200:
+
             return False
 
         exchanges = filter(lambda e: isinstance(e, dict), resp['body'])

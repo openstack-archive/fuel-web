@@ -346,6 +346,11 @@ class Environment(BaseObject):
             )
         )
 
+    @property
+    def status(self):
+        data = self.get_fresh_data()
+        return data['status']
+
     def _get_method_url(self, method_type, nodes):
         return "clusters/{0}/{1}/?nodes={2}".format(
             self.id,

@@ -140,7 +140,7 @@ class TaskHelper(object):
     def get_nodes_to_deployment_error(cls, cluster):
         q_nodes_to_error = db().query(Node).\
             filter(Node.cluster == cluster).\
-            filter(Node.status.in_(['provisioned', 'deploying']))
+            filter(Node.status.in_(['deploying']))
 
         return q_nodes_to_error
 

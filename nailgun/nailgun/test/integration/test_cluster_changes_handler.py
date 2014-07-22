@@ -171,11 +171,19 @@ class TestHandlers(BaseIntegrationTest):
             'compute': 700
         }
 
+        critical_mapping = {
+            'primary-controller': True,
+            'controller': False,
+            'cinder': False,
+            'compute': False
+        }
+
         deployment_info = []
         for node in nodes_db:
             ips = assigned_ips[node.id]
             for role in sorted(node.roles):
                 priority = priority_mapping[role]
+                is_critical = critical_mapping[role]
                 if isinstance(priority, list):
                     priority = priority.pop()
 
@@ -184,6 +192,7 @@ class TestHandlers(BaseIntegrationTest):
                     'status': node.status,
                     'role': role,
                     'online': node.online,
+                    'fail_if_error': is_critical,
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
                     'priority': priority,
 
@@ -219,6 +228,7 @@ class TestHandlers(BaseIntegrationTest):
             lambda node: node['role'] == 'controller',
             deployment_info)
         controller_nodes[0]['role'] = 'primary-controller'
+        controller_nodes[0]['fail_if_error'] = True
 
         supertask = self.env.launch_deployment()
         deploy_task_uuid = [x.uuid for x in supertask.subtasks
@@ -515,11 +525,20 @@ class TestHandlers(BaseIntegrationTest):
             'cinder': 700,
             'compute': 700
         }
+
+        critical_mapping = {
+            'primary-controller': True,
+            'controller': False,
+            'cinder': False,
+            'compute': False
+        }
+
         deployment_info = []
         for node in nodes_db:
             ips = assigned_ips[node.id]
             for role in sorted(node.roles):
                 priority = priority_mapping[role]
+                is_critical = critical_mapping[role]
                 if isinstance(priority, list):
                     priority = priority.pop()
 
@@ -528,6 +547,7 @@ class TestHandlers(BaseIntegrationTest):
                     'status': node.status,
                     'role': role,
                     'online': node.online,
+                    'fail_if_error': is_critical,
                     'fqdn': 'node-%d.%s' % (node.id, settings.DNS_DOMAIN),
                     'priority': priority,
 
@@ -621,6 +641,7 @@ class TestHandlers(BaseIntegrationTest):
             lambda node: node['role'] == 'controller',
             deployment_info)
         controller_nodes[0]['role'] = 'primary-controller'
+        controller_nodes[0]['fail_if_error'] = True
 
         supertask = self.env.launch_deployment()
         deploy_task_uuid = [x.uuid for x in supertask.subtasks

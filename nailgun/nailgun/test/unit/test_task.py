@@ -194,6 +194,9 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         self.set_node_status('discover')
         self.assertTrue(self.is_checking_required())
 
+        self.set_node_status('provisioned')
+        self.assertFalse(self.is_checking_required())
+
     def test_is_disk_checking_required_in_case_of_error(self):
         self.set_node_status('error')
         self.set_node_error_type('provision')

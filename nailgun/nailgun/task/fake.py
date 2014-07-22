@@ -373,16 +373,17 @@ class FakeDeletionThread(FakeThread):
             raise e
 
         recover_nodes = self.params.get("recover_nodes", True)
+        recover_offline_nodes = self.params.get("recover_offline_nodes", True)
 
         if not recover_nodes:
             db().commit()
             return
 
         for node_data in nodes_to_restore:
-            # Offline node just deleted from db
-            # and could not recreated with status
-            # discover
-            if "online" in node_data and not node_data["online"]:
+            # We want to preserve offline nodes since in fake mode
+            # it's easier to do that than add new one
+            is_offline = "online" in node_data and not node_data["online"]
+            if is_offline and not recover_offline_nodes:
                 continue
 
             node_data["status"] = "discover"

@@ -69,7 +69,7 @@ class NeutronConfig(NetworkingConfig):
     net_l23_provider = Column(
         Enum(*consts.NEUTRON_L23_PROVIDERS, name='net_l23_provider'),
         nullable=False,
-        default='ovs'
+        default=consts.NEUTRON_L23_PROVIDERS.ovs
     )
 
 

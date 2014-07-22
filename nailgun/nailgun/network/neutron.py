@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from nailgun import consts
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import NeutronConfig
@@ -24,10 +25,13 @@ from nailgun.objects import Cluster
 class NeutronManager(NetworkManager):
 
     @classmethod
-    def create_neutron_config(cls, cluster, segment_type):
+    def create_neutron_config(
+            cls, cluster, segmentation_type,
+            net_l23_provider=consts.NEUTRON_L23_PROVIDERS.ovs):
         neutron_config = NeutronConfig(
             cluster_id=cluster.id,
-            segmentation_type=segment_type,
+            segmentation_type=segmentation_type,
+            net_l23_provider=net_l23_provider
         )
         db().add(neutron_config)
         meta = cluster.release.networks_metadata["neutron"]["config"]

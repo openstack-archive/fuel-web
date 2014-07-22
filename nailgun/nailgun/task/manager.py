@@ -621,6 +621,11 @@ class CheckNetworksTaskManager(TaskManager):
 
 class VerifyNetworksTaskManager(TaskManager):
 
+    _blocking_statuses = (
+        CLUSTER_STATUSES.deployment,
+        CLUSTER_STATUSES.update,
+    )
+
     def remove_previous_task(self):
         locked_tasks = objects.TaskCollection.filter_by(
             None,
@@ -674,6 +679,17 @@ class VerifyNetworksTaskManager(TaskManager):
             task.progress = 100
             task.message = ('At least two nodes are required to be '
                             'in the environment for network verification.')
+            db().add(task)
+            db().commit()
+            return task
+
+        if self.cluster.status in self._blocking_statuses:
+            task.status = TASK_STATUSES.error
+            task.progress = 100
+            task.message = (
+                "Environment is not ready to run network verification "
+                "because it is in '{0}' state.".format(self.cluster.status)
+            )
             db().add(task)
             db().commit()
             return task

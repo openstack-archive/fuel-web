@@ -18,6 +18,7 @@ import copy
 
 import unittest2
 
+from nailgun.consts import CLUSTER_STATUSES
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
 from nailgun.openstack.common import jsonutils
@@ -145,6 +146,36 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         error_msg = 'At least two nodes are required to be in ' \
                     'the environment for network verification.'
         self.assertEqual(task.message, error_msg)
+
+    @fake_tasks()
+    def test_network_verify_when_env_not_ready(self):
+        cluster_db = self.env.clusters[0]
+        blocking_statuses = (
+            CLUSTER_STATUSES.deployment,
+            CLUSTER_STATUSES.update,
+        )
+        for status in blocking_statuses:
+            cluster_db.status = status
+            self.db.commit()
+
+            resp = self.app.get(
+                reverse(
+                    'NovaNetworkConfigurationHandler',
+                    kwargs={'cluster_id': self.env.clusters[0].id}
+                ),
+                headers=self.default_headers
+            )
+            nets = jsonutils.loads(resp.body)
+
+            task = self.env.launch_verify_networks(nets)
+            self.db.refresh(task)
+
+            self.assertEqual(task.status, "error")
+            error_msg = (
+                "Environment is not ready to run network verification "
+                "because it is in '{0}' state.".format(status)
+            )
+            self.assertEqual(task.message, error_msg)
 
     @fake_tasks()
     def test_network_verify_if_old_task_is_running(self):

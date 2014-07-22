@@ -69,6 +69,8 @@ def get_nodes_not_for_deletion(cluster):
 
 class DeploymentMultinodeSerializer(object):
 
+    critical_roles = ['controller', 'ceph-osd']
+
     @classmethod
     def serialize(cls, cluster, nodes):
         """Method generates facts which
@@ -78,6 +80,7 @@ class DeploymentMultinodeSerializer(object):
         common_attrs = cls.get_common_attrs(cluster)
 
         cls.set_deployment_priorities(nodes)
+        cls.set_critical_nodes(cluster, nodes)
 
         return [dict_merge(node, common_attrs) for node in nodes]
 
@@ -87,9 +90,7 @@ class DeploymentMultinodeSerializer(object):
         attrs = objects.Attributes.merged_attrs_values(
             cluster.attributes
         )
-        release = objects.Release.get_by_uid(cluster.pending_release_id) \
-            if cluster.status == consts.CLUSTER_STATUSES.update \
-            else cluster.release
+        release = cls.current_release(cluster)
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
         attrs['openstack_version'] = release.version
@@ -112,6 +113,13 @@ class DeploymentMultinodeSerializer(object):
                                                                       attrs))
 
         return attrs
+
+    @classmethod
+    def current_release(cls, cluster):
+        """Actual cluster release."""
+        return objects.Release.get_by_uid(cluster.pending_release_id) \
+            if cluster.status == consts.CLUSTER_STATUSES.update \
+            else cluster.release
 
     @classmethod
     def set_storage_parameters(cls, cluster, attrs):
@@ -186,6 +194,14 @@ class DeploymentMultinodeSerializer(object):
                                        'primary-mongo',
                                        'zabbix-server']):
             n['priority'] = other_nodes_prior
+
+    @classmethod
+    def set_critical_nodes(cls, cluster, nodes):
+        """Set behavior on nodes deployment error
+        during deployment process.
+        """
+        for n in nodes:
+            n['fail_if_error'] = n['role'] in cls.critical_roles
 
     @classmethod
     def serialize_nodes(cls, nodes):
@@ -315,6 +331,11 @@ class DeploymentMultinodeSerializer(object):
 
 class DeploymentHASerializer(DeploymentMultinodeSerializer):
     """Serializer for ha mode."""
+
+    critical_roles = ['primary-controller',
+                      'primary-mongo',
+                      'primary-swift-proxy',
+                      'ceph-osd']
 
     @classmethod
     def serialize_nodes(cls, nodes):

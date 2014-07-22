@@ -626,7 +626,7 @@ class CheckBeforeDeploymentTask(object):
     def _is_disk_checking_required(cls, node):
         """Disk checking required in case if node is not provisioned.
         """
-        if node.status in ('ready', 'deploying') or \
+        if node.status in ('ready', 'deploying', 'provisioned') or \
            (node.status == 'error' and node.error_type != 'provision'):
             return False
 

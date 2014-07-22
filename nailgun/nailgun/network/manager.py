@@ -1036,6 +1036,7 @@ class NetworkManager(object):
                                   data.get('net_segment_type'))
         if cluster.net_provider == 'neutron':
             cls.create_neutron_config(cluster,
-                                      data.get('net_segment_type'))
+                                      data.get('net_segment_type'),
+                                      data.get('net_l23_provider'))
         elif cluster.net_provider == 'nova_network':
             cls.create_nova_network_config(cluster)

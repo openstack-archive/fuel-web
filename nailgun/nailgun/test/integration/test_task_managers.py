@@ -390,7 +390,7 @@ class TestTaskManagers(BaseIntegrationTest):
         manager = ApplyChangesTaskManager(cluster_db.id)
         self.assertRaises(errors.WrongNodeStatus, manager.execute)
 
-    @fake_tasks()
+    @fake_tasks(recover_offline_nodes=False)
     def test_deletion_offline_node(self):
         self.env.create(
             nodes_kwargs=[
@@ -403,7 +403,7 @@ class TestTaskManagers(BaseIntegrationTest):
         self.env.wait_ready(supertask, timeout=5)
         self.assertEqual(self.env.db.query(Node).count(), 1)
 
-    @fake_tasks()
+    @fake_tasks(recover_offline_nodes=False)
     def test_deletion_three_offline_nodes_and_one_online(self):
         self.env.create(
             nodes_kwargs=[
@@ -423,7 +423,33 @@ class TestTaskManagers(BaseIntegrationTest):
         self.assertEqual(node.status, 'discover')
         self.assertEqual(node.cluster_id, None)
 
-    @fake_tasks()
+    @fake_tasks(recover_nodes=True, recover_offline_nodes=True)
+    def test_delete_offile_nodes_and_recover_them(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"online": False, "pending_deletion": True},
+                {"online": False, "pending_deletion": True},
+                {"online": True, "pending_deletion": True}
+            ]
+        )
+
+        supertask = self.env.launch_deployment()
+        self.db.flush()
+        self.env.wait_ready(supertask, timeout=5)
+
+        q_nodes = self.env.db.query(Node)
+
+        online_nodes_count = q_nodes.filter_by(online=True).count()
+        self.assertEqual(online_nodes_count, 1)
+
+        offilne_nodes_count = q_nodes.filter_by(online=False).count()
+        self.assertEqual(offilne_nodes_count, 2)
+
+        for node in q_nodes:
+            self.assertEqual(node.status, 'discover')
+            self.assertEqual(node.cluster_id, None)
+
+    @fake_tasks(recover_offline_nodes=False)
     def test_deletion_offline_node_when_cluster_has_only_one_node(self):
         cluster = self.env.create_cluster()
         objects.Cluster.clear_pending_changes(self.env.clusters[0])

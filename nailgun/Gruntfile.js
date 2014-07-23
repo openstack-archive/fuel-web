@@ -49,24 +49,35 @@ module.exports = function(grunt) {
                 }
             }
         },
-        jslint: {
-            client: {
-                src: [
-                    'static/js/**/*.js',
-                    '!static/js/libs/**',
-                    '!static/js/expression_parser.js'
-                ],
-                directives: {
-                    predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
-                    ass: true,
-                    browser: true,
-                    unparam: true,
-                    nomen: true,
-                    eqeq: true,
-                    vars: true,
-                    white: true,
-                    es5: false
-                }
+        jshint: {
+            options: {
+                reporter: require('jshint-stylish'),
+                curly: true,
+                eqeqeq: false,
+                eqnull: false,
+                browser: true,
+                globals: {
+                    jQuery: true
+                },
+                "-W041": false
+            },
+            all: [
+                'static/js/**/*.js',
+                'static/js/**/*.jsx',
+                '!static/js/libs/**',
+                '!static/js/expression_parser.js',
+                '!static/js/component_mixins.js'
+            ],
+            directives: {
+                predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
+                ass: true,
+                browser: true,
+                unparam: true,
+                nomen: true,
+                eqeq: true,
+                vars: true,
+                white: true,
+                es5: false
             }
         },
         less: {
@@ -244,5 +255,6 @@ module.exports = function(grunt) {
         'clean:finalize_build'
     ]);
     grunt.registerTask('default', ['build']);
+    grunt.registerTask('lint-ui', ['jshint']);
     grunt.task.loadTasks('grunt');
 };

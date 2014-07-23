@@ -16,7 +16,7 @@
         },
         "colors": {
           "version": "0.6.2",
-          "from": "colors@~0.6.0-1"
+          "from": "colors@~0.6.2"
         },
         "dateformat": {
           "version": "1.0.2-1.2.3",
@@ -98,7 +98,7 @@
         },
         "nopt": {
           "version": "1.0.10",
-          "from": "nopt@~1.0.0",
+          "from": "nopt@~1.0.10",
           "dependencies": {
             "abbrev": {
               "version": "1.0.5",
@@ -175,12 +175,12 @@
       }
     },
     "grunt-bower-task": {
-      "version": "0.3.4",
-      "from": "grunt-bower-task@~0.3.4",
+      "version": "0.4.0",
+      "from": "grunt-bower-task@",
       "dependencies": {
         "bower": {
           "version": "1.3.8",
-          "from": "bower@~1.3.8",
+          "from": "bower@~1.3.0",
           "dependencies": {
             "abbrev": {
               "version": "1.0.5",
@@ -192,7 +192,7 @@
             },
             "bower-config": {
               "version": "0.5.2",
-              "from": "bower-config@~0.5.0",
+              "from": "bower-config@~0.5.2",
               "dependencies": {
                 "graceful-fs": {
                   "version": "2.0.3",
@@ -220,7 +220,7 @@
             },
             "bower-endpoint-parser": {
               "version": "0.2.2",
-              "from": "bower-endpoint-parser@~0.2.0"
+              "from": "bower-endpoint-parser@~0.2.2"
             },
             "bower-json": {
               "version": "0.4.0",
@@ -232,7 +232,7 @@
                 },
                 "graceful-fs": {
                   "version": "2.0.3",
-                  "from": "graceful-fs@~2.0.1"
+                  "from": "graceful-fs@~2.0.0"
                 },
                 "intersect": {
                   "version": "0.0.3",
@@ -250,7 +250,7 @@
               "dependencies": {
                 "async": {
                   "version": "0.2.10",
-                  "from": "async@~0.2.8"
+                  "from": "async@~0.2.6"
                 },
                 "graceful-fs": {
                   "version": "2.0.3",
@@ -524,7 +524,7 @@
                 },
                 "minimatch": {
                   "version": "0.3.0",
-                  "from": "minimatch@0.3",
+                  "from": "minimatch@^0.3.0",
                   "dependencies": {
                     "sigmund": {
                       "version": "1.0.0",
@@ -644,7 +644,7 @@
                 },
                 "mute-stream": {
                   "version": "0.0.4",
-                  "from": "mute-stream@0.0.4"
+                  "from": "mute-stream@~0.0.4"
                 },
                 "readline2": {
                   "version": "0.1.0",
@@ -768,7 +768,7 @@
                   "dependencies": {
                     "mkdirp": {
                       "version": "0.3.5",
-                      "from": "mkdirp@~0.3.5"
+                      "from": "mkdirp@0.3"
                     },
                     "js-yaml": {
                       "version": "3.0.2",
@@ -846,7 +846,7 @@
                     },
                     "mute-stream": {
                       "version": "0.0.4",
-                      "from": "mute-stream@~0.0.4"
+                      "from": "mute-stream@0.0.4"
                     },
                     "through": {
                       "version": "2.3.4",
@@ -1097,7 +1097,7 @@
               "from": "semver@~2.3.0"
             },
             "shell-quote": {
-              "version": "1.4.1",
+              "version": "1.4.2",
               "from": "shell-quote@~1.4.1",
               "dependencies": {
                 "jsonify": {
@@ -1132,7 +1132,7 @@
                 },
                 "inherits": {
                   "version": "2.0.1",
-                  "from": "inherits@2"
+                  "from": "inherits@~2.0.1"
                 }
               }
             },
@@ -1162,7 +1162,7 @@
                       "dependencies": {
                         "ansi-regex": {
                           "version": "0.2.1",
-                          "from": "ansi-regex@^0.2.0"
+                          "from": "ansi-regex@^0.2.1"
                         }
                       }
                     },
@@ -1172,7 +1172,7 @@
                       "dependencies": {
                         "ansi-regex": {
                           "version": "0.2.1",
-                          "from": "ansi-regex@^0.2.0"
+                          "from": "ansi-regex@^0.2.1"
                         }
                       }
                     },
@@ -1243,7 +1243,7 @@
                           "from": "registry-url@^0.1.0",
                           "dependencies": {
                             "npmconf": {
-                              "version": "2.0.1",
+                              "version": "2.0.3",
                               "from": "npmconf@^2.0.1",
                               "dependencies": {
                                 "config-chain": {
@@ -1258,7 +1258,7 @@
                                 },
                                 "inherits": {
                                   "version": "2.0.1",
-                                  "from": "inherits@~2.0.1"
+                                  "from": "inherits@~2.0.0"
                                 },
                                 "ini": {
                                   "version": "1.2.1",
@@ -1651,44 +1651,16 @@
       "from": "grunt-jslint@~1.1.1",
       "dependencies": {
         "jslint": {
-          "version": "0.5.2",
+          "version": "0.6.1",
           "from": "jslint@>=0.5.0",
           "dependencies": {
-            "nopt": {
-              "version": "1.0.10",
-              "from": "nopt@~1.0.0",
-              "dependencies": {
-                "abbrev": {
-                  "version": "1.0.5",
-                  "from": "abbrev@1"
-                }
-              }
-            },
-            "readable-stream": {
-              "version": "1.0.27-1",
-              "from": "readable-stream@~1.0.0",
-              "dependencies": {
-                "core-util-is": {
-                  "version": "1.0.1",
-                  "from": "core-util-is@~1.0.0"
-                },
-                "isarray": {
-                  "version": "0.0.1",
-                  "from": "isarray@0.0.1"
-                },
-                "string_decoder": {
-                  "version": "0.10.25-1",
-                  "from": "string_decoder@~0.10.x"
-                },
-                "inherits": {
-                  "version": "2.0.1",
-                  "from": "inherits@2"
-                }
-              }
+            "exit": {
+              "version": "0.1.2",
+              "from": "exit@^0.1.2"
             },
             "glob": {
-              "version": "3.2.11",
-              "from": "glob@~3.2.8",
+              "version": "4.0.4",
+              "from": "glob@^4.0.4",
               "dependencies": {
                 "inherits": {
                   "version": "2.0.1",
@@ -1696,7 +1668,7 @@
                 },
                 "minimatch": {
                   "version": "0.3.0",
-                  "from": "minimatch@0.3",
+                  "from": "minimatch@^0.3.0",
                   "dependencies": {
                     "lru-cache": {
                       "version": "2.5.0",
@@ -1707,6 +1679,24 @@
                       "from": "sigmund@~1.0.0"
                     }
                   }
+                },
+                "once": {
+                  "version": "1.3.0",
+                  "from": "once@^1.3.0"
+                },
+                "graceful-fs": {
+                  "version": "3.0.2",
+                  "from": "graceful-fs@^3.0.2"
+                }
+              }
+            },
+            "nopt": {
+              "version": "3.0.1",
+              "from": "nopt@^3.0.0",
+              "dependencies": {
+                "abbrev": {
+                  "version": "1.0.5",
+                  "from": "abbrev@1"
                 }
               }
             }
@@ -1807,7 +1797,7 @@
           "from": "mime@1.2.x"
         },
         "request": {
-          "version": "2.37.0",
+          "version": "2.38.0",
           "from": "request@>=2.12.0",
           "dependencies": {
             "qs": {
@@ -1911,6 +1901,10 @@
             "aws-sign2": {
               "version": "0.5.0",
               "from": "aws-sign2@~0.5.0"
+            },
+            "stringstream": {
+              "version": "0.0.4",
+              "from": "stringstream@~0.0.4"
             }
           }
         },

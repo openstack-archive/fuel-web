@@ -14,9 +14,10 @@
  * under the License.
  **/
 module.exports = function(grunt) {
+    var pkg = grunt.file.readJSON('package.json');
     var staticDir = grunt.option('static-dir') || '/tmp/static_compressed';
     grunt.initConfig({
-        pkg: grunt.file.readJSON('package.json'),
+        pkg: pkg,
         requirejs: {
             compile: {
                 options: {
@@ -145,16 +146,10 @@ module.exports = function(grunt) {
         }
     });
 
-    grunt.loadNpmTasks('grunt-contrib-requirejs');
-    grunt.loadNpmTasks('grunt-contrib-less');
-    grunt.loadNpmTasks('grunt-contrib-clean');
-    grunt.loadNpmTasks('grunt-jison');
-    grunt.loadNpmTasks('grunt-cleanempty');
-    grunt.loadNpmTasks('grunt-text-replace');
-    grunt.loadNpmTasks('grunt-git-revision');
-    grunt.loadNpmTasks('grunt-jslint');
-    grunt.loadNpmTasks('grunt-bower-task');
-    grunt.loadNpmTasks('grunt-debug-task');
+    Object.keys(pkg.devDependencies)
+        .filter(function(npmTaskName) { return npmTaskName.indexOf('grunt-') === 0; })
+        .forEach(grunt.loadNpmTasks.bind(grunt));
+
     grunt.registerTask('trimstatic', ['clean', 'cleanempty']);
     grunt.registerTask('build', ['bower', 'less', 'requirejs', 'trimstatic', 'revision', 'replace']);
     grunt.registerTask('default', ['build']);

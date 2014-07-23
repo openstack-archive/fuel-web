@@ -213,7 +213,7 @@ class Node(Base):
         ).all()
 
     @property
-    def admin_interface(self):
+    def admin_interface(self, is_provision=False):
         """Iterate over interfaces, if admin subnet include
         ip address of current interface then return this interface.
 
@@ -221,7 +221,7 @@ class Node(Base):
         """
         # TODO(enchantner): move to object
         from nailgun.network.manager import NetworkManager
-        return NetworkManager.get_admin_interface(self)
+        return NetworkManager.get_admin_interface(self, is_provision)
 
     def _check_interface_has_required_params(self, iface):
         return bool(iface.get('name') and iface.get('mac'))

@@ -43,4 +43,4 @@ class TestProvisioningSerializer(BaseIntegrationTest):
             ).first()
             self.assertEqual(
                 node['kernel_options']['netcfg/choose_interface'],
-                node_db.admin_interface.mac)
+                node_db.admin_interface().mac)

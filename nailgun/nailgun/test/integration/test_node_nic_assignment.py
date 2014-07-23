@@ -425,8 +425,8 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         self.env.create_node(api=True, meta=meta, mac=mac1,
                              cluster_id=cluster['id'])
         node_db = self.env.nodes[0]
-        self.assertEqual(node_db.admin_interface.mac, mac2)
-        self.assertEqual(node_db.admin_interface.ip_addr, admin_ip)
+        self.assertEqual(node_db.admin_interface().mac, mac2)
+        self.assertEqual(node_db.admin_interface().ip_addr, admin_ip)
 
         meta = deepcopy(node_db.meta)
         for interface in meta['interfaces']:
@@ -446,8 +446,8 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         self.db.refresh(node_db)
-        self.assertEqual(node_db.admin_interface.mac, mac2)
-        self.assertEqual(node_db.admin_interface.ip_addr, None)
+        self.assertEqual(node_db.admin_interface().mac, mac2)
+        self.assertEqual(node_db.admin_interface().ip_addr, None)
 
         resp = self.app.put(
             reverse('NodeCollectionHandler'),
@@ -458,8 +458,8 @@ class TestNodeNICAdminAssigning(BaseIntegrationTest):
         self.assertEqual(resp.status_code, 200)
 
         self.db.refresh(node_db)
-        self.assertEqual(node_db.admin_interface.mac, mac1)
-        self.assertEqual(node_db.admin_interface.ip_addr, admin_ip)
+        self.assertEqual(node_db.admin_interface().mac, mac1)
+        self.assertEqual(node_db.admin_interface().ip_addr, admin_ip)
 
 
 class TestNodePublicNetworkToNICAssignment(BaseIntegrationTest):

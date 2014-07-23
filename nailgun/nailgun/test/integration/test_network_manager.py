@@ -339,7 +339,7 @@ class TestNovaNetworkManager(BaseIntegrationTest):
         self.node_db = self.env.nodes[0]
 
     def test_get_default_nic_assignment(self):
-        admin_nic_id = self.node_db.admin_interface.id
+        admin_nic_id = self.node_db.admin_interface().id
         admin_nets = [n.name for n in self.db.query(
             NodeNICInterface).get(admin_nic_id).assigned_networks_list]
 

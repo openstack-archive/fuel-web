@@ -411,7 +411,7 @@ class NetworkManager(object):
 
             if to_assign_ids:
                 allowed_ids = \
-                    ng_wo_admin_ids if nic != node.admin_interface else ng_ids
+                    ng_wo_admin_ids if nic != cls.get_admin_interface(node) else ng_ids
                 can_assign = [ng_id for ng_id in to_assign_ids
                               if ng_id in allowed_ids]
                 assigned_ids = set()
@@ -499,7 +499,7 @@ class NetworkManager(object):
             'netmask': str(net_cidr.netmask),
             'brd': str(net_cidr.broadcast),
             'gateway': net.gateway,
-            'dev': node.admin_interface.name
+            'dev': cls.get_admin_interface(node).name
         }
 
     @classmethod
@@ -790,13 +790,18 @@ class NetworkManager(object):
         }
 
     @classmethod
-    def get_admin_interface(cls, node):
+    def get_admin_interface(cls, node, is_provision=False):
         try:
-            return cls._get_interface_by_network_name(
+            interface = cls._get_interface_by_network_name(
                 node, 'fuelweb_admin')
+            if not is_provision:
+                return interface
         except errors.CanNotFindInterface:
             logger.debug(u'Cannot find interface with assigned admin '
                          'network group on %s', node.full_name)
+        else:
+            if interface.type not in consts.NETWORK_INTERFACE_TYPES.bond:
+                return interface
 
         for interface in node.nic_interfaces:
             if cls.is_ip_belongs_to_admin_subnet(interface.ip_addr):

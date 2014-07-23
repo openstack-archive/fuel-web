@@ -49,9 +49,9 @@ implement this feature, these steps were followed:
 #. Test your Nailgun changes::
 
     cd fuel-web
-    ./run_tests.sh --no-jslint --no-webui
+    ./run_tests.sh --no-jshint --no-webui
     ./run_tests.sh --flake8
-    ./run_tests.sh --jslint
+    ./run_tests.sh --jshint
     ./run_tests.sh --webui
 
 #. You should also test Nailgun in fake UI mode by following

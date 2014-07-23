@@ -16,6 +16,9 @@
 module.exports = function(grunt) {
     var pkg = grunt.file.readJSON('package.json');
     var staticDir = grunt.option('static-dir') || '/tmp/static_compressed';
+    var staticBuildPreparationDir = staticDir + '/_prepare_build';
+    var staticBuildDir = staticDir + '/_build';
+
     grunt.initConfig({
         pkg: pkg,
         requirejs: {
@@ -33,7 +36,8 @@ module.exports = function(grunt) {
                     },
                     map: {
                         '*': {
-                            'css': 'require-css'
+                            'css': 'require-css',
+                            'JSXTransformer': 'empty:'
                         }
                     },
                     modules: [
@@ -45,30 +49,40 @@ module.exports = function(grunt) {
                 }
             }
         },
-        jslint: {
-            client: {
-                src: [
-                    'static/js/**/*.js',
-                    '!static/js/libs/**',
-                    '!static/js/expression_parser.js'
-                ],
-                directives: {
-                    predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
-                    ass: true,
-                    browser: true,
-                    unparam: true,
-                    nomen: true,
-                    eqeq: true,
-                    vars: true,
-                    white: true,
-                    es5: false
-                }
+        jshint: {
+            options: {
+                reporter: require('jshint-stylish'),
+                curly: true,
+                eqeqeq: false,
+                eqnull: false,
+                browser: true,
+                globals: {
+                    jQuery: true
+                },
+                "-W041": false
+            },
+            all: [
+                'static/js/**/*.js',
+                'static/js/**/*.jsx',
+                '!static/js/libs/**',
+                '!static/js/expression_parser.js'
+            ],
+            directives: {
+                predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
+                ass: true,
+                browser: true,
+                unparam: true,
+                nomen: true,
+                eqeq: true,
+                vars: true,
+                white: true,
+                es5: false
             }
         },
         less: {
             all: {
                 src: 'static/css/styles.less',
-                dest: 'static/css/styles.css',
+                dest: staticBuildPreparationDir + '/static/css/styles.css',
             }
         },
         bower: {
@@ -88,6 +102,69 @@ module.exports = function(grunt) {
                 }
             }
         },
+        react: {
+            compile: {
+                files: [
+                    {
+                        expand: true,
+                        src: [staticBuildPreparationDir + '/static/**/*.jsx'],
+                        ext: '.js'
+                    }
+                ]
+            }
+        },
+        copy: {
+            prepare_build: {
+                files: [
+                    {
+                        expand: true,
+                        src: [
+                            'static/**',
+                            '!**/*.less',
+                            '!**/*.js',
+                            '!**/*.jsx',
+                            '!**/*.jison'
+                        ],
+                        dest: staticBuildPreparationDir + '/'
+                    }
+                ]
+            },
+            preprocess_js: {
+                files: [
+                    {
+                        expand: true,
+                        src: [
+                            'static/**/*.js',
+                            'static/**/*.jsx',
+                            '!**/JSXTransformer.js'
+                        ],
+                        dest: staticBuildPreparationDir + '/'
+                    }
+                ],
+                options: {
+                    process: function (content, path) {
+                        content = content.replace(/jsx!/g, '');
+                        if (/\.jsx$/.test(path)) {
+                            content = '/** @jsx React.DOM */\n' + content;
+                        }
+                        return content;
+                    }
+                }
+            },
+            finalize_build: {
+                files: [
+                    {
+                        expand: true,
+                        cwd: staticBuildDir,
+                        src: ['**'],
+                        dest: staticDir
+                    }
+                ],
+                options: {
+                    force: true
+                }
+            }
+        },
         clean: {
             trim: {
                 expand: true,
@@ -102,6 +179,17 @@ module.exports = function(grunt) {
                     'templates',
                     'i18n'
                 ]
+            },
+            jsx: {
+                expand: true,
+                cwd: staticBuildPreparationDir,
+                src: ['**/*.jsx']
+            },
+            prepare_build: {
+                src: [staticDir]
+            },
+            finalize_build: {
+                src: [staticBuildDir, staticBuildPreparationDir]
             },
             options: {
                 force: true
@@ -151,7 +239,22 @@ module.exports = function(grunt) {
         .forEach(grunt.loadNpmTasks.bind(grunt));
 
     grunt.registerTask('trimstatic', ['clean', 'cleanempty']);
-    grunt.registerTask('build', ['bower', 'less', 'requirejs', 'trimstatic', 'revision', 'replace']);
+    grunt.registerTask('build', [
+        'bower',
+        'clean:prepare_build',
+        'copy:prepare_build',
+        'copy:preprocess_js',
+        'less',
+        'react',
+        'clean:jsx',
+        'requirejs',
+        'clean:trim',
+        'cleanempty:trim',
+        'revision',
+        'replace',
+        'copy:finalize_build',
+        'clean:finalize_build'
+    ]);
     grunt.registerTask('default', ['build']);
     grunt.task.loadTasks('grunt');
 };

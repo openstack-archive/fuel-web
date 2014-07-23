@@ -7,9 +7,10 @@ Development Documentation
    :maxdepth: 3
    :numbered:
 
-   develop/quick_start
    develop/architecture
    develop/sequence
+   develop/quick_start
+   develop/addition_examples
    develop/env
    develop/system_tests/tree
    develop/nailgun

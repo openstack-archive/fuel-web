@@ -306,22 +306,23 @@ define(['utils', 'deepModel'], function(utils) {
             return response.editable;
         },
         toJSON: function(options) {
-            var result = this.constructor.__super__.toJSON.call(this, options);
-            _.each(result, function(group, groupName) {
-                var metadata = _.omit(group.metadata, 'disabled', 'visible');
-                if (_.isEmpty(metadata)) {
-                    delete result[groupName].metadata;
-                } else {
-                    result[groupName].metadata = metadata;
-                }
-                _.each(group, function(setting, settingName) {
-                    group[settingName] = _.omit(setting, 'disabled', 'hasDependentRole', 'visible');
-                    _.each(setting.values, function(option, index) {
-                        setting.values[index] = _.omit(option, 'disabled', 'visible');
+            var currentSettings = this.constructor.__super__.toJSON.call(this, options);
+            if (this.initialAttributes) {
+                var result = _.cloneDeep(this.initialAttributes);
+                _.each(currentSettings, function(group, groupName) {
+                    _.each(group, function(setting, settingName) {
+                        if (settingName == 'metadata') {
+                            if (!_.isUndefined(setting.toggleable)) {
+                                result[groupName][settingName].enabled = setting.enabled;
+                            }
+                        } else  {
+                            result[groupName][settingName].value = setting.value;
+                        }
                     });
-                });
-            }, this);
-            return {editable: result};
+                }, this);
+                return {editable: result};
+            }
+            return {editable: currentSettings};
         },
         processRestrictions: function(configModels) {
             var handleRestrictions = function(restrictions) {
@@ -344,6 +345,7 @@ define(['utils', 'deepModel'], function(utils) {
                     _.each(setting.values, calculateState);
                 });
             });
+            return this.attributes;
         },
         validate: function(attrs) {
             var errors = [];

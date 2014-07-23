@@ -700,8 +700,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         """
         # Get Mellanox data
         neutron_mellanox_data =  \
-            node.cluster.attributes.editable\
-            .get('neutron_mellanox', {})
+            node.cluster.attributes.editable.get('neutron_mellanox', {})
 
         # Get storage data
         storage_data = node.cluster.attributes.editable.get('storage', {})
@@ -714,11 +713,12 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         # Find Physical port for VFs generation
         if 'plugin' in neutron_mellanox_data and \
-           neutron_mellanox_data['plugin']['value'] == 'ethernet':
+                neutron_mellanox_data['plugin']['value'] == 'ethernet':
             node_attrs = cls.set_mellanox_ml2_config(node_attrs, node, nm)
 
         # Fix network scheme to have physical port for RDMA if iSER enabled
-        if 'iser' in storage_data and storage_data['iser']['value']:
+        if 'iser' in storage_data and storage_data['iser']['value'] and \
+                neutron_mellanox_data:
             node_attrs = cls.fix_iser_port(node_attrs, node, nm)
 
         return node_attrs

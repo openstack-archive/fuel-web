@@ -159,7 +159,7 @@ function(React, utils, models, componentMixins, dialogs) {
         showNodeInfo: function(id) {
             var node = new models.Node({id: id});
             node.deferred = node.fetch();
-            (new dialogViews.ShowNodeInfoDialog({node: node})).render();
+            (new dialogs.ShowNodeInfoDialog({node: node})).render();
         },
         toggle: function(visible) {
             this.props.togglePopover(visible);

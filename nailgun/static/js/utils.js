@@ -245,12 +245,12 @@ define(['require', 'expression_parser', 'react'], function(require, ExpressionPa
         validateIpCorrespondsToCIDR: function(cidr, ip) {
             var result = true;
             if (cidr) {
-                /*jslint bitwise: true*/
+                /* jshint bitwise: false */
                 var networkAddressToInt = utils.ipIntRepresentation(cidr.split('/')[0]);
                 var netmask = ~((Math.pow(2, 32) - 1) >>> cidr.split('/')[1]);
                 var ipToInt = utils.ipIntRepresentation(ip);
                 result = (networkAddressToInt & netmask).toString(16) == (ipToInt & netmask).toString(16);
-                /*jslint bitwise: false*/
+                /* jshint bitwise: true */
             }
             return result;
         },

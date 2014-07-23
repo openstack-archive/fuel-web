@@ -57,10 +57,6 @@ class ProvisioningSerializer(object):
     @classmethod
     def serialize_node(cls, cluster_attrs, node):
         """Serialize a single node."""
-        mlnx_num_of_vf = cluster_attrs['neutron_mellanox']['vf_num']
-        mlnx_plugin_mode = cluster_attrs['neutron_mellanox']['plugin']
-        mlnx_is_iser_enabled = cluster_attrs['storage']['iser']
-
         serialized_node = {
             'uid': node.uid,
             'power_address': node.ip,
@@ -97,9 +93,6 @@ class ProvisioningSerializer(object):
                 'mco_password': settings.MCO_PASSWORD,
                 'mco_connector': settings.MCO_CONNECTOR,
                 'mco_enable': 1,
-                'mlnx_vf_num': mlnx_num_of_vf,
-                'mlnx_plugin_mode': mlnx_plugin_mode,
-                'mlnx_iser_enabled': mlnx_is_iser_enabled,
                 'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', '')}}
 
         orchestrator_data = objects.Release.get_orchestrator_data_dict(
@@ -111,6 +104,14 @@ class ProvisioningSerializer(object):
         vlan_splinters = cluster_attrs.get('vlan_splinters', None)
         if vlan_splinters == 'kernel_lt':
             serialized_node['ks_meta']['kernel_lt'] = 1
+
+        mellanox_data = cluster_attrs.get('neutron_mellanox')
+        if mellanox_data:
+            serialized_node['ks_meta'].update({
+                'mlnx_vf_num': mellanox_data['vf_num'],
+                'mlnx_plugin_mode': mellanox_data['plugin'],
+                'mlnx_iser_enabled': cluster_attrs['storage']['iser'],
+            })
 
         serialized_node.update(cls.serialize_interfaces(node))
 

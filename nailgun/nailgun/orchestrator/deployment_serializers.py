@@ -698,28 +698,30 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         merged with common attributes, if mellanox plugin or iSER storage
         enabled.
         """
-        # Get Mellanox data
-        neutron_mellanox_data =  \
-            node.cluster.attributes.editable\
-            .get('neutron_mellanox', {})
-
-        # Get storage data
-        storage_data = node.cluster.attributes.editable.get('storage', {})
-
-        # Get network manager
-        nm = objects.Node.get_network_manager(node)
-
         # Init mellanox dict
         node_attrs['neutron_mellanox'] = {}
 
-        # Find Physical port for VFs generation
-        if 'plugin' in neutron_mellanox_data and \
-           neutron_mellanox_data['plugin']['value'] == 'ethernet':
-            node_attrs = cls.set_mellanox_ml2_config(node_attrs, node, nm)
+        # Get Mellanox data
+        neutron_mellanox_data = objects.Cluster.get_attributes(node.cluster)\
+            .editable.get('neutron_mellanox')
 
-        # Fix network scheme to have physical port for RDMA if iSER enabled
-        if 'iser' in storage_data and storage_data['iser']['value']:
-            node_attrs = cls.fix_iser_port(node_attrs, node, nm)
+        if neutron_mellanox_data:
+
+            # Get storage data
+            storage_data = objects.Cluster.get_attributes(node.cluster)\
+                .editable.get('storage', {})
+
+            # Get network manager
+            nm = objects.Node.get_network_manager(node)
+
+            # Find Physical port for VFs generation
+            if 'plugin' in neutron_mellanox_data and \
+                    neutron_mellanox_data['plugin']['value'] == 'ethernet':
+                node_attrs = cls.set_mellanox_ml2_config(node_attrs, node, nm)
+
+            # Fix network scheme to have physical port for RDMA if iSER enabled
+            if 'iser' in storage_data and storage_data['iser']['value']:
+                node_attrs = cls.fix_iser_port(node_attrs, node, nm)
 
         return node_attrs
 

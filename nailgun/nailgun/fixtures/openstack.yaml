@@ -212,7 +212,6 @@
               error: "Invalid cluster list"
         nsx_plugin:
           metadata:
-            toggleable: true
             enabled: false
             label: "VMware NSX"
             weight: 20
@@ -966,6 +965,7 @@
                 - "cluster:net_provider": "neutron"
                 - "cluster:net_l23_provider": "nsx"
                 - "cluster:net_segment_type": "gre"
+                - "settings:nsx_plugin.metadata.enabled": "true"
       Storage:
         cinder:
           type: "radio"

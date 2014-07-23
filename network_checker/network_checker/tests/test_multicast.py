@@ -67,7 +67,7 @@ class TestSystemMulticastVerification(unittest.TestCase):
 
     def test_mutlicast_with_config(self):
         config = {"uid": "112", "group": "225.0.0.250",
-                  "port": 8890, "iface": "eth0"}
+                  "port": 8890, "ifaces": ["eth0"]}
         config_json = json.dumps(config)
 
         init_args = ["fuel-netcheck", "multicast", "serve",

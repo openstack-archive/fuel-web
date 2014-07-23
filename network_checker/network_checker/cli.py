@@ -23,7 +23,7 @@ Multicast config options:
   ttl: 5
   uid: '1001'
   repeat: 3
-  iface: eth0
+  ifaces: ['eth0']
   timeout: 10
 
 """

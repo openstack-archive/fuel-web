@@ -380,27 +380,20 @@ class Cluster(NailgunObject):
     @classmethod
     def get_ifaces_for_network_in_cluster(
             cls, instance, net):
-        """Method for receiving node_id:iface pairs for all nodes in
-        specific cluster
+        """Method for receiving all ifaces for all nodes in cluster
 
         :param instance: Cluster instance
         :param net: Nailgun specific network name
         :type net: str
-        :returns: List of node_id, iface pairs for all nodes in cluster.
+        :returns: List of ifaces.
         """
-        nics_db = db().query(
-            models.NodeNICInterface.node_id,
-            models.NodeNICInterface.name).filter(
-                models.NodeNICInterface.node.has(cluster_id=instance.id),
-                models.NodeNICInterface.assigned_networks_list.any(name=net)
-            )
-        bonds_db = db().query(
-            models.NodeBondInterface.node_id,
-            models.NodeBondInterface.name).filter(
-                models.NodeBondInterface.node.has(cluster_id=instance.id),
-                models.NodeBondInterface.assigned_networks_list.any(name=net)
-            )
-        return nics_db.union(bonds_db)
+        nics_db = db().query(models.NodeNICInterface).filter(
+            models.NodeNICInterface.node.has(cluster_id=instance.id),
+            models.NodeNICInterface.assigned_networks_list.any(name=net))
+        bonds_db = db().query(models.NodeBondInterface).filter(
+            models.NodeBondInterface.node.has(cluster_id=instance.id),
+            models.NodeBondInterface.assigned_networks_list.any(name=net))
+        return list(nics_db) + list(bonds_db)
 
 
 class ClusterCollection(NailgunCollection):

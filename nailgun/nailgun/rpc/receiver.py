@@ -853,7 +853,7 @@ class NailgunReceiver(object):
                            in task.cache['args']['nodes'])
             not_received_nodes = node_ids - set(response.keys())
             if not_received_nodes:
-                msg = (u'No answer from nodes: {0}').format(
+                msg = (u'Multicast: No answer from nodes: {0}').format(
                     list(not_received_nodes))
                 errors.append(msg)
             for node_id, received_ids in response.iteritems():
@@ -863,8 +863,9 @@ class NailgunReceiver(object):
                           'not_received': list(not_received_ids)}
                 results.append(result)
                 if not_received_ids:
-                    msg = (u'Not received ids {0}'
-                           u' for node {1}.').format(not_received_ids, node_id)
+                    msg = (u'Multicast: Not received ids {0}'
+                           u' for node {1}.').format(list(not_received_ids),
+                                                     node_id)
                     errors.append(msg)
 
             task.message = '\n'.join(errors)

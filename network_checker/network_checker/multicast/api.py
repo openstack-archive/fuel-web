@@ -28,65 +28,75 @@ SO_BINDTODEVICE = 25
 class MulticastChecker(object):
 
     def __init__(self, group='225.0.0.250', port='13100',
-                 uid='999', iface='eth0',
+                 uid='999', ifaces=['eth0'],
                  ttl=1, repeat=1, timeout=3):
         self.group = group
         self.port = int(port)
         self.ttl = ttl
-        self.uid = uid
+        self.uid = str(uid)
         self.repeat = repeat
         self.timeout = timeout
-        self.receiver = None
+        self.receivers = []
+        self.listeners = []
         self.messages = []
-        self.iface = iface
+        self.ifaces = ifaces
 
-    def send(self):
+    def _send_iface(self, iface):
         ttl_data = struct.pack('@i', self.ttl)
         _socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         _socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL,
                            ttl_data)
         _socket.setsockopt(
             socket.SOL_SOCKET,
-            SO_BINDTODEVICE, self.iface)
+            SO_BINDTODEVICE, iface)
 
         for _ in xrange(self.repeat):
             _socket.sendto(self.uid, (self.group, self.port))
+
+    def send(self):
+        for iface in self.ifaces:
+            self._send_iface(iface)
         return {'group': self.group,
                 'port': self.port,
-                'iface': self.iface,
+                'ifaces': self.ifaces,
                 'uid': self.uid}
 
     def listen(self):
-        self._register_group()
-        self._start_listeners()
+        for iface in self.ifaces:
+            self._register_group(iface)
+            self._start_listener(iface)
         return {'group': self.group,
                 'port': self.port,
-                'iface': self.iface,
+                'ifaces': self.ifaces,
                 'uid': self.uid}
 
-    def _register_group(self):
-        self.receiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.receiver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.receiver.setsockopt(
+    def _register_group(self, iface):
+        receiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        receiver.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        receiver.setsockopt(
             socket.SOL_SOCKET,
-            SO_BINDTODEVICE, self.iface)
-        self.receiver.bind(('', self.port))
+            SO_BINDTODEVICE, iface)
+        receiver.bind(('', self.port))
         group_packed = socket.inet_aton(self.group)
         group_data = struct.pack('4sL', group_packed, socket.INADDR_ANY)
-        self.receiver.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
-                                 group_data)
+        receiver.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP,
+                            group_data)
+        self.receivers.append(receiver)
 
-    def _start_listeners(self):
-        self.listener = pcap.pcap(self.iface)
+    def _start_listener(self, iface):
+        listener = pcap.pcap(iface)
         udp_filter = 'udp and dst port {0}'.format(self.port)
-        self.listener.setfilter(udp_filter)
+        listener.setfilter(udp_filter)
+        self.listeners.append(listener)
 
     def get_info(self):
-        for sock, pack in self.listener.readpkts():
-            pack = scapy.Ether(pack)
-            data, _ = pack[scapy.UDP].extract_padding(pack[scapy.UDP].load)
-            self.messages.append(data.decode())
-        self.receiver.close()
+        for listener in self.listeners:
+            for sock, pack in listener.readpkts():
+                pack = scapy.Ether(pack)
+                data, _ = pack[scapy.UDP].extract_padding(pack[scapy.UDP].load)
+                self.messages.append(data.decode())
+        for receiver in self.receivers:
+            receiver.close()
         return list(set(self.messages))
 
     def test(self):

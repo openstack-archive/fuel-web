@@ -26,6 +26,7 @@ from sqlalchemy.orm import object_mapper
 
 import nailgun.rpc as rpc
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.consts import NODE_STATUSES
@@ -532,8 +533,15 @@ class MulticastVerificationTask(BaseNetworkVerification):
         # corosync uses for communication - management in our case
         all_nics = objects.cluster.Cluster.get_ifaces_for_network_in_cluster(
             self.task.cluster, 'management')
-        return [dict(self.config, iface=nic[1], uid=str(nic[0]))
-                for nic in all_nics]
+        config = []
+        for nic in all_nics:
+            if nic.type is consts.NETWORK_INTERFACE_TYPES.bond:
+                ifaces = [n.name for n in nic.slaves]
+            else:
+                ifaces = [nic.name]
+            config.append(dict(self.config,
+                          ifaces=ifaces, uid=str(nic.node_id)))
+        return config
 
     @classmethod
     def enabled(cls, cluster):

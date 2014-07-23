@@ -790,13 +790,18 @@ class NetworkManager(object):
         }
 
     @classmethod
-    def get_admin_interface(cls, node):
+    def get_admin_interface(cls, node, is_provision=False):
         try:
-            return cls._get_interface_by_network_name(
+            interface = cls._get_interface_by_network_name(
                 node, 'fuelweb_admin')
+            if not is_provision:
+                return interface
         except errors.CanNotFindInterface:
             logger.debug(u'Cannot find interface with assigned admin '
                          'network group on %s', node.full_name)
+        else:
+            if interface.type not in consts.NETWORK_INTERFACE_TYPES.bond:
+                return interface
 
         for interface in node.nic_interfaces:
             if cls.is_ip_belongs_to_admin_subnet(interface.ip_addr):

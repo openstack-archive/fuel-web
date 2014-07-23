@@ -70,6 +70,7 @@ function(React, utils, models, componentMixins, dialogViews) {
         },
         render: function() {
             return (
+                /* jshint ignore:start */
                 <div>
                     <div className="user-info-box">
                         {this.props.version.get('auth_required') && this.props.user.get('authenticated') &&
@@ -102,6 +103,7 @@ function(React, utils, models, componentMixins, dialogViews) {
                         {this.state.popoverVisible && <NotificationsPopover ref="popover" notifications={this.props.notifications} displayCount={this.notificationsDisplayCount} />}
                     </div>
                 </div>
+            /* jshint ignore:end */
             );
         }
     });
@@ -109,6 +111,7 @@ function(React, utils, models, componentMixins, dialogViews) {
     var NodeStats = React.Component.extend({
         render: function() {
             return (
+            /* jshint ignore:start */
                 <li className="navigation-bar-icon nodes-summary-container">
                     <div className="statistic">
                         {_.map(['total', 'unallocated'], function(prop) {
@@ -120,6 +123,7 @@ function(React, utils, models, componentMixins, dialogViews) {
                         }, this)}
                     </div>
                 </li>
+            /* jshint ignore:end */
             );
         }
     });
@@ -131,10 +135,12 @@ function(React, utils, models, componentMixins, dialogViews) {
         render: function() {
             var unreadNotifications = this.props.notifications.where({status: 'unread'});
             return (
+            /* jshint ignore:start */
                 <li className="navigation-bar-icon notifications" onClick={this.togglePopover}>
                     <i className="icon-comment"></i>
                     {unreadNotifications.length && <span className="badge badge-warning">{unreadNotifications.length}</span>}
                 </li>
+            /* jshint ignore:end */
             );
         }
     });
@@ -185,6 +191,7 @@ function(React, utils, models, componentMixins, dialogViews) {
             var showMore = (Backbone.history.getHash() != 'notifications') && this.props.notifications.length;
             var notifications = this.props.notifications.last(this.props.displayCount).reverse();
             return (
+            /* jshint ignore:start */
                 <div className="message-list-placeholder">
                     <ul className="message-list-popover">
                         {this.props.notifications.length ? (
@@ -202,6 +209,7 @@ function(React, utils, models, componentMixins, dialogViews) {
                     </ul>
                     {showMore && <div className="show-more-notifications"><a href="#notifications">{$.t('notifications_popover.view_all_button')}</a></div>}
                 </div>
+            /* jshint ignore:end */
             );
         }
     });
@@ -210,6 +218,7 @@ function(React, utils, models, componentMixins, dialogViews) {
         displayName: 'Footer',
         render: function () {
             return (
+            /* jshint ignore:start */
                 <div className="footer-box">
                     {_.contains(this.props.version.get('feature_groups'), 'mirantis') &&
                         <div>
@@ -233,6 +242,7 @@ function(React, utils, models, componentMixins, dialogViews) {
                         </div>
                     </div>
                 </div>
+            /* jshint ignore:end */
             );
         },
         setLocale: function(newLocale) {
@@ -266,6 +276,7 @@ function(React, utils, models, componentMixins, dialogViews) {
             this.setProps({path: path});
         },
         render: function() {
+        /* jshint ignore:start */
             return <ul className="breadcrumb">
                 {_.map(this.props.path, function(breadcrumb, index) {
                     if (_.isArray(breadcrumb)) {
@@ -277,6 +288,7 @@ function(React, utils, models, componentMixins, dialogViews) {
                     return <li key={index} className="active">{$.t('breadcrumbs.' + breadcrumb, {defaultValue: breadcrumb})}</li>;
                 })}
             </ul>;
+        /* jshint ignore:end */
         }
     });
 

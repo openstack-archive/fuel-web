@@ -590,7 +590,8 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-storage"],
-                                "tags": [102, 0]},
+                                "tags": [102, 0],
+                                "vlan_ids": [102, 0]},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-ex"],
@@ -598,7 +599,8 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-mgmt"],
-                                "tags": [101, 0]},
+                                "tags": [101, 0],
+                                "vlan_ids": [101, 0]},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth1", "br-fw-admin"],

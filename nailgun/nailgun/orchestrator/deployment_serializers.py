@@ -930,7 +930,8 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 attrs['transformations'].append({
                     'action': 'add-patch',
                     'bridges': ['br-%s' % netgroup['dev'], brname],
-                    'tags': [netgroup['vlan'], 0]
+                    'tags': [netgroup['vlan'], 0],
+                    'vlan_ids': [netgroup['vlan'], 0]
                 })
             else:
                 # FIXME! Should raise some exception I think.

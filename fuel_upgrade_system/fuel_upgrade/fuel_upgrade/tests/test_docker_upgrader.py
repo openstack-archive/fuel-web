@@ -42,10 +42,8 @@ class TestDockerUpgrader(BaseTestCase):
         self.supervisor_class.return_value = self.supervisor_mock
 
         with mock.patch('fuel_upgrade.engines.docker_engine.utils'):
-            with mock.patch('fuel_upgrade.engines.docker_engine.'
-                            'from_fuel_version', return_value='0'):
-                self.upgrader = DockerUpgrader(self.fake_config)
-                self.upgrader.upgrade_verifier = mock.MagicMock()
+            self.upgrader = DockerUpgrader(self.fake_config)
+            self.upgrader.upgrade_verifier = mock.MagicMock()
 
     def tearDown(self):
         self.docker_patcher.stop()

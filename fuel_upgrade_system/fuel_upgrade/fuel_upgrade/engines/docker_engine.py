@@ -25,7 +25,6 @@ from copy import deepcopy
 import docker
 import requests
 
-from fuel_upgrade.config import from_fuel_version
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade.health_checker import FuelUpgradeVerify
 from fuel_upgrade.supervisor_client import SupervisorClient
@@ -62,8 +61,7 @@ class DockerUpgrader(UpgradeEngine):
 
         self.from_version_path = self.config.from_version_path
         self.save_current_version_file()
-        self.from_version = from_fuel_version(
-            self.from_version_path, self.config.current_fuel_version_path)
+        self.from_version = self.config.from_version
         self.supervisor = SupervisorClient(self.config, self.from_version)
 
     def upgrade(self):

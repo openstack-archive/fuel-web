@@ -81,6 +81,15 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                         method = 'update';
                     }
                     if (version.get('auth_required') && !this.authExempt) {
+                        // FIXME(vkramskikh): manually moving success/error callbacks
+                        // to deferred-style callbacks. Everywhere in the code we use
+                        // deferreds, but backbone uses success/error callbacks. It
+                        // seems there is a bug somewhere: somtimes in long deferred
+                        // chains with .then() success/error callbacks are called when
+                        // deferred object is not resolved, so 'sync' event is
+                        // triggered but dfd.state() still returns 'pending'. This
+                        // leads to various bugs here and there.
+                        var callbacks = {};
                         // add keystone token to headers
                         return keystoneClient.authenticate()
                             .fail(function() {
@@ -90,8 +99,29 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                                 options = options || {};
                                 options.headers = options.headers || {};
                                 options.headers['X-Auth-Token'] = keystoneClient.token;
+                                _.each(['success', 'error'], function(callback) {
+                                    if (options[callback]) {
+                                        callbacks[callback] = options[callback];
+                                        delete options[callback];
+                                    }
+                                });
                                 return originalSync.call(this, method, model, options);
-                            }, this));
+                            }, this))
+                            .done(function() {
+                                if (callbacks.success) {
+                                    callbacks.success.apply(callbacks.success, arguments);
+                                }
+                            })
+                            .fail(function() {
+                                if (callbacks.error) {
+                                    callbacks.error.apply(callbacks.error, arguments);
+                                }
+                            })
+                            .fail(function(response) {
+                                if (response && response.status == 401) {
+                                    app.logout();
+                                }
+                            });
                     }
                     return originalSync.call(this, method, model, options);
                 };

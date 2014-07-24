@@ -44,7 +44,7 @@ casper.then(function() {
         this.then(function() {
             this.click('.btn-edit-disks');
         });
-        this.test.assertSelectorAppears('.edit-node-disks', 'Node disks configuration screen appears');
+        this.test.assertSelectorAppears('.disk-box', 'Node disks configuration screen appears');
     });
 
     this.then(function() {

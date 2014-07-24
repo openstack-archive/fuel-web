@@ -173,7 +173,7 @@ casper.then(function() {
     });
     this.loadPage('#cluster/1/actions').waitForSelector('#tab-actions > *');
     this.then(function() {
-        this.test.assertSelectorAppears('.action-item-controls .reset-environment-btn:disabled', 'Reset button is disabled after successful reset', 5000);
+        this.test.assertSelectorAppears('.action-item-controls .reset-environment-btn:disabled', 'Reset button is disabled after successful reset');
     });
 });
 

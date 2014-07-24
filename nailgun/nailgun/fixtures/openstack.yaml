@@ -18,19 +18,12 @@
         description: "The controller initiates orchestration activities and provides an external API.  Other components like Glance (image storage), Keystone (identity management), Horizon (OpenStack dashboard) and Nova-Scheduler are installed on the controller as well."
         conflicts:
           - compute
-          - zabbix-server
       compute:
         name: "Compute"
         description: "A compute node creates, manages and terminates virtual machine instances."
-        conflicts:
-          - controller
-          - mongo
-          - zabbix-server
       cinder:
         name: "Storage - Cinder LVM"
         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."
-        conflicts:
-          - zabbix-server
     networks_metadata:
       nova_network:
         networks:
@@ -508,16 +501,12 @@
       ceph-osd:
         name: "Storage - Ceph OSD"
         description: "Ceph storage can be configured to provide storage for block volumes (Cinder), images (Glance) and ephemeral instance storage (Nova). It can also provide object storage through the S3 and Swift API (See settings to enable each)."
-        conflicts:
-          - mongo
-          - zabbix-server
       mongo:
         name: "Telemetry - MongoDB"
         description: "A feature-complete and recommended database for storage of metering data from OpenStack Telemetry (Ceilometer)."
         conflicts:
           - compute
           - ceph-osd
-          - zabbix-server
         depends:
           - condition: "settings:additional_components.ceilometer.value == true"
             warning: "Ceilometer should be enabled"

@@ -255,7 +255,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 loading: this.loading,
                 provider: this.model.get('net_provider'),
                 locked: this.isLocked(),
-                segment_type: networkingParameters ? networkingParameters.get('segmentation_type') : null
+                segment_type: networkingParameters ? networkingParameters.get('segmentation_type') : null,
+                l23_provider: networkingParameters ? networkingParameters.get('net_l23_provider') : null
             })).i18n();
             if (this.loading.state() != 'pending') {
                 this.stickit(networkingParameters, {'input[name=net-manager]': 'net_manager'});

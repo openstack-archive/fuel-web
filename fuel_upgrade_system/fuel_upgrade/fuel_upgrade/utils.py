@@ -317,11 +317,10 @@ def copy_dir(source, destination, overwrite=True, symlinks=True):
         u'Copying "%s" -> "%s" [overwrite=%d symlinks=%d]',
         source, destination, overwrite, symlinks)
 
-    if overwrite or not os.path.exists(destination):
-        if os.path.exists(destination):
-            # we need remove destination folder for prevent
-            # copytree conflicts
+    if overwrite or not os.path.lexists(destination):
+        if os.path.lexists(destination):
             remove(destination, ignore_errors=True)
+
         shutil.copytree(source, destination, symlinks=True)
     else:
         logger.debug('Skip copying process')
@@ -335,7 +334,7 @@ def remove(path, ignore_errors=True):
     """
     logger.debug(u'Removing "%s"', path)
 
-    if ignore_errors and not os.path.exists(path):
+    if ignore_errors and not os.path.lexists(path):
         return
 
     if os.path.isdir(path) and not os.path.islink(path):

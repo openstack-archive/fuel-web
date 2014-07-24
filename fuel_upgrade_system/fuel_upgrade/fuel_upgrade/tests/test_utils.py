@@ -225,7 +225,7 @@ class TestUtils(BaseTestCase):
         utils.copy_dir(from_path, to_path)
         copy_mock.assert_called_once_with(from_path, to_path, symlinks=True)
 
-    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.lexists', return_value=True)
     @mock.patch('fuel_upgrade.utils.shutil.copytree')
     @mock.patch('fuel_upgrade.utils.remove')
     def test_copy_dir_overwrite(self, rm_mock, copy_mock, _):
@@ -431,7 +431,7 @@ class TestUtils(BaseTestCase):
         utils.remove('path')
         remove_mock.assert_called_once_with('path')
 
-    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
+    @mock.patch('fuel_upgrade.utils.os.path.lexists', return_value=False)
     @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=False)
     @mock.patch('fuel_upgrade.utils.os.remove')
     def test_remove_file_does_not_exist(self, remove_mock, _, __):

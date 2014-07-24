@@ -684,30 +684,30 @@
             weight: 50
           plugin:
             value: "disabled"
-            label: "Mellanox SR-IOV plugin"
+            label: "Mellanox drivers and SR-IOV plugin"
             weight: 60
             type: "radio"
             values:
               - data: "disabled"
-                label: "Disabled"
-                description: "Do not install Mellanox Neutron plugin"
+                label: "Mellanox drivers and plugins disabled"
+                description: "If selected, Mellanox drivers, Neutron and Cinder plugin will not be installed."
                 restrictions:
                   - "settings:storage.iser.value == true"
               - data: "drivers_only"
-                label: "Ethernet Drivers only"
-                description: "If selected, Mellanox Ethernet drivers will be installed, to support networking over Mellanox card, without using the Mellanox Neutron plugin"
+                label: "Install only Mellanox drivers"
+                description: "If selected, Mellanox Ethernet drivers will be installed to support networking over Mellanox NIC. Mellanox Neutron plugin will not be installed."
                 restrictions:
                   - "settings:common.libvirt_type.value != 'kvm'"
               - data: "ethernet"
-                label: "Ethernet SR-IOV"
-                description: "If selected, Mellanox Ethernet plugin will be installed, Accelerated hypervisor mode using SR-IOV, enable bare metal performance over VMs"
+                label: "Install Mellanox drivers and SR-IOV plugin"
+                description: "If selected, both Mellanox Ethernet drivers and Mellanox network acceleration (Neutron) plugin will be installed."
                 restrictions:
                   - "settings:common.libvirt_type.value != 'kvm' or not (cluster:net_provider == 'neutron' and networking_parameters:segmentation_type? == 'vlan')"
           vf_num:
             value: "16"
-            label: "Virtual NICs number"
-            description: "Number of virtual functions (virtual NICs) to create"
-            weight: 10
+            label: "Number of virtual NICs"
+            description: "Note that one virtual function will be reserved to the storage network, in case of choosing iSER."
+            weight: 70
             type: "text"
             restrictions:
               - "settings:neutron_mellanox.plugin.value != 'ethernet'"
@@ -763,9 +763,7 @@
           iser:
             value: false
             label: "iSER protocol for volumes (Cinder)"
-            description: "High performance storage: Cinder volumes over ISER protocol (iSCSI over RDMA).
-This feature requires SR-IOV capabilities on the storage network card, and will change the storage port to a virtual port on the hypervisor.
-Note that Mellanox Hardware and drivers installation are required."
+            description: "High performance block storage: Cinder volumes over iSER protocol (iSCSI over RDMA). This feature requires SR-IOV capabilities in the NIC, and will use a dedicated virtual function for the storage network."
             weight: 11
             type: "checkbox"
             restrictions:

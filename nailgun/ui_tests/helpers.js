@@ -20,6 +20,8 @@ casper.on('page.error', function(msg) {
 });
 
 casper.loadPage = function(page) {
+    //FIXME: hack to prevent ajax requests interruption (phantomjs issue)
+    this.wait(1000);
     return this.thenOpen(baseUrl + page).waitWhileSelector('#content > .loading');
 }
 

@@ -14,6 +14,9 @@
 
 import fnmatch
 import os
+import shutil
+import tempfile
+import yaml
 try:
     from unittest.case import TestCase
 except ImportError:
@@ -45,7 +48,8 @@ class TestDriver(TestCase):
             "dir": "Dir",
             "subs": "Subs",
             "postgres": "Postgres",
-            "command": "Command"
+            "command": "Command",
+            "info": "GetInfo"
         }
         for t, n in types.iteritems():
             with patch("shotgun.driver.%s" % n) as mocked:
@@ -132,6 +136,41 @@ class TestFile(TestCase):
         file_driver.snapshot()
 
         mget.assert_called_with(data["path"], target_path)
+
+
+class TestGetInfo(TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    @patch('shotgun.driver.Driver.get')
+    @patch('shotgun.driver.requests.get')
+    @patch('shotgun.driver.GetInfo.read_yaml_config')
+    def test_snapshot(self, mget, mrequest, mget_info_conf):
+        data = {
+            "type": "info",
+            "action": "nodes"
+        }
+        conf = MagicMock()
+        conf.target = "/target"
+        get_info_driver = shotgun.driver.GetInfo(data, conf)
+        get_info_driver.path = self.temp_dir
+        get_info_driver.file = 'nodes.yaml'
+        get_info_driver.astute_conf = {
+            "keystone": {
+                "admin_token": "fake"
+            },
+            "ADMIN_NETWORK": {
+                "ipaddress": "10.20.0.2"
+            }
+        }
+        mrequest.return_value.json.return_value = {u"node": 1}
+
+        get_info_driver.snapshot()
+        with open(os.path.join(self.temp_dir, "nodes.yaml")) as nod:
+            self.assertEqual(yaml.load(nod)["node"], 1)
 
 
 class TestSubs(TestCase):

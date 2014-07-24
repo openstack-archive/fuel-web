@@ -558,7 +558,7 @@ begin
     resp = agent.post
     # We must not log 409 as error, after node is provisioned there will be no
     # /etc/nailgun_uid, it will be created after put request
-    if resp.status == 409
+    if [409, 403].include? resp.status
       resp = agent.put
     end
   else

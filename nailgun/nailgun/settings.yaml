@@ -570,6 +570,8 @@ DUMP:
         path: /etc/astute
       - type: dir
         path: /etc/fuel
+      - type: info
+        action: nodes
       - type: command
         command: df -h
         to_file: df.txt

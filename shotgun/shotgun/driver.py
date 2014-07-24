@@ -18,9 +18,11 @@ import os
 import pprint
 import pwd
 import re
+import requests
 import stat
 import tempfile
 import xmlrpclib
+import yaml
 
 import fabric.api
 
@@ -60,6 +62,7 @@ class Driver(object):
             "postgres": Postgres,
             "xmlrpc": XmlRpc,
             "command": Command,
+            "info": GetInfo,
         }.get(driver_type, cls)(data, conf)
 
     def __init__(self, data, conf):
@@ -145,6 +148,40 @@ class File(Driver):
 
 
 Dir = File
+
+
+class GetInfo(Driver):
+    """Class used to collecting additional info during taking snapshots
+    """
+    def __init__(self, data, conf):
+        super(GetInfo, self).__init__(data, conf)
+        # type of action, path of the file and file
+        actions_types = {
+            "nodes": (self.get_nodes_info, "etc/nailgun", "nodes.yaml")
+        }
+        self.type = self.data.get("action", "nodes")
+        self.action, path, self.file = actions_types.get(self.type)
+        self.read_yaml_config('/etc/fuel/astute.yaml')
+        self.path = os.path.join(
+            self.conf.target, self.host, path)
+
+    def read_yaml_config(self, path):
+        self.astute_conf = yaml.load(open(path, 'r'))
+
+    def get_nodes_info(self):
+        token = self.astute_conf["keystone"]["admin_token"]
+        headers = {'X-Auth-Token': token}
+        resp = requests.get(
+            "http://{0}:8000/api/nodes/".
+            format(self.astute_conf['ADMIN_NETWORK']['ipaddress']),
+            headers=headers)
+        return resp.json()
+
+    def snapshot(self):
+        to_write_info = self.action()
+        execute('mkdir -p "{0}"'.format(self.path))
+        with open(os.path.join(self.path, self.file), 'w') as outfile:
+            outfile.write(yaml.safe_dump(to_write_info))
 
 
 class Subs(File):

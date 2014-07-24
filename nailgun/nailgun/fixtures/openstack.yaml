@@ -232,36 +232,54 @@
             description: "NSX administrator's username"
             weight: 20
             type: "text"
+            regex:
+              source: '\S'
+              error: "Empty username"
           nsx_password:
             value: ""
             label: "NSX password"
             description: "Password for Administrator"
             weight: 30
             type: "password"
+            regex:
+              source: '\S'
+              error: "Empty password"
           transport_zone_uuid:
             value: ""
             label: "Transport zone UUID"
             description: "UUID of the pre-existing default NSX Transport zone"
             weight: 40
             type: "text"
+            regex:
+              source: &valid_uuid '[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}'
+              error: "Invalid transport zone UUID"
           l3_gw_service_uuid:
             value: ""
             label: "L3 service UUID"
             description: "UUID for the default L3 gateway service to use with this cluster"
             weight: 50
             type: "text"
+            regex:
+              source: *valid_uuid
+              error: "Invalid L3 gateway service UUID"
           nsx_controllers:
             value: ""
             label: "NSX controller endpoint"
-            description: "One or more IP[:port] addresses of NSX controller node, separated by comma (e.g. 10.30.30.2:443,192.168.110.254:8080)"
+            description: "One or more IPv4[:port] addresses of NSX controller node, separated by comma (e.g. 10.30.30.2,192.168.110.254:443)"
             weight: 60
             type: "text"
+            regex:
+              source: '^(([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])\.){3}([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])(:(6553[0-5]|655[0-2][\d]|65[0-4][\d]{2}|6[0-4][\d]{3}|5[\d]{4}|[\d][\d]{0,3}))?(,(([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])\.){3}([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])(:(6553[0-5]|655[0-2][\d]|65[0-4][\d]{2}|6[0-4][\d]{3}|5[\d]{4}|[\d][\d]{0,3}))?)*$'
+              error: "Invalid controller endpoints, specify valid IPv4[:port] pair"
           packages_url:
             value: ""
             label: "URL to NSX bits"
-            description: "Specify URL to NSX specific packages (e.g. http://10.20.0.2:8080/)"
+            description: "URL to NSX specific packages"
             weight: 70
             type: "text"
+            regex:
+              source: '^https?://(([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])\.){3}([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])(:(6553[0-5]|655[0-2][\d]|65[0-4][\d]{2}|6[0-4][\d]{3}|5[\d]{4}|[\d][\d]{0,3}))?(/.*)?$'
+              error: "Invalid URL, specify valid HTTP/HTTPS URL with IPv4 address (e.g. http://10.20.0.2/nsx)"
           connector_type:
             value: "stt"
             values:
@@ -276,7 +294,7 @@
               - data: "bridge"
                 label: "Bridge"
             label: "NSX connector type"
-            description: "The default network transport type to use"
+            description: "Default network transport type to use"
             weight: 80
             type: "dropdown"
         common:

@@ -225,7 +225,7 @@ class TestUtils(BaseTestCase):
         utils.copy_dir(from_path, to_path)
         copy_mock.assert_called_once_with(from_path, to_path, symlinks=True)
 
-    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.lexists', return_value=True)
     @mock.patch('fuel_upgrade.utils.shutil.copytree')
     @mock.patch('fuel_upgrade.utils.remove')
     def test_copy_dir_overwrite(self, rm_mock, copy_mock, _):
@@ -254,7 +254,7 @@ class TestUtils(BaseTestCase):
 
     @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.symlink')
-    @mock.patch('fuel_upgrade.utils.remove_if_exists')
+    @mock.patch('fuel_upgrade.utils.remove')
     def test_symlink(self, remove_mock, symlink_mock, _):
         from_path = '/tmp/from/path'
         to_path = '/tmp/to/path'
@@ -265,7 +265,7 @@ class TestUtils(BaseTestCase):
 
     @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
     @mock.patch('fuel_upgrade.utils.os.symlink')
-    @mock.patch('fuel_upgrade.utils.remove_if_exists')
+    @mock.patch('fuel_upgrade.utils.remove')
     def test_symlink_no_exist(self, remove_mock, symlink_mock, _):
         from_path = '/tmp/from/path'
         to_path = '/tmp/to/path'
@@ -416,14 +416,14 @@ class TestUtils(BaseTestCase):
         utils.rename('source', 'destination')
         rename_mock.assert_called_once_with('source', 'destination')
 
-    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.lexists', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=False)
     @mock.patch('fuel_upgrade.utils.os.remove')
     def test_remove_file(self, remove_mock, _, __):
         utils.remove('path')
         remove_mock.assert_called_once_with('path')
 
-    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.lexists', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.path.islink', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.remove')
@@ -431,14 +431,14 @@ class TestUtils(BaseTestCase):
         utils.remove('path')
         remove_mock.assert_called_once_with('path')
 
-    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
+    @mock.patch('fuel_upgrade.utils.os.path.lexists', return_value=False)
     @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=False)
     @mock.patch('fuel_upgrade.utils.os.remove')
     def test_remove_file_does_not_exist(self, remove_mock, _, __):
         utils.remove('path')
         self.method_was_not_called(remove_mock)
 
-    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.os.path.lexists', return_value=True)
     @mock.patch('fuel_upgrade.utils.os.path.isdir', return_value=True)
     @mock.patch('fuel_upgrade.utils.shutil.rmtree')
     def test_remove_dir(self, remove_mock, _, __):

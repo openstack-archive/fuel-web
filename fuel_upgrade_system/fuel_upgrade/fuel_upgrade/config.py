@@ -585,43 +585,40 @@ def config(update_path):
             {
                 'name': 'move',
                 'from': '/var/www/nailgun/bootstrap',
-                'to': '/var/www/nailgun/{0}_bootstrap'.format(
-                    from_version,
-                ),
-                'overwrite': False,  # it's danger to overwrite versioned files
-                'undo': [],          # don't undo this action
+                'to': '/var/www/nailgun/{0}_bootstrap'.format(from_version),
+                # Don't overwrite backup files
+                'overwrite': False,
+                'undo': [
+                    {
+                        # NOTE(eli): Rollback bootstrap files
+                        # with copy, because in 5.0 version
+                        # we have volumes linking in container
+                        # which doesn't work correctly with symlinks
+                        'name': 'copy',
+                        'from': '/var/www/nailgun/{0}_bootstrap'.format(
+                            from_version),
+                        'to': '/var/www/nailgun/bootstrap',
+                        'undo': [],
+                        'overwrite': True
+                    }
+                ]
             },
             {
                 'name': 'symlink',
-                'from': '/var/www/nailgun/{0}_bootstrap'.format(
-                    from_version,
-                ),
+                'from': '/var/www/nailgun/{0}_bootstrap'.format(from_version),
                 'to': '/var/www/nailgun/bootstrap',
-                'undo': [],          # don't undo this action
+                'undo': []
             },
             {
                 'name': 'copy',
                 'from': join(update_path, 'bootstrap'),
-                'to': '/var/www/nailgun/{0}_bootstrap'.format(
-                    new_version,
-                ),
+                'to': '/var/www/nailgun/{0}_bootstrap'.format(new_version),
             },
             {
                 'name': 'symlink',
-                'from': '/var/www/nailgun/{0}_bootstrap'.format(
-                    new_version,
-                ),
+                'from': '/var/www/nailgun/{0}_bootstrap'.format(new_version),
                 'to': '/var/www/nailgun/bootstrap',
-                'undo': [
-                    {
-                        'name': 'symlink',
-                        'from': '/var/www/nailgun/{0}_bootstrap'.format(
-                            from_version,
-                        ),
-                        'to': '/var/www/nailgun/bootstrap',
-                        'undo': [],
-                    }
-                ],
+                'undo': []
             }
         ]}
 

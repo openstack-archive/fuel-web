@@ -25,6 +25,7 @@ casper.on('page.error', function(msg) {
 });
 
 casper.loadPage = function(page) {
+    this.wait(1000);
     return this.thenOpen(baseUrl + page).waitWhileSelector('#content > .loading');
 }
 

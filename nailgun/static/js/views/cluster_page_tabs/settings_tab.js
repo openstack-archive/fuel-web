@@ -183,33 +183,39 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             return settingName == 'metadata' ? 'enabled' : 'value';
         },
         checkDependentSettings: function(groupName, settingName) {
+            var unsupportedTypes = ['text', 'password'];
             var settingPath = groupName + '.' + settingName;
             var processedSetting = this.settings.get(settingPath);
             var valueAttribute = this.getValueAttribute(settingName);
             var notToggleableGroup = settingName == 'metadata' && !processedSetting.toggleable;
-            if (notToggleableGroup || _.contains(['text', 'password'], this.settings.get(settingPath).type)) {
+            if (notToggleableGroup || _.contains(unsupportedTypes, this.settings.get(settingPath).type)) {
                 return false;
             }
             var isDependent = function(restriction) {
                 return restriction.action == 'disable' && _.contains(restriction.condition, 'settings:' + settingPath);
             };
-            // collect settings to check
-            var checkedSettings = [];
+            // collect restrictions to check
+            var restrictions = [];
             _.each(this.settings.attributes, function(group, groupName) {
                 if (!group.metadata.visible) { return; }
                 _.each(group, function(setting, settingName) {
-                    if (setting[this.getValueAttribute(settingName)] !== true || groupName + '.' + settingName == settingPath) { return; }
-                    if (_.any(setting.restrictions, isDependent)) {
-                        checkedSettings.push(setting);
+                    if (_.contains(unsupportedTypes, setting.type) || groupName + '.' + settingName == settingPath) { return; }
+                    if (setting[this.getValueAttribute(settingName)] == true) { // for checkboxes and toggleable setting groups
+                        restrictions.push(_.find(setting.restrictions, isDependent));
+                    } else {
+                        var activeOption = _.find(setting.values, {data: setting.value}); // for dropdowns and radio groups
+                        if (activeOption) {
+                            restrictions.push(_.find(activeOption.restrictions, isDependent));
+                        }
                     }
                 }, this);
             }, this);
-            if (checkedSettings.length) {
+            restrictions = _.compact(restrictions);
+            if (restrictions.length) {
                 var processedValues = _.without(_.pluck(processedSetting.values, 'data'), processedSetting[valueAttribute]) || [!processedSetting[valueAttribute]];
                 var configModels = _.cloneDeep(this.configModels);
                 configModels.settings = new models.Settings(this.settings.toJSON().editable);
-                return _.any(checkedSettings, function(setting) {
-                    var restriction = _.find(setting.restrictions, isDependent);
+                return _.any(restrictions, function(restriction) {
                     var suitableValues = _.filter(processedValues, function(value) {
                         configModels.settings.get(settingPath)[valueAttribute] = value;
                         return !utils.evaluateExpression(restriction.condition, configModels).value;

@@ -365,6 +365,7 @@
                     "node": "Node",
                     "source": "Source",
                     "min_level": "Min. level",
+                    "level": "Level",
                     "show": "Show",
                     "log_alert": "Unable to fetch logs.",
                     "source_alert": "Unable to fetch log sources.",

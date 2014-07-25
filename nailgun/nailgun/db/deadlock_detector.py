@@ -22,6 +22,7 @@ ALLOWED_LOCKS_CHAINS = [
     ('clusters', 'nodes'),
     ('tasks', 'clusters'),
     ('tasks', 'clusters', 'nodes'),
+    ('tasks', 'nodes'),
 ]
 
 

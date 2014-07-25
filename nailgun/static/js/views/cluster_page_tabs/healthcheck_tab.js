@@ -53,6 +53,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
             this.runTestsButton.set({disabled: disabledState || !this.getNumberOfCheckedTests()});
             this.stopTestsButton.set({disabled: !hasRunningTests});
             this.selectAllCheckbox.set({disabled: disabledState || hasRunningTests});
+            this.credentialsWrapper.set({disabled: disabledState || hasRunningTests});
         },
         toggleTestsVisibility: function() {
             var hasRunningTests = this.hasRunningTests();
@@ -171,7 +172,8 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 disabled: false
             });
             this.credentialsWrapper = new Backbone.Model({
-                visible: false
+                visible: false,
+                disabled: false
             });
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
@@ -327,12 +329,23 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
             'input[name=username]': 'username',
             'input[name=tenant]': 'tenant'
         },
+        controlsBinding: {
+            '.parameter-control input': {
+                attributes: [
+                        {
+                            name: 'disabled',
+                            observe: 'disabled'
+                        }
+                    ]
+            }
+        },
         initialize: function(options) {
             _.defaults(this, options);
         },
         render: function() {
-            this.$el.html(this.template({locked: this.tab.isLocked() || this.tab.hasRunningTests()})).i18n();
+            this.$el.html(this.template()).i18n();
             this.stickit(this.credentials);
+            this.stickit(this.tab.credentialsWrapper, this.controlsBinding);
             return this;
         }
     });

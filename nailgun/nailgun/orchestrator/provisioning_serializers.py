@@ -60,7 +60,6 @@ class ProvisioningSerializer(object):
         mlnx_num_of_vf = cluster_attrs['neutron_mellanox']['vf_num']
         mlnx_plugin_mode = cluster_attrs['neutron_mellanox']['plugin']
         mlnx_is_iser_enabled = cluster_attrs['storage']['iser']
-
         serialized_node = {
             'uid': node.uid,
             'power_address': node.ip,
@@ -83,7 +82,7 @@ class ProvisioningSerializer(object):
             'ks_meta': {
                 'pm_data': {
                     'ks_spaces': node.attributes.volumes,
-                    'kernel_params': node.kernel_params},
+                    'kernel_params': objects.Node.get_kernel_params(node)},
                 'fuel_version': node.cluster.fuel_version,
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,

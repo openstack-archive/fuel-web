@@ -79,7 +79,7 @@ class ProvisioningSerializer(object):
             'ks_meta': {
                 'pm_data': {
                     'ks_spaces': node.attributes.volumes,
-                    'kernel_params': node.kernel_params},
+                    'kernel_params': objects.Node.get_kernel_params(node)},
                 'fuel_version': node.cluster.fuel_version,
                 'puppet_auto_setup': 1,
                 'puppet_master': settings.PUPPET_MASTER_HOST,

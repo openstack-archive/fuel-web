@@ -8,6 +8,10 @@ For information on how to get source code see :ref:`getting-source`.
 Setup for Nailgun Unit Tests
 ----------------------------
 
+.. warning:: Nailgun require Python 2.6. Please check installed python version
+    ``python --version``. If the version check does not match,
+    you can use PPA (Ubuntu) or `Pyenv <https://github.com/yyuu/pyenv>`_ (Universal).
+
 #. Nailgun can be found in fuel-web/nailgun
 
 #. Install and configure PostgreSQL database::

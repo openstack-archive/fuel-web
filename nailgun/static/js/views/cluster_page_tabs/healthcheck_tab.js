@@ -53,6 +53,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
             this.runTestsButton.set({disabled: disabledState || !this.getNumberOfCheckedTests()});
             this.stopTestsButton.set({disabled: !hasRunningTests});
             this.selectAllCheckbox.set({disabled: disabledState || hasRunningTests});
+            this.credentialsWrapper.set({disabled: disabledState || hasRunningTests});
         },
         toggleTestsVisibility: function() {
             var hasRunningTests = this.hasRunningTests();
@@ -171,7 +172,8 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 disabled: false
             });
             this.credentialsWrapper = new Backbone.Model({
-                visible: false
+                visible: false,
+                disabled: false
             });
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
@@ -217,7 +219,6 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 }
             }
             this.testruns.on('sync', this.updateTestRuns, this);
-            this.testruns.on('change:status', this.renderCredentials, this);
             if (!this.model.has('ostfCredentials')) {
                 var credentials = new models.OSTFCredentials();
                 this.model.set({ostfCredentials: credentials});
@@ -270,6 +271,12 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                             return 'icon-' + (value ? 'minus' : 'plus') + '-circle';
                         }
                     }]
+                },
+                '.credentials input': {
+                    attributes: [{
+                        name: 'disabled',
+                        observe: 'disabled'
+                    }]
                 }
             };
             this.stickit(this.credentialsWrapper, credentialsWrapperBindings);
@@ -312,8 +319,8 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
             this.$('.credentials').collapse({toggle: false});
             this.$('.credentials').on('show.bs.collapse', _.bind(function() {this.credentialsWrapper.set({visible: true});}, this));
             this.$('.credentials').on('hide.bs.collapse',  _.bind(function() {this.credentialsWrapper.set({visible: false});}, this));
-            this.initStickitBindings();
             this.renderCredentials();
+            this.initStickitBindings();
             return this;
         }
     });
@@ -331,7 +338,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
             _.defaults(this, options);
         },
         render: function() {
-            this.$el.html(this.template({locked: this.tab.isLocked() || this.tab.hasRunningTests()})).i18n();
+            this.$el.html(this.template()).i18n();
             this.stickit(this.credentials);
             return this;
         }

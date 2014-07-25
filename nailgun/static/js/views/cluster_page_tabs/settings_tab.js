@@ -85,10 +85,10 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         },
         updateInitialSettings: function(settings) {
             this.settings.initialAttributes = settings ? settings.editable : _.cloneDeep(this.settings.attributes);
+            this.expandRestrictions(this.settings.initialAttributes);
         },
         loadInitialSettings: function() {
-            var initialSettingsModel = new models.Settings(this.settings.initialAttributes);
-            this.settings.set(initialSettingsModel.processRestrictions(this.configModels));
+            this.settings.set(_.cloneDeep(this.settings.initialAttributes));
         },
         onSettingChange: function() {
             this.$('input.error').removeClass('error');
@@ -233,12 +233,12 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     return utils.evaluateExpression(restriction.condition, this.configModels).value;
                 }, this);
             }, this);
-            this.settings.set(settingPath + '.disabled', setting.hasDependentRole || checkRestrictions(setting, 'disable') || this.checkDependentSettings(groupName, settingName));
             this.settings.set(settingPath + '.visible', !checkRestrictions(setting, 'hide'));
+            this.settings.set(settingPath + '.disabled', setting.hasDependentRole || checkRestrictions(setting, 'disable') || this.checkDependentSettings(groupName, settingName));
             _.each(setting.values, function(value, index) {
                 var values = _.cloneDeep(setting.values);
-                values[index].disabled = checkRestrictions(values[index], 'disable');
                 values[index].visible = !checkRestrictions(values[index], 'hide');
+                values[index].disabled = checkRestrictions(values[index], 'disable');
                 this.settings.set(settingPath + '.values', values);
             }, this);
         },
@@ -305,6 +305,16 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             }
             return this;
         },
+        expandRestrictions: function(attributes) {
+            _.each(attributes, function(group) {
+                _.each(group, function(setting) {
+                    setting.restrictions = _.map(setting.restrictions, utils.expandRestriction);
+                    _.each(setting.values, function(value) {
+                        value.restrictions = _.map(value.restrictions, utils.expandRestriction);
+                    });
+                });
+            });
+        },
         initialize: function(options) {
             this.model.on('change:status', this.render, this);
             this.model.get('tasks').bindToView(this, [{group: 'deployment'}], function(task) {
@@ -320,7 +330,9 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 }, this);
             }, this);
             (this.loading = $.when(this.settings.fetch({cache: true}), this.model.get('networkConfiguration').fetch({cache: true}))).done(_.bind(function() {
-                this.updateInitialSettings();
+                if (!this.settings.initialAttributes) {
+                    this.updateInitialSettings();
+                }
                 this.configModels = {
                     cluster: this.model,
                     settings: this.settings,
@@ -328,7 +340,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                     version: app.version,
                     default: this.settings
                 };
-                this.settings.processRestrictions(this.configModels);
+                this.expandRestrictions(this.settings.attributes);
                 _.each(this.settings.attributes, function(group, groupName) {
                     _.each(group, function(setting, settingName) {
                         this.composeListeners(groupName, settingName);
@@ -338,7 +350,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 }, this);
                 this.settings.on('change', this.onSettingChange, this);
                 this.settings.on('sync', function(settings) {
-                    settings.processRestrictions(this.configModels);
+                    this.expandRestrictions(this.settings.attributes);
                 }, this);
             }, this));
             if (this.loading.state() == 'pending') {

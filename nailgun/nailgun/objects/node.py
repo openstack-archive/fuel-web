@@ -548,11 +548,7 @@ class Node(NailgunObject):
         """
         instance.cluster_id = cluster_id
         db().flush()
-        db().refresh(instance)
-        instance.kernel_params = Cluster.get_default_kernel_params(
-            instance.cluster
-        )
-        db().flush()
+
         network_manager = Cluster.get_network_manager(instance.cluster)
         network_manager.assign_networks_by_default(instance)
         cls.add_pending_change(instance, consts.CLUSTER_CHANGES.interfaces)
@@ -627,6 +623,14 @@ class Node(NailgunObject):
         return u"{instance_name}.{dns_domain}" \
             .format(instance_name=cls.make_slave_name(instance),
                     dns_domain=settings.DNS_DOMAIN)
+
+    @classmethod
+    def get_kernel_params(cls, instance):
+        """Return cluster kernel_params if they wasnot replaced by
+           custom params.
+        """
+        return (instance.kernel_params or
+                Cluster.get_default_kernel_params(instance.cluster))
 
 
 class NodeCollection(NailgunCollection):

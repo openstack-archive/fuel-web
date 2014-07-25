@@ -268,7 +268,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_enable': 1,
                     'pm_data': {
                         'ks_spaces': n.attributes.volumes,
-                        'kernel_params': n.kernel_params,
+                        'kernel_params': objects.Node.get_kernel_params(n),
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                     'mlnx_vf_num': "16",
@@ -670,7 +670,7 @@ class TestHandlers(BaseIntegrationTest):
                     'mco_enable': 1,
                     'pm_data': {
                         'ks_spaces': n.attributes.volumes,
-                        'kernel_params': n.kernel_params,
+                        'kernel_params': objects.Node.get_kernel_params(n),
                     },
                     'auth_key': "\"%s\"" % cluster_attrs.get('auth_key', ''),
                     'mlnx_vf_num': "16",

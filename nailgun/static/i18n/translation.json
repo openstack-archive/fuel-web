@@ -469,7 +469,7 @@
                     "storage": {
                         "title": "Storage Backends",
                         "alert": "Ceph is not supported in __NameAndRelease.release_name__",
-                        "vcenter_alert": "Ceph cannot be used with vCenter.",
+                        "vcenter_alert": "Ceph backend for Cinder cannot be used with vCenter.",
                         "default": "Default",
                         "ceph": "Ceph",
                         "cinder": "Cinder",

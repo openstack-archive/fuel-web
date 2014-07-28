@@ -125,8 +125,8 @@ class NeutronManager(NetworkManager):
                 attrs['neutron_mellanox']['plugin']['value'] == 'ethernet':
             res['mechanism_drivers'] = 'mlnx,openvswitch'
             seg_type = cluster.network_config.segmentation_type
-            res['tenant_network_types'] = '%s' % seg_type
-            res['type_drivers'] = '%s,flat' % seg_type
+            res['tenant_network_types'] = seg_type
+            res['type_drivers'] = '{0},flat'.format(seg_type)
 
         return res
 

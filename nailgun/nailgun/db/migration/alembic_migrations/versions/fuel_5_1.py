@@ -34,6 +34,7 @@ from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_enum
 from nailgun.utils.migration import upgrade_release_attributes_50_to_51
 from nailgun.utils.migration import upgrade_release_roles_50_to_51
+from nailgun.utils.migration import upgrade_release_wizard_metadata_50_to_51
 
 cluster_changes_old = (
     'networks',
@@ -111,6 +112,14 @@ def upgrade_schema():
         )
     )
     op.add_column(
+        'releases',
+        sa.Column(
+            'wizard_metadata',
+            JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
         'clusters',
         sa.Column(
             'pending_release_id',
@@ -172,12 +181,19 @@ def upgrade_data():
 
     # upgrade release data from 5.0 to 5.1
     select = text(
-        """SELECT id, attributes_metadata, roles_metadata from releases""")
+        """SELECT id, attributes_metadata, roles_metadata
+        from releases""")
     update = text(
         """UPDATE releases
-        SET attributes_metadata = :attrs, roles_metadata = :roles
+        SET attributes_metadata = :attrs, roles_metadata = :roles,
+        wizard_metadata = :wiz_meta
         WHERE id = :id""")
     r = connection.execute(select)
+
+    # reading files in loop is in general a bad idea and as long as
+    # wizard_metadata is the same for all existing releases
+    # getting it can be moved outside of the loop
+    wizard_meta = upgrade_release_wizard_metadata_50_to_51()
     for release in r:
         attrs_meta = upgrade_release_attributes_50_to_51(
             jsonutils.loads(release[1]))
@@ -187,7 +203,8 @@ def upgrade_data():
             update,
             id=release[0],
             attrs=jsonutils.dumps(attrs_meta),
-            roles=jsonutils.dumps(roles_meta)
+            roles=jsonutils.dumps(roles_meta),
+            wiz_meta=jsonutils.dumps(wizard_meta)
         )
 
 

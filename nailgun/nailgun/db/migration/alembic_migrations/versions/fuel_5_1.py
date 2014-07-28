@@ -24,10 +24,13 @@ revision = '52924111f7d8'
 down_revision = '1a1504d469f8'
 
 from alembic import op
+import os
 import sqlalchemy as sa
 from sqlalchemy.sql import text
+import yaml
 
 from nailgun import consts
+from nailgun.db.sqlalchemy.fixman import load_fixture
 from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.openstack.common import jsonutils
 from nailgun.utils.migration import drop_enum
@@ -111,6 +114,14 @@ def upgrade_schema():
         )
     )
     op.add_column(
+        'releases',
+        sa.Column(
+            'wizard_metadata',
+            JSON(),
+            nullable=True
+        )
+    )
+    op.add_column(
         'clusters',
         sa.Column(
             'pending_release_id',
@@ -167,17 +178,39 @@ def upgrade_schema():
     ### end Alembic commands ###
 
 
+def _get_wizard_metadata():
+    fixture_path = os.path.join(os.path.dirname(__file__), '..',
+                                '..', '..', '..',
+                                'fixtures', 'openstack.yaml')
+
+    with open(fixture_path, 'r') as fixture_file:
+        fixt = load_fixture(fixture_file, loader=yaml)
+
+    # we are interested only in wizard_metadata section
+    return fixt[0]['fields']['wizard_metadata']
+
+
 def upgrade_data():
     connection = op.get_bind()
 
     # upgrade release data from 5.0 to 5.1
     select = text(
-        """SELECT id, attributes_metadata, roles_metadata from releases""")
+        """SELECT id, attributes_metadata, roles_metadata, wizard_metadata
+        from releases""")
     update = text(
         """UPDATE releases
-        SET attributes_metadata = :attrs, roles_metadata = :roles
+        SET attributes_metadata = :attrs, roles_metadata = :roles,
+        wizard_metadata = :wiz_meta
         WHERE id = :id""")
     r = connection.execute(select)
+    # wizard_metadata should be the same for all existing releases
+    wizard_meta = _get_wizard_metadata()
+    # remove nsx data from Network section
+    wizard_meta['Network'] = [
+        n for n in wizard_meta['Network']['manager']['values']
+        if n['data'] != 'neutron-nsx'
+    ]
+
     for release in r:
         attrs_meta = upgrade_release_attributes_50_to_51(
             jsonutils.loads(release[1]))
@@ -187,7 +220,8 @@ def upgrade_data():
             update,
             id=release[0],
             attrs=jsonutils.dumps(attrs_meta),
-            roles=jsonutils.dumps(roles_meta)
+            roles=jsonutils.dumps(roles_meta),
+            wiz_meta=jsonutils.dumps(wizard_meta)
         )
 
 

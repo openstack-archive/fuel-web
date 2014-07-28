@@ -36,6 +36,7 @@ substitutions = {
     "remove": "--delete",
     "config": "--config",
     "--roles": "--role",
+    "help": "--help",
 }
 
 

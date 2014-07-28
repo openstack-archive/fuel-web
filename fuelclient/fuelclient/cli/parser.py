@@ -74,6 +74,9 @@ class Parser:
 
     def parse(self):
         self.prepare_args()
+        if len(self.args) < 2:
+            self.parser.print_help()
+            sys.exit(0)
         parsed_params, _ = self.parser.parse_known_args(self.args[1:])
         if parsed_params.action not in actions:
             self.parser.print_help()

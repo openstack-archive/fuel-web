@@ -13,9 +13,12 @@
 #    under the License.
 
 from alembic import op
-import sqlalchemy as sa
-
+import os
 import six
+import sqlalchemy as sa
+import yaml
+
+from nailgun.db.sqlalchemy.fixman import load_fixture
 
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
@@ -98,3 +101,22 @@ def upgrade_release_roles_50_to_51(roles_meta):
                     depend['condition'] = \
                         expr + " == " + convert_condition_value(cond[expr])
     return roles_meta
+
+
+def upgrade_release_wizard_metadata_50_to_51(fixture_path=None):
+    if not fixture_path:
+        fixture_path = os.path.join(os.path.dirname(__file__), '..',
+                                    'fixtures', 'openstack.yaml')
+
+    with open(fixture_path, 'r') as fixture_file:
+        fixt = load_fixture(fixture_file, loader=yaml)
+
+    # wizard_meta is the same for all existing in db releases
+    wizard_meta = fixt[0]['fields']['wizard_metadata']
+    # remove nsx data from Network section of wizard_metadata
+    wizard_meta['Network']['manager']['values'] = [
+        n for n in wizard_meta['Network']['manager']['values']
+        if n['data'] != 'neutron-nsx'
+    ]
+
+    return wizard_meta

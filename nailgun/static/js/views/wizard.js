@@ -28,10 +28,9 @@ define(
     'text!templates/dialogs/create_cluster_wizard/ready.html',
     'text!templates/dialogs/create_cluster_wizard/control_template.html',
     'text!templates/dialogs/create_cluster_wizard/warning.html',
-    'text!templates/dialogs/create_cluster_wizard/text_input.html',
-    'text!js/wizard.json'
+    'text!templates/dialogs/create_cluster_wizard/text_input.html'
 ],
-function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate, wizardInfo) {
+function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {};
@@ -51,11 +50,11 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         composeStickitBindings: function() {
             var bindings = {};
-            _.each(_.keys(this.config), function(paneConstructor, paneIndex) {
+            _.each(this.panesConstructors, function(PaneConstructor, paneIndex) {
                 bindings['.wizard-step[data-pane=' + paneIndex + ']'] = {
                     attributes: [{
                         name: 'class',
-                        observe: paneConstructor
+                        observe: PaneConstructor.prototype.constructorName
                     }]
                 };
             }, this);
@@ -88,7 +87,24 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.config = JSON.parse(wizardInfo);
+            this.config = {
+                "NameAndRelease": {
+                    "name": {
+                        "type": "custom",
+                        "value": "",
+                        "bind": "cluster:name"
+                    },
+                    "release" : {
+                        "type": "custom",
+                        "bind": {"id": "cluster:release"},
+                        "aliases": {
+                            "operating_system": "NameAndRelease.release_operating_system",
+                            "roles": "NameAndRelease.release_roles",
+                            "name": "NameAndRelease.release_name"
+                        }
+                    }
+                }
+            };
             this.panesModel = new Backbone.Model({
                 activePaneIndex: 0,
                 maxAvailablePaneIndex: 0
@@ -219,15 +235,16 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         getListOfPanesToRestore: function(currentIndex, maxIndex) {
             var panesNames = [];
-            _.each(_.keys(this.config), function(paneName, paneIndex) {
+            _.each(this.panesConstructors, function(PaneConstructor, paneIndex) {
                 if ((paneIndex <= maxIndex) && (paneIndex > currentIndex)) {
-                    panesNames.push(paneName);
+                    panesNames.push(PaneConstructor.prototype.constructorName);
                 }
             }, this);
             return panesNames;
         },
         updatePanesStatuses: function() {
-            _.each(_.keys(this.config), function(paneName, paneIndex) {
+            _.each(this.panesConstructors, function(PaneConstructor, paneIndex) {
+                var paneName = PaneConstructor.prototype.constructorName;
                 if (paneIndex == this.panesModel.get('activePaneIndex')) {
                     this.panesModel.set(paneName, 'current');
                 } else if (paneIndex <= this.panesModel.get('maxAvailablePaneIndex')) {
@@ -581,19 +598,39 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 this.releases.fetch();
             }
             this.releases.on('sync', this.render, this);
-            this.wizard.model.on('change:NameAndRelease.release', this.updateReleaseDescription, this);
+            this.wizard.model.on('change:NameAndRelease.release', this.updateRelease, this);
         },
-        updateReleaseDescription: function(model, value) {
-            var description = this.wizard.model.get('NameAndRelease.release').get('description');
-            this.$('.release-description').text(description);
+        updateConfig: function(config) {
+            var name = this.wizard.model.get('NameAndRelease.name');
+            var release = this.wizard.model.get('NameAndRelease.release');
+            _.extend(this.wizard.config, _.cloneDeep(config));
+            this.wizard.model.off(null, null, this);
+            this.wizard.model.initialize(this.wizard.config);
+            this.wizard.model.processConfig(this.wizard.config);
+            this.wizard.model.set({
+                'NameAndRelease.name': name,
+                'NameAndRelease.release': release
+            });
+            this.wizard.panesModel.set({
+                activePaneIndex: 0,
+                maxAvailablePaneIndex: 0
+            });
+            this.wizard.processRestrictions();
+            this.wizard.attachModelListeners();
+            this.wizard.renderPane(this.constructor);
+        },
+        updateRelease: function() {
+            var release = this.wizard.model.get('NameAndRelease.release');
+            this.updateConfig(release.get('wizard_metadata'));
         },
         render: function() {
             this.constructor.__super__.render.call(this);
             if (this.releases.length) {
-                if (!this.wizard.model.get('NameAndRelease.release')) {
+                var release = this.wizard.model.get('NameAndRelease.release');
+                if (!release) {
                     this.wizard.model.set('NameAndRelease.release', this.releases.first());
                 } else {
-                    this.updateReleaseDescription();
+                    this.$('.release-description').text(release.get('description'));
                 }
             }
             return this;

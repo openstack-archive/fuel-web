@@ -29,6 +29,7 @@ class ReleaseSerializer(BasicSerializer):
         "modes_metadata",
         "roles",
         "roles_metadata",
+        "wizard_metadata",
         "state"
     )
 

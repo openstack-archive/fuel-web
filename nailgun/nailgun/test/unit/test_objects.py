@@ -139,7 +139,7 @@ class TestNodeObject(BaseIntegrationTest):
         )
         node_db = self.env.nodes[0]
         self.assertEqual(
-            node_db.kernel_params,
+            objects.Node.get_kernel_params(node_db),
             (
                 'console=ttyS0,9600 '
                 'console=tty0 '
@@ -176,7 +176,7 @@ class TestNodeObject(BaseIntegrationTest):
         )
         node_db = self.env.nodes[0]
         self.assertEqual(
-            node_db.kernel_params,
+            objects.Node.get_kernel_params(node_db),
             (
                 'console=ttyS0,9600 '
                 'console=tty0 '
@@ -184,6 +184,25 @@ class TestNodeObject(BaseIntegrationTest):
                 'nomodeset'
             )
         )
+
+    def test_get_kernel_params_overwriten(self):
+        """Test verifies that overwriten kernel params will be returned."""
+        self.env.create(
+            nodes_kwargs=[
+                {"role": "controller"}
+            ])
+        additional_kernel_params = 'intel_iommu=true'
+        default_kernel_params = objects.Cluster.get_default_kernel_params(
+            self.env.clusters[0])
+        kernel_params = '{0} {1}'.format(default_kernel_params,
+                                         additional_kernel_params)
+        self.env.nodes[0].kernel_params = kernel_params
+        self.assertNotEqual(
+            objects.Node.get_kernel_params(self.env.nodes[0]),
+            default_kernel_params)
+        self.assertEqual(
+            objects.Node.get_kernel_params(self.env.nodes[0]),
+            kernel_params)
 
     def test_removing_from_cluster(self):
         self.env.create(

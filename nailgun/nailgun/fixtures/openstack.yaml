@@ -601,6 +601,9 @@
         mongo:
           - {allocate_size: "min", id: "os"}
           - {allocate_size: "all", id: "mongo"}
+        zabbix-server:
+          - {allocate_size: "min", id: "os"}
+          - {allocate_size: "all", id: "var"}
       volumes:
         - id: "mongo"
           type: "vg"
@@ -645,6 +648,18 @@
               name: "swap"
               size: {generator: "calc_swap_size"}
               file_system: "swap"
+        - id: "var"
+          type: "vg"
+          min_size: {generator: "calc_min_var_size"}
+          label: "Var Directory"
+          volumes:
+            - mount: "/var"
+              type: "lv"
+              name: "root"
+              size: 
+                generator: "calc_total_vg"
+                generator_args: ["var"]
+              file_system: "ext4"
         - id: "vm"
           type: "vg"
           min_size: {generator: "calc_min_vm_size"}

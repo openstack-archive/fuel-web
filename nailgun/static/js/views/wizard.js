@@ -28,15 +28,33 @@ define(
     'text!templates/dialogs/create_cluster_wizard/ready.html',
     'text!templates/dialogs/create_cluster_wizard/control_template.html',
     'text!templates/dialogs/create_cluster_wizard/warning.html',
-    'text!templates/dialogs/create_cluster_wizard/text_input.html',
-    'text!js/wizard.json'
+    'text!templates/dialogs/create_cluster_wizard/text_input.html'
 ],
-function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate, wizardInfo) {
+function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {};
 
     var clusterWizardPanes = {};
+
+    var NameAndReleaseConfig = {
+      "NameAndRelease": {
+        "name": {
+          "type": "custom",
+          "value": "",
+          "bind": "cluster:name"
+        },
+        "release" : {
+          "type": "custom",
+          "bind": {"id": "cluster:release"},
+          "aliases": {
+            "operating_system": "NameAndRelease.release_operating_system",
+            "roles": "NameAndRelease.release_roles",
+            "name": "NameAndRelease.release_name"
+          }
+        }
+      }
+    };
 
     views.CreateClusterWizard = dialogs.Dialog.extend({
         className: 'modal fade create-cluster-modal',
@@ -88,23 +106,29 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.config = JSON.parse(wizardInfo);
             this.panesModel = new Backbone.Model({
                 activePaneIndex: 0,
                 maxAvailablePaneIndex: 0
             });
-            this.updatePanesStatuses();
-            this.settings = new models.Settings();
             this.panesModel.on('change:activePaneIndex', this.handlePaneIndexChange, this);
             this.panesModel.on('change:maxAvailablePaneIndex', function() {
                 this.updatePanesStatuses();
                 //FIXME: this should be moved to view method
                 this.$('.wizard-footer .btn-success:visible').focus();
             }, this);
+            this.releases = new models.Releases();
+            this.releases.fetch().done(_.bind(this.processReleasesData, this));
+        },
+        processReleasesData: function() {
+            this.config = _.extend(_.first(this.releases.pluck('wizard_metadata')), NameAndReleaseConfig);
+            this.updatePanesStatuses();
+            this.settings = new models.Settings();
             this.model = new models.WizardModel(this.config);
             this.model.processConfig(this.config);
             this.processRestrictions();
             this.attachModelListeners();
+            this.renderPane(this.panesConstructors[this.panesModel.get('activePaneIndex')]);
+            this.composeStickitBindings();
         },
         attachModelListeners: function() {
             _.each(this.restrictions, function(paneConfig) {
@@ -294,8 +318,6 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 maxAvailableStep: this.panesModel.get('maxAvailablePaneIndex')
             }));
             this.$('.wizard-footer .btn-success:visible').focus();
-            this.renderPane(this.panesConstructors[this.panesModel.get('activePaneIndex')]);
-            this.composeStickitBindings();
             return this;
         }
     });
@@ -572,17 +594,18 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
-            this.releases = this.wizard.releases || new models.Releases();
+            this.releases = this.wizard.releases;
             if (!this.releases.length) {
                 this.wizard.releases = this.releases;
                 this.releases.fetch();
             }
-            this.releases.on('sync', this.render, this);
-            this.wizard.model.on('change:NameAndRelease.release', this.updateReleaseDescription, this);
+            this.wizard.model.on('change:NameAndRelease.release', this.updateReleaseData, this);
         },
-        updateReleaseDescription: function(model, value) {
-            var description = this.wizard.model.get('NameAndRelease.release').get('description');
+        updateReleaseData: function(model, value) {
+            var currentRelease = this.wizard.model.get('NameAndRelease.release');
+            var description = currentRelease.get('description');
             this.$('.release-description').text(description);
+            this.wizard.config = currentRelease.get('wizard_metadata');
         },
         render: function() {
             this.constructor.__super__.render.call(this);

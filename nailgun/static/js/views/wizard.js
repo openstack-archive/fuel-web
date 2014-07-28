@@ -28,15 +28,34 @@ define(
     'text!templates/dialogs/create_cluster_wizard/ready.html',
     'text!templates/dialogs/create_cluster_wizard/control_template.html',
     'text!templates/dialogs/create_cluster_wizard/warning.html',
-    'text!templates/dialogs/create_cluster_wizard/text_input.html',
-    'text!js/wizard.json'
+    'text!templates/dialogs/create_cluster_wizard/text_input.html'
 ],
-function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate, wizardInfo) {
+function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplate, clusterNameAndReleasePaneTemplate, commonWizardTemplate, modePaneTemplate, storagePaneTemplate, clusterReadyPaneTemplate, controlTemplate, warningTemplate, textInputTemplate) {
     'use strict';
 
     var views = {};
 
     var clusterWizardPanes = {};
+
+    var NameAndReleaseConfig = {
+      "NameAndRelease": {
+        "name": {
+          "type": "custom",
+          "value": "",
+          "bind": "cluster:name"
+        },
+        "release" : {
+          "ignored": true,
+          "type": "custom",
+          "bind": {"id": "cluster:release"},
+          "aliases": [
+            "operating_system",
+            "roles",
+            "name"
+          ]
+        }
+      }
+    };
 
     views.CreateClusterWizard = dialogs.Dialog.extend({
         className: 'modal fade create-cluster-modal',
@@ -88,11 +107,12 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.config = JSON.parse(wizardInfo);
             this.panesModel = new Backbone.Model({
                 activePaneIndex: 0,
                 maxAvailablePaneIndex: 0
             });
+            this.releases = new models.Releases();
+
             this.updatePanesStatuses();
             this.settings = new models.Settings();
             this.panesModel.on('change:activePaneIndex', this.handlePaneIndexChange, this);
@@ -101,6 +121,13 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 //FIXME: this should be moved to view method
                 this.$('.wizard-footer .btn-success:visible').focus();
             }, this);
+
+        },
+        processReleasesData: function() {
+            if (_.isUndefined(this.currentRelease)) {
+                this.currentRelease = this.releases.first();
+            }
+            this.config = _.extend(_.first(this.releases.pluck('wizard_metadata')), NameAndReleaseConfig);
             this.model = new models.WizardModel(this.config);
             this.model.processConfig(this.config);
             this.processRestrictions();
@@ -294,8 +321,13 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 maxAvailableStep: this.panesModel.get('maxAvailablePaneIndex')
             }));
             this.$('.wizard-footer .btn-success:visible').focus();
-            this.renderPane(this.panesConstructors[this.panesModel.get('activePaneIndex')]);
-            this.composeStickitBindings();
+            this.$('.wizard-steps-content').append('<div class="loading"></div>');
+            this.releases.fetch().done(_.bind(function() {
+                this.processReleasesData();
+                this.renderPane(this.panesConstructors[this.panesModel.get('activePaneIndex')]);
+                this.composeStickitBindings();
+                this.$('.loading').remove();
+            }, this));
             return this;
         }
     });
@@ -382,7 +414,15 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         composePaneBindings: function() {
             this.bindings = {};
             _.each(this.config, function(attributeConfig, attribute) {
-                this.bindings['[name=' + attribute + ']'] = {observe: this.constructorName + '.' + attribute};
+                //special handler needed
+                if (_.isUndefined(attributeConfig.ignored)) {
+                    this.bindings['[name=' + attribute + ']'] = {
+                        observe: this.constructorName + '.' + attribute
+                    };
+                }
+                else {
+                    this.bindings['[name=' + attribute + ']'] = {};
+                }
                 switch (attributeConfig.type) {
                     case 'radio':
                         _.each(attributeConfig.values, function(value) {
@@ -438,10 +478,15 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         processPaneAliases: function() {
             _.each(this.config, function(attributeConfig, attribute) {
-                _.each(attributeConfig.aliases, function(wizardModelAttribute, modelAttribute) {
-                    this.wizard.model.on('change:' + this.constructorName + '.' + attribute, function(wizardModel, model) {
-                        wizardModel.set(wizardModelAttribute, model.get(modelAttribute));
-                    }, this);
+                _.each(attributeConfig.aliases, function(alias) {
+                    this.wizard.currentRelease.on('change', _.bind(function(releaseModel, model) {
+                        if (releaseModel.get('release')) {
+                            this.wizard.model.set('NameAndRelease.release_' + alias, releaseModel.get('release').get(alias));
+                        }
+                        else {
+                            this.wizard.model.set('NameAndRelease.release_' + alias, releaseModel.get(alias));
+                        }
+                    }, this), this);
                 }, this);
             }, this);
         },
@@ -533,7 +578,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             this.$('.control-group').removeClass('error').find('.help-inline').text('');
             var success = true;
             var name = this.wizard.model.get('NameAndRelease.name');
-            var release = this.wizard.model.get('NameAndRelease.release').id;
+            var release = this.wizard.currentRelease.id;
             this.wizard.cluster = new models.Cluster();
             this.wizard.cluster.on('invalid', function(model, error) {
                 success = false;
@@ -558,37 +603,37 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         },
         composePaneBindings: function() {
             this.constructor.__super__.composePaneBindings.apply(this, arguments);
-            this.bindings['[name=release]'].selectOptions = {
-                collection: function() {
-                    return this.releases.map(function(release) {
-                        return {
-                            value: release,
-                            label: release.get('name') + ' (' + release.get('version') + ')'
-                        };
-                    });
-                }
-            };
-            this.stickit(this.wizard.model);
+            this.bindings['[name=release]']= {
+                selectOptions: {
+                    collection: function() {
+                        return this.wizard.releases.map(function(release) {
+                            return {
+                                value: release,
+                                label: release.get('name') + ' (' + release.get('version') + ')'
+                            };
+                        });
+                    }
+                },
+                //FIXME: need to do smth with this
+                observe: 'release'
+            }
+            this.stickit(this.wizard.currentRelease);
         },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this, arguments);
-            this.releases = this.wizard.releases || new models.Releases();
-            if (!this.releases.length) {
-                this.wizard.releases = this.releases;
-                this.releases.fetch();
-            }
-            this.releases.on('sync', this.render, this);
-            this.wizard.model.on('change:NameAndRelease.release', this.updateReleaseDescription, this);
+            this.wizard.releases.on('sync', this.render, this);
+            this.wizard.currentRelease.on('change:release', this.updateReleaseDescription, this);
         },
         updateReleaseDescription: function(model, value) {
-            var description = this.wizard.model.get('NameAndRelease.release').get('description');
-            this.$('.release-description').text(description);
+            var currentRelease = this.wizard.currentRelease.get('release') || this.wizard.currentRelease;
+            this.$('.release-description').text(currentRelease.get('description'));
+            this.wizard.processReleasesData();
         },
         render: function() {
             this.constructor.__super__.render.call(this);
-            if (this.releases.length) {
-                if (!this.wizard.model.get('NameAndRelease.release')) {
-                    this.wizard.model.set('NameAndRelease.release', this.releases.first());
+            if (this.wizard.releases.length) {
+                if (!this.wizard.currentRelease) {
+                    this.wizard.currentRelease = this.wizard.releases.first();
                 } else {
                     this.updateReleaseDescription();
                 }
@@ -606,7 +651,8 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             this.wizard.model.on('change:Mode.mode', this.updateModeDescription, this);
         },
         updateModeDescription: function() {
-            var description = this.wizard.model.get('NameAndRelease.release').get('modes_metadata')[this.wizard.model.get('Mode.mode')].description;
+            var description =  this.wizard.currentRelease.get('modes_metadata')[this.wizard.model.get('Mode.mode')].description ||
+                    this.wizard.currentRelease.get('release').get('modes_metadata')[this.wizard.model.get('Mode.mode')].description;
             this.$('.mode-description').text(description);
         },
         renderCustomElements: function() {

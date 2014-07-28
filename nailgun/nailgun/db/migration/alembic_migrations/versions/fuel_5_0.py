@@ -91,6 +91,7 @@ def upgrade():
                     sa.Column('volumes_metadata', JSON(), nullable=True),
                     sa.Column('modes_metadata', JSON(), nullable=True),
                     sa.Column('roles_metadata', JSON(), nullable=True),
+                    sa.Column('wizard_metadata', JSON(), nullable=True),
                     sa.PrimaryKeyConstraint('id'),
                     sa.UniqueConstraint('name', 'version')
                     )

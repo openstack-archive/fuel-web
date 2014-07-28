@@ -288,7 +288,7 @@
                     "vlan_manager": "VLAN Manager",
                     "verify_networks_button": "Verify Networks",
                     "network_verification": "Network verification",
-                    "neutron_segmentation": "Neutron with __segment_type__ segmentation",
+                    "neutron_segmentation": "Neutron with __l23_provider__ (__segment_type__ segmentation)",
                     "neutron_l23_provider": "Neutron with __l23_provider__",
                     "untagged": "untagged",
                     "range_start": "Start",

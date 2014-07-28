@@ -19,6 +19,7 @@ import os
 
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade import utils
+from fuel_upgrade.version_file import VersionFile
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,10 @@ class HostSystemUpgrader(UpgradeEngine):
         #: path to local repository
         self.repo_path = self.host_system_config['repo_path']
 
+        #: version file manager
+        self.version_file = VersionFile(self.config)
+        self.version_file.save_current()
+
     @property
     def required_free_space(self):
         """Required free space to run upgrade
@@ -77,8 +82,16 @@ class HostSystemUpgrader(UpgradeEngine):
     def upgrade(self):
         """Run host system upgrade process
         """
+        self.version_file.switch_to_new()
         self.update_repo()
         self.run_puppet()
+
+    def rollback(self):
+        """The only thing which we can rollback here
+        is yum config
+        """
+        self.version_file.switch_to_previous()
+        self.remove_repo_config()
 
     def update_repo(self):
         """Add new centos repository
@@ -96,12 +109,6 @@ class HostSystemUpgrader(UpgradeEngine):
             'puppet apply -d -v '
             '{0} --modulepath={1}'.format(
                 self.manifest_path, self.puppet_modules_path))
-
-    def rollback(self):
-        """The only thing which we can rollback here
-        is yum config
-        """
-        self.remove_repo_config()
 
     def remove_repo_config(self):
         """Remove yum repository config

@@ -41,9 +41,13 @@ class TestDockerUpgrader(BaseTestCase):
         self.supervisor_mock = mock.MagicMock()
         self.supervisor_class.return_value = self.supervisor_mock
 
+        self.version_mock = mock.MagicMock()
+
         with mock.patch('fuel_upgrade.engines.docker_engine.utils'):
-            self.upgrader = DockerUpgrader(self.fake_config)
-            self.upgrader.upgrade_verifier = mock.MagicMock()
+            with mock.patch('fuel_upgrade.engines.docker_engine.VersionFile',
+                            return_value=self.version_mock):
+                self.upgrader = DockerUpgrader(self.fake_config)
+                self.upgrader.upgrade_verifier = mock.MagicMock()
 
         self.pg_dump_path = '/var/lib/fuel_upgrade/9999/pg_dump_all.sql'
 
@@ -63,8 +67,7 @@ class TestDockerUpgrader(BaseTestCase):
             'upload_images',
             'create_containers',
             'generate_configs',
-            'switch_to_new_configs',
-            'switch_version_to_new']
+            'switch_to_new_configs']
 
         self.mock_methods(self.upgrader, mocked_methods)
         self.upgrader.upgrade()
@@ -79,6 +82,8 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(self.supervisor_mock.stop_all_services)
         self.called_once(self.supervisor_mock.restart_and_wait)
         self.called_once(self.upgrader.upgrade_verifier.verify)
+        self.called_once(self.version_mock.save_current)
+        self.called_once(self.version_mock.switch_to_new)
 
     def test_rollback(self):
         self.upgrader.stop_fuel_containers = mock.MagicMock()
@@ -90,14 +95,8 @@ class TestDockerUpgrader(BaseTestCase):
         self.called_once(self.supervisor_mock.switch_to_previous_configs)
         self.called_once(self.supervisor_mock.stop_all_services)
         self.called_once(self.supervisor_mock.restart_and_wait)
-        self.called_once(self.upgrader.switch_version_file_to_previous_version)
-
-    @mock.patch('fuel_upgrade.engines.docker_engine.utils.symlink')
-    def test_switch_version_file_to_previous_version(self, symlink_mock):
-        self.upgrader.switch_version_file_to_previous_version()
-        symlink_mock.assert_called_once_with(
-            '/etc/fuel/0/version.yaml',
-            '/etc/fuel/version.yaml')
+        self.called_once(self.version_mock.save_current)
+        self.called_once(self.version_mock.switch_to_previous)
 
     def test_stop_fuel_containers(self):
         non_fuel_images = [
@@ -373,26 +372,6 @@ class TestDockerUpgrader(BaseTestCase):
              '/var/lib/docker': 5,
              '/etc/fuel/': 10,
              '/etc/supervisord.d/': 10})
-
-    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
-    def test_save_current_version_file(self, mock_utils):
-        self.upgrader.save_current_version_file()
-        mock_utils.copy_if_does_not_exist.assert_called_once_with(
-            '/etc/fuel/version.yaml',
-            '/var/lib/fuel_upgrade/9999/version.yaml')
-
-    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
-    def test_switch_version_to_new(self, mock_utils):
-        self.upgrader.switch_version_to_new()
-
-        mock_utils.create_dir_if_not_exists.assert_called_once_with(
-            '/etc/fuel/9999')
-        mock_utils.copy.assert_called_once_with(
-            '/tmp/upgrade_path/config/version.yaml',
-            '/etc/fuel/9999/version.yaml')
-        mock_utils.symlink.assert_called_once_with(
-            '/etc/fuel/9999/version.yaml',
-            '/etc/fuel/version.yaml')
 
     @mock.patch('fuel_upgrade.engines.docker_engine.'
                 'DockerUpgrader.exec_cmd_in_container')

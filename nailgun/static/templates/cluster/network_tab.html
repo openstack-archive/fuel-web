@@ -23,11 +23,13 @@
       </div>
       <hr>
     <% } else if (segment_type) { %>
-      <% if (l23_provider) { %>
-        <span class="network-segment-type"><%- $.t('cluster_page.network_tab.neutron_l23_provider', {l23_provider: l23_provider.toUpperCase()}) %></span>
+      <span class="network-segment-type">
+      <% if (l23_provider == 'nsx' ) { %>
+        <%- $.t('cluster_page.network_tab.neutron_l23_provider', {l23_provider: l23_provider.toUpperCase()}) %>
       <% } else { %>
-        <span class="network-segment-type"><%- $.t('cluster_page.network_tab.neutron_segmentation', {segment_type: segment_type.toUpperCase()}) %></span>
+        <%- $.t('cluster_page.network_tab.neutron_segmentation', {segment_type: segment_type.toUpperCase()}) %>
       <% } %>
+      </span>
     <% } %>
     <div class="networks-table"></div>
     <div class="networking-parameters"></div>

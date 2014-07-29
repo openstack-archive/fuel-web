@@ -12,23 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This mapping is supposed to be dynamically filled with
-# names of objects and their types
+import os
 
-OBJECT_TYPES = {}
+import pygit2
 
-
-class MetaObject(type):
-    def __init__(self, name, bases, dct):
-        if '__typename__' in dct:
-            OBJECT_TYPES[dct['__typename__']] = self
-        return super(MetaObject, self).__init__(name, bases, dct)
+from fuel_agent_ci import utils
 
 
-class Object(object):
-    __metaclass__ = MetaObject
-    __typename__ = 'object'
+def repo_clone(repo):
+    return pygit2.clone_repository(
+        repo.url, os.path.join(repo.env.envdir, repo.path),
+        checkout_branch=repo.branch)
 
-    @property
-    def typename(self):
-        return self.__typename__
+
+def repo_clean(repo):
+    utils.execute('rm -rf %s' % os.path.join(repo.env.envdir, repo.path))
+
+
+def repo_status(repo):
+    try:
+        pygit2.discover_repository(os.path.join(repo.env.envdir, repo.path))
+    except KeyError:
+        return False
+    return True

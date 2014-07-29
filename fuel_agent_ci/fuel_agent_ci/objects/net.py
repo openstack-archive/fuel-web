@@ -19,38 +19,27 @@ from fuel_agent_ci.objects import Object
 LOG = logging.getLogger(__name__)
 
 
-class Dhcp(Object):
-    __typename__ = 'dhcp'
+class Net(Object):
+    __typename__ = 'net'
 
-    def __init__(self, env, name, begin, end, network):
-        self.name = name
+    def __init__(self, env, name, bridge, ip, forward):
         self.env = env
-        self.begin = begin
-        self.end = end
-        self.network = network
-        self.hosts = []
-        self.bootp = None
-
-    def add_host(self, mac, ip, name=None):
-        host = {'mac': mac, 'ip': ip}
-        if name is not None:
-            host['name'] = name
-        self.hosts.append(host)
-
-    def set_bootp(self, file):
-        self.bootp = {'file': file}
+        self.name = name
+        self.bridge = bridge
+        self.ip = ip
+        self.forward = forward
 
     def start(self):
         if not self.status():
-            LOG.debug('Starting DHCP')
-            self.env.driver.dhcp_start(self)
+            LOG.debug('Starting network %s' % self.name)
+            self.env.driver.net_start(self)
 
     def stop(self):
         if self.status():
-            LOG.debug('Stopping DHCP')
-            self.env.driver.dhcp_stop(self)
+            LOG.debug('Stopping network %s' % self.name)
+            self.env.driver.net_stop(self)
 
     def status(self):
-        status = self.env.driver.dhcp_status(self)
-        LOG.debug('DHCP status %s' % status)
+        status = self.env.driver.net_status(self)
+        LOG.debug('Network %s status %s' % (self.name, status))
         return status

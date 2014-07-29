@@ -21,6 +21,7 @@
 #
 import argparse
 import functools
+import itertools
 import json
 import logging
 import os
@@ -73,6 +74,8 @@ class Actor(object):
             'sport': 31337,
             'dport': 31337,
             'cookie': "Nailgun:",
+            'time': 30,
+            'repeat': 2
         }
         if config:
             self.config.update(config)
@@ -357,10 +360,27 @@ class Sender(Actor):
     def _run(self):
         for iface, vlan in self._iface_vlan_iterator():
             self._ensure_iface_up(iface)
-            data = str(''.join((self.config['cookie'], iface, ' ',
-                       self.config['uid'])))
+        self._send_packets()
+        self._log_ifaces("Interfaces just after sending probing packages")
+        for iface in self._iface_iterator():
+            self._ensure_iface_down(iface)
+        self._log_ifaces("Interfaces just after ensuring them down in sender")
+        self.logger.info("=== Sender Finished ===")
+
+    def _send_packets(self):
+        start_time = time.time()
+        for iface, vlan in itertools.cycle(self._iface_vlan_iterator()):
             self.logger.debug("Sending packets: iface=%s vlan=%s",
                               iface, str(vlan))
+            for _ in xrange(self.config['repeat']):
+                self._sendp(iface, vlan)
+            if time.time() - start_time >= self.config['time']:
+                break
+
+    def _sendp(self, iface, vlan):
+        try:
+            data = str(''.join((self.config['cookie'], iface, ' ',
+                       self.config['uid'])))
 
             p = scapy.Ether(src=self._get_iface_mac(iface),
                             dst="ff:ff:ff:ff:ff:ff")
@@ -369,20 +389,9 @@ class Sender(Actor):
             p = p / scapy.IP(src=self.config['src'], dst=self.config['dst'])
             p = p / scapy.UDP(sport=self.config['sport'],
                               dport=self.config['dport']) / data
-
-            try:
-                for i in xrange(5):
-                    self.logger.debug("Sending packet: iface=%s data=%s",
-                                      iface, data)
-                    scapy.sendp(p, iface=iface)
-            except socket.error as e:
-                self.logger.error("Socket error: %s, %s", e, iface)
-
-        self._log_ifaces("Interfaces just after sending probing packages")
-        for iface in self._iface_iterator():
-            self._ensure_iface_down(iface)
-        self._log_ifaces("Interfaces just after ensuring them down in sender")
-        self.logger.info("=== Sender Finished ===")
+            scapy.sendp(p, iface=iface)
+        except socket.error as e:
+            self.logger.error("Socket error: %s, %s", e, iface)
 
 
 class Listener(Actor):
@@ -615,6 +624,14 @@ def define_subparsers(parser):
         '-u', '--uid', dest='uid', action='store', type=str,
         help='uid to insert into probe packets payload', default='1'
     )
+    generate_parser.add_argument(
+        '-t', '--time', dest='time', type=int, default=30,
+        help='Amount of time to generate network packets. In seconds',
+    )
+    generate_parser.add_argument(
+        '-r', '--repeat', dest='repeat', type=int, default=2,
+        help='Amount of packets sended in one iteration.',
+    )
 
 
 def term_handler(signum, sigframe):
@@ -668,6 +685,8 @@ def main():
             config['interfaces'][params.interface] = params.vlan_list
             config['uid'] = params.uid
             config['cookie'] = params.cookie
+            config['time'] = params.time
+            config['repeat'] = params.repeat
 
     actor = ActorFabric.getInstance(config)
     actor.run()

@@ -32,7 +32,16 @@ class Parser:
     def __init__(self):
         self.args = sys.argv
         self.parser = argparse.ArgumentParser(
-            usage="fuel [optional args] <namespace> [action] [flags]"
+            usage="""
+            Configuration for client you can find in
+            /etc/fuel/client/config.yaml. If you don't have this file please
+            create it ie:
+            "SERVER_ADDRESS": "127.0.0.1",
+            "LISTEN_PORT": "8000",
+            "KEYSTONE_USER": "admin",
+            "KEYSTONE_PASS": "admin"
+
+            fuel [optional args] <namespace> [action] [flags]"""
         )
         self.universal_flags = []
         self.subparsers = self.parser.add_subparsers(
@@ -106,20 +115,16 @@ class Parser:
         )
 
     def add_keystone_credentials_args(self):
-        self.universal_flags.append("--os-username")
         self.parser.add_argument(
             "--os-username",
             dest="user",
-            action="store",
             type=str,
             help="credentials for keystone authentication user",
             default=None
         )
-        self.universal_flags.append("--os-password")
         self.parser.add_argument(
             "--os-password",
             dest="password",
-            action="store",
             type=str,
             help="credentials for keystone authentication password",
             default=None

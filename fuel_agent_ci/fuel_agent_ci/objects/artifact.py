@@ -19,26 +19,28 @@ from fuel_agent_ci.objects import Object
 LOG = logging.getLogger(__name__)
 
 
-class Tftp(Object):
-    __typename__ = 'tftp'
+class Artifact(Object):
+    __typename__ = 'artifact'
 
-    def __init__(self, env, name, tftp_root, network):
-        self.name = name
+    def __init__(self, env, name, url, path, unpack=None, clean=None):
         self.env = env
-        self.tftp_root = tftp_root
-        self.network = network
+        self.name = name
+        self.url = url
+        self.path = path
+        self.unpack = unpack
+        self.clean = clean
 
-    def start(self):
+    def get(self):
         if not self.status():
-            LOG.debug('Starting TFTP')
-            self.env.driver.tftp_start(self)
+            LOG.debug('Getting artifact %s' % self.name)
+            self.env.driver.artifact_get(self)
 
-    def stop(self):
+    def clean(self):
         if self.status():
-            LOG.debug('Stopping TFTP')
-            self.env.driver.tftp_stop(self)
+            LOG.debug('Cleaning artifact %s' % self.name)
+            self.env.driver.artifact_clean(self)
 
     def status(self):
-        status = self.env.driver.tftp_status(self)
-        LOG.debug('TFTP status %s' % status)
+        status = self.env.driver.artifact_status(self)
+        LOG.debug('Artifact %s status %s' % (self.name, status))
         return status

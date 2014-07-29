@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class Network(object):
-    def __init__(self, name, bridge, ip, forward):
-        self.name = name
-        self.bridge = bridge
-        self.ip = ip
-        self.forward = forward
+try:
+    from unittest.case import TestCase
+except ImportError:
+    # Runing unit-tests in production environment
+    from unittest2.case import TestCase
+
+class TestPartition(TestCase):
+    pass

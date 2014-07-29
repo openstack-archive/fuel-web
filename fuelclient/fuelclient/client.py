@@ -57,32 +57,32 @@ class Client(object):
         )
         self.api_root = self.root + "/api/v1/"
         self.ostf_root = self.root + "/ostf/"
-        self.auth_status()
         self.user = defaults["KEYSTONE_USER"]
         self.password = defaults["KEYSTONE_PASS"]
-        self.keystone_client = None
-        self.initialize_keystone_client()
+        self._keystone_client = None
+        self._auth_required = None
 
     @property
     def auth_token(self):
-        if self.keystone_client:
+        if self.auth_required:
             if not self.keystone_client.auth_token:
                 self.keystone_client.authenticate()
             return self.keystone_client.auth_token
         return ''
 
     @property
-    def user_id(self):
-        if self.keystone_client and not self.keystone_client.auth_token:
-            self.keystone_client.authenticate()
-            return self.keystone_client.user_id
-        return ''
+    def auth_required(self):
+        if self._auth_required is None:
+            request = urllib2.urlopen(''.join([self.api_root, 'version']))
+            self._auth_required = json.loads(
+                request.read()).get('auth_required', False)
+        return self._auth_required
 
-    def auth_status(self):
-        self.auth_required = False
-        request = urllib2.urlopen(''.join([self.api_root, 'version']))
-        self.auth_required = json.loads(
-            request.read()).get('auth_required', False)
+    @property
+    def keystone_client(self):
+        if not self._keystone_client:
+            self.initialize_keystone_client()
+        return self._keystone_client
 
     def update_own_password(self, new_pass):
         if self.auth_token:
@@ -91,12 +91,13 @@ class Client(object):
 
     def initialize_keystone_client(self):
         if self.auth_required:
-            self.keystone_client = auth_client.Client(
+            self._keystone_client = auth_client.Client(
                 username=self.user,
                 password=self.password,
                 auth_url=self.keystone_base,
                 tenant_name="admin")
-            self.keystone_client.session.auth = self.keystone_client
+            self._keystone_client.session.auth = self._keystone_client
+            self._keystone_client.authenticate()
 
     def debug_mode(self, debug=False):
         self.debug = debug

@@ -541,7 +541,9 @@ class MulticastVerificationTask(BaseNetworkVerification):
         is present in editable attributes, which is not the case if cluster
         was upgraded from 5.0
         """
-        return 'corosync' in cluster.attributes['editable']
+        #TODO(dshulyak) enable it, when it will be possible to upgrade
+        # mcagent and network checker for old envs
+        return False
 
 
 class CheckNetworksTask(object):

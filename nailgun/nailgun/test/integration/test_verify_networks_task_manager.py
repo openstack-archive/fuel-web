@@ -16,6 +16,8 @@
 
 import copy
 
+import unittest2
+
 from nailgun.consts import NETWORK_INTERFACE_TYPES
 from nailgun.consts import OVS_BOND_MODES
 from nailgun.openstack.common import jsonutils
@@ -172,6 +174,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         )
         self.assertEqual(400, resp.status_code)
 
+    @unittest2.skip('Multicast is always disabled.')
     @fake_tasks(fake_rpc=False)
     def test_multicast_enabled_when_corosync_section_present(self, mocked_rpc):
         self.env.launch_verify_networks()
@@ -182,6 +185,7 @@ class TestVerifyNetworkTaskManagers(BaseIntegrationTest):
         self.assertEqual(dhcp_subtask['method'], 'check_dhcp')
         self.assertEqual(multicast['method'], 'multicast_verification')
 
+    @unittest2.skip('Multicast is always disabled.')
     @fake_tasks(fake_rpc=False)
     def test_multicast_disabled_when_corosync_is_not_present(self, mocked_rpc):
         editable = copy.deepcopy(self.env.clusters[0].attributes.editable)

@@ -128,6 +128,15 @@ class TestHandlers(BaseTestCase):
         )
 
 
+class TestUserActions(BaseTestCase):
+
+    def test_change_password_params(self):
+        cmd = "user --change-password"
+        msg = "Expect password [--newpass NEWPASS]"
+        result = self.run_cli_command(cmd, check_errors=True)
+        self.assertTrue(msg, result)
+
+
 class TestCharset(BaseTestCase):
 
     def test_charset_problem(self):

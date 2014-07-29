@@ -105,7 +105,8 @@ def plugin_hook(name):
                     plugin_result = {}
                     map(plugin_result.update, plugin_result_list)
                 else:
-                    return plugin_result_list
+                    # only one result if we don't know how to merge it
+                    return plugin_result_list[0]
             else:
                 result = func(*args, **kwargs)
                 plugin_result = result

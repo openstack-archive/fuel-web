@@ -136,7 +136,7 @@ def vgreduce(vgname, pvname, *args):
     # check if vg exists
     if not filter(lambda x: x['name'] == vgname, vgdisplay()):
         raise errors.VGNotFoundError(
-            'Error while extending vg: vg %s not found' % vgname)
+            'Error while reducing vg: vg %s not found' % vgname)
     pvnames = [pvname] + list(args)
     # check if all necessary pv are attached to vg
     if not set(pvnames).issubset(
@@ -151,7 +151,7 @@ def vgremove(vgname):
     # check if vg exists
     if not filter(lambda x: x['name'] == vgname, vgdisplay()):
         raise errors.VGNotFoundError(
-            'Error while extending vg: vg %s not found' % vgname)
+            'Error while removing vg: vg %s not found' % vgname)
     utils.execute('vgremove', '-f', vgname, check_exit_code=[0])
 
 
@@ -161,7 +161,9 @@ def lvdisplay():
         '-C',
         '--noheading',
         '--units', 'm',
-        '--options', 'lv_name,lv_size,vg_name,lv_uuid,lv_path',
+        #NOTE(agordeev): lv_path had been removed from options
+        # since versions of lvdisplay prior 2.02.68 don't have it.
+        '--options', 'lv_name,lv_size,vg_name,lv_uuid',
         '--separator', ';',
         check_exit_code=[0])
 
@@ -176,7 +178,8 @@ def lvdisplay():
             'size': utils.parse_unit(lv_params[1], 'm'),
             'vg': lv_params[2],
             'uuid': lv_params[3],
-            'path': lv_params[4]
+            #NOTE(agordeev): simulate lv_path with '/dev/$vg_name/$lv_name'
+            'path': '/dev/%s/%s' % (lv_params[2], lv_params[0])
         })
     LOG.debug('Found logical volumes: {0}'.format(lvs))
     return lvs
@@ -188,7 +191,7 @@ def lvcreate(vgname, lvname, size):
     # check if vg exists
     if not vg:
         raise errors.VGNotFoundError(
-            'Error while extending vg: vg %s not found' % vgname)
+            'Error while creating vg: vg %s not found' % vgname)
     # check if enough space is available
     if vg[0]['free'] < size:
         raise errors.NotEnoughSpaceError(

@@ -12,9 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class Network(object):
-    def __init__(self, name, bridge, ip, forward):
+import logging
+
+from fuel_agent_ci.objects import Object
+
+LOG = logging.getLogger(__name__)
+
+
+class Net(Object):
+    __typename__ = 'net'
+
+    def __init__(self, env, name, bridge, ip, forward):
+        self.env = env
         self.name = name
         self.bridge = bridge
         self.ip = ip
         self.forward = forward
+
+    def start(self):
+        if not self.status():
+            LOG.debug('Starting network %s' % self.name)
+            self.env.driver.net_start(self)
+
+    def stop(self):
+        if self.status():
+            LOG.debug('Stopping network %s' % self.name)
+            self.env.driver.net_stop(self)
+
+    def status(self):
+        status = self.env.driver.net_status(self)
+        LOG.debug('Network %s status %s' % (self.name, status))
+        return status

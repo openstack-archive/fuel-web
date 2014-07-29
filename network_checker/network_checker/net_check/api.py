@@ -20,11 +20,11 @@
 # Analyse dumps for packets with special cookie in UDP payload.
 #
 import argparse
-import functools
 import json
 import logging
 import os
 import re
+import shutil
 import signal
 import socket
 import subprocess
@@ -38,11 +38,11 @@ import logging.handlers
 
 from scapy import config as scapy_config
 
-import pcap
-
 scapy_config.logLevel = 40
 scapy_config.use_pcap = True
 import scapy.all as scapy
+
+from scapy.utils import rdpcap
 
 
 class ActorFabric(object):
@@ -73,6 +73,7 @@ class Actor(object):
             'sport': 31337,
             'dport': 31337,
             'cookie': "Nailgun:",
+            'pcap_dir': "/var/run/pcap_dir/"
         }
         if config:
             self.config.update(config)
@@ -81,6 +82,12 @@ class Actor(object):
         self._execute(["modprobe", "8021q"])
         self.iface_down_after = {}
         self.viface_remove_after = {}
+        self._define_pcap_dir()
+
+    def _define_pcap_dir(self):
+        if os.path.exists(self.config['pcap_dir']):
+            shutil.rmtree(self.config['pcap_dir'])
+        os.mkdir(self.config['pcap_dir'])
 
     def _define_logger(self, filename=None,
                        appname='netprobe', level=logging.DEBUG):
@@ -416,21 +423,12 @@ class Listener(Actor):
 
     def _run(self):
         sniffers = set()
+        listeners = []
 
-        def run_listener_thread(iface, vlan=False):
-            t = threading.Thread(
-                target=self.get_probe_frames,
-                args=(iface, vlan)
-            )
-            t.daemon = True
-            t.start()
-            return t
-
-        for iface, vlan in self._iface_vlan_iterator():
+        for iface in self._iface_iterator():
             self._ensure_iface_up(iface)
             if iface not in sniffers:
-                run_listener_thread(iface)
-                run_listener_thread(iface, vlan=True)
+                listeners.append(self.get_probe_frames(iface))
                 sniffers.add(iface)
 
         try:
@@ -463,6 +461,13 @@ class Listener(Actor):
         except SystemExit:
             self.logger.debug("TERM signal catched")
 
+        for listener in listeners:
+            # terminate and flush pipes
+            listener.terminate()
+            listener.communicate()
+
+        self.logger.debug('Start reading dumped information.')
+        self.read_packets()
         self._log_ifaces("Interfaces just before ensuring interfaces down")
 
         for iface in self._iface_iterator():
@@ -474,6 +479,16 @@ class Listener(Actor):
             fo.write(json.dumps(self.neighbours))
         os.unlink(self.pidfile)
         self.logger.info("=== Listener Finished ===")
+
+    def read_packets(self):
+        for iface in self._iface_iterator():
+            try:
+                pcap_file = os.path.join(self.config['pcap_dir'],
+                                         '{0}.pcap'.format(iface))
+                for pkt in rdpcap(pcap_file):
+                    self.fprn(pkt, iface)
+            except Exception:
+                self.logger.exception('Cant read pcap file %s', pcap_file)
 
     def fprn(self, p, iface):
 
@@ -493,38 +508,19 @@ class Listener(Actor):
         if riface not in self.neighbours[iface][vlan].setdefault(uid, []):
             self.neighbours[iface][vlan][uid].append(riface)
 
-    def get_probe_frames(self, iface, vlan=False):
+    def get_probe_frames(self, iface):
         if iface not in self.neighbours:
             self.neighbours[iface] = {}
-        """
-        We do not use scapy filtering because it is slow. Instead we use
-        python binding to extreamely fast libpcap library to filter out
-        probing packages.
-        """
-        pc = pcap.pcap(iface)
         filter_string = 'udp and dst port {0}'.format(self.config['dport'])
-        if vlan:
-            filter_string = 'vlan and {0}'.format(filter_string)
-        pc.setfilter(filter_string)
+        pcap_file = os.path.join(self.config['pcap_dir'],
+                                 '{0}.pcap'.format(iface))
+        tcpdump = ['tcpdump', '-i', iface,
+                   '-w', pcap_file, '-n', filter_string]
 
-        def fltr(p):
-            try:
-                received_msg = str(p[scapy.UDP].payload)[:p[scapy.UDP].len]
-                decoded_msg = received_msg.decode()
-                return decoded_msg.startswith(self.config["cookie"])
-            except Exception as e:
-                self.logger.debug("Error while filtering packet: %s", str(e))
-                return False
-
-        pprn = functools.partial(self.fprn, iface=iface)
-        try:
-            while True:
-                ts, pkt = pc.next()
-                p = scapy.Ether(pkt)
-                if fltr(p):
-                    pprn(p)
-        except (KeyboardInterrupt, SystemExit):
-            pass
+        return subprocess.Popen(
+            tcpdump,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
 # -------------- main ---------------
 

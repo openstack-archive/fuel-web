@@ -563,6 +563,10 @@ begin
     end
   else
     resp = agent.put
+    # Handle case when node was removed, but nailgun_uid exist
+    if resp.status == 400
+      resp = agent.post
+    end
   end
   unless [201, 200].include? resp.status
     logger.error resp.body

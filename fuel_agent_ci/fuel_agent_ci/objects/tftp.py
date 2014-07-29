@@ -12,7 +12,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class Tftp(object):
-    def __init__(self, tftp_root, network):
+import logging
+
+from fuel_agent_ci.objects import Object
+
+LOG = logging.getLogger(__name__)
+
+
+class Tftp(Object):
+    __typename__ = 'tftp'
+
+    def __init__(self, env, name, tftp_root, network):
+        self.name = name
+        self.env = env
         self.tftp_root = tftp_root
         self.network = network
+
+    def start(self):
+        if not self.status():
+            LOG.debug('Starting TFTP')
+            self.env.driver.tftp_start(self)
+
+    def stop(self):
+        if self.status():
+            LOG.debug('Stopping TFTP')
+            self.env.driver.tftp_stop(self)
+
+    def status(self):
+        status = self.env.driver.tftp_status(self)
+        LOG.debug('TFTP status %s' % status)
+        return status

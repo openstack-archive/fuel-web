@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fuel_agent_ci.drivers import libvirt_driver
-from fuel_agent_ci import objects
+import logging
+
+from fuel_agent_ci.objects.environment import Environment
+
+LOG = logging.getLogger(__name__)
 
 
 class Manager(object):
     def __init__(self, data):
-        self.data = data
-        self.driver = libvirt_driver
-        self.env = objects.Environment.new(**self.data)
+        self.env = Environment.new(**data)
 
-    def define(self):
-        self.driver.env_define(self.env)
+    def do_item(self, item_type, item_action, item_name=None, **kwargs):
+        return getattr(
+            self.env, '%s_%s' % (item_type, item_action))(item_name, **kwargs)
 
-    def undefine(self):
-        self.driver.env_undefine(self.env)
+    def do_env(self, env_action, **kwargs):
+        return getattr(self.env, env_action)(**kwargs)

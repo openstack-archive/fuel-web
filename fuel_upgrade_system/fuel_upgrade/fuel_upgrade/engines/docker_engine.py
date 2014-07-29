@@ -28,6 +28,7 @@ import requests
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade.health_checker import FuelUpgradeVerify
 from fuel_upgrade.supervisor_client import SupervisorClient
+from fuel_upgrade.version_file import VersionFile
 
 from fuel_upgrade import errors
 from fuel_upgrade import utils
@@ -57,10 +58,10 @@ class DockerUpgrader(UpgradeEngine):
             working_directory=self.working_directory)
         self.upgrade_verifier = FuelUpgradeVerify(self.config)
 
-        self.from_version_path = self.config.from_version_path
-        self.save_current_version_file()
         self.from_version = self.config.from_version
         self.supervisor = SupervisorClient(self.config, self.from_version)
+        self.version_file = VersionFile(self.config)
+        self.version_file.save_current()
 
     def upgrade(self):
         """Method with upgarde logic
@@ -80,28 +81,18 @@ class DockerUpgrader(UpgradeEngine):
         # Update configs and run new services
         self.generate_configs()
         self.switch_to_new_configs()
-        self.switch_version_to_new()
+        self.version_file.switch_to_new()
         self.supervisor.restart_and_wait()
         self.upgrade_verifier.verify()
 
     def rollback(self):
         """Method which contains rollback logic
         """
-        self.switch_version_file_to_previous_version()
+        self.version_file.switch_to_previous()
         self.supervisor.switch_to_previous_configs()
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
         self.supervisor.restart_and_wait()
-
-    def switch_version_file_to_previous_version(self):
-        """Switch version.yaml symlink to previous version
-        """
-        logger.info(u'Switch current version file to previous version')
-        previous_version_path = self.config.previous_version_path
-
-        utils.symlink(
-            previous_version_path,
-            self.config.current_fuel_version_path)
 
     @property
     def required_free_space(self):
@@ -124,19 +115,6 @@ class DockerUpgrader(UpgradeEngine):
     def _calculate_images_size(self):
         images_list = [i['docker_image'] for i in self.new_release_images]
         return utils.files_size(images_list)
-
-    def save_current_version_file(self):
-        """Save current version in working
-        directory if it was not saved during
-        previous run.
-
-        This action is important in case
-        when upgrade script was interrupted
-        after symlinking of version.yaml file.
-        """
-        utils.copy_if_does_not_exist(
-            self.config.current_fuel_version_path,
-            self.from_version_path)
 
     def save_db(self):
         """Saves postgresql database into the file
@@ -212,20 +190,6 @@ class DockerUpgrader(UpgradeEngine):
             if not utils.check_file_is_valid_json(config):
                 raise errors.WrongCobblerConfigsError(
                     u'Invalid json config {0}'.format(config))
-
-    def switch_version_to_new(self):
-        """Switches version.yaml file to new version
-
-        * creates new version yaml file
-        * and creates symlink to /etc/fuel/version.yaml
-        """
-        logger.info(u'Run post upgrade actions')
-        version_yaml_from_upgrade = self.config.new_upgrade_version_path
-        new_version_path = self.config.new_version_path
-
-        utils.create_dir_if_not_exists(os.path.dirname(new_version_path))
-        utils.copy(version_yaml_from_upgrade, new_version_path)
-        utils.symlink(new_version_path, self.config.current_fuel_version_path)
 
     def upload_images(self):
         """Uploads images to docker

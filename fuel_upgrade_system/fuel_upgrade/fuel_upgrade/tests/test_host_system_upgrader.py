@@ -25,7 +25,11 @@ from fuel_upgrade.tests.base import BaseTestCase
 class TestHostSystemUpgrader(BaseTestCase):
 
     def setUp(self):
-        self.upgrader = HostSystemUpgrader(self.fake_config)
+        self.version_mock = mock.MagicMock()
+
+        with mock.patch('fuel_upgrade.engines.host_system.VersionFile',
+                        return_value=self.version_mock):
+            self.upgrader = HostSystemUpgrader(self.fake_config)
 
     @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.update_repo')
@@ -36,6 +40,8 @@ class TestHostSystemUpgrader(BaseTestCase):
 
         self.called_once(run_puppet_mock)
         self.called_once(update_repo_mock)
+        self.called_once(self.version_mock.save_current)
+        self.called_once(self.version_mock.switch_to_new)
 
     @mock.patch('fuel_upgrade.engines.host_system.utils')
     def test_update_repo(self, utils_mock):
@@ -62,6 +68,8 @@ class TestHostSystemUpgrader(BaseTestCase):
     def test_rollback(self, remove_repo_config_mock):
         self.upgrader.rollback()
         self.called_once(remove_repo_config_mock)
+        self.called_once(self.version_mock.save_current)
+        self.called_once(self.version_mock.switch_to_previous)
 
     @mock.patch('fuel_upgrade.engines.host_system.utils')
     def test_remove_repo_config(self, utils_mock):

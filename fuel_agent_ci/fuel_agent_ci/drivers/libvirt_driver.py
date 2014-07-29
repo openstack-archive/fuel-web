@@ -343,80 +343,164 @@ class LibvirtDriver(object):
             stream.finish()
 
 
-def env_define(env, drv=None):
+def net_start(net, drv=None):
     if drv is None:
         drv = LibvirtDriver()
-
-    LOG.debug('Defining environment: %s' % env.name)
-
-    for network in env.networks:
-        netname = env.name + '_' + network.name
-        LOG.debug('Defining network: %s' % netname)
-        network_kwargs = {
-            'bridge_name': network.bridge,
-            'forward_mode': 'nat',
-            'ip_address': network.ip,
+    LOG.debug('Starting network: %s' % net.name)
+    netname = net.env.name + '_' + net.name
+    net_kwargs = {
+        'bridge_name': net.bridge,
+        'forward_mode': 'nat',
+        'ip_address': net.ip,
+    }
+    tftp = net.env.tftp_by_network(net.name)
+    if tftp:
+        net_kwargs['tftp_root'] = os.path.join(
+            net.env.envdir, tftp.tftp_root)
+    dhcp = net.env.dhcp_by_network(net.name)
+    if dhcp:
+        net_kwargs['dhcp'] = {
+            'start': dhcp.begin,
+            'end': dhcp.end,
         }
-        if env.tftp and env.tftp.network == network.name:
-            network_kwargs['tftp_root'] = env.tftp.tftp_root
-        if env.dhcp and env.dhcp.network == network.name:
-            network_kwargs['dhcp'] = {
-                'start': env.dhcp.start,
-                'end': env.dhcp.end,
-            }
-            if env.dhcp.bootp:
-                network_kwargs['dhcp']['bootp'] = env.dhcp.bootp
-            if env.dhcp.hosts:
-                network_kwargs['dhcp']['hosts'] = env.dhcp.hosts
-        drv.net_define(netname, **network_kwargs)
-        drv.net_start(drv.net_uuid_by_name(netname))
+        if dhcp.bootp:
+            net_kwargs['dhcp']['bootp'] = dhcp.bootp
+        if dhcp.hosts:
+            net_kwargs['dhcp']['hosts'] = dhcp.hosts
+    drv.net_define(netname, **net_kwargs)
+    drv.net_start(drv.net_uuid_by_name(netname))
 
 
-    for vm in env.vms:
-        vmname = env.name + '_' + vm.name
-        disks = []
-        for num, disk in enumerate(vm.disks):
-            disk_name = vmname + '_%s' % num
-            order = 'abcdefghijklmnopqrstuvwxyz'
-            if disk.base:
-                drv.vol_create(disk_name, base=disk.base)
-            else:
-                drv.vol_create(disk_name, capacity=disk.size)
-            disks.append({
-                'source_file': drv.vol_path(disk_name),
-                'target_dev': 'sd%s' % order[num],
-                'target_bus': 'scsi',
-            })
-        interfaces = []
-        for interface in vm.interfaces:
-            interfaces.append({
-                'type': 'network',
-                'source_network': env.name + '_' + interface.network,
-                'mac_address': interface.mac
-            })
-        drv.define(vmname, boot=vm.boot, disks=disks, interfaces=interfaces)
-        drv.start(drv.uuid_by_name(vmname))
-
-
-def env_undefine(env, drv=None):
+def net_stop(net, drv=None):
     if drv is None:
         drv = LibvirtDriver()
+    LOG.debug('Stopping net: %s' % net.name)
+    netname = net.env.name + '_' + net.name
+    if netname in drv.net_list():
+        uuid = drv.net_uuid_by_name(netname)
+        if netname in drv.net_list_active():
+            drv.net_destroy(uuid)
+        drv.net_undefine(uuid)
 
-    for vm in env.vms:
-        vmname = env.name + '_' + vm.name
-        if vmname in drv.list():
-            uuid = drv.uuid_by_name(vmname)
-            if vmname in drv.list_active():
-                drv.destroy(uuid)
-            drv.undefine(uuid)
 
-        for volname in [v for v in drv.vol_list() if v.startswith(vmname)]:
-            drv.vol_delete(volname)
+def net_status(net, drv=None):
+    if drv is None:
+        drv = LibvirtDriver()
+    return (net.env.name + '_' + net.name in drv.net_list_active())
 
-    for network in env.networks:
-        netname = env.name + '_' + network.name
-        if netname in drv.net_list():
-            uuid = drv.net_uuid_by_name(netname)
-            if netname in drv.net_list_active():
-                drv.net_destroy(uuid)
-            drv.net_undefine(uuid)
+
+def vm_start(vm, drv=None):
+    if drv is None:
+        drv = LibvirtDriver()
+    LOG.debug('Starting vm: %s' % vm.name)
+    vmname = vm.env.name + '_' + vm.name
+
+    if vm.env.name not in drv.pool_list():
+        LOG.debug('Defining volume pool %s' % vm.env.name)
+        drv.pool_define(vm.env.name, os.path.join(vm.env.envdir, 'volumepool'))
+    if vm.env.name not in drv.pool_list_active():
+        LOG.debug('Starting volume pool %s' % vm.env.name)
+        drv.pool_start(drv.pool_uuid_by_name(vm.env.name))
+
+    disks = []
+    for num, disk in enumerate(vm.disks):
+        disk_name = vmname + '_%s' % num
+        order = 'abcdefghijklmnopqrstuvwxyz'
+        if disk_name not in drv.vol_list(pool_name=vm.env.name):
+            if disk.base:
+                LOG.debug('Creating vm disk: pool=%s vol=%s base=%s' %
+                          (vm.env.name, disk_name, disk.base))
+                drv.vol_create(disk_name, base=disk.base,
+                               pool_name=vm.env.name)
+            else:
+                LOG.debug('Creating empty vm disk: pool=%s vol=%s '
+                          'capacity=%s' % (vm.env.name, disk_name, disk.size))
+                drv.vol_create(disk_name, capacity=disk.size,
+                               pool_name=vm.env.name)
+        disks.append({
+            'source_file': drv.vol_path(disk_name, pool_name=vm.env.name),
+            'target_dev': 'sd%s' % order[num],
+            'target_bus': 'scsi',
+        })
+
+    interfaces = []
+    for interface in vm.interfaces:
+        LOG.debug('Creating vm interface: net=%s mac=%s' %
+                  (vm.env.name + '_' + interface.network, interface.mac))
+        interfaces.append({
+            'type': 'network',
+            'source_network': vm.env.name + '_' + interface.network,
+            'mac_address': interface.mac
+        })
+    LOG.debug('Defining vm %s' % vm.name)
+    drv.define(vmname, boot=vm.boot, disks=disks, interfaces=interfaces)
+    LOG.debug('Starting vm %s' % vm.name)
+    drv.start(drv.uuid_by_name(vmname))
+
+
+def vm_stop(vm, drv=None):
+    if drv is None:
+        drv = LibvirtDriver()
+    LOG.debug('Stopping vm: %s' % vm.name)
+    vmname = vm.env.name + '_' + vm.name
+    if vmname in drv.list():
+        uuid = drv.uuid_by_name(vmname)
+        if vmname in drv.list_active():
+            LOG.debug('Destroying vm: %s' % vm.name)
+            drv.destroy(uuid)
+        LOG.debug('Undefining vm: %s' % vm.name)
+        drv.undefine(uuid)
+
+    for volname in [v for v in drv.vol_list(pool_name=vm.env.name)
+                    if v.startswith(vmname)]:
+        LOG.debug('Deleting vm disk: pool=%s vol=%s' % (vm.env.name, volname))
+        drv.vol_delete(volname, pool_name=vm.env.name)
+
+    if not drv.vol_list(pool_name=vm.env.name):
+        LOG.debug('Deleting volume pool: %s' % vm.env.name)
+        if vm.env.name in drv.pool_list():
+            uuid = drv.pool_uuid_by_name(vm.env.name)
+            if vm.env.name in drv.pool_list_active():
+                LOG.debug('Destroying pool: %s' % vm.env.name)
+                drv.pool_destroy(uuid)
+            if vm.env.name in drv.pool_list():
+                LOG.debug('Undefining pool: %s' % vm.env.name)
+                drv.pool_undefine(uuid)
+
+
+def vm_status(vm, drv=None):
+    if drv is None:
+        drv = LibvirtDriver()
+    return (vm.env.name + '_' + vm.name in drv.list_active())
+
+
+def dhcp_start(dhcp):
+    """This feature is implemented in net_start
+    """
+    pass
+
+
+def dhcp_stop(dhcp):
+    """This feature is implemented is net_stop
+    """
+    pass
+
+
+def dhcp_status(dhcp):
+    return dhcp.env.net_by_name(dhcp.network).status()
+
+
+def tftp_start(tftp):
+    """This feature is implemented is net_start
+    """
+    pass
+
+
+def tftp_stop(tftp):
+    """This feature is implemented is net_stop
+    """
+    pass
+
+
+def tftp_status(tftp):
+    return tftp.env.net_by_name(tftp.network).status()

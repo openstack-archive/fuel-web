@@ -782,8 +782,6 @@
             description: "Configures Glance to use the Ceph RBD backend to store images. If enabled, this option will prevent Swift from installing."
             weight: 30
             type: "checkbox"
-            restrictions:
-              - "settings:common.libvirt_type.value == 'vcenter'"
           ephemeral_ceph:
             value: false
             label: "Ceph RBD for ephemeral volumes (Nova)"
@@ -799,7 +797,7 @@
             weight: 40
             type: "checkbox"
             restrictions:
-              - "settings:storage.images_ceph.value == false or settings:common.libvirt_type.value == 'vcenter'"
+              - "settings:storage.images_ceph.value == false"
           osd_pool_size:
             value: "2"
             label: "Ceph object replication factor"

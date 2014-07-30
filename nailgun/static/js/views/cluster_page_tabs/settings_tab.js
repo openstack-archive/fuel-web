@@ -213,16 +213,17 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             }, this);
             restrictions = _.compact(restrictions);
             if (restrictions.length) {
-                var processedValues = _.without(_.pluck(processedSetting.values, 'data'), processedSetting[valueAttribute]) || [!processedSetting[valueAttribute]];
-                var configModels = _.cloneDeep(this.configModels);
-                configModels.settings = new models.Settings(this.settings.toJSON().editable);
-                return _.any(restrictions, function(restriction) {
+                var currentValue = processedSetting[valueAttribute];
+                var processedValues = _.without(_.pluck(processedSetting.values, 'data'), currentValue) || [!currentValue];
+                var result = _.any(restrictions, function(restriction) {
                     var suitableValues = _.filter(processedValues, function(value) {
-                        configModels.settings.get(settingPath)[valueAttribute] = value;
-                        return !utils.evaluateExpression(restriction.condition, configModels).value;
-                    });
+                        processedSetting[valueAttribute] = value;
+                        return !utils.evaluateExpression(restriction.condition, this.configModels).value;
+                    }, this);
                     return !suitableValues.length;
-                });
+                }, this);
+                processedSetting[valueAttribute] = currentValue;
+                return result;
             }
             return false;
         },

@@ -178,7 +178,6 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                 updated_disks_count += 1
 
         self.put(node_db.id, disks)
-
         vgs_after_update = filter(
             lambda volume: volume.get('type') == 'vg',
             node_db.attributes.volumes)

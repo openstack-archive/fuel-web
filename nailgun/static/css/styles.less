@@ -262,6 +262,8 @@
 @color-msg-unimportant: @fuel-dark-1;
 @color-msg-provisioned: @fuel-dark-blue;
 
+@node-network-block-width: 600px;
+
 // Components: Cluster Tabs variables
 // -------------------------
 @cluster-tabs-box-shadow: 0 0 0 rgba(0,0,0,.0), inset 0px 1px 0px rgba(255,255,255,.45);
@@ -2581,7 +2583,7 @@ hr.slim {
 
 .logical-network-box {
   .float-mixin;
-  width: 600px;
+  width: @node-network-block-width;
   min-height: 68px;
   margin-bottom: 10px;
   text-align: center;
@@ -2722,6 +2724,8 @@ hr.slim {
   margin-top: 26px;
   position: absolute;
   margin-left: 10px;
+  width: @node-network-block-width;
+  text-align: left;
 }
 
 .radio-checkbox-group .item-box .parameter-box {

@@ -340,6 +340,48 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
         ]
         self.assertEqual(expected_priorities, nodes)
 
+    def test_set_deployment_priorities_many_cntrls(self):
+        nodes = [
+            {'role': 'zabbix-server'},
+            {'role': 'primary-swift-proxy'},
+            {'role': 'swift-proxy'},
+            {'role': 'storage'},
+            {'role': 'mongo'},
+            {'role': 'primary-mongo'},
+            {'role': 'primary-controller'},
+            {'role': 'controller'},
+            {'role': 'controller'},
+            {'role': 'controller'},
+            {'role': 'controller'},
+            {'role': 'controller'},
+            {'role': 'controller'},
+            {'role': 'controller'},
+            {'role': 'controller'},
+            {'role': 'ceph-osd'},
+            {'role': 'other'}
+        ]
+        self.serializer.set_deployment_priorities(nodes)
+        expected_priorities = [
+            {'role': 'zabbix-server', 'priority': 100},
+            {'role': 'primary-swift-proxy', 'priority': 200},
+            {'role': 'swift-proxy', 'priority': 300},
+            {'role': 'storage', 'priority': 400},
+            {'role': 'mongo', 'priority': 500},
+            {'role': 'primary-mongo', 'priority': 600},
+            {'role': 'primary-controller', 'priority': 700},
+            {'role': 'controller', 'priority': 800},
+            {'role': 'controller', 'priority': 800},
+            {'role': 'controller', 'priority': 800},
+            {'role': 'controller', 'priority': 800},
+            {'role': 'controller', 'priority': 800},
+            {'role': 'controller', 'priority': 800},
+            {'role': 'controller', 'priority': 900},
+            {'role': 'controller', 'priority': 900},
+            {'role': 'ceph-osd', 'priority': 1000},
+            {'role': 'other', 'priority': 1000}
+        ]
+        self.assertEqual(expected_priorities, nodes)
+
     def test_set_primary_controller_priority_not_depend_on_nodes_order(self):
         controllers = filter(lambda n: 'controller' in n.roles, self.env.nodes)
         expected_primary_controller = sorted(
@@ -623,7 +665,7 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         cluster_id = cluster.id
         editable_attrs = self._make_data_copy(cluster.attributes.editable)
 
-        #value of kernel-ml should end up with vlan_splinters = off
+        # value of kernel-ml should end up with vlan_splinters = off
         editable_attrs['vlan_splinters']['metadata']['enabled'] = True
         editable_attrs['vlan_splinters']['vswitch']['value'] = 'kernel_lt'
         cluster.attributes.editable = editable_attrs

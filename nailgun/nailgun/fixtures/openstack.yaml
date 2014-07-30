@@ -95,16 +95,25 @@
           min_size: {generator: "calc_min_os_size"}
           label: "Base System"
           volumes:
-            - mount: "/"
-              type: "lv"
-              name: "root"
-              size: {generator: "calc_total_root_vg"}
-              file_system: "ext4"
             - mount: "swap"
               type: "lv"
               name: "swap"
-              size: {generator: "calc_swap_size"}
+              size:
+                generator: "calc_swap_size"
               file_system: "swap"
+            - mount: "/"
+              type: "lv"
+              name: "root"
+              size:
+                generator: "calc_root_size"
+              file_system: "ext4"
+            - mount: "/var"
+              type: "lv"
+              name: "var"
+              size:
+                generator: "vg_free_size"
+                generator_args: ["os", "var", "calc_var_size"]
+              file_system: "ext4"
         - id: "vm"
           type: "vg"
           min_size: {generator: "calc_min_vm_size"}
@@ -635,16 +644,25 @@
           min_size: {generator: "calc_min_os_size"}
           label: "Base System"
           volumes:
-            - mount: "/"
-              type: "lv"
-              name: "root"
-              size: {generator: "calc_total_root_vg"}
-              file_system: "ext4"
             - mount: "swap"
               type: "lv"
               name: "swap"
-              size: {generator: "calc_swap_size"}
+              size:
+                generator: "calc_swap_size"
               file_system: "swap"
+            - mount: "/"
+              type: "lv"
+              name: "root"
+              size:
+                generator: "calc_root_size"
+              file_system: "ext4"
+            - mount: "/var"
+              type: "lv"
+              name: "var"
+              size:
+                generator: "vg_free_size"
+                generator_args: ["os", "var", "calc_var_size"]
+              file_system: "ext4"
         - id: "vm"
           type: "vg"
           min_size: {generator: "calc_min_vm_size"}

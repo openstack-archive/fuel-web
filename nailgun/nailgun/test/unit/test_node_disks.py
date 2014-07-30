@@ -15,6 +15,7 @@
 #    under the License.
 
 from copy import deepcopy
+import mock
 from mock import patch
 import string
 
@@ -26,6 +27,7 @@ from nailgun.volumes.manager import Disk
 from nailgun.volumes.manager import DisksFormatConvertor
 from nailgun.volumes.manager import only_disks
 from nailgun.volumes.manager import only_vg
+from nailgun.volumes.manager import VolumeManager
 
 
 class TestNodeDisksHandlers(BaseIntegrationTest):
@@ -178,7 +180,6 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
                 updated_disks_count += 1
 
         self.put(node_db.id, disks)
-
         vgs_after_update = filter(
             lambda volume: volume.get('type') == 'vg',
             node_db.attributes.volumes)
@@ -490,6 +491,86 @@ class TestVolumeManager(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(404, resp.status_code)
+
+    @patch('nailgun.volumes.manager.VolumeManager.expand_generators')
+    @patch('nailgun.volumes.manager.VolumeManager.__init__')
+    @patch('nailgun.volumes.manager.only_vg')
+    def test_calc_os_size(self, mock_only_vg, mock_vminit, mock_expgen):
+        mock_vminit.return_value = None
+        mock_only_vg.return_value = [
+            {
+                'id': 'os',
+                'volumes': [
+                    {'size': 10},
+                    {'size': 20},
+                    {'size': 40}
+                ]
+            },
+            {
+                'id': 'another',
+                'volumes': [
+                    {'size': 80},
+                    {'size': 160}
+                ]
+            }
+        ]
+        mock_expgen.side_effect = lambda x: x
+        vm = VolumeManager()
+        vm.volumes = None
+        self.assertEqual(vm._calc_os_size(), 70)
+
+    @patch('nailgun.volumes.manager.VolumeManager.call_generator')
+    @patch('nailgun.volumes.manager.VolumeManager._calc_total_vg')
+    @patch('nailgun.volumes.manager.VolumeManager.expand_generators')
+    @patch('nailgun.volumes.manager.VolumeManager.__init__')
+    @patch('nailgun.volumes.manager.only_vg')
+    def test_vg_free_size(self, mock_only_vg, mock_vminit,
+                          mock_expgen, mock_totvg, mock_callgen):
+        # should return the size which left after allocating all
+        # other logical volumes except given one
+        mock_vminit.return_value = None
+        mock_only_vg.return_value = [
+            {
+                'id': 'os',
+                'volumes': [
+                    {'name': 'foo', 'size': 10},
+                    {'name': 'bar', 'size': 20},
+                    {'name': 'zoo', 'size': 40}
+                ]
+            },
+            {
+                'id': 'another',
+                'volumes': [
+                    {'name': 'bla', 'size': 80},
+                    {'name': 'lol', 'size': 160}
+                ]
+            }
+        ]
+        mock_expgen.side_effect = lambda x: x
+        mock_callgen.return_value = 200
+        vm = VolumeManager()
+        vm.volumes = None
+        mock_totvg.return_value = 1000
+        self.assertEqual(vm._vg_free_size('os', 'foo', 'backgen'), 940)
+        # that is the case when _calc_total_vg returns 0
+        # when volume manager is not properly initialized yet
+        mock_totvg.return_value = 0
+        self.assertEqual(vm._vg_free_size('os', 'foo', 'backgen'), 200)
+
+    @patch('nailgun.volumes.manager.VolumeManager.__init__')
+    def test_calc_var_size(self, mock_vminit):
+        mock_vminit.return_value = None
+        disk = mock.Mock()
+        vm = VolumeManager()
+        vm.disks = [disk]
+        disk.size = int(15 * 1024 * 5) - 1
+        self.assertEqual(vm._calc_var_size(), int(15 * 1024))
+        disk.size = int(15 * 1024 * 5)
+        self.assertEqual(vm._calc_var_size(), int(15 * 1024))
+        disk.size = int(30 * 1024 * 5)
+        self.assertEqual(vm._calc_var_size(), int(30 * 1024))
+        disk.size = int(30 * 1024 * 5) + 1
+        self.assertEqual(vm._calc_var_size(), int(30 * 1024))
 
     def test_allocates_all_free_space_for_os_for_controller_role(self):
         node = self.create_node('controller')

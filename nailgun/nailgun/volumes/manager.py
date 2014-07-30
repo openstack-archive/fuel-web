@@ -685,8 +685,13 @@ class VolumeManager(object):
         generators = {
             # Calculate swap space based on total RAM
             'calc_swap_size': self._calc_swap_size,
-            # 15G <= root <= 50G
-            'calc_root_size': self._calc_root_size,
+            # root = 15G
+            'calc_root_size': lambda: gb_to_mb(15),
+            # 15G <= var <= 30G
+            'calc_var_size': self._calc_var_size,
+            # os size is a sum of all os volumes
+            'calc_os_size': self._calc_os_size,
+            'vg_free_size': self._vg_free_size,
             # boot = 200MB
             'calc_boot_size': lambda: 200,
             # boot records size = 300MB
@@ -701,16 +706,13 @@ class VolumeManager(object):
             'calc_min_glance_size': lambda: gb_to_mb(5),
             'calc_min_cinder_size': lambda: gb_to_mb(1.5),
             'calc_min_mongo_size': lambda: gb_to_mb(10),
-            'calc_total_root_vg': self._calc_total_root_vg,
+            'calc_total_root_vg': partial(self._vg_free_size, 'os',
+                                          'root', 'calc_root_size'),
             # 2GB reuquired for journal, leave 1GB for data
             'calc_min_ceph_size': lambda: gb_to_mb(3),
             'calc_min_ceph_journal_size': lambda: 0,
             'calc_min_mysql_size': lambda: gb_to_mb(10)
         }
-
-        generators['calc_os_size'] = \
-            lambda: generators['calc_root_size']() + \
-            generators['calc_swap_size']()
 
         generators['calc_os_vg_size'] = generators['calc_os_size']
         generators['calc_min_os_size'] = generators['calc_os_size']
@@ -724,17 +726,33 @@ class VolumeManager(object):
                       (generator, args, result))
         return result
 
-    def _calc_root_size(self):
+    def _calc_var_size(self):
         size = int(self.disks[0].size * 0.2)
         if size < gb_to_mb(15):
             size = gb_to_mb(15)
-        elif size > gb_to_mb(50):
-            size = gb_to_mb(50)
+        elif size > gb_to_mb(30):
+            size = gb_to_mb(30)
         return size
 
-    def _calc_total_root_vg(self):
-        return self._calc_total_vg('os') - \
-            self.call_generator('calc_swap_size')
+    def _vg_free_size(self, vgname, volname, backgen):
+        other_vg_volumes = filter(
+            lambda x: x['name'] != volname,
+            filter(
+                lambda y: y['id'] == vgname,
+                only_vg(self.volumes)
+            )[0]['volumes']
+        )
+        size = self._calc_total_vg(vgname) - \
+            sum([self.expand_generators(v['size']) for v in other_vg_volumes])
+        if size > 0:
+            return size
+        else:
+            return self.call_generator(backgen)
+
+    def _calc_os_size(self):
+        volumes = filter(
+            lambda x: x['id'] == 'os', only_vg(self.volumes))[0]['volumes']
+        return sum([self.expand_generators(v['size']) for v in volumes])
 
     def _calc_total_vg(self, vg):
         vg_space = 0
@@ -743,7 +761,6 @@ class VolumeManager(object):
                 if subv.get('type') == 'pv' and subv.get('vg') == vg:
                     vg_space += subv.get('size', 0) - \
                         subv.get('lvm_meta_size', 0)
-
         return vg_space
 
     def _calc_swap_size(self):
@@ -762,13 +779,14 @@ class VolumeManager(object):
         '''
         mem = int(float(self.ram) / 1024 ** 2)
         if mem <= 2048:
-            return (2 * mem)
+            size = (2 * mem)
         elif mem > 2048 and mem <= 8192:
-            return mem
+            size = mem
         elif mem > 8192 and mem <= 65536:
-            return int(.5 * mem)
+            size = int(.5 * mem)
         else:
-            return gb_to_mb(4)
+            size = gb_to_mb(4)
+        return size
 
     def _allocate_all_free_space_for_volume(self, volume_info):
         """Allocate all existing space on all disks."""

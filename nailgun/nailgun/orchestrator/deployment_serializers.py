@@ -421,10 +421,17 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         for n in cls.by_role(nodes, 'primary-controller'):
             n['priority'] = prior.next
 
-        # Then deploy other controllers
-        controllers_priority = prior.next
-        for n in cls.by_role(nodes, 'controller'):
-            n['priority'] = controllers_priority
+        # Then deploy other controllers.
+        # We are deploying in parallel, so do
+        # not let us deploy more than 6 controllers
+        # simultaneously or galera master may be exhausted
+
+        secondary_controllers = cls.by_role(nodes, 'controller')
+
+        for index, node in enumerate(secondary_controllers):
+            if index % 6 == 0:
+                sec_controller_priority = prior.next
+            node['priority'] = sec_controller_priority
 
         other_nodes_prior = prior.next
         for n in cls.not_roles(nodes, ['primary-swift-proxy',

@@ -685,8 +685,10 @@ class VolumeManager(object):
         generators = {
             # Calculate swap space based on total RAM
             'calc_swap_size': self._calc_swap_size,
-            # 15G <= root <= 50G
+            # root = 15G
             'calc_root_size': self._calc_root_size,
+            # 15G <= var <= 30G
+            'calc_var_size': self._calc_var_size,
             # boot = 200MB
             'calc_boot_size': lambda: 200,
             # boot records size = 300MB
@@ -709,6 +711,7 @@ class VolumeManager(object):
 
         generators['calc_os_size'] = \
             lambda: generators['calc_root_size']() + \
+            generator['calc_var_size']() + \
             generators['calc_swap_size']()
 
         generators['calc_os_vg_size'] = generators['calc_os_size']
@@ -724,15 +727,24 @@ class VolumeManager(object):
         return result
 
     def _calc_root_size(self):
+        return gb_to_mb(15)
+
+    def _calc_var_size(self):
         size = int(self.disks[0].size * 0.2)
         if size < gb_to_mb(15):
             size = gb_to_mb(15)
-        elif size > gb_to_mb(50):
-            size = gb_to_mb(50)
+        elif size > gb_to_mb(30):
+            size = gb_to_mb(30)
         return size
+
+    def _calc_total_var_vg(self):
+        return self._calc_total_vg('os') - \
+            self.call_generator('calc_root_size') - \
+            self.call_generator('calc_swap_size')
 
     def _calc_total_root_vg(self):
         return self._calc_total_vg('os') - \
+            self.call_generator('calc_var_size') - \
             self.call_generator('calc_swap_size')
 
     def _calc_total_vg(self, vg):

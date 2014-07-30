@@ -95,16 +95,25 @@
           min_size: {generator: "calc_min_os_size"}
           label: "Base System"
           volumes:
-            - mount: "/"
-              type: "lv"
-              name: "root"
-              size: {generator: "calc_total_root_vg"}
-              file_system: "ext4"
             - mount: "swap"
               type: "lv"
               name: "swap"
-              size: {generator: "calc_swap_size"}
+              size:
+                generator: "calc_swap_size"
               file_system: "swap"
+            - mount: "/"
+              type: "lv"
+              name: "root"
+              size:
+                generator: "calc_root_size"
+              file_system: "ext4"
+            - mount: "/var"
+              type: "lv"
+              name: "var"
+              size:
+                generator: "vg_free_size"
+                generator_args: ["os", "var", "calc_var_size"]
+              file_system: "ext4"
         - id: "vm"
           type: "vg"
           min_size: {generator: "calc_min_vm_size"}
@@ -638,12 +647,19 @@
           min_size: {generator: "calc_min_os_size"}
           label: "Base System"
           volumes:
+            - mount: "swap"
+              type: "lv"
+              name: "swap"
+              size:
+                generator: "calc_swap_size"
+              file_system: "swap"
             - mount: "/"
               type: "lv"
               name: "root"
-              size: {generator: "calc_total_root_vg"}
+              size:
+                generator: "calc_root_size"
               file_system: "ext4"
-            - mount: "swap"
+            - mount: "/var"
               type: "lv"
               name: "swap"
               size: {generator: "calc_swap_size"}
@@ -659,6 +675,10 @@
               size:
                 generator: "calc_total_vg"
                 generator_args: ["mysql"]
+              name: "var"
+              size:
+                generator: "vg_free_size"
+                generator_args: ["os", "var", "calc_var_size"]
               file_system: "ext4"
         - id: "vm"
           type: "vg"
@@ -1069,3 +1089,90 @@
         cobbler:
           profile:
             generator_arg: "ubuntu_1204_x86_64"
+    volumes_metadata:
+      volumes:
+        - id: "mongo"
+          type: "vg"
+          label: "MongoDB"
+          min_size: {generator: "calc_min_mongo_size"}
+          volumes:
+            - mount: "/var/lib/mongo"
+              type: "lv"
+              name: "mongodb"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["mongo"]
+              file_system: "ext4"
+        - id: "ceph"
+          type: "partition"
+          min_size: {generator: "calc_min_ceph_size"}
+          label: "Ceph"
+          name: "Ceph"
+          mount: "none"
+          partition_guid: "4fbd7e29-9d25-41b8-afd0-062c0ceff05d"
+          file_system: "none"
+        - id: "cephjournal"
+          type: "partition"
+          min_size: {generator: "calc_min_ceph_journal_size"}
+          name: "Ceph Journal"
+          label: "Ceph Journal"
+          mount: "none"
+          partition_guid: "45b0969e-9b03-4f30-b4c6-b4b80ceff106"
+          file_system: "none"
+        - id: "os"
+          type: "vg"
+          min_size: {generator: "calc_min_os_size"}
+          label: "Base System"
+          volumes:
+            - mount: "swap"
+              type: "lv"
+              name: "swap"
+              size:
+                generator: "calc_swap_size"
+              file_system: "swap"
+            - mount: "/"
+              type: "lv"
+              name: "root"
+              size:
+                generator: "calc_root_size"
+              file_system: "ext4"
+        - id: "var"
+          type: "vg"
+          min_size: {generator: "calc_var_size"}
+          label: "/var mount point"
+          volumes:
+            - mount: "/var"
+              type: "lv"
+              name: "var"
+              size:
+                generator: "calc_var_size"
+              file_system: "ext4"
+        - id: "vm"
+          type: "vg"
+          min_size: {generator: "calc_min_vm_size"}
+          label: "Virtual Storage"
+          volumes:
+            - mount: "/var/lib/nova"
+              type: "lv"
+              name: "nova"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["vm"]
+              file_system: "xfs"
+        - id: "image"
+          type: "vg"
+          min_size: {generator: "calc_min_glance_size"}
+          label: "Image Storage"
+          volumes:
+            - mount: "/var/lib/glance"
+              type: "lv"
+              name: "glance"
+              size:
+                generator: "calc_total_vg"
+                generator_args: ["image"]
+              file_system: "xfs"
+        - id: "cinder"
+          type: "vg"
+          label: "Cinder"
+          min_size: {generator: "calc_min_cinder_size"}
+          volumes: []

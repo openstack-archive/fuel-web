@@ -214,8 +214,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
             restrictions = _.compact(restrictions);
             if (restrictions.length) {
                 var processedValues = _.without(_.pluck(processedSetting.values, 'data'), processedSetting[valueAttribute]) || [!processedSetting[valueAttribute]];
-                var configModels = _.cloneDeep(this.configModels);
-                configModels.settings = new models.Settings(this.settings.toJSON().editable);
+                var configModels = _.extend({}, this.configModels, {settings: new models.Settings(this.settings.toJSON().editable)});
                 return _.any(restrictions, function(restriction) {
                     var suitableValues = _.filter(processedValues, function(value) {
                         configModels.settings.get(settingPath)[valueAttribute] = value;

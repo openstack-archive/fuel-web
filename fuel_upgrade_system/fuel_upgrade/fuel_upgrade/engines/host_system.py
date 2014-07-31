@@ -80,6 +80,10 @@ class HostSystemUpgrader(UpgradeEngine):
         self.update_repo()
         self.run_puppet()
 
+    def on_success(self):
+        """Do nothing for this engine
+        """
+
     def update_repo(self):
         """Add new centos repository
         """

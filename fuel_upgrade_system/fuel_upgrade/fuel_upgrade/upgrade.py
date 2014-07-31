@@ -65,6 +65,7 @@ class UpgradeManager(object):
                 logger.error('*** UPGRADE FAILED')
                 raise
 
+        self._on_success()
         logger.info('*** UPGRADE DONE SUCCESSFULLY')
 
     def before_upgrade(self):
@@ -72,6 +73,24 @@ class UpgradeManager(object):
         if self._checkers:
             for checker in self._checkers:
                 checker.check()
+
+    def _on_success(self):
+        """Run on_success method for engines,
+        skip method call if there were some errors,
+        because if upgrade succeed we shouldn't
+        fail it.
+        """
+        for upgrader in self._upgraders:
+            try:
+                logger.debug(
+                    '%s: run on_success method',
+                    upgrader.__class__.__name__)
+                upgrader.on_success()
+            except Exception as exc:
+                logger.exception(
+                    '%s: skip the engine because failed to '
+                    'execute on_success method: "%s"',
+                    upgrader.__class__.__name__, exc)
 
     def rollback(self):
         logger.debug('Run rollback')

@@ -126,6 +126,10 @@ class OpenStackUpgrader(UpgradeEngine):
 
         logger.info('rollback is done!')
 
+    def on_success(self):
+        """Do nothing for this engine
+        """
+
     def install_releases(self):
         # check releases for existing in nailgun side
         releases = self._get_unique_releases(

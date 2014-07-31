@@ -107,3 +107,21 @@ class TestUpgradeManager(BaseTestCase):
 
         for checker_mock in checkers_mock:
             self.called_once(checker_mock.check)
+
+    def test_upgrade_run_on_success_methods(self):
+        engines = [mock.Mock(), mock.Mock(), mock.Mock()]
+        upgrader = UpgradeManager(**self.default_args(upgraders=engines))
+        upgrader.run()
+
+        for engine in engines:
+            self.called_once(engine.on_success)
+
+    def test_upgrade_does_not_fail_if_on_success_method_raise_error(self):
+        error_engine = mock.Mock()
+        error_engine.on_success.side_effect = Exception('error')
+        engines = [mock.Mock(), error_engine, mock.Mock()]
+        upgrader = UpgradeManager(**self.default_args(upgraders=engines))
+        upgrader.run()
+
+        for engine in engines:
+            self.called_once(engine.on_success)

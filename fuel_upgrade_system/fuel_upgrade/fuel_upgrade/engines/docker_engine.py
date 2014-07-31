@@ -105,6 +105,33 @@ class DockerUpgrader(UpgradeEngine):
             previous_version_path,
             self.config.current_fuel_version_path)
 
+    def on_success(self):
+        """Remove saved version files for all upgrades
+
+        NOTE(eli): It solves several problems:
+
+        1. user runs upgrade 5.0 -> 5.1 which fails
+        upgrade system saves version which we upgrade
+        from in file working_dir/5.1/version.yaml.
+        Then user runs upgrade 5.0 -> 5.0.1 which
+        successfully upgraded. Then user runs again
+        upgrade 5.0.1 -> 5.1, but there is saved file
+        working_dir/5.1/version.yaml which contains
+        5.0 version, and upgrade system thinks that
+        it's upgrading from 5.0 version, as result
+        it tries to make database dump from wrong
+        version of container.
+
+        2. without this hack user can run upgrade
+        second time and loose his data, this hack
+        prevents this case because before upgrade
+        checker will use current version instead
+        of saved version to determine version which
+        we run upgrade from.
+        """
+        for version_file in glob.glob(self.config.version_files_mask):
+            utils.remove(version_file)
+
     @property
     def required_free_space(self):
         """Required free space to run upgrade

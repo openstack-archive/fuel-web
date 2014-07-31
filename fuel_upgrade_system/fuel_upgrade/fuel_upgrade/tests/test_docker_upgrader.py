@@ -97,6 +97,16 @@ class TestDockerUpgrader(BaseTestCase):
             '/etc/fuel/0/version.yaml',
             '/etc/fuel/version.yaml')
 
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    @mock.patch('fuel_upgrade.engines.docker_engine.glob.glob',
+                return_value=['file1', 'file2'])
+    def test_on_success(self, glob_mock, utils_mock):
+        self.upgrader.on_success()
+        glob_mock.assert_called_once_with(self.fake_config.version_files_mask)
+        self.assertEqual(
+            utils_mock.remove.call_args_list,
+            [(('file1',),), (('file2',),)])
+
     def test_stop_fuel_containers(self):
         non_fuel_images = [
             'first_image_1.0', 'second_image_2.0', 'third_image_2.0']

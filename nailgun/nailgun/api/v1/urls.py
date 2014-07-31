@@ -13,6 +13,9 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+from nailgun.api.v1.handlers.disks import NodeDisksHandler, NodeDefaultsDisksHandler, NodeVolumesInformationHandler
+from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler, NodeCollectionNICsDefaultHandler, NodeNICsHandler, \
+    NodeNICsDefaultHandler, NodesAllocationStatsHandler, NodeHandler, NodeAgentHandler, NodeCollectionHandler
 
 import web
 
@@ -32,33 +35,10 @@ from nailgun.api.v1.handlers.cluster import ClusterResetHandler
 from nailgun.api.v1.handlers.cluster import ClusterStopDeploymentHandler
 from nailgun.api.v1.handlers.cluster import ClusterUpdateHandler
 
-from nailgun.api.v1.handlers.disks import NodeDefaultsDisksHandler
-from nailgun.api.v1.handlers.disks import NodeDisksHandler
-from nailgun.api.v1.handlers.disks import NodeVolumesInformationHandler
-
 from nailgun.api.v1.handlers.logs import LogEntryCollectionHandler
 from nailgun.api.v1.handlers.logs import LogPackageHandler
 from nailgun.api.v1.handlers.logs import LogSourceByNodeCollectionHandler
 from nailgun.api.v1.handlers.logs import LogSourceCollectionHandler
-
-from nailgun.api.v1.handlers.network_configuration \
-    import NeutronNetworkConfigurationHandler
-from nailgun.api.v1.handlers.network_configuration \
-    import NeutronNetworkConfigurationVerifyHandler
-from nailgun.api.v1.handlers.network_configuration \
-    import NovaNetworkConfigurationHandler
-from nailgun.api.v1.handlers.network_configuration \
-    import NovaNetworkConfigurationVerifyHandler
-
-from nailgun.api.v1.handlers.node import NodeAgentHandler
-from nailgun.api.v1.handlers.node import NodeCollectionHandler
-from nailgun.api.v1.handlers.node import NodeHandler
-from nailgun.api.v1.handlers.node import NodesAllocationStatsHandler
-
-from nailgun.api.v1.handlers.node import NodeCollectionNICsDefaultHandler
-from nailgun.api.v1.handlers.node import NodeCollectionNICsHandler
-from nailgun.api.v1.handlers.node import NodeNICsDefaultHandler
-from nailgun.api.v1.handlers.node import NodeNICsHandler
 
 from nailgun.api.v1.handlers.notifications import NotificationCollectionHandler
 from nailgun.api.v1.handlers.notifications import NotificationHandler
@@ -79,12 +59,39 @@ from nailgun.api.v1.handlers.tasks import TaskHandler
 
 from nailgun.api.v1.handlers.version import VersionHandler
 
+from nailgun import plugins
+
 
 urls = (
     r'/releases/?$',
     ReleaseCollectionHandler,
     r'/releases/(?P<obj_id>\d+)/?$',
     ReleaseHandler,
+
+    r'/nodes/interfaces/?$',
+    NodeCollectionNICsHandler,
+    r'/nodes/interfaces/default_assignment/?$',
+    NodeCollectionNICsDefaultHandler,
+    r'/nodes/(?P<node_id>\d+)/interfaces/?$',
+    NodeNICsHandler,
+    r'/nodes/(?P<node_id>\d+)/interfaces/default_assignment/?$',
+    NodeNICsDefaultHandler,
+
+    r'/nodes/(?P<node_id>\d+)/disks/?$',
+    NodeDisksHandler,
+    r'/nodes/(?P<node_id>\d+)/disks/defaults/?$',
+    NodeDefaultsDisksHandler,
+    r'/nodes/(?P<node_id>\d+)/volumes/?$',
+    NodeVolumesInformationHandler,
+    r'/nodes/allocation/stats/?$',
+    NodesAllocationStatsHandler,
+
+    r'/nodes/?$',
+    NodeCollectionHandler,
+    r'/nodes/agent/?$',
+    NodeAgentHandler,
+    r'/nodes/(?P<obj_id>\d+)/?$',
+    NodeHandler,
 
     r'/clusters/?$',
     ClusterCollectionHandler,
@@ -96,18 +103,6 @@ urls = (
     ClusterAttributesHandler,
     r'/clusters/(?P<cluster_id>\d+)/attributes/defaults/?$',
     ClusterAttributesDefaultsHandler,
-    # nova network-related
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/nova_network/?$',
-    NovaNetworkConfigurationHandler,
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
-    'nova_network/verify/?$',
-    NovaNetworkConfigurationVerifyHandler,
-    # neutron-related
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/neutron/?$',
-    NeutronNetworkConfigurationHandler,
-    r'/clusters/(?P<cluster_id>\d+)/network_configuration/'
-    'neutron/verify/?$',
-    NeutronNetworkConfigurationVerifyHandler,
 
     r'/clusters/(?P<cluster_id>\d+)/orchestrator/deployment/?$',
     DeploymentInfo,
@@ -119,7 +114,6 @@ urls = (
     DefaultProvisioningInfo,
     r'/clusters/(?P<cluster_id>\d+)/generated/?$',
     ClusterGeneratedData,
-
     r'/clusters/(?P<cluster_id>\d+)/provision/?$',
     ProvisionSelectedNodes,
     r'/clusters/(?P<cluster_id>\d+)/deploy/?$',
@@ -136,28 +130,6 @@ urls = (
     r'/clusters/(?P<cluster_id>\d+)/unassignment/?$',
     NodeUnassignmentHandler,
 
-    r'/nodes/?$',
-    NodeCollectionHandler,
-    r'/nodes/agent/?$',
-    NodeAgentHandler,
-    r'/nodes/(?P<obj_id>\d+)/?$',
-    NodeHandler,
-    r'/nodes/(?P<node_id>\d+)/disks/?$',
-    NodeDisksHandler,
-    r'/nodes/(?P<node_id>\d+)/disks/defaults/?$',
-    NodeDefaultsDisksHandler,
-    r'/nodes/(?P<node_id>\d+)/volumes/?$',
-    NodeVolumesInformationHandler,
-    r'/nodes/interfaces/?$',
-    NodeCollectionNICsHandler,
-    r'/nodes/interfaces/default_assignment/?$',
-    NodeCollectionNICsDefaultHandler,
-    r'/nodes/(?P<node_id>\d+)/interfaces/?$',
-    NodeNICsHandler,
-    r'/nodes/(?P<node_id>\d+)/interfaces/default_assignment/?$',
-    NodeNICsDefaultHandler,
-    r'/nodes/allocation/stats/?$',
-    NodesAllocationStatsHandler,
     r'/tasks/?$',
     TaskCollectionHandler,
     r'/tasks/(?P<obj_id>\d+)/?$',
@@ -189,7 +161,18 @@ urls = (
     CapacityLogCsvHandler,
 )
 
+# Get all plugins and extend urls with
+# urls provided in plugin
+for plugin in plugins.get_api_plugins().values():
+    new_urls = plugin.get_urls()
+
+    for obj in new_urls[1::2]:
+        locals()[obj.__name__] = obj
+
+    urls = urls + new_urls
+
 urls = [i if isinstance(i, str) else i.__name__ for i in urls]
+
 
 _locals = locals()
 

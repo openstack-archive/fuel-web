@@ -93,6 +93,10 @@ class HostSystemUpgrader(UpgradeEngine):
         self.version_file.switch_to_previous()
         self.remove_repo_config()
 
+    def on_success(self):
+        """Do nothing for this engine
+        """
+
     def update_repo(self):
         """Add new centos repository
         """

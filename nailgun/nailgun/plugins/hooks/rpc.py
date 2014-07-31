@@ -23,3 +23,8 @@ def process_node_attrs(node, node_attrs):
 @plugin_hook('process_cluster_attrs')
 def process_cluster_attrs(cluster, cluster_attrs):
     return cluster_attrs
+
+
+@plugin_hook('process_cluster_ha_attrs')
+def process_cluster_ha_attrs(cluster, cluster_attrs):
+    return cluster_attrs

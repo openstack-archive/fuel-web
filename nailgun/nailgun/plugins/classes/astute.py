@@ -1,4 +1,4 @@
-#    Copyright 2014 Mirantis, Inc.
+#    Copyright 2013 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,19 +12,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.plugins import plugin_hook
+from nailgun.plugins.classes.base import NailgunPlugin
 
 
-@plugin_hook('process_node_attrs')
-def process_node_attrs(node, node_attrs):
-    return node_attrs
+class AstutePlugin(NailgunPlugin):
 
+    def process_node_attrs(self, node, node_attrs):
+        return node_attrs
 
-@plugin_hook('process_cluster_attrs')
-def process_cluster_attrs(cluster, cluster_attrs):
-    return cluster_attrs
+    def process_cluster_attrs(self, cluster, attrs):
+        return attrs
 
+    def process_cluster_ha_attrs(self, cluster, attrs):
+        return attrs
 
-@plugin_hook('process_cluster_ha_attrs')
-def process_cluster_ha_attrs(cluster, cluster_attrs):
-    return cluster_attrs

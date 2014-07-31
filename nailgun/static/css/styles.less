@@ -1486,71 +1486,60 @@ label {cursor: default;}
   }
 }
 
-// Notifications Page
-// -------------------------
-
 .page-wrapper {
   background-color: @fuel-white-color;
   border-radius: 4px;
   padding: 20px;
 }
 
-.notifications-list > ul, .notifications-list > ol {
-  .indent-mixin(0 0 10px 0px);
-}
+// Notifications Page
+// -------------------------
 
-.message-list {
+.notification-list {
   display: block;
   list-style: none outside none;
-  > li {
-    display: block;
-    clear: both;
-  }
-}
-
-.notification-box {
-  .indent-mixin;
-  .font-layout-mixin(@font-size-small-1, @font-color-dark);
-  display: block;
-  border-bottom: 1px dotted #dadada;
-  min-height: 1px;
-  &:after{ clear: both; }
-  &:first-child{ border-bottom: 0px dotted @fuel-white-color; }
-  &:last-child{ margin-bottom: 40px; }
-  > .icon {
-    .float-mixin;
-    width: 30px;
-    font-size: @font-size-big-1;
-  }
-  > .datetime {
-    .float-mixin;
-    width: 130px;
-  }
-  > .message {
-    .float-mixin;
-    width: 770px;
-  }
-  .icon, .datetime, .message { margin: 6px 0px 6px 0px; }
-  > .message:after { clear: both; }
-}
-
-.message-list {
-  > .new { cursor: default; }
-  > .discover[data-node] {
-    cursor: pointer;
-    > .message { text-decoration: underline; }
-    &:hover > .message {
-      text-decoration: none;
-      color: @fuel-dark-blue;
+  ul {
+    .indent-mixin(0 0 10px 0);
+    li {
+      .indent-mixin;
+      .font-layout-mixin(@font-size-small-1, @font-color-dark);
+      display: block;
+      clear: both;
+      border-bottom: 1px dotted #dadada;
+      min-height: 1px;
+      &:first-child{ border-bottom: 0px dotted @fuel-white-color; }
+      &:last-child{ margin-bottom: 40px; }
+      .icon, .datetime, .message {
+        .float-mixin;
+        cursor: default;
+        margin: 6px 0;
+      }
+      .icon {
+        width: 30px;
+        font-size: @font-size-big-1;
+      }
+      .datetime { width: 130px; }
+      .message {
+        width: 770px;
+        &:after { clear: both; }
+      }
+      &.clickable {
+        cursor: pointer;
+        .message { text-decoration: underline; }
+        &:hover .message {
+          text-decoration: none;
+          color: @fuel-dark-blue;
+        }
+      }
+      &.unread {
+        cursor: pointer;
+        color: @font-color-dark;
+        font-weight: bold;
+      }
+      &.error { color: @fuel-deep-red; }
     }
   }
-  > .new > .message, > .new > .icon, > .new > .datetime {
-    color: @font-color-dark;
-    font-weight: bold;
-  }
-  > .error > .message, > .error > .icon, > .error > .datetime {
-    color: #cd3500;
-  }
+  
 }
 
 // Filter Bar

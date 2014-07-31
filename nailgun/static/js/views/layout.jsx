@@ -142,7 +142,7 @@ function(React, utils, models, componentMixins, dialogs) {
     });
 
     var Notifications = React.createClass({
-        mixins: [React.BackboneMixin('notifications')],
+        mixins: [React.BackboneMixin('notifications', 'add remove change:status')],
         render: function() {
             var unreadNotifications = this.props.notifications.where({status: 'unread'});
             return (
@@ -165,7 +165,7 @@ function(React, utils, models, componentMixins, dialogs) {
             this.props.togglePopover(visible);
         },
         handleBodyClick: function(e) {
-            if (_.all([this.el, this._owner.refs.notifications.el], function(el) {
+            if (_.all([this.getDOMNode(), this._owner.refs.notifications.getDOMNode()], function(el) {
                 return !$(e.target).closest(el).length;
             })) {
                 _.defer(_.bind(this.toggle, this, false));
@@ -199,15 +199,20 @@ function(React, utils, models, componentMixins, dialogs) {
         },
         render: function() {
             var showMore = (Backbone.history.getHash() != 'notifications') && this.props.notifications.length;
-            var notifications = this.props.notifications.last(this.props.displayCount).reverse();
+            var notifications = this.props.notifications.first(this.props.displayCount);
             return (
                 <div className="message-list-placeholder">
                     <ul className="message-list-popover">
                         {this.props.notifications.length ? (
                             _.map(notifications, function(notification, index, collection) {
                                 var unread = notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id);
+                                var nodeId = notification.get('node_id');
                                 return [
-                                    <li key={'notification' + notification.id} className={cx({'enable-selection': true, 'new': unread}) + ' ' + notification.get('topic')} onClick={notification.get('node_id') && _.bind(this.showNodeInfo, this, notification.get('node_id'))}>
+                                    <li
+                                        key={'notification' + notification.id}
+                                        className={cx({'enable-selection': true, 'new': unread, 'clickable': nodeId}) + ' ' + notification.get('topic')}
+                                        onClick={nodeId && _.bind(this.showNodeInfo, this, nodeId)}
+                                    >
                                         <i className={{error: 'icon-attention', warning: 'icon-attention', discover: 'icon-bell'}[notification.get('topic')] || 'icon-info-circled'}></i>
                                         <span dangerouslySetInnerHTML={{__html: utils.urlify(notification.escape('message'))}}></span>
                                     </li>,

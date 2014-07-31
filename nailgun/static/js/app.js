@@ -28,7 +28,7 @@ define(
     'views/cluster_page_tabs/nodes_tab',
     'jsx!views/clusters_page',
     'views/releases_page',
-    'views/notifications_page',
+    'jsx!views/notifications_page',
     'views/support_page',
     'views/capacity_page'
 ],
@@ -87,7 +87,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                         // FIXME(vkramskikh): manually moving success/error callbacks
                         // to deferred-style callbacks. Everywhere in the code we use
                         // deferreds, but backbone uses success/error callbacks. It
-                        // seems there is a bug somewhere: somtimes in long deferred
+                        // seems there is a bug somewhere: sometimes in long deferred
                         // chains with .then() success/error callbacks are called when
                         // deferred object is not resolved, so 'sync' event is
                         // triggered but dfd.state() still returns 'pending'. This
@@ -278,7 +278,10 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             }, this));
         },
         showNotifications: function() {
-            this.setPage(NotificationsPage, {notifications: app.navbar.props.notifications});
+            var notifications = app.navbar.props.notifications;
+            notifications.fetch().always(_.bind(function() {
+                this.setPage(NotificationsPage, {notifications: notifications});
+            }, this));
         },
         showSupportPage: function() {
             this.setPage(SupportPage);

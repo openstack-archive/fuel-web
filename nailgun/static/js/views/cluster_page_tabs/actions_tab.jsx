@@ -15,6 +15,7 @@
 **/
 define(
 [
+    'react',
     'utils',
     'models',
     'views/common',
@@ -25,34 +26,73 @@ define(
     'text!templates/cluster/actions_delete.html',
     'text!templates/cluster/actions_update.html'
 ],
-function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvironmentTemplate, resetEnvironmentTemplate, deleteEnvironmentTemplate, updateEnvironmentTemplate) {
+function(React, utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvironmentTemplate, resetEnvironmentTemplate, deleteEnvironmentTemplate, updateEnvironmentTemplate) {
     'use strict';
-
     var ActionsTab, Action, RenameEnvironmentAction, ResetEnvironmentAction, DeleteEnvironmentAction, UpdateEnvironmentAction;
 
-    ActionsTab = commonViews.Tab.extend({
-        template: _.template(actionsTabTemplate),
-        initialize: function(options) {
-            _.defaults(this, options);
-        },
+    ActionsTab = React.createClass({
+        mixins: [
+            React.BackboneMixin('model')
+        ],
         render: function() {
-            this.tearDownRegisteredSubViews();
-            this.$el.html(this.template()).i18n();
-            var actions = [
-                RenameEnvironmentAction,
-                ResetEnvironmentAction,
-                DeleteEnvironmentAction,
-                UpdateEnvironmentAction
-            ];
-            _.each(actions, function(ActionConstructor) {
-                var actionView = new ActionConstructor({model: this.model});
-                this.registerSubView(actionView);
-                this.$('.environment-actions').append(actionView.render().el);
-            }, this);
-            return this;
+            return (
+                <div className="wrapper">
+                    <h3 className="span12">{$.t('cluster_page.actions_tab.title')}</h3>
+                    <div className="row-fluid environment-actions">
+                        <RenameEnvironmentAction cluster={this.props.model}/>
+                    </div>
+                </div>
+            );
         }
     });
 
+    RenameEnvironmentAction = React.createClass({
+        applyAction: function() {
+            var cluster = this.props.cluster;
+            var name = this.state.text;
+            if (name != cluster.get('name')) {
+                var deferred = cluster.save({name: name}, {patch: true, wait: true});
+                if (deferred) {
+                    this.setState({disabled: true});
+                    deferred
+                        .fail(_.bind(function(response) {
+                            if (response.status == 409) {
+                                cluster.trigger('invalid', cluster, {name: response.responseText});
+                            } else {
+                                utils.showErrorDialog({title: $.t('cluster_page.actions_tab.rename_error.title')});
+                            }
+                        }, this))
+                        .always(_.bind(function() {
+                            this.setState({disabled: false});
+                        }, this));
+                }
+            }
+        },
+        getInitialState: function() {
+            return {text: this.props.cluster.get('name'), input_error_class: '', message_error_class: 'hide', disabled: false};
+        },
+        showValidationError: function(model, error) {
+            this.setState({text: e.target.value, input_error_class: 'error', message_error_class: ''})
+        },
+        onClusterNameInputKeydown: function(e) {
+            this.setState({text: e.target.value, input_error_class: '', message_error_class: 'hide'});
+        },
+        render: function() {
+            return (
+                <div className="span4 action-item-placeholder environment-action-form">
+                      <h4>{$.t('cluster_page.actions_tab.rename_environment')}</h4>
+                      <div className="action-item-controls">
+                        <div className="action-body">
+                          <input type="text" disabled={this.state.disabled} className={this.state.input_error_class} name="cluster_name" maxlength="50" onChange={this.onClusterNameInputKeydown} value={this.state.text} />
+                          <div className="text-error {this.state.message_error_class}"></div>
+                        </div>
+                        <button className="btn btn-success action-btn rename-environment-btn" onClick={this.applyAction} disabled={this.state.disabled}><span>{$.t('common.rename_button')}</span></button>
+                      </div>
+                </div>
+            );
+        }
+    });
+    
     Action = Backbone.View.extend({
         className: 'span4 action-item-placeholder',
         events: {
@@ -85,47 +125,6 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
         }
     });
 
-    RenameEnvironmentAction = Action.extend({
-        template: _.template(renameEnvironmentTemplate),
-        events: {
-            'click .action-btn': 'applyAction',
-            'keydown input[name=cluster_name]': 'onClusterNameInputKeydown'
-        },
-        applyAction: function() {
-            var name = $.trim(this.$('input[name=cluster_name]').val());
-            if (name != this.model.get('name')) {
-                var deferred = this.model.save({name: name}, {patch: true, wait: true});
-                if (deferred) {
-                    var controls = this.$('input, button');
-                    controls.attr('disabled', true);
-                    deferred
-                        .fail(_.bind(function(response) {
-                            if (response.status == 409) {
-                                this.model.trigger('invalid', this.model, {name: response.responseText});
-                            } else {
-                                utils.showErrorDialog({title: $.t('cluster_page.actions_tab.rename_error.title')});
-                            }
-                        }, this))
-                        .always(_.bind(function() {
-                            controls.attr('disabled', false);
-                        }, this));
-                }
-            }
-        },
-        showValidationError: function(model, error) {
-            this.$('input[name=cluster_name]').addClass('error');
-            this.$('.text-error').text(_.values(error).join('; ')).show();
-        },
-        onClusterNameInputKeydown: function(e) {
-            this.$('input[name=cluster_name]').removeClass('error');
-            this.$('.text-error').hide();
-        },
-        initialize: function(options) {
-            this.constructor.__super__.initialize.apply(this);
-            this.model.on('change:name', this.render, this);
-            this.model.on('invalid', this.showValidationError, this);
-        }
-    });
 
     ResetEnvironmentAction = Action.extend({
         action: 'reset',

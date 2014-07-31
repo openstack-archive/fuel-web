@@ -113,6 +113,9 @@ class TestOpenStackUpgrader(BaseTestCase):
         self.called_once(self.upgrader.action_manager.do)
         self.called_once(i_releases)
 
+    def test_on_success_does_not_raise_exceptions(self):
+        self.upgrader.on_success()
+
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')
     def test_upgrade_with_errors(self, i_releases):

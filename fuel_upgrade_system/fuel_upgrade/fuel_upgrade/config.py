@@ -117,6 +117,7 @@ def config(update_path):
     new_version_path = join(
         '/etc/fuel', new_version, 'version.yaml')
 
+    version_files_mask = '/var/lib/fuel_upgrade/*/version.yaml'
     working_directory = join('/var/lib/fuel_upgrade', new_version)
 
     from_version_path = join(working_directory, 'version.yaml')

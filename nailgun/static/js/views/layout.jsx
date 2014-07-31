@@ -200,12 +200,11 @@ function(React, utils, models, componentMixins, dialogViews) {
         },
         render: function() {
             var showMore = (Backbone.history.getHash() != 'notifications') && this.props.notifications.length;
-            var notifications = this.props.notifications.last(this.props.displayCount).reverse();
             return (
                 <div className="message-list-placeholder">
                     <ul className="message-list-popover">
                         {this.props.notifications.length ? (
-                            _.map(notifications, function(notification, index, collection) {
+                            this.props.notifications.map(function(notification, index, collection) {
                                 var unread = notification.get('status') == 'unread' || _.contains(this.state.unreadNotificationsIds, notification.id);
                                 return [
                                     <li key={'notification' + notification.id} className={cx({'enable-selection': true, 'new': unread}) + ' ' + notification.get('topic')} onClick={notification.get('node_id') && _.bind(this.showNodeInfo, this, notification.get('node_id'))}>

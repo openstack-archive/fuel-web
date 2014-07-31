@@ -292,7 +292,9 @@ define(['utils', 'deepModel'], function(utils) {
         constructorName: 'Notifications',
         model: models.Notification,
         url: '/api/notifications',
-        comparator: 'id'
+        comparator: function(notification) {
+            return -notification.id;
+        }
     });
 
     models.Settings = Backbone.DeepModel.extend({

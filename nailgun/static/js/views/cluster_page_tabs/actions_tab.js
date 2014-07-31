@@ -205,7 +205,6 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
         },
         initialize: function(options) {
             this.constructor.__super__.initialize.apply(this);
-            this.action = this.model.get('status') == 'update_error' ? 'rollback' : 'update';
             this.model.on('change:release', this.stickitAction, this);
             if (!this.releases.length) {
                 this.releases.deferred = this.releases.fetch();
@@ -223,6 +222,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
             return this.constructor.__super__.getDescription.call(this, this.action);
         },
         render: function() {
+            this.action = this.model.get('status') == 'update_error' ? 'rollback' : 'update';
             this.$el.html(this.template({
                 action: this.action,
                 cluster: this.model,

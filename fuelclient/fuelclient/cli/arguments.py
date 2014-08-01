@@ -221,6 +221,10 @@ def get_set_type_arg(name, **kwargs):
     return get_arg(name, **default_kwargs)
 
 
+def get_delete_from_db_arg(help_msg):
+    return get_boolean_arg("delete-from-db", help=help_msg)
+
+
 def get_network_arg(help_msg):
     return get_boolean_arg("network", flags=("--net",), help=help_msg)
 

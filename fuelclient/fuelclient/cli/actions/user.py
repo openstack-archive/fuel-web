@@ -14,6 +14,7 @@
 
 from fuelclient.cli.actions.base import Action
 import fuelclient.cli.arguments as Args
+from fuelclient.cli.error import ArgumentException
 from fuelclient.client import APIClient
 
 
@@ -37,4 +38,8 @@ class UserAction(Action):
         """To change user password:
                 fuel user change-password
         """
-        APIClient.update_own_password(params.newpass)
+        if params.newpass:
+            APIClient.update_own_password(params.newpass)
+        else:
+            raise ArgumentException(
+                "Expect password [--newpass NEWPASS]")

@@ -6,6 +6,7 @@
 
 <div class="support page-wrapper">
 
+  <% if (_.contains(app.version.get('feature_groups'), 'mirantis')) { %>
   <div class="row-fluid">
     <div class="span2"><div class="img-register-fuel"></div></div>
     <div class="span10">
@@ -37,6 +38,7 @@
   </div>
 
   <hr>
+  <% } %>
 
   <div class="row-fluid">
     <div class="span2"><div class="img-download-logs"></div></div>

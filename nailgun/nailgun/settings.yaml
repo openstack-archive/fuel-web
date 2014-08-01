@@ -722,3 +722,12 @@ DUMP:
       - type: command
         command: blkid -o list
         to_file: blkid_o_list.txt
+      - type: command
+        command: ceph health
+        to_file: ceph_health.txt
+      - type: command
+        command: ceph -s
+        to_file: ceph_s.txt
+      - type: command
+        command: ceph osd tree
+        to_file: ceph_osd_tree.txt

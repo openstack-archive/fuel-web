@@ -51,5 +51,8 @@ class BootstrapUpgrader(UpgradeEngine):
     @property
     def required_free_space(self):
         return get_required_size_for_actions(
-            self.config.bootstrap['actions'], self.config.update_path
-        )
+            self.config.bootstrap['actions'], self.config.update_path)
+
+    def on_success(self):
+        """Do nothing for this engine
+        """

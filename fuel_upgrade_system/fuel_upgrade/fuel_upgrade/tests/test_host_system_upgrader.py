@@ -71,6 +71,9 @@ class TestHostSystemUpgrader(BaseTestCase):
         self.called_once(self.version_mock.save_current)
         self.called_once(self.version_mock.switch_to_previous)
 
+    def test_on_success_does_not_raise_exceptions(self):
+        self.upgrader.on_success()
+
     @mock.patch('fuel_upgrade.engines.host_system.utils')
     def test_remove_repo_config(self, utils_mock):
         self.upgrader.remove_repo_config()

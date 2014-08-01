@@ -667,6 +667,8 @@ DUMP:
         path: /var/log/ceph
       - type: file
         path: /etc/resolv.conf
+      - type: dir
+        path: /var/run/pcap_dir
       - type: command
         command: df -h
         to_file: df.txt

@@ -46,6 +46,7 @@ class NodeAction(Action):
                 Args.get_network_arg("Node network configuration."),
                 Args.get_disk_arg("Node disk configuration."),
                 Args.get_deploy_arg("Deploy specific nodes."),
+                Args.get_destroy_arg("Delete specific node from fuel."),
                 Args.get_provision_arg("Provision specific nodes.")
             ),
             group(
@@ -71,6 +72,7 @@ class NodeAction(Action):
             ("disk", self.attributes),
             ("deploy", self.start),
             ("provision", self.start),
+            ("destroy", self.destroy),
             (None, self.list)
         )
 
@@ -247,3 +249,15 @@ class NodeAction(Action):
                 column_to_join=("roles", "pending_roles")
             )
         )
+
+    @check_all("node")
+    def destroy(self, params):
+        """To delete node from db:
+                fuel node --node-id 1 --destroy
+        """
+        nodes = Node.get_by_ids(params.node)
+        for node in nodes:
+            node.delete()
+        self.serializer.print_to_output(
+            {},
+            "Node with id {0} has been deleted from fuel.".format(params.node))

@@ -221,6 +221,10 @@ def get_set_type_arg(name, **kwargs):
     return get_arg(name, **default_kwargs)
 
 
+def get_destroy_arg(help_msg):
+    return get_boolean_arg("destroy", help=help_msg)
+
+
 def get_network_arg(help_msg):
     return get_boolean_arg("network", flags=("--net",), help=help_msg)
 

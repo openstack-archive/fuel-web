@@ -15,6 +15,7 @@
 #    under the License.
 
 import mock
+import xmlrpclib
 
 from fuel_upgrade.supervisor_client import SupervisorClient
 from fuel_upgrade.tests.base import BaseTestCase
@@ -50,13 +51,23 @@ class TestSupervisorClient(BaseTestCase):
 
     def test_stop_all_services(self, _):
         self.supervisor.stop_all_services()
-        self.supervisor.supervisor.stopAllProcesses.assert_called_once()
+        self.supervisor.supervisor.stopAllProcesses.assert_called_once_with()
 
     def test_restart_and_wait(self, _):
         self.supervisor.restart_and_wait()
-        self.supervisor.supervisor.restart.assert_called_once()
-        self.utils_mock.wait_for_true.assert_called_once()
-        self.supervisor.supervisor.getAllProcessInfo.assert_called_once()
+        self.supervisor.supervisor.restart.assert_called_once_with()
+        self.utils_mock.wait_for_true.assert_called_once_with(
+            self.supervisor.get_all_processes_safely,
+            timeout=600)
+
+    def test_get_all_processes_safely(self, _):
+        self.supervisor.get_all_processes_safely()
+        self.supervisor.supervisor.getAllProcessInfo.assert_called_once_with()
+
+    def test_get_all_processes_safely_does_not_raise_error(self, _):
+        for exc in (IOError(), xmlrpclib.Fault('', '')):
+            self.supervisor.supervisor.getAllProcessInfo.side_effect = exc
+            self.assertIsNone(self.supervisor.get_all_processes_safely())
 
     def test_generate_configs(self, _):
         self.supervisor.generate_config = mock.MagicMock()

@@ -263,7 +263,7 @@ class TestDockerUpgrader(BaseTestCase):
 
     def test_switch_to_new_configs(self):
         self.upgrader.switch_to_new_configs()
-        self.supervisor_mock.switch_to_new_configs.called_once()
+        self.supervisor_mock.switch_to_new_configs.assert_called_once_with()
 
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd')
     def test_exec_cmd_in_container(self, exec_cmd_mock):

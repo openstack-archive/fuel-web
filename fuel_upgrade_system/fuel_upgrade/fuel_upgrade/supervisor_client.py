@@ -130,18 +130,25 @@ class SupervisorClient(object):
         logger.info(u'Restart supervisor')
         self.supervisor.restart()
 
-        def get_all_processes():
-            try:
-                return self.supervisor.getAllProcessInfo()
-            except (IOError, Fault):
-                return False
-
         all_processes = utils.wait_for_true(
-            get_all_processes,
+            self.get_all_processes_safely,
             timeout=self.config.supervisor['restart_timeout'])
 
         logger.debug(u'List of supervisor processes {0}'.format(
             all_processes))
+
+    def get_all_processes_safely(self):
+        """Retrieves list of processes from supervisor,
+        doesn't raise errors if there is no running
+        supervisor.
+
+        :returns: list of processes in case of success or
+                  None in case of error
+        """
+        try:
+            return self.supervisor.getAllProcessInfo()
+        except (IOError, Fault):
+            return None
 
     def generate_configs(self, services):
         """Generates supervisor configs for services

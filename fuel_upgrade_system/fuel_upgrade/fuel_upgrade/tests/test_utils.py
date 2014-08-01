@@ -158,7 +158,7 @@ class TestUtils(BaseTestCase):
 
             create_dir_if_not_exists(path)
             mock_isdir.assert_called_once_with(path)
-            mock_makedirs.called_once(path)
+            mock_makedirs.assert_called_once_with(path)
 
     def test_wait_for_true_does_not_raise_errors(self):
         self.assertEqual(wait_for_true(lambda: True, timeout=0), True)

@@ -20,6 +20,7 @@ import fuelmenu.common.urwidwrapper as widget
 from fuelmenu.settings import Settings
 import logging
 import netaddr
+import os
 import re
 import socket
 import subprocess
@@ -48,11 +49,12 @@ class dnsandhostname(urwid.WidgetWrap):
                                "Internet access."]
         self.fields = ["HOSTNAME", "DNS_DOMAIN", "DNS_SEARCH", "DNS_UPSTREAM",
                        "blank", "TEST_DNS"]
+        hostname, sep, domain = os.uname()[1].partition('.')
         self.defaults = \
             {
                 "HOSTNAME": {"label": "Hostname",
                              "tooltip": "Hostname to use for Fuel master node",
-                             "value": socket.gethostname().split('.')[0]},
+                             "value": hostname},
                 "DNS_UPSTREAM": {"label": "External DNS",
                                  "tooltip": "DNS server(s) (comma separated) \
 to handle DNS requests (example 8.8.8.8)",
@@ -60,11 +62,11 @@ to handle DNS requests (example 8.8.8.8)",
                 "DNS_DOMAIN": {"label": "Domain",
                                "tooltip": "Domain suffix to user for all \
 nodes in your cluster",
-                               "value": "domain.tld"},
+                               "value": domain},
                 "DNS_SEARCH": {"label": "Search Domain",
                                "tooltip": "Domains to search when looking up \
 DNS (space separated)",
-                               "value": "domain.tld"},
+                               "value": domain},
                 "TEST_DNS": {"label": "Hostname to test DNS:",
                              "value": "www.google.com",
                              "tooltip": "DNS record to resolve to see if DNS \
@@ -300,8 +302,10 @@ is accessible"}
                 continue
         #Read hostname if it's already set
         try:
-            import os
-            oldsettings["HOSTNAME"] = os.uname()[1]
+            hostname, sep, domain = os.uname()[1].partition('.')
+            oldsettings["HOSTNAME"] = hostname
+            oldsettings["DNS_DOMAIN"] = domain
+            oldsettings["DNS_SEARCH"] = domain
         except Exception:
             log.warning("Unable to look up system hostname")
         return oldsettings

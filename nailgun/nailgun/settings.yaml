@@ -662,6 +662,8 @@ DUMP:
       - type: file
         path: /etc/swift*
       - type: file
+        path: /etc/haproxy*
+      - type: file
         path: /var/log/ceph
       - type: file
         path: /etc/resolv.conf

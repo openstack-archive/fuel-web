@@ -226,7 +226,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         updateEnvironment: function() {
             this.$('.update-environment-btn').attr('disabled', true);
             var deferred = this.model.save({
-                pending_release_id: this.action == 'update' ? this.model.get('pending_release_id') : this.model.get('release_id')
+                pending_release_id: this.action == 'update' ? this.pendingReleaseId : this.model.get('release_id')
             }, {patch: true, wait: true});
             if (deferred) {
                 deferred.done(_.bind(function() {

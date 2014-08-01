@@ -367,7 +367,11 @@ class TestDockerUpgrader(BaseTestCase):
                 '--to-destination 172.17.0.7:1'),
             mock.call(
                 'iptables -t nat -D  DOCKER -p tcp -m tcp --dport 2 -j DNAT '
-                '--to-destination 172.17.0.3:2')]
+                '--to-destination 172.17.0.3:2'),
+            mock.call('iptables -t nat -S'),
+            mock.call('iptables -S'),
+            mock.call('cat /etc/sysconfig/iptables'),
+            mock.call('cat /etc/sysconfig/iptables.save')]
 
         self.assertEqual(exec_cmd_mock.call_args_list, expected_calls)
 

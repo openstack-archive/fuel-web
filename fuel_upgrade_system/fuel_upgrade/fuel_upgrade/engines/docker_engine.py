@@ -512,6 +512,15 @@ class DockerUpgrader(UpgradeEngine):
             # Remove -A (add) prefix and use -D (delete) instead
             utils.exec_cmd('iptables -t nat -D {0}'.format(rule[2:]))
 
+        # NOTE(eli): Run list of rules again,
+        # it's required to debug the problem
+        # with inter-container communication
+        # https://bugs.launchpad.net/fuel/+bug/1349287
+        utils.exec_cmd('iptables -t nat -S')
+        utils.exec_cmd('iptables -S')
+        utils.exec_cmd('cat /etc/sysconfig/iptables')
+        utils.exec_cmd('cat /etc/sysconfig/iptables.save')
+
     def stop_container(self, container_id):
         """Stop docker container
 

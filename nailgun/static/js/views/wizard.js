@@ -326,7 +326,10 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 description: ''
             });
             var controlTpl = _.template(controlTemplate);
-            _.each(this.config, function(attributeConfig, attribute) {
+            var paneConfig = this.config;
+            var sortedConfig = _.sortBy(paneConfig, 'weight');
+            _.each(sortedConfig, function(attributeConfig, attributeIndex) {
+                var attribute = _.keys(paneConfig)[attributeIndex];
                 switch (attributeConfig.type) {
                     case 'checkbox':
                         controlsHtml += (controlTpl(_.extend(attributeConfig, {
@@ -340,11 +343,11 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                         break;
                     case 'radio':
                         _.each(attributeConfig.values, function(value) {
-                            var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
+                        var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
                             if (shouldBeAdded) {
                                 controlsHtml += (controlTpl(_.extend(attributeConfig, {
                                     value: value.data,
-                                    pane: attribute,
+                                pane: attribute,
                                     labelClasses: configToUse.labelClasses || '',
                                     descriptionClasses: configToUse.descriptionClasses || '',
                                     label: value.label,

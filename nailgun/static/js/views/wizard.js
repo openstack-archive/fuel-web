@@ -326,7 +326,10 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 description: ''
             });
             var controlTpl = _.template(controlTemplate);
-            _.each(this.config, function(attributeConfig, attribute) {
+            var paneConfig = this.config;
+            var sortedConfig = _.sortBy(paneConfig, 'weight');
+            _.each(sortedConfig, function(attributeConfig, attributeIndex) {
+                var attribute = _.keys(paneConfig)[attributeIndex];
                 switch (attributeConfig.type) {
                     case 'checkbox':
                         controlsHtml += (controlTpl(_.extend(attributeConfig, {

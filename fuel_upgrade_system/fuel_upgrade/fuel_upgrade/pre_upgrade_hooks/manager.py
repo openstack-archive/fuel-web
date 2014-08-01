@@ -20,6 +20,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_credentials \
     import AddCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml \
     import AddVersionsYaml
+from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_apply_versioncmp_fix \
+    import ApplyVersioncmpFix
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +35,7 @@ class PreUpgradeHookManager(object):
     """
 
     #: List of hook clases
-    hook_list = [AddCredentialsHook, AddVersionsYaml]
+    hook_list = [AddCredentialsHook, AddVersionsYaml, ApplyVersioncmpFix]
 
     def __init__(self, upgraders, config):
         #: Pre upgrade hook objects

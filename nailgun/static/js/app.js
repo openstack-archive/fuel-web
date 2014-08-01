@@ -29,7 +29,7 @@ define(
     'jsx!views/clusters_page',
     'jsx!views/releases_page',
     'jsx!views/notifications_page',
-    'views/support_page',
+    'jsx!views/support_page',
     'views/capacity_page'
 ],
 function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
@@ -277,7 +277,10 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             }, this));
         },
         showSupportPage: function() {
-            this.setPage(SupportPage);
+            var tasks = new models.Tasks();
+            tasks.fetch().done(_.bind(function() {
+                this.setPage(SupportPage, {tasks: tasks});
+            }, this));
         },
         showCapacityPage: function() {
             this.setPage(CapacityPage);

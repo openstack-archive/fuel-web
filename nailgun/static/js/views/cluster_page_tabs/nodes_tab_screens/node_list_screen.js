@@ -411,20 +411,8 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                         }
                     });
                 }
-                // FIXME(vk): hack for vCenter, do not allow ceph and controllers
-                // has to be removed when we describe it in role metadata
-                if (this.settings.get('common.libvirt_type.value') == 'vcenter') {
-                    if (role.get('name') == 'compute') {
-                        unavailable = true;
-                        unavailabityReasons.push('Computes cannot be used with vCenter');
-                    } else if (role.get('name') == 'ceph-osd') {
-                        unavailable = true;
-                        unavailabityReasons.push('Ceph cannot be used with vCenter');
-                    }
-                }
-
                 if (unavailable) {
-                    role.set({unavailable: true, unavailabityReason: unavailabityReasons.join(' ')});
+                    role.set({unavailable: true, unavailabityReason: _.compact(unavailabityReasons).join(' ')});
                 }
                 role.set({visible: visible});
             }, this);

@@ -21,6 +21,9 @@
       compute:
         name: "Compute"
         description: "A compute node creates, manages and terminates virtual machine instances."
+        depends:
+          - condition: "settings:common.libvirt_type.value != 'vcenter'"
+            warning: "Computes cannot be used with vCenter"
       cinder:
         name: "Storage - Cinder LVM"
         description: "Cinder LVM provides block storage over iSCSI. Block storage can be used for database storage, expandable file systems, or providing a server with access to raw block level devices."

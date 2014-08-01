@@ -118,6 +118,9 @@ class Node(BaseObject):
     def provision(self):
         self.env.install_selected_nodes("provision", (self,))
 
+    def delete(self):
+        self.connection.delete_request(self.instance_api_path.format(self.id))
+
 
 class NodeCollection(object):
 

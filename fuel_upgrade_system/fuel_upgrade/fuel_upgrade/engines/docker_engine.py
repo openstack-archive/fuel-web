@@ -267,7 +267,7 @@ class DockerUpgrader(UpgradeEngine):
 
             self.start_container(
                 created_container,
-                port_bindings=self.get_port_bindings(container),
+                port_bindings=container.get('port_bindings'),
                 links=links,
                 volumes_from=volumes_from,
                 binds=container.get('binds'),
@@ -305,20 +305,6 @@ class DockerUpgrader(UpgradeEngine):
         utils.exec_cmd(
             "lxc-attach --name {0} -- {1}".format(
                 db_container_id, cmd))
-
-    def get_port_bindings(self, container):
-        """Docker binding accepts port_bindings
-        as tuple, here we convert from list to tuple.
-
-        FIXME(eli): https://github.com/dotcloud/docker-py/blob/
-                    030516eb290ddbd33429e0a111a07b43480ea6e5/
-                    docker/utils/utils.py#L87
-        """
-        port_bindings = container.get('port_bindings')
-        if port_bindings is None:
-            return None
-
-        return dict([(k, tuple(v)) for k, v in port_bindings.iteritems()])
 
     def get_ports(self, container):
         """Docker binding accepts ports as tuple,

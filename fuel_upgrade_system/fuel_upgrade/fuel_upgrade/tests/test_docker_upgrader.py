@@ -236,11 +236,6 @@ class TestDockerUpgrader(BaseTestCase):
         links = self.upgrader.get_container_links(fake_containers[0])
         self.assertEqual(links, [('container_name2', 'alias2')])
 
-    def test_get_port_bindings(self):
-        port_bindings = {'port_bindings': {'53/udp': ['0.0.0.0', 53]}}
-        bindings = self.upgrader.get_port_bindings(port_bindings)
-        self.assertEqual({'53/udp': ('0.0.0.0', 53)}, bindings)
-
     def test_get_ports(self):
         ports = self.upgrader.get_ports({'ports': [[53, 'udp'], 100]})
         self.assertEqual([(53, 'udp'), 100], ports)

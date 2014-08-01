@@ -301,13 +301,17 @@ def config(update_path):
 
     # Docker containers description section
     container_prefix = 'fuel-core-'
+    master_ip = astute['ADMIN_NETWORK']['ipaddress']
 
     containers = [
 
         {'id': 'nailgun',
          'supervisor_config': True,
          'from_image': 'nailgun',
-         'port_bindings': {'8001': ['0.0.0.0', 8001]},
+         'port_bindings': {
+             '8001': [
+                 ('127.0.0.1', 8001),
+                 (master_ip, 8001)]},
          'ports': [8001],
          'links': [
              {'id': 'postgres', 'alias': 'db'},
@@ -338,10 +342,14 @@ def config(update_path):
          'from_image': 'cobbler',
          'privileged': True,
          'port_bindings': {
-             '80': ['0.0.0.0', 80],
-             '443': ['0.0.0.0', 443],
-             '53/udp': ['0.0.0.0', 53],
-             '69/udp': ['0.0.0.0', 69]},
+             '80': ('0.0.0.0', 80),
+             '443': ('0.0.0.0', 443),
+             '53/udp': [
+                 ('127.0.0.1', 53),
+                 (master_ip, 53)],
+             '69/udp': [
+                 ('127.0.0.1', 69),
+                 (master_ip, 69)]},
          'ports': [
              [53, 'udp'],
              [53, 'tcp'],
@@ -372,7 +380,9 @@ def config(update_path):
          'supervisor_config': True,
          'from_image': 'rsync',
          'port_bindings': {
-             '873': ['0.0.0.0', 873]},
+             '873': [
+                 ('127.0.0.1', 873),
+                 (master_ip, 873)]},
          'ports': [873],
          'volumes_from': [
              'volume_logs',
@@ -384,8 +394,15 @@ def config(update_path):
          'supervisor_config': True,
          'from_image': 'rsyslog',
          'port_bindings': {
-             '514': ['0.0.0.0', 514],
-             '514/udp': ['0.0.0.0', 514]},
+             '514': [
+                 ('127.0.0.1', 514),
+                 (master_ip, 514)],
+             '514/udp': [
+                 ('127.0.0.1', 514),
+                 (master_ip, 514)],
+             '25150': [
+                 ('127.0.0.1', 25150),
+                 (master_ip, 25150)]},
          'ports': [[514, 'udp'], 514],
          'volumes_from': [
              'volume_logs',
@@ -396,8 +413,8 @@ def config(update_path):
          'supervisor_config': True,
          'from_image': 'keystone',
          'port_bindings': {
-             '5000': ['0.0.0.0', 5000],
-             '35357': ['0.0.0.0', 35357]},
+             '5000': ('0.0.0.0', 5000),
+             '35357': ('0.0.0.0', 35357)},
          'ports': [5000, 35357],
          'links': [
              {'id': 'postgres', 'alias': 'postgres'}],
@@ -410,8 +427,8 @@ def config(update_path):
          'supervisor_config': True,
          'from_image': 'nginx',
          'port_bindings': {
-             '8000': ['0.0.0.0', 8000],
-             '8080': ['0.0.0.0', 8080]},
+             '8000': ('0.0.0.0', 8000),
+             '8080': ('0.0.0.0', 8080)},
          'ports': [8000, 8080],
          'links': [
              {'id': 'nailgun', 'alias': 'nailgun'},
@@ -428,10 +445,18 @@ def config(update_path):
          'supervisor_config': True,
          'from_image': 'rabbitmq',
          'port_bindings': {
-             '4369': ['0.0.0.0', 4369],
-             '5672': ['0.0.0.0', 5672],
-             '15672': ['0.0.0.0', 15672],
-             '61613': ['0.0.0.0', 61613]},
+             '4369': [
+                 ('127.0.0.1', 4369),
+                 (master_ip, 4369)],
+             '5672': [
+                 ('127.0.0.1', 5672),
+                 (master_ip, 5672)],
+             '15672': [
+                 ('127.0.0.1', 15672),
+                 (master_ip, 15672)],
+             '61613': [
+                 ('127.0.0.1', 61613),
+                 (master_ip, 61613)]},
          'ports': [5672, 4369, 15672, 61613],
          'volumes_from': [
              'volume_logs',
@@ -442,7 +467,9 @@ def config(update_path):
          'supervisor_config': True,
          'from_image': 'ostf',
          'port_bindings': {
-             '8777': ['0.0.0.0', 8777]},
+             '8777': [
+                 ('127.0.0.1', 8777),
+                 (master_ip, 8777)]},
          'ports': [8777],
          'links': [
              {'id': 'postgres', 'alias': 'db'},
@@ -460,7 +487,9 @@ def config(update_path):
          'supervisor_config': True,
          'from_image': 'postgres',
          'port_bindings': {
-             '5432': ['0.0.0.0', 5432]},
+             '5432': [
+                 ('127.0.0.1', 5432),
+                 (master_ip, 5432)]},
          'ports': [5432],
          'volumes_from': [
              'volume_logs',

@@ -326,11 +326,21 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 description: ''
             });
             var controlTpl = _.template(controlTemplate);
-            _.each(this.config, function(attributeConfig, attribute) {
+            var paneConfig = this.config;
+            var sortedConfig = _.sortBy(paneConfig, 'weight');
+            sortedConfig =  _.map(sortedConfig, _.bind(function(config, name) {
+                if (config.type == 'radio') {
+                   return _.extend(config, {'values': _.sortBy(config.values, function(value) {
+                       return value.weight;
+                   })});
+                }
+                return config;
+            }, this));
+            _.each(_.flatten(sortedConfig), function(attributeConfig, attributeIndex) {
                 switch (attributeConfig.type) {
                     case 'checkbox':
                         controlsHtml += (controlTpl(_.extend(attributeConfig, {
-                            pane: attribute,
+                            pane: _.keys(paneConfig)[attributeIndex],
                             labelClasses: configToUse.labelClasses,
                             descriptionClasses: configToUse.descriptionClasses,
                             label: attributeConfig.label,
@@ -340,11 +350,11 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                         break;
                     case 'radio':
                         _.each(attributeConfig.values, function(value) {
-                            var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : attribute == configToUse.additionalAttribute;
+                        var shouldBeAdded = _.isUndefined(configToUse.additionalAttribute) ? true : _.keys(paneConfig)[attributeIndex] == configToUse.additionalAttribute;
                             if (shouldBeAdded) {
                                 controlsHtml += (controlTpl(_.extend(attributeConfig, {
                                     value: value.data,
-                                    pane: attribute,
+                                pane: _.keys(paneConfig)[attributeIndex],
                                     labelClasses: configToUse.labelClasses || '',
                                     descriptionClasses: configToUse.descriptionClasses || '',
                                     label: value.label,
@@ -358,7 +368,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                     case 'password':
                         var newControlTemplate = _.template(textInputTemplate);
                         var newControlsHtml = '';
-                        newControlsHtml = (newControlTemplate(_.extend(attributeConfig, {attribute: attribute})));
+                        newControlsHtml = (newControlTemplate(_.extend(attributeConfig, {attribute: _.keys(paneConfig)[attributeIndex]})));
                         controlsHtml += newControlsHtml;
                         break;
                 }

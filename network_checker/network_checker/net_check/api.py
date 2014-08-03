@@ -74,8 +74,8 @@ class Actor(object):
             'dport': 31337,
             'cookie': "Nailgun:",
             'pcap_dir': "/var/run/pcap_dir/",
-            'duration': 20,
-            'repeat': 2
+            'duration': 5,
+            'repeat': 1
         }
         if config:
             self.config.update(config)
@@ -627,11 +627,11 @@ def define_subparsers(parser):
         help='uid to insert into probe packets payload', default='1'
     )
     generate_parser.add_argument(
-        '-d', '--duration', dest='duration', type=int, default=20,
+        '-d', '--duration', dest='duration', type=int, default=5,
         help='Amount of time to generate network packets. In seconds',
     )
     generate_parser.add_argument(
-        '-r', '--repeat', dest='repeat', type=int, default=2,
+        '-r', '--repeat', dest='repeat', type=int, default=1,
         help='Amount of packets sended in one iteration.',
     )
 

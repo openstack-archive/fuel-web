@@ -308,40 +308,19 @@ define(['utils', 'deepModel'], function(utils) {
             return response.editable;
         },
         toJSON: function(options) {
-            var currentSettings = this.constructor.__super__.toJSON.call(this, options);
-            if (this.initialAttributes) {
-                var result = _.cloneDeep(this.initialAttributes);
-                _.each(currentSettings, function(group, groupName) {
-                    _.each(group, function(setting, settingName) {
-                        if (settingName == 'metadata') {
-                            if (!_.isUndefined(setting.toggleable)) {
-                                result[groupName][settingName].enabled = setting.enabled;
-                            }
-                        } else  {
-                            result[groupName][settingName].value = setting.value;
-                        }
-                    });
-                }, this);
-                return {editable: result};
-            }
-            return {editable: currentSettings};
+            return {editable: this.constructor.__super__.toJSON.call(this, options)};
         },
-        expandRestrictions: function() {
-            _.each(this.attributes, function(group, groupName) {
-                _.each(group, function(setting, settingName) {
-                    setting.restrictions = _.map(setting.restrictions, utils.expandRestriction);
-                    _.each(setting.values, function(value) {
-                        value.restrictions = _.map(value.restrictions, utils.expandRestriction);
-                    });
-                }, this);
-            }, this);
-        },
-        validate: function(attrs) {
+        validate: function(attrs, options) {
             var errors = [];
+            var checkRestrictions = _.bind(function(path) {
+                if (!options || (!options.parsedRestrictions && !options.configModels)) { return {result: false}; }
+                var restrictions = options.expandedRestrictions ? options.expandedRestrictions[path] : this.get(path).restrictions;
+                return utils.checkRestrictions(restrictions, options.parsedRestrictions, options.configModels);
+            }, this);
             _.each(attrs, function(group, groupName) {
-                if (group.metadata && (group.metadata.disabled || !group.metadata.visible)) { return; }
+                if (checkRestrictions(groupName + '.metadata').result) { return; }
                 _.each(group, function(setting, settingName) {
-                    if (!(setting.regex && setting.regex.source) || setting.disabled) { return; }
+                    if (!(setting.regex && setting.regex.source) || checkRestrictions(groupName + '.' + settingName).result) { return; }
                     var regExp = new RegExp(setting.regex.source);
                     if (!setting.value.match(regExp)) {
                         errors.push({

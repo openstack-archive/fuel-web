@@ -21,6 +21,7 @@ from copy import deepcopy
 from fuel_upgrade import utils
 
 from fuel_upgrade.engines.docker_engine import DockerUpgrader
+from fuel_upgrade.engines.host_system import HostSystemUpgrader
 from fuel_upgrade.pre_upgrade_hooks.base import PreUpgradeHookBase
 
 logger = logging.getLogger(__name__)
@@ -39,8 +40,8 @@ class AddCredentialsHook(PreUpgradeHookBase):
     [1] https://blueprints.launchpad.net/fuel/+spec/access-control-master-node
     """
 
-    #: This hook required only for docker engine
-    enable_for_engines = [DockerUpgrader]
+    #: This hook required only for docker and host system engines
+    enable_for_engines = [DockerUpgrader, HostSystemUpgrader]
 
     #: Default credentials
     credentials = {

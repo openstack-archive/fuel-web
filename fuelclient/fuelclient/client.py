@@ -27,7 +27,7 @@ from fuelclient.logs import NullHandler
 
 # configure logging to silent all logs
 # and prevent issues in keystoneclient logging
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.addHandler(NullHandler())
 
 

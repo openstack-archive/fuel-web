@@ -47,6 +47,17 @@ class Parser:
         self.add_keystone_credentials_args()
         self.add_serializers_args()
 
+    # debug stuff
+    @property
+    def help_string(self):
+        return self.parser.format_help()
+
+    # debug stuff
+    def print_sub(self):
+        print(self.subparsers.help)
+        for k, v in self.subparsers._name_parser_map.iteritems():
+            print(k, v._actions)
+
     def generate_actions(self):
         for action, action_object in actions.iteritems():
             action_parser = self.subparsers.add_parser(
@@ -162,7 +173,10 @@ class Parser:
                 break
 
 
+parser = Parser()
+
+
 @exceptions_decorator
 def main():
-    parser = Parser()
+    parser.print_sub()
     parser.parse()

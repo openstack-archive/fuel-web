@@ -52,12 +52,17 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             return modelPath;
         },
         evaluateExpression: function(expression, models, options) {
-            var compiledExpression = new Expression(expression, models, options);
-            var value = compiledExpression.evaluate();
+            var compiledExpression = new Expression(expression, options);
+            var value = compiledExpression.evaluate(models);
             return {
                 value: value,
                 modelPaths: compiledExpression.modelPaths
             };
+        },
+        compileExpression: function(expression) {
+            var expressions = Expression.prototype.expressions;
+            if (!_.has(expressions, expression)) expressions[expression] = new Expression(expression);
+            return expressions[expression];
         },
         expandRestriction: function(restriction) {
             var result = {

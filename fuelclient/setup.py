@@ -23,11 +23,17 @@ setup(
     author='Mirantis Inc.',
     author_email='product@mirantis.com',
     url='http://mirantis.com',
-    install_requires=['PyYAML==3.10', "argparse==1.2.1"],
+    install_requires=['PyYAML==3.10', "argparse==1.2.1", "cliff>=1.6.1"],
     packages=find_packages(),
     entry_points={
         'console_scripts': [
             'fuel = fuelclient.cli.parser:main',
+            'fuel2 = fuelclient.main:main',
+        ],
+        'fuelclient': [
+            'environment-list = fuelclient.commands.environment:EnvList',
+            'environment-delete = fuelclient.commands.environment:EnvDelete',
+            'environment-update = fuelclient.commands.environment:EnvUpdate',
         ],
     }
 )

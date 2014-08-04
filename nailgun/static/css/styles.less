@@ -2418,17 +2418,16 @@ legend {
   }
   &.openstack-sub-title {
     .font-layout-mixin(@font-size-big-1, null, null, null, 30px);
-    margin: 10px 0px 6px 14px;
+    margin: 10px 0 6px 14px;
   }
   .toggleable {
     font-size: @font-size-base + 4;
-    margin: 0px;
-    padding: 0px;
+    indent-mixin(0, 0);
   }
   .tumbler {
     float:left;
     margin-top: -6px;
-    margin-right: 0px;
+    margin-right: 0;
   }
 }
 
@@ -2731,10 +2730,6 @@ hr.slim {
   .parameter-name {
     min-width: 10px;
   }
-}
-
-.changes-locked label {
-  cursor: default !important;
 }
 
 // Disk Utility Start

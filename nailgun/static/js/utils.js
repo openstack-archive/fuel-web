@@ -95,6 +95,19 @@ define(['require', 'expression', 'react'], function(require, Expression, React) 
             }
             return result;
         },
+        checkRestrictions: function(restrictions, models, restrictionsExpanded, action) {
+            var result = false,
+                warnings = _.compact(_.map(restrictions, function(restriction) {
+                    if (!restrictionsExpanded) {
+                        restriction = utils.expandRestriction(restriction);
+                    }
+                    if ((!action || restriction.action == action) && utils.evaluateExpression(restriction.condition, models).value) {
+                        result = true;
+                        return restriction.message;
+                    };
+                }, this));
+            return {result: result, warnings: warnings};
+        },
         universalMount: function(view, el, parentView) {
             if (view instanceof Backbone.View) {
                 view.render();

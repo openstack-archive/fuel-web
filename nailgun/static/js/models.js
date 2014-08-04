@@ -306,40 +306,24 @@ define(['utils', 'deepModel'], function(utils) {
             return response.editable;
         },
         toJSON: function(options) {
-            var currentSettings = this.constructor.__super__.toJSON.call(this, options);
-            if (this.initialAttributes) {
-                var result = _.cloneDeep(this.initialAttributes);
-                _.each(currentSettings, function(group, groupName) {
-                    _.each(group, function(setting, settingName) {
-                        if (settingName == 'metadata') {
-                            if (!_.isUndefined(setting.toggleable)) {
-                                result[groupName][settingName].enabled = setting.enabled;
-                            }
-                        } else  {
-                            result[groupName][settingName].value = setting.value;
-                        }
-                    });
-                }, this);
-                return {editable: result};
-            }
-            return {editable: currentSettings};
+            return {editable: this.constructor.__super__.toJSON.call(this, options)};
         },
-        expandRestrictions: function() {
-            _.each(this.attributes, function(group, groupName) {
-                _.each(group, function(setting, settingName) {
-                    setting.restrictions = _.map(setting.restrictions, utils.expandRestriction);
-                    _.each(setting.values, function(value) {
-                        value.restrictions = _.map(value.restrictions, utils.expandRestriction);
-                    });
-                }, this);
-            }, this);
+        checkRestrictions: function(configModels, setting, action) {
+            var result = false,
+                warnings = _.compact(_.map(setting.restrictions, function(restriction) {
+                    restriction = utils.expandRestriction(restriction);
+                    if ((!action || restriction.action == action) && utils.evaluateExpression(restriction.condition, configModels).value) {
+                        result = true;
+                        return restriction.message;
+                    };
+                }, this));
+            return {result: result, warnings: warnings};
         },
-        validate: function(attrs) {
+        validate: function(attrs, options) {
             var errors = [];
             _.each(attrs, function(group, groupName) {
-                if (group.metadata && (group.metadata.disabled || !group.metadata.visible)) { return; }
                 _.each(group, function(setting, settingName) {
-                    if (!(setting.regex && setting.regex.source) || setting.disabled) { return; }
+                    if (!(setting.regex && setting.regex.source) || this.checkRestrictions(options.configModels, setting)) { return; }
                     var regExp = new RegExp(setting.regex.source);
                     if (!setting.value.match(regExp)) {
                         errors.push({

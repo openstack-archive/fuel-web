@@ -2314,12 +2314,12 @@ input.error:focus {
   .box-sizing-mixin;
   min-width: 120px;
   font-weight: bold;
-  margin: 7px 14px 0 0;
-  overflow: hidden;
+  margin: 7px 3px 0 0;
   cursor: default;
   &.hide {
     display: none;
   }
+  border-bottom: none !important;
 }
 
 .modal .parameter-name {
@@ -2403,6 +2403,7 @@ input.error:focus {
 }
 
 legend {
+  cursor: default;
   &.openstack-settings, &.networks {
     display: block;
     margin-bottom: 10px;
@@ -2416,23 +2417,40 @@ legend {
     .font-layout-mixin(@font-size-base + 4, @font-color-dark, null, null, 18px);
     .box-sizing-mixin;
   }
-  &.openstack-sub-title {
-    .font-layout-mixin(@font-size-big-1, null, null, null, 30px);
-    margin: 10px 0px 6px 14px;
-  }
   .toggleable {
-    font-size: @font-size-base + 4;
-    margin: 0px;
-    padding: 0px;
+    .indent-mixin;
+    .parameter-name {
+      font-size: @font-size-base + 4; 
+      font-weight: normal;
+    }
+    label {
+      display: inline;
+      > div { .position(relative, @top: -5px); }
+    }
   }
   .tumbler {
     float:left;
     margin-top: -6px;
-    margin-right: 0px;
+    margin-right: 0;
   }
 }
 
-.settings .hide { display: none !important; }
+.openstack-settings {
+  .icon-attention {
+    font-size: @font-size-base;
+    .position(relative, @top: -6px, @left: -2px);
+  }
+  .tooltip-inner {
+    min-width: 200px;
+    max-width: 800px;
+  }
+  .settings-group > div > .openstack-sub-title {
+    .font-layout-mixin(@font-size-big-1, null, null, null, 30px);
+    margin: 10px 0 6px 14px;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  form { margin: 0 0 0 12px; }
+}
 
 .credentials {
   margin-bottom: 15px;
@@ -2731,10 +2749,6 @@ hr.slim {
   .parameter-name {
     min-width: 10px;
   }
-}
-
-.changes-locked label {
-  cursor: default !important;
 }
 
 // Disk Utility Start
@@ -3147,14 +3161,9 @@ form.create-cluster-form {
   font-size: @font-size-small-2;
 }
 
-input.input-append {
-  width: 175px;
-}
-
-.parameter-control.input-append .add-on {
-  .icon-eye, .icon-eye-off {
-    cursor: pointer;
-  }
+.parameter-control.input-append {
+  input.input-append { width: 175px; }
+  .add-on { cursor: pointer; }
 }
 
 // OpenStack Health Check

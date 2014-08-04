@@ -16,27 +16,28 @@
 define(['expression/parser', 'expression/objects'], function(ExpressionParser, expressionObjects) {
     'use strict';
 
-    function Expression(expressionText, models, options) {
+    function Expression(expressionText, options) {
         if (!(this instanceof Expression)) {
-            return new Expression(expressionText, models, options);
+            return new Expression(expressionText, options);
         }
         options = _.extend({strict: true}, options);
         _.extend(this, {
             expressionText: expressionText,
-            models: models || {},
             options: options
         });
         _.extend(ExpressionParser.yy, expressionObjects, {expression: this});
         this.compiledExpression = ExpressionParser.parse(expressionText);
         return this;
     }
-    Expression.prototype.evaluate = function(extraModels) {
-        this.modelPaths = {};
-        this.knownModels = extraModels ? _.extend({}, this.models, extraModels) : this.models;
-        var value = this.compiledExpression.evaluate();
-        delete this.knownModels;
-        return value;
-    };
+    _.extend(Expression.prototype, {
+        evaluate: function(models) {
+            return this.compiledExpression.evaluate(models ? _.extend({}, models) : {});
+        },
+        compile: function(expressionText) {
+            if (!_.has(this.expressions, expressionText)) this.expressions[expressionText] = new Expression(expressionText);
+            return this.expressions[expressionText];
+        }
+    });
 
     return Expression;
 });

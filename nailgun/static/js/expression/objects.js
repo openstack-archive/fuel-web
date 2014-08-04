@@ -66,8 +66,9 @@ define(['underscore'], function(_) {
         this.modelPath = new ModelPath(yytext);
         this.strict = strict;
     }
-    ModelPathWrapper.prototype.evaluate = function() {
-        this.modelPath.setModel(this.expression.knownModels);
+    ModelPathWrapper.prototype.evaluate = function(models) {
+        this.modelPaths = {};
+        this.modelPath.setModel(models);
         var result = this.modelPath.get();
         if (_.isUndefined(result)) {
             if (this.strict) {

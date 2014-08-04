@@ -17,11 +17,36 @@ import sys
 
 from fuelclient.cli.actions import actions
 from fuelclient.cli.arguments import get_fuel_version_arg
-from fuelclient.cli.arguments import get_version_arg
 from fuelclient.cli.arguments import substitutions
 from fuelclient.cli.error import exceptions_decorator
 from fuelclient.cli.error import ParserException
 from fuelclient.cli.serializers import Serializer
+
+
+class CustomizedHelpFormattingParser(argparse.ArgumentParser):
+    """Needed for redefinition of format_help method of
+    argparse.ArgumentParser class
+
+    Is using for backward compability with version of fuelclient code
+    without cliff. Must be removed when all commands will be migrated
+    on cliff code.
+    """
+
+    def format_help(self):
+        """Builds summirized help only for subparsers
+        """
+        formatter = self._get_formatter()
+
+        for action_group in self._action_groups:
+            if action_group.title != 'Namespaces':
+                continue
+
+            formatter.start_section(action_group.title)
+            formatter.add_text(action_group.description)
+            formatter.add_arguments(action_group._group_actions)
+            formatter.end_section()
+
+        return formatter.format_help()
 
 
 class Parser:
@@ -31,7 +56,7 @@ class Parser:
     """
     def __init__(self):
         self.args = sys.argv
-        self.parser = argparse.ArgumentParser(
+        self.parser = CustomizedHelpFormattingParser(
             usage="fuel [optional args] <namespace> [action] [flags]"
         )
         self.universal_flags = []
@@ -43,9 +68,17 @@ class Parser:
         )
         self.generate_actions()
         self.add_version_args()
-        self.add_debug_arg()
         self.add_keystone_credentials_args()
         self.add_serializers_args()
+
+    # debug stuff
+    @property
+    def help_string(self):
+        return self.parser.format_help()
+
+    @property
+    def arg_parser(self):
+        return self.parser
 
     def generate_actions(self):
         for action, action_object in actions.iteritems():
@@ -95,16 +128,6 @@ class Parser:
                 default=False
             )
 
-    def add_debug_arg(self):
-        self.universal_flags.append("--debug")
-        self.parser.add_argument(
-            "--debug",
-            dest="debug",
-            action="store_true",
-            help="prints details of all HTTP request",
-            default=False
-        )
-
     def add_keystone_credentials_args(self):
         self.parser.add_argument(
             "--os-username",
@@ -122,8 +145,8 @@ class Parser:
         )
 
     def add_version_args(self):
-        for args in (get_version_arg(), get_fuel_version_arg()):
-            self.parser.add_argument(*args["args"], **args["params"])
+        args = get_fuel_version_arg()
+        self.parser.add_argument(*args["args"], **args["params"])
 
     def prepare_args(self):
         # replace some args from dict substitutions
@@ -162,7 +185,9 @@ class Parser:
                 break
 
 
+parser = Parser()
+
+
 @exceptions_decorator
 def main():
-    parser = Parser()
     parser.parse()

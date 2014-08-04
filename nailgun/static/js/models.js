@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['utils', 'deepModel'], function(utils) {
+define(['utils', 'expression', 'deepModel'], function(utils, Expression) {
     'use strict';
 
     var models = {};
@@ -30,6 +30,25 @@ define(['utils', 'deepModel'], function(utils) {
                 this.lastSyncTime = new Date();
             }
             return this.constructor.__super__.sync.apply(this, arguments);
+        }
+    };
+
+    var restrictionMixin = {
+        expandRestrictions: function(restrictions, path) {
+            if (restrictions && restrictions.length) {
+                var result = _.map(restrictions, utils.expandRestriction, this);
+                if (path) this.expandedRestrictions[path] = result; else this.expandedRestrictions = result;
+            }
+        },
+        checkRestrictions: function(models, path, action) {
+            var restrictions = this.expandedRestrictions[path];
+            if (action) restrictions = _.where(restrictions, {action: action});
+            var result = false,
+                warnings = _.map(restrictions, function(restriction) {
+                    result = result || utils.compileExpression(restriction.condition).evaluate(models);
+                    return restriction.message;
+                });
+            return {result: result, warnings: _.compact(warnings)};
         }
     };
 
@@ -312,53 +331,40 @@ define(['utils', 'deepModel'], function(utils) {
             return response.editable;
         },
         toJSON: function(options) {
-            var currentSettings = this.constructor.__super__.toJSON.call(this, options);
-            if (this.initialAttributes) {
-                var result = _.cloneDeep(this.initialAttributes);
-                _.each(currentSettings, function(group, groupName) {
-                    _.each(group, function(setting, settingName) {
-                        if (settingName == 'metadata') {
-                            if (!_.isUndefined(setting.toggleable)) {
-                                result[groupName][settingName].enabled = setting.enabled;
-                            }
-                        } else {
-                            result[groupName][settingName].value = setting.value;
-                        }
-                    });
-                }, this);
-                return {editable: result};
-            }
-            return {editable: currentSettings};
+            return {editable: this.constructor.__super__.toJSON.call(this, options)};
         },
-        expandRestrictions: function() {
+        processRestrictions: function() {
+            this.expandedRestrictions = {};
             _.each(this.attributes, function(group, groupName) {
+                this.expandRestrictions(group.metadata.restrictions, groupName + '.metadata');
                 _.each(group, function(setting, settingName) {
-                    setting.restrictions = _.map(setting.restrictions, utils.expandRestriction);
+                    this.expandRestrictions(setting.restrictions, groupName + '.' + settingName);
                     _.each(setting.values, function(value) {
-                        value.restrictions = _.map(value.restrictions, utils.expandRestriction);
-                    });
+                        this.expandRestrictions(value.restrictions, groupName + '.' + settingName + '.' + value.data);
+                    }, this);
                 }, this);
             }, this);
         },
-        validate: function(attrs) {
-            var errors = [];
+        validate: function(attrs, options) {
+            // settings validation assumes that setting restrictions are expanded
+            var errors = [],
+                models = options ? options.models : {};
             _.each(attrs, function(group, groupName) {
-                if (group.metadata && (group.metadata.disabled || !group.metadata.visible)) { return; }
+                // no validation if any group restrictions are satisfied
+                if (this.checkRestrictions(models, groupName + '.metadata').result) return;
                 _.each(group, function(setting, settingName) {
-                    if (!(setting.regex && setting.regex.source) || setting.disabled || !setting.visible) { return; }
+                    var path = groupName + '.' + settingName;
+                    // regex validation of text/password attributes supported only
+                    // no validation if any group restrictions are satisfied
+                    if (!(setting.regex && setting.regex.source) || this.checkRestrictions(models, path).result) return;
                     var regExp = new RegExp(setting.regex.source);
-                    if (!setting.value.match(regExp)) {
-                        errors.push({
-                            field: groupName + '.' + settingName,
-                            message: setting.regex.error
-                        });
-                    }
-                });
-            });
+                    if (!setting.value.match(regExp)) errors.push({field: path, message: setting.regex.error});
+                }, this);
+            }, this);
             return errors.length ? errors : null;
         }
     });
-    _.extend(models.Settings.prototype, cacheMixin);
+    _.extend(models.Settings.prototype, cacheMixin, restrictionMixin);
 
     models.Disk = Backbone.Model.extend({
         constructorName: 'Disk',

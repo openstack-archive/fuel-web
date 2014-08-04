@@ -52,13 +52,19 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             return modelPath;
         },
         evaluateExpression: function(expression, models, options) {
-            var compiledExpression = new Expression(expression, models, options);
-            var value = compiledExpression.evaluate();
+            var compiledExpression = new Expression(expression, options);
+            var value = compiledExpression.evaluate(models);
             return {
                 value: value,
                 modelPaths: compiledExpression.modelPaths
             };
         },
+        compileExpression: function(expression) {
+            if (!_.has(Expression.prototype.expressions, expression)) Expression.prototype.expressions[expression] = new Expression(expression);
+            return Expression.prototype.expressions[expression];
+        },
+        // probably should be moved to restriction mixin (models.js)
+        // but it's used in processing of wizard config which isn't a model
         expandRestriction: function(restriction) {
             var result = {
                 action: 'disable',

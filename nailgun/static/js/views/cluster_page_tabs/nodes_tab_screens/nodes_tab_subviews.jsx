@@ -43,37 +43,30 @@ function(React, Expression, utils, controls) {
             };
         },
         componentDidMount: function() {
-            if (!this.parsedDependencies) this.props.cluster.get('settings').fetch({cache: true}).always(this.parseRoleData, this);
+            var settings = this.props.cluster.get('settings');
+            settings.fetch({cache: true}).always(this.processRoleData, this);
+            this.configModels = {
+                cluster: this.props.cluster,
+                settings: settings,
+                version: app.version,
+                default: settings
+            };
         },
         componentDidUpdate: function() {
             _.each(this.refs, function(roleView, role) {
                 roleView.refs.input.getDOMNode().indeterminate = _.contains(this.state.indeterminateRoles, role);
             }, this);
         },
-        parseRoleData: function() {
-            this.parsedDependencies = {};
+        processRoleData: function() {
+            this.expandedDependencies = {};
             this.conflicts = {};
-            var configModels = {
-                cluster: this.props.cluster,
-                settings: this.props.cluster.get('settings'),
-                version: app.version,
-                default: this.props.cluster.get('settings')
-            };
             _.each(this.getRoleData(), function(data, role) {
                 this.conflicts[role] = _.compact(_.uniq(_.union(this.conflicts[role], data.conflicts)));
                 _.each(data.conflicts, function(conflictingRole) {
                     this.conflicts[conflictingRole] =  this.conflicts[conflictingRole] || [];
                     this.conflicts[conflictingRole].push(role);
                 }, this);
-                this.parsedDependencies[role] = [];
-                _.each(data.depends, function(dependency) {
-                    dependency = utils.expandRestriction(dependency);
-                    this.parsedDependencies[role].push({
-                        expression: new Expression(dependency.condition, configModels),
-                        action: dependency.action,
-                        warning: dependency.warning
-                    });
-                }, this);
+                this.expandedDependencies[role] = _.map(data.depends, utils.expandRestriction);
             }, this);
             this.forceUpdate();
         },
@@ -116,11 +109,11 @@ function(React, Expression, utils, controls) {
         },
         checkDependencies: function(role, action) {
             var checkResult = {result: true, warning: ''};
-            if (this.parsedDependencies) {
+            if (this.expandedDependencies) {
                 action = action || 'disable';
                 var warnings = [];
-                _.each(_.where(this.parsedDependencies[role], {action: action}), function(dependency) {
-                    if (!dependency.expression.evaluate()) {
+                _.each(_.where(this.expandedDependencies[role], {action: action}), function(dependency) {
+                    if (!Expression.compile(dependency.condition).evaluate(this.configModels)) {
                         checkResult.result = false;
                         warnings.push(dependency.warning);
                     }

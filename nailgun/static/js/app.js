@@ -30,7 +30,7 @@ define(
     'views/releases_page',
     'views/notifications_page',
     'views/support_page',
-    'views/capacity_page'
+    'jsx!views/capacity_page'
 ],
 function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
@@ -287,7 +287,9 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.setPage(SupportPage);
         },
         showCapacityPage: function() {
-            this.setPage(CapacityPage);
+            var task = new models.Task();
+            task.save({}, {url: '/api/capacity/', method: 'PUT'});
+            this.setPage(CapacityPage, {task: task});
         }
     });
 

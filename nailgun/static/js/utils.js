@@ -78,6 +78,19 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             }
             return result;
         },
+        checkRestrictions: function(restrictions, models, action) {
+            var result = false,
+                warnings = _.map(restrictions, function(restriction) {
+                    if (!_.isPlainObject(restriction) || !_.has(restriction, 'condition')) {
+                        restriction = utils.expandRestriction(restriction);
+                    }
+                    if ((!action || restriction.action == action) && utils.evaluateExpression(restriction.condition, models).value) {
+                        result = true;
+                        return restriction.message;
+                    }
+                });
+            return {result: result, warnings: _.compact(warnings)};
+        },
         universalMount: function(view, el, parentView) {
             if (view instanceof Backbone.View) {
                 view.render();

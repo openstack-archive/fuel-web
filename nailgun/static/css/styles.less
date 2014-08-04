@@ -2418,21 +2418,25 @@ legend {
   }
   &.openstack-sub-title {
     .font-layout-mixin(@font-size-big-1, null, null, null, 30px);
-    margin: 10px 0px 6px 14px;
+    margin: 10px 0 6px 14px;
   }
   .toggleable {
-    font-size: @font-size-base + 4;
-    margin: 0px;
-    padding: 0px;
+    .indent-mixin;
+    .parameter-name {
+      font-size: @font-size-base + 4; 
+      font-weight: normal;
+    }
+    label {
+      display: inline;
+      > div { .position(relative, @top: -5px); }
+    }
   }
   .tumbler {
     float:left;
     margin-top: -6px;
-    margin-right: 0px;
+    margin-right: 0;
   }
 }
-
-.settings .hide { display: none !important; }
 
 .credentials {
   margin-bottom: 15px;
@@ -2731,10 +2735,6 @@ hr.slim {
   .parameter-name {
     min-width: 10px;
   }
-}
-
-.changes-locked label {
-  cursor: default !important;
 }
 
 // Disk Utility Start
@@ -3147,14 +3147,9 @@ form.create-cluster-form {
   font-size: @font-size-small-2;
 }
 
-input.input-append {
-  width: 175px;
-}
-
-.parameter-control.input-append .add-on {
-  .icon-eye, .icon-eye-off {
-    cursor: pointer;
-  }
+.parameter-control.input-append {
+  input.input-append { width: 175px; }
+  .add-on { cursor: pointer; }
 }
 
 // OpenStack Health Check

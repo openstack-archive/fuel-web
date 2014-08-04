@@ -1934,9 +1934,6 @@ label {cursor: default;}
     text-transform: capitalize;
     margin: 10px 0 0;
   }
-  label {
-    margin-top: 10px;
-  }
 }
 
 .deployment-result { margin-top: 5px; }
@@ -2303,10 +2300,6 @@ input.error:focus {
 .custom-tumbler input[disabled] + span{filter:alpha(opacity=50);-moz-opacity:0.5;-khtml-opacity:0.5;opacity:0.5;cursor: not-allowed;}
 .custom-tumbler input[type=radio] + span.checked{background-position:0px -24px;}
 
-.parameter-box {
-  display: block;
-}
-
 .fieldset-group > div > .parameter-box,
 .fieldset-group > div > div > .parameter-box  {
   margin-left: 12px;
@@ -2317,12 +2310,12 @@ input.error:focus {
   .box-sizing-mixin;
   min-width: 120px;
   font-weight: bold;
-  margin: 7px 14px 0 0;
-  overflow: hidden;
+  margin: 7px 3px 0 0;
   cursor: default;
   &.hide {
     display: none;
   }
+  border-bottom: none !important;
 }
 
 .modal .parameter-name {
@@ -2367,7 +2360,7 @@ input.error:focus {
   > .tablerow-wrapper {
     display: table-row;
     height:40px;
-    .parameter-name {
+    .parameter-name span {
       display: table-cell;
       word-break: break-word !important;
       vertical-align: middle;
@@ -2406,6 +2399,7 @@ input.error:focus {
 }
 
 legend {
+  cursor: default;
   &.openstack-settings, &.networks {
     display: block;
     margin-bottom: 10px;
@@ -2419,14 +2413,11 @@ legend {
     .font-layout-mixin(@font-size-base + 4, @font-color-dark, null, null, 18px);
     .box-sizing-mixin;
   }
-  &.openstack-sub-title {
-    .font-layout-mixin(@font-size-big-1, null, null, null, 30px);
-    margin: 10px 0px 6px 14px;
-  }
-  .toggleable {
+  .parameter-control { .position(relative, @top: -5px); }
+  .toggleable span {
+    .indent-mixin;
     font-size: @font-size-base + 4;
-    margin: 0px;
-    padding: 0px;
+    display: inline;
   }
   .tumbler {
     float:left;
@@ -2435,7 +2426,29 @@ legend {
   }
 }
 
-.settings .hide { display: none !important; }
+.parameter-box { clear: both; }
+
+.openstack-settings {
+  .icon-attention {
+    font-size: @font-size-base;
+    .position(relative, @top: -6px, @left: -2px);
+  }
+  .parameter-box {
+    clear: both;
+    margin: 10px 0;
+    .parameter-name {
+      float: none;
+      .font-layout-mixin(@font-size-big-1, null, null, null, 30px);
+      margin: 0;
+    }
+    .parameter-description { float: none; }
+  }
+}
+
+.tooltip-inner {
+  min-width: 200px;
+  max-width: 800px;
+}
 
 .credentials {
   margin-bottom: 15px;
@@ -3115,14 +3128,9 @@ form.create-cluster-form {
   text-align: center;
 }
 
-input.input-append {
-  width: 175px;
-}
-
-.parameter-control.input-append .add-on {
-  .icon-eye, .icon-eye-off {
-    cursor: pointer;
-  }
+.parameter-control.input-append {
+  input { width: 175px; }
+  .add-on { cursor: pointer; }
 }
 
 // OpenStack Health Check

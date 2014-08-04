@@ -306,33 +306,7 @@ define(['utils', 'deepModel'], function(utils) {
             return response.editable;
         },
         toJSON: function(options) {
-            var currentSettings = this.constructor.__super__.toJSON.call(this, options);
-            if (this.initialAttributes) {
-                var result = _.cloneDeep(this.initialAttributes);
-                _.each(currentSettings, function(group, groupName) {
-                    _.each(group, function(setting, settingName) {
-                        if (settingName == 'metadata') {
-                            if (!_.isUndefined(setting.toggleable)) {
-                                result[groupName][settingName].enabled = setting.enabled;
-                            }
-                        } else  {
-                            result[groupName][settingName].value = setting.value;
-                        }
-                    });
-                }, this);
-                return {editable: result};
-            }
-            return {editable: currentSettings};
-        },
-        expandRestrictions: function() {
-            _.each(this.attributes, function(group, groupName) {
-                _.each(group, function(setting, settingName) {
-                    setting.restrictions = _.map(setting.restrictions, utils.expandRestriction);
-                    _.each(setting.values, function(value) {
-                        value.restrictions = _.map(value.restrictions, utils.expandRestriction);
-                    });
-                }, this);
-            }, this);
+            return {editable: this.constructor.__super__.toJSON.call(this, options)};
         },
         validate: function(attrs) {
             var errors = [];

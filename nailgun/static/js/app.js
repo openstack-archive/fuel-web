@@ -30,7 +30,7 @@ define(
     'views/releases_page',
     'views/notifications_page',
     'views/support_page',
-    'views/capacity_page'
+    'jsx!views/capacity_page'
 ],
 function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';

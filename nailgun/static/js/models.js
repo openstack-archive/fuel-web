@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['utils', 'deepModel'], function(utils) {
+define(['utils', 'expression'], function(utils, Expression) {
     'use strict';
 
     var models = {};
@@ -33,9 +33,56 @@ define(['utils', 'deepModel'], function(utils) {
         }
     };
 
+    var restrictionMixin = {
+        processRestrictions: function(models, path) {
+            var restrictions = path ? this.get(path).restrictions : this.get('restrictions');
+            if (restrictions && restrictions.length) {
+                var expandedRestrictions = path ? this.expandedRestrictions[path] : this.expandedRestrictions;
+                expandedRestrictions = _.map(restrictions, utils.expandRestriction, this);
+                _.each(expandedRestrictions, function(restriction) {
+                    this.compiledRestrictions[restriction.condition] = new Expression(restriction.condition, models);
+                }, this);
+            }
+        },
+        checkRestrictions: function(path, action, models) {
+            // the method assumes that restrictions are expanded and precompiled
+            var restrictions = this.expandedRestrictions[path];
+            if (action) restrictions = _.where(restrictions, {action: action});
+            var result = false,
+                warnings = _.map(restrictions, function(restriction) {
+                    result = result || this.compiledRestrictions[restriction.condition].evaluate(models);
+                    return restriction.message;
+                }, this);
+            return {result: result, warning: _.compact(warnings)};
+        }
+    };
+
+    models.Role = Backbone.Model.extend({
+        constructorName: 'Role',
+        prepareRestrictions: function(models) {
+            // role restrictions should be processed once the model is created
+            this.processRestrictions(models);
+        }
+    });
+    _.extend(models.Role.prototype, restrictionMixin);
+
+    models.Roles = Backbone.Collection.extend({
+        constructorName: 'Roles',
+        model: models.Role
+    });
+
     models.Release = Backbone.Model.extend({
         constructorName: 'Release',
-        urlRoot: '/api/releases'
+        urlRoot: '/api/releases',
+        parse: function(response) {
+            response.roles = new models.Roles(_.map(response.roles, function(roleName) {
+                var roleData = this.get('roles_metadata')[roleName];
+                roleData.label = roleData.name;
+                return _.extend(roleData, {name: roleName});
+            }, this));
+            delete response.roles_metadata;
+            return response;
+        }
     });
 
     models.Releases = Backbone.Collection.extend({
@@ -310,53 +357,40 @@ define(['utils', 'deepModel'], function(utils) {
             return response.editable;
         },
         toJSON: function(options) {
-            var currentSettings = this.constructor.__super__.toJSON.call(this, options);
-            if (this.initialAttributes) {
-                var result = _.cloneDeep(this.initialAttributes);
-                _.each(currentSettings, function(group, groupName) {
-                    _.each(group, function(setting, settingName) {
-                        if (settingName == 'metadata') {
-                            if (!_.isUndefined(setting.toggleable)) {
-                                result[groupName][settingName].enabled = setting.enabled;
-                            }
-                        } else {
-                            result[groupName][settingName].value = setting.value;
-                        }
-                    });
-                }, this);
-                return {editable: result};
-            }
-            return {editable: currentSettings};
+            return {editable: this.constructor.__super__.toJSON.call(this, options)};
         },
-        expandRestrictions: function() {
+        prepareRestrictions: function(models) {
+            // setting restrictions should be processed once the model is created
+            var process = _.bind(this.processRestrictions, this, models);
             _.each(this.attributes, function(group, groupName) {
+                process(groupName + '.metadata');
                 _.each(group, function(setting, settingName) {
-                    setting.restrictions = _.map(setting.restrictions, utils.expandRestriction);
-                    _.each(setting.values, function(value) {
-                        value.restrictions = _.map(value.restrictions, utils.expandRestriction);
+                    process(groupName + '.' + settingName);
+                    _.each(setting.values, function(value, index) {
+                        process(groupName + '.' + settingName + '.' + value.data);
                     });
-                }, this);
-            }, this);
-        },
-        validate: function(attrs) {
-            var errors = [];
-            _.each(attrs, function(group, groupName) {
-                if (group.metadata && (group.metadata.disabled || !group.metadata.visible)) { return; }
-                _.each(group, function(setting, settingName) {
-                    if (!(setting.regex && setting.regex.source) || setting.disabled || !setting.visible) { return; }
-                    var regExp = new RegExp(setting.regex.source);
-                    if (!setting.value.match(regExp)) {
-                        errors.push({
-                            field: groupName + '.' + settingName,
-                            message: setting.regex.error
-                        });
-                    }
                 });
             });
+        },
+        validate: function(attrs, options) {
+            // settings validation assumes that setting restrictions are expanded and precompiled
+            var errors = [];
+            _.each(attrs, function(group, groupName) {
+                // no validation if any group restrictions are satisfied
+                if (this.checkRestrictions(groupName + '.metadata').result) return;
+                _.each(group, function(setting, settingName) {
+                    var path = groupName + '.' + settingName;
+                    // regex validation of text/password attributes supported only
+                    // no validation if any group restrictions are satisfied
+                    if (!(setting.regex && setting.regex.source) || this.checkRestrictions(path).result) return;
+                    var regExp = new RegExp(setting.regex.source);
+                    if (!setting.value.match(regExp)) errors.push({field: path, message: setting.regex.error});
+                }, this);
+            }, this);
             return errors.length ? errors : null;
         }
     });
-    _.extend(models.Settings.prototype, cacheMixin);
+    _.extend(models.Settings.prototype, cacheMixin, restrictionMixin);
 
     models.Disk = Backbone.Model.extend({
         constructorName: 'Disk',

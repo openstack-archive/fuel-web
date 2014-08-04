@@ -340,6 +340,11 @@ def save_only(iface):
     except Exception:
         print("Unable to define DHCP pools")
         sys.exit(1)
+    try:
+        hostname, sep, domain = os.uname()[1].partition('.')
+    except Exception:
+        print("Unable to calculate hostname and domain")
+        sys.exit(1)
     settings = \
         {
             "ADMIN_NETWORK/interface": iface,
@@ -350,6 +355,9 @@ def save_only(iface):
             "ADMIN_NETWORK/dhcp_pool_end": dynamic_end,
             "ADMIN_NETWORK/static_pool_start": static_start,
             "ADMIN_NETWORK/static_pool_end": static_end,
+            "HOSTNAME": hostname,
+            "DNS_DOMAIN": domain,
+            "DNS_SEARCH": domain,
             "astute/user": "naily",
             "astute/password": pwgen.password(),
             "cobbler/user": "cobbler",

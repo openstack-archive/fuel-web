@@ -63,12 +63,13 @@ class BaseTestCase(TestCase):
         self.assertEqual(method.call_count, count)
 
     @property
+    @mock.patch('fuel_upgrade.config.glob.glob', return_value=['2014.1.1-5.1'])
     @mock.patch('fuel_upgrade.config.get_version_from_config',
                 side_effect=['0', '9999'])
     @mock.patch('fuel_upgrade.config.from_fuel_version', return_value='0')
     @mock.patch('fuel_upgrade.config.read_yaml_config',
                 return_value={'ADMIN_NETWORK': {'ipaddress': '0.0.0.0'}})
-    def fake_config(self, _, __, ___):
+    def fake_config(self, _, __, ___, ____):
         update_path = '/tmp/upgrade_path'
         conf = config.build_config(update_path)
 

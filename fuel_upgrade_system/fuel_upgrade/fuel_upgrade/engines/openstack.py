@@ -104,8 +104,10 @@ class OpenStackUpgrader(UpgradeEngine):
             utils.remove(destination)
 
     def on_success(self):
-        """Do nothing for this engine
+        """Replace duplicate files with hardlinks
+        in repository
         """
+        utils.hardlink_duplicates(self.config.repo_path)
 
     def install_releases(self):
         # check releases for existing in nailgun side

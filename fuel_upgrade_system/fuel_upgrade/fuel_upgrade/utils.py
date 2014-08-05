@@ -19,6 +19,7 @@ import json
 import logging
 import os
 import re
+import select
 import shutil
 import subprocess
 import time
@@ -83,10 +84,24 @@ def exec_cmd_iterator(cmd):
         stderr=subprocess.PIPE,
         shell=True)
 
-    logger.debug(u'Stdout and stderr of command "{0}":'.format(cmd))
-    for line in child.stdout:
-        logger.debug(line.rstrip())
-        yield line
+    logger.debug(u'Stdout or stderr of command "{0}":'.format(cmd))
+
+    while True:
+        stream_fileno = [child.stdout.fileno(), child.stderr.fileno()]
+        ready_for_read = select.select(stream_fileno, [], [])[0]
+
+        for fd in ready_for_read:
+            if fd == child.stderr.fileno():
+                line = child.stderr.readline()
+                logger.debug('stderr: %s', line.rstrip())
+
+            if fd == child.stdout.fileno():
+                line = child.stdout.readline()
+                logger.debug('stdout: %s', line.rstrip())
+                yield line
+
+        if child.poll() is not None:
+            break
 
     _wait_and_check_exit_code(cmd, child)
 
@@ -650,6 +665,52 @@ def iterfiles(path):
     for root, dirnames, filenames in os.walk(path, topdown=True):
         for filename in filenames:
             yield os.path.join(root, filename)
+
+
+def hardlink_duplicates(dir_path):
+    """Replaces duplicate files with hardlinks in the directory
+
+    :param str dir_path: path to the directory
+    """
+    cmd = 'fdupes --quiet --noempty --recurse "{0}"'.format(dir_path)
+    lines = (line.rstrip('\n') for line in exec_cmd_iterator(cmd))
+
+    for line in lines:
+        # Take first file
+        first_file = line
+
+        # Iterate over the rest of equal files
+        for hardlink_to in lines:
+            # Empty line means the end of the list of equal files
+            if not hardlink_to:
+                break
+            safe_hardlink(first_file, hardlink_to)
+
+
+def safe_hardlink(src, dst):
+    """Hardlink files safely
+
+    NOTE(eli): link method in python
+    doesn't have overwrite option to
+    achieve non-destructive actions, make
+    hardlink to tmp file and then rename
+    file, which overwrites destination
+
+    :param str src: hardlink from
+    :param str dst: hardlink to
+    """
+    tmp_file = '{0}.{1}'.format(dst, generate_uuid_string())
+    try:
+        logger.debug(u'Make hardlink "%s" "%s"', src, dst)
+        os.link(src, tmp_file)
+        os.rename(tmp_file, dst)
+    except OSError as exc:
+        logger.debug(u'Failed to make hardlink %s', exc)
+
+        try:
+            os.remove(tmp_file)
+        except OSError as exc:
+            logger.debug(u'Failed to remove "%s" %s', tmp_file, exc)
 
 
 class VersionedFile(object):

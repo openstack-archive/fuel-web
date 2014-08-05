@@ -37,6 +37,7 @@ class TestUtils(BaseTestCase):
     def make_process_mock(self, return_code=0):
         process_mock = mock.Mock()
         process_mock.stdout = ['Stdout line 1', 'Stdout line 2']
+        process_mock.stderr = ['Stderr line 1', 'Stderr line 2']
         process_mock.returncode = return_code
 
         return process_mock
@@ -74,10 +75,24 @@ class TestUtils(BaseTestCase):
                 'exit code: {1} '.format(return_code, cmd),
                 exec_cmd, cmd)
 
-    def test_exec_cmd_iterator_executes_sucessfuly(self):
+    def make_process_mock_iterator(self, return_code=0):
+        process_mock = mock.Mock()
+        process_mock.stdout.fileno.return_value = 1
+        process_mock.stdout.readline.side_effect = [
+            'Stdout line 1', 'Stdout line 2']
+
+        process_mock.stderr.fileno.return_value = 2
+        process_mock.stderr.readline.side_effect = [
+            'Stderr line 1', 'Stderr line 2']
+        process_mock.returncode = return_code
+
+        return process_mock
+
+    @mock.patch('fuel_upgrade.utils.select.select', return_value=[[1, 2]])
+    def test_exec_cmd_iterator_executes_sucessfuly(self, _):
         cmd = 'some command'
 
-        process_mock = self.make_process_mock()
+        process_mock = self.make_process_mock_iterator()
         with patch.object(
                 subprocess, 'Popen', return_value=process_mock) as popen_mock:
             for line in exec_cmd_iterator(cmd):
@@ -89,12 +104,14 @@ class TestUtils(BaseTestCase):
             stderr=subprocess.PIPE,
             shell=True)
 
+    @mock.patch('fuel_upgrade.utils.select.select', return_value=[[1]])
     def test_exec_cmd_iterator_raises_error_in_case_of_non_zero_exit_code(
-            self):
+            self, _):
         cmd = 'some command'
         return_code = 1
 
-        process_mock = self.make_process_mock(return_code=return_code)
+        process_mock = self.make_process_mock_iterator(return_code=return_code)
+
         with patch.object(subprocess, 'Popen', return_value=process_mock):
             with self.assertRaisesRegexp(
                     errors.ExecutedErrorNonZeroExitCode,
@@ -508,6 +525,61 @@ class TestUtils(BaseTestCase):
         for _ in utils.iterfiles('path/to/dir'):
             pass
         walk.assert_called_once_with('path/to/dir', topdown=True)
+
+    @mock.patch('fuel_upgrade.utils.generate_uuid_string', return_value='uuid')
+    @mock.patch('fuel_upgrade.utils.os')
+    def test_safe_hardlink(self, os_mock, uuid_mock):
+        src = '/tmp/src'
+        dst = '/tmp/dst'
+        tmp = '/tmp/dst.uuid'
+        utils.safe_hardlink(src, dst)
+
+        os_mock.link.assert_called_once_with(src, tmp)
+        os_mock.rename.assert_called_once_with(tmp, dst)
+        uuid_mock.assert_called_once_with()
+
+    @mock.patch('fuel_upgrade.utils.generate_uuid_string', return_value='uuid')
+    @mock.patch('fuel_upgrade.utils.os.remove', side_effect=OSError())
+    @mock.patch('fuel_upgrade.utils.os.rename', side_effect=OSError())
+    @mock.patch('fuel_upgrade.utils.os')
+    def test_safe_hardlink_does_not_fail_with_os_errors(
+            self, os_mock, rename_mock, _, __):
+        src = '/tmp/src'
+        dst = '/tmp/dst'
+        tmp = '/tmp/dst.uuid'
+        utils.safe_hardlink(src, dst)
+
+        os_mock.link.assert_called_once_with(src, tmp)
+        rename_mock.assert_called_once_with(tmp, dst)
+        os_mock.remove.assert_called_once_with(tmp)
+
+    @mock.patch('fuel_upgrade.utils.safe_hardlink')
+    def test_hardlink_duplicates(self, mock_hardlink):
+        path = '/tmp/dir'
+
+        exec_mock = mock.MagicMock()
+        exec_mock.__iter__.return_value = iter([
+            'file1\n',
+            'file2\n',
+            'file3\n',
+            '\n',
+            'file4\n',
+            'file5\n',
+            '\n',
+            'file6\n',
+            '\n'])
+
+        with mock.patch('fuel_upgrade.utils.exec_cmd_iterator',
+                        return_value=exec_mock) as iter_mock:
+            utils.hardlink_duplicates(path)
+            iter_mock.assert_called_once_with(
+                'fdupes --quiet --noempty --recurse "/tmp/dir"')
+
+        self.assertEqual(
+            mock_hardlink.call_args_list,
+            [mock.call('file1', 'file2'),
+             mock.call('file1', 'file3'),
+             mock.call('file4', 'file5')])
 
 
 class TestVersionedFile(BaseTestCase):

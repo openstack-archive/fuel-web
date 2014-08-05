@@ -239,6 +239,7 @@ def config(update_path):
     cobbler_config_path = join(working_directory, 'cobbler_configs')
     cobbler_config_files_for_verifier = join(
         cobbler_config_path, 'config/systems.d/*.json')
+    repo_path = '/var/www/nailgun/'
 
     # Keep only 3 latest database files
     keep_db_backups_count = 3

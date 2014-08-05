@@ -73,8 +73,11 @@ class TestOpenStackUpgrader(BaseTestCase):
         self.called_once(rep)
         self.called_once(rel)
 
-    def test_on_success_does_not_raise_exceptions(self):
+    @mock.patch('fuel_upgrade.engines.openstack.utils')
+    def test_on_success_does_not_raise_exceptions(self, utils_mock):
         self.upgrader.on_success()
+        utils_mock.hardlink_duplicates.assert_called_once_with(
+            '/var/www/nailgun/')
 
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')

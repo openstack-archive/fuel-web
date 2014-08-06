@@ -212,8 +212,11 @@ class DeploymentMultinodeSerializer(object):
         """
         serialized_nodes = []
         for node in nodes:
-            for role in sorted(node.all_roles):
-                serialized_nodes.append(cls.serialize_node(node, role))
+            if node.replaced_deployment_info:
+                serialized_nodes.extend(node.replaced_deployment_info)
+            else:
+                for role in sorted(node.all_roles):
+                    serialized_nodes.append(cls.serialize_node(node, role))
         cls.set_primary_mongo(serialized_nodes)
         return serialized_nodes
 

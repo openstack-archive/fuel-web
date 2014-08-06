@@ -49,7 +49,10 @@ class ProvisioningSerializer(object):
         """Serialize nodes."""
         serialized_nodes = []
         for node in nodes:
-            serialized_node = cls.serialize_node(cluster_attrs, node)
+            if node.replaced_provisioning_info:
+                serialized_node = node.replaced_provisioning_info
+            else:
+                serialized_node = cls.serialize_node(cluster_attrs, node)
             serialized_nodes.append(serialized_node)
 
         return serialized_nodes

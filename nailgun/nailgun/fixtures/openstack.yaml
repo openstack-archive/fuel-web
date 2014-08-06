@@ -773,7 +773,7 @@
             weight: 15
             type: "checkbox"
             restrictions:
-              - "settings:storage.volumes_lvm.value == false or settings:common.libvirt_type.value == 'vcenter'"
+              - "settings:common.libvirt_type.value != 'vcenter' or settings:storage.volumes_lvm.value == true"
           iser:
             value: false
             label: "iSER protocol for volumes (Cinder)"

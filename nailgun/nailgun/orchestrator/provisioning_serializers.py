@@ -16,6 +16,8 @@
 
 """Provisioning serializers for orchestrator"""
 
+from itertools import groupby
+
 from nailgun import objects
 import netaddr
 
@@ -27,31 +29,48 @@ class ProvisioningSerializer(object):
     """Provisioning serializer"""
 
     @classmethod
-    def serialize(cls, cluster, nodes):
+    def serialize(cls, cluster, nodes, ignore_customized=False):
         """Serialize cluster for provisioning."""
 
         cluster_attrs = objects.Attributes.merged_attrs_values(
             cluster.attributes
         )
-        serialized_nodes = cls.serialize_nodes(cluster_attrs, nodes)
+        serialized_nodes = []
+        keyfunc = lambda node: bool(node.replaced_provisioning_info)
+        for customized, node_group in groupby(nodes, keyfunc):
+            if customized and not ignore_customized:
+                serialized_nodes.extend(cls.serialize_customized(node_group))
+            else:
+                serialized_nodes.extend(
+                    cls.serialize_nodes(cluster_attrs, node_group))
+        serialized_info = (cluster.replaced_provisioning_info or
+                           cls.serialize_cluster_info(cluster))
+        serialized_info['nodes'] = serialized_nodes
+        return serialized_info
 
+    @classmethod
+    def serialize_cluster_info(cls, cluster):
         return {
             'engine': {
                 'url': settings.COBBLER_URL,
                 'username': settings.COBBLER_USER,
                 'password': settings.COBBLER_PASSWORD,
                 'master_ip': settings.MASTER_IP,
-            },
-            'nodes': serialized_nodes}
+            }}
+
+    @classmethod
+    def serialize_customized(self, nodes):
+        serialized = []
+        for node in nodes:
+            serialized.append(node.replaced_provisioning_info)
+        return serialized
 
     @classmethod
     def serialize_nodes(cls, cluster_attrs, nodes):
         """Serialize nodes."""
         serialized_nodes = []
         for node in nodes:
-            serialized_node = cls.serialize_node(cluster_attrs, node)
-            serialized_nodes.append(serialized_node)
-
+            serialized_nodes.append(cls.serialize_node(cluster_attrs, node))
         return serialized_nodes
 
     @classmethod
@@ -183,8 +202,9 @@ class ProvisioningSerializer(object):
         return settings.PATH_TO_SSH_KEY
 
 
-def serialize(cluster, nodes):
+def serialize(cluster, nodes, ignore_customized=False):
     """Serialize cluster for provisioning."""
     objects.NodeCollection.prepare_for_provisioning(nodes)
 
-    return ProvisioningSerializer.serialize(cluster, nodes)
+    return ProvisioningSerializer.serialize(
+        cluster, nodes, ignore_customized=ignore_customized)

@@ -364,6 +364,8 @@ class Cluster(NailgunObject):
             net_manager.clear_assigned_networks,
             nodes_to_remove
         )
+        cls.replace_provisioning_info_on_nodes(instance, [], nodes_to_remove)
+        cls.replace_deployment_info_on_nodes(instance, [], nodes_to_remove)
         map(
             net_manager.assign_networks_by_default,
             nodes_to_add
@@ -401,6 +403,53 @@ class Cluster(NailgunObject):
                 models.NodeBondInterface.assigned_networks_list.any(name=net)
             )
         return nics_db.union(bonds_db)
+
+    @classmethod
+    def replace_provisioning_info_on_nodes(cls, instance, data, nodes):
+        for node in nodes:
+            node_data = next((n for n in nodes if node.uid == n['uid']), {})
+            node.replaced_provisioning_info = node_data
+
+    @classmethod
+    def replace_deployment_info_on_nodes(cls, instance, data, nodes):
+        for node in instance.nodes:
+            node_data = [n for n in data if node.uid == n['uid']]
+            node.replaced_deployment_info = node_data
+
+    @classmethod
+    def replace_provisioning_info(cls, instance, data):
+        nodes = data.pop('nodes', [])
+        instance.is_customized = True
+        instance.replaced_provisioning_info = data
+        cls.replace_provisioning_info_on_nodes(instance, data, nodes)
+        return cls.get_provisioning_info(instance)
+
+    @classmethod
+    def replace_deployment_info(cls, instance, data):
+        instance.is_customized = True
+        cls.replace_deployment_info_on_nodes(instance, data, instance.nodes)
+        return cls.get_deployment_info(instance)
+
+    @classmethod
+    def get_provisioning_info(cls, instance):
+        data = {}
+        if instance.replaced_provisioning_info:
+            data.update(instance.replaced_provisioning_info)
+        nodes = []
+        for node in instance.nodes:
+            if node.replaced_provisioning_info:
+                nodes.append(node.replaced_provisioning_info)
+        if data:
+            data['nodes'] = nodes
+        return data
+
+    @classmethod
+    def get_deployment_info(cls, instance):
+        data = []
+        for node in instance.nodes:
+            if node.replaced_deployment_info:
+                data.extend(node.replaced_deployment_info)
+        return data
 
 
 class ClusterCollection(NailgunCollection):

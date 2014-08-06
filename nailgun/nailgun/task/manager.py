@@ -147,8 +147,9 @@ class ApplyChangesTaskManager(TaskManager):
 
         # Run validation if user didn't redefine
         # provisioning and deployment information
-        if not self.cluster.replaced_provisioning_info and \
-                not self.cluster.replaced_deployment_info:
+
+        if (not objects.Cluster.get_provisioning_info(self.cluster) and
+                not objects.Cluster.get_deployment_info(self.cluster)):
             try:
                 self.check_before_deployment(supertask)
             except errors.CheckBeforeDeploymentError:

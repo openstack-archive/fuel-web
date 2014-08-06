@@ -16,6 +16,8 @@
 
 import nailgun
 
+from nailgun import objects
+
 from mock import patch
 
 from nailgun.db.sqlalchemy.models import Cluster
@@ -35,9 +37,9 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
         super(TestOrchestratorInfoHandlers, self).setUp()
         self.cluster = self.env.create_cluster(api=False)
 
-    def check_info_handler(self, handler_name, get_info):
+    def check_info_handler(
+            self, handler_name, get_info, orchestrator_data, default=[]):
         # updating provisioning info
-        orchestrator_data = {"field": "test"}
         put_resp = self.app.put(
             reverse(handler_name,
                     kwargs={'cluster_id': self.cluster.id}),
@@ -63,17 +65,28 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(delete_resp.status_code, 202)
-        self.assertEqual(get_info(), {})
+        self.assertEqual(get_info(), default)
 
     def test_cluster_provisioning_info(self):
+        orchestrator_data = {'engine': {}, 'nodes': []}
+        for node in self.env.nodes:
+            orchestrator_data['nodes'].append(
+                {"field": "test", "uid": node.uid})
+
         self.check_info_handler(
             'ProvisioningInfo',
-            lambda: self.cluster.replaced_provisioning_info)
+            lambda: objects.Cluster.get_provisioning_info(self.cluster),
+            orchestrator_data,
+            default={})
 
     def test_cluster_deployment_info(self):
+        orchestrator_data = []
+        for node in self.env.nodes:
+            orchestrator_data.append({"field": "test", "uid": node.uid})
         self.check_info_handler(
             'DeploymentInfo',
-            lambda: self.cluster.replaced_deployment_info)
+            lambda: objects.Cluster.get_deployment_info(self.cluster),
+            orchestrator_data)
 
 
 class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
@@ -89,8 +102,7 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
 
         self.cluster = self.db.query(Cluster).get(cluster['id'])
 
-    def customization_handler_helper(self, handler_name, get_info):
-        facts = {"key": "value"}
+    def customization_handler_helper(self, handler_name, get_info, facts):
         resp = self.app.put(
             reverse(handler_name,
                     kwargs={'cluster_id': self.cluster.id}),
@@ -147,15 +159,25 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         self.assertItemsEqual(actual_uids, node_ids)
 
     def test_cluster_provisioning_customization(self):
+        facts = {'engine': {'1': '2'}}
+        nodes = []
+        for node in self.env.nodes:
+            nodes.append({"key": "value", "uid": node.uid})
+        facts['nodes'] = nodes
         self.customization_handler_helper(
             'ProvisioningInfo',
-            lambda: self.cluster.replaced_provisioning_info
+            lambda: objects.Cluster.get_provisioning_info(self.cluster),
+            facts
         )
 
     def test_cluster_deployment_customization(self):
+        facts = []
+        for node in self.env.nodes:
+            facts.append({"key": "value", "uid": node.uid})
         self.customization_handler_helper(
             'DeploymentInfo',
-            lambda: self.cluster.replaced_deployment_info
+            lambda: objects.Cluster.get_deployment_info(self.cluster),
+            facts
         )
 
     def test_deployment_with_one_compute_node(self):

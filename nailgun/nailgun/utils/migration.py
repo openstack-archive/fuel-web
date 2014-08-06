@@ -16,9 +16,11 @@ from alembic import op
 import os
 import six
 import sqlalchemy as sa
+from sqlalchemy.sql import text
 import yaml
 
 from nailgun.db.sqlalchemy.fixman import load_fixture
+from nailgun.openstack.common import jsonutils
 
 
 def upgrade_enum(table, column_name, enum_name, old_options, new_options):
@@ -120,3 +122,44 @@ def upgrade_release_wizard_metadata_50_to_51(fixture_path=None):
     ]
 
     return wizard_meta
+
+
+def upgrade_clusters_replaced_info(connection):
+    select = text(
+        """SELECT id, replaced_provisioning_info, replaced_deployment_info
+        FROM clusters""")
+    clusters = connection.execute(select)
+    for cluster in clusters:
+        nodes_select = text(
+            """SELECT id FROM nodes WHERE cluster_id=:id""")
+        nodes = connection.execute(
+            nodes_select,
+            id=cluster[0])
+        provisioning_info = jsonutils.loads(cluster[1])
+        deployment_nodes = jsonutils.loads(cluster[2])
+        provisioning_nodes = provisioning_info.pop('nodes', [])
+        for node in nodes:
+            node_deploy = [d for d in deployment_nodes
+                           if d['uid'] == str(node[0])]
+            node_provision = next((d for d in provisioning_nodes
+                                   if d['uid'] == str(node[0])), {})
+            update_node = text(
+                """UPDATE nodes
+                SET replaced_deployment_info = :deploy,
+                    replaced_provisioning_info = :provision
+                WHERE id = :id""")
+            connection.execute(
+                update_node,
+                deploy=jsonutils.dumps(node_deploy),
+                provision=jsonutils.dumps(node_provision),
+                id=node[0])
+        update_cluster = text(
+            """UPDATE clusters
+            SET replaced_deployment_info = :deploy,
+                replaced_provisioning_info = :provision
+            WHERE id = :id""")
+        connection.execute(
+            update_cluster,
+            deploy=jsonutils.dumps({}),
+            provision=jsonutils.dumps(provisioning_info),
+            id=cluster[0])

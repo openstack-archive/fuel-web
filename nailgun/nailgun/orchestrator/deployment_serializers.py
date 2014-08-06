@@ -17,6 +17,7 @@
 """Deployment serializers for orchestrator"""
 
 from copy import deepcopy
+from itertools import groupby
 
 from netaddr import IPNetwork
 from sqlalchemy import and_
@@ -72,10 +73,22 @@ class DeploymentMultinodeSerializer(object):
     critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
 
     @classmethod
-    def serialize(cls, cluster, nodes):
+    def serialize(cls, cluster, nodes, ignore_customized=False):
         """Method generates facts which
         through an orchestrator passes to puppet
         """
+        serialized_nodes = []
+        keyfunc = lambda node: bool(node.replaced_deployment_info)
+        for customized, node_group in groupby(nodes, keyfunc):
+            if customized and not ignore_customized:
+                serialized_nodes.extend(cls.serialize_customized(node_group))
+            else:
+                serialized_nodes.extend(cls.serialize_generated(
+                    cluster, node_group))
+        return serialized_nodes
+
+    @classmethod
+    def serialize_generated(cls, cluster, nodes):
         nodes = cls.serialize_nodes(nodes)
         common_attrs = cls.get_common_attrs(cluster)
 
@@ -83,6 +96,13 @@ class DeploymentMultinodeSerializer(object):
         cls.set_critical_nodes(cluster, nodes)
 
         return [dict_merge(node, common_attrs) for node in nodes]
+
+    @classmethod
+    def serialize_customized(self, nodes):
+        serialized = []
+        for node in nodes:
+            serialized.extend(node.replaced_deployment_info)
+        return serialized
 
     @classmethod
     def get_common_attrs(cls, cluster):
@@ -1024,7 +1044,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         return iface_attrs
 
 
-def serialize(cluster, nodes):
+def serialize(cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode
     """
     objects.NodeCollection.prepare_for_deployment(cluster.nodes)
@@ -1034,4 +1054,5 @@ def serialize(cluster, nodes):
     elif cluster.is_ha_mode:
         serializer = DeploymentHASerializer
 
-    return serializer.serialize(cluster, nodes)
+    return serializer.serialize(
+        cluster, nodes, ignore_customized=ignore_customized)

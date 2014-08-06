@@ -99,16 +99,6 @@ class Cluster(Base):
     is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
 
-    def replace_provisioning_info(self, data):
-        self.replaced_provisioning_info = data
-        self.is_customized = True
-        return self.replaced_provisioning_info
-
-    def replace_deployment_info(self, data):
-        self.replaced_deployment_info = data
-        self.is_customized = True
-        return self.replaced_deployment_info
-
     @property
     def changes(self):
         return [

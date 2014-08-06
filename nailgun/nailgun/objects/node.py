@@ -617,6 +617,7 @@ class Node(NailgunObject):
             netmanager.clear_bond_configuration(instance)
         cls.update_roles(instance, [])
         cls.update_pending_roles(instance, [])
+        cls.remove_replaced_params(instance)
         instance.cluster_id = None
         instance.kernel_params = None
         instance.reset_name_to_default()
@@ -648,6 +649,11 @@ class Node(NailgunObject):
         """
         return (instance.kernel_params or
                 Cluster.get_default_kernel_params(instance.cluster))
+
+    @classmethod
+    def remove_replaced_params(cls, instance):
+        instance.replaced_deployment_info = []
+        instance.replaced_provisioning_info = {}
 
 
 class NodeCollection(NailgunCollection):

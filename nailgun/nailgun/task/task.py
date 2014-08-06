@@ -135,8 +135,8 @@ class DeploymentTask(object):
         db().flush()
 
         # here we replace deployment data if user redefined them
-        serialized_cluster = task.cluster.replaced_deployment_info or \
-            deployment_serializers.serialize(task.cluster, nodes)
+        serialized_cluster = deployment_serializers.serialize(
+            task.cluster, nodes)
 
         # After serialization set pending_addition to False
         for node in nodes:
@@ -167,8 +167,8 @@ class UpdateTask(object):
             n.progress = 0
 
         # here we replace deployment data if user redefined them
-        serialized_cluster = task.cluster.replaced_deployment_info or \
-            deployment_serializers.serialize(task.cluster, nodes)
+        serialized_cluster = deployment_serializers.serialize(
+            task.cluster, nodes)
 
         # After serialization set pending_addition to False
         for node in nodes:
@@ -196,9 +196,8 @@ class ProvisionTask(object):
             lock_for_update=True
         )
         objects.NodeCollection.lock_nodes(nodes_to_provisioning)
-        serialized_cluster = task.cluster.replaced_provisioning_info or \
-            provisioning_serializers.serialize(
-                task.cluster, nodes_to_provisioning)
+        serialized_cluster = provisioning_serializers.serialize(
+            task.cluster, nodes_to_provisioning)
 
         for node in nodes_to_provisioning:
             if settings.FAKE_TASKS or settings.FAKE_TASKS_AMQP:

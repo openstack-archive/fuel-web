@@ -149,21 +149,19 @@ class DefaultDeploymentInfo(DefaultOrchestratorInfo):
 class ProvisioningInfo(OrchestratorInfo):
 
     def get_orchestrator_info(self, cluster):
-        return cluster.replaced_provisioning_info
+        return objects.Cluster.get_provisioning_info(cluster)
 
     def update_orchestrator_info(self, cluster, data):
-        cluster.replace_provisioning_info(data)
-        return cluster.replaced_provisioning_info
+        return objects.Cluster.replace_provisioning_info(cluster, data)
 
 
 class DeploymentInfo(OrchestratorInfo):
 
     def get_orchestrator_info(self, cluster):
-        return cluster.replaced_deployment_info
+        return objects.Cluster.get_deployment_info(cluster)
 
     def update_orchestrator_info(self, cluster, data):
-        cluster.replace_deployment_info(data)
-        return cluster.replaced_deployment_info
+        return objects.Cluster.replace_deployment_info(cluster, data)
 
 
 class SelectedNodesBase(NodesFilterMixin, BaseHandler):

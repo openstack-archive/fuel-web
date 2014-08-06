@@ -281,6 +281,27 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         ]
         self.assertEqual(expected_priorities, nodes)
 
+    def test_set_critital_node(self):
+        nodes = [
+            {'role': 'mongo'},
+            {'role': 'mongo'},
+            {'role': 'primary-mongo'},
+            {'role': 'controller'},
+            {'role': 'ceph-osd'},
+            {'role': 'other'}
+        ]
+        serializer = DeploymentMultinodeSerializer()
+        serializer.set_critical_nodes(self.cluster, nodes)
+        expected_ciritial_roles = [
+            {'role': 'mongo', 'fail_if_error': False},
+            {'role': 'mongo', 'fail_if_error': False},
+            {'role': 'primary-mongo', 'fail_if_error': True},
+            {'role': 'controller', 'fail_if_error': True},
+            {'role': 'ceph-osd', 'fail_if_error': True},
+            {'role': 'other', 'fail_if_error': False}
+        ]
+        self.assertEqual(expected_ciritial_roles, nodes)
+
 
 class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
 
@@ -381,6 +402,36 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'role': 'other', 'priority': 1000}
         ]
         self.assertEqual(expected_priorities, nodes)
+
+    def test_set_critital_node(self):
+        nodes = [
+            {'role': 'zabbix-server'},
+            {'role': 'primary-swift-proxy'},
+            {'role': 'swift-proxy'},
+            {'role': 'storage'},
+            {'role': 'mongo'},
+            {'role': 'primary-mongo'},
+            {'role': 'primary-controller'},
+            {'role': 'controller'},
+            {'role': 'controller'},
+            {'role': 'ceph-osd'},
+            {'role': 'other'}
+        ]
+        self.serializer.set_critical_nodes(self.cluster, nodes)
+        expected_ciritial_roles = [
+            {'role': 'zabbix-server', 'fail_if_error': False},
+            {'role': 'primary-swift-proxy', 'fail_if_error': True},
+            {'role': 'swift-proxy', 'fail_if_error': False},
+            {'role': 'storage', 'fail_if_error': False},
+            {'role': 'mongo', 'fail_if_error': False},
+            {'role': 'primary-mongo', 'fail_if_error': True},
+            {'role': 'primary-controller', 'fail_if_error': True},
+            {'role': 'controller', 'fail_if_error': False},
+            {'role': 'controller', 'fail_if_error': False},
+            {'role': 'ceph-osd', 'fail_if_error': True},
+            {'role': 'other', 'fail_if_error': False}
+        ]
+        self.assertEqual(expected_ciritial_roles, nodes)
 
     def test_set_primary_controller_priority_not_depend_on_nodes_order(self):
         controllers = filter(lambda n: 'controller' in n.roles, self.env.nodes)

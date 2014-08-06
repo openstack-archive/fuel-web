@@ -160,7 +160,7 @@ class NodeNICsHandler(BaseHandler):
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
-        node = self.get_object_or_404(Node, node_id)
+        node = self.get_object_or_404(objects.Node, node_id)
         return map(self.render, node.interfaces)
 
     @content_json
@@ -174,7 +174,7 @@ class NodeNICsHandler(BaseHandler):
         node_data = {'id': node_id, 'interfaces': interfaces_data}
 
         objects.Cluster.get_network_manager()._update_attrs(node_data)
-        node = self.get_object_or_404(Node, node_id)
+        node = self.get_object_or_404(objects.Node, node_id)
         objects.Node.add_pending_change(
             node,
             consts.CLUSTER_CHANGES.interfaces
@@ -224,7 +224,7 @@ class NodeNICsDefaultHandler(BaseHandler):
         :http: * 200 (OK)
                * 404 (node not found in db)
         """
-        node = self.get_object_or_404(Node, node_id)
+        node = self.get_object_or_404(objects.Node, node_id)
         default_nets = self.get_default(node)
         return default_nets
 
@@ -252,14 +252,14 @@ class NodeCollectionNICsDefaultHandler(NodeNICsDefaultHandler):
         """
         cluster_id = web.input(cluster_id=None).cluster_id
         if cluster_id == '':
-            nodes = self.get_object_or_404(Node, cluster_id=None)
+            nodes = self.get_object_or_404(objects.Node, cluster_id=None)
         elif cluster_id:
             nodes = self.get_object_or_404(
-                Node,
+                objects.Node,
                 cluster_id=cluster_id
             )
         else:
-            nodes = self.get_object_or_404(Node)
+            nodes = self.get_object_or_404(objects.Node)
         def_net_nodes = []
         for node in nodes:
             rendered_node = self.get_default(self.render(node))

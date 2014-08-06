@@ -296,3 +296,13 @@ class TaskCollection(NailgunCollection):
         query = cls.order_by(query, 'id')
         query = cls.lock_for_update(query)
         return query.all()
+
+    @classmethod
+    def delete_by_names(cls, cluster_id, names):
+        db().query(cls.single.model).filter_by(
+            cluster_id=cluster_id,
+        ).filter(
+            cls.single.model.name.in_(names)
+        ).delete(
+            synchronize_session='fetch'
+        )

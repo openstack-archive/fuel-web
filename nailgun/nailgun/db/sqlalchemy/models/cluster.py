@@ -14,7 +14,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
@@ -94,20 +93,7 @@ class Cluster(Base):
         cascade="delete",
         order_by="NetworkGroup.id"
     )
-    replaced_deployment_info = Column(JSON, default={})
-    replaced_provisioning_info = Column(JSON, default={})
-    is_customized = Column(Boolean, default=False)
     fuel_version = Column(Text, nullable=False)
-
-    def replace_provisioning_info(self, data):
-        self.replaced_provisioning_info = data
-        self.is_customized = True
-        return self.replaced_provisioning_info
-
-    def replace_deployment_info(self, data):
-        self.replaced_deployment_info = data
-        self.is_customized = True
-        return self.replaced_deployment_info
 
     @property
     def changes(self):

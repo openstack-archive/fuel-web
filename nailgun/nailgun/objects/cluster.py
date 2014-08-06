@@ -28,8 +28,7 @@ from nailgun.db.sqlalchemy import models
 
 from nailgun.errors import errors
 
-from nailgun.objects import NailgunCollection
-from nailgun.objects import NailgunObject
+from nailgun import objects
 
 from nailgun.settings import settings
 
@@ -38,7 +37,7 @@ from nailgun.utils import dict_merge
 from nailgun.utils import traverse
 
 
-class Attributes(NailgunObject):
+class Attributes(objects.NailgunObject):
     """Cluster attributes object
     """
 
@@ -100,7 +99,7 @@ class Attributes(NailgunObject):
         return attrs
 
 
-class Cluster(NailgunObject):
+class Cluster(objects.NailgunObject):
     """Cluster object
     """
 
@@ -402,8 +401,34 @@ class Cluster(NailgunObject):
             )
         return nics_db.union(bonds_db)
 
+    @classmethod
+    def replace_provisioning_info(cls, instance, data):
+        for node in instance.nodes:
+            node_data = [d for d in data if node.uid == d['uid']]
+            node.replaced_provisioning_info = node_data
+        return data
 
-class ClusterCollection(NailgunCollection):
+    @classmethod
+    def replace_deployment_info(cls, instance, data):
+        for node in instance.nodes:
+            node_data = [d for d in data if node.uid == d['uid']]
+            node.replaced_deployment_info = node_data
+        return data
+
+    def get_provisioning_info(cls, instance):
+        data = []
+        for node in instance.nodes:
+            data.extend(node.replaced_provisioning_info)
+        return data
+
+    def get_deployment_info(cls, instance):
+        data = []
+        for node in instance.nodes:
+            data.extend(node.replaced_deployment_info)
+        return data
+
+
+class ClusterCollection(objects.NailgunCollection):
     """Cluster collection
     """
 

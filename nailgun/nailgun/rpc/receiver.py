@@ -487,7 +487,6 @@ class NailgunReceiver(object):
             message,
             task.cluster_id
         )
-
         data = {'status': status, 'progress': progress, 'message': message}
         objects.Task.update(task, data)
 

@@ -56,6 +56,20 @@ def exec_cmd(cmd):
     _wait_and_check_exit_code(cmd, child)
 
 
+def safe_exec_cmd(cmd):
+    """Execute command with logging.
+    Ouput of stdout and stderr will be written
+    in log. Doesn't raise error in case
+    of non zero exit code.
+
+    :param cmd: shell command
+    """
+    try:
+        exec_cmd(cmd)
+    except errors.ExecutedErrorNonZeroExitCode as exc:
+        logger.warn(exc)
+
+
 def exec_cmd_iterator(cmd):
     """Execute command with logging.
 

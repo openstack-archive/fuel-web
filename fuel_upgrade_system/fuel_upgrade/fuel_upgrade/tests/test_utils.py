@@ -55,6 +55,13 @@ class TestUtils(BaseTestCase):
             stderr=subprocess.STDOUT,
             shell=True)
 
+    @mock.patch('fuel_upgrade.utils.exec_cmd',
+                side_effect=errors.ExecutedErrorNonZeroExitCode())
+    def test_safe_exec_cmd(self, exec_mock):
+        cmd = 'some command'
+        utils.safe_exec_cmd(cmd)
+        exec_mock.assert_called_once_with(cmd)
+
     def test_exec_cmd_raises_error_in_case_of_non_zero_exit_code(self):
         cmd = 'some command'
         return_code = 1

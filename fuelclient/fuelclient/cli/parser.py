@@ -106,20 +106,16 @@ class Parser:
         )
 
     def add_keystone_credentials_args(self):
-        self.universal_flags.append("--os-username")
         self.parser.add_argument(
             "--os-username",
             dest="user",
-            action="store",
             type=str,
             help="credentials for keystone authentication user",
             default=None
         )
-        self.universal_flags.append("--os-password")
         self.parser.add_argument(
             "--os-password",
             dest="password",
-            action="store",
             type=str,
             help="credentials for keystone authentication password",
             default=None

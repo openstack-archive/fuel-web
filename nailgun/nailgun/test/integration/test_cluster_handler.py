@@ -200,22 +200,22 @@ class TestHandlers(BaseIntegrationTest):
             nodes_kwargs=[
                 {'roles': ['controller'], 'pending_addition': True},
                 {'roles': ['compute'], 'pending_addition': True}])
-        cluster = self.env.clusters[0]
         new_deployment_info = {"field": "deployment_info"}
         new_provisioning_info = {"field": "provisioning_info"}
-
-        # assigning facts to cluster
-        cluster.replaced_deployment_info = new_deployment_info
-        cluster.replaced_provisioning_info = new_provisioning_info
-        self.db.commit()
+        self.env.nodes[0].replaced_deployment_info = [new_deployment_info]
+        self.env.nodes[1].replaced_deployment_info = [new_deployment_info]
+        self.env.nodes[0].replaced_provisioning_info = new_provisioning_info
+        self.env.nodes[1].replaced_provisioning_info = new_provisioning_info
         self.env.launch_deployment()
 
         # intercepting arguments with which rpc.cast was called
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
         self.datadiff(
-            new_provisioning_info, args[1][0]['args']['provisioning_info'])
+            [new_provisioning_info] * 2,
+            args[1][0]['args']['provisioning_info'])
         self.datadiff(
-            new_deployment_info, args[1][1]['args']['deployment_info'])
+            [new_deployment_info] * 2,
+            args[1][1]['args']['deployment_info'])
 
     def test_cluster_generated_data_handler(self):
         self.env.create(

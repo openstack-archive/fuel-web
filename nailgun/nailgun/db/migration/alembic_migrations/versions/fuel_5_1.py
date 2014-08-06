@@ -173,6 +173,12 @@ def upgrade_schema():
 
     op.drop_table('red_hat_accounts')
     drop_enum('license_type')
+    op.drop_column('clusters', u'replaced_deployment_info')
+    op.drop_column('clusters', u'replaced_provisioning_info')
+    op.add_column('nodes', sa.Column(
+        'replaced_deployment_info', JSON(), nullable=True))
+    op.add_column('nodes', sa.Column(
+        'replaced_provisioning_info', JSON(), nullable=True))
     ### end Alembic commands ###
 
 
@@ -278,6 +284,12 @@ def downgrade_schema():
                               nullable=False),
                     sa.PrimaryKeyConstraint('id')
                     )
+    op.drop_column('nodes', 'replaced_provisioning_info')
+    op.drop_column('nodes', 'replaced_deployment_info')
+    op.add_column('clusters', sa.Column(
+        u'replaced_provisioning_info', JSON(), nullable=True))
+    op.add_column('clusters', sa.Column(
+        u'replaced_deployment_info', JSON(), nullable=True))
     ### end Alembic commands ###
 
 

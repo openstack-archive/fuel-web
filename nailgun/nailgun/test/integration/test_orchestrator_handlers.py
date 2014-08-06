@@ -16,6 +16,8 @@
 
 import nailgun
 
+from nailgun import objects
+
 from mock import patch
 
 from nailgun.db.sqlalchemy.models import Cluster
@@ -37,7 +39,9 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
 
     def check_info_handler(self, handler_name, get_info):
         # updating provisioning info
-        orchestrator_data = {"field": "test"}
+        orchestrator_data = []
+        for node in self.env.nodes:
+            orchestrator_data.append({"field": "test", "uid": node.uid})
         put_resp = self.app.put(
             reverse(handler_name,
                     kwargs={'cluster_id': self.cluster.id}),
@@ -63,17 +67,17 @@ class TestOrchestratorInfoHandlers(BaseIntegrationTest):
             headers=self.default_headers)
 
         self.assertEqual(delete_resp.status_code, 202)
-        self.assertEqual(get_info(), {})
+        self.assertEqual(get_info(), [])
 
     def test_cluster_provisioning_info(self):
         self.check_info_handler(
             'ProvisioningInfo',
-            lambda: self.cluster.replaced_provisioning_info)
+            lambda: objects.Cluster.get_provisioning_info(self.cluster))
 
     def test_cluster_deployment_info(self):
         self.check_info_handler(
             'DeploymentInfo',
-            lambda: self.cluster.replaced_deployment_info)
+            lambda: objects.Cluster.get_deployment_info(self.cluster))
 
 
 class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
@@ -90,7 +94,9 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
         self.cluster = self.db.query(Cluster).get(cluster['id'])
 
     def customization_handler_helper(self, handler_name, get_info):
-        facts = {"key": "value"}
+        facts = []
+        for node in self.env.nodes:
+            facts.append({"key": "value", "uid": node.uid})
         resp = self.app.put(
             reverse(handler_name,
                     kwargs={'cluster_id': self.cluster.id}),
@@ -149,13 +155,13 @@ class TestDefaultOrchestratorInfoHandlers(BaseIntegrationTest):
     def test_cluster_provisioning_customization(self):
         self.customization_handler_helper(
             'ProvisioningInfo',
-            lambda: self.cluster.replaced_provisioning_info
+            lambda: objects.Cluster.get_provisioning_info(self.cluster)
         )
 
     def test_cluster_deployment_customization(self):
         self.customization_handler_helper(
             'DeploymentInfo',
-            lambda: self.cluster.replaced_deployment_info
+            lambda: objects.Cluster.get_deployment_info(self.cluster)
         )
 
     def test_deployment_with_one_compute_node(self):

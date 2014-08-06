@@ -402,6 +402,45 @@ class Cluster(NailgunObject):
             )
         return nics_db.union(bonds_db)
 
+    @classmethod
+    def replace_provisioning_info(cls, instance, data):
+        instance.is_customized = True
+        nodes = data.pop('nodes', [])
+        instance.replaced_provisioning_info = data
+        for node in instance.nodes:
+            node_data = next((n for n in nodes if node.uid == n['uid']), {})
+            node.replaced_provisioning_info = node_data
+        return cls.get_provisioning_info(instance)
+
+    @classmethod
+    def replace_deployment_info(cls, instance, data):
+        instance.is_customized = True
+        for node in instance.nodes:
+            node_data = [n for n in data if node.uid == n['uid']]
+            node.replaced_deployment_info = node_data
+        return cls.get_deployment_info(instance)
+
+    @classmethod
+    def get_provisioning_info(cls, instance):
+        data = {}
+        if instance.replaced_provisioning_info:
+            data.update(instance.replaced_provisioning_info)
+        nodes = []
+        for node in instance.nodes:
+            if node.replaced_provisioning_info:
+                nodes.append(node.replaced_provisioning_info)
+        if data:
+            data['nodes'] = nodes
+        return data
+
+    @classmethod
+    def get_deployment_info(cls, instance):
+        data = []
+        for node in instance.nodes:
+            if node.replaced_deployment_info:
+                data.extend(node.replaced_deployment_info)
+        return data
+
 
 class ClusterCollection(NailgunCollection):
     """Cluster collection

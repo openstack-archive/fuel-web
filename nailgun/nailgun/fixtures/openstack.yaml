@@ -181,7 +181,7 @@
             value: true
             label: ""
             description: ""
-            weight: 05
+            weight: 5
             type: "hidden"
           host_ip:
             value: ""
@@ -193,7 +193,7 @@
             value: ""
             label: "Username"
             description: "vCenter admin username"
-            weight: 30
+            weight: 20
             type: "text"
           vc_password:
             value: ""
@@ -876,6 +876,7 @@
         hypervisor:
           type: "radio"
           value: "qemu"
+          weight: 5
           bind: "settings:common.libvirt_type.value"
           values:
             - data: "kvm"
@@ -891,6 +892,7 @@
           type: "text"
           label: "dialog.create_cluster_wizard.compute.vcenter_ip"
           description: "dialog.create_cluster_wizard.compute.vcenter_ip_description"
+          weight: 10
           bind: "settings:vcenter.host_ip.value"
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
@@ -903,6 +905,7 @@
           type: "text"
           label: "dialog.create_cluster_wizard.compute.vcenter_username"
           description: "dialog.create_cluster_wizard.compute.vcenter_username_description"
+          weight: 20
           bind: "settings:vcenter.vc_user.value"
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
@@ -915,6 +918,7 @@
           type: "password"
           label: "dialog.create_cluster_wizard.compute.vcenter_password"
           description: "dialog.create_cluster_wizard.compute.vcenter_password_description"
+          weight: 30
           bind: "settings:vcenter.vc_password.value"
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"
@@ -922,11 +926,12 @@
               message: null
           regex:
             source: *non_empty_regex
-            error: "dialog.create_cluster_wizard.compute.vcenter_user_warning"
+            error: "dialog.create_cluster_wizard.compute.vcenter_password_warning"
         cluster:
           type: "text"
           label: "dialog.create_cluster_wizard.compute.vcenter_cluster"
           description: "dialog.create_cluster_wizard.compute.vcenter_cluster_description"
+          weight: 40
           bind: "settings:vcenter.cluster.value"
           restrictions:
             - condition: "Compute.hypervisor != 'vcenter'"

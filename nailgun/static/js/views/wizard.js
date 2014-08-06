@@ -343,10 +343,12 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 description: ''
             });
             var controlTpl = _.template(controlTemplate);
-            var paneConfig = this.config;
-            var sortedConfig = _.sortBy(paneConfig, 'weight');
-            _.each(sortedConfig, function(attributeConfig, attributeIndex) {
-                var attribute = _.keys(paneConfig)[attributeIndex];
+            var sortedConfig = _.sortBy(_.pairs(this.config), function(configEntry) {
+                return configEntry[1].weight;
+            });
+            _.each(sortedConfig, function(configEntry) {
+                var attribute = configEntry[0];
+                var attributeConfig = configEntry[1];
                 switch (attributeConfig.type) {
                     case 'checkbox':
                         controlsHtml += (controlTpl(_.extend(attributeConfig, {

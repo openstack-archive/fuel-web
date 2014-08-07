@@ -901,6 +901,55 @@ define([
         urlRoot: '/api/ostf'
     });
 
+    models.Plugin = BaseModel.extend({
+        constructorName: 'Plugin',
+        urlRoot: '/api/plugins',
+        getMetaDataUrl: function() {
+            return 'plugins/' + this.get('name') + '-' + this.get('version') + '/plugin';
+        },
+        processMixins: function() {
+        },
+        processTranslations: function(translations) {
+            _.merge($.i18n.options.resStore, translations);
+        },
+        load: function() {
+            if (!this.deferred) {
+                this.deferred = $.Deferred();
+                if (this.get('ui')) {
+                    require([this.getMetaDataUrl()], _.bind(function(metadata) {
+                        if (_.isPlainObject(metadata)) {
+                            this.processTranslations(metadata.translations);
+                            this.processMixins(metadata.mixins);
+                            this.deferred.resolve();
+                        } else {
+                            this.handleLoadingError();
+                        }
+                    }, this), _.bind(this.handleLoadingError, this));
+                } else {
+                    this.deferred.resolve();
+                }
+            }
+            return this.deferred;
+        },
+        handleLoadingError: function(err) {
+            this.deferred.reject();
+            utils.showErrorDialog({
+                message: i18n('plugins.loading_error', {
+                    name: this.get('title'),
+                    version: this.get('version'),
+                    url: this.getMetaDataUrl() + '.js',
+                    message: err ? err.message : i18n('common.not_available')
+                })
+            });
+        }
+    });
+
+    models.Plugins = BaseCollection.extend({
+        constructorName: 'Plugins',
+        model: models.Plugin,
+        url: '/api/plugins'
+    });
+
     models.FuelVersion = BaseModel.extend({
         constructorName: 'FuelVersion',
         urlRoot: '/api/version',

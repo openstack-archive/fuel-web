@@ -566,6 +566,9 @@
                 "download_report": "Download report",
                 "loading": "Loading..."
             },
+            "plugins": {
+                "loading_error": "Unable to load UI part of __name__ __version__ from __url__: __message__"
+            },
             "dialog": {
                 "create_cluster_wizard": {
                     "title": "Create a new OpenStack environment",

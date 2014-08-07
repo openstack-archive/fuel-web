@@ -81,6 +81,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
             });
 
             this.version = new models.FuelVersion();
+            this.plugins = new models.Plugins();
             this.settings = new models.FuelSettings();
             this.user = new models.User();
             this.statistics = new models.NodesStatistics();
@@ -144,17 +145,25 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, models, K
                 if (app.version.get('auth_required')) {
                     _.extend(keystoneClient, this.user.pick('token'));
                     return keystoneClient.authenticate()
-                        .done(function() {
+                        .then(function() {
                             app.user.set({authenticated: true});
+                        }, function() {
+                            return $.Deferred().resolve();
                         });
                 }
                 return $.Deferred().resolve();
             }, this)).then(_.bind(function() {
                 return this.settings.fetch();
+            }, this)).then(_.bind(function() {
+                // FIXME: this won't be work if UI is loaded by a non-authenticated user
+                return this.plugins.fetch().then(_.bind(this.processPlugins, this));
             }, this)).always(_.bind(function() {
                 this.renderLayout();
                 Backbone.history.start();
             }, this));
+        },
+        processPlugins: function() {
+            return $.when.apply($, this.plugins.invoke('load'));
         },
         renderLayout: function() {
             this.rootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));

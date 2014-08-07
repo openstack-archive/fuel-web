@@ -1,0 +1,11 @@
+{
+    "en-US": {
+        "translation": {
+            "plugins": {
+                "test": {
+                    "sample_translation": "Sample translation"
+                }
+            }
+        }
+    }
+}

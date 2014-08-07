@@ -70,8 +70,9 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                 tenant: 'admin'
             });
             var version = this.version = new models.FuelVersion();
+            this.plugins = new models.Plugins();
 
-            version.fetch().done(_.bind(function() {
+            version.fetch().then(_.bind(function() {
                 this.user = new models.User({authenticated: !version.get('auth_required')});
 
                 var originalSync = Backbone.sync;
@@ -126,24 +127,34 @@ function(Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, C
                     return originalSync.call(this, method, model, options);
                 };
 
-                this.renderLayout();
-
                 if (version.get('auth_required')) {
                     _.extend(keystoneClient, this.user.pick('username', 'password'));
-                    keystoneClient.authenticate()
-                        .done(function() {
+                    return keystoneClient.authenticate()
+                        .then(function() {
                             app.user.set({authenticated: true});
-                        })
-                        .always(function() {
-                            Backbone.history.start();
-                        })
-                        .fail(function() {
-                            app.navigate('#login', {trigger: true});
+                        }, function() {
+                            return $.Deferred().resolve();
                         });
-                } else {
-                    Backbone.history.start();
+                }
+                return $.Deferred().resolve();
+            }, this)).then(_.bind(function() {
+                //return this.plugins.fetch().done(_.bind(this.processPlugins, this));
+                // FIXME: mocks
+                this.plugins.reset([{
+                    id: 'test',
+                    ui: true
+                }]);
+                this.processPlugins();
+            }, this)).always(_.bind(function() {
+                this.renderLayout();
+                Backbone.history.start();
+                if (version.get('auth_required') && !this.user.get('authenticated')) {
+                    app.navigate('#login', {trigger: true});
                 }
             }, this));
+        },
+        processPlugins: function() {
+            return $.when.apply($, this.plugins.invoke('load'));
         },
         renderLayout: function() {
             this.content = $('#content');

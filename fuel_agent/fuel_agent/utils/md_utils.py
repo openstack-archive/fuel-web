@@ -21,33 +21,46 @@ from fuel_agent.utils import utils
 LOG = logging.getLogger(__name__)
 
 
-def mddisplay():
+def mddetail_parse(output):
+    md = {}
+    h, v = output.split('Number   Major   Minor   RaidDevice State')
+    for line in h.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        for pattern in ('Version', 'Raid Level', 'Raid Devices',
+                        'Active Devices', 'Spare Devices',
+                        'Failed Devices', 'State', 'UUID'):
+            if line.startswith(pattern):
+                md[pattern] = line.split()[-1]
+    md['devices'] = []
+    for line in v.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+        md['devices'].append(line.split()[-1])
+    return md
+
+
+def get_mdnames(output=None):
     mdnames = []
-    with open('/proc/mdstat') as f:
-        for line in f.read().split('\n'):
-            if line.startswith('md'):
-                mdnames.append('/dev/%s' % line.split()[0])
+    if not output:
+        with open('/proc/mdstat') as f:
+            output = f.read()
+    for line in output.split('\n'):
+        if line.startswith('md'):
+            mdnames.append('/dev/%s' % line.split()[0])
+    return mdnames
+
+
+def mddisplay(names=[]):
+    mdnames = names or get_mdnames()
     mds = []
     for mdname in mdnames:
-        result = utils.execute('mdadm', '--detail', mdname,
-                               check_exit_code=[0])
+        output = utils.execute('mdadm', '--detail', mdname,
+                               check_exit_code=[0])[0]
         md = {'name': mdname}
-        h, v = result[0].split('Number   Major   Minor   RaidDevice State')
-        for line in h.split('\n'):
-            line = line.strip()
-            if not line:
-                continue
-            for pattern in ('Version', 'Raid Level', 'Raid Devices',
-                            'Active Devices', 'Spare Devices',
-                            'Failed Devices', 'State', 'UUID'):
-                if line.startswith(pattern):
-                    md[pattern] = line.split()[-1]
-        md['devices'] = []
-        for line in v.split('\n'):
-            line = line.strip()
-            if not line:
-                continue
-            md['devices'].append(line.split()[-1])
+        md.update(mddetail_parse(output))
         mds.append(md)
     LOG.debug('Found md devices: {0}'.format(mds))
     return mds

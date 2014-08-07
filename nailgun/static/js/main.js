@@ -17,6 +17,9 @@
 //>>excludeStart("compressed", pragmas.compressed);
 require(['./config'], function(config) {
     'use strict';
+//>>excludeEnd("compressed");
+    requirejs.config({baseUrl: 'static'});
+//>>excludeStart("compressed", pragmas.compressed);
     requirejs.config(config);
 //>>excludeEnd("compressed");
     require([

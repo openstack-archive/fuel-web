@@ -19,7 +19,7 @@ module.exports = function(grunt) {
     var staticBuildPreparationDir = staticDir + '/_prepare_build';
     var staticBuildDir = staticDir + '/_build';
 
-    grunt.initConfig({
+    var config = {
         pkg: pkg,
         requirejs: {
             compile: {
@@ -74,8 +74,14 @@ module.exports = function(grunt) {
         },
         less: {
             all: {
-                src: 'static/css/styles.less',
-                dest: staticBuildPreparationDir + '/static/css/styles.css',
+                files: [
+                    {
+                        expand: true,
+                        src: ['static/**/styles.less'],
+                        dest: staticBuildPreparationDir,
+                        ext: '.css'
+                    }
+                ]
             }
         },
         bower: {
@@ -166,8 +172,8 @@ module.exports = function(grunt) {
                     '**/*.js',
                     '!js/main.js',
                     '!js/libs/bower/requirejs/js/require.js',
-                    '**/*.css',
                     '!css/styles.css',
+                    '!plugins/*/plugin.js',
                     'templates',
                     'i18n'
                 ]
@@ -224,7 +230,18 @@ module.exports = function(grunt) {
                 }
             }
         }
+    };
+
+    var path = require('path');
+    grunt.file.expand('static/plugins/*/plugin.js').forEach(function(file) {
+        var pluginName = path.basename(path.dirname(file));
+        config.requirejs.compile.options.modules.push({
+            name: 'plugins/' + pluginName + '/plugin',
+            exclude: ['js/main']
+        });
     });
+
+    grunt.initConfig(config);
 
     Object.keys(pkg.devDependencies)
         .filter(function(npmTaskName) { return npmTaskName.indexOf('grunt-') === 0; })

@@ -91,6 +91,7 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
             });
 
             this.version = new models.FuelVersion();
+            this.plugins = new models.Plugins();
             this.settings = new models.FuelSettings();
             this.user = new models.User();
             this.statistics = new models.NodesStatistics();
@@ -154,8 +155,10 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
                 if (app.version.get('auth_required')) {
                     _.extend(keystoneClient, this.user.pick('token'));
                     return keystoneClient.authenticate()
-                        .done(function() {
+                        .then(function() {
                             app.user.set({authenticated: true});
+                        }, function() {
+                            return $.Deferred().resolve();
                         });
                 }
                 return $.Deferred().resolve();
@@ -165,10 +168,16 @@ function($, _, i18n, Backbone, React, utils, layoutComponents, Coccyx, coccyxMix
                         //FIXME: it needs to move master_node_uid into tracking section
                         this.masterNodeUid = data.master_node_uid;
                     }, this));
+            }, this)).then(_.bind(function() {
+                // FIXME: remove fail handling when plugin handler is auth exempt
+                return this.plugins.fetch().then(_.bind(this.processPlugins, this), _.bind(this.processPlugins, this));
             }, this)).always(_.bind(function() {
                 this.renderLayout();
                 Backbone.history.start();
             }, this));
+        },
+        processPlugins: function() {
+            return $.when.apply($, this.plugins.invoke('load'));
         },
         renderLayout: function() {
             this.rootComponent = utils.universalMount(RootComponent, _.pick(this, 'version', 'user', 'statistics', 'notifications'), $('#main-container'));

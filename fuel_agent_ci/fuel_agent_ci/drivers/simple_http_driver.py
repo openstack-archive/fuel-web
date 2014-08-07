@@ -14,6 +14,7 @@
 
 import atexit
 import BaseHTTPServer
+import errno
 import logging
 import multiprocessing
 import os
@@ -144,6 +145,21 @@ class CustomHTTPServer(object):
         self.server.parent = self
         self.server.serve_forever()
 
+    def check_pid(self, pid):
+        try:
+            os.kill(pid, 0)
+        except OSError as err:
+            if err.errno == errno.ESRCH:
+                # ESRCH == No such process
+                return False
+            elif err.errno == errno.EPERM:
+                # EPERM clearly means there's a process to deny access to
+                return True
+        else:
+            # According to "man 2 kill" possible error values are
+            # (EINVAL, EPERM, ESRCH)
+            return True
+
     def start(self):
         try:
             with open(self.pidfile) as f:
@@ -151,9 +167,14 @@ class CustomHTTPServer(object):
         except (IOError, ValueError):
             pid = None
         if pid:
-            message = 'pidfile %s already exists. Daemon already running?\n'
-            sys.stderr.write(message % self.pidfile)
-            sys.exit(1)
+            if self.check_pid(pid):
+                message = 'pidfile %s already exists. Daemon already running?\n'
+                sys.stderr.write(message % self.pidfile)
+                sys.exit(1)
+            else:
+                message = "pidfile %s already exists. Daemon isn't running. Removing the pidfile\n"
+                sys.stderr.write(message % self.pidfile)
+                self.delpid()
         self.daemonize()
         self.run()
 

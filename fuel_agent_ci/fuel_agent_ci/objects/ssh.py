@@ -40,13 +40,15 @@ class Ssh(Object):
         if self.status():
             LOG.debug('Putting content %s' % self.name)
             self.env.driver.ssh_put_content(self, content, remote_filename)
-        raise Exception('Wrong ssh status: %s' % self.name)
+        else:
+            raise Exception('Wrong ssh status: %s' % self.name)
 
     def put_file(self, filename, remote_filename):
         if self.status():
             LOG.debug('Putting file %s' % self.name)
             self.env.driver.ssh_put_file(self, filename, remote_filename)
-        raise Exception('Wrong ssh status: %s' % self.name)
+        else:
+            raise Exception('Wrong ssh status: %s' % self.name)
 
     def run(self, command, command_timeout=10):
         if self.status():
@@ -59,7 +61,7 @@ class Ssh(Object):
         # this loop does not have sleep statement
         # because it relies on self.timeout which is by default 5 seconds
         while time.time() - begin_time < timeout:
-            if self.status(self):
+            if self.status():
                 return True
             LOG.debug('Waiting for ssh connection to be '
                       'available: %s' % self.name)

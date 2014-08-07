@@ -16,7 +16,7 @@ from fuel_agent import errors
 
 
 class Image(object):
-    SUPPORTED_CONTAINERS = ['raw']
+    SUPPORTED_CONTAINERS = ['raw', 'gzip']
 
     def __init__(self, uri, target_device,
                  image_format, container, size=None):

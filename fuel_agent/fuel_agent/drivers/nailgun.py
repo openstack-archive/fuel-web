@@ -209,11 +209,14 @@ class Nailgun(object):
     def image_scheme(self, partition_scheme):
         data = self.data
         image_scheme = objects.ImageScheme()
+        root_image_uri = 'http://%s/targetimages/%s.img.gz' % (
+            data['ks_meta']['master_ip'],
+            data['profile'].split('_')[0]
+        )
         image_scheme.add_image(
-            uri=data['ks_meta']['image_uri'],
+            uri=root_image_uri,
             target_device=partition_scheme.root_device(),
-            image_format=data['ks_meta']['image_format'],
-            container=data['ks_meta']['image_container'],
-            size=data['ks_meta'].get('image_size'),
+            image_format='ext4',
+            container='gzip',
         )
         return image_scheme

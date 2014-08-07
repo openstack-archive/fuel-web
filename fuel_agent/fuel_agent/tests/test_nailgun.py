@@ -65,9 +65,6 @@ PROVISION_SAMPLE_DATA = {
     "power_address": "10.20.0.253",
     "name_servers": "\"10.20.0.2\"",
     "ks_meta": {
-        "image_uri": "proto://fake_image_uri",
-        "image_format": "fake_image_format",
-        "image_container": "raw",
         "timezone": "America/Los_Angeles",
         "master_ip": "10.20.0.2",
         "mco_enable": 1,
@@ -461,10 +458,14 @@ class TestNailgun(test_base.BaseTestCase):
         i_scheme = self.drv.image_scheme(p_scheme)
         self.assertEqual(1, len(i_scheme.images))
         img = i_scheme.images[0]
-        self.assertEqual('raw', img.container)
-        self.assertEqual('fake_image_format', img.image_format)
+        self.assertEqual('gzip', img.container)
+        self.assertEqual('ext4', img.image_format)
         self.assertEqual('/dev/mapper/os-root', img.target_device)
-        self.assertEqual('proto://fake_image_uri', img.uri)
+        self.assertEqual(
+            'http://%s/targetimages/%s.img.gz' % (
+                self.drv.data['ks_meta']['master_ip'],
+                self.drv.data['profile'].split('_')[0]),
+            img.uri)
         self.assertEqual(None, img.size)
 
     def test_getlabel(self):

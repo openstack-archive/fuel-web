@@ -7,3 +7,4 @@ six>=1.5.2
 pbr>=0.7.0
 Jinja2
 stevedore>=0.15
+requests>=1.2.3

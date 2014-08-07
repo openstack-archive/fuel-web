@@ -18,6 +18,7 @@ from oslo.config import cfg
 
 from fuel_agent import errors
 from fuel_agent.utils import fs_utils as fu
+from fuel_agent.utils import img_utils as iu
 from fuel_agent.utils import lvm_utils as lu
 from fuel_agent.utils import md_utils as mu
 from fuel_agent.utils import partition_utils as pu
@@ -128,11 +129,24 @@ class Manager(object):
             uri='file://%s' % CONF.config_drive_path,
             target_device=configdrive_device,
             image_format='iso9660',
-            container='raw',
+            container='raw'
         )
 
     def do_copyimage(self):
-        pass
+        for image in self.image_scheme.images:
+            processing = iu.Chain()
+            processing.append(image.uri)
+
+            if image.uri.startswith('http://'):
+                processing.append(iu.HttpUrl)
+            elif image.uri.startswith('file://'):
+                processing.append(iu.LocalFile)
+
+            if image.container == 'gzip':
+                processing.append(iu.GunzipStream)
+
+            processing.append(image.target_device)
+            processing.process()
 
     def do_bootloader(self):
         pass

@@ -716,6 +716,42 @@ define(['utils', 'deepModel'], function(utils) {
         }
     });
 
+    models.Plugin = Backbone.Model.extend({
+        constructorName: 'Plugin',
+        urlRoot: '/api/plugins',
+        getMetaDataUrl: function() {
+            return 'plugins/' + this.id + '/plugin';
+        },
+        processMixins: function(mixins) {
+            return 'TBD';
+        },
+        processTranslations: function(translations) {
+            return 'TBD';
+        },
+        load: function() {
+            if (!this.deferred) {
+                this.deferred = $.Deferred();
+                if (this.get('ui')) {
+                    require([this.getMetaDataUrl()], _.bind(function(metadata) {
+                        this.processTranslations(metadata.translations);
+                        this.processMixins(metadata.mixins);
+                        this.deferred.resolve();
+                    }, this));
+                } else {
+                    this.deferred.resolve();
+                }
+            }
+            return this.deferred;
+        }
+    });
+
+    models.Plugins = Backbone.Collection.extend({
+        constructorName: 'Plugins',
+        model: models.Plugin,
+        url: '/api/plugins',
+        authExempt: true
+    });
+
     models.FuelKey = Backbone.Model.extend({
         constructorName: 'FuelKey',
         urlRoot: '/api/registration/key'

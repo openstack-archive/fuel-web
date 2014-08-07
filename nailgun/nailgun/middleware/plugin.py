@@ -27,7 +27,7 @@ class HTTPPluginMiddleware(object):
     def __init__(self, app):
         self.app = app
         self.re_plugins = re.compile(
-            r"https?://[^/]+/api/plugins(/(?P<plugin_name>[^/]*))"
+            r"^https?://[^/]+/api/plugins(/(?P<plugin_name>[^/?]*))?"
         )
 
     def __call__(self, environ, start_response):

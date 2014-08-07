@@ -496,30 +496,48 @@ class DockerUpgrader(UpgradeEngine):
           -A DOCKER -p tcp -m tcp --dport 443 -j DNAT \
             --to-destination 172.17.0.3:443
 
+          -A DOCKER -d 10.108.0.2/32 -p tcp -m tcp --dport \
+            8777 -j DNAT --to-destination 172.17.0.10:8777
+          -A DOCKER -d 127.0.0.1/32 -p tcp -m tcp --dport \
+            8777 -j DNAT --to-destination 172.17.0.11:8777
+          -A DOCKER -d 10.108.0.2/32 -p tcp -m tcp --dport \
+            8777 -j DNAT --to-destination 172.17.0.11:8777
+
         :param ports: list of ports to clean up
         """
         rules_to_deletion = []
         patterns = [re.compile(
             '^-A DOCKER .+ --dport {0} '
             '-j DNAT --to-destination .+'.format(port)) for port in ports]
+        patterns.extend([re.compile(
+            '^-A DOCKER -d \S+ -p \S+ -m \S+ '
+            '--dport {0} -j DNAT --to-destination '
+            '\S+:{0}') for port in ports])
 
         for rule in utils.exec_cmd_iterator('iptables -t nat -S'):
             for pattern in patterns:
                 if pattern.match(rule):
                     rules_to_deletion.append(rule)
 
+        self._log_iptables()
         for rule in rules_to_deletion:
             # Remove -A (add) prefix and use -D (delete) instead
-            utils.exec_cmd('iptables -t nat -D {0}'.format(rule[2:]))
+            utils.safe_exec_cmd('iptables -t nat -D {0}'.format(rule[2:]))
 
-        # NOTE(eli): Run list of rules again,
-        # it's required to debug the problem
-        # with inter-container communication
-        # https://bugs.launchpad.net/fuel/+bug/1349287
-        utils.exec_cmd('iptables -t nat -S')
-        utils.exec_cmd('iptables -S')
-        utils.exec_cmd('cat /etc/sysconfig/iptables')
-        utils.exec_cmd('cat /etc/sysconfig/iptables.save')
+        # Save current rules
+        utils.safe_exec_cmd('service iptables save')
+        self._log_iptables()
+
+    def _log_iptables(self):
+        """Method for additional logging of iptables rules
+
+        NOTE(eli): Sometimes there are problems with
+        iptables rules like this
+        https://bugs.launchpad.net/fuel/+bug/1349287
+        """
+        utils.safe_exec_cmd('iptables -t nat -S')
+        utils.safe_exec_cmd('iptables -S')
+        utils.safe_exec_cmd('cat /etc/sysconfig/iptables.save')
 
     def stop_container(self, container_id):
         """Stop docker container

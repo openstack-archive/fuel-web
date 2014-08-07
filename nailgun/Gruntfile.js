@@ -166,8 +166,8 @@ module.exports = function(grunt) {
                     '**/*.js',
                     '!js/main.js',
                     '!js/libs/bower/requirejs/js/require.js',
-                    '**/*.css',
                     '!css/styles.css',
+                    '!plugins/**',
                     'templates',
                     'i18n'
                 ]

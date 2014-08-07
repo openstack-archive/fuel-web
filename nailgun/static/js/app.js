@@ -72,6 +72,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 tenant: 'admin'
             });
             var version = this.version = new models.FuelVersion();
+            this.plugins = new models.Plugins();
 
             version.fetch().then(_.bind(function() {
                 this.user = new models.User({authenticated: !version.get('auth_required')});
@@ -131,11 +132,16 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 if (version.get('auth_required')) {
                     _.extend(keystoneClient, this.user.pick('username', 'password'));
                     return keystoneClient.authenticate()
-                        .done(function() {
+                        .then(function() {
                             app.user.set({authenticated: true});
+                        }, function() {
+                            return $.Deferred().resolve();
                         });
                 }
                 return $.Deferred().resolve();
+            }, this)).then(_.bind(function() {
+                // FIXME: remove fail handling when plugin handler is auth exempt
+                return this.plugins.fetch().then(_.bind(this.processPlugins, this), _.bind(this.processPlugins, this));
             }, this)).always(_.bind(function() {
                 this.renderLayout();
                 Backbone.history.start();
@@ -143,6 +149,14 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                     app.navigate('#login', {trigger: true});
                 }
             }, this));
+        },
+        processPlugins: function() {
+            // FIXME: mock
+            this.plugins.reset([{
+                id: 'test',
+                ui: true
+            }]);
+            return $.when.apply($, this.plugins.invoke('load'));
         },
         renderLayout: function() {
             this.content = $('#content');

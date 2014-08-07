@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
@@ -53,6 +54,7 @@ class Plugin(Base):
     licenses = Column(JSON, server_default='[]', nullable=False)
     homepage = Column(Text, nullable=True)
     package_version = Column(String(32), nullable=False)
+    ui = Column(Boolean, default=False)
     clusters = relationship("Cluster",
                             secondary=ClusterPlugins.__table__,
                             backref="plugins")

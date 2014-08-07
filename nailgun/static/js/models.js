@@ -901,6 +901,41 @@ define([
         urlRoot: '/api/ostf'
     });
 
+    models.Plugin = BaseModel.extend({
+        constructorName: 'Plugin',
+        urlRoot: '/api/plugins',
+        getMetaDataUrl: function() {
+            return 'plugins/' + this.get('name') + '-' + this.get('version') + '/plugin';
+        },
+        processMixins: function() {
+        },
+        processTranslations: function(translations) {
+            _.merge($.i18n.options.resStore, translations);
+        },
+        load: function() {
+            if (!this.deferred) {
+                this.deferred = $.Deferred();
+                if (this.get('ui')) {
+                    require([this.getMetaDataUrl()], _.bind(function(metadata) {
+                        this.processTranslations(metadata.translations);
+                        this.processMixins(metadata.mixins);
+                        this.deferred.resolve();
+                    }, this));
+                } else {
+                    this.deferred.resolve();
+                }
+            }
+            return this.deferred;
+        }
+    });
+
+    models.Plugins = BaseCollection.extend({
+        constructorName: 'Plugins',
+        model: models.Plugin,
+        url: '/api/plugins',
+        authExempt: true
+    });
+
     models.FuelVersion = BaseModel.extend({
         constructorName: 'FuelVersion',
         urlRoot: '/api/version',

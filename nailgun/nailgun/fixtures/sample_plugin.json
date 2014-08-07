@@ -1,0 +1,14 @@
+[
+    {
+        "pk": 1,
+        "model": "nailgun.plugin",
+        "fields": {
+            "name": "sample-plugin",
+            "title": "Sample Plugin",
+            "version": "1.0.0",
+            "description": "Just a sample plugin",
+            "package_version": "1.0.0",
+            "ui": false
+        }
+    }
+]

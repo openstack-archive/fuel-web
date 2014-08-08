@@ -110,6 +110,8 @@ class Nailgun(object):
         for disk in self.ks_disks:
             parted = partition_scheme.add_parted(
                 name=self._disk_dev(disk), label='gpt')
+            # we install bootloader on every disk
+            parted.install_bootloader = True
             # legacy boot partition
             parted.add_partition(size=24, flags=['bios_grub'])
             # uefi partition (for future use)
@@ -163,6 +165,8 @@ class Nailgun(object):
                             fs_type=volume.get('file_system', 'xfs'),
                             fs_label=self._getlabel(volume.get('disk_label')))
 
+        partition_scheme.append_kernel_params(
+            self.data['ks_meta']['pm_data']['kernel_params'])
         return partition_scheme
 
     def configdrive_scheme(self):
@@ -209,14 +213,28 @@ class Nailgun(object):
     def image_scheme(self, partition_scheme):
         data = self.data
         image_scheme = objects.ImageScheme()
-        root_image_uri = 'http://%s/targetimages/%s.img.gz' % (
-            data['ks_meta']['master_ip'],
-            data['profile'].split('_')[0]
-        )
-        image_scheme.add_image(
-            uri=root_image_uri,
-            target_device=partition_scheme.root_device(),
-            image_format='ext4',
-            container='gzip',
-        )
+        for fs in partition_scheme.fss:
+            if fs.mount == 'swap':
+                continue
+            # We assume for every file system user needs to provide
+            # file system image. For example if partitioning scheme has
+            # /, /boot, /var/lib file systems then will try to download
+            # profile.img.gz, profile-boot.img.gz and profile-var-lib.img.gz
+            # files and copy them to corresponding volumes.
+            uri = 'http://%s/targetimages/%s%s.img.gz' % (
+                data['ks_meta']['master_ip'],
+                data['profile'].split('_')[0],
+                # / => ''
+                # /boot => '-boot'
+                # /var/lib => '-var-lib'
+                '-'.join(fs.mount.split('/')).rstrip('-')
+            )
+            image_scheme.add_image(
+                uri=uri,
+                target_device=fs.device,
+                # In the future we will get image_format and container format
+                # from provision.json, but currently it is hard coded.
+                image_format='ext4',
+                container='gzip',
+            )
         return image_scheme

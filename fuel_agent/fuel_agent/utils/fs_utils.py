@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from fuel_agent import errors
 from fuel_agent.utils import utils
 
 
@@ -27,3 +28,32 @@ def make_fs(fs_type, fs_options, fs_label, dev):
         cmd_line.extend([s for s in opt.split(' ') if s])
     cmd_line.append(dev)
     utils.execute(*cmd_line)
+
+
+def extend_fs(fs_type, fs_dev):
+    if fs_type.startswith('ext3') or fs_type.startswith('ext4'):
+        # ext3,4 file system can be mounted
+        # must be checked with e2fsck -f
+        utils.execute('e2fsck', ' -f', fs_dev, check_exit_code=[0])
+        utils.execute('resize2fs', fs_dev, check_exit_code=[0])
+    elif fs_type.startswith('xfs'):
+        # xfs file system must be mounted
+        utils.execute('xfs_growfs', fs_dev, check_exit_code=[0])
+    else:
+        raise errors.FsUtilsError('Unsupported file system type')
+
+
+def mount_fs(fs_type, fs_dev, fs_mount):
+    utils.execute('mount', '-t', fs_type, fs_dev, fs_mount,
+                  check_exit_code=[0])
+
+
+def mount_bind(chroot, path, path2=None):
+    if not path2:
+        path2 = path
+    utils.execute('mount', '--bind', path, chroot + path2,
+                  check_exit_code=[0])
+
+
+def umount_fs(fs_mount):
+    utils.execute('umount', fs_mount, check_exit_code=[0])

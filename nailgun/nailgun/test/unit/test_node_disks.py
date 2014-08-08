@@ -65,6 +65,12 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         else:
             return resp
 
+    @staticmethod
+    def get_vgs(resp):
+        disks_vgs = [d['volumes'] for d in resp]
+        vgs = [vg['name'] for disk_vgs in disks_vgs for vg in disk_vgs]
+        return set(vgs)
+
     def test_default_attrs_after_creation(self):
         self.env.create_node(api=True)
         node_db = self.env.nodes[0]
@@ -85,11 +91,6 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         node_db = self.env.nodes[0]
         original_roles_response = self.get(node_db.id)
 
-        def get_vgs(resp):
-            disks_vgs = [d['volumes'] for d in resp]
-            vgs = [vg['name'] for disk_vgs in disks_vgs for vg in disk_vgs]
-            return set(vgs)
-
         def update_node_roles(roles):
             resp = self.app.put(
                 reverse('NodeCollectionHandler'),
@@ -100,30 +101,59 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         # adding role
         update_node_roles(['compute', 'cinder'])
         modified_roles_response = self.get(node_db.id)
-        self.assertNotEqual(get_vgs(original_roles_response),
-                            get_vgs(modified_roles_response))
+        self.assertNotEqual(self.get_vgs(original_roles_response),
+                            self.get_vgs(modified_roles_response))
         original_roles_response = modified_roles_response
 
         # replacing role
         update_node_roles(['compute', 'ceph-osd'])
         modified_roles_response = self.get(node_db.id)
-        self.assertNotEqual(get_vgs(original_roles_response),
-                            get_vgs(modified_roles_response))
+        self.assertNotEqual(self.get_vgs(original_roles_response),
+                            self.get_vgs(modified_roles_response))
         original_roles_response = modified_roles_response
 
         # removing role
         update_node_roles(['compute'])
         modified_roles_response = self.get(node_db.id)
-        self.assertNotEqual(get_vgs(original_roles_response),
-                            get_vgs(modified_roles_response))
+        self.assertNotEqual(self.get_vgs(original_roles_response),
+                            self.get_vgs(modified_roles_response))
         original_roles_response = modified_roles_response
 
         # replacing role to itself
         update_node_roles(['controller'])
         update_node_roles(['compute'])
         modified_roles_response = self.get(node_db.id)
-        self.assertEqual(get_vgs(original_roles_response),
-                         get_vgs(modified_roles_response))
+        self.assertEqual(self.get_vgs(original_roles_response),
+                         self.get_vgs(modified_roles_response))
+
+    def test_volumes_update_after_roles_assignment(self):
+        self.env.create(
+            nodes_kwargs=[
+                {"cluster_id": None}
+            ]
+        )
+        node_db = self.env.nodes[0]
+        original_roles_response = self.get(node_db.id)
+
+        # adding role
+        assignment_data = [
+            {
+                "id": node_db.id,
+                "roles": ['compute', 'cinder']
+            }
+        ]
+        self.app.post(
+            reverse(
+                'NodeAssignmentHandler',
+                kwargs={'cluster_id': self.env.clusters[0].id}
+            ),
+            jsonutils.dumps(assignment_data),
+            headers=self.default_headers
+        )
+
+        modified_roles_response = self.get(node_db.id)
+        self.assertNotEqual(self.get_vgs(original_roles_response),
+                            self.get_vgs(modified_roles_response))
 
     def test_disks_volumes_size_update(self):
         node_db = self.create_node()

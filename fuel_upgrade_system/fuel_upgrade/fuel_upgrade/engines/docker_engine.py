@@ -70,6 +70,14 @@ class DockerUpgrader(UpgradeEngine):
         self.save_db()
         self.save_cobbler_configs()
 
+        # NOTE(akislitsky): fix for bug
+        # https://bugs.launchpad.net/fuel/+bug/1354465
+        # supervisord can restart old container even if it already stopped
+        # and new container start will be failed. We switch configs
+        # before upgrade, so if supervisord will try to start container
+        # it will be new container.
+        self.switch_to_new_configs()
+
         # Run upgrade
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
@@ -80,7 +88,6 @@ class DockerUpgrader(UpgradeEngine):
 
         # Update configs and run new services
         self.generate_configs()
-        self.switch_to_new_configs()
         self.version_file.switch_to_new()
         self.supervisor.restart_and_wait()
         self.upgrade_verifier.verify()

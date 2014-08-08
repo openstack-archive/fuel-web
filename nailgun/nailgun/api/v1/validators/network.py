@@ -29,12 +29,7 @@ class NetworkConfigurationValidator(BasicValidator):
 
     @classmethod
     def validate_networks_update(cls, data):
-        d = cls.validate_json(data)
-        if not d:
-            raise errors.InvalidData(
-                "No valid data received",
-                log_message=True
-            )
+        d = cls.load_json(data)
 
         networks = d.get('networks')
         if not isinstance(networks, list):
@@ -55,7 +50,7 @@ class NovaNetworkConfigurationValidator(NetworkConfigurationValidator):
 
     @classmethod
     def validate_dns_servers_update(cls, data):
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
 
         dns_servers = d['dns_nameservers'].get("nameservers", [])
 
@@ -78,7 +73,7 @@ class NeutronNetworkConfigurationValidator(NetworkConfigurationValidator):
 
     @classmethod
     def validate_neutron_params(cls, data, **kwargs):
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
         np = d.get('networking_parameters')
         cluster_id = kwargs.get("cluster_id")
         if cluster_id:
@@ -214,12 +209,12 @@ class NetAssignmentValidator(BasicValidator):
 
     @classmethod
     def validate_structure(cls, webdata):
-        node_data = cls.validate_json(webdata)
+        node_data = cls.load_json(webdata)
         return cls.validate(node_data)
 
     @classmethod
     def validate_collection_structure_and_data(cls, webdata):
-        data = cls.validate_json(webdata)
+        data = cls.load_json(webdata)
         if not isinstance(data, list):
             raise errors.InvalidData(
                 "Data should be list of nodes",
@@ -232,7 +227,7 @@ class NetAssignmentValidator(BasicValidator):
 
     @classmethod
     def validate_structure_and_data(cls, webdata, node_id):
-        interfaces_data = cls.validate_json(webdata)
+        interfaces_data = cls.load_json(webdata)
         node_data = {'id': node_id, 'interfaces': interfaces_data}
         cls.validate(node_data)
         cls.verify_data_correctness(node_data)

@@ -23,6 +23,7 @@ class Parted(object):
         self.name = name
         self.label = label
         self.partitions = []
+        self.install_bootloader = False
 
     def add_partition(self, **kwargs):
         # TODO(kozhukalov): validate before appending
@@ -45,6 +46,9 @@ class Parted(object):
         partition = Partition(**kwargs)
         self.partitions.append(partition)
         return partition
+
+    def bootloader(self, install_bootloader=True):
+        self.install_bootloader = install_bootloader
 
     @property
     def logical(self):
@@ -283,17 +287,44 @@ class PartitionScheme(object):
             return found[0]
 
     def root_device(self):
-        for fs in self.fss:
-            if fs.mount == '/':
-                return fs.device
-        raise errors.WrongPartitionSchemeError(
-            'Error while trying to find root device: '
-            'root file system not found')
+        fs = self.fs_by_mount('/')
+        if not fs:
+            raise errors.WrongPartitionSchemeError(
+                'Error while trying to find root device: '
+                'root file system not found')
+        return fs.device
 
-    # Configdrive device must be a small (about 10M) partition
-    # on one of node hard drives. This partition is necessary
-    # only if one uses cloud-init with configdrive.
+    def boot_device(self, grub_version=2):
+        # FIXME(kozhukalov)
+        # We assume here that /boot is a separate mount point
+        # not a directory on root file system.
+        fs = self.fs_by_mount('/boot')
+        if not fs:
+            raise errors.WrongPartitionSchemeError(
+                'Error while trying to find boot device: '
+                'boot file system not fount, '
+                'it must be a separate mount point')
+
+        # Legacy GRUB has a limitation. It is not able to mount MD devices.
+        # If it is MD compatible it is only able to ignore MD metadata
+        # and to mount one of those devices which are parts of MD device,
+        # but it is possible only if MD device is a MIRROR.
+        if grub_version == 1:
+            md = self.md_by_name(fs.device)
+            if md:
+                try:
+                    return md.devices[0]
+                except IndexError:
+                    raise errors.WrongPartitionSchemeError(
+                        'Error while trying to find boot device: '
+                        'md device %s does not have devices attached' %
+                        md.name)
+        return fs.device
+
     def configdrive_device(self):
+        # Configdrive device must be a small (about 10M) partition
+        # on one of node hard drives. This partition is necessary
+        # only if one uses cloud-init with configdrive.
         for parted in self.parteds:
             for prt in parted.partitions:
                 if prt.configdrive:

@@ -365,9 +365,8 @@ class TestHandlers(BaseIntegrationTest):
     def test_node_create_without_mac(self):
         node = self.env.create_node(
             api=True,
-            exclude=["mac"],
-            expect_http=400,
-            expect_message="No mac address specified"
+            exclude=['mac'],
+            expect_http=400
         )
         self.assertEqual(node, None)
 
@@ -407,7 +406,6 @@ class TestHandlers(BaseIntegrationTest):
                 headers=self.default_headers,
                 expect_errors=(http_code != 201)
             )
-
             self.assertEqual(response.status_code, http_code)
 
     def test_node_update_ext_mac(self):

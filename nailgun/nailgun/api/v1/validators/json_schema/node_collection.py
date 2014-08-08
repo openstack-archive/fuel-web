@@ -13,19 +13,27 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import copy
 
-from nailgun.logger import add_app_log_handler
+from nailgun.api.v1.validators.json_schema.base_types import MAC_ADDRESS
+
+from nailgun.api.v1.validators.json_schema.node import NODE
 
 
-class HTTPMethodOverrideMiddleware(object):
-    allowed_methods = ('PUT', 'PATCH', 'DELETE')
+# GET schema
+GET_REQUEST = {}
 
-    def __init__(self, app):
-        self.app = app
-        add_app_log_handler()
+GET_RESPONSE = {
+    'type': 'array',
+    'items': NODE
+}
 
-    def __call__(self, environ, start_response):
-        method = environ.get('HTTP_X_HTTP_METHOD_OVERRIDE', '').upper()
-        if method in self.allowed_methods:
-            environ['REQUEST_METHOD'] = method
-        return self.app(environ, start_response)
+# POST schema
+POST_REQUEST = copy.deepcopy(NODE)
+POST_REQUEST['properties'].update({
+    'mac': MAC_ADDRESS
+})
+POST_REQUEST['required'] = ['mac']
+POST_REQUEST['additionalProperties'] = False
+
+POST_RESPONSE = copy.deepcopy(NODE)

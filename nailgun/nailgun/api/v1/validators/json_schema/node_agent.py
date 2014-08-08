@@ -14,18 +14,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from nailgun.logger import add_app_log_handler
+from nailgun.api.v1.validators.json_schema.base_types import ID
 
 
-class HTTPMethodOverrideMiddleware(object):
-    allowed_methods = ('PUT', 'PATCH', 'DELETE')
-
-    def __init__(self, app):
-        self.app = app
-        add_app_log_handler()
-
-    def __call__(self, environ, start_response):
-        method = environ.get('HTTP_X_HTTP_METHOD_OVERRIDE', '').upper()
-        if method in self.allowed_methods:
-            environ['REQUEST_METHOD'] = method
-        return self.app(environ, start_response)
+PUT_RESPONSE = {
+    'type': 'object',
+    'properties': {
+        'id': ID,
+        'cached': {'type': 'boolean'}
+    },
+    'required': ['id']
+}

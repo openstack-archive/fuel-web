@@ -51,7 +51,7 @@ class ReleaseValidator(BasicValidator):
 
     @classmethod
     def validate(cls, data):
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
         if "name" not in d:
             raise errors.InvalidData(
                 "No release name specified",
@@ -88,7 +88,7 @@ class ReleaseValidator(BasicValidator):
 
     @classmethod
     def validate_update(cls, data, instance):
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
         cls._validate_common(d)
 
         if db().query(Release).filter_by(

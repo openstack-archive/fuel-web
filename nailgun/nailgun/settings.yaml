@@ -67,7 +67,6 @@ DEFAULT_REPO:
   centos: "http://{master_ip}:8080/centos/fuelweb/x86_64"
   ubuntu: "http://{master_ip}:8080/ubuntu/fuelweb/x86_64 precise main"
 
-APP_LOG: &nailgun_log "/var/log/nailgun/app.log"
 API_LOG: &api_log "/var/log/nailgun/api.log"
 SYSLOG_DIR: &remote_syslog_dir "/var/log/remote/"
 
@@ -147,11 +146,6 @@ LOG_GROUPS:
 
 LOGS:
 # Master node logs.
-  - id: app
-    name: "Web backend"
-    <<: *local_log_type
-    <<: *python_log_format
-    path: *nailgun_log
   - id: api
     name: "REST API"
     <<: *local_log_type

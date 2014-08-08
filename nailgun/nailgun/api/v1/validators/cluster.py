@@ -39,7 +39,7 @@ class ClusterValidator(BasicValidator):
 
     @classmethod
     def _validate_common(cls, data, instance=None):
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
 
         release_id = d.get("release", d.get("release_id"))
         if release_id:
@@ -113,7 +113,7 @@ class ClusterValidator(BasicValidator):
 class AttributesValidator(BasicValidator):
     @classmethod
     def validate(cls, data):
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
         if "generated" in d:
             raise errors.InvalidData(
                 "It is not allowed to update generated attributes",

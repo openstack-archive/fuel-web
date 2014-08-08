@@ -834,6 +834,18 @@ class BaseUnitTest(TestCase):
     pass
 
 
+class BaseApiTest(TestCase):
+    class SchemaImitator(object):
+        def __init__(self, **kwargs):
+            self.__dict__.update(**kwargs)
+
+    # @classmethod
+    # def setUpClass(cls):
+    #     cls.app = app.TestApp(
+    #         build_app().wsgifunc()
+    #     )
+
+
 def fake_tasks(fake_rpc=True,
                mock_rpc=True,
                tick_count=100,

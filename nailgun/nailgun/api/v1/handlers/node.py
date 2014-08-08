@@ -27,6 +27,8 @@ from nailgun.api.v1.handlers.base import CollectionHandler
 from nailgun.api.v1.handlers.base import content_json
 from nailgun.api.v1.handlers.base import SingleHandler
 from nailgun.api.v1.validators.network import NetAssignmentValidator
+from nailgun.api.v1.validators.node import NodeAgentValidator
+from nailgun.api.v1.validators.node import NodeCollectionValidator
 from nailgun.api.v1.validators.node import NodeValidator
 
 from nailgun import consts
@@ -58,7 +60,7 @@ class NodeCollectionHandler(CollectionHandler):
               'pending_addition', 'pending_deletion', 'os_platform',
               'error_type', 'online', 'cluster', 'uuid', 'network_data')
 
-    validator = NodeValidator
+    validator = NodeCollectionValidator
     collection = objects.NodeCollection
 
     @content_json
@@ -77,7 +79,7 @@ class NodeCollectionHandler(CollectionHandler):
         elif cluster_id:
             nodes = nodes.filter_by(cluster_id=cluster_id)
 
-        return self.collection.to_json(nodes)
+        return self.collection.to_list(nodes)
 
     @content_json
     def PUT(self):
@@ -110,7 +112,7 @@ class NodeCollectionHandler(CollectionHandler):
 class NodeAgentHandler(BaseHandler):
 
     collection = objects.NodeCollection
-    validator = NodeValidator
+    validator = NodeAgentValidator
 
     @content_json
     def PUT(self):

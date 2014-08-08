@@ -13,117 +13,192 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import copy
 
-# Non-complete JSON Schema for validating IP addresses.
-# Use it for better readability in the main schema.
-_IP_ADDRESS_SCHEMA = {
+from nailgun import consts
+
+from nailgun.api.v1.validators.json_schema.base_types import ID
+from nailgun.api.v1.validators.json_schema.base_types import IP_ADDRESS
+from nailgun.api.v1.validators.json_schema.base_types import MAC_ADDRESS
+from nailgun.api.v1.validators.json_schema.base_types import NET_ADDRESS
+from nailgun.api.v1.validators.json_schema.base_types \
+    import NON_NEGATIVE_INTEGER
+from nailgun.api.v1.validators.json_schema.base_types import NULLABLE_ID
+from nailgun.api.v1.validators.json_schema.base_types \
+    import NULLABLE_IP_ADDRESS
+from nailgun.api.v1.validators.json_schema.base_types \
+    import NULLABLE_MAC_ADDRESS
+from nailgun.api.v1.validators.json_schema.base_types \
+    import NULLABLE_NON_NEGATIVE_INTEGER
+from nailgun.api.v1.validators.json_schema.base_types \
+    import NULLABLE_POSITIVE_INTEGER
+from nailgun.api.v1.validators.json_schema.base_types import NULLABLE_STRING
+from nailgun.api.v1.validators.json_schema.base_types import POSITIVE_INTEGER
+from nailgun.api.v1.validators.json_schema.base_types import STRINGS_ARRAY
+
+
+NODE_STATUS = {
     'type': 'string',
-    'format': 'ipv4',
+    'enum': list(consts.NODE_STATUSES)
 }
 
-
-# Non-complete JSON schema for validating NET addresses.
-# Use it for better readability in the main schema.
-_NET_ADDRESS_SCHEMA = {
-    'type': 'string',
-
-    # check for valid ip address and route prefix
-    # e.g: 192.168.0.0/24
-    'pattern': '^(({octet}\.){{3}}{octet})({prefix})?$'.format(
-        octet='(2(5[0-5]|[0-4][0-9])|[01]?[0-9][0-9]?)',
-        prefix='/(3[012]|[12]?[0-9])'
-    ),
-}
-
-
-# Non-complete JSON Schema for validating MAC addresses.
-# Use it for better readability in the main schema.
-_MAC_ADDRESS_SCHEMA = {
-    'type': 'string',
-    'pattern': '^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$',
-}
-
-
-# TODO(@ikalnitsky): add `required` properties to all needed objects
-node_format_schema = {
-    '$schema': 'http://json-schema.org/draft-04/schema#',
-    'title': 'JSONized Node object',
-    'description': 'Object with node description',
+INTERFACE = {
     'type': 'object',
     'properties': {
-        'mac': _MAC_ADDRESS_SCHEMA,
-        'ip': _IP_ADDRESS_SCHEMA,
+        'ip': IP_ADDRESS,
+        'mac': MAC_ADDRESS,
+        'max_speed': NULLABLE_POSITIVE_INTEGER,
+        'name': {'type': 'string'},
+        'current_speed': NULLABLE_NON_NEGATIVE_INTEGER,
+    },
+    'required': ['mac', 'name']
+}
+
+DISK = {
+    'type': 'object',
+    'properties': {
+        'model': NULLABLE_STRING,
+        'disk': {'type': 'string'},
+        'size': POSITIVE_INTEGER,
+        'name': {'type': 'string'},
+    },
+    'required': ['model', 'disk', 'size', 'name']
+}
+
+MEMORY_CHIP = {
+    'type': 'object',
+    'properties': {
+        'frequency': POSITIVE_INTEGER,
+        'type': {'type': 'string'},
+        'size': POSITIVE_INTEGER
+    },
+    'required': ['type', 'size']
+}
+
+MEMORY_BANK = {
+    'type': 'object',
+    'properties': {
+        'slots': POSITIVE_INTEGER,
+        'total': POSITIVE_INTEGER,
+        'maximum_capacity': POSITIVE_INTEGER,
+        'devices': {
+            'type': 'array',
+            'items': MEMORY_CHIP
+        }
+    }
+}
+
+SYSTEM = {
+    'type': 'object',
+    'properties': {
+        'product': {'type': 'string'},
+        'family': {'type': 'string'},
+        'manufacturer': {'type': 'string'},
+        'version': {'type': 'string'},
+        'serial': {'type': 'string'},
+        'fqdn': {'type': 'string'},
+    }
+}
+
+CPU_UNIT = {
+    'type': 'object',
+    'properties': {
+        'model': {'type': 'string'},
+        'frequency': POSITIVE_INTEGER
+    },
+    'required': ['model', 'frequency']
+}
+
+CPU = {
+    'type': 'object',
+    'properties': {
+        'spec': {
+            'type': 'array',
+            'items': CPU_UNIT
+        },
+        'total': POSITIVE_INTEGER,
+        'real': POSITIVE_INTEGER,
+    },
+    'required': ['real', 'total', 'spec']
+}
+
+NETWORK = {
+    'type': 'object',
+    'properties': {
+        'name': {'type': 'string'},
+        'dev': {'type': 'string'},
+        'ip': NET_ADDRESS,
+        'vlan': NULLABLE_POSITIVE_INTEGER,
+        'netmask': IP_ADDRESS,
+        'brd': IP_ADDRESS
+    },
+    'required': ['name', 'dev']
+}
+
+NODE = {
+    '$schema': 'http://json-schema.org/draft-04/schema#',
+    'title': "Node",
+    'description': "Serialized Node object",
+    'type': 'object',
+    'properties': {
+        'id': ID,
+        'name': {'type': 'string'},
+        'status': NODE_STATUS,
+        'roles': STRINGS_ARRAY,
+        'cluster': NULLABLE_ID,
+        'cluster_id': NULLABLE_ID,
+        'ip': NULLABLE_IP_ADDRESS,
+        'error_type': NULLABLE_STRING,
+        'error_msg': {'type': 'string'},
+        'pending_addition': {'type': 'boolean'},
+        'fqdn': NULLABLE_STRING,
+        'platform_name': NULLABLE_STRING,
+        'kernel_params': NULLABLE_STRING,
+        'mac': NULLABLE_MAC_ADDRESS,
+        'pending_deletion': {'type': 'boolean'},
+        'online': {'type': 'boolean'},
+        'progress': NON_NEGATIVE_INTEGER,
+        'pending_roles': STRINGS_ARRAY,
+        'os_platform': NULLABLE_STRING,
+        'manufacturer': NULLABLE_STRING,
         'meta': {
             'type': 'object',
             'properties': {
-                # I guess the format schema below will be used somewhere else,
-                # so it would be great to move it out in the future.
                 'interfaces': {
                     'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            'ip': _IP_ADDRESS_SCHEMA,
-                            'netmask': _NET_ADDRESS_SCHEMA,
-                            'mac': _MAC_ADDRESS_SCHEMA,
-                            'state': {'type': 'string'},
-                            'name': {'type': 'string'},
-                        }
-                    }
+                    'items': INTERFACE
                 },
-                # I guess the format schema below will be used somewhere else,
-                # so it would be great to move it out in the future.
                 'disks': {
                     'type': 'array',
-                    'items': {
-                        'type': 'object',
-                        'properties': {
-                            'model': {'type': ['string', 'null']},
-                            'disk': {'type': 'string'},
-                            'size': {'type': 'number'},
-                            'name': {'type': 'string'},
-                        }
-                    }
+                    'items': DISK
                 },
-                'memory': {
-                    'type': 'object',
-                    'properties': {
-                        'total': {'type': 'number'}
-                    }
-                },
-                'cpu': {
-                    'type': 'object',
-                    'properties': {
-                        'spec': {
-                            'type': 'array',
-                            'items': {
-                                'type': 'object',
-                                'properties': {
-                                    'model': {'type': 'string'},
-                                    'frequency': {'type': 'number'}
-                                }
-                            }
-                        },
-                        'total': {'type': 'integer'},
-                        'real': {'type': 'integer'},
-                    }
-                },
-                'system': {
-                    'type': 'object',
-                    'properties': {
-                        'manufacturer': {'type': 'string'},
-                        'version': {'type': 'string'},
-                        'serial': {'type': 'string'},
-                        'family': {'type': 'string'},
-                        'fqdn': {'type': 'string'},
-                    }
-                },
+                'memory': MEMORY_BANK,
+                'cpu': CPU,
+                'system': SYSTEM
             }
         },
-        'id': {'type': 'string'},
-        'manufacturer': {'type': 'string'},
-        'os_platform': {'type': 'string'},
-        'is_agent': {'type': 'boolean'},
-        'platform_name': {'type': ['string', 'null']},
+        'network_data': {
+            'type': 'array',
+            'items': NETWORK
+        },
+        'agent_checksum': {'type': 'string'}
     },
+    'required': ['id', 'name', 'status', 'roles', 'ip', 'error_type',
+                 'pending_addition', 'fqdn', 'platform_name', 'kernel_params',
+                 'mac', 'pending_deletion', 'online', 'progress',
+                 'pending_roles', 'os_platform', 'meta', 'manufacturer',
+                 'network_data'],
+    'additionalProperties': True
 }
+
+# GET schema
+GET_REQUEST = {}
+
+GET_RESPONSE = copy.deepcopy(NODE)
+
+# PUT schema
+PUT_REQUEST = copy.deepcopy(NODE)
+PUT_REQUEST.pop('required')
+PUT_REQUEST['additionalProperties'] = False
+
+PUT_RESPONSE = GET_RESPONSE

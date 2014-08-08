@@ -29,6 +29,7 @@ from nailgun import consts
 
 from nailgun.objects.serializers.node import NodeSerializer
 
+from nailgun.api.v1.validators.json_schema.node import NODE as NODE_SCHEMA
 from nailgun.db import db
 from nailgun.db.sqlalchemy import models
 from nailgun.errors import errors
@@ -53,40 +54,7 @@ class Node(NailgunObject):
     serializer = NodeSerializer
 
     #: Node JSON schema
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "title": "Node",
-        "description": "Serialized Node object",
-        "type": "object",
-        "properties": {
-            "id": {"type": "number"},
-            "cluster_id": {"type": "number"},
-            "name": {"type": "string"},
-            "status": {
-                "type": "string",
-                "enum": list(consts.NODE_STATUSES)
-            },
-            "meta": {"type": "object"},
-            "mac": {"type": "string"},
-            "fqdn": {"type": "string"},
-            "manufacturer": {"type": "string"},
-            "platform_name": {"type": "string"},
-            "kernel_params": {"type": "string"},
-            "progress": {"type": "number"},
-            "os_platform": {"type": "string"},
-            "pending_addition": {"type": "boolean"},
-            "pending_deletion": {"type": "boolean"},
-            "error_type": {
-                "type": "string",
-                "enum": list(consts.NODE_ERRORS)
-            },
-            "error_msg": {"type": "string"},
-            "online": {"type": "boolean"},
-            "roles": {"type": "array"},
-            "pending_roles": {"type": "array"},
-            "agent_checksum": {"type": "string"}
-        }
-    }
+    schema = NODE_SCHEMA
 
     @classmethod
     def get_by_mac_or_uid(cls, mac=None, node_uid=None):

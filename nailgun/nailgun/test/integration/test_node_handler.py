@@ -50,7 +50,7 @@ class TestHandlers(BaseIntegrationTest):
         self.assertEqual(node.meta['memory'], response['meta']['memory'])
 
     def test_node_creation_with_id(self):
-        node_id = '080000000003'
+        node_id = 80000000003
         resp = self.app.post(
             reverse('NodeCollectionHandler'),
             jsonutils.dumps({'id': node_id,

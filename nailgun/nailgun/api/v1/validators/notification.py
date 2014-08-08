@@ -24,7 +24,7 @@ class NotificationValidator(BasicValidator):
 
     @classmethod
     def validate(cls, data):
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
         if d.get('topic') not in consts.NOTIFICATION_TOPICS:
             raise errors.InvalidData(
                 "Notification topic is not found or invalid"
@@ -34,7 +34,7 @@ class NotificationValidator(BasicValidator):
     @classmethod
     def validate_update(cls, data, instance):
         valid = {}
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
 
         status = d.get("status", None)
         if status in consts.NOTIFICATION_STATUSES:
@@ -49,7 +49,7 @@ class NotificationValidator(BasicValidator):
 
     @classmethod
     def validate_collection_update(cls, data):
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
         if not isinstance(d, list):
             raise errors.InvalidData(
                 "Invalid json list",

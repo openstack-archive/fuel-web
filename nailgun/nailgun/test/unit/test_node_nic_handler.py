@@ -90,17 +90,17 @@ class TestHandlers(BaseIntegrationTest):
         node = self.env.create_node(api=True, meta=meta)
 
         meta_clean_list = [
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'max_speed': -100}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'current_speed': -100}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'current_speed': '100'}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'max_speed': 10.0}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'max_speed': '100'}]},
-            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00',
+            {'interfaces': [{'name': 'eth0', 'mac': '00:00:00:00:00:00',
                              'current_speed': 10.0}]}
         ]
         for nic_meta in meta_clean_list:
@@ -122,7 +122,7 @@ class TestHandlers(BaseIntegrationTest):
             self.assertEqual(
                 ifaces,
                 [
-                    {'name': 'eth0', 'mac': '00:00:00',
+                    {'name': 'eth0', 'mac': '00:00:00:00:00:00',
                      'max_speed': None, 'current_speed': None}
                 ]
             )

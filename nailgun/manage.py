@@ -62,6 +62,11 @@ def load_run_parsers(subparsers):
         help='Choose authentication type',
         choices=['none', 'fake', 'keystone'],
     )
+    run_parser.add_argument(
+        '--app-log', dest='app_log', action='store', type=str,
+        help='application log file'
+    )
+
 
 
 def load_db_parsers(subparsers):
@@ -238,7 +243,10 @@ def action_run(params):
 
     if params.authentication_method:
         auth_method = params.authentication_method
-        settings.AUTH.update({'AUTHENTICATION_METHOD' : auth_method})
+        settings.AUTH.update({'AUTHENTICATION_METHOD': auth_method})
+
+    if params.app_log:
+        settings.update({'APP_LOG': params.app_log})
 
     if params.config_file:
         settings.update_from_file(params.config_file)

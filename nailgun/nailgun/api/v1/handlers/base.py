@@ -87,18 +87,64 @@ def load_db_driver(handler):
         db.remove()
 
 
+def _validate_request(method, handler, data):
+    method_name = method.__name__.lower()
+    req_validator_name = 'validate_{0}_request'.format(method_name)
+    request_validator = getattr(handler.validator, req_validator_name)
+    request_validator(data)
+
+
+def _validate_response(method, handler, data):
+    method_name = method.__name__.lower()
+    resp_validator_name = 'validate_{0}_response'.format(method_name)
+    response_validator = getattr(handler.validator, resp_validator_name)
+    response_validator(data)
+
+
+@decorator
+def validate_schema(method, *args, **kwargs):
+    data = kwargs.get('data', web.data())
+    if data:
+        data = jsonutils.loads(data)
+
+    handler = args[0]
+
+    # request validation
+    _validate_request(method, handler, data)
+
+    # calling method
+    result = method(*args, **kwargs)
+
+    # response validation
+    _validate_response(method, handler, result)
+
+    return result
+
+
 @decorator
 def content_json(func, *args, **kwargs):
+    # Nested try/except is required for handling schema validation errors.
+    # In case of result is 'returned' through exception rising we
+    # should validate response in the nested except block
     try:
-        data = func(*args, **kwargs)
-    except web.notmodified:
-        raise
-    except web.HTTPError as http_error:
-        web.header('Content-Type', 'application/json')
-        if isinstance(http_error.data, (dict, list)):
-            http_error.data = build_json_response(http_error.data)
-        raise
-    web.header('Content-Type', 'application/json')
+        try:
+            validated_func = validate_schema(func)
+            data = validated_func(*args, **kwargs)
+        except web.notmodified:
+            raise
+        except web.HTTPError as http_error:
+            if isinstance(http_error.data, (dict, list)):
+                http_error.data = build_json_response(http_error.data)
+            elif http_error.message != BaseHandler.NO_CONTENT_MESSAGE:
+                web.header('Content-Type', 'application/json')
+            raise
+    except errors.InvalidData as validation_error:
+        logger.debug("JSON schema validation failed: {0}".format(
+            validation_error
+        ))
+        data = {'error_code': validation_error.__class__.__name__,
+                'message': str(validation_error)}
+        web.badrequest()
     return build_json_response(data)
 
 
@@ -114,6 +160,8 @@ class BaseHandler(object):
     serializer = BasicSerializer
 
     fields = []
+
+    NO_CONTENT_MESSAGE = '204 No Content'
 
     @classmethod
     def render(cls, instance, fields=None):
@@ -132,11 +180,11 @@ class BaseHandler(object):
         :param headers: the headeers to send along, as a dictionary
         """
         class _nocontent(web.HTTPError):
-            message = 'No Content'
+            message = cls.NO_CONTENT_MESSAGE
 
             def __init__(self, message=''):
                 super(_nocontent, self).__init__(
-                    status='204 No Content',
+                    status=cls.NO_CONTENT_MESSAGE,
                     data=message or self.message
                 )
 
@@ -174,7 +222,6 @@ class BaseHandler(object):
         try:
             data = kwargs.pop('data', web.data())
             method = validate_method or self.validator.validate
-
             valid_data = method(data, **kwargs)
         except (
             errors.InvalidInterfacesInfo,
@@ -254,30 +301,32 @@ class SingleHandler(BaseHandler):
     def GET(self, obj_id):
         """:returns: JSONized REST object.
         :http: * 200 (OK)
+               * 400 (request or response jsonschema validation failed)
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-        return self.single.to_json(obj)
+        return self.single.to_dict(obj)
 
     @content_json
     def PUT(self, obj_id):
         """:returns: JSONized REST object.
         :http: * 200 (OK)
+               * 400 (request or response jsonschema validation failed)
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(self.single, obj_id)
-
         data = self.checked_data(
             self.validator.validate_update,
             instance=obj
         )
-
         self.single.update(obj, data)
-        return self.single.to_json(obj)
+        return self.single.to_dict(obj)
 
+    @content_json
     def DELETE(self, obj_id):
         """:returns: Empty string
         :http: * 204 (object successfully deleted)
+               * 400 (request or response jsonschema validation failed)
                * 404 (object not found in db)
         """
         obj = self.get_object_or_404(
@@ -304,6 +353,7 @@ class CollectionHandler(BaseHandler):
     def GET(self):
         """:returns: Collection of JSONized REST objects.
         :http: * 200 (OK)
+               * 400 (request or response jsonschema validation failed)
         """
         q = self.collection.eager(None, self.eager)
         return self.collection.to_json(q)
@@ -312,17 +362,16 @@ class CollectionHandler(BaseHandler):
     def POST(self):
         """:returns: JSONized REST object.
         :http: * 201 (object successfully created)
-               * 400 (invalid object data specified)
+               * 400 (invalid object data specified or
+                      request or response jsonschema validation failed)
                * 409 (object with such parameters already exists)
         """
-
         data = self.checked_data()
 
         try:
             new_obj = self.collection.create(data)
         except errors.CannotCreate as exc:
             raise self.http(400, exc.message)
-
         raise self.http(201, self.collection.single.to_json(new_obj))
 
 

@@ -39,6 +39,21 @@ def make_nailgun_logger():
     return logger
 
 
+def add_app_log_handler():
+    """Adding file logging handler for nailgun app
+    """
+    # Circular import dependency problem
+    # we import logger module in settings
+    from nailgun.settings import settings
+    if settings.APP_LOG is None:
+        return logger
+    log_file = WatchedFileHandler(settings.APP_LOG)
+    log_file.setFormatter(formatter)
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(log_file)
+    return logger
+
+
 def make_api_logger():
     """Make logger for REST API writes logs to the file
     """

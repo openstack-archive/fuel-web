@@ -135,10 +135,10 @@ casper.createNode = function(options) {
         ],
         "cpu": {
             "real": 0,
-            "0": {
+            "spec": [{
                 "family": "6",
                 "vendor_id": "GenuineIntel",
-                "mhz": "3192.766",
+                "frequency": 3192.766,
                 "stepping": "3",
                 "cache_size": "4096 KB",
                 "flags": [
@@ -147,7 +147,7 @@ casper.createNode = function(options) {
                 ],
                 "model": "2",
                 "model_name": "QEMU Virtual CPU version 0.14.1"
-            },
+            }],
             "total": 1
         },
         "memory": {
@@ -156,16 +156,20 @@ casper.createNode = function(options) {
             "maximum_capacity": 8589934592,
             "devices": [
                 {
-                    "size": 1073741824
+                    "size": 1073741824,
+                    "type": "DDR3"
                 },
                 {
-                    "size": 1073741824
+                    "size": 1073741824,
+                    "type": "DDR3"
                 },
                 {
-                    "size": 1073741824
+                    "size": 1073741824,
+                    "type": "DDR3"
                 },
                 {
-                    "size": 1073741824
+                    "size": 1073741824,
+                    "type": "DDR3"
                 }
             ]
         }

@@ -17,8 +17,9 @@ import os
 from oslo.config import cfg
 
 from fuel_agent import errors
+from fuel_agent.utils import artifact_utils as au
 from fuel_agent.utils import fs_utils as fu
-from fuel_agent.utils import img_utils as iu
+from fuel_agent.utils import grub_utils as gu
 from fuel_agent.utils import lvm_utils as lu
 from fuel_agent.utils import md_utils as mu
 from fuel_agent.utils import partition_utils as pu
@@ -136,22 +137,70 @@ class Manager(object):
 
     def do_copyimage(self):
         for image in self.image_scheme.images:
-            processing = iu.Chain()
+            processing = au.Chain()
             processing.append(image.uri)
 
             if image.uri.startswith('http://'):
-                processing.append(iu.HttpUrl)
+                processing.append(au.HttpUrl)
             elif image.uri.startswith('file://'):
-                processing.append(iu.LocalFile)
+                processing.append(au.LocalFile)
 
             if image.container == 'gzip':
-                processing.append(iu.GunzipStream)
+                processing.append(au.GunzipStream)
 
             processing.append(image.target_device)
-            processing.process()
+            # For every file system in partitioning scheme we call
+            # make_fs utility. That means we do not care whether fs image
+            # is available for a particular file system.
+            # If image is not available we assume user wants to
+            # leave this file system un-touched.
+            try:
+                processing.process()
+            except Exception:
+                pass
+
+    def mount_target(self, chroot):
+        # Here we are going to mount all file systems in partition scheme.
+        # Shorter paths earlier. We sort all mount points by their depth.
+        # ['/', '/boot', '/var', '/var/lib/mysql']
+        key = lambda x: len(x.mount.rstrip('/').split('/'))
+        for fs in sorted(self.partition_scheme.fss, key=key):
+            if fs.mount == 'swap':
+                continue
+            mount = chroot + fs.mount
+            if not os.path.isdir(mount):
+                os.makedirs(mount, mode=0o755)
+            fu.mount_fs(fs.type, fs.device, mount)
+        fu.mount_bind(chroot, '/sys')
+        fu.mount_bind(chroot, '/dev')
+        fu.mount_bind(chroot, '/proc')
+
+    def umount_target(self, chroot):
+        key = lambda x: len(x.mount.rstrip('/').split('/'))
+        for fs in sorted(self.partition_scheme.fss, key=key, reverse=True):
+            fu.umount_fs(fs.device)
+        fu.umount_fs(chroot + '/proc')
+        fu.umount_fs(chroot + '/dev')
+        fu.umount_fs(chroot + '/sys')
 
     def do_bootloader(self):
-        pass
+        chroot = '/tmp/target'
+        self.mount_target(chroot)
+
+        grub_version = gu.grub_version_guess(chroot=chroot)
+        boot_device = self.partition_scheme.boot_device(grub_version)
+        install_devices = [d.name for d in self.partition_scheme.parteds
+                           if d.install_bootloader]
+        kernel_params = self.partition_scheme.kernel_params
+
+        if grub_version == 1:
+            gu.grub1_cfg(kernel_params=kernel_params, chroot=chroot)
+            gu.grub1_install(install_devices, boot_device, chroot=chroot)
+        else:
+            gu.grub2_cfg(kernel_params=kernel_params, chroot=chroot)
+            gu.grub2_install(install_devices, chroot=chroot)
+
+        self.umount_target(chroot)
 
     def do_provisioning(self):
         self.do_parsing()

@@ -23,6 +23,7 @@ class Parted(object):
         self.name = name
         self.label = label
         self.partitions = []
+        self.install_bootloader = False
 
     def add_partition(self, **kwargs):
         # TODO(kozhukalov): validate before appending
@@ -186,6 +187,7 @@ class PartitionScheme(object):
         self.vgs = []
         self.lvs = []
         self.fss = []
+        self.kernel_params = ''
 
     def add_parted(self, **kwargs):
         parted = Parted(**kwargs)
@@ -282,19 +284,61 @@ class PartitionScheme(object):
         if found:
             return found[0]
 
-    def root_device(self):
-        for fs in self.fss:
-            if fs.mount == '/':
-                return fs.device
-        raise errors.WrongPartitionSchemeError(
-            'Error while trying to find root device: '
-            'root file system not found')
+    def lv_by_device_name(self, device_name):
+        found = filter(lambda x: x.device_name == device_name, self.lvs)
+        if found:
+            return found[0]
 
-    # Configdrive device must be a small (about 10M) partition
-    # on one of node hard drives. This partition is necessary
-    # only if one uses cloud-init with configdrive.
+    def root_device(self):
+        fs = self.fs_by_mount('/')
+        if not fs:
+            raise errors.WrongPartitionSchemeError(
+                'Error while trying to find root device: '
+                'root file system not found')
+        return fs.device
+
+    def boot_device(self, grub_version=2):
+        # We assume /boot is a separate partition. If it is not
+        # then we try to use root file system
+        boot_fs = self.fs_by_mount('/boot') or self.fs_by_mount('/')
+        if not boot_fs:
+            raise errors.WrongPartitionSchemeError(
+                'Error while trying to find boot device: '
+                'boot file system not fount, '
+                'it must be a separate mount point')
+
+        if grub_version == 1:
+            # Legacy GRUB has a limitation. It is not able to mount MD devices.
+            # If it is MD compatible it is only able to ignore MD metadata
+            # and to mount one of those devices which are parts of MD device,
+            # but it is possible only if MD device is a MIRROR.
+            md = self.md_by_name(boot_fs.device)
+            if md:
+                try:
+                    return md.devices[0]
+                except IndexError:
+                    raise errors.WrongPartitionSchemeError(
+                        'Error while trying to find boot device: '
+                        'md device %s does not have devices attached' %
+                        md.name)
+            # Legacy GRUB is not able to mount LVM devices.
+            if self.lv_by_device_name(boot_fs.device):
+                raise errors.WrongPartitionSchemeError(
+                    'Error while trying to find boot device: '
+                    'found device is %s but legacy grub is not able to '
+                    'mount logical volumes' %
+                    boot_fs.device)
+
+        return boot_fs.device
+
     def configdrive_device(self):
+        # Configdrive device must be a small (about 10M) partition
+        # on one of node hard drives. This partition is necessary
+        # only if one uses cloud-init with configdrive.
         for parted in self.parteds:
             for prt in parted.partitions:
                 if prt.configdrive:
                     return prt.name
+
+    def append_kernel_params(self, kernel_params):
+        self.kernel_params += ' ' + kernel_params

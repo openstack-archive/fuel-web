@@ -122,3 +122,11 @@ class ProcessExecutionError(Exception):
                                             'stdout': stdout,
                                             'stderr': stderr}
         super(ProcessExecutionError, self).__init__(message)
+
+
+class GrubUtilsError(BaseError):
+    pass
+
+
+class FsUtilsError(BaseError):
+    pass

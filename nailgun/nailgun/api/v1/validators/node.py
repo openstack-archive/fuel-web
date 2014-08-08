@@ -16,8 +16,11 @@
 from nailgun.api.v1.validators.base import BasicValidator
 from nailgun.api.v1.validators.json_schema.disks \
     import disks_simple_format_schema
-from nailgun.api.v1.validators.json_schema.node \
-    import node_format_schema
+from nailgun.api.v1.validators.json_schema import node as node_schema
+from nailgun.api.v1.validators.json_schema \
+    import node_agent as node_agent_schema
+from nailgun.api.v1.validators.json_schema \
+    import node_collection as node_collection_schema
 
 from nailgun import consts
 
@@ -102,11 +105,12 @@ class MetaValidator(BasicValidator):
 
 
 class NodeValidator(BasicValidator):
+    schema_module = node_schema
+
     @classmethod
     def validate(cls, data):
         # TODO(enchantner): rewrite validators to use Node object
-        data = cls.validate_json(data)
-        cls.validate_schema(data, node_format_schema)
+        data = cls.load_json(data)
 
         if data.get("status", "") != "discover":
             raise errors.NotAllowed(
@@ -187,7 +191,7 @@ class NodeValidator(BasicValidator):
     @classmethod
     def validate_update(cls, data, instance=None):
         if isinstance(data, (str, unicode)):
-            d = cls.validate_json(data)
+            d = cls.load_json(data)
         else:
             d = data
 
@@ -247,7 +251,8 @@ class NodeValidator(BasicValidator):
 
     @classmethod
     def validate_collection_update(cls, data):
-        d = cls.validate_json(data)
+        d = cls.load_json(data)
+        # TODO(akislitsky): replace with json schema validation
         if not isinstance(d, list):
             raise errors.InvalidData(
                 "Invalid json list",
@@ -259,10 +264,18 @@ class NodeValidator(BasicValidator):
         return d
 
 
+class NodeCollectionValidator(NodeValidator):
+    schema_module = node_collection_schema
+
+
+class NodeAgentValidator(NodeValidator):
+    schema_module = node_agent_schema
+
+
 class NodeDisksValidator(BasicValidator):
     @classmethod
     def validate(cls, data, node=None):
-        dict_data = cls.validate_json(data)
+        dict_data = cls.load_json(data)
         cls.validate_schema(dict_data, disks_simple_format_schema)
         cls.at_least_one_disk_exists(dict_data)
         cls.sum_of_volumes_not_greater_than_disk_size(dict_data)

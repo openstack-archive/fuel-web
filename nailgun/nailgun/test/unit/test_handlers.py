@@ -17,6 +17,7 @@
 import web
 
 from nailgun.api.v1.handlers.base import BaseHandler
+from nailgun.openstack.common import jsonutils
 
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
@@ -35,7 +36,11 @@ class TestHandlers(BaseIntegrationTest):
             self.assertTrue(resp.status_code in [404, 405])
             resp = self.app.delete(test_url, expect_errors=True)
             self.assertTrue(resp.status_code in [404, 405])
-            resp = self.app.put(test_url, expect_errors=True)
+            resp = self.app.put(
+                test_url,
+                params=jsonutils.dumps({'id': 1}),
+                expect_errors=True
+            )
             self.assertTrue(resp.status_code in [404, 405])
             resp = self.app.post(test_url, expect_errors=True)
             self.assertTrue(resp.status_code in [404, 405])

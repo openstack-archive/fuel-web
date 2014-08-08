@@ -61,7 +61,7 @@ class NodeAssignmentValidator(AssignmentValidator):
 
     @classmethod
     def validate_collection_update(cls, data, cluster_id=None):
-        data = cls.validate_json(data)
+        data = cls.load_json(data)
         cls.validate_schema(data, assignment_format_schema)
         dict_data = dict((d["id"], d["roles"]) for d in data)
         received_node_ids = dict_data.keys()
@@ -148,7 +148,7 @@ class NodeUnassignmentValidator(AssignmentValidator):
 
     @classmethod
     def validate_collection_update(cls, data, cluster_id=None):
-        list_data = cls.validate_json(data)
+        list_data = cls.load_json(data)
         cls.validate_schema(list_data, unassignment_format_schema)
         node_ids_set = set(n['id'] for n in list_data)
         nodes = db.query(Node).filter(Node.id.in_(node_ids_set))

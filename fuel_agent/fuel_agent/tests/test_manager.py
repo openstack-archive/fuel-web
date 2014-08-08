@@ -21,9 +21,9 @@ from fuel_agent import errors
 from fuel_agent import manager
 from fuel_agent.objects import partition
 from fuel_agent.tests import test_nailgun
+from fuel_agent.utils import artifact_utils as au
 from fuel_agent.utils import fs_utils as fu
 from fuel_agent.utils import hardware_utils as hu
-from fuel_agent.utils import img_utils as iu
 from fuel_agent.utils import lvm_utils as lu
 from fuel_agent.utils import md_utils as mu
 from fuel_agent.utils import partition_utils as pu
@@ -170,15 +170,15 @@ class TestManager(test_base.BaseTestCase):
         self.assertRaises(errors.WrongPartitionSchemeError,
                           self.mgr.do_configdrive)
 
-    @mock.patch.object(iu, 'GunzipStream')
-    @mock.patch.object(iu, 'LocalFile')
-    @mock.patch.object(iu, 'HttpUrl')
-    @mock.patch.object(iu, 'Chain')
+    @mock.patch.object(au, 'GunzipStream')
+    @mock.patch.object(au, 'LocalFile')
+    @mock.patch.object(au, 'HttpUrl')
+    @mock.patch.object(au, 'Chain')
     @mock.patch.object(utils, 'execute')
     @mock.patch.object(utils, 'render_and_save')
     @mock.patch.object(hu, 'list_block_devices')
-    def test_do_copyimage(self, mock_lbd, mock_u_ras, mock_u_e, mock_iu_c,
-                          mock_iu_h, mock_iu_l, mock_iu_g):
+    def test_do_copyimage(self, mock_lbd, mock_u_ras, mock_u_e, mock_au_c,
+                          mock_au_h, mock_au_l, mock_au_g):
 
         class FakeChain(object):
             processors = []
@@ -190,14 +190,14 @@ class TestManager(test_base.BaseTestCase):
                 pass
 
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
-        mock_iu_c.return_value = FakeChain()
+        mock_au_c.return_value = FakeChain()
         self.mgr.do_parsing()
         self.mgr.do_configdrive()
         self.mgr.do_copyimage()
         imgs = self.mgr.image_scheme.images
         self.assertEqual(2, len(imgs))
-        expected_processors_list = [imgs[0].uri, iu.HttpUrl, iu.GunzipStream,
+        expected_processors_list = [imgs[0].uri, au.HttpUrl, au.GunzipStream,
                                     imgs[0].target_device, imgs[1].uri,
-                                    iu.LocalFile, imgs[1].target_device]
+                                    au.LocalFile, imgs[1].target_device]
         self.assertEqual(expected_processors_list,
-                         mock_iu_c.return_value.processors)
+                         mock_au_c.return_value.processors)

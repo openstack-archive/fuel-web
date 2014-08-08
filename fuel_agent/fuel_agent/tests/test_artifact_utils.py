@@ -17,18 +17,18 @@ from oslotest import base as test_base
 import requests
 import zlib
 
-from fuel_agent.utils import img_utils as iu
+from fuel_agent.utils import artifact_utils as au
 
 
 class TestTarget(test_base.BaseTestCase):
     def setUp(self):
         super(TestTarget, self).setUp()
-        self.tgt = iu.Target()
+        self.tgt = au.Target()
 
     def test_target_next(self):
         self.assertRaises(StopIteration, self.tgt.next)
 
-    @mock.patch.object(iu.Target, '__iter__')
+    @mock.patch.object(au.Target, '__iter__')
     def test_target_target(self, mock_iter):
         mock_iter.return_value = iter(['chunk1', 'chunk2', 'chunk3'])
         m = mock.mock_open()
@@ -46,7 +46,7 @@ class TestTarget(test_base.BaseTestCase):
 class TestLocalFile(test_base.BaseTestCase):
     def setUp(self):
         super(TestLocalFile, self).setUp()
-        self.lf = iu.LocalFile('/dev/null')
+        self.lf = au.LocalFile('/dev/null')
 
     def test_localfile_next(self):
         self.lf.fileobj = mock.Mock()
@@ -61,7 +61,7 @@ class TestHttpUrl(test_base.BaseTestCase):
     def test_httpurl_iter(self, mock_r_get):
         content = ['fake content #1', 'fake content #2']
         mock_r_get.return_value.iter_content.return_value = content
-        httpurl = iu.HttpUrl('fake_url')
+        httpurl = au.HttpUrl('fake_url')
         for data in enumerate(httpurl):
             self.assertEqual(content[data[0]], data[1])
         self.assertEqual('fake_url', httpurl.url)
@@ -71,7 +71,7 @@ class TestGunzipStream(test_base.BaseTestCase):
     def test_gunzip_stream_next(self):
         content = ['fake content #1']
         compressed_stream = [zlib.compress(data) for data in content]
-        gunzip_stream = iu.GunzipStream(compressed_stream)
+        gunzip_stream = au.GunzipStream(compressed_stream)
         for data in enumerate(gunzip_stream):
             self.assertEqual(content[data[0]], data[1])
 
@@ -79,7 +79,7 @@ class TestGunzipStream(test_base.BaseTestCase):
 class TestChain(test_base.BaseTestCase):
     def setUp(self):
         super(TestChain, self).setUp()
-        self.chain = iu.Chain()
+        self.chain = au.Chain()
 
     def test_append(self):
         self.assertEqual(0, len(self.chain.processors))
@@ -89,7 +89,7 @@ class TestChain(test_base.BaseTestCase):
 
     def test_process(self):
         self.chain.processors.append('fake_uri')
-        fake_processor = mock.Mock(spec=iu.Target)
+        fake_processor = mock.Mock(spec=au.Target)
         self.chain.processors.append(fake_processor)
         self.chain.processors.append('fake_target')
         self.chain.process()

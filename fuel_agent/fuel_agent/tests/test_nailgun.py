@@ -17,6 +17,7 @@ from oslotest import base as test_base
 
 from fuel_agent.drivers import nailgun
 from fuel_agent import errors
+from fuel_agent.objects import image
 from fuel_agent.utils import hardware_utils as hu
 
 
@@ -456,17 +457,28 @@ class TestNailgun(test_base.BaseTestCase):
         mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
         p_scheme = self.drv.partition_scheme()
         i_scheme = self.drv.image_scheme(p_scheme)
-        self.assertEqual(1, len(i_scheme.images))
-        img = i_scheme.images[0]
-        self.assertEqual('gzip', img.container)
-        self.assertEqual('ext4', img.image_format)
-        self.assertEqual('/dev/mapper/os-root', img.target_device)
-        self.assertEqual(
-            'http://%s/targetimages/%s.img.gz' % (
-                self.drv.data['ks_meta']['master_ip'],
-                self.drv.data['profile'].split('_')[0]),
-            img.uri)
-        self.assertEqual(None, img.size)
+        expected_images = []
+        for fs in p_scheme.fss:
+            if fs.mount == 'swap':
+                continue
+            expected_images.append(image.Image(
+                uri='http://%s/targetimages/%s%s.img.gz' % (
+                    self.drv.data['ks_meta']['master_ip'],
+                    self.drv.data['profile'].split('_')[0],
+                    '-'.join(fs.mount.split('/')).rstrip('-')),
+                target_device=fs.device,
+                image_format='ext4',
+                container='gzip'
+            ))
+        expected_images = sorted(expected_images, key=lambda x: x.uri)
+        for i, img in enumerate(sorted(i_scheme.images, key=lambda x: x.uri)):
+            self.assertEqual(img.uri, expected_images[i].uri)
+            self.assertEqual(img.target_device,
+                             expected_images[i].target_device)
+            self.assertEqual(img.image_format,
+                             expected_images[i].image_format)
+            self.assertEqual(img.container,
+                             expected_images[i].container)
 
     def test_getlabel(self):
         self.assertEqual('', self.drv._getlabel(None))

@@ -97,3 +97,11 @@ class WrongImageDataError(BaseError):
 
 class TemplateWriteError(BaseError):
     pass
+
+
+class GrubUtilsError(BaseError):
+    pass
+
+
+class FsUtilsError(BaseError):
+    pass

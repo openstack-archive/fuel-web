@@ -15,6 +15,7 @@
 import mock
 from oslotest import base as test_base
 
+from fuel_agent import errors
 from fuel_agent.utils import fs_utils as fu
 from fuel_agent.utils import utils
 
@@ -32,3 +33,56 @@ class TestFSUtils(test_base.BaseTestCase):
         fu.make_fs('swap', ' -f ', ' -L fake_label ', '/dev/fake')
         mock_exec.assert_called_once_with('mkswap', '-f', '-L', 'fake_label',
                                           '/dev/fake')
+
+    @mock.patch.object(utils, 'execute')
+    def test_extend_fs_ok_ext3(self, mock_exec):
+        fu.extend_fs('ext3', '/dev/fake')
+        expected_calls = [
+            mock.call('e2fsck', ' -f', '/dev/fake', check_exit_code=[0]),
+            mock.call('resize2fs', '/dev/fake', check_exit_code=[0])
+        ]
+        self.assertEqual(mock_exec.call_args_list, expected_calls)
+
+    @mock.patch.object(utils, 'execute')
+    def test_extend_fs_ok_ext4(self, mock_exec):
+        fu.extend_fs('ext4', '/dev/fake')
+        expected_calls = [
+            mock.call('e2fsck', ' -f', '/dev/fake', check_exit_code=[0]),
+            mock.call('resize2fs', '/dev/fake', check_exit_code=[0])
+        ]
+        self.assertEqual(mock_exec.call_args_list, expected_calls)
+
+    @mock.patch.object(utils, 'execute')
+    def test_extend_fs_ok_xfs(self, mock_exec):
+        fu.extend_fs('xfs', '/dev/fake')
+        mock_exec.assert_called_once_with(
+            'xfs_growfs', '/dev/fake', check_exit_code=[0])
+
+    @mock.patch.object(utils, 'execute')
+    def test_extend_fs_unsupported_fs(self, mock_exec):
+        self.assertRaises(errors.FsUtilsError, fu.extend_fs,
+                          'unsupported', '/dev/fake')
+
+    @mock.patch.object(utils, 'execute')
+    def test_mount_fs(self, mock_exec):
+        fu.mount_fs('ext3', '/dev/fake', '/target')
+        mock_exec.assert_called_once_with(
+            'mount', '-t', 'ext3', '/dev/fake', '/target', check_exit_code=[0])
+
+    @mock.patch.object(utils, 'execute')
+    def test_mount_bind_no_path2(self, mock_exec):
+        fu.mount_bind('/target', '/fake')
+        mock_exec.assert_called_once_with(
+            'mount', '--bind', '/fake', '/target/fake', check_exit_code=[0])
+
+    @mock.patch.object(utils, 'execute')
+    def test_mount_bind_path2(self, mock_exec):
+        fu.mount_bind('/target', '/fake', '/fake2')
+        mock_exec.assert_called_once_with(
+            'mount', '--bind', '/fake', '/target/fake2', check_exit_code=[0])
+
+    @mock.patch.object(utils, 'execute')
+    def test_umount_fs(self, mock_exec):
+        fu.umount_fs('/fake')
+        mock_exec.assert_called_once_with(
+            'umount', '/fake', check_exit_code=[0])

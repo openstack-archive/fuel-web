@@ -134,6 +134,49 @@ class TestNodeNICsBonding(BaseIntegrationTest):
             for nic in data:
                 self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
 
+    def test_nics_bond_removed_on_node_unassign(self):
+        self.get_node_nics_info()
+        self.nics_bond_create(self.put_single)
+
+        node = self.env.nodes[0]
+        resp = self.app.post(
+            reverse(
+                'NodeUnassignmentHandler',
+                kwargs={'cluster_id': self.env.clusters[0]['id']}
+            ),
+            jsonutils.dumps([{'id': node.id}]),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+
+        self.assertEqual(node.cluster, None)
+        resp = self.env.node_nics_get(node.id)
+        self.assertEqual(resp.status_code, 200)
+        data = jsonutils.loads(resp.body)
+        for nic in data:
+            self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
+
+    def test_nics_bond_removed_on_remove_node_from_cluster(self):
+        self.get_node_nics_info()
+        self.nics_bond_create(self.put_single)
+
+        node = self.env.nodes[0]
+        resp = self.app.put(
+            reverse('ClusterHandler',
+                    kwargs={'obj_id': self.env.clusters[0]['id']}),
+            jsonutils.dumps({'nodes': []}),
+            headers=self.default_headers,
+            expect_errors=True
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        self.assertEqual(node.cluster, None)
+        resp = self.env.node_nics_get(node.id)
+        self.assertEqual(resp.status_code, 200)
+        data = jsonutils.loads(resp.body)
+        for nic in data:
+            self.assertNotEqual(nic["type"], NETWORK_INTERFACE_TYPES.bond)
+
     def test_nics_bond_create_failed_no_type(self):
         self.data.append({
             "name": 'ovs-bond0'

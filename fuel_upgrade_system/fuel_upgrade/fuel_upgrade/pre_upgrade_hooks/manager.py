@@ -22,6 +22,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml \
     import AddVersionsYaml
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_apply_versioncmp_fix \
     import ApplyVersioncmpFix
+from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_sync_dns \
+    import SyncDnsHook
 
 
 logger = logging.getLogger(__name__)
@@ -35,7 +37,8 @@ class PreUpgradeHookManager(object):
     """
 
     #: List of hook clases
-    hook_list = [AddCredentialsHook, AddVersionsYaml, ApplyVersioncmpFix]
+    hook_list = [AddCredentialsHook, AddVersionsYaml, ApplyVersioncmpFix,
+                 SyncDnsHook]
 
     def __init__(self, upgraders, config):
         #: Pre upgrade hook objects

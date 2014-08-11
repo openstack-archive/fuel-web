@@ -1,0 +1,14 @@
+controller:
+    - 01_task:
+        name: stuff
+        priority: 0
+        description: Do some stuff on node
+    - 02_task:
+        name: other_stuff
+        priority: 10
+        description: Do other stuff
+compute:
+    - 01_task:
+        name: stuff
+        priority: 0
+        description: Do some stuff on node

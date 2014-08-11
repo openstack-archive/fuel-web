@@ -145,6 +145,15 @@ def load_settings_parsers(subparsers):
     )
 
 
+def load_tasks_parser(subparsers):
+    parser = subparsers.add_parser(
+        'loadtasks', help='load provided tasks for release'
+    )
+    parser.add_argument(
+        '-d', '--dir',
+        dest='config_dir', default='/etc/fuel/')
+
+
 def action_dumpdata(params):
     import logging
 
@@ -223,6 +232,14 @@ def action_shell(params):
         code.interact(local={'db': db, 'settings': settings})
 
 
+def action_loadtasks(params):
+    from nailgun.db import db
+    from nailgun.objects import release
+
+    release.ReleaseCollection.load_task_metadata(params.config_dir)
+    db().commit()
+
+
 def action_run(params):
     from nailgun.settings import settings
 
@@ -238,7 +255,7 @@ def action_run(params):
 
     if params.authentication_method:
         auth_method = params.authentication_method
-        settings.AUTH.update({'AUTHENTICATION_METHOD' : auth_method})
+        settings.AUTH.update({'AUTHENTICATION_METHOD': auth_method})
 
     if params.config_file:
         settings.update_from_file(params.config_file)
@@ -258,6 +275,7 @@ if __name__ == "__main__":
     load_test_parsers(subparsers)
     load_shell_parsers(subparsers)
     load_settings_parsers(subparsers)
+    load_tasks_parser(subparsers)
 
     params, other_params = parser.parse_known_args()
     sys.argv.pop(1)

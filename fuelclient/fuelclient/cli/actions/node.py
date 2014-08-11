@@ -46,6 +46,9 @@ class NodeAction(Action):
                 Args.get_network_arg("Node network configuration."),
                 Args.get_disk_arg("Node disk configuration."),
                 Args.get_deploy_arg("Deploy specific nodes."),
+                Args.get_delete_from_db_arg(
+                    "Delete specific nodes only from fuel db.\n"
+                    "User should still delete node from cobbler"),
                 Args.get_provision_arg("Provision specific nodes.")
             ),
             group(
@@ -71,6 +74,7 @@ class NodeAction(Action):
             ("disk", self.attributes),
             ("deploy", self.start),
             ("provision", self.start),
+            ("delete-from-db", self.delete_from_db),
             (None, self.list)
         )
 
@@ -247,3 +251,16 @@ class NodeAction(Action):
                 column_to_join=("roles", "pending_roles")
             )
         )
+
+    @check_all("node")
+    def delete_from_db(self, params):
+        """To delete nodes from fuel db:
+                fuel node --node-id 1 --delete-from-db
+        """
+        nodes = Node.get_by_ids(params.node)
+        for node in nodes:
+            node.delete()
+        self.serializer.print_to_output(
+            {},
+            "Nodes with id {0} has been deleted from fuel db.\n"
+            "You should still delete node from cobbler".format(params.node))

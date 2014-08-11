@@ -60,9 +60,10 @@ class TestHandlers(BaseTestCase):
     def test_node_action(self):
         help_msg = ["fuel node [-h] [--env ENV]",
                     "[--list | --set | --delete | --network | --disk |"
-                    " --deploy | --provision]", "-h", "--help", " -s",
-                    "--default", " -d", "--download", " -u", "--upload",
-                    "--dir", "--node", "--node-id", " -r", "--role", "--net"]
+                    " --deploy | --delete-from-db | --provision]", "-h",
+                    "--help", " -s", "--default", " -d", "--download", " -u",
+                    "--upload", "--dir", "--node", "--node-id", " -r",
+                    "--role", "--net"]
         self.check_all_in_msg("node --help", help_msg)
 
         self.check_for_rows_in_table("node")
@@ -89,6 +90,19 @@ class TestHandlers(BaseTestCase):
         for cmd, msg in zip(commands, messages):
             self.check_for_stdout(
                 "--env-id=1 node {0} --node=1".format(cmd),
+                msg
+            )
+
+    def test_destroy_node(self):
+        self.load_data_to_nailgun_server()
+        self.run_cli_commands((
+            "env create --name=NewEnv --release=1",
+            "--env-id=1 node set --node 1 --role=controller"
+        ))
+        msg = ("Nodes with id [1] has been deleted from fuel db.\n"
+               "You should still delete node from cobbler\n")
+        self.check_for_stdout(
+                "node --node 1 --delete-from-db",
                 msg
             )
 

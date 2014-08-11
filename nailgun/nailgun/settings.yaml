@@ -56,6 +56,8 @@ KEEPALIVE:
 STATIC_DIR: "/var/tmp/nailgun_static"
 TEMPLATE_DIR: "/var/tmp/nailgun_static"
 
+TASK_DIR: "/etc/fuel/roles"
+
 RABBITMQ:
   fake: "0"
   hostname: "127.0.0.1"
@@ -63,6 +65,7 @@ RABBITMQ:
 DEFAULT_PUPPET:
   modules: "rsync://{MASTER_IP}:/puppet/modules/"
   manifests: "rsync://{MASTER_IP}:/puppet/manifests/"
+  tasks: "rsync://{MASTER_IP}:/puppet/tasks/"
 DEFAULT_REPO:
   centos: "http://{MASTER_IP}:8080/centos/x86_64"
   ubuntu: "http://{MASTER_IP}:8080/ubuntu/x86_64 precise main"

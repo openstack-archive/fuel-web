@@ -1187,3 +1187,14 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assertIn('enable_metadata_network', l3_settings['dhcp_agent'])
         self.assertEqual(l3_settings['dhcp_agent']['enable_metadata_network'],
                          True)
+
+
+TASKS = {'compute': [{'description': 'Do some stuff on node',
+                      'name': 'compute_stuff',
+                      'priority': 0}],
+         'controller': [{'description': 'Do some stuff on node',
+                         'name': 'stuff',
+                         'priority': 0},
+                        {'description': 'Do other stuff',
+                         'name': 'other_stuff',
+                         'priority': 10}]}

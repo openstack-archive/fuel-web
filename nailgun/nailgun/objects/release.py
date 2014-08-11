@@ -244,7 +244,7 @@ class Release(NailgunObject):
                 MASTER_IP=settings.MASTER_IP),
             "puppet_manifests_source":
             settings.DEFAULT_PUPPET['manifests'].format(
-                MASTER_IP=settings.MASTER_IP),
+                MASTER_IP=settings.MASTER_IP)
         }
 
         return {

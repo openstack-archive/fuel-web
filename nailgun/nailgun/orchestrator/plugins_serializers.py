@@ -21,64 +21,12 @@ from nailgun import consts
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.orchestrator.priority_serializers import PriorityStrategy
+from nailgun.orchestrator.task_serializers import make_centos_repo_task
+from nailgun.orchestrator.task_serializers import make_puppet_task
+from nailgun.orchestrator.task_serializers import make_shell_task
+from nailgun.orchestrator.task_serializers import make_sync_scripts_task
+from nailgun.orchestrator.task_serializers import make_ubuntu_repo_task
 from nailgun.plugins.manager import PluginManager
-
-
-def make_repo_task(uids, repo_data, repo_path):
-    return {
-        'type': 'upload_file',
-        'uids': uids,
-        'parameters': {
-            'path': repo_path,
-            'data': repo_data}}
-
-
-def make_ubuntu_repo_task(plugin_name, repo_url, uids):
-    repo_data = 'deb {0} /'.format(repo_url)
-    repo_path = '/etc/apt/sources.list.d/{0}.list'.format(plugin_name)
-
-    return make_repo_task(uids, repo_data, repo_path)
-
-
-def make_centos_repo_task(plugin_name, repo_url, uids):
-    repo_data = '\n'.join([
-        '[{0}]',
-        'name=Plugin {0} repository',
-        'baseurl={1}',
-        'gpgcheck=0']).format(plugin_name, repo_url)
-    repo_path = '/etc/yum.repos.d/{0}.repo'.format(plugin_name)
-
-    return make_repo_task(uids, repo_data, repo_path)
-
-
-def make_sync_scripts_task(uids, src, dst):
-    return {
-        'type': 'sync',
-        'uids': uids,
-        'parameters': {
-            'src': src,
-            'dst': dst}}
-
-
-def make_shell_task(uids, task, cwd):
-    return {
-        'type': 'shell',
-        'uids': uids,
-        'parameters': {
-            'cmd': task['parameters']['cmd'],
-            'timeout': task['parameters']['timeout'],
-            'cwd': cwd}}
-
-
-def make_puppet_task(uids, task, cwd):
-    return {
-        'type': 'puppet',
-        'uids': uids,
-        'parameters': {
-            'puppet_manifest': task['parameters']['puppet_manifest'],
-            'puppet_modules': task['parameters']['puppet_modules'],
-            'timeout': task['parameters']['timeout'],
-            'cwd': cwd}}
 
 
 class BasePluginDeploymentHooksSerializer(object):
@@ -105,17 +53,21 @@ class BasePluginDeploymentHooksSerializer(object):
                 uids = self.get_uids_for_task(task)
                 if not uids:
                     continue
-                tasks.append(self.serialize_task(
+                serialized = self.serialize_task(
                     plugin, task,
-                    make_shell_task(uids, task, plugin.slaves_scripts_path)))
+                    make_shell_task(task, plugin.slaves_scripts_path))
+                serialized['uids'] = uids
+                tasks.append(serialized)
 
             for task in puppet_tasks:
                 uids = self.get_uids_for_task(task)
                 if not uids:
                     continue
-                tasks.append(self.serialize_task(
+                serialized = self.serialize_task(
                     plugin, task,
-                    make_puppet_task(uids, task, plugin.slaves_scripts_path)))
+                    make_puppet_task(task, plugin.slaves_scripts_path))
+                serialized['uids'] = uids
+                tasks.append(serialized)
 
         return tasks
 
@@ -157,7 +109,6 @@ class PluginsPreDeploymentHooksSerializer(BasePluginDeploymentHooksSerializer):
         tasks.extend(self.sync_scripts(plugins))
         tasks.extend(self.deployment_tasks(plugins))
         self.priority.one_by_one(tasks)
-
         return tasks
 
     def create_repositories(self, plugins):

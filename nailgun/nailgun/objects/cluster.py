@@ -18,25 +18,22 @@
 Cluster-related objects and collections
 """
 
-from nailgun.objects.serializers.cluster import ClusterSerializer
+import glob
+import itertools
+import os
+
+import yaml
 
 from nailgun import consts
-
 from nailgun.db import db
-
 from nailgun.db.sqlalchemy import models
-
 from nailgun.errors import errors
-
 from nailgun.logger import logger
-
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
-
+from nailgun.objects.serializers.cluster import ClusterSerializer
 from nailgun.plugins.manager import PluginManager
-
 from nailgun.settings import settings
-
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
 from nailgun.utils import traverse
@@ -512,6 +509,47 @@ class Cluster(NailgunObject):
     @classmethod
     def get_creds(cls, instance):
         return instance.attributes.editable['access']
+
+    @classmethod
+    def get_cluster_artifacts(cls, instance):
+        roles_for_cluster = set(itertools.chain.from_iterable(
+            (node.roles for node in instance.nodes)))
+        return {'artifacts': {'roles': roles_for_cluster}}
+
+    @classmethod
+    def get_cluster_base_models(cls, instance):
+        return {'cluster': instance,
+                'settings': instance.attributes.editable}
+
+    @classmethod
+    def get_expression_models(cls, instance):
+        """In future this utility will be extended by hooks to provide
+        a way for plugins add stuff to expression parser
+        """
+        models = {}
+        models.update(cls.get_cluster_base_models(instance))
+        models.update(cls.get_cluster_artifacts(instance))
+        return models
+
+    @classmethod
+    def get_tasks(cls, instance):
+        """Load tasks provided in config directory."""
+        tasks = []
+        for config_path in cls.get_tasks_configs(instance):
+            with open(config_path) as f:
+                tasks.extend(yaml.load(f.read()))
+        return tasks
+
+    @classmethod
+    def get_tasks_configs(cls, instance):
+        config_dir = os.path.join(
+            settings.TASK_DIR.format(RELEASE_VERSION=instance.release.version),
+            '*.yaml')
+        config_files = glob.glob(config_dir)
+        if not config_files:
+            config_dir = os.path.join(settings.TASK_DIR, '*.yaml')
+            config_files = glob.glob(config_dir)
+        return config_files
 
 
 class ClusterCollection(NailgunCollection):

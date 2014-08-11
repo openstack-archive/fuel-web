@@ -38,6 +38,7 @@ from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.orchestrator import priority_serializers as ps
+from nailgun.orchestrator import task_serializers
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
@@ -798,8 +799,10 @@ class DeploymentMultinodeSerializer(object):
 
         self.set_deployment_priorities(nodes)
         self.set_critical_nodes(nodes)
+        self.set_deployment_tasks(cluster, nodes)
+        serialized_nodes = [dict_merge(node, common_attrs) for node in nodes]
 
-        return [dict_merge(node, common_attrs) for node in nodes]
+        return serialized_nodes
 
     def serialize_customized(self, cluster, nodes):
         serialized = []
@@ -840,6 +843,11 @@ class DeploymentMultinodeSerializer(object):
                                                                        attrs))
 
         return attrs
+
+    def set_deployment_tasks(self, cluster, nodes):
+        tasks_fabric = task_serializers.TaskDeploymentSerializer(cluster)
+        for node in nodes:
+            node['tasks'] = tasks_fabric.get_tasks_for_role(node['role'])
 
     def current_release(self, cluster):
         """Actual cluster release."""

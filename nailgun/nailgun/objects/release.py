@@ -18,6 +18,12 @@
 Release object and collection
 """
 
+import collections
+import glob
+import os
+
+import yaml
+
 from sqlalchemy import not_
 
 from nailgun import consts
@@ -184,11 +190,11 @@ class Release(NailgunObject):
 
     @classmethod
     def get_orchestrator_data_dict(cls, instance):
-        os = instance.operating_system.lower()
+        os_name = instance.operating_system.lower()
         default_orchestrator_data = {
             "repo_metadata": {
                 "nailgun":
-                settings.DEFAULT_REPO[os].format(
+                settings.DEFAULT_REPO[os_name].format(
                     master_ip=settings.MASTER_IP),
             },
             "puppet_modules_source":
@@ -207,6 +213,23 @@ class Release(NailgunObject):
             "puppet_manifests_source":
             instance.orchestrator_data.puppet_manifests_source
         } if instance.orchestrator_data else default_orchestrator_data
+
+    @classmethod
+    def get_task_metadata(cls, instance):
+        """Load tasks provided in config directory."""
+        task_metadata = collections.defaultdict(list)
+        for config_path in cls.task_metadata_configs(instance):
+            with open(config_path) as f:
+                data = yaml.load(f.read())
+            for role, tasks in data.iteritems():
+                task_metadata[role].extend(tasks)
+        return task_metadata
+
+    @classmethod
+    def task_metadata_configs(cls, instance):
+        version_config_dir = os.path.join(
+            settings.TASK_DIR, instance.version, '*.yaml')
+        return glob.glob(version_config_dir)
 
 
 class ReleaseCollection(NailgunCollection):

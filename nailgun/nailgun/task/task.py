@@ -54,6 +54,17 @@ def make_astute_message(method, respond_to, args):
     }
 
 
+def make_deploy_message(task, serialized_cluster):
+    # I think it is good enough solution until we will implement correct
+    # versioning for orchestrator api
+    if objects.Cluster.get_base_tasks_configs(task.cluster):
+        method = 'task_deployment'
+    else:
+        method = 'deploy'
+    args = {'task_uuid': task.uuid, 'deployment_info': serialized_cluster}
+    return make_astute_message(method, 'deploy_resp', args)
+
+
 def fake_cast(queue, messages, **kwargs):
     def make_thread(message, join_to=None):
         thread = FAKE_THREADS[message['method']](
@@ -144,14 +155,7 @@ class DeploymentTask(object):
             node.pending_addition = False
         db().commit()
 
-        return make_astute_message(
-            'deploy',
-            'deploy_resp',
-            {
-                'task_uuid': task.uuid,
-                'deployment_info': serialized_cluster
-            }
-        )
+        return make_deploy_message(task, serialized_cluster)
 
 
 class UpdateTask(object):
@@ -176,14 +180,7 @@ class UpdateTask(object):
             node.pending_addition = False
         db().commit()
 
-        return make_astute_message(
-            'deploy',
-            'deploy_resp',
-            {
-                'task_uuid': task.uuid,
-                'deployment_info': serialized_cluster
-            }
-        )
+        return make_deploy_message(task, serialized_cluster)
 
 
 class ProvisionTask(object):

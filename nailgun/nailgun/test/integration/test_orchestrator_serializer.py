@@ -1051,24 +1051,25 @@ class TestMongoNodesSerialization(OrchestratorSerializerTestBase):
 
 class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
 
+    orch_data = {
+        "repo_metadata": {
+            "nailgun":
+            "http://10.20.0.2:8080/centos-5.0/centos/fuelweb/x86_64/"
+        },
+        "puppet_modules_source":
+        "rsync://10.20.0.2/puppet/release/5.0/modules",
+        "puppet_manifests_source":
+        "rsync://10.20.0.2/puppet/release/5.0/manifests"
+    }
+
     def test_repo_and_puppet_data_w_orch_data(self):
         release_id = self.env.create_release().id
 
-        orch_data = {
-            "repo_metadata": {
-                "nailgun":
-                "http://10.20.0.2:8080/centos-5.0/centos/fuelweb/x86_64/"
-            },
-            "puppet_modules_source":
-            "rsync://10.20.0.2/puppet/release/5.0/modules",
-            "puppet_manifests_source":
-            "rsync://10.20.0.2/puppet/release/5.0/manifests"
-        }
         resp = self.app.put(
             reverse('ReleaseHandler', kwargs={'obj_id': release_id}),
             params=jsonutils.dumps(
                 {
-                    "orchestrator_data": orch_data
+                    "orchestrator_data": self.orch_data
                 }
             ),
             headers=self.default_headers,
@@ -1139,6 +1140,28 @@ class TestRepoAndPuppetDataSerialization(OrchestratorSerializerTestBase):
             fact['puppet_manifests_source'],
             'rsync://127.0.0.1:/puppet/manifests/'
         )
+
+    def test_orch_data_w_replaced_deployment_info(self):
+        replaced_deployment_info = [{'repo_metadata': 'custom_stuff'}]
+        release = self.env.create_release()
+        self.env.create(
+            cluster_kwargs={'release_id': release.id},
+            nodes_kwargs=[
+                {'roles': ['controller'], 'pending_addition': True}
+            ])
+        objects.Release.update_orchestrator_data(release, self.orch_data)
+        self.db.flush()
+        self.db.refresh(release)
+        self.env.nodes[0].replaced_deployment_info = replaced_deployment_info
+
+        facts = self.serializer.serialize(
+            self.env.clusters[0], self.env.nodes)
+        self.assertEqual(facts[0]['repo_metadata'],
+                         self.orch_data['repo_metadata'])
+        self.assertEqual(facts[0]['puppet_modules_source'],
+                         self.orch_data['puppet_modules_source'])
+        self.assertEqual(facts[0]['puppet_manifests_source'],
+                         self.orch_data['puppet_manifests_source'])
 
 
 class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):

@@ -17,6 +17,7 @@
 from mock import patch
 
 import nailgun
+from nailgun import objects
 from nailgun.db.sqlalchemy.models import Cluster
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.db.sqlalchemy.models import Node
@@ -205,11 +206,17 @@ class TestHandlers(BaseIntegrationTest):
         nodes = []
         self.env.clusters[0].replaced_provisioning_info = new_provisioning_info
         self.db.flush()
+
+        orch_data = objects.Release.get_orchestrator_data_dict(
+            self.env.clusters[0].release)
+
         for node in self.env.nodes:
-            node.replaced_deployment_info = [{
+            role_info = {
                 "field": "deployment_info",
                 "uid": node.uid
-            }]
+            }
+            role_info.update(orch_data)
+            node.replaced_deployment_info = [role_info]
             new_deployment_info.extend(node.replaced_deployment_info)
             node.replaced_provisioning_info = {
                 "field": "provisioning_info",
@@ -221,12 +228,12 @@ class TestHandlers(BaseIntegrationTest):
         self.env.launch_deployment()
         # intercepting arguments with which rpc.cast was called
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
+        received_provisioning_info = args[1][0]['args']['provisioning_info']
+        received_deployment_info = args[1][1]['args']['deployment_info']
         self.datadiff(
-            new_provisioning_info,
-            args[1][0]['args']['provisioning_info'])
+            new_provisioning_info, received_provisioning_info)
         self.datadiff(
-            new_deployment_info,
-            args[1][1]['args']['deployment_info'])
+            new_deployment_info, received_deployment_info)
 
     def test_cluster_generated_data_handler(self):
         self.env.create(

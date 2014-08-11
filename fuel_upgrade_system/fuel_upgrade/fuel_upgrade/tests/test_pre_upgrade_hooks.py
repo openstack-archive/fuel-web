@@ -22,10 +22,8 @@ from fuel_upgrade.tests.base import BaseTestCase
 from fuel_upgrade.pre_upgrade_hooks.base import PreUpgradeHookBase
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_credentials \
     import AddCredentialsHook
-from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml \
-    import AddVersionsYaml
-from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_apply_versioncmp_fix \
-    import ApplyVersioncmpFix
+from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_fix_puppet_manifests \
+    import FixPuppetManifests
 from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
 
 
@@ -97,107 +95,51 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
             for key in agrs[0][1].keys()))
 
 
-class TestAddVersionsYamlHook(TestPreUpgradeHooksBase):
+class TestFixPuppetManifestHook(TestPreUpgradeHooksBase):
+
+    iterfiles_returns = [
+        '/tmp/upgrade_path/config/5.0/modules/package/lib/puppet'
+        '/provider/package/yum.rb',
+        '/tmp/upgrade_path/config/5.0/manifests/centos-versions.yaml']
 
     def setUp(self):
-        super(TestAddVersionsYamlHook, self).setUp()
-        self.hook = AddVersionsYaml(self.upgraders, self.fake_config)
+        super(TestFixPuppetManifestHook, self).setUp()
 
-    @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml.'
-        'os.path.exists', return_value=False)
-    def test_is_required_returns_true(self, _):
-        self.assertTrue(self.hook.check_if_required())
+        conf = self.fake_config
+        conf.from_version = '5.0'
 
-    @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml.'
-        'os.path.exists', return_value=True)
-    def test_is_required_returns_false(self, _):
-        self.assertFalse(self.hook.check_if_required())
+        self.hook = FixPuppetManifests(self.upgraders, conf)
 
-    @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml.'
-        'copy')
-    def test_run(self, copy):
-        self.hook.run()
-
-        self.called_times(copy, len(self.hook.versions_yaml))
-
-
-class TestApplyVersioncmpFixHook(TestPreUpgradeHooksBase):
-
-    def setUp(self):
-        super(TestApplyVersioncmpFixHook, self).setUp()
-        self.hook = ApplyVersioncmpFix(self.upgraders, self.fake_config)
-
-    @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_apply_versioncmp_fix.'
-        'file_contains_lines', return_value=False)
-    def test_is_required_returns_true(self, _):
+    def test_is_required_returns_true(self):
         self.hook.config.from_version = '5.0'
         self.assertTrue(self.hook.check_if_required())
 
         self.hook.config.from_version = '5.0.1'
         self.assertTrue(self.hook.check_if_required())
 
-    @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_apply_versioncmp_fix.'
-        'file_contains_lines', return_value=True)
-    def test_is_required_returns_false(self, _):
-        self.hook.config.from_version = '999'
-        self.assertFalse(self.hook.check_if_required())
-
-        self.hook.config.from_version = '5.0'
+    def test_is_required_returns_false(self):
+        self.hook.config.from_version = '5.1'
         self.assertFalse(self.hook.check_if_required())
 
     @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml.'
-        'os.path.exists', return_value=False)
+        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_fix_puppet_manifests.'
+        'iterfiles', return_value=iterfiles_returns)
     @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_apply_versioncmp_fix.'
+        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_fix_puppet_manifests.'
         'copy')
-    def test_run_for_5_0(self, copy, _):
-        self.hook.config.from_version = '5.0'
-        self.hook.run()
-
-        copy.assert_called_with(
-            '/tmp/upgrade_path/config/5.0/yum.rb',
-            '/etc/puppet/modules/package/lib/puppet/provider/package/yum.rb',
-            overwrite=True)
-
-    @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml.'
-        'os.path.exists', return_value=False)
-    @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_apply_versioncmp_fix.'
-        'copy')
-    def test_run_for_5_0_1(self, copy, _):
-        self.hook.config.from_version = '5.0.1'
-        self.hook.run()
-
-        copy.assert_called_with(
-            '/tmp/upgrade_path/config/5.0.1/yum.rb',
-            '/etc/puppet/modules/package/lib/puppet/provider/package/yum.rb',
-            overwrite=True)
-
-    @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml.'
-        'os.path.exists', return_value=True)
-    @mock.patch(
-        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_apply_versioncmp_fix.'
-        'copy')
-    def test_run_for_5_0_and_5_0_1(self, copy, _):
+    def test_run(self, copy, _):
         self.hook.run()
 
         copy.assert_has_calls([
             mock.call(
-                '/tmp/upgrade_path/config/5.0/yum.rb',
-                '/etc/puppet/modules/package/lib/puppet/provider'
-                '/package/yum.rb', overwrite=True),
+                '/tmp/upgrade_path/config/5.0/modules/package/lib'
+                '/puppet/provider/package/yum.rb',
+                '/etc/puppet/modules/package/lib/puppet/provider/package'
+                '/yum.rb'),
             mock.call(
-                '/tmp/upgrade_path/config/5.0.1/yum.rb',
-                '/etc/puppet/5.0.1/modules/package/lib/puppet/provider'
-                '/package/yum.rb', overwrite=True)])
+                '/tmp/upgrade_path/config/5.0/manifests'
+                '/centos-versions.yaml',
+                '/etc/puppet/manifests/centos-versions.yaml')])
 
 
 class TestPreUpgradeHookBase(TestPreUpgradeHooksBase):

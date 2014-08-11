@@ -503,6 +503,12 @@ class TestUtils(BaseTestCase):
         self.assertFalse(utils.file_exists('path'))
         exists_mock.assert_called_once_with('path')
 
+    @mock.patch('fuel_upgrade.utils.os.walk')
+    def test_iterfiles(self, walk):
+        for _ in utils.iterfiles('path/to/dir'):
+            pass
+        walk.assert_called_once_with('path/to/dir', topdown=True)
+
 
 class TestVersionedFile(BaseTestCase):
 

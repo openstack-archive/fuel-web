@@ -149,7 +149,7 @@ class DeploymentTask(object):
         db().commit()
 
         return make_astute_message(
-            'deploy',
+            'task_deployment',
             'deploy_resp',
             {
                 'task_uuid': task.uuid,
@@ -183,11 +183,11 @@ class UpdateTask(object):
         db().commit()
 
         return make_astute_message(
-            'deploy',
+            'task_deployment',
             'deploy_resp',
             {
                 'task_uuid': task.uuid,
-                'deployment_info': serialized_cluster
+                'deployment_info': serialized_cluster,
             }
         )
 

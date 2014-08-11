@@ -195,3 +195,5 @@ LOG_RECORD_SEND_STATUS = Enum(
     'existed',
     'failed'
 )
+
+ANY_ROLE = '*'

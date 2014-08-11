@@ -270,7 +270,7 @@ def action_run(params):
 
     if params.authentication_method:
         auth_method = params.authentication_method
-        settings.AUTH.update({'AUTHENTICATION_METHOD' : auth_method})
+        settings.AUTH.update({'AUTHENTICATION_METHOD': auth_method})
 
     if params.config_file:
         settings.update_from_file(params.config_file)

@@ -15,8 +15,7 @@
 #    under the License.
 
 import logging
-
-from copy import deepcopy
+import os
 
 from fuel_upgrade import utils
 from fuel_upgrade.config import read_yaml_config
@@ -28,48 +27,23 @@ from fuel_upgrade.pre_upgrade_hooks.base import PreUpgradeHookBase
 logger = logging.getLogger(__name__)
 
 
-class AddCredentialsHook(PreUpgradeHookBase):
-    """Feature `access control on master node`
+class SyncDnsHook(PreUpgradeHookBase):
+    """Bug `Fix dns domain and search settings on Fuel Master`
     was introduced in 5.1 release [1].
 
-    In this feature fuelmenu generates credenitals
-    and saves them in /etc/astute.yaml file.
+    In this feature fuelmenu parses existing DNS
+    settings and applies them as a default instead
+    of its own in /etc/fuel/astute.yaml.
 
-    Before upgrade for this featuer we need to
-    add default credentials to the file.
+    Before upgrade for this feature, we need to
+    correct /etc/fuel/astute.yaml to match
+    /etc/resolv.conf.
 
-    [1] https://blueprints.launchpad.net/fuel/+spec/access-control-master-node
+    [1] Fix dns domain and search settings on Fuel Master
     """
 
     #: This hook required only for docker and host system engines
     enable_for_engines = [DockerUpgrader, HostSystemUpgrader]
-
-    #: Default credentials
-    credentials = {
-        "astute": {
-            "user": "naily",
-            "password": "naily"},
-        "cobbler": {
-            "user": "cobbler",
-            "password": "cobbler"},
-        "mcollective": {
-            "user": "mcollective",
-            "password": "marionette"},
-        "postgres": {
-            "keystone_dbname": "keystone",
-            "keystone_user": "keystone",
-            "keystone_password": "keystone",
-            "nailgun_dbname": "nailgun",
-            "nailgun_user": "nailgun",
-            "nailgun_password": "nailgun",
-            "ostf_dbname": "ostf",
-            "ostf_user": "ostf",
-            "ostf_password": "ostf"},
-        "keystone": {
-            "admin_token": utils.generate_uuid_string()},
-        "FUEL_ACCESS": {
-            "user": "admin",
-            "password": "admin"}}
 
     def check_if_required(self):
         """Checks if it's required to run upgrade
@@ -77,21 +51,26 @@ class AddCredentialsHook(PreUpgradeHookBase):
         :returns: True - if it is required to run this hook
                   False - if it is not required to run this hook
         """
-        is_required = not all(key in self.config.astute
-                              for key in self.credentials.keys())
+        astute_domain = self.config.astute['DNS_DOMAIN']
+        astute_search = self.config.astute['DNS_SEARCH']
+        hostname, sep, realdomain = os.uname()[1].partition('.')
 
+        is_required = not all([astute_domain == realdomain,
+                              realdomain in astute_search])
         return is_required
 
     def run(self):
-        """Adds default credentials to config file
+        """Replaces config file with current DNS domain
         """
         # NOTE(ikalnitsky): we need to re-read astute.yaml in order protect
         # us from loosing some useful injection of another hook
-        astute_config = deepcopy(self.credentials)
-        astute_config.update(
-            read_yaml_config(self.config.current_fuel_astute_path))
+        astute_config = read_yaml_config(self.config.current_fuel_astute_path)
+        hostname, sep, realdomain = os.uname()[1].partition('.')
 
-        # NOTE(eli): Just save file for backup in case
+        astute_config['DNS_DOMAIN'] = realdomain
+        astute_config['DNS_SEARCH'] = realdomain
+
+        # NOTE(mattymo): Just save file for backup in case
         # if user wants to restore it manually
         utils.copy_file(
             self.config.current_fuel_astute_path,

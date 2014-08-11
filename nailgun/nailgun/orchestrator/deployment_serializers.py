@@ -779,7 +779,19 @@ class DeploymentMultinodeSerializer(object):
         self.set_deployment_priorities(nodes)
         self.set_critical_nodes(nodes)
 
-        return [dict_merge(node, common_attrs) for node in nodes]
+        serialized_nodes = [dict_merge(node, common_attrs) for node in nodes]
+        self.hook_task_metadata(cluster, serialized_nodes)
+        return serialized_nodes
+
+    def hook_task_metadata(self, cluster, nodes):
+        # this will be moved to plugable hooks as soon they will be merged
+        # task metadata is defauldict(list) with format similar to >>
+        # {role: [list_of_tasks]}
+        task_metadata = objects.Cluster.get_cluster_tasks(cluster)
+        if task_metadata:
+            for node in nodes:
+                node['tasks'] = sorted(task_metadata[node['role']],
+                                       key=lambda task: task['priority'])
 
     def serialize_customized(self, cluster, nodes):
         serialized = []

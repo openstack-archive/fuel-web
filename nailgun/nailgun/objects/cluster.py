@@ -18,11 +18,20 @@
 Cluster-related objects and collections
 """
 
+import collections
+import glob
+import itertools
+import os
+
+import yaml
+
 from nailgun.objects.serializers.cluster import ClusterSerializer
 
 from nailgun import consts
 
 from nailgun.db import db
+
+from nailgun.expression import Expression
 
 from nailgun.db.sqlalchemy import models
 
@@ -470,6 +479,55 @@ class Cluster(NailgunObject):
             if node.replaced_deployment_info:
                 data.extend(node.replaced_deployment_info)
         return data
+
+    @classmethod
+    def get_cluster_artifacts(cls, instance):
+        roles_for_cluster = set(itertools.chain.from_iterable(
+            (node.roles for node in instance.nodes)))
+        return {'artifacts': {'roles': roles_for_cluster}}
+
+    @classmethod
+    def get_cluster_base_models(cls, instance):
+        return {'cluster': instance,
+                'settings': instance.attributes.editable}
+
+    @classmethod
+    def get_expression_models(cls, instance):
+        """In future this utility will be extended by hooks to provide
+        a way for plugins add stuff to expression parser
+        """
+        models = {}
+        models.update(cls.get_cluster_base_models(instance))
+        models.update(cls.get_cluster_artifacts(instance))
+        return models
+
+    @classmethod
+    def get_cluster_tasks(cls, instance):
+        task_metadata = collections.defaultdict(list)
+        exp_models = cls.get_expression_models(instance)
+        for role, tasks in cls.get_base_tasks(instance):
+            for task in tasks:
+                if 'condition' in task:
+                    if Expression(task['condition'], exp_models).evaluate():
+                        task_metadata[role].append(task)
+                else:
+                    task_metadata[role].append(task)
+        return task_metadata
+
+    @classmethod
+    def get_base_tasks(cls, instance):
+        """Load tasks provided in config directory."""
+        for config_path in cls.get_base_tasks_configs(instance):
+            with open(config_path) as f:
+                data = yaml.load(f.read())
+            for role, tasks in data.iteritems():
+                yield role, tasks
+
+    @classmethod
+    def get_base_tasks_configs(cls, instance):
+        version_config_dir = os.path.join(
+            settings.TASK_DIR, instance.release.version, '*.yaml')
+        return glob.glob(version_config_dir)
 
 
 class ClusterCollection(NailgunCollection):

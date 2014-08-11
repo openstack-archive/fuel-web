@@ -184,11 +184,11 @@ class Release(NailgunObject):
 
     @classmethod
     def get_orchestrator_data_dict(cls, instance):
-        os = instance.operating_system.lower()
+        os_name = instance.operating_system.lower()
         default_orchestrator_data = {
             "repo_metadata": {
                 "nailgun":
-                settings.DEFAULT_REPO[os].format(
+                settings.DEFAULT_REPO[os_name].format(
                     master_ip=settings.MASTER_IP),
             },
             "puppet_modules_source":

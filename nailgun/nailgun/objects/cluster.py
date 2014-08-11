@@ -18,6 +18,12 @@
 Cluster-related objects and collections
 """
 
+import collections
+import glob
+import os
+
+import yaml
+
 from nailgun.objects.serializers.cluster import ClusterSerializer
 
 from nailgun import consts
@@ -35,6 +41,7 @@ from nailgun.settings import settings
 
 from nailgun.utils import AttributesGenerator
 from nailgun.utils import dict_merge
+from nailgun.utils import evaluate_expression
 from nailgun.utils import traverse
 
 
@@ -451,6 +458,37 @@ class Cluster(NailgunObject):
             if node.replaced_deployment_info:
                 data.extend(node.replaced_deployment_info)
         return data
+
+    @classmethod
+    def get_cluster_tasks(cls, instance):
+        task_metadata = collections.defaultdict(list)
+        exp_models = {
+            'cluster': instance,
+            'settings': instance.attributes.editable,
+        }
+        for role, tasks in cls.get_base_tasks(instance):
+            for task in tasks:
+                if 'condition' in task:
+                    if evaluate_expression(task['condition'], exp_models):
+                        task_metadata[role].append(task)
+                else:
+                    task_metadata[role].append(task)
+        return task_metadata
+
+    @classmethod
+    def get_base_tasks(cls, instance):
+        """Load tasks provided in config directory."""
+        for config_path in cls.get_base_tasks_configs(instance):
+            with open(config_path) as f:
+                data = yaml.load(f.read())
+            for role, tasks in data.iteritems():
+                yield role, tasks
+
+    @classmethod
+    def get_base_tasks_configs(cls, instance):
+        version_config_dir = os.path.join(
+            settings.TASK_DIR, instance.release.version, '*.yaml')
+        return glob.glob(version_config_dir)
 
 
 class ClusterCollection(NailgunCollection):

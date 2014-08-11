@@ -563,6 +563,9 @@ DATABASE:
   passwd: "nailgun"
 API_LOG: ${artifacts_path}/api.log
 APP_LOG: ${artifacts_path}/app.log
+VERSION:
+  feature_groups:
+    - experimental
 EOL
 }
 

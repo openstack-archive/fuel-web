@@ -14,10 +14,16 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import patch
+
 from nailgun.db.sqlalchemy.models import Release
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import reverse
+
+
+FEATURE_MIRANTIS = {'feature_groups': ['mirantis']}
+FEATURE_EXPERIMENTAL = {'feature_groups': ['experimental']}
 
 
 class TestHandlers(BaseIntegrationTest):
@@ -63,10 +69,8 @@ class TestHandlers(BaseIntegrationTest):
             "clusters assigned"
         )
 
+    @patch.dict('nailgun.settings.settings.VERSION', FEATURE_MIRANTIS)
     def test_release_put_deployable(self):
-        # make sure that we don't have experimental mode
-        from nailgun.settings import settings
-        settings.VERSION['feature_groups'] = ['mirantis']
 
         release = self.env.create_release(api=False)
 
@@ -82,10 +86,8 @@ class TestHandlers(BaseIntegrationTest):
 
             self.assertEqual(response['is_deployable'], deployable)
 
+    @patch.dict('nailgun.settings.settings.VERSION', FEATURE_EXPERIMENTAL)
     def test_release_deployable_in_experimental(self):
-        # make sure that we have experimental mode
-        from nailgun.settings import settings
-        settings.VERSION['feature_groups'] = ['experimental']
 
         # set deployable to False
         release = self.env.create_release(api=False)

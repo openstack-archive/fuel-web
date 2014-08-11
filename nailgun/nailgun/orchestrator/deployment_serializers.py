@@ -779,7 +779,28 @@ class DeploymentMultinodeSerializer(object):
         self.set_deployment_priorities(nodes)
         self.set_critical_nodes(nodes)
 
-        return [dict_merge(node, common_attrs) for node in nodes]
+        serialized_nodes = [dict_merge(node, common_attrs) for node in nodes]
+
+        if 'experimental' in settings.VERSION['feature_groups']:
+            self.serialize_experimental(cluster, serialized_nodes)
+        return serialized_nodes
+
+    def serialize_experimental(self, cluster, serialized_nodes):
+        self.set_task_metadata(cluster, serialized_nodes)
+
+    def set_task_metadata(self, cluster, serialized_nodes):
+        # TODO(dshulyak)
+        # this will be moved to plugable hooks as soon they will be merged
+        # task metadata is defauldict(list) with format similar to >>
+        # {role: [list_of_tasks]}
+        # for each node-role pair fetch tasks by role name,
+        # sort them by priority (or depends attribute) and set as
+        # tasks facts in deployment config
+        task_metadata = objects.Cluster.get_cluster_tasks(cluster)
+        if task_metadata:
+            for node in serialized_nodes:
+                node['tasks'] = sorted(task_metadata[node['role']],
+                                       key=lambda task: task['priority'])
 
     def serialize_customized(self, cluster, nodes):
         serialized = []

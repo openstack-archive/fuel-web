@@ -18,6 +18,8 @@
 Release object and collection
 """
 
+import collections
+
 from sqlalchemy import not_
 
 from nailgun import consts
@@ -93,6 +95,7 @@ class Release(NailgunObject):
             },
             "networks_metadata": {"type": "array"},
             "attributes_metadata": {"type": "object"},
+            "task_metadata": {"type": "object"},
             "volumes_metadata": {"type": "object"},
             "modes_metadata": {"type": "object"},
             "roles_metadata": {"type": "object"},
@@ -133,11 +136,14 @@ class Release(NailgunObject):
         """
         roles = data.pop("roles", None)
         orch_data = data.pop("orchestrator_data", None)
+        task_metadata = data.pop("task_metadata", None)
         super(Release, cls).update(instance, data)
         if roles is not None:
             cls.update_roles(instance, roles)
         if orch_data:
             cls.update_orchestrator_data(instance, orch_data)
+        if task_metadata is not None:
+            cls.load_task_metadata(instance, task_metadata)
         return instance
 
     @classmethod
@@ -184,11 +190,11 @@ class Release(NailgunObject):
 
     @classmethod
     def get_orchestrator_data_dict(cls, instance):
-        os = instance.operating_system.lower()
+        os_name = instance.operating_system.lower()
         default_orchestrator_data = {
             "repo_metadata": {
                 "nailgun":
-                settings.DEFAULT_REPO[os].format(
+                settings.DEFAULT_REPO[os_name].format(
                     master_ip=settings.MASTER_IP),
             },
             "puppet_modules_source":
@@ -208,6 +214,18 @@ class Release(NailgunObject):
             instance.orchestrator_data.puppet_manifests_source
         } if instance.orchestrator_data else default_orchestrator_data
 
+    @classmethod
+    def load_task_metadata(cls, instance, data):
+        """Load tasks provided in config directory."""
+        task_metadata = collections.defaultdict(list)
+        for role, tasks in instance.task_metadata.iteritems():
+            task_metadata[role].extend(tasks)
+            if role in data:
+                task_metadata[role].extend(data.pop(role))
+        for role, tasks in data.iteritems():
+            task_metadata[role].extend(tasks)
+        instance.task_metadata = task_metadata
+
 
 class ReleaseCollection(NailgunCollection):
     """Release collection
@@ -215,3 +233,8 @@ class ReleaseCollection(NailgunCollection):
 
     #: Single Release object class
     single = Release
+
+    @classmethod
+    def load_task_metadata(cls, data):
+        for release in cls.all():
+            cls.single.load_task_metadata(release, data)

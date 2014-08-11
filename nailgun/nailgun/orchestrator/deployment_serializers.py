@@ -250,7 +250,8 @@ class DeploymentMultinodeSerializer(object):
             'role': role,
             # TODO (eli): need to remove, requried
             # for the fake thread only
-            'online': node.online
+            'online': node.online,
+            'tasks': cls.get_tasks_for_role(node, role)
         }
 
         node_attrs.update(
@@ -347,6 +348,11 @@ class DeploymentMultinodeSerializer(object):
     def filter_by_roles(cls, nodes, roles):
         return filter(
             lambda node: node['role'] in roles, nodes)
+
+    @classmethod
+    def get_tasks_for_role(cls, node, role):
+        """Returns list of tasks for a given role."""
+        return role.release.task_metadata.get(role.name, [])
 
 
 class DeploymentHASerializer(DeploymentMultinodeSerializer):

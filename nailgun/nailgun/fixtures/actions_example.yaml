@@ -1,0 +1,14 @@
+controller:
+    -
+     name: stuff
+     priority: 0
+     description: Do some stuff on node
+    -
+     name: other_stuff
+     priority: 10
+     description: Do other stuff
+compute:
+    -
+     name: compute_stuff
+     priority: 0
+     description: Do some stuff on node

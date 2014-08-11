@@ -68,6 +68,7 @@ class Release(Base):
     modes_metadata = Column(JSON, default={})
     roles_metadata = Column(JSON, default={})
     wizard_metadata = Column(JSON, default={})
+    task_metadata = Column(JSON, default={})
     role_list = relationship(
         "Role",
         backref="release",

@@ -16,6 +16,7 @@
 
 
 import mock
+import os
 
 from fuel_upgrade.tests.base import BaseTestCase
 
@@ -26,6 +27,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_versions_yaml \
     import AddVersionsYaml
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_apply_versioncmp_fix \
     import ApplyVersioncmpFix
+from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_sync_dns \
+    import SyncDnsHook
 from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
 
 
@@ -95,6 +98,57 @@ class TestAddCredentialsHook(TestPreUpgradeHooksBase):
         self.assertTrue(all(
             key in self.additional_keys
             for key in agrs[0][1].keys()))
+
+
+class TestSyncDnsHook(TestPreUpgradeHooksBase):
+
+    def setUp(self):
+        super(TestSyncDnsHook, self).setUp()
+        self.additional_keys = [
+            'DNS_DOMAIN',
+            'DNS_SEARCH']
+
+    def get_hook(self, astute):
+        config = self.fake_config
+        config.astute = astute
+        return SyncDnsHook(self.upgraders, config)
+
+    def test_is_required_returns_true(self):
+        hook = self.get_hook({
+            'DNS_DOMAIN': 'veryunlikelydomain',
+            'DNS_SEARCH': 'veryunlikelydomain'})
+        self.assertTrue(hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        hostname, sep, realdomain = os.uname()[1].partition('.')
+        hook = self.get_hook({
+            'DNS_DOMAIN': realdomain,
+            'DNS_SEARCH': realdomain})
+
+        self.assertFalse(hook.check_if_required())
+
+    @mock.patch('fuel_upgrade.pre_upgrade_hooks.'
+                'from_5_0_to_any_sync_dns.utils')
+    def test_run(self, utils_mock):
+        file_key = 'this_key_was_here_before_upgrade'
+        hook = self.get_hook({file_key: file_key})
+        hook.run()
+
+        utils_mock.copy_file.assert_called_once_with(
+            '/etc/fuel/astute.yaml',
+            '/etc/fuel/astute.yaml_0',
+            overwrite=False)
+
+        args = utils_mock.save_as_yaml.call_args
+        self.assertEqual(args[0][0], '/etc/fuel/astute.yaml')
+
+        # Check that the key which was in file
+        # won't be overwritten
+        self.additional_keys.append(file_key)
+        # Check that all required keys are in method call
+        self.assertTrue(all(
+            key in self.additional_keys
+            for key in args[0][1].keys()))
 
 
 class TestAddVersionsYamlHook(TestPreUpgradeHooksBase):

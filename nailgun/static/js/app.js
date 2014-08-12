@@ -27,7 +27,7 @@ define(
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
     'jsx!views/clusters_page',
-    'views/releases_page',
+    'jsx!views/releases_page',
     'jsx!views/notifications_page',
     'views/support_page',
     'views/capacity_page'
@@ -266,15 +266,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
         },
         listReleases: function() {
             var releases = new models.Releases();
-            var tasks = new models.Tasks();
-            tasks.fetch = function(options) {
-                return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
-            };
-            $.when(releases.fetch(), tasks.fetch()).done(_.bind(function() {
-                this.setPage(ReleasesPage, {
-                    collection: releases,
-                    tasks: tasks
-                });
+            releases.fetch().done(_.bind(function() {
+                this.setPage(ReleasesPage, {releases: releases});
             }, this));
         },
         showNotifications: function() {

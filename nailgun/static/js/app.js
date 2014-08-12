@@ -27,7 +27,7 @@ define(
     'views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
     'jsx!views/clusters_page',
-    'views/releases_page',
+    'jsx!views/releases_page',
     'views/notifications_page',
     'views/support_page',
     'views/capacity_page'
@@ -272,7 +272,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             };
             $.when(releases.fetch(), tasks.fetch()).done(_.bind(function() {
                 this.setPage(ReleasesPage, {
-                    collection: releases,
+                    releases: releases,
                     tasks: tasks
                 });
             }, this));

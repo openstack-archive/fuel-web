@@ -25,6 +25,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_credentials \
     import AddCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_fix_puppet_manifests \
     import FixPuppetManifests
+from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_kill_supervisord \
+    import KillSupervisordHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_sync_dns \
     import SyncDnsHook
 from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
@@ -200,6 +202,33 @@ class TestFixPuppetManifestHook(TestPreUpgradeHooksBase):
                 '/tmp/upgrade_path/config/5.0/manifests'
                 '/centos-versions.yaml',
                 '/etc/puppet/manifests/centos-versions.yaml')])
+
+
+class TestKillSupervisordHook(TestPreUpgradeHooksBase):
+
+    def setUp(self):
+        super(TestKillSupervisordHook, self).setUp()
+        self.hook = KillSupervisordHook(self.upgraders, self.fake_config)
+
+    def test_is_required_returns_true(self):
+        self.hook.config.from_version = '5.0'
+        self.assertTrue(self.hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        self.hook.config.from_version = '5.1'
+        self.assertFalse(self.hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_kill_supervisord.'
+        'safe_exec_cmd')
+    def test_run(self, exec_cmd):
+        self.hook.run()
+
+        exec_cmd.assert_has_calls([
+            mock.call('kill -9 `cat /var/run/supervisord.pid`'),
+            mock.call('rm -f /var/run/supervisord.pid'),
+            mock.call('pkill -f "docker.*D.*attach.*fuel-core"'),
+            mock.call('pkill -f "dockerctl.*start.*attach"')])
 
 
 class TestPreUpgradeHookBase(TestPreUpgradeHooksBase):

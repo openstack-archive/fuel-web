@@ -48,7 +48,8 @@ requirejs.config({
         collections: 'js/collections',
         views: 'js/views',
         view_mixins: 'js/view_mixins',
-        component_mixins: 'js/component_mixins'
+        component_mixins: 'js/component_mixins',
+        controls: 'js/views/controls'
     },
     shim: {
         underscore: {

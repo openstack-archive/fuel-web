@@ -19,10 +19,9 @@ define(
     'models',
     'utils',
     'jsx!component_mixins',
-    'jsx!views/dialogs',
     'views/wizard'
 ],
-function(React, models, utils, componentMixins, dialogViews, wizard) {
+function(React, models, utils, componentMixins, wizard) {
     'use strict';
     var ClustersPage, ClusterList, Cluster, RegisterTrial;
 

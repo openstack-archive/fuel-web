@@ -20,6 +20,8 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_add_credentials \
     import AddCredentialsHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_fix_puppet_manifests \
     import FixPuppetManifests
+from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_kill_supervisord \
+    import KillSupervisordHook
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_sync_dns \
     import SyncDnsHook
 
@@ -35,7 +37,11 @@ class PreUpgradeHookManager(object):
     """
 
     #: List of hook clases
-    hook_list = [AddCredentialsHook, FixPuppetManifests, SyncDnsHook]
+    hook_list = [
+        AddCredentialsHook,
+        FixPuppetManifests,
+        KillSupervisordHook,
+        SyncDnsHook]
 
     def __init__(self, upgraders, config):
         #: Pre upgrade hook objects

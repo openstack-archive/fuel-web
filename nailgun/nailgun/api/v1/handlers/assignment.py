@@ -52,9 +52,9 @@ class NodeAssignmentHandler(BaseHandler):
         )
 
         for node in nodes:
-            objects.Node.add_into_cluster(node, cluster_id)
-            objects.Node.update_pending_roles(node, data[node.id])
-            objects.Node.update(node, {"pending_addition": True})
+            objects.Node.update(node, {"cluster_id": cluster_id,
+                                       "pending_roles": data[node.id],
+                                       "pending_addition": True})
 
 
 class NodeUnassignmentHandler(BaseHandler):

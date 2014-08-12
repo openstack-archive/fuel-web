@@ -121,17 +121,14 @@
             },
             "release_page": {
                 "title": "Releases",
-                "release_name": "OpenStack Release",
-                "release_version": "Version",
-                "release_status": "Status",
-                "release_actions": "Actions",
+                "name": "OpenStack Release",
+                "version": "Version",
+                "state": "Status",
                 "no_releases_message": "There are no releases available.",
                 "release": {
-                    "configure_button": "Configure",
-                    "active": "Active",
+                    "available": "Active",
                     "error": "Error",
-                    "not_available": "Not available",
-                    "download_progress": "Downloading"
+                    "not_available": "Not available"
                 }
             },
             "clusters_page": {
@@ -713,17 +710,14 @@
             },
             "release_page": {
                 "title": "版本",
-                "release_name": "名称",
-                "release_version": "发布",
-                "release_status": "状态",
-                "release_actions": "操作",
+                "name": "名称",
+                "version": "发布",
+                "state": "状态",
                 "no_releases_message": "没有版本可用",
                 "release": {
-                    "configure_button": "配置",
-                    "active": "活动",
+                    "available": "活动",
                     "error": "错误",
-                    "not_available": "不可用",
-                    "download_progress": "下载中"
+                    "not_available": "不可用"
                 }
             },
             "clusters_page": {
@@ -1271,17 +1265,14 @@
             },
             "release_page": {
                 "title": "リリース",
-                "release_name": "OpenStack リリース",
-                "release_version": "バージョン",
-                "release_status": "ステータス",
-                "release_actions": "アクション",
+                "name": "OpenStack リリース",
+                "version": "バージョン",
+                "state": "ステータス",
                 "no_releases_message": "利用可能なリリースはありません。",
                 "release": {
-                    "configure_button": "設定",
-                    "active": "アクティブ",
+                    "available": "アクティブ",
                     "error": "エラー",
-                    "not_available": "利用不可",
-                    "download_progress": "ダウンロード中"
+                    "not_available": "利用不可"
                 }
             },
             "clusters_page": {
@@ -1760,17 +1751,14 @@
             },
             "release_page": {
                 "title": "출시",
-                "release_name": "OpenStack 출시",
-                "release_version": "버젼",
-                "release_status": "상태",
-                "release_actions": "작업",
+                "name": "OpenStack 출시",
+                "version": "버젼",
+                "state": "상태",
                 "no_releases_message": "사용 가능한 출시가 없습니다.",
                 "release": {
-                    "configure_button": "설정",
-                    "active": "유효한",
+                    "available": "유효한",
                     "error": "오류",
-                    "not_available": "사용할 수 없음",
-                    "download_progress": "다운로드중"
+                    "not_available": "사용할 수 없음"
                 }
             },
             "clusters_page": {

@@ -1213,14 +1213,6 @@ label {cursor: default;}
   overflow: hidden;
 }
 
-.table-releases-box {
-  background-color: @fuel-white-color;
-  padding: 20px 20px 10px 20px;
-  border-radius: 4px;
-}
-
-.table-releases th {color: @fuel-dark-2;}
-
 .modal {
   .help-block {
     .font-layout-mixin(@font-size-small-2, @fuel-dark-2);
@@ -3037,6 +3029,7 @@ form.rhel-license {
 }
 
 form.create-cluster-form {
+  margin-bottom: 10px;
   .input-large { width: 330px; }
   select { width: 340px; }
   .control-label {
@@ -3046,14 +3039,6 @@ form.create-cluster-form {
   .controls { margin-left: 160px; }
 }
 
-div.create-cluster-form {
-  max-height: 545px;
-  .control-group {margin-bottom: 10px;}
-  .radio-checkbox-group label {
-    margin-right: 20px;
-  }
-}
-
 .control-group {
   > .parameter-box {
   display: block;
@@ -3061,35 +3046,6 @@ div.create-cluster-form {
     font-size: @font-size-small-2;
     }
   }
-}
-
-form.create-cluster-form {
-  margin-bottom: 10px;
-}
-
-.releases-table .error {
-  color: #ee0000;
-}
-
-.rhel-license-dialog {
-  max-height: 520px;
-}
-
-.rhel-license {
-  label {
-    text-align: left;
-  }
-  span.help-inline {
-    padding-left: 30px;
-    .position(relative, @left: -26px);
-  }
-  label.control-label {
-    width: 170px;
-  }
-}
-
-.download_progress .progress {
-  .css-linear-gradient-mixin(#435267, @fuel-light-1);
 }
 
 .credentials .radio-checkbox-group {
@@ -3104,23 +3060,28 @@ form.create-cluster-form {
   width: 335px;
 }
 
-.releases-table {
-  cursor: default;
-  .release-name { min-width: 200px; }
-  .release-version { width: 100px; }
-  .release-status { min-width: 200px; }
-  .release-actions { min-width: 120px; }
-  td {
-    height: 30px;
-    vertical-align: middle;
-  }
-  th.name {
-    width: 60%;
-  }
-  th.version,
-  th.status,
-  th.actions {
-    width: 12%;
+.table-releases-box {
+  background-color: @fuel-white-color;
+  padding: 20px 20px 10px 20px;
+  .border-radius-mixin(4px);
+  .releases-table {
+    th {
+      min-width: 200px;
+      width: 12%;
+      &.name { width: 60%; }
+      &.version { min-width: 100px; }
+    }
+    td {
+      height: 30px;
+      vertical-align: middle;
+    }
+    .release-error {
+      font-size: @font-size-small-2;
+      color: @fuel-red;
+    }
+    .download_progress .progress {
+      .css-linear-gradient-mixin(#435267, @fuel-light-1);
+    }
   }
 }
 
@@ -3130,10 +3091,6 @@ form.create-cluster-form {
   margin-top: -40px;
   .font-layout-mixin(@font-size-small-3, @fuel-white-color);
   text-align: center;
-}
-
-.release-error {
-  font-size: @font-size-small-2;
 }
 
 input.input-append {

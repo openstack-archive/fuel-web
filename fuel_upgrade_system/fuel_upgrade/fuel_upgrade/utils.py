@@ -642,6 +642,16 @@ def file_exists(file_path):
     return os.path.exists(file_path)
 
 
+def iterfiles(path):
+    """Iterate over all files in the ``path`` directory.
+
+    :param path: a path to find in
+    """
+    for root, dirnames, filenames in os.walk(path, topdown=True):
+        for filename in filenames:
+            yield os.path.join(root, filename)
+
+
 class VersionedFile(object):
     """Set of methods for versioned files.
     If `basename` is '/tmp/file.ext' it allows

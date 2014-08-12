@@ -364,6 +364,10 @@ class Cluster(NailgunObject):
             net_manager.clear_assigned_networks,
             nodes_to_remove
         )
+        map(
+            net_manager.clear_bond_configuration,
+            nodes_to_remove
+        )
         cls.replace_provisioning_info_on_nodes(instance, [], nodes_to_remove)
         cls.replace_deployment_info_on_nodes(instance, [], nodes_to_remove)
         map(

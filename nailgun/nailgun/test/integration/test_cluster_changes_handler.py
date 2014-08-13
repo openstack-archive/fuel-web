@@ -420,8 +420,8 @@ class TestHandlers(BaseIntegrationTest):
                 'shared': False,
                 'L2': {
                     'router_ext': True,
-                    'network_type': 'flat',
-                    'physnet': 'physnet1',
+                    'network_type': 'local',
+                    'physnet': None,
                     'segment_id': None},
                 'L3': {
                     'subnet': u'172.16.0.0/24',
@@ -601,9 +601,6 @@ class TestHandlers(BaseIntegrationTest):
                                 "name": u"eth1"},
                             {
                                 "action": "add-br",
-                                "name": "br-ex"},
-                            {
-                                "action": "add-br",
                                 "name": "br-mgmt"},
                             {
                                 "action": "add-br",
@@ -612,13 +609,12 @@ class TestHandlers(BaseIntegrationTest):
                                 "action": "add-br",
                                 "name": "br-fw-admin"},
                             {
+                                "action": "add-br",
+                                "name": "br-ex"},
+                            {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-storage"],
                                 "tags": [102, 0]},
-                            {
-                                "action": "add-patch",
-                                "bridges": [u"br-eth0", "br-ex"],
-                                "trunks": [0]},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-mgmt"],
@@ -626,6 +622,10 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth1", "br-fw-admin"],
+                                "trunks": [0]},
+                            {
+                                "action": "add-patch",
+                                "bridges": [u"br-eth0", "br-ex"],
                                 "trunks": [0]},
                         ]
                     }

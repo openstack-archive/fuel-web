@@ -60,10 +60,10 @@ class NeutronManager(NetworkManager):
                 "enable_dhcp": False
             },
             "L2": {
-                "network_type": "flat",
+                "network_type": "local",
                 "segment_id": None,
                 "router_ext": True,
-                "physnet": "physnet1"
+                "physnet": None
             },
             "tenant": "admin",
             "shared": False

@@ -143,6 +143,29 @@ class Node(NailgunObject):
         ).first()
 
     @classmethod
+    def should_have_public(cls, instance=None, uid=None):
+        """Determine whether this node has Public network.
+
+        :param instance: Node DB instance
+        :param uid: Node ID
+        :returns: True when node has Public network
+        """
+        node = instance or cls.get_by_mac_or_uid(node_uid=uid)
+        if not node:
+            return False
+        if node.cluster.net_provider == \
+                consts.CLUSTER_NET_PROVIDERS.nova_network:
+            return True
+        assignment = \
+            node.cluster.attributes.editable.get('public_network_assignment')
+        if not assignment or assignment['assign_to_all_nodes']['value']:
+            return True
+        ctrl = set(['primary-controller', 'controller', 'zabbix-server'])
+        if ctrl & (set(node.roles) or set(node.pending_roles)):
+            return True
+        return False
+
+    @classmethod
     def create(cls, data):
         """Create Node instance with specified parameters in DB.
         This includes:

@@ -364,6 +364,19 @@
             description: "Public key(s) to include in authorized_keys on deployed nodes"
             weight: 70
             type: "text"
+        public_network_assignment:
+          metadata:
+            weight: 50
+            label: "Public network assignment"
+            restrictions:
+              - condition: "cluster:net_provider != 'neutron'"
+                action: "hide"
+          assign_to_all_nodes:
+            value: false
+            label: "Assign public network to all nodes"
+            description: "When disabled, public network will be assigned to controllers and zabbix-server only"
+            weight: 10
+            type: "checkbox"
         corosync:
           metadata:
             weight: 50

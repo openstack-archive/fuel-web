@@ -83,7 +83,8 @@ class NeutronNetworkConfigurationSerializer(NetworkConfigurationSerializer):
     network_cfg_fields = (
         'dns_nameservers', 'segmentation_type', 'net_l23_provider',
         'floating_ranges', 'vlan_range', 'gre_id_range',
-        'base_mac', 'internal_cidr', 'internal_gateway')
+        'base_mac', 'internal_cidr', 'internal_gateway',
+        'assign_public_to_all_nodes')
 
     @classmethod
     def serialize_for_cluster(cls, cluster):

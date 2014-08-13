@@ -588,6 +588,66 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                 self.assertEqual(attrs['storage_address'],
                                  node['storage_address'])
 
+    def test_public_serialization_for_different_roles(self):
+        attrs = self.cluster.attributes.editable
+        self.assertEqual(
+            attrs['public_network_assignment']['assign_to_all_nodes']['value'],
+            True
+        )
+        attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
+            False
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': self.cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+
+        serialized_nodes = self.serializer.serialize(self.cluster,
+                                                     self.cluster.nodes)
+        need_public_nodes_count = set()
+        for node in serialized_nodes:
+            node_db = self.db.query(Node).get(int(node['uid']))
+            is_public = objects.Node.should_have_public(obj=node_db)
+            if is_public:
+                need_public_nodes_count.add(int(node['uid']))
+
+            for node_attrs in node['nodes']:
+                is_public_for_role = \
+                    objects.Node.should_have_public(uid=int(node_attrs['uid']))
+                self.assertEqual('public_address' in node_attrs,
+                                 is_public_for_role)
+                self.assertEqual('public_netmask' in node_attrs,
+                                 is_public_for_role)
+
+            self.assertEqual(
+                {
+                    'action': 'add-br',
+                    'name': 'br-ex'
+                } in node['network_scheme']['transformations'],
+                is_public
+            )
+            self.assertEqual(
+                {
+                    'action': 'add-patch',
+                    'bridges': ['br-eth0', 'br-ex'],
+                    'trunks': [0]
+                } in node['network_scheme']['transformations'],
+                is_public
+            )
+            self.assertEqual(
+                'ex' in node['network_scheme']['roles'],
+                is_public
+            )
+            self.assertEqual(
+                'br-ex' in node['network_scheme']['endpoints'],
+                is_public
+            )
+
+        self.assertEqual(len(need_public_nodes_count), 1)
+
     def test_neutron_l3_gateway(self):
         cluster = self.create_env('ha_compact', 'gre')
         test_gateway = "192.168.111.255"

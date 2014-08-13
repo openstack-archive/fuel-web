@@ -81,7 +81,8 @@ class DeploymentMultinodeSerializer(object):
         keyfunc = lambda node: bool(node.replaced_deployment_info)
         for customized, node_group in groupby(nodes, keyfunc):
             if customized and not ignore_customized:
-                serialized_nodes.extend(cls.serialize_customized(node_group))
+                serialized_nodes.extend(
+                    cls.serialize_customized(cluster, node_group))
             else:
                 serialized_nodes.extend(cls.serialize_generated(
                     cluster, node_group))
@@ -98,10 +99,14 @@ class DeploymentMultinodeSerializer(object):
         return [dict_merge(node, common_attrs) for node in nodes]
 
     @classmethod
-    def serialize_customized(self, nodes):
+    def serialize_customized(cls, cluster, nodes):
         serialized = []
+        release_data = objects.Release.get_orchestrator_data_dict(
+            cls.current_release(cluster))
         for node in nodes:
-            serialized.extend(node.replaced_deployment_info)
+            for role_data in node.replaced_deployment_info:
+                role_data.update(release_data)
+                serialized.append(role_data)
         return serialized
 
     @classmethod

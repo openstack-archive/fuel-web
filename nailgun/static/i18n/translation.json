@@ -452,7 +452,7 @@
                         "vcenter_password_description": "vCenter admin password",
                         "vcenter_cluster": "Cluster",
                         "vcenter_cluster_description": "vCenter cluster name. If you have multiple clusters, use comma separated names.",
-                        "vcenter_ip_warning": "Invalid IP format",
+                        "vcenter_ip_warning": "Invalid IPv4 address",
                         "vcenter_user_warning": "Username cannot be empty",
                         "vcenter_password_warning": "Password cannot be empty",
                         "vcenter_cluster_warning": "Invalid cluster list"

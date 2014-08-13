@@ -550,7 +550,11 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         # Check common attrs
         for node in node_list:
             node_db = self.db.query(Node).get(int(node['uid']))
-            self.assertEqual(node['public_netmask'], '255.255.255.0')
+            is_public = objects.Node.should_have_public(obj=node_db)
+            if is_public:
+                self.assertEqual(node['public_netmask'], '255.255.255.0')
+            else:
+                self.assertFalse('public_netmask' in node)
             self.assertEqual(node['internal_netmask'], '255.255.255.0')
             self.assertEqual(node['storage_netmask'], '255.255.255.0')
             self.assertEqual(node['uid'], str(node_db.id))
@@ -571,8 +575,8 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         for i in range(len(expected_list)):
             expected_list[i]['attrs'] = {'uid': node_uids[i],
                                          'internal_address': man_ip[i],
-                                         'public_address': pub_ip[i],
                                          'storage_address': sto_ip[i]}
+        expected_list[0]['attrs']['public_address'] = pub_ip[0]
 
         for expected in expected_list:
             attrs = expected['attrs']
@@ -580,13 +584,66 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             for role in expected['roles']:
                 nodes = self.filter_by_role(node_list, role)
                 node = self.filter_by_uid(nodes, attrs['uid'])[0]
-
+                is_public = objects.Node.should_have_public(uid=node['uid'])
                 self.assertEqual(attrs['internal_address'],
                                  node['internal_address'])
-                self.assertEqual(attrs['public_address'],
-                                 node['public_address'])
+                if is_public:
+                    self.assertEqual(attrs['public_address'],
+                                     node['public_address'])
+                else:
+                    self.assertFalse('public_address' in node)
                 self.assertEqual(attrs['storage_address'],
                                  node['storage_address'])
+
+    def test_public_serialization_for_different_roles(self):
+        serialized_nodes = self.serializer.serialize(self.cluster,
+                                                     self.cluster.nodes)
+        need_public_nodes_count = set()
+        for node in serialized_nodes:
+            node_db = self.db.query(Node).get(int(node['uid']))
+            is_public = objects.Node.should_have_public(obj=node_db)
+            if is_public:
+                need_public_nodes_count.add(int(node['uid']))
+
+            net_man = objects.Node.get_network_manager(node_db)
+            self.assertEqual(
+                net_man._get_ip_by_network_name(node_db, 'public') is not None,
+                is_public
+            )
+
+            for node_attrs in node['nodes']:
+                is_public_for_role = \
+                    objects.Node.should_have_public(uid=int(node_attrs['uid']))
+                self.assertEqual('public_address' in node_attrs,
+                                 is_public_for_role)
+                self.assertEqual('public_netmask' in node_attrs,
+                                 is_public_for_role)
+
+            self.assertEqual(
+                {
+                    'action': 'add-br',
+                    'name': 'br-ex'
+                } in node['network_scheme']['transformations'],
+                is_public
+            )
+            self.assertEqual(
+                {
+                    'action': 'add-patch',
+                    'bridges': ['br-eth0', 'br-ex'],
+                    'trunks': [0]
+                } in node['network_scheme']['transformations'],
+                is_public
+            )
+            self.assertEqual(
+                'ex' in node['network_scheme']['roles'],
+                is_public
+            )
+            self.assertEqual(
+                'br-ex' in node['network_scheme']['endpoints'],
+                is_public
+            )
+
+        self.assertEqual(len(need_public_nodes_count), 1)
 
     def test_neutron_l3_gateway(self):
         cluster = self.create_env('ha_compact', 'gre')
@@ -856,7 +913,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
         self.assertEqual(attrs['management_vip'], '192.168.0.7')
-        self.assertEqual(attrs['public_vip'], '172.16.0.8')
+        self.assertEqual(attrs['public_vip'], '172.16.0.5')
 
         # last_contrller
         controllers = self.get_controllers(self.cluster.id)

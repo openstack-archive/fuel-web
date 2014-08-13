@@ -502,6 +502,9 @@ class NetworkDeploymentSerializer(object):
             netw_data = node.network_data
             addresses = {}
             for net in node.cluster.network_groups:
+                if net.name == 'public' and \
+                        not objects.Node.should_have_public(obj=node):
+                    continue
                 if net.meta.get('render_addr_mask'):
                     addresses.update(cls.get_addr_mask(
                         netw_data,
@@ -610,7 +613,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         # Interfaces assignment
         attrs = {'network_data': interfaces}
-        attrs.update(cls.interfaces_list(network_data))
+        attrs.update(cls.interfaces_list(node, network_data))
 
         if cluster.network_config.net_manager == 'VlanManager':
             attrs.update(cls.add_vlan_interfaces(node))
@@ -656,6 +659,10 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         for network in network_data:
             network_name = network['name']
+            if network_name == 'public' and \
+                    not objects.Node.should_have_public(obj=node):
+                continue
+
             name = cls.__make_interface_name(network.get('dev'),
                                              network.get('vlan'))
 
@@ -699,11 +706,14 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 }
 
     @classmethod
-    def interfaces_list(cls, network_data):
+    def interfaces_list(cls, node, network_data):
         """Generate list of interfaces
         """
         interfaces = {}
         for network in network_data:
+            if network['name'] == 'public' and \
+                    not objects.Node.should_have_public(obj=node):
+                continue
             if_name = cls.__make_interface_name(
                 network.get('dev'),
                 network.get('vlan'))
@@ -962,10 +972,15 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         for ngname, brname in netgroup_mapping:
             # Here we get a dict with network description for this particular
             # node with its assigned IPs and device names for each network.
+            if ngname == 'public' and \
+                    not objects.Node.should_have_public(obj=node):
+                continue
             netgroup = nm.get_node_network_by_netname(node, ngname)
             attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
             netgroups[ngname] = netgroup
-        attrs['endpoints']['br-ex']['gateway'] = netgroups['public']['gateway']
+        if objects.Node.should_have_public(obj=node):
+            attrs['endpoints']['br-ex']['gateway'] = \
+                netgroups['public']['gateway']
 
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:

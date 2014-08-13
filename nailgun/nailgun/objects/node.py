@@ -143,6 +143,20 @@ class Node(NailgunObject):
         ).first()
 
     @classmethod
+    def should_have_public(cls, obj=None, uid=None):
+        if not obj and not uid:
+            return False
+        node = obj or cls.get_by_mac_or_uid(node_uid=uid)
+        ctrl = set(['primary-controller', 'controller', 'zabbix-server'])
+        if ctrl & set(node.roles):
+            return True
+        if 'compute' in node.roles and \
+                node.cluster.net_provider == consts. \
+                CLUSTER_NET_PROVIDERS.nova_network:
+            return True
+        return False
+
+    @classmethod
     def create(cls, data):
         """Create Node instance with specified parameters in DB.
         This includes:

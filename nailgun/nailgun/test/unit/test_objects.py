@@ -19,6 +19,7 @@ from itertools import cycle
 from itertools import ifilter
 
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import reverse
 
 from nailgun.errors import errors
 
@@ -26,6 +27,8 @@ from nailgun import consts
 
 from nailgun.db import NoCacheQuery
 from nailgun.db.sqlalchemy.models import Task
+
+from nailgun.openstack.common import jsonutils
 
 from nailgun import objects
 
@@ -203,6 +206,47 @@ class TestNodeObject(BaseIntegrationTest):
         self.assertEqual(
             objects.Node.get_kernel_params(self.env.nodes[0]),
             kernel_params)
+
+    def test_should_have_public(self):
+        self.env.create(
+            cluster_kwargs={
+                'net_provider': 'neutron'},
+            nodes_kwargs=[
+                {'roles': ['controller', 'cinder'], 'pending_addition': True},
+                {'roles': ['compute', 'cinder'], 'pending_addition': True},
+                {'roles': ['compute'], 'pending_addition': True},
+                {'roles': [], 'pending_roles': ['cinder'],
+                 'pending_addition': True},
+                {'roles': [], 'pending_roles': ['controller'],
+                 'pending_addition': True}])
+
+        cluster = self.env.clusters[0]
+        attrs = cluster.attributes.editable
+        self.assertEqual(
+            attrs['public_network_assignment']['assign_to_all_nodes']['value'],
+            False
+        )
+
+        nodes_w_public_count = 0
+        for node in self.env.nodes:
+            nodes_w_public_count += int(objects.Node.should_have_public(node))
+        self.assertEqual(nodes_w_public_count, 2)
+
+        attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
+            True
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+
+        nodes_w_public_count = 0
+        for node in self.env.nodes:
+            nodes_w_public_count += int(objects.Node.should_have_public(node))
+        self.assertEqual(nodes_w_public_count, 5)
 
     def test_removing_from_cluster(self):
         self.env.create(

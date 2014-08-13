@@ -60,10 +60,10 @@ class NeutronManager(NetworkManager):
                 "enable_dhcp": False
             },
             "L2": {
-                "network_type": "flat",
+                "network_type": "local",
                 "segment_id": None,
                 "router_ext": True,
-                "physnet": "physnet1"
+                "physnet": None
             },
             "tenant": "admin",
             "shared": False
@@ -103,12 +103,7 @@ class NeutronManager(NetworkManager):
         res = {
             "base_mac": cluster.network_config.base_mac,
             "segmentation_type": cluster.network_config.segmentation_type,
-            "phys_nets": {
-                "physnet1": {
-                    "bridge": "br-ex",
-                    "vlan_range": None
-                }
-            }
+            "phys_nets": {}
         }
         if cluster.network_config.segmentation_type == 'gre':
             res["tunnel_id_ranges"] = join_range(

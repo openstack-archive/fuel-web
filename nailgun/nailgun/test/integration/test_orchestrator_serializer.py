@@ -30,6 +30,7 @@ from nailgun.orchestrator.deployment_serializers import\
 from nailgun.orchestrator.deployment_serializers import\
     DeploymentMultinodeSerializer
 
+from nailgun.db.sqlalchemy import models
 from nailgun import objects
 
 from nailgun.settings import settings
@@ -513,6 +514,23 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
         self.assert_nodes_with_role(nodes, 'compute', 2)
         self.assert_nodes_with_role(nodes, 'cinder', 3)
 
+    def set_assign_public_to_all_nodes(self, cluster_db, value):
+        attrs = cluster_db.attributes.editable
+        attrs['public_network_assignment']['assign_to_all_nodes']['value'] = \
+            value
+        resp = self.app.patch(
+            reverse(
+                'ClusterAttributesHandler',
+                kwargs={'cluster_id': cluster_db.id}),
+            params=jsonutils.dumps({'editable': attrs}),
+            headers=self.default_headers
+        )
+        self.assertEqual(200, resp.status_code)
+        self.assertEqual(
+            attrs['public_network_assignment']['assign_to_all_nodes']['value'],
+            value
+        )
+
     def test_serialize_nodes(self):
         serialized_nodes = self.serializer.serialize_nodes(self.cluster.nodes)
         self.assert_roles_flattened(serialized_nodes)
@@ -542,51 +560,138 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
                          'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
 
     def test_node_list(self):
-        node_list = self.serializer.get_common_attrs(self.cluster)['nodes']
+        assign_public_options = (False, True)
+        for assign in assign_public_options:
+            self.set_assign_public_to_all_nodes(self.cluster, assign)
 
-        # Check right nodes count with right roles
-        self.assert_roles_flattened(node_list)
+            # Clear IPs
+            for ip in self.db.query(models.IPAddr):
+                self.db.delete(ip)
+            self.db.flush()
 
-        # Check common attrs
-        for node in node_list:
-            node_db = self.db.query(Node).get(int(node['uid']))
-            self.assertEqual(node['public_netmask'], '255.255.255.0')
-            self.assertEqual(node['internal_netmask'], '255.255.255.0')
-            self.assertEqual(node['storage_netmask'], '255.255.255.0')
-            self.assertEqual(node['uid'], str(node_db.id))
-            self.assertEqual(node['name'], 'node-%d' % node_db.id)
-            self.assertEqual(node['fqdn'], 'node-%d.%s' %
-                                           (node_db.id, settings.DNS_DOMAIN))
+            objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+            node_list = self.serializer.get_common_attrs(self.cluster)['nodes']
 
-        # Check uncommon attrs
-        node_uids = sorted(set([n['uid'] for n in node_list]))
-        man_ip = [str(ip) for ip in IPRange('192.168.0.1', '192.168.0.4')]
-        pub_ip = [str(ip) for ip in IPRange('172.16.0.2', '172.16.0.5')]
-        sto_ip = [str(ip) for ip in IPRange('192.168.1.1', '192.168.1.4')]
-        expected_list = [
-            {'roles': ['controller', 'cinder']},
-            {'roles': ['compute', 'cinder']},
-            {'roles': ['compute']},
-            {'roles': ['cinder']}]
-        for i in range(len(expected_list)):
-            expected_list[i]['attrs'] = {'uid': node_uids[i],
-                                         'internal_address': man_ip[i],
-                                         'public_address': pub_ip[i],
-                                         'storage_address': sto_ip[i]}
+            roles_w_public_count = 0
 
-        for expected in expected_list:
-            attrs = expected['attrs']
+            # Check right nodes count with right roles
+            self.assert_roles_flattened(node_list)
 
-            for role in expected['roles']:
-                nodes = self.filter_by_role(node_list, role)
-                node = self.filter_by_uid(nodes, attrs['uid'])[0]
+            # Check common attrs
+            for node in node_list:
+                node_db = self.db.query(Node).get(int(node['uid']))
+                is_public = objects.Node.should_have_public(node_db)
+                if is_public:
+                    self.assertEqual(node['public_netmask'], '255.255.255.0')
+                    roles_w_public_count += 1
+                else:
+                    self.assertFalse('public_netmask' in node)
+                self.assertEqual(node['internal_netmask'], '255.255.255.0')
+                self.assertEqual(node['storage_netmask'], '255.255.255.0')
+                self.assertEqual(node['uid'], str(node_db.id))
+                self.assertEqual(node['name'], 'node-%d' % node_db.id)
+                self.assertEqual(
+                    node['fqdn'],
+                    'node-%d.%s' % (node_db.id, settings.DNS_DOMAIN))
 
-                self.assertEqual(attrs['internal_address'],
-                                 node['internal_address'])
-                self.assertEqual(attrs['public_address'],
-                                 node['public_address'])
-                self.assertEqual(attrs['storage_address'],
-                                 node['storage_address'])
+            # We have 6 roles on 4 nodes summarily.
+            # Only 1 node w 2 roles (controller+cinder) will have public
+            # when 'assign_to_all_nodes' option is switched off
+            self.assertEqual(roles_w_public_count, 6 if assign else 2)
+
+            # Check uncommon attrs
+            node_uids = sorted(set([n['uid'] for n in node_list]))
+            man_ip = [str(ip) for ip in IPRange('192.168.0.1', '192.168.0.4')]
+            pub_ip = [str(ip) for ip in IPRange('172.16.0.2', '172.16.0.5')]
+            sto_ip = [str(ip) for ip in IPRange('192.168.1.1', '192.168.1.4')]
+            expected_list = [
+                {'roles': ['controller', 'cinder']},
+                {'roles': ['compute', 'cinder']},
+                {'roles': ['compute']},
+                {'roles': ['cinder']}]
+            for i in range(len(expected_list)):
+                expected_list[i]['attrs'] = {'uid': node_uids[i],
+                                             'internal_address': man_ip[i],
+                                             'storage_address': sto_ip[i]}
+                if assign:
+                    expected_list[i]['attrs']['public_address'] = pub_ip[i]
+            if not assign:
+                expected_list[0]['attrs']['public_address'] = pub_ip[0]
+
+            for expected in expected_list:
+                attrs = expected['attrs']
+
+                for role in expected['roles']:
+                    nodes = self.filter_by_role(node_list, role)
+                    node = self.filter_by_uid(nodes, attrs['uid'])[0]
+                    is_public = objects.Node.should_have_public(
+                        objects.Node.get_by_mac_or_uid(node_uid=node['uid']))
+                    self.assertEqual(attrs['internal_address'],
+                                     node['internal_address'])
+                    if is_public:
+                        self.assertEqual(attrs['public_address'],
+                                         node['public_address'])
+                    else:
+                        self.assertFalse('public_address' in node)
+                    self.assertEqual(attrs['storage_address'],
+                                     node['storage_address'])
+
+    def test_public_serialization_for_different_roles(self):
+        assign_public_options = (False, True)
+        for assign in assign_public_options:
+            self.set_assign_public_to_all_nodes(self.cluster, assign)
+
+            objects.NodeCollection.prepare_for_deployment(self.cluster.nodes)
+            serialized_nodes = self.serializer.serialize(self.cluster,
+                                                         self.cluster.nodes)
+            need_public_nodes_count = set()
+            for node in serialized_nodes:
+                node_db = self.db.query(Node).get(int(node['uid']))
+                is_public = objects.Node.should_have_public(node_db)
+                if is_public:
+                    need_public_nodes_count.add(int(node['uid']))
+
+                net_man = objects.Node.get_network_manager(node_db)
+                self.assertEqual(
+                    net_man._get_ip_by_network_name(
+                        node_db, 'public') is not None,
+                    is_public
+                )
+
+                for node_attrs in node['nodes']:
+                    is_public_for_role = objects.Node.should_have_public(
+                        objects.Node.get_by_mac_or_uid(
+                            node_uid=int(node_attrs['uid'])))
+                    self.assertEqual('public_address' in node_attrs,
+                                     is_public_for_role)
+                    self.assertEqual('public_netmask' in node_attrs,
+                                     is_public_for_role)
+
+                self.assertEqual(
+                    {
+                        'action': 'add-br',
+                        'name': 'br-ex'
+                    } in node['network_scheme']['transformations'],
+                    is_public
+                )
+                self.assertEqual(
+                    {
+                        'action': 'add-patch',
+                        'bridges': ['br-eth0', 'br-ex'],
+                        'trunks': [0]
+                    } in node['network_scheme']['transformations'],
+                    is_public
+                )
+                self.assertEqual(
+                    'ex' in node['network_scheme']['roles'],
+                    is_public
+                )
+                self.assertEqual(
+                    'br-ex' in node['network_scheme']['endpoints'],
+                    is_public
+                )
+
+            self.assertEqual(len(need_public_nodes_count), 4 if assign else 1)
 
     def test_neutron_l3_gateway(self):
         cluster = self.create_env('ha_compact', 'gre')
@@ -856,7 +961,7 @@ class TestNeutronOrchestratorHASerializer(OrchestratorSerializerTestBase):
         attrs = self.serializer.get_common_attrs(self.cluster)
         # vips
         self.assertEqual(attrs['management_vip'], '192.168.0.7')
-        self.assertEqual(attrs['public_vip'], '172.16.0.8')
+        self.assertEqual(attrs['public_vip'], '172.16.0.5')
 
         # last_contrller
         controllers = self.get_controllers(self.cluster.id)

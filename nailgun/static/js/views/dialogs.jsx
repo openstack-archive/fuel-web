@@ -140,7 +140,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             task.save({}, {url: _.result(this.model, 'url') + '/changes', type: 'PUT'})
                 .done(_.bind(function() {
                     this.$el.modal('hide');
-                    app.page.deploymentTaskStarted();
+                    app.page.startDeployment();
                 }, this))
                 .fail(_.bind(this.displayError, this));
         },
@@ -185,7 +185,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             task.save({}, {url: _.result(this.model, 'url') + '/stop_deployment', type: 'PUT'})
                 .done(_.bind(function() {
                     this.$el.modal('hide');
-                    app.page.deploymentTaskStarted();
+                    app.page.startDeployment();
                 }, this))
                 .fail(_.bind(function(response) {
                     this.displayError({
@@ -212,7 +212,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             task.save({}, {url: _.result(this.model, 'url') + '/reset', type: 'PUT'})
                 .done(_.bind(function() {
                     this.$el.modal('hide');
-                    app.page.deploymentTaskStarted();
+                    app.page.startDeployment();
                 }, this))
                 .fail(_.bind(this.displayError, this));
         }
@@ -235,7 +235,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                     task.save({}, {url: _.result(this.model, 'url') + '/update', type: 'PUT'})
                         .done(_.bind(function() {
                             this.$el.modal('hide');
-                            app.page.deploymentTaskStarted();
+                            app.page.startDeployment();
                         }, this))
                         .fail(_.bind(this.displayError, this));
                 }, this))

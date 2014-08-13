@@ -22,9 +22,8 @@ define(
     'js/coccyx_mixins',
     'models',
     'keystone_client',
-    'views/common',
     'views/login_page',
-    'views/cluster_page',
+    'jsx!views/cluster_page',
     'views/cluster_page_tabs/nodes_tab',
     'jsx!views/clusters_page',
     'views/releases_page',
@@ -32,7 +31,7 @@ define(
     'views/support_page',
     'views/capacity_page'
 ],
-function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -215,7 +214,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             var cluster, tasks;
             var render = function() {
                 this.setPage(ClusterPage, {
-                    model: cluster,
+                    cluster: cluster,
                     activeTab: activeTab,
                     tabOptions: tabOptions,
                     tasks: tasks

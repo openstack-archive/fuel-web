@@ -12,9 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-class Dhcp(object):
-    def __init__(self, start, end, network):
-        self.start = start
+import logging
+
+from fuel_agent_ci.objects import Object
+
+LOG = logging.getLogger(__name__)
+
+
+class Dhcp(Object):
+    __typename__ = 'dhcp'
+
+    def __init__(self, env, name, begin, end, network):
+        self.name = name
+        self.env = env
+        self.begin = begin
         self.end = end
         self.network = network
         self.hosts = []
@@ -28,3 +39,18 @@ class Dhcp(object):
 
     def set_bootp(self, file):
         self.bootp = {'file': file}
+
+    def start(self):
+        if not self.status():
+            LOG.debug('Starting DHCP')
+            self.env.driver.dhcp_start(self)
+
+    def stop(self):
+        if self.status():
+            LOG.debug('Stopping DHCP')
+            self.env.driver.dhcp_stop(self)
+
+    def status(self):
+        status = self.env.driver.dhcp_status(self)
+        LOG.debug('DHCP status %s' % status)
+        return status

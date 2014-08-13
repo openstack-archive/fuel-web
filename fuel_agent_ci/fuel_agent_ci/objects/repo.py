@@ -19,30 +19,27 @@ from fuel_agent_ci.objects import Object
 LOG = logging.getLogger(__name__)
 
 
-class Http(Object):
-    __typename__ = 'http'
+class Repo(Object):
+    __typename__ = 'repo'
 
-    def __init__(self, env, name, http_root, port, network,
-                 status_url='/status', shutdown_url='/shutdown'):
-        self.name = name
+    def __init__(self, env, name, url, path, branch='master'):
         self.env = env
-        self.http_root = http_root
-        self.port = port
-        self.network = network
-        self.status_url = status_url
-        self.shutdown_url = shutdown_url
+        self.name = name
+        self.url = url
+        self.path = path
+        self.branch = branch
 
-    def start(self):
+    def clone(self):
         if not self.status():
-            LOG.debug('Starting HTTP server')
-            self.env.driver.http_start(self)
+            LOG.debug('Cloning repo %s' % self.name)
+            self.env.driver.repo_clone(self)
 
-    def stop(self):
+    def clean(self):
         if self.status():
-            LOG.debug('Stopping HTTP server')
-            self.env.driver.http_stop(self)
+            LOG.debug('Cleaning repo %s' % self.name)
+            self.env.driver.repo_clean(self)
 
     def status(self):
-        status = self.env.driver.http_status(self)
-        LOG.debug('HTTP status %s' % status)
+        status = self.env.driver.repo_status(self)
+        LOG.debug('Repo %s status %s' % (self.name, status))
         return status

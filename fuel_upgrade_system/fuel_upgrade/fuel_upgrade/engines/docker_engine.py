@@ -17,7 +17,6 @@
 import glob
 import logging
 import os
-import re
 import time
 
 from copy import deepcopy
@@ -253,7 +252,7 @@ class DockerUpgrader(UpgradeEngine):
         containers_to_creation = utils.topological_sorting(graph)
         logger.debug(u'Resolved creation order {0}'.format(
             containers_to_creation))
-
+        self._log_iptables()
         for container_id in containers_to_creation:
             container = self.container_by_id(container_id)
             logger.debug(u'Start container {0}'.format(container))
@@ -282,6 +281,11 @@ class DockerUpgrader(UpgradeEngine):
 
             if container.get('after_container_creation_command'):
                 self.run_after_container_creation_command(container)
+            if container.get('container_name'):
+                self.clean_docker_iptables_rules(container)
+        # Save current rules
+        utils.safe_exec_cmd('service iptables save')
+        self._log_iptables()
 
     def run_after_container_creation_command(self, container):
         """Runs command in container with retries in
@@ -466,10 +470,6 @@ class DockerUpgrader(UpgradeEngine):
 
             self.stop_container(container['Id'])
 
-        public_ports = self._get_docker_container_public_ports(
-            containers_to_stop)
-        self.clean_docker_iptables_rules(public_ports)
-
     def _get_docker_container_public_ports(self, containers):
         """Returns public ports
 
@@ -486,7 +486,7 @@ class DockerUpgrader(UpgradeEngine):
         return [container_port['PublicPort']
                 for container_port in container_ports]
 
-    def clean_docker_iptables_rules(self, ports):
+    def clean_docker_iptables_rules(self, container):
         """Sometimes when we run docker stop
         (version dc9c28f/0.10.0) it doesn't clean
         iptables rules, as result when we run new
@@ -509,31 +509,9 @@ class DockerUpgrader(UpgradeEngine):
             8777 -j DNAT --to-destination 172.17.0.11:8777
           -A DOCKER -d 10.108.0.2/32 -p tcp -m tcp --dport \
             8777 -j DNAT --to-destination 172.17.0.11:8777
-
-        :param ports: list of ports to clean up
         """
-        rules_to_deletion = []
-        patterns = [re.compile(
-            '^-A DOCKER .+ --dport {0} '
-            '-j DNAT --to-destination .+'.format(port)) for port in ports]
-        patterns.extend([re.compile(
-            '^-A DOCKER -d \S+ -p \S+ -m \S+ '
-            '--dport {0} -j DNAT --to-destination '
-            '\S+:{0}') for port in ports])
-
-        for rule in utils.exec_cmd_iterator('iptables -t nat -S'):
-            for pattern in patterns:
-                if pattern.match(rule):
-                    rules_to_deletion.append(rule)
-
-        self._log_iptables()
-        for rule in rules_to_deletion:
-            # Remove -A (add) prefix and use -D (delete) instead
-            utils.safe_exec_cmd('iptables -t nat -D {0}'.format(rule[2:]))
-
-        # Save current rules
-        utils.safe_exec_cmd('service iptables save')
-        self._log_iptables()
+        utils.safe_exec_cmd('dockerctl post_start_hooks {0}'.format(
+            container['container_name']))
 
     def _log_iptables(self):
         """Method for additional logging of iptables rules

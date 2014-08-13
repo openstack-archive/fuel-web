@@ -120,14 +120,11 @@ class TestDockerUpgrader(BaseTestCase):
         ports = [1, 2, 3]
         self.upgrader._get_docker_container_public_ports = mock.MagicMock(
             return_value=ports)
-        self.upgrader.clean_docker_iptables_rules = mock.MagicMock()
         self.docker_mock.containers.return_value = all_images
         self.upgrader.stop_fuel_containers()
         self.assertEqual(
             self.docker_mock.stop.call_args_list,
             [mock.call(3, 10), mock.call(4, 10)])
-        self.upgrader.clean_docker_iptables_rules.assert_called_once_with(
-            ports)
 
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd')
     @mock.patch('fuel_upgrade.engines.docker_engine.os.path.exists',
@@ -347,41 +344,11 @@ class TestDockerUpgrader(BaseTestCase):
                 docker_ports_mapping))
 
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.safe_exec_cmd')
-    @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd_iterator')
-    def test_clean_docker_iptables_rules(
-            self, exec_cmd_iterator_mock, exec_cmd_mock):
-        iptables_rules = [
-            '-A DOCKER -p tcp -m tcp --dport 1 -j DNAT '
-            '--to-destination 172.17.0.7:1',
-            '-A POSTROUTING -p tcp -m tcp --dport 3 -j DNAT '
-            '--to-destination 172.17.0.7:3',
-            '-A DOCKER -p tcp -m tcp --dport 2 -j DNAT '
-            '--to-destination 172.17.0.3:2',
-            '-A DOCKER -d 10.108.0.2/32 -p tcp -m tcp --dport '
-            '4 -j DNAT --to-destination 172.17.0.11:4']
-
-        exec_cmd_iterator_mock.return_value = iter(iptables_rules)
-        self.upgrader.clean_docker_iptables_rules([1, 2, 3, 4])
-
-        expected_calls = [
-            mock.call('iptables -t nat -S'),
-            mock.call('iptables -S'),
-            mock.call('cat /etc/sysconfig/iptables.save'),
-            mock.call(
-                'iptables -t nat -D  DOCKER -p tcp -m tcp --dport 1 -j DNAT '
-                '--to-destination 172.17.0.7:1'),
-            mock.call(
-                'iptables -t nat -D  DOCKER -p tcp -m tcp --dport 2 -j DNAT '
-                '--to-destination 172.17.0.3:2'),
-            mock.call(
-                'iptables -t nat -D  DOCKER -d 10.108.0.2/32 -p tcp -m tcp '
-                '--dport 4 -j DNAT --to-destination 172.17.0.11:4'),
-            mock.call('service iptables save'),
-            mock.call('iptables -t nat -S'),
-            mock.call('iptables -S'),
-            mock.call('cat /etc/sysconfig/iptables.save')]
-
-        self.assertEqual(exec_cmd_mock.call_args_list, expected_calls)
+    def test_clean_docker_iptables_rules(self, exec_cmd_mock):
+        container = {'container_name': 'astute'}
+        self.upgrader.clean_docker_iptables_rules(container)
+        exec_cmd_mock.assert_called_once_with(
+            'dockerctl post_start_hooks astute')
 
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.files_size',
                 return_value=5)

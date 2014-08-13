@@ -601,9 +601,6 @@ class TestHandlers(BaseIntegrationTest):
                                 "name": u"eth1"},
                             {
                                 "action": "add-br",
-                                "name": "br-ex"},
-                            {
-                                "action": "add-br",
                                 "name": "br-mgmt"},
                             {
                                 "action": "add-br",
@@ -612,13 +609,12 @@ class TestHandlers(BaseIntegrationTest):
                                 "action": "add-br",
                                 "name": "br-fw-admin"},
                             {
+                                "action": "add-br",
+                                "name": "br-ex"},
+                            {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-storage"],
                                 "tags": [102, 0]},
-                            {
-                                "action": "add-patch",
-                                "bridges": [u"br-eth0", "br-ex"],
-                                "trunks": [0]},
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth0", "br-mgmt"],
@@ -626,6 +622,10 @@ class TestHandlers(BaseIntegrationTest):
                             {
                                 "action": "add-patch",
                                 "bridges": [u"br-eth1", "br-fw-admin"],
+                                "trunks": [0]},
+                            {
+                                "action": "add-patch",
+                                "bridges": [u"br-eth0", "br-ex"],
                                 "trunks": [0]},
                         ]
                     }
@@ -761,6 +761,8 @@ class TestHandlers(BaseIntegrationTest):
         args, kwargs = nailgun.task.manager.rpc.cast.call_args
         self.assertEqual(len(args), 2)
         self.assertEqual(len(args[1]), 2)
+
+        print args[1][1]['args']['deployment_info'][0]['network_scheme']
 
         self.datadiff(args[1][0], provision_msg)
         self.datadiff(args[1][1], deployment_msg)

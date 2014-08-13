@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
@@ -71,6 +72,7 @@ class NeutronConfig(NetworkingConfig):
         nullable=False,
         default=consts.NEUTRON_L23_PROVIDERS.ovs
     )
+    assign_public_to_all_modes = Column(Boolean, nullable=False, default=True)
 
 
 class NovaNetworkConfig(NetworkingConfig):

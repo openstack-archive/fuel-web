@@ -502,6 +502,9 @@ class NetworkDeploymentSerializer(object):
             netw_data = node.network_data
             addresses = {}
             for net in node.cluster.network_groups:
+                if net.name == 'public' and \
+                        not objects.Node.should_have_public(obj=node):
+                    continue
                 if net.meta.get('render_addr_mask'):
                     addresses.update(cls.get_addr_mask(
                         netw_data,
@@ -610,7 +613,7 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         # Interfaces assignment
         attrs = {'network_data': interfaces}
-        attrs.update(cls.interfaces_list(network_data))
+        attrs.update(cls.interfaces_list(node, network_data))
 
         if cluster.network_config.net_manager == 'VlanManager':
             attrs.update(cls.add_vlan_interfaces(node))
@@ -656,6 +659,10 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         for network in network_data:
             network_name = network['name']
+            if network_name == 'public' and \
+                    not objects.Node.should_have_public(obj=node):
+                continue
+
             name = cls.__make_interface_name(network.get('dev'),
                                              network.get('vlan'))
 
@@ -699,11 +706,14 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
                 }
 
     @classmethod
-    def interfaces_list(cls, network_data):
+    def interfaces_list(cls, node, network_data):
         """Generate list of interfaces
         """
         interfaces = {}
         for network in network_data:
+            if network['name'] == 'public' and \
+                    not objects.Node.should_have_public(obj=node):
+                continue
             if_name = cls.__make_interface_name(
                 network.get('dev'),
                 network.get('vlan'))
@@ -876,18 +886,20 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             'interfaces': {},  # It's a list of physical interfaces.
             'endpoints': {
                 'br-storage': {},
-                'br-ex': {},
                 'br-mgmt': {},
                 'br-fw-admin': {},
             },
             'roles': {
-                'ex': 'br-ex',
                 'management': 'br-mgmt',
                 'storage': 'br-storage',
                 'fw-admin': 'br-fw-admin',
             },
             'transformations': []
         }
+
+        if objects.Node.should_have_public(obj=node):
+            attrs['endpoints']['br-ex'] = {}
+            attrs['roles']['ex'] = 'br-ex'
 
         nm = objects.Node.get_network_manager(node)
         iface_types = consts.NETWORK_INTERFACE_TYPES
@@ -945,7 +957,11 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         # We have to add them after br-ethXX bridges because it is the way
         # to provide a right ordering of ifdown/ifup operations with
         # IP interfaces.
-        for brname in ('br-ex', 'br-mgmt', 'br-storage', 'br-fw-admin'):
+        brnames = ['br-mgmt', 'br-storage', 'br-fw-admin']
+        if objects.Node.should_have_public(obj=node):
+            brnames.append('br-ex')
+
+        for brname in brnames:
             attrs['transformations'].append({
                 'action': 'add-br',
                 'name': brname
@@ -954,10 +970,12 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         # Populate IP address information to endpoints.
         netgroup_mapping = [
             ('storage', 'br-storage'),
-            ('public', 'br-ex'),
             ('management', 'br-mgmt'),
             ('fuelweb_admin', 'br-fw-admin'),
         ]
+        if objects.Node.should_have_public(obj=node):
+            netgroup_mapping.append(('public', 'br-ex'))
+
         netgroups = {}
         for ngname, brname in netgroup_mapping:
             # Here we get a dict with network description for this particular
@@ -965,7 +983,9 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
             netgroup = nm.get_node_network_by_netname(node, ngname)
             attrs['endpoints'][brname]['IP'] = [netgroup['ip']]
             netgroups[ngname] = netgroup
-        attrs['endpoints']['br-ex']['gateway'] = netgroups['public']['gateway']
+        if objects.Node.should_have_public(obj=node):
+            attrs['endpoints']['br-ex']['gateway'] = \
+                netgroups['public']['gateway']
 
         # Connect interface bridges to network bridges.
         for ngname, brname in netgroup_mapping:

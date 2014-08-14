@@ -58,6 +58,7 @@ class TestDockerUpgrader(BaseTestCase):
             'stop_fuel_containers',
             'save_db',
             'save_cobbler_configs',
+            'save_astute_keys',
             'upload_images',
             'create_containers',
             'generate_configs',
@@ -297,6 +298,16 @@ class TestDockerUpgrader(BaseTestCase):
             'docker cp fuel-core-0-cobbler:/var/lib/cobbler/config '
             '{0}'.format(cobbler_config_path))
         rm_mock.assert_called_once_with(cobbler_config_path)
+
+    @mock.patch('fuel_upgrade.engines.docker_engine.'
+                'utils.exec_cmd')
+    def test_save_astute_keys(self, exec_cmd_mock):
+        self.upgrader.save_astute_keys()
+
+        exec_cmd_mock.assert_called_once_with(
+            'docker cp fuel-core-0-astute:/var/lib/astute '
+            '/var/lib/fuel_upgrade/9999')
+        self.called_once(exec_cmd_mock)
 
     @mock.patch('fuel_upgrade.engines.docker_engine.glob.glob',
                 return_value=['1.json'])

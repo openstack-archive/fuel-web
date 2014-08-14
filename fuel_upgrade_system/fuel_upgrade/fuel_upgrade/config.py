@@ -125,6 +125,9 @@ def config(update_path):
         current_fuel_version_path, from_version_path)
     previous_version_path = join('/etc/fuel', from_version, 'version.yaml')
 
+    astute_container_keys_path = '/var/lib/astute'
+    astute_keys_path = join(working_directory, 'astute')
+
     cobbler_container_config_path = '/var/lib/cobbler/config'
     cobbler_config_path = join(working_directory, 'cobbler_configs')
     cobbler_config_files_for_verifier = join(
@@ -284,13 +287,17 @@ def config(update_path):
         {'id': 'astute',
          'supervisor_config': True,
          'from_image': 'astute',
+         'after_container_creation_command': (
+             "bash -c 'cp -rn /tmp/upgrade/astute/* "
+             "/var/lib/astute/'"),
          'links': [
              {'id': 'rabbitmq', 'alias': 'rabbitmq'}],
          'volumes_from': [
              'volume_logs',
              'volume_repos',
              'volume_ssh_keys',
-             'volume_fuel_configs']},
+             'volume_fuel_configs',
+             'volume_upgrade_directory']},
 
         {'id': 'cobbler',
          'supervisor_config': True,

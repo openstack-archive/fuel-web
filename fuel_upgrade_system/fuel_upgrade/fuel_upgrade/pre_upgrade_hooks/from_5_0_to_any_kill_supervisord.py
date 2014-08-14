@@ -46,7 +46,7 @@ class KillSupervisordHook(PreUpgradeHookBase):
     def check_if_required(self):
         """The hack is required if we're going to upgrade from 5.0 to any.
         """
-        return self.config.from_version in ('5.0', )
+        return self.config.from_version in ('5.0', '5.0.1')
 
     def run(self):
         for command in self.commands:

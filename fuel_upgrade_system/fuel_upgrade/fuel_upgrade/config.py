@@ -284,6 +284,9 @@ def config(update_path):
         {'id': 'astute',
          'supervisor_config': True,
          'from_image': 'astute',
+         'after_container_creation_command': (
+             "bash -c 'cp -rn /tmp/upgrade/astute/* "
+             "/var/lib/astute/'"),
          'links': [
              {'id': 'rabbitmq', 'alias': 'rabbitmq'}],
          'volumes_from': [

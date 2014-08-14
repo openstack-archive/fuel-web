@@ -553,14 +553,21 @@ class UpdateEnvironmentTaskManager(TaskManager):
         objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_change)
         logger.debug('Nodes to update: {0}'.format(
             ' '.join([n.fqdn for n in nodes_to_change])))
-        task_update = Task(name='update', cluster=self.cluster)
+
+        if self.cluster.status == CLUSTER_STATUSES.update_error:
+            task_update = Task(name=TASK_NAMES.rollback, cluster=self.cluster)
+            task_manager = tasks.RollbackTask
+        else:
+            task_update = Task(name=TASK_NAMES.update, cluster=self.cluster)
+            task_manager = tasks.UpdateTask
+
         db().add(task_update)
-        self.cluster.status = 'update'
+        self.cluster.status = CLUSTER_STATUSES.update
         db().flush()
 
         deployment_message = self._call_silently(
             task_update,
-            tasks.UpdateTask,
+            task_manager,
             nodes_to_change,
             method_name='message')
 

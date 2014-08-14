@@ -155,6 +155,9 @@ class DeploymentTask(object):
 
 class UpdateTask(object):
 
+    method = 'update'
+    respond_to = 'update_resp'
+
     @classmethod
     def message(cls, task, nodes):
         logger.debug("%s.message(task=%s)", cls.__class__.__name__, task.uuid)
@@ -176,13 +179,19 @@ class UpdateTask(object):
         db().commit()
 
         return make_astute_message(
-            'deploy',
-            'deploy_resp',
+            cls.method,
+            cls.respond_to,
             {
                 'task_uuid': task.uuid,
                 'deployment_info': serialized_cluster
             }
         )
+
+
+class RollbackTask(UpdateTask):
+
+    method = 'rollback'
+    respond_to = 'rollback_resp'
 
 
 class ProvisionTask(object):

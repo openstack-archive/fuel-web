@@ -132,6 +132,7 @@ TASK_NAMES = Enum(
     'stop_deployment',
     'reset_environment',
     'update',
+    'rollback',
 
     'node_deletion',
     'cluster_deletion',

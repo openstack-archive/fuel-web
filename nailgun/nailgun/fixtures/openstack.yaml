@@ -191,14 +191,20 @@
             type: "text"
             depends:
               - "settings:common.libvirt_type.value": "vcenter"
+            regex:
+              source: &ipv4_regex '^(([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])\.){3}([\d]|[1-9][\d]|1[\d]{2}|2[0-4][\d]|25[0-5])$'
+              error: 'Specify valid IPv4 address'
           vc_user:
             value: ""
             label: "Username"
             description: "vCenter admin username"
-            weight: 30
+            weight: 20
             type: "text"
             depends:
               - "settings:common.libvirt_type.value": "vcenter"
+            regex:
+              source: &non_empty_string '\S'
+              error: 'Empty username'
           vc_password:
             value: ""
             label: "Password"
@@ -207,6 +213,9 @@
             type: "password"
             depends:
               - "settings:common.libvirt_type.value": "vcenter"
+            regex:
+              source: *non_empty_string
+              error: "Empty password"
           cluster:
             value: ""
             label: "Cluster"
@@ -215,6 +224,9 @@
             type: "text"
             depends:
               - "settings:common.libvirt_type.value": "vcenter"
+            regex:
+              source: &valid_cluster_name '^([^,\ ]+([\ ]*[^,\ ])*)(,[^,\ ]+([\ ]*[^,\ ])*)*$'
+              error: "Invalid cluster name"
         common:
           metadata:
             label: "Common"

@@ -182,7 +182,7 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
                                 return $.when.apply($, _.invoke(this.panes, 'beforeSettingsSaving', settings));
                             }, this))
                             .then(_.bind(function() {
-                                return settings.save();
+                                return settings.save(settings.attributes, {validate: false});
                             }, this))
                             .done(_.bind(function() {
                                 this.$el.modal('hide');
@@ -407,9 +407,9 @@ function(require, utils, models, simpleMessageTemplate, createClusterWizardTempl
         },
         onHypervisorChange: function() {
             this.hypervisor = this.$('input[name=hypervisor]:checked').val();
-            this.$('.vcenter-alert').toggle(this.hypervisor == 'vcenter');
+            this.$('.vcenter-alert').toggleClass('hide', this.hypervisor != 'vcenter');
             var mode = this.wizard.findPane(clusterWizardPanes.ClusterModePane).mode;
-            this.$('.ha-vcenter-alert').toggle(this.hypervisor == 'vcenter' && mode != 'multinode');
+            this.$('.ha-vcenter-alert').toggleClass('hide', this.hypervisor != 'vcenter' || mode == 'multinode');
             this.wizard.updateMaxAvailablePaneIndex();
         },
         processPaneData: function() {

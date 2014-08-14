@@ -314,7 +314,8 @@
                         "ip_range": "IP Range",
                         "gateway": "Gateway",
                         "cidr": "CIDR",
-                        "use_vlan_tagging": "Use VLAN tagging"
+                        "use_vlan_tagging": "Use VLAN tagging",
+                        "assign_public_to_all_nodes": "Assign public IPs to all nodes"
                     },
                     "networking_parameters": {
                         "fixed_cidr": "Fixed network CIDR",

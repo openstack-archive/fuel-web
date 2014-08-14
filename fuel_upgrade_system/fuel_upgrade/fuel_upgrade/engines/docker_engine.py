@@ -68,6 +68,7 @@ class DockerUpgrader(UpgradeEngine):
         # Preapre env for upgarde
         self.save_db()
         self.save_cobbler_configs()
+        self.save_astute_keys()
 
         # NOTE(akislitsky): fix for bug
         # https://bugs.launchpad.net/fuel/+bug/1354465
@@ -186,6 +187,25 @@ class DockerUpgrader(UpgradeEngine):
                 u'Failed to make database dump, there '
                 'are no valid database backup '
                 'files, {0}'.format(pg_dump_path))
+
+    def save_astute_keys(self):
+        """Copy any astute generated keys."""
+        container_name = self.make_container_name(
+            'astute', self.from_version)
+        try:
+            utils.exec_cmd('docker cp {0}:{1} {2}'.format(
+                container_name,
+                self.config.astute_container_keys_path,
+                self.config.working_directory
+            ))
+        except errors.ExecutedErrorNonZeroExitCode:
+            # we need to create default directory because in
+            # after_container_creation_command will use it
+            # but we want to remove keys
+            if os.path.exists(self.config.astute_keys_path):
+                utils.rmtree(self.config.astute_keys_path)
+                raise
+            os.mkdir(self.config.astute_keys_path)
 
     def save_cobbler_configs(self):
         """Copy config files from container

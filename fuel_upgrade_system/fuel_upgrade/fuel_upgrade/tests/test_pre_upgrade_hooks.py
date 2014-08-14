@@ -214,6 +214,9 @@ class TestKillSupervisordHook(TestPreUpgradeHooksBase):
         self.hook.config.from_version = '5.0'
         self.assertTrue(self.hook.check_if_required())
 
+        self.hook.config.from_version = '5.0.1'
+        self.assertTrue(self.hook.check_if_required())
+
     def test_is_required_returns_false(self):
         self.hook.config.from_version = '5.1'
         self.assertFalse(self.hook.check_if_required())
@@ -225,7 +228,8 @@ class TestKillSupervisordHook(TestPreUpgradeHooksBase):
         self.hook.run()
 
         exec_cmd.assert_has_calls([
-            mock.call('kill -9 `cat /var/run/supervisord.pid`'),
+            mock.call('kill -9 `cat /var/run/supervisord.pid` '
+                      '|| pkill -9 -P 1 supervisord'),
             mock.call('rm -f /var/run/supervisord.pid'),
             mock.call('pkill -f "docker.*D.*attach.*fuel-core"'),
             mock.call('pkill -f "dockerctl.*start.*attach"')])

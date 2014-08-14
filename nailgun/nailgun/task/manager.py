@@ -553,20 +553,27 @@ class UpdateEnvironmentTaskManager(TaskManager):
         objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_change)
         logger.debug('Nodes to update: {0}'.format(
             ' '.join([n.fqdn for n in nodes_to_change])))
-        task_update = Task(name='update', cluster=self.cluster)
-        db().add(task_update)
-        self.cluster.status = 'update'
+
+        if self.cluster.status == CLUSTER_STATUSES.update_error:
+            task = Task(name=TASK_NAMES.rollback, cluster=self.cluster)
+            task_manager = tasks.RollbackTask
+        else:
+            task = Task(name=TASK_NAMES.update, cluster=self.cluster)
+            task_manager = tasks.UpdateTask
+
+        db().add(task)
+        self.cluster.status = CLUSTER_STATUSES.update
         db().flush()
 
         deployment_message = self._call_silently(
-            task_update,
-            tasks.UpdateTask,
+            task,
+            task_manager,
             nodes_to_change,
             method_name='message')
 
-        db().refresh(task_update)
+        db().refresh(task)
 
-        task_update.cache = deployment_message
+        task.cache = deployment_message
 
         for node in nodes_to_change:
             node.status = 'deploying'
@@ -575,7 +582,7 @@ class UpdateEnvironmentTaskManager(TaskManager):
         db().commit()
         rpc.cast('naily', deployment_message)
 
-        return task_update
+        return task
 
 
 class CheckNetworksTaskManager(TaskManager):

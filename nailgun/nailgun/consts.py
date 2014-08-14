@@ -131,7 +131,10 @@ TASK_NAMES = Enum(
     'provision',
     'stop_deployment',
     'reset_environment',
+
+    # update/rollback envs (openstack patching)
     'update',
+    'rollback',
 
     'node_deletion',
     'cluster_deletion',

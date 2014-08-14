@@ -289,6 +289,14 @@ class NailgunReceiver(object):
             objects.Task.update(task, data)
 
     @classmethod
+    def update_resp(cls, **kwargs):
+        cls.deploy_resp(**kwargs)
+
+    @classmethod
+    def rollback_resp(cls, **kwargs):
+        cls.deploy_resp(**kwargs)
+
+    @classmethod
     def provision_resp(cls, **kwargs):
         logger.info(
             "RPC method provision_resp received: %s" %

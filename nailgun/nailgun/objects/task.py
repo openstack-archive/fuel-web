@@ -232,7 +232,8 @@ class Task(NailgunObject):
             else:
                 cls.__update_cluster_status(cluster, 'stopped')
 
-        elif instance.name == consts.TASK_NAMES.update:
+        elif instance.name in (
+                consts.TASK_NAMES.update, consts.TASK_NAMES.rollback):
             if instance.status == consts.TASK_STATUSES.error:
                 cls.__update_cluster_status(
                     cluster,

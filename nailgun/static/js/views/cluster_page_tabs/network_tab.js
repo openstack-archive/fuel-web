@@ -413,6 +413,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             'input[name=base_mac]': 'base_mac',
             'input[name=internal_cidr]': 'internal_cidr',
             'input[name=internal_gateway]': 'internal_gateway',
+            'input[name=dont_assign_public_everywhere]': 'dont_assign_public_everywhere',
             'select[name=fixed_network_size]': {
                 observe: 'fixed_network_size',
                 selectOptions: {collection: _.map(_.range(3, 12), _.partial(Math.pow, 2))}

@@ -88,7 +88,7 @@ define(['utils', 'deepModel'], function(utils) {
             return this.get('nodes').hasChanges() || (this.get('changes').length && this.get('nodes').currentNodes().length);
         },
         needsRedeployment: function() {
-            return this.get('nodes').where({pending_addition: false, status: 'error'}).length;
+            return this.get('nodes').where({pending_addition: false, status: 'error'}).length && (this.get('status') != 'update_error');
         },
         availableModes: function() {
             return ['ha_compact', 'multinode'];

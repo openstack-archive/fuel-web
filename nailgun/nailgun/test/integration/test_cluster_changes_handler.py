@@ -23,6 +23,7 @@ import nailgun
 
 from nailgun import objects
 
+from nailgun.db.sqlalchemy import models
 from nailgun.db.sqlalchemy.models import NetworkGroup
 from nailgun.network.manager import NetworkManager
 from nailgun.openstack.common import jsonutils
@@ -1154,6 +1155,7 @@ class TestHandlers(BaseIntegrationTest):
             expect_errors=True
         )
         self.assertEqual(resp.status_code, 400)
+        self.assertEqual(self.db.query(models.Task).count(), 0)
 
     def datadiff(self, node1, node2, path=None):
         if path is None:

@@ -143,6 +143,8 @@ class ApplyChangesTaskManager(TaskManager):
         task_messages = []
         if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
             db().rollback()
+            db().delete(supertask)
+            db().commit()
             raise errors.WrongNodeStatus("No changes to deploy")
 
         # Run validation if user didn't redefine

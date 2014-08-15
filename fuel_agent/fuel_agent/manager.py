@@ -113,12 +113,13 @@ class Manager(object):
             self.configdrive_scheme.template_data(), md_output_path
         )
 
-        utils.execute('write-mime-multipart', '--output=%s' % ud_output_path,
-                      '%s:text/cloud-boothook' % bh_output_path,
-                      '%s:text/cloud-config' % cc_output_path)
-        utils.execute('genisoimage', '-output', CONF.config_drive_path,
-                      '-volid', 'cidata', '-joliet', '-rock', ud_output_path,
-                      md_output_path)
+        utils.execute('write-mime-multipart --output=%s %s:text/cloud-boothook'
+                      ' %s:text/cloud-config' % (ud_output_path,
+                                                 bh_output_path,
+                                                 cc_output_path))
+        utils.execute('genisoimage -output %s -volid cidata -joliet -rock %s '
+                      '%s' % (CONF.config_drive_path, ud_output_path,
+                              md_output_path))
 
         configdrive_device = self.partition_scheme.configdrive_device()
         if configdrive_device is None:

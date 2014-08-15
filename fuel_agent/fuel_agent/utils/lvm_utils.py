@@ -23,12 +23,8 @@ LOG = logging.getLogger(__name__)
 def pvdisplay():
     # unit m means MiB (power of 2)
     output = utils.execute(
-        'pvdisplay',
-        '-C',
-        '--noheading',
-        '--units', 'm',
-        '--options', 'pv_name,vg_name,pv_size,dev_size,pv_uuid',
-        '--separator', ';',
+        'pvdisplay -C --noheading --units m --options '
+        'pv_name,vg_name,pv_size,dev_size,pv_uuid --separator ;',
         check_exit_code=[0])[0]
     return pvdisplay_parse(output)
 
@@ -56,10 +52,9 @@ def pvcreate(pvname, metadatasize=64, metadatacopies=2):
     if filter(lambda x: x['name'] == pvname, pvdisplay()):
         raise errors.PVAlreadyExistsError(
             'Error while creating pv: pv %s already exists' % pvname)
-    utils.execute('pvcreate',
-                  '--metadatacopies', str(metadatacopies),
-                  '--metadatasize', str(metadatasize) + 'm',
-                  pvname, check_exit_code=[0])
+    utils.execute('pvcreate --metadatacopies %s --metadatasize %sm %s' %
+                  (str(metadatacopies), str(metadatasize), pvname),
+                  check_exit_code=[0])
 
 
 def pvremove(pvname):
@@ -73,17 +68,13 @@ def pvremove(pvname):
     if pv[0]['vg'] is not None:
         raise errors.PVBelongsToVGError('Error while removing pv: '
                                         'pv belongs to vg %s' % pv[0]['vg'])
-    utils.execute('pvremove', '-ff', '-y', pvname, check_exit_code=[0])
+    utils.execute('pvremove -ff -y %s' % pvname, check_exit_code=[0])
 
 
 def vgdisplay():
     output = utils.execute(
-        'vgdisplay',
-        '-C',
-        '--noheading',
-        '--units', 'm',
-        '--options', 'vg_name,vg_uuid,vg_size,vg_free',
-        '--separator', ';',
+        'vgdisplay -C --noheading --units m --options '
+        'vg_name,vg_uuid,vg_size,vg_free --separator ;',
         check_exit_code=[0])[0]
     return vgdisplay_parse(output)
 
@@ -126,7 +117,8 @@ def vgcreate(vgname, pvname, *args):
             'Error while creating vg: vg %s already exists' % vgname)
     pvnames = [pvname] + list(args)
     _vg_attach_validate(pvnames)
-    utils.execute('vgcreate', vgname, *pvnames, check_exit_code=[0])
+    utils.execute('vgcreate %s %s' % (vgname, ' '.join(pvnames)),
+                  check_exit_code=[0])
 
 
 def vgextend(vgname, pvname, *args):
@@ -136,7 +128,8 @@ def vgextend(vgname, pvname, *args):
             'Error while extending vg: vg %s not found' % vgname)
     pvnames = [pvname] + list(args)
     _vg_attach_validate(pvnames)
-    utils.execute('vgextend', vgname, *pvnames, check_exit_code=[0])
+    utils.execute('vgextend %s %s' % (vgname, ' '.join(pvnames)),
+                  check_exit_code=[0])
 
 
 def vgreduce(vgname, pvname, *args):
@@ -151,7 +144,8 @@ def vgreduce(vgname, pvname, *args):
         raise errors.PVNotFoundError(
             'Error while reducing vg: at least one of pv is '
             'not attached to vg')
-    utils.execute('vgreduce', '-f', vgname, *pvnames, check_exit_code=[0])
+    utils.execute('vgreduce -f %s %s' % (vgname, ' '.join(pvnames)),
+                  check_exit_code=[0])
 
 
 def vgremove(vgname):
@@ -159,19 +153,15 @@ def vgremove(vgname):
     if not filter(lambda x: x['name'] == vgname, vgdisplay()):
         raise errors.VGNotFoundError(
             'Error while removing vg: vg %s not found' % vgname)
-    utils.execute('vgremove', '-f', vgname, check_exit_code=[0])
+    utils.execute('vgremove -f %s' % vgname, check_exit_code=[0])
 
 
 def lvdisplay():
     output = utils.execute(
-        'lvdisplay',
-        '-C',
-        '--noheading',
-        '--units', 'm',
+        'lvdisplay -C --noheading --units m '
         #NOTE(agordeev): lv_path had been removed from options
         # since versions of lvdisplay prior 2.02.68 don't have it.
-        '--options', 'lv_name,lv_size,vg_name,lv_uuid',
-        '--separator', ';',
+        '--options lv_name,lv_size,vg_name,lv_uuid --separator ;',
         check_exit_code=[0])[0]
     return lvdisplay_parse(output)
 
@@ -211,8 +201,8 @@ def lvcreate(vgname, lvname, size):
     if filter(lambda x: x['name'] == lvname, lvdisplay()):
         raise errors.LVAlreadyExistsError(
             'Error while creating lv: lv %s already exists' % lvname)
-    utils.execute('lvcreate', '-L', '%sm' % size, '-n', lvname,
-                  vgname, check_exit_code=[0])
+    utils.execute('lvcreate -L %sm -n %s %s' % (size, lvname, vgname),
+                  check_exit_code=[0])
 
 
 def lvremove(lvname):
@@ -220,4 +210,4 @@ def lvremove(lvname):
     if not filter(lambda x: x['name'] == lvname, lvdisplay()):
         raise errors.LVNotFoundError(
             'Error while removing lv: lv %s not found' % lvname)
-    utils.execute('lvremove', '-f', lvname, check_exit_code=[0])
+    utils.execute('lvremove -f %s' % lvname, check_exit_code=[0])

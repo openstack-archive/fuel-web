@@ -44,9 +44,7 @@ def parse_partition_info(output):
 
 
 def info(dev):
-    output = utils.execute('parted', '-s', dev, '-m',
-                           'unit', 'MiB',
-                           'print', 'free',
+    output = utils.execute('parted -s %s -m unit MiB print free' % dev,
                            check_exit_code=[0, 1])[0]
     return parse_partition_info(output)
 
@@ -67,7 +65,7 @@ def make_label(dev, label='gpt'):
     if label not in ('gpt', 'msdos'):
         raise errors.WrongPartitionLabelError(
             'Wrong partition label type: %s' % label)
-    utils.execute('parted', '-s', dev, 'mklabel', label,
+    utils.execute('parted -s %s mklabel %s' % (dev, label),
                   check_exit_code=[0])
 
 
@@ -91,8 +89,8 @@ def set_partition_flag(dev, num, flag, state='on'):
     if state not in ('on', 'off'):
         raise errors.WrongPartitionSchemeError(
             'Wrong partition flag state: %s' % state)
-    utils.execute('parted', '-s', dev, 'set', str(num),
-                  flag, state, check_exit_code=[0])
+    utils.execute('parted -s %s set %s %s %s' % (dev, str(num), flag, state),
+                  check_exit_code=[0])
 
 
 def set_gpt_type(dev, num, type_guid):
@@ -107,8 +105,8 @@ def set_gpt_type(dev, num, type_guid):
     :returns: None
     """
     # TODO(kozhukalov): check whether type_guid is valid
-    utils.execute('sgdisk', '--typecode=%s:%s' % (num, type_guid),
-                  dev, check_exit_code=[0])
+    utils.execute('sgdisk --typecode=%s:%s %s' % (num, type_guid, dev),
+                  check_exit_code=[0])
 
 
 def make_partition(dev, begin, end, ptype):
@@ -129,12 +127,13 @@ def make_partition(dev, begin, end, ptype):
             'are not inside available free space'
         )
 
-    utils.execute('parted', '-a', 'optimal', '-s', dev, 'unit', 'MiB',
-                  'mkpart', ptype, str(begin), str(end), check_exit_code=[0])
+    utils.execute('parted -a optimal -s %s unit MiB mkpart %s %s %s' %
+                  (dev, ptype, str(begin), str(end)),
+                  check_exit_code=[0])
 
 
 def remove_partition(dev, num):
     if not any(x['fstype'] != 'free' and x['num'] == num
                for x in info(dev)['parts']):
         raise errors.PartitionNotFoundError('Partition %s not found' % num)
-    utils.execute('parted', '-s', dev, 'rm', str(num), check_exit_code=[0])
+    utils.execute('parted -s %s rm %s' % (dev, str(num)), check_exit_code=[0])

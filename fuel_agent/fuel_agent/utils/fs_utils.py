@@ -20,10 +20,10 @@ def make_fs(fs_type, fs_options, fs_label, dev):
     #                ext* uses -F flag, xfs/mkswap uses -f flag.
     cmd_line = []
     cmd_name = 'mkswap'
-    if fs_type is not 'swap':
+    if not fs_type == 'swap':
         cmd_name = 'mkfs.%s' % fs_type
     cmd_line.append(cmd_name)
     for opt in (fs_options, fs_label):
         cmd_line.extend([s for s in opt.split(' ') if s])
     cmd_line.append(dev)
-    utils.execute(*cmd_line)
+    utils.execute(' '.join(cmd_line))

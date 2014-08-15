@@ -91,8 +91,8 @@ localhost.localdomain)
         }]
 
         mds = mu.mddisplay()
-        mock_exec.assert_called_once_with(
-            'mdadm', '--detail', '/dev/md0', check_exit_code=[0])
+        mock_exec.assert_called_once_with('mdadm --detail /dev/md0',
+                                          check_exit_code=[0])
 
         key = lambda x: x['name']
         self.assertEqual(sorted(expected, key=key), sorted(mds, key=key))
@@ -118,9 +118,8 @@ localhost.localdomain)
 
         mu.mdcreate('/dev/md0', 'mirror', '/dev/fake1', '/dev/fake2')
         mock_exec.assert_called_once_with(
-            'mdadm', '--force', '--create', '/dev/md0', '-e1.2',
-            '--level=mirror',
-            '--raid-devices=2', '/dev/fake1', '/dev/fake2',
+            'mdadm --create --force /dev/md0 -e1.2 --level=mirror '
+            '--raid-devices=2 /dev/fake1 /dev/fake2',
             check_exit_code=[0])
 
     @mock.patch.object(mu, 'mddisplay')
@@ -187,8 +186,8 @@ localhost.localdomain)
         # should run mdadm command to remove md device
         mock_mddisplay.return_value = [{'name': '/dev/md0'}]
         expected_calls = [
-            mock.call('mdadm', '--stop', '/dev/md0', check_exit_code=[0]),
-            mock.call('mdadm', '--remove', '/dev/md0', check_exit_code=[0, 1])
+            mock.call('mdadm --stop /dev/md0', check_exit_code=[0]),
+            mock.call('mdadm --remove /dev/md0', check_exit_code=[0, 1])
         ]
         mu.mdremove('/dev/md0')
         self.assertEqual(mock_exec.call_args_list, expected_calls)
@@ -204,6 +203,5 @@ localhost.localdomain)
     @mock.patch.object(utils, 'execute')
     def test_mdclean(self, mock_exec):
         mu.mdclean('/dev/md0')
-        mock_exec.assert_called_once_with('mdadm', '--zero-superblock',
-                                          '--force', '/dev/md0',
-                                          check_exit_code=[0])
+        mock_exec.assert_called_once_with('mdadm --zero-superblock --force '
+                                          '/dev/md0', check_exit_code=[0])

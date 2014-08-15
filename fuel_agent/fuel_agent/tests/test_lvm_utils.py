@@ -52,12 +52,8 @@ class TestLvmUtils(test_base.BaseTestCase):
 
         pvs = lu.pvdisplay()
         mock_exec.assert_called_once_with(
-            'pvdisplay',
-            '-C',
-            '--noheading',
-            '--units', 'm',
-            '--options', 'pv_name,vg_name,pv_size,dev_size,pv_uuid',
-            '--separator', ';',
+            'pvdisplay -C --noheading --units m --options pv_name,vg_name,'
+            'pv_size,dev_size,pv_uuid --separator ;',
             check_exit_code=[0]
         )
         key = lambda x: x['name']
@@ -76,24 +72,16 @@ class TestLvmUtils(test_base.BaseTestCase):
         lu.pvcreate('/dev/fake4')
 
         expected_calls = [
-            mock.call('pvcreate',
-                      '--metadatacopies', '1',
-                      '--metadatasize', '32m',
+            mock.call('pvcreate --metadatacopies 1 --metadatasize 32m '
                       '/dev/fake1',
                       check_exit_code=[0]),
-            mock.call('pvcreate',
-                      '--metadatacopies', '1',
-                      '--metadatasize', '64m',
+            mock.call('pvcreate --metadatacopies 1 --metadatasize 64m '
                       '/dev/fake2',
                       check_exit_code=[0]),
-            mock.call('pvcreate',
-                      '--metadatacopies', '2',
-                      '--metadatasize', '32m',
+            mock.call('pvcreate --metadatacopies 2 --metadatasize 32m '
                       '/dev/fake3',
                       check_exit_code=[0]),
-            mock.call('pvcreate',
-                      '--metadatacopies', '2',
-                      '--metadatasize', '64m',
+            mock.call('pvcreate --metadatacopies 2 --metadatasize 64m '
                       '/dev/fake4',
                       check_exit_code=[0])
         ]
@@ -114,7 +102,7 @@ class TestLvmUtils(test_base.BaseTestCase):
         # then should run pvremove command
         mock_pvdisplay.return_value = [{'vg': None, 'name': '/dev/fake'}]
         lu.pvremove('/dev/fake')
-        mock_exec.assert_called_once_with('pvremove', '-ff', '-y', '/dev/fake',
+        mock_exec.assert_called_once_with('pvremove -ff -y /dev/fake',
                                           check_exit_code=[0])
 
     @mock.patch.object(lu, 'pvdisplay')
@@ -157,12 +145,8 @@ class TestLvmUtils(test_base.BaseTestCase):
 
         vg = lu.vgdisplay()
         mock_exec.assert_called_once_with(
-            'vgdisplay',
-            '-C',
-            '--noheading',
-            '--units', 'm',
-            '--options', 'vg_name,vg_uuid,vg_size,vg_free',
-            '--separator', ';',
+            'vgdisplay -C --noheading --units m --options vg_name,vg_uuid,'
+            'vg_size,vg_free --separator ;',
             check_exit_code=[0]
         )
         key = lambda x: x['name']
@@ -185,9 +169,8 @@ class TestLvmUtils(test_base.BaseTestCase):
         lu.vgcreate('vgname', '/dev/fake1', '/dev/fake2')
 
         expected_calls = [
-            mock.call('vgcreate', 'vgname', '/dev/fake1',
-                      check_exit_code=[0]),
-            mock.call('vgcreate', 'vgname', '/dev/fake1', '/dev/fake2',
+            mock.call('vgcreate vgname /dev/fake1', check_exit_code=[0]),
+            mock.call('vgcreate vgname /dev/fake1 /dev/fake2',
                       check_exit_code=[0])
         ]
         self.assertEqual(mock_exec.call_args_list, expected_calls)
@@ -234,7 +217,7 @@ class TestLvmUtils(test_base.BaseTestCase):
                                        {'vg': None, 'name': '/dev/fake2'}]
         lu.vgextend('some', '/dev/fake1', '/dev/fake2')
         mock_exec.assert_called_once_with(
-            'vgextend', 'some', '/dev/fake1', '/dev/fake2',
+            'vgextend some /dev/fake1 /dev/fake2',
             check_exit_code=[0])
 
     @mock.patch.object(lu, 'vgdisplay')
@@ -275,7 +258,7 @@ class TestLvmUtils(test_base.BaseTestCase):
         # then run vgremove command if it exists
         mock_vgdisplay.return_value = [{'name': 'vgname'}, {'name': 'some'}]
         lu.vgremove('vgname')
-        mock_exec.assert_called_once_with('vgremove', '-f', 'vgname',
+        mock_exec.assert_called_once_with('vgremove -f vgname',
                                           check_exit_code=[0])
 
     @mock.patch.object(lu, 'vgdisplay')
@@ -291,7 +274,7 @@ class TestLvmUtils(test_base.BaseTestCase):
     def test_lvremove_ok(self, mock_exec, mock_lvdisplay):
         mock_lvdisplay.return_value = [{'name': 'lvname'}, {'name': 'some'}]
         lu.lvremove('lvname')
-        mock_exec.assert_called_once_with('lvremove', '-f', 'lvname',
+        mock_exec.assert_called_once_with('lvremove -f lvname',
                                           check_exit_code=[0])
 
     @mock.patch.object(lu, 'lvdisplay')
@@ -308,8 +291,7 @@ class TestLvmUtils(test_base.BaseTestCase):
                                        {'name': 'some'}]
         mock_lvdisplay.return_value = [{'name': 'some'}]
         lu.lvcreate('vgname', 'lvname', 1000)
-        mock_exec.assert_called_once_with('lvcreate', '-L', '1000m', '-n',
-                                          'lvname', 'vgname',
+        mock_exec.assert_called_once_with('lvcreate -L 1000m -n lvname vgname',
                                           check_exit_code=[0])
 
     @mock.patch.object(lu, 'vgdisplay')
@@ -349,10 +331,9 @@ class TestLvmUtils(test_base.BaseTestCase):
                          'uuid': 'lv_uuid2', 'path': '/dev/vg_name/lv_name2'}]
         actual_lvs = lu.lvdisplay()
         self.assertEqual(expected_lvs, actual_lvs)
-        mock_exec.assert_called_once_with('lvdisplay', '-C', '--noheading',
-                                          '--units', 'm', '--options',
-                                          'lv_name,lv_size,vg_name,lv_uuid',
-                                          '--separator', ';',
+        mock_exec.assert_called_once_with('lvdisplay -C --noheading --units m '
+                                          '--options lv_name,lv_size,vg_name,'
+                                          'lv_uuid --separator ;',
                                           check_exit_code=[0])
 
     @mock.patch.object(lu, 'pvdisplay')
@@ -363,9 +344,8 @@ class TestLvmUtils(test_base.BaseTestCase):
         mock_pvdisplay.return_value = [{'vg': 'vgname', 'name': '/dev/fake1'},
                                        {'vg': 'vgname', 'name': '/dev/fake2'}]
         lu.vgreduce('vgname', '/dev/fake1', '/dev/fake2')
-        mock_exec.assert_called_once_with('vgreduce', '-f', 'vgname',
-                                          '/dev/fake1', '/dev/fake2',
-                                          check_exit_code=[0])
+        mock_exec.assert_called_once_with('vgreduce -f vgname /dev/fake1 '
+                                          '/dev/fake2', check_exit_code=[0])
 
     @mock.patch.object(lu, 'vgdisplay')
     def test_vgreduce_vg_not_found(self, mock_vgdisplay):

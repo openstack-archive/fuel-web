@@ -97,3 +97,28 @@ class WrongImageDataError(BaseError):
 
 class TemplateWriteError(BaseError):
     pass
+
+
+class ProcessExecutionError(Exception):
+    def __init__(self, stdout=None, stderr=None, exit_code=None, cmd=None,
+                 description=None):
+        self.exit_code = exit_code
+        self.stderr = stderr
+        self.stdout = stdout
+        self.cmd = cmd
+        self.description = description
+
+        if description is None:
+            description = ("Unexpected error while running command.")
+        if exit_code is None:
+            exit_code = '-'
+        message = ('%(description)s\n'
+                   'Command: %(cmd)s\n'
+                   'Exit code: %(exit_code)s\n'
+                   'Stdout: %(stdout)r\n'
+                   'Stderr: %(stderr)r') % {'description': description,
+                                            'cmd': cmd,
+                                            'exit_code': exit_code,
+                                            'stdout': stdout,
+                                            'stderr': stderr}
+        super(ProcessExecutionError, self).__init__(message)

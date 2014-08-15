@@ -57,7 +57,7 @@ def mddisplay(names=[]):
     mdnames = names or get_mdnames()
     mds = []
     for mdname in mdnames:
-        output = utils.execute('mdadm', '--detail', mdname,
+        output = utils.execute('mdadm --detail %s' % mdname,
                                check_exit_code=[0])[0]
         md = {'name': mdname}
         md.update(mddetail_parse(output))
@@ -98,9 +98,9 @@ def mdcreate(mdname, level, device, *args):
 
     # cleaning md metadata from devices
     map(mdclean, devices)
-    utils.execute('mdadm', '--force', '--create', mdname, '-e1.2',
-                  '--level=%s' % level,
-                  '--raid-devices=%s' % len(devices), *devices,
+    utils.execute('mdadm --create --force %s -e1.2 --level=%s '
+                  '--raid-devices=%s %s' % (mdname, level, len(devices),
+                                            ' '.join(devices)),
                   check_exit_code=[0])
 
 
@@ -112,11 +112,11 @@ def mdremove(mdname):
         raise errors.MDNotFoundError(
             'Error while removing md: md %s not found' % mdname)
 
-    utils.execute('mdadm', '--stop', mdname, check_exit_code=[0])
-    utils.execute('mdadm', '--remove', mdname, check_exit_code=[0, 1])
+    utils.execute('mdadm --stop %s' % mdname, check_exit_code=[0])
+    utils.execute('mdadm --remove %s' % mdname, check_exit_code=[0, 1])
 
 
 def mdclean(device):
     # we don't care if device actually exists or not
-    utils.execute('mdadm', '--zero-superblock', '--force', device,
+    utils.execute('mdadm --zero-superblock --force %s' % device,
                   check_exit_code=[0])

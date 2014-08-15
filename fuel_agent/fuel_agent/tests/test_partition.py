@@ -201,7 +201,7 @@ class TestParted(test_base.BaseTestCase):
         self.assertEqual(expected_name, self.prtd.next_name())
 
     def test_next_begin_empty_partitions(self):
-        self.assertEqual(0, self.prtd.next_begin())
+        self.assertEqual(1, self.prtd.next_begin())
 
     def test_next_begin_last_extended_partition(self):
         self.prtd.partitions.append(

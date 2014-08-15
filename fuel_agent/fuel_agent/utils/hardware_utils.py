@@ -54,7 +54,7 @@ def parse_dmidecode(type):
 
     :returns: A list with dictionaries of entities for specified type.
     """
-    output = utils.execute('dmidecode', '-q', '--type', type)
+    output = utils.execute('dmidecode -q --type %s' % type)
     lines = output[0].split('\n')
     info = []
     multiline_values = None
@@ -87,7 +87,7 @@ def parse_lspci():
 
     :returns: A list of dicts containing PCI devices information
     """
-    output = utils.execute('lspci', '-vmm', '-D')
+    output = utils.execute('lspci -vmm -D')
     lines = output[0].split('\n')
     info = [{}]
     section = 0
@@ -104,14 +104,14 @@ def parse_lspci():
     return info
 
 
-def parse_simple_kv(*command):
+def parse_simple_kv(command):
     """Parses simple key:value output from specified command.
 
     :param command: A command to execute
 
     :returns: A dict of parsed key-value data
     """
-    output = utils.execute(*command)
+    output = utils.execute(command)
     lines = output[0].split('\n')
     info = {}
 
@@ -162,12 +162,8 @@ def udevreport(dev):
 
     :returns: A dict of udev device properties.
     """
-    report = utils.execute('udevadm',
-                           'info',
-                           '--query=property',
-                           '--export',
-                           '--name={0}'.format(dev),
-                           check_exit_code=[0])[0]
+    report = utils.execute('udevadm info --query=property --export '
+                           '--name=%s' % dev, check_exit_code=[0])[0]
 
     spec = {}
     for line in [l for l in report.splitlines() if l]:
@@ -206,7 +202,7 @@ def blockdevreport(blockdev):
         blockdev
     ]
     opts = [o[5:] for o in cmd if o.startswith('--get')]
-    report = utils.execute(*cmd, check_exit_code=[0])[0]
+    report = utils.execute(' '.join(cmd), check_exit_code=[0])[0]
     return dict(zip(opts, report.splitlines()))
 
 
@@ -247,7 +243,7 @@ def list_block_devices(disks=True):
     """
     bdevs = []
 
-    report = utils.execute('blockdev', '--report', check_exit_code=[0])[0]
+    report = utils.execute('blockdev --report', check_exit_code=[0])[0]
     lines = [line.split() for line in report.splitlines() if line]
 
     startsec_idx = lines[0].index('StartSec')

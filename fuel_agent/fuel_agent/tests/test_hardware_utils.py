@@ -53,8 +53,7 @@ System Slot Information
                      "bus address": "0000:00:1c.4"}]
 
         self.assertEqual(expected, hu.parse_dmidecode("fake_type"))
-        exec_mock.assert_called_once_with("dmidecode", "-q", "--type",
-                                          "fake_type")
+        exec_mock.assert_called_once_with("dmidecode -q --type fake_type")
 
     @mock.patch.object(utils, 'execute')
     def test_parse_lspci(self, exec_mock):
@@ -92,7 +91,7 @@ ProgIf: 8f
                      'vendor': 'Marvell Technology Group Ltd.'}]
 
         self.assertEqual(expected, hu.parse_lspci())
-        exec_mock.assert_called_once_with('lspci', '-vmm', '-D')
+        exec_mock.assert_called_once_with('lspci -vmm -D')
 
     @mock.patch.object(utils, 'execute')
     def test_parse_simple_kv(self, exec_mock):
@@ -116,8 +115,8 @@ supports-register-dump: yes
                     'supports-eeprom-access': 'no',
                     'supports-register-dump': 'yes'}
 
-        self.assertEqual(expected, hu.parse_simple_kv('fake', 'cmd'))
-        exec_mock.assert_called_once_with('fake', 'cmd')
+        self.assertEqual(expected, hu.parse_simple_kv('fake cmd'))
+        exec_mock.assert_called_once_with('fake cmd')
 
     @mock.patch.object(utils, 'execute')
     def test_udevreport(self, mock_exec):
@@ -152,11 +151,8 @@ supports-register-dump: yes
             'ID_CDROM': '1'
         }
         self.assertEqual(expected, hu.udevreport('/dev/fake'))
-        mock_exec.assert_called_once_with('udevadm',
-                                          'info',
-                                          '--query=property',
-                                          '--export',
-                                          '--name=/dev/fake',
+        mock_exec.assert_called_once_with('udevadm info --query=property '
+                                          '--export --name=/dev/fake',
                                           check_exit_code=[0])
 
     @mock.patch.object(utils, 'execute')
@@ -183,7 +179,7 @@ supports-register-dump: yes
             'maxsect': '1024'
         }
         self.assertEqual(expected, hu.blockdevreport('/dev/fake'))
-        mock_exec.assert_called_once_with(*cmd, check_exit_code=[0])
+        mock_exec.assert_called_once_with(' '.join(cmd), check_exit_code=[0])
 
     @mock.patch('six.moves.builtins.open')
     def test_extrareport(self, mock_open):
@@ -319,7 +315,7 @@ supports-register-dump: yes
             'espec': {'key2': 'value2'}
         }]
         self.assertEqual(hu.list_block_devices(), expected)
-        mock_exec.assert_called_once_with('blockdev', '--report',
+        mock_exec.assert_called_once_with('blockdev --report',
                                           check_exit_code=[0])
         self.assertEqual(mock_ureport.call_args_list, [mock.call('/dev/fake'),
                          mock.call('/dev/fake1'), mock.call('/dev/sr0')])

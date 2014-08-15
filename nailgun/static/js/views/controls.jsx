@@ -192,5 +192,33 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         }
     });
 
+    input.TableWrapper = React.createClass({
+        render: function() {
+            var tableClass = 'table table-bordered table-striped ' + this.props.className;
+            return (
+                <table className={tableClass}>
+                    <thead>
+                        <tr>
+                            {_.map(this.props.head, function(column, index) {
+                                return <th key={index} className={column.className || ''}>{column.label}</th>;
+                            })}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {_.map(this.props.body, function(row, rowIndex) {
+                            return <tr key={rowIndex}> {
+                                _.map(row, function(column, columnIndex) {
+                                    return <td key={columnIndex}>{column}</td>;
+                                })
+                           }
+                           </tr>;
+                        })}
+                    </tbody>
+                </table>
+            );
+        }
+    });
+
+
     return input;
 });

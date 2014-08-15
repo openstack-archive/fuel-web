@@ -24,7 +24,7 @@ define(
     'jsx!views/cluster_page_tabs/settings_tab',
     'views/cluster_page_tabs/logs_tab',
     'views/cluster_page_tabs/actions_tab',
-    'views/cluster_page_tabs/healthcheck_tab',
+    'jsx!views/cluster_page_tabs/healthcheck_tab',
     'text!templates/cluster/page.html',
     'text!templates/cluster/customization_message.html',
     'text!templates/cluster/deployment_result.html',

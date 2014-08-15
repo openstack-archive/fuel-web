@@ -133,8 +133,6 @@ class ApplyChangesTaskManager(TaskManager):
 
         supertask = Task(name=TASK_NAMES.deploy, cluster=self.cluster)
         db().add(supertask)
-        # we should have task committed for processing in other threads
-        db().commit()
 
         nodes_to_delete = TaskHelper.nodes_to_delete(self.cluster)
         nodes_to_deploy = TaskHelper.nodes_to_deploy(self.cluster)
@@ -144,6 +142,9 @@ class ApplyChangesTaskManager(TaskManager):
         if not any([nodes_to_provision, nodes_to_deploy, nodes_to_delete]):
             db().rollback()
             raise errors.WrongNodeStatus("No changes to deploy")
+
+        # we should have task committed for processing in other threads
+        db().commit()
 
         # Run validation if user didn't redefine
         # provisioning and deployment information

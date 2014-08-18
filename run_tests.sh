@@ -77,7 +77,6 @@ ROOT=$(dirname `readlink -f $0`)
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
-CASPERJS="casperjs"
 LINTUI="grunt lint-ui"
 
 # test options
@@ -257,9 +256,9 @@ function run_nailgun_tests {
 #
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_webui_tests {
+  local WEBUI_TESTING_DISPLAY=:99.0
   local SERVER_PORT=$UI_SERVER_PORT
-  local TESTS_DIR=$ROOT/nailgun/ui_tests
-  local TESTS=$TESTS_DIR/test_*.js
+  local TESTS=$ROOT/nailgun/ui_tests/tests/*.js
   local artifacts=$ARTIFACTS/webui
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config
@@ -271,7 +270,7 @@ function run_webui_tests {
 
   pushd $ROOT/nailgun >> /dev/null
 
-  # test compression
+  # UI compression
   echo -n "Compressing UI... "
   local output=$(grunt build --static-dir=$COMPRESSED_STATIC_DIR 2>&1)
   if [ $? -ne 0 ]; then
@@ -280,6 +279,21 @@ function run_webui_tests {
     exit 1
   fi
   echo "done"
+
+  local xvfb_pid=0
+  xdpyinfo -display $WEBUI_TESTING_DISPLAY >/dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo -n "Display $WEBUI_TESTING_DISPLAY is not available, "
+    which Xvfb > /dev/null
+    if [ $? -eq 0 ]; then
+      echo "using xvfb"
+      Xvfb $WEBUI_TESTING_DISPLAY -ac >/dev/null 2>&1 &
+      xvfb_pid=$!
+    else
+      echo "xvfb not available, using display $DISPLAY"
+      WEBUI_TESTING_DISPLAY=$DISPLAY
+    fi
+  fi
 
   # run js testcases
   local server_log=`mktemp /tmp/test_nailgun_ui_server.XXXX`
@@ -290,18 +304,18 @@ function run_webui_tests {
     dropdb $config
     syncdb $config true
 
-    local pid=`run_server $SERVER_PORT $server_log $config`
-
-    if [ $pid -ne 0 ]; then
-      SERVER_PORT=$SERVER_PORT \
-      ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
+    local nailgun_pid=`run_server $SERVER_PORT $server_log $config`
+    if [ $nailgun_pid -ne 0 ]; then
+    SERVER_PORT=$SERVER_PORT \
+    DISPLAY=$WEBUI_TESTING_DISPLAY \
+      grunt nightwatch --launch-url="http://127.0.0.1:$SERVER_PORT" --test=$testcase
       if [ $? -ne 0 ]; then
         result=1
         break
       fi
 
-      kill $pid
-      wait $pid 2> /dev/null
+      kill $nailgun_pid
+      wait $nailgun_pid 2> /dev/null
     else
       cat $server_log
       result=1
@@ -309,6 +323,10 @@ function run_webui_tests {
     fi
 
   done
+
+  if [ $xvfb_pid -ne 0 ]; then
+    kill $xvfb_pid
+  fi
 
   rm $server_log
   popd >> /dev/null

@@ -143,6 +143,19 @@ module.exports = function(grunt) {
                     moduleType: 'js'
                 }
             }
+        },
+        nightwatch: {
+            options: {
+                standalone: true
+                // uncomment to work with phantomjs
+//                test_settings : {
+//                    "desiredCapabilities" : {
+//                        "browserName" : "phantomjs",
+//                        "javascriptEnabled" : true,
+//                        "phantomjs.binary.path" : "node_modules/phantomjs/lib/phantom/bin/phantomjs"
+//                    }
+//                }
+            }
         }
     });
 

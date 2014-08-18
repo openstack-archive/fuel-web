@@ -17,11 +17,14 @@
     "grunt-jison": "~1.2.1",
     "grunt-jslint": "~1.1.1",
     "grunt-text-replace": "~0.3.12",
+    "grunt-nightwatch": "~0.2.2",
     "jison": "~0.4.13",
     "jslint": "~0.2.5",
     "less": "~1.5.1",
     "lodash-node": "~2.4.1",
     "requirejs": "~2.1.9",
-    "uglifyjs": "~2.3.6"
+    "uglifyjs": "~2.3.6",
+    "nightwatch": "~0.5.11",
+    "phantomjs": "~1.9"
   }
 }

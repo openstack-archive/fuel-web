@@ -143,6 +143,22 @@ module.exports = function(grunt) {
                     moduleType: 'js'
                 }
             }
+        },
+        nightwatch: {
+            options: {
+                standalone: true,
+                src_folders: ['ui_tests/tests'],
+                custom_commands_path: 'ui_tests/commands',
+                test_settings: {
+                    launch_url: grunt.option('launch-url') || 'http://127.0.0.1:5544',
+                    screenshots: {enabled: true, path: 'test_run/webui'},
+                    filter: grunt.option('tests') || null,
+                    desiredCapabilities: {
+                        javascriptEnabled: true,
+                        browserName: 'firefox'
+                    }
+                }
+            }
         }
     });
 

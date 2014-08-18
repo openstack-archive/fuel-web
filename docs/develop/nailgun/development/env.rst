@@ -5,8 +5,8 @@ For information on how to get source code see :ref:`getting-source`.
 
 .. _nailgun_dependencies:
 
-Setup for Nailgun Unit Tests
-----------------------------
+Preparing Development Environment
+---------------------------------
 
 .. warning:: Nailgun requires Python 2.6. Please check installed Python version
     using ``python --version``. If the version check does not match, you can use
@@ -45,6 +45,19 @@ Setup for Nailgun Unit Tests
     sudo mkdir /var/log/nailgun
     sudo chown -R `whoami`.`whoami` /var/log/nailgun
 
+
+Setup for Nailgun Unit Tests
+----------------------------
+
+#. Nailgun unit tests use `Tox <http://testrun.org/tox/latest/>`_ for generating test
+   environments. This means that you don't need to install all Python packages required
+   for the project to run them, because Tox does this by itself.
+
+#. First, create a virtualenv the way it's described in previous section. Then, install
+   the Tox package::
+
+    pip install tox
+
 #. Run the Nailgun backend unit tests::
 
     ./run_tests.sh --no-jslint --no-webui
@@ -52,6 +65,18 @@ Setup for Nailgun Unit Tests
 #. Run the Nailgun flake8 test::
 
     ./run_tests.sh --flake8
+
+#. You can also run the same tests by hand, using tox itself::
+
+    cd nailgun
+    tox -epy26 -- -vv nailgun/test
+    tox -epep8
+
+#. Tox reuses the previously created environment. After making some changes with package
+   dependencies, tox should be run with **-r** option to recreate existing virtualenvs::
+
+    tox -r -epy26 -- -vv nailgun/test
+    tox -r -epep8
 
 
 Setup for Web UI Tests

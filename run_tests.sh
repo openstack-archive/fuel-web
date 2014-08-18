@@ -77,7 +77,6 @@ ROOT=$(dirname `readlink -f $0`)
 TESTRTESTS="nosetests"
 FLAKE8="flake8"
 PEP8="pep8"
-CASPERJS="casperjs"
 JSLINT="grunt jslint"
 
 # test options
@@ -256,8 +255,7 @@ function run_nailgun_tests {
 #   $@ -- tests to be run; with no arguments all tests will be run
 function run_webui_tests {
   local SERVER_PORT=$UI_SERVER_PORT
-  local TESTS_DIR=$ROOT/nailgun/ui_tests
-  local TESTS=$TESTS_DIR/test_*.js
+  local TESTS=$ROOT/nailgun/ui_tests/tests/*.js
   local artifacts=$ARTIFACTS/webui
   local config=$artifacts/test.yaml
   prepare_artifacts $artifacts $config
@@ -291,8 +289,7 @@ function run_webui_tests {
     local pid=`run_server $SERVER_PORT $server_log $config`
 
     if [ $pid -ne 0 ]; then
-      SERVER_PORT=$SERVER_PORT \
-      ${CASPERJS} test --includes="$TESTS_DIR/helpers.js" --fail-fast "$testcase"
+      grunt nightwatch --launch-url="http://127.0.0.1:$SERVER_PORT" --test=$testcase
       if [ $? -ne 0 ]; then
         result=1
         break

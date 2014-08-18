@@ -17,8 +17,12 @@
   </div>
 <% } else { %>
   <div class="pull-right deployment-control-box">
-    <% var releaseAvailable = cluster.get('release').get('state') == 'available' %>
-    <div class="deployment-control-item-box"><button class="deploy-btn <%= releaseAvailable && (cluster.hasChanges() || cluster.needsRedeployment()) && cluster.get('nodes').reject({status: 'ready'}).length ? '' : 'disabled' %>"><i class="icon-upload-cloud"></i> <%- $.t('cluster_page.deploy_changes') %></button></div>
+    <% var releaseAvailable = cluster.get('release').get('state') == 'available',
+        invalidSettings = cluster.get('settings').validationError; %>
+    <div class="deployment-control-item-box"><button
+      class="deploy-btn <%= releaseAvailable && (cluster.hasChanges() || cluster.needsRedeployment()) &&
+        cluster.get('nodes').reject({status: 'ready'}).length && !invalidSettings ? '' : 'disabled' %>"><i
+      class="icon-upload-cloud"></i> <%- $.t('cluster_page.deploy_changes') %></button></div>
     <div class="deployment-control-item-box">
       <% if (cluster.get('nodes').hasChanges()) { %>
         <button class="btn rollback" role="button" title="<%- $.t('cluster_page.discard_changes') %>"><i class="icon-back-in-time"></i></button>

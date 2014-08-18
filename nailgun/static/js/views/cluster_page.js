@@ -313,6 +313,9 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.model.get('nodes').each(this.bindNodeEvents, this);
             this.model.get('nodes').on('resize', this.render, this);
             this.model.get('nodes').on('add', this.onNewNode, this);
+            this.model.get('settings').on('invalid', _.bind(function(){
+                this.render();
+            }, this));
         },
         bindNodeEvents: function(node) {
             return node.on('change:pending_addition change:pending_deletion', this.render, this);

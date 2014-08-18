@@ -1,0 +1,25 @@
+module.exports = {
+    "Test cluster creation": function(browser) {
+        browser
+            .start()
+            .waitForElementVisible('.login-box', 10000)
+            .setValue('input[type=text]', 'admin')
+            .setValue('input[type=password]', 'admin')
+            .click('.login-btn')
+            .waitForElementVisible('.cluster-list', 10000)
+            .click('.create-cluster')
+            .waitForElementVisible('.modal', 5000, 'Cluster creation dialog opens')
+            .waitForElementVisible('.modal form select[name=release] option', 1000,
+                'Release select box updates with releases')
+            .setValue('form.create-cluster-form input[type=text]', 'name');
+        for (var i = 0; i < 6; i++) {
+            browser.click('.next-pane-btn');
+        }
+        browser
+            .click('.finish-btn')
+            .waitForElementNotVisible('.modal', 5000, 'Cluster creation dialog closes after from submission')
+            .waitForElementPresent('.cluster-name-placeholder', 5000, 'Created page opens')
+            .end();
+    }
+};
+

@@ -1603,7 +1603,8 @@ label {cursor: default;}
   .font-layout-mixin(@font-size-small-1, #545a63);
   tr td {
     padding: 1px 5px;
-    line-height: 15px;
+    line-height: 20px;
+    &.nowrap {white-space: nowrap;}
   }
   thead th {
     background-color: #ececec;
@@ -1612,7 +1613,6 @@ label {cursor: default;}
   tbody tr td {
     .font-layout-mixin(@font-size: @font-size-small-1, @font-family: @font-family-filter-bar);
   }
-  .no-logs-msg, .entries-skipped-msg { display: none; }
   .no-logs-msg tr td {
     text-align: center;
     padding: 20px;

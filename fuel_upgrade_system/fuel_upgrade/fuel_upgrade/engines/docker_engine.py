@@ -158,23 +158,10 @@ class DockerUpgrader(UpgradeEngine):
         pg_dump_files = utils.VersionedFile(pg_dump_path)
         pg_dump_tmp_path = pg_dump_files.next_file_name()
 
-        try:
-            container_name = self.make_container_name(
-                'postgres', self.from_version)
-
-            self.exec_cmd_in_container(
-                container_name,
-                u"su postgres -c 'pg_dumpall --clean' > {0}".format(
-                    pg_dump_tmp_path))
-        except (errors.ExecutedErrorNonZeroExitCode,
-                errors.CannotFindContainerError) as exc:
-            utils.remove_if_exists(pg_dump_tmp_path)
-            if not utils.file_exists(pg_dump_path):
-                raise
-
-            logger.debug(
-                u'Failed to make database dump, '
-                'will be used dump from previous run: %s', exc)
+        utils.wait_for_true(
+            lambda: self.make_pg_dump(pg_dump_tmp_path, pg_dump_path),
+            timeout=self.config.db_backup_timeout,
+            interval=self.config.db_backup_interval)
 
         valid_dumps = filter(utils.verify_postgres_dump,
                              pg_dump_files.sorted_files())
@@ -187,6 +174,39 @@ class DockerUpgrader(UpgradeEngine):
                 u'Failed to make database dump, there '
                 'are no valid database backup '
                 'files, {0}'.format(pg_dump_path))
+
+    def make_pg_dump(self, pg_dump_tmp_path, pg_dump_path):
+        """Run postgresql dump in container
+
+        :param str pg_dump_tmp_path: path to temporary dump file
+        :param str pg_dump_path: path to dump which will be restored
+                                 in the new container, if this file is
+                                 exists, it means the user already
+                                 ran upgrade and for some reasons it
+                                 failed
+        :returns: True if db was successfully dumped or if dump exists
+                  False if container isn't running or dump isn't succeed
+        """
+        try:
+            container_name = self.make_container_name(
+                'postgres', self.from_version)
+
+            self.exec_cmd_in_container(
+                container_name,
+                u"su postgres -c 'pg_dumpall --clean' > {0}".format(
+                    pg_dump_tmp_path))
+        except (errors.ExecutedErrorNonZeroExitCode,
+                errors.CannotFindContainerError) as exc:
+            utils.remove_if_exists(pg_dump_tmp_path)
+            if not utils.file_exists(pg_dump_path):
+                logger.debug('Failed to make database dump {0}'.format(exc))
+                return False
+
+            logger.debug(
+                u'Failed to make database dump, '
+                'will be used dump from previous run: %s', exc)
+
+        return True
 
     def save_astute_keys(self):
         """Copy any astute generated keys."""

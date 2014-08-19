@@ -198,7 +198,7 @@ def get_host_system(update_path, new_version):
     return {
         'manifest_path': join(
             update_path, 'puppet', openstack_version,
-            'modules/nailgun/examples/host-only.pp'),
+            'modules/nailgun/examples/host-upgrade.pp'),
 
         'puppet_modules_path': join(
             update_path, 'puppet', openstack_version, 'modules'),

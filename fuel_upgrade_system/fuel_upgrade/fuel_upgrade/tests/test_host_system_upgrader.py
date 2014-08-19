@@ -61,7 +61,7 @@ class TestHostSystemUpgrader(BaseTestCase):
         utils_mock.exec_cmd.assert_called_once_with(
             'puppet apply -d -v '
             '/tmp/upgrade_path/puppet/2014.1.1-5.1/modules/nailgun/examples'
-            '/host-only.pp '
+            '/host-upgrade.pp '
             '--modulepath=/tmp/upgrade_path/puppet/2014.1.1-5.1/modules')
 
     @mock.patch(

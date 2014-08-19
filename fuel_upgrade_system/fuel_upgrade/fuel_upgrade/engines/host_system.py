@@ -82,7 +82,6 @@ class HostSystemUpgrader(UpgradeEngine):
     def upgrade(self):
         """Run host system upgrade process
         """
-        self.version_file.switch_to_new()
         self.update_repo()
         self.run_puppet()
 
@@ -90,7 +89,6 @@ class HostSystemUpgrader(UpgradeEngine):
         """The only thing which we can rollback here
         is yum config
         """
-        self.version_file.switch_to_previous()
         self.remove_repo_config()
 
     def on_success(self):

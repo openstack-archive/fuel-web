@@ -317,23 +317,9 @@ class TestNovaHandlers(TestNetworkChecking):
         )
 
     def test_network_size_and_amount_not_fit_cidr(self):
-        self.nets['networking_parameters']['fixed_networks_amount'] = 1
+        self.nets['networking_parameters']['net_manager'] = 'VlanManager'
         self.nets['networking_parameters']['fixed_networks_cidr'] = \
             "10.10.0.0/24"
-        self.nets['networking_parameters']['fixed_network_size'] = \
-            "128"
-        self.update_nova_networks_success(self.cluster.id, self.nets)
-
-        self.nets['networking_parameters']['fixed_network_size'] = \
-            "512"
-        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEqual(
-            task['message'],
-            "Number of fixed networks (1) doesn't fit into "
-            "fixed CIDR (10.10.0.0/24) and size of one fixed network (512)."
-        )
-
-        self.nets['networking_parameters']['net_manager'] = 'VlanManager'
         self.nets['networking_parameters']['fixed_networks_amount'] = 8
         self.nets['networking_parameters']['fixed_network_size'] = \
             "32"

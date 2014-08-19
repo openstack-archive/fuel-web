@@ -307,7 +307,8 @@ class NetworkCheck(object):
         net_amount = int(self.network_config['fixed_networks_amount'])
         net_cidr = netaddr.IPNetwork(
             self.network_config['fixed_networks_cidr'])
-        if net_size * net_amount > net_cidr.size:
+        if not netmanager == 'FlatDHCPManager' and \
+                net_size * net_amount > net_cidr.size:
             self.err_msgs.append(
                 u"Number of fixed networks ({0}) doesn't fit into "
                 u"fixed CIDR ({1}) and size of one fixed network "

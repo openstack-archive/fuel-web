@@ -82,7 +82,7 @@ class HostSystemUpgrader(UpgradeEngine):
     def upgrade(self):
         """Run host system upgrade process
         """
-        self.version_file.switch_to_new()
+        #self.version_file.switch_to_new()
         self.update_repo()
         self.run_puppet()
 

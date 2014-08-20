@@ -19,28 +19,28 @@
 # Analyse dumps for packets with special cookie in UDP payload.
 #
 import argparse
-import functools
+import itertools
 import json
 import logging
 import logging.handlers
 import os
 import re
+import shutil
 import signal
 import socket
 import subprocess
 import sys
-import threading
 import time
 import traceback
 
 
 from scapy import config as scapy_config
 
-import pcap
-
 scapy_config.logLevel = 40
 scapy_config.use_pcap = True
 import scapy.all as scapy
+
+from scapy.utils import rdpcap
 
 
 class ActorFabric(object):
@@ -71,6 +71,9 @@ class Actor(object):
             'sport': 31337,
             'dport': 31337,
             'cookie': "Nailgun:",
+            'pcap_dir': "/var/run/pcap_dir/",
+            'duration': 5,
+            'repeat': 1
         }
         if config:
             self.config.update(config)
@@ -354,10 +357,27 @@ class Sender(Actor):
     def _run(self):
         for iface, vlan in self._iface_vlan_iterator():
             self._ensure_iface_up(iface)
-            data = str(''.join((self.config['cookie'], iface, ' ',
-                       self.config['uid'])))
+        self._send_packets()
+        self._log_ifaces("Interfaces just after sending probing packages")
+        for iface in self._iface_iterator():
+            self._ensure_iface_down(iface)
+        self._log_ifaces("Interfaces just after ensuring them down in sender")
+        self.logger.info("=== Sender Finished ===")
+
+    def _send_packets(self):
+        start_time = time.time()
+        for iface, vlan in itertools.cycle(self._iface_vlan_iterator()):
             self.logger.debug("Sending packets: iface=%s vlan=%s",
                               iface, str(vlan))
+            for _ in xrange(self.config['repeat']):
+                self._sendp(iface, vlan)
+            if time.time() - start_time >= self.config['duration']:
+                break
+
+    def _sendp(self, iface, vlan):
+        try:
+            data = str(''.join((self.config['cookie'], iface, ' ',
+                       self.config['uid'])))
 
             p = scapy.Ether(src=self._get_iface_mac(iface),
                             dst="ff:ff:ff:ff:ff:ff")
@@ -366,20 +386,9 @@ class Sender(Actor):
             p = p / scapy.IP(src=self.config['src'], dst=self.config['dst'])
             p = p / scapy.UDP(sport=self.config['sport'],
                               dport=self.config['dport']) / data
-
-            try:
-                for i in xrange(5):
-                    self.logger.debug("Sending packet: iface=%s data=%s",
-                                      iface, data)
-                    scapy.sendp(p, iface=iface)
-            except socket.error as e:
-                self.logger.error("Socket error: %s, %s", e, iface)
-
-        self._log_ifaces("Interfaces just after sending probing packages")
-        for iface in self._iface_iterator():
-            self._ensure_iface_down(iface)
-        self._log_ifaces("Interfaces just after ensuring them down in sender")
-        self.logger.info("=== Sender Finished ===")
+            scapy.sendp(p, iface=iface)
+        except socket.error as e:
+            self.logger.error("Socket error: %s, %s", e, iface)
 
 
 class Listener(Actor):
@@ -394,6 +403,7 @@ class Listener(Actor):
         self.pidfile = self.addpid('/var/run/net_probe')
 
         self.neighbours = {}
+        self._define_pcap_dir()
 
     def addpid(self, piddir):
         pid = os.getpid()
@@ -404,6 +414,11 @@ class Listener(Actor):
             fo.write('')
         return pidfile
 
+    def _define_pcap_dir(self):
+        if os.path.exists(self.config['pcap_dir']):
+            shutil.rmtree(self.config['pcap_dir'])
+        os.mkdir(self.config['pcap_dir'])
+
     def run(self):
         try:
             self._run()
@@ -413,21 +428,13 @@ class Listener(Actor):
 
     def _run(self):
         sniffers = set()
+        listeners = []
 
-        def run_listener_thread(iface, vlan=False):
-            t = threading.Thread(
-                target=self.get_probe_frames,
-                args=(iface, vlan)
-            )
-            t.daemon = True
-            t.start()
-            return t
-
-        for iface, vlan in self._iface_vlan_iterator():
+        for iface in self._iface_iterator():
             self._ensure_iface_up(iface)
             if iface not in sniffers:
-                run_listener_thread(iface)
-                run_listener_thread(iface, vlan=True)
+                listeners.append(self.get_probe_frames(iface))
+                listeners.append(self.get_probe_frames(iface, vlan=True))
                 sniffers.add(iface)
 
         try:
@@ -460,6 +467,13 @@ class Listener(Actor):
         except SystemExit:
             self.logger.debug("TERM signal catched")
 
+        for listener in listeners:
+            # terminate and flush pipes
+            listener.terminate()
+            listener.communicate()
+
+        self.logger.debug('Start reading dumped information.')
+        self.read_packets()
         self._log_ifaces("Interfaces just before ensuring interfaces down")
 
         for iface in self._iface_iterator():
@@ -471,6 +485,21 @@ class Listener(Actor):
             fo.write(json.dumps(self.neighbours))
         os.unlink(self.pidfile)
         self.logger.info("=== Listener Finished ===")
+
+    def read_packets(self):
+        for iface in self._iface_iterator():
+            filenames = ['{0}.pcap'.format(iface),
+                         'vlan_{0}.pcap'.format(iface)]
+            for filename in filenames:
+                self.read_pcap_file(iface, filename)
+
+    def read_pcap_file(self, iface, filename):
+        try:
+            pcap_file = os.path.join(self.config['pcap_dir'], filename)
+            for pkt in rdpcap(pcap_file):
+                self.fprn(pkt, iface)
+        except Exception:
+            self.logger.exception('Cant read pcap file %s', pcap_file)
 
     def fprn(self, p, iface):
 
@@ -493,35 +522,17 @@ class Listener(Actor):
     def get_probe_frames(self, iface, vlan=False):
         if iface not in self.neighbours:
             self.neighbours[iface] = {}
-        """
-        We do not use scapy filtering because it is slow. Instead we use
-        python binding to extreamely fast libpcap library to filter out
-        probing packages.
-        """
-        pc = pcap.pcap(iface)
         filter_string = 'udp and dst port {0}'.format(self.config['dport'])
+        filename = '{0}.pcap'.format(iface)
         if vlan:
-            filter_string = 'vlan and {0}'.format(filter_string)
-        pc.setfilter(filter_string)
+            filter_string = '{0} {1}'.format('vlan and', filter_string)
+            filename = '{0}_{1}'.format('vlan', filename)
+        pcap_file = os.path.join(self.config['pcap_dir'], filename)
 
-        def fltr(p):
-            try:
-                received_msg = str(p[scapy.UDP].payload)[:p[scapy.UDP].len]
-                decoded_msg = received_msg.decode()
-                return decoded_msg.startswith(self.config["cookie"])
-            except Exception as e:
-                self.logger.debug("Error while filtering packet: %s", str(e))
-                return False
-
-        pprn = functools.partial(self.fprn, iface=iface)
-        try:
-            while True:
-                ts, pkt = pc.next()
-                p = scapy.Ether(pkt)
-                if fltr(p):
-                    pprn(p)
-        except (KeyboardInterrupt, SystemExit):
-            pass
+        return subprocess.Popen(
+            ['tcpdump', '-i', iface, '-w', pcap_file, filter_string],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
 
 # -------------- main ---------------
 
@@ -612,6 +623,14 @@ def define_subparsers(parser):
         '-u', '--uid', dest='uid', action='store', type=str,
         help='uid to insert into probe packets payload', default='1'
     )
+    generate_parser.add_argument(
+        '-d', '--duration', dest='duration', type=int, default=5,
+        help='Amount of time to generate network packets. In seconds',
+    )
+    generate_parser.add_argument(
+        '-r', '--repeat', dest='repeat', type=int, default=1,
+        help='Amount of packets sended in one iteration.',
+    )
 
 
 def term_handler(signum, sigframe):
@@ -665,6 +684,8 @@ def main():
             config['interfaces'][params.interface] = params.vlan_list
             config['uid'] = params.uid
             config['cookie'] = params.cookie
+            config['duration'] = params.duration
+            config['repeat'] = params.repeat
 
     actor = ActorFabric.getInstance(config)
     actor.run()

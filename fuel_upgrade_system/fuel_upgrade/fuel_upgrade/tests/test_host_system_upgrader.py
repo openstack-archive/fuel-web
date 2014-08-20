@@ -31,9 +31,14 @@ class TestHostSystemUpgrader(BaseTestCase):
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.update_repo')
     @mock.patch(
         'fuel_upgrade.engines.host_system.HostSystemUpgrader.run_puppet')
-    def test_upgrade(self, run_puppet_mock, update_repo_mock):
+    @mock.patch(
+        'fuel_upgrade.engines.host_system.utils')
+    def test_upgrade(self, mock_utils, run_puppet_mock, update_repo_mock):
         self.upgrader.upgrade()
 
+        mock_utils.copy.assert_called_once_with(
+            '/tmp/upgrade_path/repos/2014.1.1-5.1/centos/x86_64',
+            '/var/www/nailgun/2014.1.1-5.1/centos/x86_64')
         self.called_once(run_puppet_mock)
         self.called_once(update_repo_mock)
 
@@ -46,8 +51,7 @@ class TestHostSystemUpgrader(BaseTestCase):
             '{0}/nailgun.repo'.format(templates_path),
             '/etc/yum.repos.d/9999_nailgun.repo',
             {'version': '9999',
-             'repo_path': '/tmp/upgrade_path/repos/2014.1.1-5.1/centos/x86_64'
-             })
+             'repo_path': '/var/www/nailgun/2014.1.1-5.1/centos/x86_64'})
 
     @mock.patch('fuel_upgrade.engines.host_system.utils')
     def test_run_puppet(self, utils_mock):

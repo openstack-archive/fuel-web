@@ -245,6 +245,8 @@ def config(update_path):
 
     # Keep only 3 latest database files
     keep_db_backups_count = 3
+    db_backup_timeout = 25
+    db_backup_interval = 4
 
     current_fuel_astute_path = '/etc/fuel/astute.yaml'
     astute = read_yaml_config(current_fuel_astute_path)

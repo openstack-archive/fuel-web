@@ -268,18 +268,6 @@ class TestNovaHandlers(TestNetworkChecking):
             "Address space intersection between ranges of floating network."
         )
 
-    def test_network_checking_fails_if_amount_flatdhcp(self):
-        self.nets['networking_parameters']['fixed_networks_amount'] = 2
-        self.nets['networking_parameters']['fixed_networks_cidr'] = \
-            "10.10.0.0/23"
-
-        task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
-        self.assertEqual(
-            task['message'],
-            "Network amount for 'fixed' is more than 1 "
-            "while using FlatDHCP manager."
-        )
-
     def test_network_checking_fails_if_vlan_ids_intersection(self):
         self.find_net_by_name('public')["vlan_start"] = 111
         self.find_net_by_name('management')["vlan_start"] = 111
@@ -298,6 +286,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.nets['networking_parameters']['fixed_networks_vlan_start'] = \
             1100
         self.nets['networking_parameters']['fixed_networks_amount'] = 20
+        self.nets['networking_parameters']['fixed_network_size'] = 256
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(

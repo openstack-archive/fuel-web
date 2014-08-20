@@ -625,10 +625,9 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         # network_size is required for all managers, otherwise
         # puppet will use default (255)
+        attrs['num_networks'] = cluster.network_config.fixed_networks_amount
         attrs['network_size'] = cluster.network_config.fixed_network_size
         if attrs['network_manager'] == 'VlanManager':
-            attrs['num_networks'] = \
-                cluster.network_config.fixed_networks_amount
             attrs['vlan_start'] = \
                 cluster.network_config.fixed_networks_vlan_start
 

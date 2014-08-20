@@ -32,6 +32,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.db.sqlalchemy.models import NodeNICInterface
 from nailgun.network.neutron import NeutronManager
 from nailgun.network.nova_network import NovaNetworkManager
+from nailgun.objects import Cluster
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.test.base import fake_tasks
@@ -324,6 +325,22 @@ class TestNetworkManager(BaseIntegrationTest):
             ),
             itertools.product((0, 1), ('eth0',))
         )
+
+    def test_nova_fixed_size(self):
+        cluster = self.env.create_cluster(api=False)
+        self.assertEqual(cluster['network_config']['fixed_network_size'],
+                         65536)
+        networks_data = \
+            {'networking_parameters': {'fixed_networks_cidr': '10.0.0.1/24',
+                                       'fixed_networks_amount': 3}}
+        resp = self.env.nova_networks_put(cluster['id'], networks_data)
+        task = jsonutils.loads(resp.body)
+        self.assertEqual(task['status'], 'ready')
+        cluster_update = Cluster.get_by_uid(cluster['id'])
+        self.assertEqual(
+            cluster_update['network_config']['fixed_network_size'], 256)
+        self.assertEqual(
+            cluster_update['network_config']['fixed_networks_amount'], 1)
 
 
 class TestNovaNetworkManager(BaseIntegrationTest):

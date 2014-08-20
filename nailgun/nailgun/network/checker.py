@@ -299,6 +299,7 @@ class NetworkCheck(object):
         net_amount = int(self.network_config['fixed_networks_amount'])
         net_cidr = netaddr.IPNetwork(
             self.network_config['fixed_networks_cidr'])
+
         if not netmanager == consts.NOVA_NET_MANAGERS.FlatDHCPManager and\
                 net_size * net_amount > net_cidr.size:
             self.err_msgs.append(

@@ -70,7 +70,7 @@ class TestHandlers(BaseIntegrationTest):
                    {'weight': '2', 'point': '2'}],
             'novanetwork_parameters': {
                 'network_manager': 'FlatDHCPManager',
-                'network_size': 256
+                'network_size': 65536
             },
             'dns_nameservers': [
                 "8.8.4.4",

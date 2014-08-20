@@ -294,14 +294,6 @@ class NetworkCheck(object):
         (nova-net)
         """
         netmanager = self.network_config['net_manager']
-        if netmanager == 'FlatDHCPManager' and \
-                self.network_config['fixed_networks_amount'] > 1:
-            self.err_msgs.append(
-                u"Network amount for 'fixed' is more than 1 "
-                "while using FlatDHCP manager."
-            )
-            self.result.append({"ids": [],
-                                "errors": ["fixed_networks_amount"]})
 
         net_size = int(self.network_config['fixed_network_size'])
         net_amount = int(self.network_config['fixed_networks_amount'])

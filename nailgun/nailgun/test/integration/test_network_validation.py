@@ -298,6 +298,7 @@ class TestNovaHandlers(TestNetworkChecking):
         self.nets['networking_parameters']['fixed_networks_vlan_start'] = \
             1100
         self.nets['networking_parameters']['fixed_networks_amount'] = 20
+        self.nets['networking_parameters']['fixed_network_size'] = 256
 
         task = self.update_nova_networks_w_error(self.cluster.id, self.nets)
         self.assertIn(

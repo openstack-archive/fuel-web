@@ -12,10 +12,73 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+import sys
+
+from oslo.config import cfg
+
+from fuel_agent import manager as manager
+from fuel_agent.openstack.common import log
+from fuel_agent import version
+
+opts = [
+    cfg.StrOpt(
+        'provision_data_file',
+        default='/tmp/provision.json',
+        help='Provision data file'
+    ),
+]
+
+CONF = cfg.CONF
+CONF.register_opts(opts)
+
+ADDITIONAL_ACTIONS = []
+
+
+def agent():
+    provision()
+
+
+def provision():
+    ADDITIONAL_ACTIONS.append('do_provisioning')
+    main()
+
+
+def partition():
+    ADDITIONAL_ACTIONS.append('do_parsing')
+    ADDITIONAL_ACTIONS.append('do_partitioning')
+    main()
+
+
+def copyimage():
+    ADDITIONAL_ACTIONS.append('do_parsing')
+    ADDITIONAL_ACTIONS.append('do_copyimage')
+    main()
+
+
+def configdrive():
+    ADDITIONAL_ACTIONS.append('do_parsing')
+    ADDITIONAL_ACTIONS.append('do_configdrive')
+    main()
+
+
+def bootloader():
+    ADDITIONAL_ACTIONS.append('do_parsing')
+    ADDITIONAL_ACTIONS.append('do_bootloader')
+    main()
+
 
 def main():
-    pass
+    CONF(sys.argv[1:], project='fuel-agent',
+         version=version.version_info.release_string())
+    log.setup('fuel-agent')
 
+    with open(CONF.provision_data_file) as f:
+        data = json.load(f)
+
+    provision_manager = manager.Manager(data)
+    for action in ADDITIONAL_ACTIONS:
+        getattr(provision_manager, action)()
 
 if __name__ == '__main__':
     main()

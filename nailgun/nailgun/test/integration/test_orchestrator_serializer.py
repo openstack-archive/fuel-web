@@ -1199,9 +1199,9 @@ class TestNSXOrchestratorSerializer(OrchestratorSerializerTestBase):
                                                     self.cluster.nodes)[0]
 
         q_settings = serialized_data['quantum_settings']
-        self.assertIn('server', q_settings)
-        self.assertIn('core_plugin', q_settings['server'])
-        self.assertEqual(q_settings['server']['core_plugin'], 'vmware')
+        self.assertIn('L2', q_settings)
+        self.assertIn('provider', q_settings['L2'])
+        self.assertEqual(q_settings['L2']['provider'], 'nsx')
         l3_settings = q_settings['L3']
         self.assertIn('dhcp_agent', l3_settings)
         self.assertIn('enable_isolated_metadata', l3_settings['dhcp_agent'])

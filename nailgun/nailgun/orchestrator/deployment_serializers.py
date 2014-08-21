@@ -865,8 +865,7 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         cluster_attrs = Cluster.get_attributes(cluster).editable
         if 'nsx_plugin' in cluster_attrs and \
                 cluster_attrs['nsx_plugin']['metadata']['enabled']:
-            server_attrs = attrs.setdefault('server', {})
-            server_attrs['core_plugin'] = 'vmware'
+            attrs['L2']['provider'] = 'nsx'
 
         return attrs
 

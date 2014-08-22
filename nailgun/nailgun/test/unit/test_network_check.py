@@ -213,8 +213,8 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker.network_config['net_manager'] = 'FlatDHCPManager'
         checker.network_config['fixed_networks_amount'] = 2
 
-        self.assertRaises(errors.NetworkCheckError,
-                          checker.check_networks_amount)
+        self.assertNotRaises(errors.NetworkCheckError,
+                             checker.check_networks_amount)
 
         checker = NetworkCheck(self.task, {})
         checker.network_config['net_manager'] = 'FlatDHCPManager'
@@ -228,8 +228,8 @@ class TestNetworkCheck(BaseIntegrationTest):
         checker.network_config['fixed_networks_amount'] = 3
         checker.network_config['fixed_networks_cidr'] = '192.168.10.1/24'
 
-        self.assertRaises(errors.NetworkCheckError,
-                          checker.check_networks_amount)
+        self.assertNotRaises(errors.NetworkCheckError,
+                             checker.check_networks_amount)
 
         checker = NetworkCheck(self.task, {})
         checker.network_config['fixed_network_size'] = 10

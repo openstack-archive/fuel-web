@@ -20,6 +20,7 @@ from itertools import product
 
 import netaddr
 
+from nailgun import consts
 from nailgun import objects
 
 from nailgun.objects.serializers.network_configuration \
@@ -294,20 +295,12 @@ class NetworkCheck(object):
         (nova-net)
         """
         netmanager = self.network_config['net_manager']
-        if netmanager == 'FlatDHCPManager' and \
-                self.network_config['fixed_networks_amount'] > 1:
-            self.err_msgs.append(
-                u"Network amount for 'fixed' is more than 1 "
-                "while using FlatDHCP manager."
-            )
-            self.result.append({"ids": [],
-                                "errors": ["fixed_networks_amount"]})
-
         net_size = int(self.network_config['fixed_network_size'])
         net_amount = int(self.network_config['fixed_networks_amount'])
         net_cidr = netaddr.IPNetwork(
             self.network_config['fixed_networks_cidr'])
-        if net_size * net_amount > net_cidr.size:
+        if not netmanager == consts.NOVA_NET_MANAGERS.FlatDHCPManager and\
+                net_size * net_amount > net_cidr.size:
             self.err_msgs.append(
                 u"Number of fixed networks ({0}) doesn't fit into "
                 u"fixed CIDR ({1}) and size of one fixed network "
@@ -568,7 +561,7 @@ class NetworkCheck(object):
     def check_configuration(self):
         """check network configuration parameters
         """
-        if self.net_provider == 'neutron':
+        if self.net_provider == consts.CLUSTER_NET_PROVIDERS.neutron:
             self.neutron_check_network_address_spaces_intersection()
             self.neutron_check_segmentation_ids()
             self.neutron_check_l3_addresses_not_match_subnet_and_broadcast()

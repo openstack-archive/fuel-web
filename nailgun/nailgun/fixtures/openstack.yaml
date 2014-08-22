@@ -995,6 +995,7 @@
               restrictions:
                 - "not ('ceph-osd' in NameAndRelease.release_roles)": "dialog.create_cluster_wizard.storage.alert"
                 - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.cinder_vcenter_alert"
+                - "Compute.hypervisor == 'vcenter'": "dialog.create_cluster_wizard.storage.vmdk_alert" 
               bind:
                 - "settings:storage.volumes_ceph.value": true
                 - "settings:storage.volumes_lvm.value": false

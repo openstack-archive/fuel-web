@@ -297,15 +297,29 @@ class TestDockerUpgrader(BaseTestCase):
             '{0}'.format(cobbler_config_path))
         rm_mock.assert_called_once_with(cobbler_config_path)
 
-    @mock.patch('fuel_upgrade.engines.docker_engine.'
-                'utils.exec_cmd')
-    def test_save_astute_keys(self, exec_cmd_mock):
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils')
+    def test_save_astute_keys(self, utils_mock):
         self.upgrader.save_astute_keys()
+        utils_mock.exec_cmd.assert_called_once_with(
+            'docker cp fuel-core-0-astute:/var/lib/astute '
+            '/var/lib/fuel_upgrade/9999')
+        utils_mock.remove.assert_called_once_with(
+            '/var/lib/fuel_upgrade/9999/astute')
 
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd',
+                side_effect=errors.ExecutedErrorNonZeroExitCode())
+    @mock.patch('fuel_upgrade.engines.docker_engine.os')
+    @mock.patch('fuel_upgrade.engines.docker_engine.utils.remove')
+    def test_save_astute_keys_creates_dir_if_error(
+            self, remove_mock, os_mock, exec_cmd_mock):
+        self.upgrader.save_astute_keys()
         exec_cmd_mock.assert_called_once_with(
             'docker cp fuel-core-0-astute:/var/lib/astute '
             '/var/lib/fuel_upgrade/9999')
-        self.called_once(exec_cmd_mock)
+        remove_mock.assert_called_once_with(
+            '/var/lib/fuel_upgrade/9999/astute')
+        os_mock.mkdir.assert_called_once_with(
+            '/var/lib/fuel_upgrade/9999/astute')
 
     @mock.patch('fuel_upgrade.engines.docker_engine.glob.glob',
                 return_value=['1.json'])

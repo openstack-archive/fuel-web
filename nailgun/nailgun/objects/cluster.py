@@ -411,13 +411,13 @@ class Cluster(NailgunObject):
     @classmethod
     def replace_provisioning_info_on_nodes(cls, instance, data, nodes):
         for node in nodes:
-            node_data = next((n for n in data if node.uid == n['uid']), {})
+            node_data = next((n for n in data if node.uid == n.get('uid')), {})
             node.replaced_provisioning_info = node_data
 
     @classmethod
     def replace_deployment_info_on_nodes(cls, instance, data, nodes):
         for node in instance.nodes:
-            node_data = [n for n in data if node.uid == n['uid']]
+            node_data = [n for n in data if node.uid == n.get('uid')]
             node.replaced_deployment_info = node_data
 
     @classmethod

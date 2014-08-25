@@ -120,8 +120,8 @@ class ProvisioningSerializer(object):
             serialized_node['ks_meta']['repo_metadata'] = \
                 orchestrator_data['repo_metadata']
 
-        vlan_splinters = cluster_attrs.get('vlan_splinters', None)
-        if vlan_splinters == 'kernel_lt':
+        vlan_splinters = cluster_attrs.get('vlan_splinters', {})
+        if vlan_splinters.get('vswitch') == 'kernel_lt':
             serialized_node['ks_meta']['kernel_lt'] = 1
 
         mellanox_data = cluster_attrs.get('neutron_mellanox')

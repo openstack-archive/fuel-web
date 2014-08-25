@@ -169,3 +169,14 @@ CLUSTER_CHANGES = Enum(
     'disks',
     'interfaces'
 )
+
+LOAD_TESTS_PATHS = Enum(
+    '/tmp/load_tests/',
+    '/tmp/load_tests/last/',
+    '/tmp/load_tests_results/',
+    names=(
+        'load_tests_base',
+        'last_load_test',
+        'load_tests_results',
+    )
+)

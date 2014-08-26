@@ -90,6 +90,7 @@ class DockerUpgrader(UpgradeEngine):
         self.generate_configs()
         self.version_file.switch_to_new()
         self.supervisor.restart_and_wait()
+        self.clean_iptables_rules()
         self.upgrade_verifier.verify()
 
     def rollback(self):
@@ -100,6 +101,7 @@ class DockerUpgrader(UpgradeEngine):
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
         self.supervisor.restart_and_wait()
+        self.clean_iptables_rules()
 
     def on_success(self):
         """Remove saved version files for all upgrades
@@ -300,7 +302,7 @@ class DockerUpgrader(UpgradeEngine):
         containers_to_creation = utils.topological_sorting(graph)
         logger.debug(u'Resolved creation order {0}'.format(
             containers_to_creation))
-        self._log_iptables()
+
         for container_id in containers_to_creation:
             container = self.container_by_id(container_id)
             logger.debug(u'Start container {0}'.format(container))
@@ -329,10 +331,6 @@ class DockerUpgrader(UpgradeEngine):
 
             if container.get('after_container_creation_command'):
                 self.run_after_container_creation_command(container)
-            self.clean_docker_iptables_rules(container)
-        # Save current rules
-        utils.safe_exec_cmd('service iptables save')
-        self._log_iptables()
 
     def run_after_container_creation_command(self, container):
         """Runs command in container with retries in
@@ -533,7 +531,7 @@ class DockerUpgrader(UpgradeEngine):
         return [container_port['PublicPort']
                 for container_port in container_ports]
 
-    def clean_docker_iptables_rules(self, container):
+    def clean_iptables_rules(self):
         """Sometimes when we run docker stop
         (version dc9c28f/0.10.0) it doesn't clean
         iptables rules, as result when we run new
@@ -557,8 +555,14 @@ class DockerUpgrader(UpgradeEngine):
           -A DOCKER -d 10.108.0.2/32 -p tcp -m tcp --dport \
             8777 -j DNAT --to-destination 172.17.0.11:8777
         """
-        utils.safe_exec_cmd('dockerctl post_start_hooks {0}'.format(
-            container['id']))
+        self._log_iptables()
+
+        for container in self.new_release_containers:
+            utils.safe_exec_cmd('dockerctl post_start_hooks {0}'.format(
+                container['id']))
+
+        utils.safe_exec_cmd('service iptables save')
+        self._log_iptables()
 
     def _log_iptables(self):
         """Method for additional logging of iptables rules

@@ -375,8 +375,11 @@
             type: "text"
         corosync:
           metadata:
-            weight: 50
             label: "Corosync"
+            weight: 50
+            restrictions:
+              - condition: "true"
+                action: "hide"
           group:
             value: "226.94.1.1"
             label: "Group"

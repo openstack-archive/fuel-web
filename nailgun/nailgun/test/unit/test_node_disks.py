@@ -21,6 +21,7 @@ import string
 from nailgun.errors import errors
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
+from nailgun.test.base import fake_tasks
 from nailgun.test.base import reverse
 from nailgun.volumes.manager import Disk
 from nailgun.volumes.manager import DisksFormatConvertor
@@ -70,6 +71,48 @@ class TestNodeDisksHandlers(BaseIntegrationTest):
         disks_vgs = [d['volumes'] for d in resp]
         vgs = [vg['name'] for disk_vgs in disks_vgs for vg in disk_vgs]
         return set(vgs)
+
+    @fake_tasks()
+    def test_clean_volumes_after_reset(self):
+        disks = [
+            {
+                "model": "TOSHIBA MK1002TS",
+                "name": "sda",
+                "disk": "sda",
+                "size": 1000204886016
+            },
+            {
+                "model": "TOSHIBA MK1002TS",
+                "name": "sdb",
+                "disk": "disk/by-path/pci-0000:00:0d.0-scsi-0:0:0:0",
+                "size": 1000204886016
+            },
+        ]
+        self.env.create(
+            nodes_kwargs=[{
+                "roles": [],
+                "pending_roles": ['compute'],
+                "meta": {"disks": disks}
+            }]
+        )
+        self.env.launch_deployment()
+        self.env.reset_environment()
+
+        node_db = self.env.nodes[0]
+
+        # simulate disk change
+        new_meta = deepcopy(node_db.meta)
+        new_meta['disks'][0]['disk'] = new_meta['disks'][1]['disk']
+        new_meta['disks'][1]['disk'] = 'sdb'
+        node_db.meta = new_meta
+        self.env.db.commit()
+
+        # check that we can config disks after reset
+        disks = self.get(node_db.id)
+        disks[0]['volumes'][0]['size'] -= 100
+        updated_disks = self.put(node_db.id, disks)
+
+        self.assertEqual(disks, updated_disks)
 
     def test_default_attrs_after_creation(self):
         self.env.create_node(api=True)

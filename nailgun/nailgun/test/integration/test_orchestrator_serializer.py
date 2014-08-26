@@ -190,6 +190,18 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
                 self.assertEqual(attrs['storage_address'],
                                  node['storage_address'])
 
+    def test_flatdhcp_manager(self):
+        cluster = self.create_env('ha_compact')
+        facts = self.serializer.serialize(cluster, cluster.nodes)
+        for fact in facts:
+            self.assertEqual(
+                fact['novanetwork_parameters']['network_manager'],
+                'FlatDHCPManager')
+            self.assertEqual(
+                fact['novanetwork_parameters']['num_networks'], 1)
+            self.assertEqual(
+                fact['novanetwork_parameters']['network_size'], 65536)
+
     def test_vlan_manager(self):
         cluster = self.create_env('ha_compact')
         data = {'networking_parameters': {'net_manager': 'VlanManager'}}

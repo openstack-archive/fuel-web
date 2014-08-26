@@ -630,12 +630,19 @@ class NovaNetworkDeploymentSerializer(NetworkDeploymentSerializer):
 
         # network_size is required for all managers, otherwise
         # puppet will use default (255)
-        attrs['network_size'] = cluster.network_config.fixed_network_size
-        if attrs['network_manager'] == 'VlanManager':
+        if attrs['network_manager'] == consts.NOVA_NET_MANAGERS.VlanManager:
             attrs['num_networks'] = \
                 cluster.network_config.fixed_networks_amount
             attrs['vlan_start'] = \
                 cluster.network_config.fixed_networks_vlan_start
+            attrs['network_size'] = cluster.network_config.fixed_network_size
+        elif (attrs['network_manager'] ==
+              consts.NOVA_NET_MANAGERS.FlatDHCPManager):
+            # We need set maximum available size for specific mask for FlatDHCP
+            # because default 256 caused problem
+            net_cidr = IPNetwork(cluster.network_config.fixed_networks_cidr)
+            attrs['network_size'] = net_cidr.size
+            attrs['num_networks'] = 1
 
         return attrs
 

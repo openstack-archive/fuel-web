@@ -68,7 +68,8 @@ class TestDockerUpgrader(BaseTestCase):
             'upload_images',
             'create_containers',
             'generate_configs',
-            'switch_to_new_configs']
+            'switch_to_new_configs',
+            'clean_iptables_rules']
 
         self.mock_methods(self.upgrader, mocked_methods)
         self.upgrader.upgrade()
@@ -369,11 +370,24 @@ class TestDockerUpgrader(BaseTestCase):
                 docker_ports_mapping))
 
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.safe_exec_cmd')
-    def test_clean_docker_iptables_rules(self, exec_cmd_mock):
-        container = {'id': 'astute'}
-        self.upgrader.clean_docker_iptables_rules(container)
-        exec_cmd_mock.assert_called_once_with(
-            'dockerctl post_start_hooks astute')
+    def test_clean_iptables_rules(self, exec_cmd_mock):
+        containers = [
+            {'id': 'astute'},
+            {'id': 'nailgun'},
+            {'id': 'ostf'}]
+
+        self.upgrader.new_release_containers = containers
+        with mock.patch('fuel_upgrade.engines.docker_engine.'
+                        'DockerUpgrader._log_iptables') as log_mock:
+            self.upgrader.clean_iptables_rules()
+            self.called_times(log_mock, 2)
+
+        self.assertEqual(
+            exec_cmd_mock.call_args_list,
+            [mock.call('dockerctl post_start_hooks astute'),
+             mock.call('dockerctl post_start_hooks nailgun'),
+             mock.call('dockerctl post_start_hooks ostf'),
+             mock.call('service iptables save')])
 
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.files_size',
                 return_value=5)

@@ -609,48 +609,56 @@ class NailgunReceiver(object):
         status = kwargs.get('status')
         progress = kwargs.get('progress')
 
-        task = objects.Task.get_by_uuid(task_uuid)
+        task = objects.Task.get_by_uuid(
+            task_uuid,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
 
-        if status == "ready":
+        # Locking cluster
+        objects.Cluster.get_by_uid(
+            task.cluster_id,
+            fail_if_not_found=True,
+            lock_for_update=True
+        )
 
+        if status == consts.TASK_STATUSES.ready:
             # restoring pending changes
-            task.cluster.status = "new"
-            objects.Cluster.add_pending_changes(task.cluster, "attributes")
-            objects.Cluster.add_pending_changes(task.cluster, "networks")
-
-            for node in task.cluster.nodes:
-                objects.Cluster.add_pending_changes(
-                    task.cluster,
-                    "disks",
-                    node_id=node.id
-                )
-
-            update_nodes = db().query(Node).filter(
-                Node.id.in_([
-                    n["uid"] for n in itertools.chain(
-                        nodes,
-                        ia_nodes
-                    )
-                ]),
-                Node.cluster_id == task.cluster_id
-            ).yield_per(100)
-
-            update_nodes.update(
-                {
-                    "online": False,
-                    "status": "discover",
-                    "pending_addition": True,
-                    "pending_deletion": False,
-                },
-                synchronize_session='fetch'
+            task.cluster.status = consts.CLUSTER_STATUSES.new
+            objects.Cluster.add_pending_changes(
+                task.cluster,
+                consts.CLUSTER_CHANGES.attributes
+            )
+            objects.Cluster.add_pending_changes(
+                task.cluster,
+                consts.CLUSTER_CHANGES.networks
             )
 
-            # Use nailgun.objects.Node.move_roles_to_pending_roles after
-            # reset_environment_resp refactoring to nailgun objects
-            for n in update_nodes:
-                n.roles, n.pending_roles = n.pending_roles, n.roles
+            node_uids = [n["uid"] for n in itertools.chain(nodes, ia_nodes)]
+            q_nodes = objects.NodeCollection.filter_by_id_list(None, node_uids)
+            q_nodes = objects.NodeCollection.filter_by(
+                q_nodes,
+                cluster_id=task.cluster_id
+            )
+            q_nodes = objects.NodeCollection.order_by(q_nodes, 'id')
 
-            db().flush()
+            # locking Nodes for update
+            update_nodes = objects.NodeCollection.lock_for_update(
+                q_nodes
+            ).all()
+
+            node_data = {
+                "online": False,
+                "status": consts.NODE_STATUSES.discover,
+                "pending_addition": True,
+                "pending_deletion": False,
+            }
+
+            for node in update_nodes:
+                # forcing volumes to rebuild
+                objects.Node.update_volumes(node)
+                objects.Node.update(node, node_data)
+                objects.Node.move_roles_to_pending_roles(node)
 
             if ia_nodes:
                 cls._notify_inaccessible(

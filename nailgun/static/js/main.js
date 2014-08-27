@@ -24,7 +24,7 @@ requirejs.config({
         'jquery-ui': 'js/libs/custom/jquery-ui-1.10.2.custom',
         'jquery-autoNumeric': 'js/libs/bower/autoNumeric/js/autoNumeric',
         utils: 'js/utils',
-        expression_parser: 'js/expression_parser',
+        expression: 'js/expression',
         keystone_client: 'js/keystone_client',
         lodash: 'js/libs/bower/lodash/js/lodash',
         backbone: 'js/libs/custom/backbone',
@@ -62,7 +62,7 @@ requirejs.config({
                 Cocktail.patch(Backbone);
             }
         },
-        expression_parser: {
+        'expression/parser': {
             exports: 'parser'
         },
         stickit: {

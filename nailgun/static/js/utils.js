@@ -13,7 +13,8 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['require', 'expression_parser', 'react'], function(require, ExpressionParser, React) {
+
+define(['require', 'expression', 'react'], function(require, Expression, React) {
     'use strict';
 
     var utils = {
@@ -68,18 +69,11 @@ define(['require', 'expression_parser', 'react'], function(require, ExpressionPa
             };
         },
         evaluateExpression: function(expression, models, options) {
-            options = _.extend({strict: true}, options);
-            ExpressionParser.yy = {
-                _: _,
-                utils: utils,
-                models: models || {},
-                options: options,
-                modelPaths: {}
-            };
-            var value = ExpressionParser.parse(expression);
+            var compiledExpression = new Expression(expression, models, options);
+            var value = compiledExpression.evaluate();
             return {
                 value: value,
-                modelPaths: ExpressionParser.yy.modelPaths
+                modelPaths: compiledExpression.modelPaths
             };
         },
         expandRestriction: function(restriction) {

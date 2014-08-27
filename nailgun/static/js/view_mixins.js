@@ -28,7 +28,7 @@ define([], function() {
                 this.$(e.currentTarget).find('i').toggleClass('hide');
             },
             render: function() {
-                this.$('input[type=password]').each(function() {
+                this.$('input[type=password]:not(.no-show)').each(function() {
                     $(this)
                         .after('<span class="add-on"><i class="icon-eye"/><i class="icon-eye-off hide"/></span>')
                         .addClass('input-append')

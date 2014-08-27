@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-#    Copyright 2013-2014 Mirantis, Inc.
+#    Copyright 2014 Mirantis, Inc.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,7 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from fuelclient.main import main
+import argparse
 
-if __name__ == "__main__":
-    main()
+from fuelclient import client
+
+
+class FuelVersionAction(argparse._VersionAction):
+    """Custom argparse._VersionAction subclass to compute fuel server version
+
+    :returns: prints fuel server version
+    """
+    def __call__(self, parser, namespace, values, option_string=None):
+        parser.exit(message=client.APIClient.get_fuel_version())

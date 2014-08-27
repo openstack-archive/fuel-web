@@ -12,24 +12,32 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import logging
+import mock
+import os
+import shutil
+import six
+import subprocess
+import sys
+import tempfile
+
+
+from fuelclient import client
+
+from tests import utils
+
 try:
     from unittest.case import TestCase
 except ImportError:
     # Runing unit-tests in production environment
     from unittest2.case import TestCase
 
-import logging
-import os
-import shutil
-import subprocess
-import sys
-import tempfile
-
 logging.basicConfig(stream=sys.stderr)
 log = logging.getLogger("CliTest.ExecutionLog")
 log.setLevel(logging.DEBUG)
 
 
+# TODO(aroma): remove it after complete move to cliff
 class CliExectutionResult:
     def __init__(self, process_handle, out, err):
         self.return_code = process_handle.returncode
@@ -45,6 +53,7 @@ class CliExectutionResult:
         return self.return_code == 0
 
 
+# TODO(aroma): remove it after complete move to cliff
 class BaseTestCase(TestCase):
     root_path = os.path.abspath(
         os.path.join(
@@ -146,3 +155,79 @@ class BaseTestCase(TestCase):
     def check_number_of_rows_in_table(self, command, number_of_rows):
         output = self.run_cli_command(command)
         self.assertEqual(len(output.stdout.split("\n")), number_of_rows + 3)
+
+
+class MyApp():
+    """Mock of main cliff application class.
+    Is supposed to provide stdout obj.
+    """
+    def __init__(self, _stdout):
+        self.stdout = _stdout
+
+
+class FakeStdout:
+
+    def __init__(self):
+        self.content = []
+
+    def write(self, text):
+        self.content.append(text)
+
+    def make_string(self):
+        result = ''
+        for line in self.content:
+            result = result + line
+        return result
+
+
+class BaseTestCommand(TestCase):
+
+    def setUp(self):
+        self.fake_stdout = FakeStdout()
+        self.cmd = self.command_class(MyApp(self.fake_stdout), None)
+
+    def _fake_execute_cmd(self, cmd, cmd_args, prog_name='fuelclient'):
+        cmd_parser = cmd.get_parser(prog_name)
+        parsed_args, _values_specs = cmd_parser.parse_known_args(cmd_args)
+        cmd.run(parsed_args)
+
+    def verify_show_command(self, cmd_args, columns_to_compare,
+                            return_value=[{}],
+                            command_output_parser=utils.list_output_parser):
+
+        with mock.patch.object(client.APIClient, self.request_to_mock,
+                               return_value=return_value):
+            self._fake_execute_cmd(self.cmd, cmd_args)
+
+        parsed_output = command_output_parser(
+            self.fake_stdout.make_string()
+        )
+
+        for elem in parsed_output:
+            self.assertEqual(
+                set(columns_to_compare),
+                set(elem.keys())
+            )
+            self.assertNotIn('not_displayable', elem.keys())
+
+            elem_id = int(elem['id'])
+            elem_to_compare = [data for data in self.return_data
+                               if data['id'] == elem_id].pop()
+
+            for key, value in six.iteritems(elem):
+                if key in ('not_displayable', 'id'):
+                    continue
+
+                self.assertEqual(
+                    utils.eval_output_to_verify(key, value),
+                    elem_to_compare[key]
+                )
+
+    def check_request_mock_called_with_args(self, cmd_args, return_value,
+                                            *called_args):
+        with mock.patch.object(client.APIClient, self.request_to_mock,
+                               return_value=return_value) \
+                as mocked:
+            self._fake_execute_cmd(self.cmd, cmd_args)
+
+            mocked.assert_called_with(*called_args)

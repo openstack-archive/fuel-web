@@ -50,7 +50,7 @@ module.exports = function(grunt) {
                 src: [
                     'static/js/**/*.js',
                     '!static/js/libs/**',
-                    '!static/js/expression_parser.js'
+                    '!static/js/expression/parser.js'
                 ],
                 directives: {
                     predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
@@ -137,8 +137,8 @@ module.exports = function(grunt) {
         },
         jison: {
             target : {
-                src: 'static/config_expression.jison',
-                dest: 'static/js/expression_parser.js',
+                src: 'static/js/expression/config.jison',
+                dest: 'static/js/expression/parser.js',
                 options: {
                     moduleType: 'js'
                 }

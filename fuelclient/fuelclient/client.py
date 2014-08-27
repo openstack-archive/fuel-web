@@ -13,7 +13,6 @@
 #    under the License.
 
 import json
-import logging
 import os
 import requests
 

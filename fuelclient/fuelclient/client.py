@@ -22,13 +22,18 @@ import yaml
 from keystoneclient import client as auth_client
 
 from fuelclient.cli.error import exceptions_decorator
-from fuelclient.logs import NullHandler
 
 
-# configure logging to silent all logs
-# and prevent issues in keystoneclient logging
-logger = logging.getLogger()
-logger.addHandler(NullHandler())
+# there is issue with management url processing by keystone client
+# code in our workflow, so we have to mute appropriate keystone
+# loggers in order to get rid from unprocessable errors
+logger = logging.getLogger('keystoneclient.httpclient')
+logger.setLevel(logging.ERROR)
+
+# increase level of loggin for urllib3 to avoid of displaying of useless
+# messages
+logging.getLogger('requests.packages.urllib3.connectionpool')\
+    .setLevel(logging.WARNING)
 
 
 class Client(object):

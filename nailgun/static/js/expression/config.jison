@@ -39,44 +39,50 @@ expressions
 
 e
     : e EQUALS e
-        {$$ = $1 == $3;}
+        {$$ = new yy.SubexpressionWrapper(function() {
+            return $1.getValue() == $3.getValue();
+        })}
     | e NOT_EQUALS e
-        {$$ = $1 != $3;}
+        {$$ = new yy.SubexpressionWrapper(function() {
+            return $1.getValue() != $3.getValue();
+        })}
     | LPAREN e RPAREN
-        {$$ = $2;}
+        {$$ = new yy.SubexpressionWrapper(function() {
+            return $2.getValue();
+        })}
     | e AND e
-        {$$ = $1 && $3;}
+        {$$ = new yy.SubexpressionWrapper(function() {
+            return $1.getValue() && $3.getValue();
+        })}
     | e OR e
-        {$$ = $1 || $3;}
+        {$$ = new yy.SubexpressionWrapper(function() {
+            return $1.getValue() || $3.getValue();
+        })}
     | NOT e
-        {$$ = !$2;}
+        {$$ = new yy.SubexpressionWrapper(function() {
+            return !($2.getValue());
+        })}
     | e IN e
-        {$$ = yy._.contains($3, $1);}
+        {$$ = new yy.SubexpressionWrapper(function() {
+            return require('underscore').contains($3.getValue(), $1.getValue());
+        })}
     | NUMBER
-        {$$ = Number(yytext);}
+        {$$ = new yy.ScalarWrapper(Number(yytext))}
     | STRING
-        {$$ = yytext.slice(1, -1);}
+        {$$ = new yy.ScalarWrapper(yytext.slice(1, -1))}
     | TRUE
-        {$$ = true;}
+        {$$ = new yy.ScalarWrapper(true)}
     | FALSE
-        {$$ = false;}
+        {$$ = new yy.ScalarWrapper(false)}
     | NULL
-        {$$ = null;}
+        {$$ = new yy.ScalarWrapper(null)}
     | MODELPATH
         {
-            var strict = yy.options.strict;
+            var strict = yy.expression.options.strict;
             if (yytext.slice(-1) == '?') {
                 strict = false;
                 yytext = yytext.slice(0, -1);
             }
-            var modelPath = yy.utils.parseModelPath(yytext, yy.models);
-            $$ = modelPath.get();
-            if (typeof $$ == 'undefined') {
-                if (strict) {
-                    throw new TypeError('Value of ' + yytext + ' is undefined. Set options.strict to false to allow undefined values.');
-                }
-                $$ = null;
-            }
-            yy.modelPaths[yytext] = modelPath;
+            $$ = new yy.ModelPathWrapper(yytext, yy.expression, strict);
         }
     ;

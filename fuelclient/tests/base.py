@@ -12,18 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-try:
-    from unittest.case import TestCase
-except ImportError:
-    # Runing unit-tests in production environment
-    from unittest2.case import TestCase
-
 import logging
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+
+import tests
 
 logging.basicConfig(stream=sys.stderr)
 log = logging.getLogger("CliTest.ExecutionLog")
@@ -45,7 +41,7 @@ class CliExectutionResult:
         return self.return_code == 0
 
 
-class BaseTestCase(TestCase):
+class BaseTestCase(tests.TestCase):
     root_path = os.path.abspath(
         os.path.join(
             os.curdir,

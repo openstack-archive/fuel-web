@@ -178,6 +178,11 @@ class NetworkManager(object):
             )
 
         for node_id in nodes_ids:
+            if network_name == 'public' and \
+                    not objects.Node.should_have_public(
+                    objects.Node.get_by_mac_or_uid(node_uid=node_id)):
+                continue
+
             node_ips = imap(
                 lambda i: i.ip_addr,
                 cls._get_ips_except_admin(

@@ -30,6 +30,12 @@ setup(
             'fuel = fuelclient.main:main',
         ],
         'fuelclient': [
+            'environment-create = fuelclient.commands.environment:EnvCreate',
+            'environment-list = fuelclient.commands.environment:EnvList',
+            'environment-show = fuelclient.commands.environment:EnvShow',
+            'environment-delete = fuelclient.commands.environment:EnvDelete',
+            'environment-update = fuelclient.commands.environment:EnvUpdate',
+            'environment-upgrade = fuelclient.commands.environment:EnvUpgrade',
         ],
     }
 )

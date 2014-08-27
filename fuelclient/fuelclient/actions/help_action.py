@@ -12,13 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import argparse
 import sys
 import traceback
 
 from fuelclient.cli.parser import parser as obsolete_parser
-from fuelclient import client
 
 
 class HelpAction(argparse.Action):
@@ -78,12 +76,3 @@ class HelpAction(argparse.Action):
         app.stdout.write('\n' + old_cmds_help)
 
         sys.exit(0)
-
-
-class FuelVersionAction(argparse._VersionAction):
-    """Custom argparse._VersionAction subclass to compute fuel server version
-
-    :returns: prints fuel server version
-    """
-    def __call__(self, parser, namespace, values, option_string=None):
-        parser.exit(message=client.APIClient.get_fuel_version())

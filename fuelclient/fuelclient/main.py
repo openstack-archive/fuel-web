@@ -25,9 +25,9 @@ from cliff.interactive import InteractiveApp
 # TODO(aroma): remove after all subcommands will be implemented using cliff
 from fuelclient.cli import parser as obsolete_parser
 
-from fuelclient.cli import arguments
-from fuelclient.utils import custom_actions
-from fuelclient.utils import custom_commands
+from fuelclient.actions import global_opts_actions
+from fuelclient.actions import help_action
+from fuelclient.commands import help_command
 
 
 LOG = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class FuelClient(app.App):
         """Initialize the application.
         """
         self.command_manager = command_manager
-        self.command_manager.add_command('help', custom_commands.HelpCommand)
+        self.command_manager.add_command('help', help_command.HelpCommand)
         self.command_manager.add_command('complete', CompleteCommand)
         self._set_streams(stdin, stdout, stderr)
         self.interactive_app_factory = interactive_app_factory
@@ -106,7 +106,7 @@ class FuelClient(app.App):
         )
         parser.add_argument(
             '-h', '--help',
-            action=custom_actions.HelpAction,
+            action=help_action.HelpAction,
             nargs=0,
             default=self,  # tricky
             help="show this help message and exit",
@@ -119,7 +119,7 @@ class FuelClient(app.App):
         )
         parser.add_argument(
             '--fuel-version',
-            action=arguments.FuelVersionAction,
+            action=global_opts_actions.FuelVersionAction,
             help="show Fuel server's version number and exit"
         )
         return parser

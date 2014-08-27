@@ -413,13 +413,14 @@ function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesD
         mixins: [viewMixins.toggleablePassword],
         events: {
             'click .btn-change-password': 'changePassword',
-            'keydown input': 'onPasswordChange',
-            'keydown': 'onInputKeydown'
+            'keyup input': 'onPasswordChange',
+            'keydown': 'onKeydown'
         },
         changePassword: function() {
-            var currentPassword = this.$('[name=current_password]').val();
-            var newPassword = this.$('[name=new_password]').val();
-            if (currentPassword && newPassword) {
+            var currentPassword = this.$('[name=current_password]').val(),
+                newPassword = this.$('[name=new_password]').val(),
+                confirmedPassword= this.$('[name=confirm_new_password]').val();
+            if (currentPassword && (newPassword == confirmedPassword)) {
                 app.keystoneClient.changePassword(currentPassword, newPassword)
                     .done(_.bind(function() {
                         app.user.set({password: app.keystoneClient.password});
@@ -432,11 +433,18 @@ function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesD
         },
         onPasswordChange: function(e) {
             this.$(e.currentTarget).removeClass('error').parent().siblings('.validation-error').hide();
+            var newPassword = this.$('[name=new_password]'),
+                confirmedPassword = this.$('[name=confirm_new_password]');
+            confirmedPassword.removeClass('error').parent().siblings('.validation-error').hide();
+            if (newPassword.val() != confirmedPassword.val()) {
+                confirmedPassword.addClass('error').parent().siblings('.validation-error').show();
+            }
+            var disabled = (!_.all(_.invoke(_.map(this.$('input'), $), 'val')) || this.$('.validation-error').is(':visible'));
             _.defer(_.bind(function() {
-                this.$('.btn-change-password').attr('disabled', !_.all(_.invoke(_.map(this.$('input'), $), 'val')));
+                this.$('.btn-change-password').attr('disabled', disabled);
             }, this));
         },
-        onInputKeydown: function(e) {
+        onKeydown: function(e) {
             if (e.which == 13) {
                 e.preventDefault();
                 this.changePassword();

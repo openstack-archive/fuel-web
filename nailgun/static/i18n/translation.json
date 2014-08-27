@@ -601,7 +601,9 @@
                     "title": "Change Password",
                     "current_password": "Current password",
                     "new_password": "New password",
-                    "wrong_current_password": "Wrong password"
+                    "confirm_new_password": "Confirm new password",
+                    "wrong_current_password": "Wrong password",
+                    "new_password_mismatch": "Passwords do not match"
                 }
             }
         }

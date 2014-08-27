@@ -224,46 +224,8 @@ def get_change_password_arg(help_msg):
     return get_boolean_arg("change-password", help=help_msg)
 
 
-def get_name_arg(help_msg):
-    return get_str_arg("name", flags=("--env-name",), help=help_msg)
-
-
-def get_mode_arg(help_msg):
-    return get_arg("mode",
-                   action="store",
-                   choices=("multinode", "ha"),
-                   default=False,
-                   flags=("-m", "--deployment-mode"),
-                   help_=help_msg)
-
-
-def get_net_arg(help_msg):
-    return get_arg("net",
-                   flags=("-n", "--network-mode"),
-                   action="store",
-                   choices=("nova", "neutron"),
-                   help_=help_msg,
-                   default="nova")
-
-
-def get_nst_arg(help_msg):
-    return get_arg("nst",
-                   flags=("--net-segment-type",),
-                   action="store",
-                   choices=("gre", "vlan"),
-                   help_=help_msg,
-                   default=None)
-
-
 def get_all_arg(help_msg):
     return get_boolean_arg("all", help=help_msg)
-
-
-def get_create_arg(help_msg):
-    return get_boolean_arg(
-        "create",
-        flags=("-c", "--env-create"),
-        help=help_msg)
 
 
 def get_download_arg(help_msg):
@@ -272,11 +234,6 @@ def get_download_arg(help_msg):
 
 def get_list_arg(help_msg):
     return get_boolean_arg("list", flags=("-l",), help=help_msg)
-
-
-def get_update_arg(help_msg):
-    return get_boolean_arg("update",
-                           flags=("--env-update",), help=help_msg)
 
 
 def get_dir_arg(help_msg):

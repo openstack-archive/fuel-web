@@ -81,6 +81,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         discardSettingsChanges: function(options) {
             this.registerSubView(new dialogViews.DiscardSettingsChangesDialog(options)).render();
+            //utils.showDialog(dialogViews.DiscardSettingsChangesDialog(options));
         },
         onNameChange: function() {
             this.updateBreadcrumbs();

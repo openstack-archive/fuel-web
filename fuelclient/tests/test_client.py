@@ -22,41 +22,6 @@ from tests.base import BaseTestCase
 
 class TestHandlers(BaseTestCase):
 
-    def test_env_action(self):
-        #check env help
-        help_msgs = ["usage: fuel environment [-h]",
-                     "[--list | --set | --delete | --create | --update]",
-                     "optional arguments:", "--help", "--list", "--set",
-                     "--delete", "--rel", "--env-create",
-                     "--create", "--name", "--env-name", "--mode", "--net",
-                     "--network-mode", "--nst", "--net-segment-type",
-                     "--deployment-mode", "--update", "--env-update"]
-        self.check_all_in_msg("help env", help_msgs)
-        #no clusters
-        self.check_for_rows_in_table("env --quiet")
-
-        for action in ("set", "create", "delete"):
-            self.check_if_required("env {0}".format(action))
-
-        #list of tuples (<fuel CLI command>, <expected output of a command>)
-        expected_stdout = \
-            [(
-                "env --create --name=TestEnv --release=1 --quiet",
-                "Environment 'TestEnv' with id=1, mode=ha_compact and "
-                "network-mode=nova_network was created!\n"
-            ), (
-                "--env-id=1 env set --name=NewEnv --quiet",
-                ("Following attributes are changed for "
-                 "the environment: name=NewEnv\n")
-            ), (
-                "--env-id=1 env set --mode=multinode --quiet",
-                ("Following attributes are changed for "
-                 "the environment: mode=multinode\n")
-            )]
-
-        for cmd, msg in expected_stdout:
-            self.check_for_stdout(cmd, msg)
-
     def test_node_action(self):
         help_msg = ["fuel node [-h] [--env ENV]",
                     "[--list | --set | --delete | --network | --disk |"
@@ -80,7 +45,7 @@ class TestHandlers(BaseTestCase):
     def test_selected_node_deploy_or_provision(self):
         self.load_data_to_nailgun_server()
         self.run_cli_commands((
-            "env create --name=NewEnv --release=1 --quiet",
+            "environment-create NewEnv 1 --quiet",
             "--env-id=1 node set --node 1 --role=controller --quiet"
         ))
         commands = ("--provision", "--deploy")
@@ -118,7 +83,7 @@ class TestHandlers(BaseTestCase):
     def test_destroy_node(self):
         self.load_data_to_nailgun_server()
         self.run_cli_commands((
-            "env create --name=NewEnv --release=1 --quiet",
+            "environment-create NewEnv 1 --quiet",
             "--env-id=1 node set --node 1 --role=controller --quiet"
         ))
         msg = ("Nodes with id [1] has been deleted from fuel db.\n"
@@ -170,7 +135,9 @@ class TestHandlers(BaseTestCase):
 
 class TestUserActions(BaseTestCase):
 
+    # TODO(aroma): move it to tests of global options
     def test_change_password_params(self):
+        self.skipTest('Should be moved to tests of global options')
         cmd = "user --change-password"
         msg = "Expect password [--newpass NEWPASS]"
         result = self.run_cli_command(cmd, check_errors=True)
@@ -179,7 +146,10 @@ class TestUserActions(BaseTestCase):
 
 class TestCharset(BaseTestCase):
 
+    # TODO(aroma): move it to tests for cliff version command
     def test_charset_problem(self):
+        self.skipTest('Should be moved to test_env_command suite')
+        self.skipTest("Should be moved ")
         self.load_data_to_nailgun_server()
         self.run_cli_commands((
             "env create --name=привет --release=1 --quiet",
@@ -193,7 +163,7 @@ class TestFiles(BaseTestCase):
     def test_file_creation(self):
         self.load_data_to_nailgun_server()
         self.run_cli_commands((
-            "env create --name=NewEnv --release=1 --quiet",
+            "environment-create NewEnv 1 --quiet",
             "--env-id=1 node set --node 1 --role=controller --quiet",
             "--env-id=1 node set --node 2,3 --role=compute --quiet"
         ))
@@ -299,7 +269,7 @@ class TestDeployChanges(BaseTestCase):
 
     def test_deploy_changes_no_failure(self):
         self.load_data_to_nailgun_server()
-        env_create = "env create --name=test --release=1 --quiet"
+        env_create = "environment-create test 1 --quiet"
         add_node = "--env-id=1 node set --node 1 --role=controller --quiet"
         deploy_changes = "deploy-changes --env 1 --quiet"
         self.run_cli_commands((env_create, add_node, deploy_changes))

@@ -120,7 +120,8 @@ class Environment(object):
         return cluster
 
     def create_release(self, api=False, **kwargs):
-        version = str(randint(0, 100000000))
+        version = str(randint(0, 100000000)) if not 'version' in kwargs else \
+            kwargs['version']
         release_data = {
             'name': u"release_name_" + version,
             'version': version,

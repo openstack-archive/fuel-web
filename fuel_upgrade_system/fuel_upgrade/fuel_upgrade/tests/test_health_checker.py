@@ -68,16 +68,18 @@ class TestBaseChecker(BaseTestCase):
         self.assertEquals(resp['code'], 200)
 
     @mock.patch('fuel_upgrade.health_checker.requests.get')
-    def test_safe_get_connection_error(self, requests_get):
-        requests_get.side_effect = requests.exceptions.ConnectionError()
-        resp = self.make_get_request()
-        self.assertEquals(resp, None)
+    def test_safe_get_exception_raised(self, requests_get):
+        exceptions = [
+            requests.exceptions.ConnectionError(),
+            requests.exceptions.Timeout(),
+            requests.exceptions.HTTPError(),
+            ValueError(),
+            socket.timeout()]
 
-    @mock.patch('fuel_upgrade.health_checker.requests.get')
-    def test_safe_get_timeout_error(self, requests_get):
-        requests_get.side_effect = requests.exceptions.Timeout()
-        resp = self.make_get_request()
-        self.assertEquals(resp, None)
+        for exception in exceptions:
+            requests_get.side_effect = exception
+            resp = self.make_get_request()
+            self.assertEquals(resp, None)
 
     @mock.patch('fuel_upgrade.health_checker.requests.get')
     def test_safe_get_non_json_response(self, requests_get):

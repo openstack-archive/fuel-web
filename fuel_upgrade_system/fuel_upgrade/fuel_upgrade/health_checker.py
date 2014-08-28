@@ -86,7 +86,8 @@ class BaseChecker(object):
         except (requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout,
                 requests.exceptions.HTTPError,
-                ValueError):
+                ValueError,
+                socket.timeout):
             return None
 
     def check_if_port_open(self, ip, port):
@@ -392,9 +393,7 @@ class FuelUpgradeVerify(object):
         """
         not_running_services = self._get_non_running_services()
         if not_running_services:
-            logger.info('Checkers which are still fail %s',
-                        not_running_services)
-
+            logger.info('Failed checkers: %s', not_running_services)
             return False
 
         return True

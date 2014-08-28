@@ -558,8 +558,9 @@ class DockerUpgrader(UpgradeEngine):
         self._log_iptables()
 
         for container in self.new_release_containers:
-            utils.safe_exec_cmd('dockerctl post_start_hooks {0}'.format(
-                container['id']))
+            if container.get('port_bindings'):
+                utils.safe_exec_cmd('dockerctl post_start_hooks {0}'.format(
+                    container['id']))
 
         utils.safe_exec_cmd('service iptables save')
         self._log_iptables()

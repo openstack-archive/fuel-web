@@ -372,9 +372,9 @@ class TestDockerUpgrader(BaseTestCase):
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.safe_exec_cmd')
     def test_clean_iptables_rules(self, exec_cmd_mock):
         containers = [
-            {'id': 'astute'},
-            {'id': 'nailgun'},
-            {'id': 'ostf'}]
+            {'id': 'astute', 'port_bindings': ['some_ports']},
+            {'id': 'some_volume_container'},
+            {'id': 'ostf', 'port_bindings': ['some_ports']}]
 
         self.upgrader.new_release_containers = containers
         with mock.patch('fuel_upgrade.engines.docker_engine.'
@@ -385,7 +385,6 @@ class TestDockerUpgrader(BaseTestCase):
         self.assertEqual(
             exec_cmd_mock.call_args_list,
             [mock.call('dockerctl post_start_hooks astute'),
-             mock.call('dockerctl post_start_hooks nailgun'),
              mock.call('dockerctl post_start_hooks ostf'),
              mock.call('service iptables save')])
 

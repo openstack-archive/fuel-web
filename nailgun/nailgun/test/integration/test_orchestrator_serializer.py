@@ -500,10 +500,15 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
 
     def setUp(self):
         super(TestNeutronOrchestratorSerializer, self).setUp()
+        self.new_env_release_version = None
         self.cluster = self.create_env('ha_compact')
 
     def create_env(self, mode, segment_type='vlan'):
+        release_kwargs = {}
+        if self.new_env_release_version:
+            release_kwargs['version'] = self.new_env_release_version
         cluster = self.env.create(
+            release_kwargs=release_kwargs,
             cluster_kwargs={
                 'mode': mode,
                 'net_provider': 'neutron',
@@ -555,6 +560,49 @@ class TestNeutronOrchestratorSerializer(OrchestratorSerializerTestBase):
             expected_node = self.serializer.serialize_node(
                 node_db, serialized_node['role'])
             self.assertEqual(serialized_node, expected_node)
+
+    def test_serialize_neutron_attrs_on_different_env_versions(self):
+        # 5.1 environment
+        self.new_env_release_version = "2014.1.1-5.1"
+        cluster = self.create_env(mode='ha_compact')
+        serialized_nodes = self.serializer.serialize(cluster, cluster.nodes)
+        for node in serialized_nodes:
+            self.assertEqual(
+                {
+                    "network_type": "local",
+                    "segment_id": None,
+                    "router_ext": True,
+                    "physnet": None
+                },
+                node['quantum_settings']['predefined_networks'][
+                    'net04_ext']['L2']
+            )
+            self.assertFalse(
+                'physnet1' in node['quantum_settings']['L2']['phys_nets']
+            )
+
+        # non-5.1 environment
+        self.new_env_release_version = "2014.1.1-5.0.2"
+        cluster = self.create_env(mode='ha_compact')
+        serialized_nodes = self.serializer.serialize(cluster, cluster.nodes)
+        for node in serialized_nodes:
+            self.assertEqual(
+                {
+                    "network_type": "flat",
+                    "segment_id": None,
+                    "router_ext": True,
+                    "physnet": "physnet1"
+                },
+                node['quantum_settings']['predefined_networks'][
+                    'net04_ext']['L2']
+            )
+            self.assertEqual(
+                {
+                    "bridge": "br-ex",
+                    "vlan_range": None
+                },
+                node['quantum_settings']['L2']['phys_nets']['physnet1']
+            )
 
     def test_serialize_node(self):
         node = self.env.create_node(

@@ -24,6 +24,19 @@
     "less": "~1.5.1",
     "lodash-node": "~2.4.1",
     "requirejs": "~2.1.9",
-    "uglifyjs": "~2.3.6"
+    "uglifyjs": "~2.3.6",
+    "react-tools": "~0.11.1",
+    "react-addons": "~0.9.0",
+    "jest-cli": "~0.1.18"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "dependencies": {
+    "react": "*"
+  },
+  "jest": {
+    "scriptPreprocessor": "static/js/preprocessor.js",
+    "unmockedModulePathPatterns": ["node_modules/react"]
   }
 }

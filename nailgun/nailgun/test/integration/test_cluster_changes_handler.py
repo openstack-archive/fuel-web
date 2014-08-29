@@ -357,6 +357,9 @@ class TestHandlers(BaseIntegrationTest):
     @patch('nailgun.rpc.cast')
     def test_neutron_deploy_cast_with_right_args(self, mocked_rpc):
         self.env.create(
+            release_kwargs={
+                'version': "2014.1.1-5.1"
+            },
             cluster_kwargs={
                 'net_provider': 'neutron',
                 'net_segment_type': 'gre'

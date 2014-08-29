@@ -93,6 +93,21 @@ class TestHandlers(BaseTestCase):
                 msg
             )
 
+    def test_check_wrong_server(self):
+        os.environ["SERVER_ADDRESS"] = "0"
+        result = self.run_cli_command("-h", check_errors=True)
+        self.assertEqual(result.stderr, '')
+        del os.environ["SERVER_ADDRESS"]
+
+    def test_wrong_credentials(self):
+        result = self.run_cli_command("--os-username=a --os-password=a node",
+                                      check_errors=True)
+        self.assertEqual(result.stderr,
+        '\n        Unauthorized: need authentication!\n'
+        '        Please provide user and password via client --os-username '
+        '--os-password\n        or modify "KEYSTONE_USER" and "KEYSTONE_PASS" '
+        'in\n        /etc/fuel/client/config.yaml\n')
+
     def test_destroy_node(self):
         self.load_data_to_nailgun_server()
         self.run_cli_commands((

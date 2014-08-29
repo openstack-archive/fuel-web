@@ -22,8 +22,8 @@ import os
 import requests
 import six
 
+from fuel_upgrade.clients import NailgunClient
 from fuel_upgrade.engines.base import UpgradeEngine
-from fuel_upgrade.nailgun_client import NailgunClient
 from fuel_upgrade import utils
 
 

@@ -16,7 +16,8 @@
 
 import json
 import logging
-import requests
+
+from fuel_upgrade.clients import KeystoneClient
 
 logger = logging.getLogger(__name__)
 
@@ -35,11 +36,11 @@ class NailgunClient(object):
 
     api_url = 'http://{host}:{port}/api/v1'
 
-    def __init__(self, host=None, port=None, keystone_credentials=None):
+    def __init__(self, host=None, port=None, keystone_credentials={}):
         #: an url to nailgun's restapi service
         self.api_url = self.api_url.format(host=host, port=port)
-        #: keystone credentials for nailgun authentification
-        self.keystone_credentials = keystone_credentials
+        #: keystone credentials for authentification
+        self.keystone_client = KeystoneClient(**keystone_credentials)
 
     def get_releases(self):
         """Returns a list with all releases.
@@ -130,43 +131,4 @@ class NailgunClient(object):
 
         :returns: :class:`requests.Session` object
         """
-        session = requests.Session()
-        token = self.get_token()
-        if token:
-            session.headers.update({'X-Auth-Token': token})
-
-        return session
-
-    def get_token(self):
-        """Retrieves auth token from keystone
-
-        :returns: authentification token
-
-        NOTE(eli): for 5.0.x versions of fuel we don't
-        have keystone and fuel access control feature,
-        as result this client should work with and without
-        authentication, in order to do this, we are
-        trying to create Keystone client and in case if
-        it fails we don't use authentication
-        """
-        if not self.keystone_credentials:
-            return None
-
-        try:
-            auth_data = self.keystone_credentials
-            resp = requests.post(
-                auth_data['auth_url'],
-                headers={'content-type': 'application/json'},
-                data=json.dumps({
-                    'auth': {
-                        'tenantName': auth_data['tenant_name'],
-                        'passwordCredentials': {
-                            'username': auth_data['username'],
-                            'password': auth_data['password']}}})).json()
-
-            return (isinstance(resp, dict) and
-                    resp.get('access', {}).get('token', {}).get('id'))
-        except (ValueError, requests.exceptions.RequestException) as exc:
-            logger.debug('Cannot authenticate in keystone: {0}'.format(exc))
-
-        return None
+        return self.keystone_client.request

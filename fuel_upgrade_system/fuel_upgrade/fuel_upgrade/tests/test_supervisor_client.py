@@ -17,15 +17,16 @@
 import mock
 import xmlrpclib
 
-from fuel_upgrade.supervisor_client import SupervisorClient
+from fuel_upgrade.clients import SupervisorClient
 from fuel_upgrade.tests.base import BaseTestCase
 
 
-@mock.patch('fuel_upgrade.supervisor_client.os')
+@mock.patch('fuel_upgrade.clients.supervisor_client.os')
 class TestSupervisorClient(BaseTestCase):
 
     def setUp(self):
-        self.utils_patcher = mock.patch('fuel_upgrade.supervisor_client.utils')
+        self.utils_patcher = mock.patch(
+            'fuel_upgrade.clients.supervisor_client.utils')
         self.utils_mock = self.utils_patcher.start()
 
         self.supervisor = SupervisorClient(self.fake_config, '0')
@@ -78,7 +79,7 @@ class TestSupervisorClient(BaseTestCase):
 
     def test_generate_config(self, _):
         config_path = '/config/path'
-        with mock.patch('fuel_upgrade.supervisor_client.os.path.join',
+        with mock.patch('fuel_upgrade.clients.supervisor_client.os.path.join',
                         return_value=config_path):
             self.supervisor.generate_config(
                 {'service_name': 'service_name1', 'command': 'command1'})
@@ -94,7 +95,7 @@ class TestSupervisorClient(BaseTestCase):
         paths = ['script_path', '/path/cobbler_config', '']
         self.supervisor.generate_config = mock.MagicMock()
         with mock.patch(
-                'fuel_upgrade.supervisor_client.os.path.join',
+                'fuel_upgrade.clients.supervisor_client.os.path.join',
                 side_effect=paths):
 
             self.supervisor.generate_cobbler_config(

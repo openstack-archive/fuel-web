@@ -121,15 +121,17 @@ def get_endpoints(astute_config):
     rabbitmq_mcollective_access = astute_config.get(
         'mcollective', {'user': 'mcollective', 'password': 'marionette'})
 
+    keystone_credentials = {
+        'username': fuel_access['user'],
+        'password': fuel_access['password'],
+        'auth_url': 'http://{0}:5000/v2.0/tokens'.format(master_ip),
+        'tenant_name': 'admin'}
+
     return {
         'nginx_nailgun': {
             'port': 8000,
             'host': '0.0.0.0',
-            'keystone_credentials': {
-                'username': fuel_access['user'],
-                'password': fuel_access['password'],
-                'auth_url': 'http://{0}:5000/v2.0/tokens'.format(master_ip),
-                'tenant_name': 'admin'}},
+            'keystone_credentials': keystone_credentials},
 
         'nginx_repo': {
             'port': 8080,
@@ -137,7 +139,8 @@ def get_endpoints(astute_config):
 
         'ostf': {
             'port': 8777,
-            'host': '127.0.0.1'},
+            'host': '127.0.0.1',
+            'keystone_credentials': keystone_credentials},
 
         'cobbler': {
             'port': 80,

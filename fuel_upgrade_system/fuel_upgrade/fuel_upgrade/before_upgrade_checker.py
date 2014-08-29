@@ -22,7 +22,7 @@ import six
 from fuel_upgrade import errors
 from fuel_upgrade import utils
 
-from fuel_upgrade.nailgun_client import NailgunClient
+from fuel_upgrade.clients import NailgunClient
 
 logger = logging.getLogger(__name__)
 

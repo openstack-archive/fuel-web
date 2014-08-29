@@ -131,7 +131,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
         action: 'reset',
         template: _.template(resetEnvironmentTemplate),
         applyAction: function() {
-            this.registerSubView(new dialogViews.ResetEnvironmentDialog({model: this.model, action: 'reset'})).render();
+            utils.showDialog(dialogViews.ResetEnvironmentDialog({model: this.model, action: 'reset'}));
         },
         isLocked: function() {
             return this.model.get('status') == 'new' || this.constructor.__super__.isLocked.apply(this);
@@ -148,7 +148,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
     DeleteEnvironmentAction = Action.extend({
         template: _.template(deleteEnvironmentTemplate),
         applyAction: function() {
-            this.registerSubView(new dialogViews.RemoveClusterDialog({model: this.model})).render();
+            utils.showDialog(dialogViews.RemoveClusterDialog({model: this.model}));
         }
     });
 
@@ -189,7 +189,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
         },
         applyAction: function() {
             var isDowngrade = _.contains(this.model.get('release').get('can_update_from_versions'), this.releases.findWhere({id: this.model.get('pending_release_id') || this.model.get('release_id')}).get('version'));
-            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action, isDowngrade: isDowngrade})).render();
+            utils.showDialog(dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action, isDowngrade: isDowngrade}));
         },
         getReleasesForUpdate: function() {
             var releaseId = this.model.get('release_id');

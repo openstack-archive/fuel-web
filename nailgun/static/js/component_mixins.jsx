@@ -64,19 +64,37 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             close: function() {
                 $(this.getDOMNode()).modal('hide');
             },
+            setDefaultValues: function(errorTitle, errorMessage) {
+                return {title: errorTitle || $.t('dialog.error_dialog.title'), message: errorMessage || $.t('dialog.error_dialog.warning')};
+            },
+            showError: function(error) {
+                this.setState({
+                    showError: true,
+                    errorTitle: error.title,
+                    errorMessage: error.message
+                });
+            },
             render: function() {
+                var error = {};
+                if (this.props.showError) {
+                    error = this.setDefaultValues(this.props.title, this.props.message);
+                } else if (this.state && this.state.showError) {
+                    error = this.setDefaultValues(this.state.errorTitle, this.state.errorMessage);
+                }
                 return (
                     <div className="modal fade" tabIndex="-1">
                         <div className="modal-header">
                             <button type="button" className="close" onClick={this.close}>&times;</button>
-                            <h3>{this.props.title}</h3>
+                            <h3>{error.title || this.props.title}</h3>
                         </div>
-                        <div className="modal-body">
-                            {this.renderBody()}
-                        </div>
-                        <div className="modal-footer">
-                            {this.renderFooter ? this.renderFooter() : <button className="btn" onClick={this.close}>{$.t('common.close_button')}</button>}
-                        </div>
+                            <div>
+                                <div className="modal-body">
+                                    {error.message || this.renderBody()}
+                                </div>
+                                <div className="modal-footer">
+                                    {(this.renderFooter && !error.message) ? this.renderFooter() : <button className="btn" onClick={this.close}>{$.t('common.close_button')}</button>}
+                                </div>
+                            </div>
                     </div>
                 );
             }

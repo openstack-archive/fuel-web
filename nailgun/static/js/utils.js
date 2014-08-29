@@ -125,11 +125,8 @@ define(['require', 'expression_parser', 'react'], function(require, ExpressionPa
             return React.renderComponent(dialog, $('#modal-container')[0]);
         },
         showErrorDialog: function(options, parentView) {
-            parentView = parentView || app.page;
             var dialogViews = require('jsx!views/dialogs'); // avoid circular dependencies
-            var dialog = new dialogViews.Dialog();
-            parentView.registerSubView(dialog);
-            dialog.render(_.extend({error: true}, options));
+            this.showDialog(dialogViews.ErrorDialog(_.extend({showError: true}, options)));
         },
         showBandwidth: function(bandwidth) {
             bandwidth = parseInt(bandwidth, 10);

@@ -77,10 +77,10 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             }
         },
         displayChanges: function() {
-            this.registerSubView(new dialogViews.DisplayChangesDialog({model: this.model})).render();
+            utils.showDialog(dialogViews.DisplayChangesDialog({model: this.model}));
         },
         discardSettingsChanges: function(options) {
-            this.registerSubView(new dialogViews.DiscardSettingsChangesDialog(options)).render();
+            utils.showDialog(dialogViews.DiscardSettingsChangesDialog(options));
         },
         onNameChange: function() {
             this.updateBreadcrumbs();
@@ -294,7 +294,8 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             }
         },
         stopDeployment: function() {
-            this.registerSubView(new dialogViews.StopDeploymentDialog({model: this.model})).render();
+            //this.registerSubView(new dialogViews.StopDeploymentDialog({model: this.model})).render();
+            utils.showDialog(dialogViews.StopDeploymentDialog({model: this.model}));
         },
         initialize: function(options) {
             _.defaults(this, options);

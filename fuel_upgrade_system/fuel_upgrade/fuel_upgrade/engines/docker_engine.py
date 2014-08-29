@@ -24,9 +24,9 @@ from copy import deepcopy
 import docker
 import requests
 
+from fuel_upgrade.clients import SupervisorClient
 from fuel_upgrade.engines.base import UpgradeEngine
 from fuel_upgrade.health_checker import FuelUpgradeVerify
-from fuel_upgrade.supervisor_client import SupervisorClient
 from fuel_upgrade.version_file import VersionFile
 
 from fuel_upgrade import errors

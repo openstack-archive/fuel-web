@@ -392,3 +392,15 @@ class TestCheckers(BaseTestCase):
             get_mock.return_value = result
             self.assert_checker_false(
                 health_checker.IntegrationCheckerRabbitMQAstuteNailgun)
+
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.make_safe_request')
+    def test_nailgun_checker_returns_true(self, make_request_mock):
+        make_request_mock.return_value = 200
+        self.assert_checker_true(
+            health_checker.IntegrationOSTFKeystoneChecker)
+
+    @mock.patch('fuel_upgrade.health_checker.BaseChecker.make_safe_request')
+    def test_nailgun_checker_returns_false(self, make_request_mock):
+        make_request_mock.return_value = 401
+        self.assert_checker_false(
+            health_checker.IntegrationOSTFKeystoneChecker)

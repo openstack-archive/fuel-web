@@ -25,7 +25,8 @@ import six
 from fuel_upgrade import errors
 from fuel_upgrade import utils
 
-from fuel_upgrade.nailgun_client import NailgunClient
+from fuel_upgrade.clients import NailgunClient
+from fuel_upgrade.clients import OSTFClient
 
 logger = logging.getLogger(__name__)
 
@@ -135,9 +136,6 @@ class OSTFChecker(BaseChecker):
         resp = self.safe_get('http://{host}:{port}/'.format(
             **self.endpoints['ostf']))
 
-        # NOTE(eli): 401 response when authorization is enabled
-        # 200 when there is no authorization, remove 200 when
-        # authorization is enabled by default
         return resp and (resp['code'] == 401 or resp['code'] == 200)
 
 
@@ -273,6 +271,24 @@ class IntegrationCheckerNginxNailgunChecker(BaseChecker):
         return resp and resp['code'] == 200
 
 
+class IntegrationOSTFKeystoneChecker(BaseChecker):
+
+    @property
+    def checker_name(self):
+        return 'integration_ostf_keystone'
+
+    def check(self):
+        ostf_client = OSTFClient(**self.endpoints['ostf'])
+
+        def get_request():
+            resp = ostf_client.get('/')
+            return resp.status_code
+
+        code = self.make_safe_request(get_request)
+
+        return code == 200
+
+
 class KeystoneChecker(BaseChecker):
 
     @property
@@ -360,6 +376,7 @@ class FuelUpgradeVerify(object):
                 MCollectiveChecker,
                 KeystoneChecker,
                 NginxChecker,
+                IntegrationOSTFKeystoneChecker,
                 IntegrationCheckerNginxNailgunChecker,
                 IntegrationCheckerPostgresqlNailgunNginx,
                 IntegrationCheckerRabbitMQAstuteNailgun]

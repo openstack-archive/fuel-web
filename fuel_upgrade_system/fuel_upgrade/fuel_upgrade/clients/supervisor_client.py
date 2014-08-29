@@ -58,7 +58,7 @@ class SupervisorClient(object):
     """RPC Client for supervisor
     """
     templates_dir = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), 'templates'))
+        os.path.join(os.path.dirname(__file__), '..', 'templates'))
 
     def __init__(self, config, from_version):
         """Create supervisor client

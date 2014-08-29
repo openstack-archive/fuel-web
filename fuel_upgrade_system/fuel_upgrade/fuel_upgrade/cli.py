@@ -15,10 +15,14 @@
 #    under the License.
 
 import argparse
+import requests
 import sys
 
 from fuel_upgrade.logger import configure_logger
 logger = configure_logger('/var/log/fuel_upgrade.log')
+
+from fuel_upgrade import errors
+from fuel_upgrade import messages
 
 from fuel_upgrade.checker_manager import CheckerManager
 from fuel_upgrade.config import build_config
@@ -53,6 +57,14 @@ UNCOMPATIBLE_SYSTEMS = (
 
 def handle_exception(exc):
     logger.exception(exc)
+
+    print(messages.header)
+
+    if isinstance(exc, requests.ConnectionError):
+        print(messages.docker_is_dead)
+    elif isinstance(exc, errors.UpgradeVerificationError):
+        print(messages.health_checker_failed)
+
     sys.exit(-1)
 
 

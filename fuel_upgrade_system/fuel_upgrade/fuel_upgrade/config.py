@@ -274,7 +274,7 @@ def config(update_path):
         'url': 'unix://var/run/docker.sock',
         'api_version': '1.10',
         'http_timeout': 160,
-        'stop_container_timeout': 10,
+        'stop_container_timeout': 20,
         'dir': '/var/lib/docker'}
 
     # Docker image description section

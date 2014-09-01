@@ -57,6 +57,7 @@ from nailgun.objects import Release
 
 from nailgun.app import build_app
 from nailgun.consts import NETWORK_INTERFACE_TYPES
+from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
 from nailgun.network.manager import NetworkManager
 from nailgun.openstack.common import jsonutils
 
@@ -829,6 +830,15 @@ class BaseIntegrationTest(BaseTestCase):
                                 timeout
                             )
                         )
+
+
+class BaseAuthenticationIntegrationTest(BaseIntegrationTest):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = app.TestApp(build_app(db_driver=test_db_driver).wsgifunc(
+            NailgunFakeKeystoneAuthMiddleware))
+        syncdb()
+        nailgun.task.task.DeploymentTask._prepare_syslog_dir = mock.Mock()
 
 
 class BaseUnitTest(TestCase):

@@ -28,6 +28,8 @@ from nailgun.db.sqlalchemy import models
 
 from nailgun.errors import errors
 
+from nailgun.logger import logger
+
 from nailgun.objects import NailgunCollection
 from nailgun.objects import NailgunObject
 
@@ -263,6 +265,13 @@ class Cluster(NailgunObject):
         :param node_id: node id for changes
         :returns: None
         """
+        logger.debug(
+            u"New pending changes in environment {0}: {1}{2}".format(
+                instance.id,
+                changes_type,
+                u" node_id={0}".format(node_id) if node_id else u""
+            )
+        )
 
         #TODO(enchantner): check if node belongs to cluster
         ex_chs = db().query(models.ClusterChanges).filter_by(
@@ -295,6 +304,12 @@ class Cluster(NailgunObject):
         :param node_id: node id for changes
         :returns: None
         """
+        logger.debug(
+            u"Removing pending changes in environment {0}{1}".format(
+                instance.id,
+                u" where node_id={0}".format(node_id) if node_id else u""
+            )
+        )
         chs = db().query(models.ClusterChanges).filter_by(
             cluster_id=instance.id
         )

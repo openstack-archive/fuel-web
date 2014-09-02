@@ -1,0 +1,2 @@
+type: puppet
+puppet_manifest: file.pp

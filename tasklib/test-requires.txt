@@ -1,0 +1,4 @@
+-r requires.txt
+mock
+nosetests
+unittest2

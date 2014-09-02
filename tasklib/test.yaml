@@ -1,0 +1,10 @@
+config_file: /home/dshulyak/openstack/fuel-web/tasklib/test.yaml
+debug: false
+library_dir: /home/dshulyak/openstack/tasklib/library
+pid_dir: /var/tmp/task_run
+puppet_manifest: site.pp
+puppet_modules: /etc/puppet/modules
+puppet_options: ''
+report_dir: /var/tmp/task_report
+status_file: status
+task_file: task.yaml

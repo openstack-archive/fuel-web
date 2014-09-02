@@ -78,19 +78,25 @@ class DockerUpgrader(UpgradeEngine):
         # it will be new container.
         self.switch_to_new_configs()
 
-        # Run upgrade
+        # Stop all of the services
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
+        # Upload docker images
         self.upload_images()
-        self.stop_fuel_containers()
-        self.create_containers()
-        self.stop_fuel_containers()
+
+        # Generate config with autostart is false
+        # not to run new services on supervisor restart
+        self.generate_configs(autostart=False)
+        self.version_file.switch_to_new()
+        # Restart supervisor to read new configs
+        self.supervisor.restart_and_wait()
+        # Create container and start it under supervisor
+        self.create_and_start_new_containers()
+        # Update configs in order to start all
+        # services on supervisor restart
+        self.generate_configs(autostart=True)
 
         # Update configs and run new services
-        self.generate_configs()
-        self.version_file.switch_to_new()
-        self.supervisor.restart_and_wait()
-        self.clean_iptables_rules()
         self.upgrade_verifier.verify()
 
     def rollback(self):
@@ -101,7 +107,6 @@ class DockerUpgrader(UpgradeEngine):
         self.supervisor.stop_all_services()
         self.stop_fuel_containers()
         self.supervisor.restart_and_wait()
-        self.clean_iptables_rules()
 
     def on_success(self):
         """Remove saved version files for all upgrades
@@ -293,7 +298,7 @@ class DockerUpgrader(UpgradeEngine):
             # `docker load`
             utils.exec_cmd(u'docker load < "{0}"'.format(docker_image))
 
-    def create_containers(self):
+    def create_and_start_new_containers(self):
         """Create containers in the right order
         """
         logger.info(u'Started containers creation')
@@ -328,6 +333,11 @@ class DockerUpgrader(UpgradeEngine):
                 volumes_from=volumes_from,
                 binds=container.get('binds'),
                 privileged=container.get('privileged', False))
+
+            if container.get('supervisor_config'):
+                self.start_service_under_supervisor(
+                    self.make_service_name(container['id']))
+                self.clean_iptables_rules(container)
 
             if container.get('after_container_creation_command'):
                 self.run_after_container_creation_command(container)
@@ -377,6 +387,13 @@ class DockerUpgrader(UpgradeEngine):
         return [port if not isinstance(port, list) else tuple(port)
                 for port in ports]
 
+    def start_service_under_supervisor(self, service_name):
+        """Start service under supervisor
+
+        :param str service_name: name of the service
+        """
+        self.supervisor.start(service_name)
+
     def exec_with_retries(
             self, func, exceptions, message, retries=0, interval=0):
         # TODO(eli): refactor it and make retries
@@ -424,7 +441,7 @@ class DockerUpgrader(UpgradeEngine):
 
         return graph
 
-    def generate_configs(self):
+    def generate_configs(self, autostart=True):
         """Generates supervisor configs
         and saves them to configs directory
         """
@@ -432,9 +449,11 @@ class DockerUpgrader(UpgradeEngine):
 
         for container in self.new_release_containers:
             params = {
-                'service_name': container['id'],
+                'config_name': container['id'],
+                'service_name': self.make_service_name(container['id']),
                 'command': u'docker start -a {0}'.format(
-                    container['container_name'])
+                    container['container_name']),
+                'autostart': autostart
             }
             if container['supervisor_config']:
                 configs.append(params)
@@ -443,8 +462,13 @@ class DockerUpgrader(UpgradeEngine):
 
         cobbler_container = self.container_by_id('cobbler')
         self.supervisor.generate_cobbler_config(
-            {'service_name': cobbler_container['id'],
-             'container_name': cobbler_container['container_name']})
+            cobbler_container['id'],
+            self.make_service_name(cobbler_container['id']),
+            cobbler_container['container_name'],
+            autostart=autostart)
+
+    def make_service_name(self, container_name):
+        return 'docker-{0}'.format(container_name)
 
     def switch_to_new_configs(self):
         """Switches supervisor to new configs
@@ -531,7 +555,7 @@ class DockerUpgrader(UpgradeEngine):
         return [container_port['PublicPort']
                 for container_port in container_ports]
 
-    def clean_iptables_rules(self):
+    def clean_iptables_rules(self, container):
         """Sometimes when we run docker stop
         (version dc9c28f/0.10.0) it doesn't clean
         iptables rules, as result when we run new
@@ -555,13 +579,12 @@ class DockerUpgrader(UpgradeEngine):
           -A DOCKER -d 10.108.0.2/32 -p tcp -m tcp --dport \
             8777 -j DNAT --to-destination 172.17.0.11:8777
         """
+        if not container.get('port_bindings'):
+            return
+
         self._log_iptables()
-
-        for container in self.new_release_containers:
-            if container.get('port_bindings'):
-                utils.safe_exec_cmd('dockerctl post_start_hooks {0}'.format(
-                    container['id']))
-
+        utils.safe_exec_cmd('dockerctl post_start_hooks {0}'.format(
+            container['id']))
         utils.safe_exec_cmd('service iptables save')
         self._log_iptables()
 

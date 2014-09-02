@@ -112,12 +112,13 @@ class DeploymentMultinodeSerializer(object):
     @classmethod
     def get_common_attrs(cls, cluster):
         """Cluster attributes."""
-        attrs = objects.Attributes.merged_attrs_values(
-            cluster.attributes
-        )
+        attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
         release = cls.current_release(cluster)
+
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
+        attrs['openstack_version_prev'] = getattr(
+            cls.previous_release(cluster), 'version', None)
         attrs['openstack_version'] = release.version
         attrs['fuel_version'] = cluster.fuel_version
         attrs.update(
@@ -145,6 +146,18 @@ class DeploymentMultinodeSerializer(object):
         return objects.Release.get_by_uid(cluster.pending_release_id) \
             if cluster.status == consts.CLUSTER_STATUSES.update \
             else cluster.release
+
+    @classmethod
+    def previous_release(cls, cluster):
+        """Returns previous release.
+
+        :param cluster: a ``Cluster`` instance to retrieve release from
+        :returns: a ``Release`` instance of previous release or ``None``
+            in case there's no previous release (fresh deployment).
+        """
+        if cluster.status == consts.CLUSTER_STATUSES.update:
+            return cluster.release
+        return None
 
     @classmethod
     def set_storage_parameters(cls, cluster, attrs):

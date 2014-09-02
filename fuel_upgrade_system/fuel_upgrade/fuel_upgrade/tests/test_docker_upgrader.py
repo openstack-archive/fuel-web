@@ -126,7 +126,7 @@ class TestDockerUpgrader(BaseTestCase):
         self.upgrader.stop_fuel_containers()
         self.assertEqual(
             self.docker_mock.stop.call_args_list,
-            [mock.call(3, 10), mock.call(4, 10)])
+            [mock.call(3, 20), mock.call(4, 20)])
 
     @mock.patch('fuel_upgrade.engines.docker_engine.utils.exec_cmd')
     @mock.patch('fuel_upgrade.engines.docker_engine.os.path.exists',

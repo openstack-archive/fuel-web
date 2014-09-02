@@ -1,0 +1,4 @@
+tmp/*
+*.egg-info
+*.pyc
+tasklib/tests/functional/tmp/

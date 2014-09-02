@@ -1,0 +1,10 @@
+config_file: tasklib/tests/functional/conf.yaml
+debug: false
+library_dir: tasklib/tests/functional
+pid_dir: tmp/task_run
+puppet_manifest: site.pp
+puppet_modules: ''
+puppet_options: ''
+report_dir: tmp/task_report
+status_file: status
+task_file: task.yaml

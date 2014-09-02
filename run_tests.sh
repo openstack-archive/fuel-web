@@ -23,6 +23,7 @@ function usage {
   echo "  -a, --agent                 Run FUEL_AGENT unit tests"
   echo "  -A, --no-agent              Don't run FUEL_AGENT unit tests"
   echo "  -n, --nailgun               Run NAILGUN both unit and integration tests"
+  echo "  -l, --tasklib               Run tasklib unit and functional tests"
   echo "  -N, --no-nailgun            Don't run NAILGUN tests"
   echo "  -w, --webui                 Run WEB-UI tests"
   echo "  -W, --no-webui              Don't run WEB-UI tests"
@@ -52,6 +53,7 @@ function process_options {
       -a|--agent) agent_tests=1;;
       -A|--no-agent) no_agent_tests=1;;
       -n|--nailgun) nailgun_tests=1;;
+      -l|--tasklib) tasklib_tests=1;;
       -N|--no-nailgun) no_nailgun_tests=1;;
       -w|--webui) webui_tests=1;;
       -W|--no-webui) no_webui_tests=1;;
@@ -115,6 +117,7 @@ no_flake8_checks=0
 jslint_checks=0
 no_jslint_checks=0
 certain_tests=0
+tasklib_tests=0
 
 
 function run_tests {
@@ -134,6 +137,7 @@ function run_tests {
   # Enable all tests if none was specified skipping all explicitly disabled tests.
   if [[ $agent_tests -eq 0 && \
       $nailgun_tests -eq 0 && \
+      $tasklib_tests -eq 0 && \
       $webui_tests -eq 0 && \
       $cli_tests -eq 0 && \
       $upgrade_system -eq 0 && \
@@ -165,6 +169,11 @@ function run_tests {
   if [ $nailgun_tests -eq 1 ]; then
     echo "Starting Nailgun tests..."
     run_nailgun_tests || errors+=" nailgun_tests"
+  fi
+
+  if [ $tasklib_tests -eq 1 ]; then
+    echo "Starting Tasklib tests"
+    run_tasklib_tests || errors+=" tasklib tests"
   fi
 
   if [ $webui_tests -eq 1 ]; then
@@ -411,6 +420,19 @@ function run_shotgun_tests {
   return $result
 }
 
+function run_tasklib_tests {
+  local result=0
+
+  pushd $ROOT/tasklib >> /dev/null
+
+  # run tests
+  tox -epy26 || result=1
+
+  popd >> /dev/null
+
+  return $result
+}
+
 function run_flake8_subproject {
   local DIRECTORY=$1
   local result=0
@@ -432,6 +454,7 @@ function run_flake8 {
   local result=0
   run_flake8_subproject fuel_agent && \
   run_flake8_subproject nailgun && \
+  run_flake8_subproject tasklib && \
   run_flake8_subproject fuelclient && \
   run_flake8_subproject fuelmenu && \
   run_flake8_subproject network_checker && \

@@ -70,6 +70,8 @@ class Manager(object):
                 pu.make_partition(prt.device, prt.begin, prt.end, prt.type)
                 for flag in prt.flags:
                     pu.set_partition_flag(prt.device, prt.count, flag)
+                if prt.guid:
+                    pu.set_gpt_type(prt.device, prt.count, prt.guid)
 
         # creating meta disks
         for md in self.partition_scheme.mds:

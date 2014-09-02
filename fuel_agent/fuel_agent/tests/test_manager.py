@@ -52,13 +52,14 @@ class TestManager(test_base.BaseTestCase):
     @mock.patch.object(lu, 'vgcreate')
     @mock.patch.object(lu, 'pvcreate')
     @mock.patch.object(mu, 'mdcreate')
+    @mock.patch.object(pu, 'set_gpt_type')
     @mock.patch.object(pu, 'set_partition_flag')
     @mock.patch.object(pu, 'make_partition')
     @mock.patch.object(pu, 'make_label')
     @mock.patch.object(hu, 'list_block_devices')
     def test_do_partitioning(self, mock_hu_lbd, mock_pu_ml, mock_pu_mp,
-                             mock_pu_spf, mock_mu_m, mock_lu_p, mock_lu_v,
-                             mock_lu_l, mock_fu_mf):
+                             mock_pu_spf, mock_pu_sgt, mock_mu_m, mock_lu_p,
+                             mock_lu_v, mock_lu_l, mock_fu_mf):
         mock_hu_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         self.mgr.do_parsing()
         self.mgr.do_partitioning()

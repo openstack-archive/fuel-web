@@ -137,6 +137,14 @@ class SupervisorClient(object):
         logger.debug(u'List of supervisor processes {0}'.format(
             all_processes))
 
+    def start(self, service_name):
+        """Start the process under supervisor
+
+        :param str service_name: name of supervisor's process
+        """
+        logger.debug(u'Start supervisor process {0}'.format(service_name))
+        self.supervisor.startProcess(service_name)
+
     def get_all_processes_safely(self):
         """Retrieves list of processes from supervisor,
         doesn't raise errors if there is no running
@@ -153,41 +161,54 @@ class SupervisorClient(object):
     def generate_configs(self, services):
         """Generates supervisor configs for services
 
-        :param services: list of dicts where `service_name`
-                         and `command` are required fields
+        :param services: list of dicts where
+                         `config_name` - is the name of the config
+                         `service_name` - is the name of the service
+                         `command` - command to run
+                         `autostart` - run the service on supervisor start
         """
         logger.info(
             u'Generate supervisor configs for services {0}'.format(services))
 
         for service in services:
-            self.generate_config(service)
+            self.generate_config(
+                service['config_name'],
+                service['service_name'],
+                service['command'],
+                autostart=service['autostart'])
 
-    def generate_config(self, service):
+    def generate_config(self, config_name, service_name,
+                        command, autostart=True):
         """Generates config for each service
 
-        :param service: dict where `service_name`
-                        and `command` are required fields
+        :param str config_name: is the name of the config
+        :param str service_name: is the name of the service
+        :param str command: command to run
+        :param bool autostart: run the service on supervisor start
         """
         config_path = os.path.join(
             self.supervisor_config_dir,
-            '{0}'.format('{0}.conf'.format(service['service_name'])))
+            '{0}'.format('{0}.conf'.format(config_name)))
 
-        log_path = '/var/log/docker-{0}.log'.format(service['service_name'])
+        log_path = '/var/log/{0}.log'.format(service_name)
 
         params = {
-            'service_name': service['service_name'],
-            'command': service['command'],
-            'log_path': log_path}
+            'service_name': service_name,
+            'command': command,
+            'log_path': log_path,
+            'autostart': 'true' if autostart else 'false'}
 
         utils.render_template_to_file(
             self.supervisor_template_path, config_path, params)
 
-    def generate_cobbler_config(self, container):
+    def generate_cobbler_config(self, config_name, service_name,
+                                container_name, autostart=True):
         """Generates cobbler config
 
-        :param container: dict `service_name` `container_name`
+        :param str config_name: is the name of the config
+        :param str service_name: is the name of the service
+        :param bool autostart: run the service on supervisor start
         """
-        container_name = container['container_name']
         script_template_path = os.path.join(
             self.templates_dir, 'cobbler_runner')
         script_path = os.path.join('/usr/bin', container_name)
@@ -197,9 +218,8 @@ class SupervisorClient(object):
             script_path,
             {'container_name': container_name})
 
-        self.generate_config({
-            'service_name': container['service_name'],
-            'command': container_name})
+        self.generate_config(
+            config_name, service_name, container_name, autostart=autostart)
 
         st = os.stat(script_path)
         os.chmod(script_path, st.st_mode | stat.S_IEXEC)

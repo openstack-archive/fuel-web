@@ -1,0 +1,5 @@
+library_dir: tasklib/tests/functional
+pid_dir: tmp/task_run
+report_dir: tmp/task_report
+debug: true
+log_file: tasklib.log

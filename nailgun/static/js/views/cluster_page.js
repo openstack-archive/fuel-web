@@ -329,7 +329,9 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             }
         },
         render: function() {
+            console.log(_.contains(app.version.get('feature_groups'), 'experimental'));
             this.$el.html(this.template({
+                isExperimental: _.contains(app.version.get('feature_groups'), 'experimental'),
                 cluster: this.model,
                 task: this.model.task({group: 'deployment', status: 'running'}) || this.page.getReleaseSetupTask()
             })).i18n();

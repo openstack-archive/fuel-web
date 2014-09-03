@@ -163,8 +163,8 @@ Astute gets the summary file from the node and reports the results to
 Nailgun. The user can always monitor both the progress and the
 results using Fuel Web interface or the CLI tool.
 
-Puppet installs the **puppet-run** script. Developers can use it if they
-need to manually synchronize manifests from the Master node and
+Fuel installs the **puppet-pull** script. Developers can use it if
+they need to manually synchronize manifests from the Master node and
 run the Puppet process on node again.
 
 Astute also does some additional actions, depending on environment

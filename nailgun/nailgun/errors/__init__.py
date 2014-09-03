@@ -47,6 +47,7 @@ default_messages = {
     "RedHatSetupError": "Red Hat setup error",
     "TaskAlreadyRunning": "A task is already running",
     "InvalidReleaseId": "Release Id is invalid",
+    "UnsupportedSerializer": "There are no serializers for a given cluster",
 
     # disk errors
     "NotEnoughFreeSpace": "Not enough free space",

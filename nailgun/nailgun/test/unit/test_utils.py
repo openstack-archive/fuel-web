@@ -19,6 +19,7 @@ import os
 from nailgun.test.base import BaseIntegrationTest
 from nailgun.utils import dict_merge
 from nailgun.utils import migration
+from nailgun.utils import extract_env_version
 
 
 class TestUtils(BaseIntegrationTest):
@@ -53,3 +54,16 @@ class TestUtils(BaseIntegrationTest):
             n['data'] for n in wizard_meta['Network']['manager']['values']
         ]
         self.assertNotIn('neutron-nsx', network_settings)
+
+    def test_extract_env_version(self):
+        # format: input, output pairs
+        test_cases = [
+            ('2014.1', '5.0'),
+            ('2014.1-5.0', '5.0'),
+            ('2014.1.1-5.0.1', '5.0.1'),
+            ('2014.1.1-5.0.1-X', '5.0.1'),
+            ('2014.1.1-5.1', '5.1'),
+        ]
+
+        for input_, output in test_cases:
+            self.assertEqual(extract_env_version(input_), output)

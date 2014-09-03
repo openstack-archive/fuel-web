@@ -370,7 +370,7 @@ class StopDeploymentTask(object):
         )
 
     @classmethod
-    def execute(cls, task, deploy_task, provision_task):
+    def execute(cls, task, deploy_task, provision_task, update_task):
         if provision_task:
             rpc.cast(
                 'naily',
@@ -381,6 +381,12 @@ class StopDeploymentTask(object):
             rpc.cast(
                 'naily',
                 cls.message(task, deploy_task),
+                service=True
+            )
+        if update_task:
+            rpc.cast(
+                'naily',
+                cls.message(task, update_task),
                 service=True
             )
 

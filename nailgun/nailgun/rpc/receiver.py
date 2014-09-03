@@ -514,7 +514,8 @@ class NailgunReceiver(object):
         stopping_task_names = [
             consts.TASK_NAMES.deploy,
             consts.TASK_NAMES.deployment,
-            consts.TASK_NAMES.provision
+            consts.TASK_NAMES.provision,
+            consts.TASK_NAMES.update,
         ]
 
         # Locking other tasks for stopping

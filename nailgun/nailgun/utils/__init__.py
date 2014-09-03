@@ -83,3 +83,25 @@ class AttributesGenerator(object):
     @classmethod
     def identical(cls, arg=None):
         return str(arg)
+
+
+def extract_env_version(release_version):
+    """Returns environment version based on release version.
+
+    A release version consists of 'OSt' and 'MOS' versions: '2014.1.1-5.0.2'
+    so we need to extract 'MOS' version and returns it as result.
+
+    .. todo:: [ikalnitsky] think about introducing a special field in release
+
+    :param release_version: a string which represents a release version
+    :returns: an environment version
+    """
+    separator = '-'
+
+    # unfortunately, Fuel 5.0 didn't has an env version in release_version
+    # so we need to handle that special case
+    if release_version == '2014.1':
+        return '5.0'
+
+    # we need to extract a second part since it's what we're looking for
+    return release_version.split(separator)[1]

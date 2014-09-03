@@ -25,6 +25,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 
 import math
+import six
 
 from nailgun import objects
 
@@ -37,6 +38,7 @@ from nailgun.logger import logger
 from nailgun.objects import Cluster
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
+from nailgun.utils import extract_env_version
 from nailgun.volumes import manager as volume_manager
 
 
@@ -480,17 +482,9 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         for n in cls.by_role(nodes, 'primary-controller'):
             n['priority'] = prior.next
 
-        # Then deploy other controllers.
-        # We are deploying in parallel, so do
-        # not let us deploy more than 6 controllers
-        # simultaneously or galera master may be exhausted
-
-        secondary_controllers = cls.by_role(nodes, 'controller')
-
-        for index, node in enumerate(secondary_controllers):
-            if index % 6 == 0:
-                sec_controller_priority = prior.next
-            node['priority'] = sec_controller_priority
+        # deploy secondary controlles sequently
+        for node in cls.by_role(nodes, 'controller'):
+            node['priority'] = prior.next
 
         other_nodes_prior = prior.next
         for n in cls.not_roles(nodes, ['primary-swift-proxy',
@@ -1083,15 +1077,105 @@ class NeutronNetworkDeploymentSerializer(NetworkDeploymentSerializer):
         return iface_attrs
 
 
+class DeploymentMultinodeSerializer51(DeploymentMultinodeSerializer):
+    """For multinode we just use the base serializer."""
+    pass
+
+
+class DeploymentHASerializer51(DeploymentHASerializer):
+
+    @classmethod
+    def set_deployment_priorities(cls, nodes):
+        """Set priorities of deployment for HA mode."""
+        prior = Priority()
+
+        zabbix_server_prior = prior.next
+        for n in cls.by_role(nodes, 'zabbix-server'):
+            n['priority'] = zabbix_server_prior
+
+        primary_swift_proxy_piror = prior.next
+        for n in cls.by_role(nodes, 'primary-swift-proxy'):
+            n['priority'] = primary_swift_proxy_piror
+
+        swift_proxy_prior = prior.next
+        for n in cls.by_role(nodes, 'swift-proxy'):
+            n['priority'] = swift_proxy_prior
+
+        storage_prior = prior.next
+        for n in cls.by_role(nodes, 'storage'):
+            n['priority'] = storage_prior
+
+        for n in cls.by_role(nodes, 'mongo'):
+            n['priority'] = prior.next
+
+        for n in cls.by_role(nodes, 'primary-mongo'):
+            n['priority'] = prior.next
+
+        # Deploy primary-controller
+        if not cls.by_role(nodes, 'primary-controller'):
+            cls.set_primary_controller(nodes)
+        for n in cls.by_role(nodes, 'primary-controller'):
+            n['priority'] = prior.next
+
+        # Then deploy other controllers.
+        # We are deploying in parallel, so do
+        # not let us deploy more than 6 controllers
+        # simultaneously or galera master may be exhausted
+
+        secondary_controllers = cls.by_role(nodes, 'controller')
+
+        for index, node in enumerate(secondary_controllers):
+            if index % 6 == 0:
+                sec_controller_priority = prior.next
+            node['priority'] = sec_controller_priority
+
+        other_nodes_prior = prior.next
+        for n in cls.not_roles(nodes, ['primary-swift-proxy',
+                                       'swift-proxy',
+                                       'storage',
+                                       'primary-controller',
+                                       'controller',
+                                       'quantum',
+                                       'mongo',
+                                       'primary-mongo',
+                                       'zabbix-server']):
+            n['priority'] = other_nodes_prior
+
+
+def get_serializer(cluster):
+    """Returns a serializer depends on a given `cluster`.
+
+    :param cluster: a cluster to process
+    :returns: a serializer for a given cluster
+    """
+    # env-version serializer map
+    serializers_map = {
+        '5.0': {
+            'multinode': DeploymentMultinodeSerializer,
+            'ha': DeploymentHASerializer,
+        },
+        '5.1': {
+            'multinode': DeploymentMultinodeSerializer51,
+            'ha': DeploymentHASerializer51,
+        },
+    }
+
+    env_version = extract_env_version(cluster.release.version)
+    env_mode = 'ha' if cluster.is_ha_mode else 'multinode'
+
+    # choose serializer
+    for version, serializers in six.iteritems(serializers_map):
+        if env_version.startswith(version):
+            return serializers[env_mode]
+
+    raise errors.UnsupportedSerializer()
+
+
 def serialize(cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode
     """
     objects.NodeCollection.prepare_for_deployment(cluster.nodes)
-
-    if cluster.mode == 'multinode':
-        serializer = DeploymentMultinodeSerializer
-    elif cluster.is_ha_mode:
-        serializer = DeploymentHASerializer
+    serializer = get_serializer(cluster)
 
     return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)

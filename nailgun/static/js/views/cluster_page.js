@@ -330,6 +330,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         },
         render: function() {
             this.$el.html(this.template({
+                experimental: app.version.get('feature_groups') == 'experimental' ? true : false,
                 cluster: this.model,
                 task: this.model.task({group: 'deployment', status: 'running'}) || this.page.getReleaseSetupTask()
             })).i18n();

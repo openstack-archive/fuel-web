@@ -580,6 +580,15 @@
                         "stop_deployment_warning": "Unable to stop deployment"
                     }
                 },
+                "stop_update": {
+                    "title": "Stop Update",
+                    "text": "Are you sure you want to stop update?",
+                    "provisioning_warning": "Are you sure you want to stop update?",
+                    "stop_update_error": {
+                        "title": "Stop Update Error",
+                        "stop_update_warning": "Unable to stop update"
+                    }
+                },
                 "reset_environment": {
                     "title": "Reset Environment",
                     "text": "Are you sure you want to reset this environment? All nodes in the environment will be deleted and returned to their pre-deployment state."

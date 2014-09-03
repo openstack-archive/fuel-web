@@ -1,14 +1,15 @@
+<% var action = cluster.task({name: 'update', status: 'running'}) ? 'update' : 'deployment'; %>
 <div class="modal-header">
   <button type="button" class="close" data-dismiss="modal">×</button>
-  <h3 data-i18n="dialog.stop_deployment.title"></h3>
+  <h3><%- $.t('dialog.stop_' + action + '.title') %></h3>
 </div>
 <div class="modal-body">
   <div class="msg-error">
     <span class="label label-important" data-i18n="common.important"></span>
     <% if (cluster.get('nodes').where({status: 'provisioning'}).length) { %>
-      <%- $.t('dialog.stop_deployment.provisioning_warning') %>
+      <%- $.t('dialog.stop_' + action + '.provisioning_warning') %>
     <% } else { %>
-      <%- $.t('dialog.stop_deployment.text') %>
+      <%- $.t('dialog.stop_' + action + '.text') %>
     <% } %>
   </div>
 </div>

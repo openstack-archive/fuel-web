@@ -66,21 +66,19 @@ class TestDockerUpgrader(BaseTestCase):
             'save_cobbler_configs',
             'save_astute_keys',
             'upload_images',
-            'create_containers',
+            'create_and_start_new_containers',
             'generate_configs',
-            'switch_to_new_configs',
-            'clean_iptables_rules']
+            'switch_to_new_configs']
 
         self.mock_methods(self.upgrader, mocked_methods)
         self.upgrader.upgrade()
 
-        # Check that all methods was called once
-        # except stop_fuel_containers method
-        for method in mocked_methods[1:-1]:
-            self.called_once(getattr(self.upgrader, method))
+        self.assertEqual(
+            self.upgrader.generate_configs.call_args_list,
+            [mock.call(autostart=False),
+             mock.call(autostart=True)])
 
-        self.called_times(self.upgrader.stop_fuel_containers, 3)
-
+        self.called_once(self.upgrader.stop_fuel_containers)
         self.called_once(self.supervisor_mock.stop_all_services)
         self.called_once(self.supervisor_mock.restart_and_wait)
         self.called_once(self.upgrader.upgrade_verifier.verify)
@@ -143,7 +141,7 @@ class TestDockerUpgrader(BaseTestCase):
              mock.call('docker load < "image2"')])
 
     def test_create_containers(self):
-        self.upgrader.new_release_containers = [
+        fake_containers = [
             {'id': 'id1',
              'container_name': 'name1',
              'image_name': 'i_name1',
@@ -151,7 +149,10 @@ class TestDockerUpgrader(BaseTestCase):
             {'id': 'id2',
              'image_name': 'i_name2',
              'container_name': 'name2',
-             'after_container_creation_command': 'cmd'}]
+             'after_container_creation_command': 'cmd',
+             'supervisor_config': True}]
+
+        self.upgrader.new_release_containers = fake_containers
 
         def mocked_create_container(*args, **kwargs):
             """Return name of the container
@@ -162,8 +163,10 @@ class TestDockerUpgrader(BaseTestCase):
             side_effect=mocked_create_container)
         self.upgrader.start_container = mock.MagicMock()
         self.upgrader.run_after_container_creation_command = mock.MagicMock()
+        self.upgrader.clean_iptables_rules = mock.MagicMock()
+        self.upgrader.start_service_under_supervisor = mock.MagicMock()
 
-        self.upgrader.create_containers()
+        self.upgrader.create_and_start_new_containers()
 
         create_container_calls = [
             mock.call('i_name2', detach=False, ports=None,
@@ -179,6 +182,10 @@ class TestDockerUpgrader(BaseTestCase):
                       binds=None, port_bindings=None,
                       privileged=False, links=[])]
 
+        self.upgrader.clean_iptables_rules.assert_called_once_with(
+            fake_containers[-1])
+        self.upgrader.start_service_under_supervisor.assert_called_once_with(
+            'docker-id2')
         self.assertEqual(
             self.upgrader.create_container.call_args_list,
             create_container_calls)
@@ -250,10 +257,15 @@ class TestDockerUpgrader(BaseTestCase):
         self.upgrader.new_release_containers = fake_containers
         self.upgrader.generate_configs()
         self.supervisor_mock.generate_configs.assert_called_once_with(
-            [{'service_name': 'id2',
-              'command': 'docker start -a container_name2'}])
+            [{'config_name': 'id2',
+              'service_name': 'docker-id2',
+              'command': 'docker start -a container_name2',
+              'autostart': True}])
         self.supervisor_mock.generate_cobbler_config.assert_called_once_with(
-            {'service_name': 'cobbler', 'container_name': 'cobbler_container'})
+            'cobbler',
+            'docker-cobbler',
+            'cobbler_container',
+            autostart=True)
 
     def test_switch_to_new_configs(self):
         self.upgrader.switch_to_new_configs()
@@ -376,15 +388,16 @@ class TestDockerUpgrader(BaseTestCase):
             {'id': 'some_volume_container'},
             {'id': 'ostf', 'port_bindings': ['some_ports']}]
 
-        self.upgrader.new_release_containers = containers
-        with mock.patch('fuel_upgrade.engines.docker_engine.'
-                        'DockerUpgrader._log_iptables') as log_mock:
-            self.upgrader.clean_iptables_rules()
-            self.called_times(log_mock, 2)
+        for container in containers:
+            with mock.patch('fuel_upgrade.engines.docker_engine.'
+                            'DockerUpgrader._log_iptables') as log_mock:
+                self.upgrader.clean_iptables_rules(container)
 
+        self.called_times(log_mock, 2)
         self.assertEqual(
             exec_cmd_mock.call_args_list,
             [mock.call('dockerctl post_start_hooks astute'),
+             mock.call('service iptables save'),
              mock.call('dockerctl post_start_hooks ostf'),
              mock.call('service iptables save')])
 

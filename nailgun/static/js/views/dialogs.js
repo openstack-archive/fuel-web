@@ -178,7 +178,8 @@ function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesD
         },
         stopDeployment: function() {
             this.$('.stop-deployment-btn').attr('disabled', true);
-            var task = new models.Task();
+            var task = new models.Task(),
+                action = this.model.task({name: 'update', status: 'running'}) ? 'update' : 'deployment';
             task.save({}, {url: _.result(this.model, 'url') + '/stop_deployment', type: 'PUT'})
                 .done(_.bind(function() {
                     this.$el.modal('hide');
@@ -186,8 +187,8 @@ function(require, utils, models, viewMixins, baseDialogTemplate, discardChangesD
                 }, this))
                 .fail(_.bind(function(response) {
                     this.displayError({
-                        title: $.t('dialog.stop_deployment.stop_deployment_error.title'),
-                        message: utils.getResponseText(response) || $.t('dialog.stop_deployment.stop_deployment_error.stop_deployment_warning')
+                        title: $.t('dialog.stop_' + action + '.stop_' + action + '_error.title'),
+                        message: utils.getResponseText(response) || $.t('dialog.stop_' + action + '.stop_' + action + '_error.stop_' + action + '_warning')
                     });
                 }, this));
         },

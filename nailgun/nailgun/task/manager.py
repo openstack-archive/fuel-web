@@ -413,7 +413,8 @@ class StopDeploymentTaskManager(TaskManager):
         names = (
             TASK_NAMES.stop_deployment,
             TASK_NAMES.deployment,
-            TASK_NAMES.provision
+            TASK_NAMES.provision,
+            TASK_NAMES.update,
         )
         objects.TaskCollection.lock_cluster_tasks(
             self.cluster.id,
@@ -457,7 +458,16 @@ class StopDeploymentTaskManager(TaskManager):
             provisioning_task, 'id'
         ).first()
 
-        if not deployment_task and not provisioning_task:
+        update_task = objects.TaskCollection.filter_by(
+            None,
+            cluster_id=self.cluster.id,
+            name=TASK_NAMES.update,
+        )
+        update_task = objects.TaskCollection.order_by(
+            update_task, 'id'
+        ).first()
+
+        if not deployment_task and not provisioning_task and not update_task:
             db().rollback()
             raise errors.DeploymentNotRunning(
                 u"Nothing to stop - deployment is "
@@ -476,7 +486,8 @@ class StopDeploymentTaskManager(TaskManager):
             task,
             tasks.StopDeploymentTask,
             deploy_task=deployment_task,
-            provision_task=provisioning_task
+            provision_task=provisioning_task,
+            update_task=update_task,
         )
         return task
 

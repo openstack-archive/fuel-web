@@ -61,20 +61,50 @@ class TestOpenStackUpgrader(BaseTestCase):
             'rsync://0.0.0.0:/puppet/2014.1/modules/')
 
     @mock.patch(
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_versions')
+    @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_repos')
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_puppets')
-    def test_upgrade(self, pup, rep, rel):
+    def test_upgrade(self, pup, rep, rel, ver):
         self.upgrader.upgrade()
 
         self.called_once(pup)
         self.called_once(rep)
         self.called_once(rel)
+        self.called_once(ver)
 
-    def test_on_success_does_not_raise_exceptions(self):
+    def test_on_success_does_not_raise_errors(self):
         self.upgrader.on_success()
+
+    @mock.patch('fuel_upgrade.engines.openstack.glob.glob',
+                return_value=['/upgrade/file1.yaml', '/upgrade/file2.yaml'])
+    @mock.patch('fuel_upgrade.engines.openstack.utils')
+    def test_install_versions(self, mock_utils, mock_glob):
+        self.upgrader.install_versions()
+
+        release_versions_path = '/etc/fuel/release_versions'
+        mock_utils.create_dir_if_not_exists.assert_called_once_with(
+            release_versions_path)
+        self.assertEqual(
+            mock_utils.copy.call_args_list,
+            [mock.call(
+                '/upgrade/file1.yaml',
+                '{0}/file1.yaml'.format(release_versions_path)),
+             mock.call(
+                 '/upgrade/file2.yaml',
+                 '{0}/file2.yaml'.format(release_versions_path))])
+
+    @mock.patch('fuel_upgrade.engines.openstack.glob.glob',
+                return_value=['/upgrade/file1.yaml'])
+    @mock.patch('fuel_upgrade.engines.openstack.utils')
+    def test_remove_versions(self, mock_utils, mock_glob):
+        self.upgrader.remove_versions()
+        self.assertEqual(
+            mock_utils.remove.call_args_list,
+            [mock.call('/etc/fuel/release_versions/file1.yaml')])
 
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.install_releases')
@@ -94,17 +124,20 @@ class TestOpenStackUpgrader(BaseTestCase):
         self.method_was_not_called(rel)
 
     @mock.patch(
+        'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_versions')
+    @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_puppets')
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_repos')
     @mock.patch(
         'fuel_upgrade.engines.openstack.OpenStackUpgrader.remove_releases')
-    def test_rollback(self, rel, rep, pup):
+    def test_rollback(self, rel, rep, pup, ver):
         self.upgrader.rollback()
 
         self.called_once(rel)
         self.called_once(rep)
         self.called_once(pup)
+        self.called_once(ver)
 
     @mock.patch('fuel_upgrade.engines.openstack.utils.copy')
     @mock.patch('fuel_upgrade.engines.openstack.glob.glob')

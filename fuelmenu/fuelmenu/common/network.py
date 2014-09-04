@@ -12,9 +12,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-import logging
 import netaddr
-log = logging.getLogger('fuelmenu.mirrors')
 
 
 def inSameSubnet(ip1, ip2, netmask_or_cidr):
@@ -59,3 +57,19 @@ def getNetwork(ip, netmask, additionalip=None):
         return ipn_list
     except netaddr.AddrFormatError:
         return False
+
+
+def range(startip, endip):
+    #Return a list of IPs between startip and endip
+    try:
+        return list(netaddr.iter_iprange(startip, endip))
+    except netaddr.AddrFormatError:
+        return False
+
+
+def intersects(range1, range2):
+    #Returns true if any IPs in range1 exist in range2
+    for ip in range1:
+        if ip in range2:
+            return True
+    return False

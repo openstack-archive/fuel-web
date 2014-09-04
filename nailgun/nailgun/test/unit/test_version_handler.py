@@ -14,7 +14,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from mock import Mock
+from mock import mock_open
 from mock import patch
+
+from contextlib import nested
 
 from nailgun.openstack.common import jsonutils
 from nailgun.test.base import BaseIntegrationTest
@@ -31,10 +35,21 @@ class TestVersionHandler(BaseIntegrationTest):
         "ostf_sha": "Unknown build",
     })
     def test_version_handler(self):
-        resp = self.app.get(
-            reverse('VersionHandler'),
-            headers=self.default_headers
-        )
+        with nested(
+            patch(
+                'nailgun.api.v1.handlers.version.glob.glob',
+                Mock(return_value=["test.yaml"])
+            ),
+            patch(
+                '__builtin__.open',
+                mock_open(read_data='test_data'),
+                create=True
+            )
+        ):
+            resp = self.app.get(
+                reverse('VersionHandler'),
+                headers=self.default_headers
+            )
         self.assertEqual(200, resp.status_code)
         self.assertEqual(
             jsonutils.loads(resp.body),
@@ -45,5 +60,8 @@ class TestVersionHandler(BaseIntegrationTest):
                 "fuellib_sha": "Unknown build",
                 "ostf_sha": "Unknown build",
                 "auth_required": True,
+                "release_versions": {
+                    "test": "test_data"
+                }
             }
         )

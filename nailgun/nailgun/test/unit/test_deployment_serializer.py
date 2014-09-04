@@ -30,7 +30,7 @@ class TestGetSerializer(BaseUnitTest):
     def test_retreiving_ha_for_5_0(self, _):
         cluster = mock.MagicMock(is_ha_mode=True)
         self.assertTrue(
-            ds.get_serializer(cluster) is ds.DeploymentHASerializer)
+            isinstance(ds.get_serializer(cluster), ds.DeploymentHASerializer))
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',
@@ -38,7 +38,8 @@ class TestGetSerializer(BaseUnitTest):
     def test_retreiving_multinode_for_5_0(self, _):
         cluster = mock.MagicMock(is_ha_mode=False)
         self.assertTrue(
-            ds.get_serializer(cluster) is ds.DeploymentMultinodeSerializer)
+            isinstance(
+                ds.get_serializer(cluster), ds.DeploymentMultinodeSerializer))
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',
@@ -46,7 +47,8 @@ class TestGetSerializer(BaseUnitTest):
     def test_retreiving_ha_for_5_1(self, _):
         cluster = mock.MagicMock(is_ha_mode=True)
         self.assertTrue(
-            ds.get_serializer(cluster) is ds.DeploymentHASerializer51)
+            isinstance(
+                ds.get_serializer(cluster), ds.DeploymentHASerializer51))
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',
@@ -54,7 +56,9 @@ class TestGetSerializer(BaseUnitTest):
     def test_retreiving_multinode_for_5_1(self, _):
         cluster = mock.MagicMock(is_ha_mode=False)
         self.assertTrue(
-            ds.get_serializer(cluster) is ds.DeploymentMultinodeSerializer51)
+            isinstance(
+                ds.get_serializer(cluster),
+                ds.DeploymentMultinodeSerializer51))
 
     @mock.patch(
         'nailgun.orchestrator.deployment_serializers.extract_env_version',

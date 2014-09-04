@@ -30,6 +30,9 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_fix_puppet_manifests \
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_sync_dns \
     import SyncDnsHook
 from fuel_upgrade.pre_upgrade_hooks import PreUpgradeHookManager
+from fuel_upgrade.pre_upgrade_hooks. \
+    from_5_0_x_to_any_copy_openstack_release_versions \
+    import CopyOpenstackReleaseVersions
 
 
 class TestPreUpgradeHooksBase(BaseTestCase):
@@ -339,3 +342,57 @@ class TestPreUpgradeHookManager(TestPreUpgradeHooksBase):
 
         for hook in self.not_required_hooks:
             self.method_was_not_called(hook.run)
+
+
+class TestCopyOpenstackReleaseVersions(TestPreUpgradeHooksBase):
+
+    iterfiles_returns = [
+        '/tmp/upgrade_path/config/5.0/modules/package/lib/puppet'
+        '/provider/package/yum.rb',
+        '/tmp/upgrade_path/config/5.0/manifests/centos-versions.yaml']
+
+    def setUp(self):
+        super(TestCopyOpenstackReleaseVersions, self).setUp()
+
+        conf = self.fake_config
+        conf.from_version = '5.0.1'
+
+        self.hook = CopyOpenstackReleaseVersions(self.upgraders, conf)
+
+    def test_is_required_returns_true(self):
+        self.hook.config.from_version = '5.0'
+        self.assertTrue(self.hook.check_if_required())
+
+        self.hook.config.from_version = '5.0.1'
+        self.assertTrue(self.hook.check_if_required())
+
+    def test_is_required_returns_false(self):
+        self.hook.config.from_version = '5.1'
+        self.assertFalse(self.hook.check_if_required())
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.'
+        'from_5_0_x_to_any_copy_openstack_release_versions.utils')
+    def test_run(self, mock_utils):
+        self.hook.run()
+        self.assertEqual(
+            mock_utils.create_dir_if_not_exists.call_args_list,
+            [mock.call(self.hook.release_dir)])
+
+        self.assertEqual(
+            mock_utils.copy_if_exists.call_args_list,
+            [mock.call(self.hook.version_path_5_0,
+                       self.hook.dst_version_path_5_0),
+             mock.call(self.hook.version_path_5_0_1,
+                       self.hook.dst_version_path_5_0_1)])
+
+    @mock.patch(
+        'fuel_upgrade.pre_upgrade_hooks.'
+        'from_5_0_x_to_any_copy_openstack_release_versions.utils')
+    def test_run_from_5_0(self, mock_utils):
+        self.hook.config.from_version = '5.0'
+        self.hook.run()
+        self.assertEqual(
+            mock_utils.copy_if_exists.call_args_list,
+            [mock.call(self.hook.version_path_5_0,
+                       self.hook.dst_version_path_5_0)])

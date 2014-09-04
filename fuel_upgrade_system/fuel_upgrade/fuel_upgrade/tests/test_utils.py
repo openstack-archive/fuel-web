@@ -418,6 +418,22 @@ class TestUtils(BaseTestCase):
         exists_mock.assert_called_once_with('to')
         copy_mock.assert_called_once_with('from', 'to')
 
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=False)
+    @mock.patch('fuel_upgrade.utils.copy')
+    def test_copy_if_exists_file_does_not_exist(
+            self, copy_mock, exists_mock):
+        utils.copy_if_exists('from', 'to')
+        exists_mock.assert_called_once_with('from')
+        self.method_was_not_called(copy_mock)
+
+    @mock.patch('fuel_upgrade.utils.os.path.exists', return_value=True)
+    @mock.patch('fuel_upgrade.utils.copy')
+    def test_copy_if_exists_file_exists(
+            self, copy_mock, exists_mock):
+        utils.copy_if_exists('from', 'to')
+        exists_mock.assert_called_once_with('from')
+        copy_mock.assert_called_once_with('from', 'to')
+
     @mock.patch('fuel_upgrade.utils.os.rename')
     def test_rename(self, rename_mock):
         utils.rename('source', 'destination')

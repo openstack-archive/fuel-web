@@ -24,6 +24,9 @@ from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_fix_puppet_manifests \
     import FixPuppetManifests
 from fuel_upgrade.pre_upgrade_hooks.from_5_0_to_any_sync_dns \
     import SyncDnsHook
+from fuel_upgrade.pre_upgrade_hooks. \
+    from_5_0_x_to_any_copy_openstack_release_versions \
+    import CopyOpenstackReleaseVersions
 
 
 logger = logging.getLogger(__name__)
@@ -41,7 +44,8 @@ class PreUpgradeHookManager(object):
         AddCredentialsHook,
         FixPuppetManifests,
         FixHostSystemRepoHook,
-        SyncDnsHook]
+        SyncDnsHook,
+        CopyOpenstackReleaseVersions]
 
     def __init__(self, upgraders, config):
         #: Pre upgrade hook objects

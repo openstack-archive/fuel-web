@@ -293,6 +293,21 @@ def copy_if_does_not_exist(from_path, to_path):
     copy(from_path, to_path)
 
 
+def copy_if_exists(from_path, to_path):
+    """Copies destination if it exists
+
+    :param from_path: src path
+    :param to_path: dst path
+    """
+    if not os.path.exists(from_path):
+        logger.debug(
+            'Skip file copying, because file {0} '
+            'does not exist'.format(from_path))
+        return
+
+    copy(from_path, to_path)
+
+
 def copy(source, destination, overwrite=True, symlinks=True):
     """Copy a given file or directory from one place to another.
 

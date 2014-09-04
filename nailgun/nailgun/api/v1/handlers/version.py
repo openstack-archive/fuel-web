@@ -18,6 +18,10 @@
 Product info handlers
 """
 
+import os
+
+import yaml
+
 from nailgun.api.v1.handlers.base import BaseHandler
 from nailgun.api.v1.handlers.base import content_json
 from nailgun.settings import settings
@@ -27,6 +31,8 @@ class VersionHandler(BaseHandler):
     """Version info handler
     """
 
+    release_versions_dir = "/etc/fuel/release_versions"
+
     @content_json
     def GET(self):
         """:returns: FUEL/FUELWeb commit SHA, release version.
@@ -35,4 +41,16 @@ class VersionHandler(BaseHandler):
         version = settings.VERSION
         method = settings.AUTH['AUTHENTICATION_METHOD']
         version['auth_required'] = method in ['fake', 'keystone']
+
+        if not os.path.exists(self.release_versions_dir):
+            return version
+
+        version['release_versions'] = {}
+        for fl in os.listdir(self.release_versions_dir):
+            f_path = os.path.join(self.release_versions_dir, fl)
+            with open(f_path, "r") as release_yaml:
+                version['release_versions'][fl] = yaml.load(
+                    release_yaml.read()
+                )
+
         return version

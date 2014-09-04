@@ -59,3 +59,17 @@ def getNetwork(ip, netmask, additionalip=None):
         return ipn_list
     except netaddr.AddrFormatError:
         return False
+
+def range(startip, endip):
+    #Return a list of IPs between startip and endip
+    try:
+        return list(netaddr.iter_iprange(startip,endip))
+    except netaddr.AddrFormatError:
+        return false
+
+def intersects(range1,range2):
+    #Returns true if any IPs in range1 exist in range2
+    for ip in range1:
+        if ip in range2:
+            return True
+    return False

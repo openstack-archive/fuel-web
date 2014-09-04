@@ -36,6 +36,7 @@ from nailgun.db.sqlalchemy.models import Node
 from nailgun.errors import errors
 from nailgun.logger import logger
 from nailgun.objects import Cluster
+from nailgun.orchestrator import priority_serializers as ps
 from nailgun.settings import settings
 from nailgun.utils import dict_merge
 from nailgun.utils import extract_env_version
@@ -74,8 +75,10 @@ class DeploymentMultinodeSerializer(object):
 
     critical_roles = ['controller', 'ceph-osd', 'primary-mongo']
 
-    @classmethod
-    def serialize(cls, cluster, nodes, ignore_customized=False):
+    def __init__(self, priority_serializer):
+        self.priority = priority_serializer
+
+    def serialize(self, cluster, nodes, ignore_customized=False):
         """Method generates facts which
         through an orchestrator passes to puppet
         """
@@ -84,13 +87,12 @@ class DeploymentMultinodeSerializer(object):
         for customized, node_group in groupby(nodes, keyfunc):
             if customized and not ignore_customized:
                 serialized_nodes.extend(
-                    cls.serialize_customized(cluster, node_group))
+                    self.serialize_customized(cluster, node_group))
             else:
-                serialized_nodes.extend(cls.serialize_generated(
+                serialized_nodes.extend(self.serialize_generated(
                     cluster, node_group))
         return serialized_nodes
 
-    @classmethod
     def serialize_generated(cls, cluster, nodes):
         nodes = cls.serialize_nodes(nodes)
         common_attrs = cls.get_common_attrs(cluster)
@@ -100,7 +102,6 @@ class DeploymentMultinodeSerializer(object):
 
         return [dict_merge(node, common_attrs) for node in nodes]
 
-    @classmethod
     def serialize_customized(cls, cluster, nodes):
         serialized = []
         release_data = objects.Release.get_orchestrator_data_dict(
@@ -111,7 +112,6 @@ class DeploymentMultinodeSerializer(object):
                 serialized.append(role_data)
         return serialized
 
-    @classmethod
     def get_common_attrs(cls, cluster):
         """Cluster attributes."""
         attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
@@ -142,14 +142,12 @@ class DeploymentMultinodeSerializer(object):
 
         return attrs
 
-    @classmethod
     def current_release(cls, cluster):
         """Actual cluster release."""
         return objects.Release.get_by_uid(cluster.pending_release_id) \
             if cluster.status == consts.CLUSTER_STATUSES.update \
             else cluster.release
 
-    @classmethod
     def previous_release(cls, cluster):
         """Returns previous release.
 
@@ -161,7 +159,6 @@ class DeploymentMultinodeSerializer(object):
             return cluster.release
         return None
 
-    @classmethod
     def set_storage_parameters(cls, cluster, attrs):
         """Generate pg_num as the number of OSDs across the cluster
         multiplied by 100, divided by Ceph replication factor, and
@@ -186,7 +183,6 @@ class DeploymentMultinodeSerializer(object):
             pg_num = 128
         attrs['storage']['pg_num'] = pg_num
 
-    @classmethod
     def node_list(cls, nodes):
         """Generate nodes list. Represents
         as "nodes" parameter in facts.
@@ -203,39 +199,16 @@ class DeploymentMultinodeSerializer(object):
 
         return node_list
 
-    @classmethod
     def by_role(cls, nodes, role):
         return filter(lambda node: node['role'] == role, nodes)
 
-    @classmethod
     def not_roles(cls, nodes, roles):
         return filter(lambda node: node['role'] not in roles, nodes)
 
-    @classmethod
-    def set_deployment_priorities(cls, nodes):
+    def set_deployment_priorities(self, nodes):
         """Set priorities of deployment."""
-        prior = Priority()
+        self.priority.set_deployment_priorities(nodes)
 
-        for n in cls.by_role(nodes, 'zabbix-server'):
-            n['priority'] = prior.next
-
-        for n in cls.by_role(nodes, 'mongo'):
-            n['priority'] = prior.next
-
-        for n in cls.by_role(nodes, 'primary-mongo'):
-            n['priority'] = prior.next
-
-        for n in cls.by_role(nodes, 'controller'):
-            n['priority'] = prior.next
-
-        other_nodes_prior = prior.next
-        for n in cls.not_roles(nodes, ['controller',
-                                       'mongo',
-                                       'primary-mongo',
-                                       'zabbix-server']):
-            n['priority'] = other_nodes_prior
-
-    @classmethod
     def set_critical_nodes(cls, cluster, nodes):
         """Set behavior on nodes deployment error
         during deployment process.
@@ -243,7 +216,6 @@ class DeploymentMultinodeSerializer(object):
         for n in nodes:
             n['fail_if_error'] = n['role'] in cls.critical_roles
 
-    @classmethod
     def serialize_nodes(cls, nodes):
         """Serialize node for each role.
         For example if node has two roles then
@@ -257,7 +229,6 @@ class DeploymentMultinodeSerializer(object):
         cls.set_primary_mongo(serialized_nodes)
         return serialized_nodes
 
-    @classmethod
     def serialize_node(cls, node, role):
         """Serialize node, then it will be
         merged with common attributes
@@ -279,7 +250,6 @@ class DeploymentMultinodeSerializer(object):
         node_attrs.update(cls.generate_test_vm_image_data(node))
         return node_attrs
 
-    @classmethod
     def get_image_cache_max_size(cls, node):
         images_ceph = (node.cluster.attributes['editable']['storage']
                        ['images_ceph']['value'])
@@ -290,7 +260,6 @@ class DeploymentMultinodeSerializer(object):
                 node.attributes.volumes)
         return {'glance': {'image_cache_max_size': image_cache_max_size}}
 
-    @classmethod
     def generate_test_vm_image_data(cls, node):
         # Instantiate all default values in dict.
         image_data = {
@@ -330,14 +299,12 @@ class DeploymentMultinodeSerializer(object):
 
         return {'test_vm_image': image_data}
 
-    @classmethod
     def get_net_provider_serializer(cls, cluster):
         if cluster.net_provider == 'nova_network':
             return NovaNetworkDeploymentSerializer
         else:
             return NeutronNetworkDeploymentSerializer
 
-    @classmethod
     def set_primary_node(cls, nodes, role, primary_node_index):
         """Set primary node for role if it not set yet.
         primary_node_index defines primary node position in nodes list
@@ -356,14 +323,12 @@ class DeploymentMultinodeSerializer(object):
         if result_nodes:
             result_nodes[primary_node_index]['role'] = primary_role
 
-    @classmethod
     def set_primary_mongo(cls, nodes):
         """Set primary mongo for the last mongo node
         node if it not set yet
         """
         cls.set_primary_node(nodes, 'mongo', 0)
 
-    @classmethod
     def filter_by_roles(cls, nodes, roles):
         return filter(
             lambda node: node['role'] in roles, nodes)
@@ -377,7 +342,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                       'primary-swift-proxy',
                       'ceph-osd']
 
-    @classmethod
     def serialize_nodes(cls, nodes):
         """Serialize nodes and set primary-controller
         """
@@ -386,14 +350,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         cls.set_primary_controller(serialized_nodes)
         return serialized_nodes
 
-    @classmethod
     def set_primary_controller(cls, nodes):
         """Set primary controller for the first controller
         node if it not set yet
         """
         cls.set_primary_node(nodes, 'controller', 0)
 
-    @classmethod
     def get_last_controller(cls, nodes):
         sorted_nodes = sorted(
             nodes, key=lambda node: int(node['uid']))
@@ -407,7 +369,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         return {'last_controller': last_controller}
 
-    @classmethod
     def node_list(cls, nodes):
         """Node list
         """
@@ -421,7 +382,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         return node_list
 
-    @classmethod
     def get_common_attrs(cls, cluster):
         """Common attributes for all facts
         """
@@ -448,55 +408,6 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
         cls.set_primary_controller(common_attrs['nodes'])
 
         return common_attrs
-
-    @classmethod
-    def set_deployment_priorities(cls, nodes):
-        """Set priorities of deployment for HA mode."""
-        prior = Priority()
-
-        zabbix_server_prior = prior.next
-        for n in cls.by_role(nodes, 'zabbix-server'):
-            n['priority'] = zabbix_server_prior
-
-        primary_swift_proxy_piror = prior.next
-        for n in cls.by_role(nodes, 'primary-swift-proxy'):
-            n['priority'] = primary_swift_proxy_piror
-
-        swift_proxy_prior = prior.next
-        for n in cls.by_role(nodes, 'swift-proxy'):
-            n['priority'] = swift_proxy_prior
-
-        storage_prior = prior.next
-        for n in cls.by_role(nodes, 'storage'):
-            n['priority'] = storage_prior
-
-        for n in cls.by_role(nodes, 'mongo'):
-            n['priority'] = prior.next
-
-        for n in cls.by_role(nodes, 'primary-mongo'):
-            n['priority'] = prior.next
-
-        # Deploy primary-controller
-        if not cls.by_role(nodes, 'primary-controller'):
-            cls.set_primary_controller(nodes)
-        for n in cls.by_role(nodes, 'primary-controller'):
-            n['priority'] = prior.next
-
-        # deploy secondary controlles sequently
-        for node in cls.by_role(nodes, 'controller'):
-            node['priority'] = prior.next
-
-        other_nodes_prior = prior.next
-        for n in cls.not_roles(nodes, ['primary-swift-proxy',
-                                       'swift-proxy',
-                                       'storage',
-                                       'primary-controller',
-                                       'controller',
-                                       'quantum',
-                                       'mongo',
-                                       'primary-mongo',
-                                       'zabbix-server']):
-            n['priority'] = other_nodes_prior
 
 
 class NetworkDeploymentSerializer(object):
@@ -1083,66 +994,10 @@ class DeploymentMultinodeSerializer51(DeploymentMultinodeSerializer):
 
 
 class DeploymentHASerializer51(DeploymentHASerializer):
-
-    @classmethod
-    def set_deployment_priorities(cls, nodes):
-        """Set priorities of deployment for HA mode."""
-        prior = Priority()
-
-        zabbix_server_prior = prior.next
-        for n in cls.by_role(nodes, 'zabbix-server'):
-            n['priority'] = zabbix_server_prior
-
-        primary_swift_proxy_piror = prior.next
-        for n in cls.by_role(nodes, 'primary-swift-proxy'):
-            n['priority'] = primary_swift_proxy_piror
-
-        swift_proxy_prior = prior.next
-        for n in cls.by_role(nodes, 'swift-proxy'):
-            n['priority'] = swift_proxy_prior
-
-        storage_prior = prior.next
-        for n in cls.by_role(nodes, 'storage'):
-            n['priority'] = storage_prior
-
-        for n in cls.by_role(nodes, 'mongo'):
-            n['priority'] = prior.next
-
-        for n in cls.by_role(nodes, 'primary-mongo'):
-            n['priority'] = prior.next
-
-        # Deploy primary-controller
-        if not cls.by_role(nodes, 'primary-controller'):
-            cls.set_primary_controller(nodes)
-        for n in cls.by_role(nodes, 'primary-controller'):
-            n['priority'] = prior.next
-
-        # Then deploy other controllers.
-        # We are deploying in parallel, so do
-        # not let us deploy more than 6 controllers
-        # simultaneously or galera master may be exhausted
-
-        secondary_controllers = cls.by_role(nodes, 'controller')
-
-        for index, node in enumerate(secondary_controllers):
-            if index % 6 == 0:
-                sec_controller_priority = prior.next
-            node['priority'] = sec_controller_priority
-
-        other_nodes_prior = prior.next
-        for n in cls.not_roles(nodes, ['primary-swift-proxy',
-                                       'swift-proxy',
-                                       'storage',
-                                       'primary-controller',
-                                       'controller',
-                                       'quantum',
-                                       'mongo',
-                                       'primary-mongo',
-                                       'zabbix-server']):
-            n['priority'] = other_nodes_prior
+    pass
 
 
-def get_serializer(cluster):
+def create_serializer(cluster):
     """Returns a serializer depends on a given `cluster`.
 
     :param cluster: a cluster to process
@@ -1151,12 +1006,24 @@ def get_serializer(cluster):
     # env-version serializer map
     serializers_map = {
         '5.0': {
-            'multinode': DeploymentMultinodeSerializer,
-            'ha': DeploymentHASerializer,
+            'multinode': (
+                DeploymentMultinodeSerializer,
+                ps.PriorityMultinodeSerializer50
+            ),
+            'ha': (
+                DeploymentHASerializer,
+                ps.PriorityHASerializer50
+            ),
         },
         '5.1': {
-            'multinode': DeploymentMultinodeSerializer51,
-            'ha': DeploymentHASerializer51,
+            'multinode': (
+                DeploymentMultinodeSerializer51,
+                ps.PriorityMultinodeSerializer51
+            ),
+            'ha': (
+                DeploymentHASerializer51,
+                ps.PriorityHASerializer51
+            ),
         },
     }
 
@@ -1166,7 +1033,13 @@ def get_serializer(cluster):
     # choose serializer
     for version, serializers in six.iteritems(serializers_map):
         if env_version.startswith(version):
-            return serializers[env_mode]
+            serializer, priority = serializers[env_mode]
+            if cluster.pending_release_id:
+                priority = {
+                    'ha': ps.PriorityHASerializerPatching,
+                    'multinode': ps.PriorityMultinodeSerializerPatching,
+                }.get(env_mode)
+            return serializer(priority())
 
     raise errors.UnsupportedSerializer()
 
@@ -1175,7 +1048,7 @@ def serialize(cluster, nodes, ignore_customized=False):
     """Serialization depends on deployment mode
     """
     objects.NodeCollection.prepare_for_deployment(cluster.nodes)
-    serializer = get_serializer(cluster)
+    serializer = create_serializer(cluster)
 
     return serializer.serialize(
         cluster, nodes, ignore_customized=ignore_customized)

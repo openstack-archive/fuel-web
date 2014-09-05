@@ -15,6 +15,7 @@
 #    under the License.
 
 import traceback
+from nailgun.db.filtering import TaskFilter
 
 from nailgun.objects.serializers.network_configuration \
     import NeutronNetworkConfigurationSerializer
@@ -483,13 +484,12 @@ class StopDeploymentTaskManager(TaskManager):
 
 class ResetEnvironmentTaskManager(TaskManager):
 
-    def execute(self):
-        deploy_running = db().query(Task).filter_by(
-            cluster=self.cluster,
-            name='deploy',
-            status='running'
-        ).first()
-        if deploy_running:
+    def check_deploy_is_not_started(self):
+        f = TaskFilter(
+            self.cluster.id,
+            {'name': TASK_NAMES.deploy, 'status': TASK_STATUSES.running}
+        )
+        if f.get_objs_count():
             raise errors.DeploymentAlreadyStarted(
                 u"Can't reset environment '{0}' when "
                 u"deployment is running".format(
@@ -497,25 +497,29 @@ class ResetEnvironmentTaskManager(TaskManager):
                 )
             )
 
-        obsolete_tasks = db().query(Task).filter_by(
-            cluster_id=self.cluster.id,
-        ).filter(
-            Task.name.in_([
-                'deploy',
-                'deployment',
-                'stop_deployment'
-            ])
+    def execute(self):
+        self.check_deploy_is_not_started()
+        to_be_deleted = [
+            TASK_NAMES.deploy,
+            TASK_NAMES.deployment,
+            TASK_NAMES.stop_deployment
+        ]
+        f = TaskFilter(
+            self.cluster.id,
+            {'names': to_be_deleted},
+            ordering='id'
         )
+        obsolete_tasks = f.get_objs(for_update=True)
         for task in obsolete_tasks:
             db().delete(task)
-        db().commit()
 
         task = Task(
-            name="reset_environment",
+            name=TASK_NAMES.reset_environment,
             cluster=self.cluster
         )
         db().add(task)
         db.commit()
+
         self._call_silently(
             task,
             tasks.ResetEnvironmentTask
@@ -525,12 +529,7 @@ class ResetEnvironmentTaskManager(TaskManager):
 
 class UpdateEnvironmentTaskManager(TaskManager):
 
-    def execute(self):
-        if not self.cluster.pending_release_id:
-            raise errors.InvalidReleaseId(
-                u"Can't update environment '{0}' when "
-                u"new release Id is invalid".format(self.cluster.name))
-
+    def check_task_is_not_started(self):
         running_tasks = db().query(Task).filter_by(
             cluster_id=self.cluster.id,
             status='running'
@@ -549,6 +548,17 @@ class UpdateEnvironmentTaskManager(TaskManager):
                     self.cluster.id
                 )
             )
+
+    def check_release(self):
+        if not self.cluster.pending_release_id:
+            raise errors.InvalidReleaseId(
+                u"Can't update environment '{0}' when "
+                u"new release Id is invalid".format(self.cluster.name))
+
+    def execute(self):
+
+        self.check_release()
+        self.check_task_is_not_started()
 
         nodes_to_change = TaskHelper.nodes_to_upgrade(self.cluster)
         objects.NodeCollection.update_slave_nodes_fqdn(nodes_to_change)

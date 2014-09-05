@@ -28,6 +28,7 @@ default_messages = {
     "NotAllowed": "Action is not allowed",
     "InvalidField": "Invalid field specified for object",
     "ObjectNotFound": "Object not found in DB",
+    "FoundMoreThanOne": "Found more than one object in DB",
 
     # node discovering errors
     "InvalidInterfacesInfo": "Invalid interfaces info",

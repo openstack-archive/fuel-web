@@ -93,62 +93,62 @@ class DeploymentMultinodeSerializer(object):
                     cluster, node_group))
         return serialized_nodes
 
-    def serialize_generated(cls, cluster, nodes):
-        nodes = cls.serialize_nodes(nodes)
-        common_attrs = cls.get_common_attrs(cluster)
+    def serialize_generated(self, cluster, nodes):
+        nodes = self.serialize_nodes(nodes)
+        common_attrs = self.get_common_attrs(cluster)
 
-        cls.set_deployment_priorities(nodes)
-        cls.set_critical_nodes(cluster, nodes)
+        self.set_deployment_priorities(nodes)
+        self.set_critical_nodes(nodes)
 
         return [dict_merge(node, common_attrs) for node in nodes]
 
-    def serialize_customized(cls, cluster, nodes):
+    def serialize_customized(self, cluster, nodes):
         serialized = []
         release_data = objects.Release.get_orchestrator_data_dict(
-            cls.current_release(cluster))
+            self.current_release(cluster))
         for node in nodes:
             for role_data in node.replaced_deployment_info:
                 role_data.update(release_data)
                 serialized.append(role_data)
         return serialized
 
-    def get_common_attrs(cls, cluster):
+    def get_common_attrs(self, cluster):
         """Cluster attributes."""
         attrs = objects.Attributes.merged_attrs_values(cluster.attributes)
-        release = cls.current_release(cluster)
+        release = self.current_release(cluster)
 
         attrs['deployment_mode'] = cluster.mode
         attrs['deployment_id'] = cluster.id
         attrs['openstack_version_prev'] = getattr(
-            cls.previous_release(cluster), 'version', None)
+            self.previous_release(cluster), 'version', None)
         attrs['openstack_version'] = release.version
         attrs['fuel_version'] = cluster.fuel_version
         attrs.update(
             objects.Release.get_orchestrator_data_dict(release)
         )
-        attrs['nodes'] = cls.node_list(get_nodes_not_for_deletion(cluster))
+        attrs['nodes'] = self.node_list(get_nodes_not_for_deletion(cluster))
 
         for node in attrs['nodes']:
             if node['role'] in 'cinder':
                 attrs['use_cinder'] = True
 
-        cls.set_storage_parameters(cluster, attrs)
-        cls.set_primary_mongo(attrs['nodes'])
+        self.set_storage_parameters(cluster, attrs)
+        self.set_primary_mongo(attrs['nodes'])
 
         attrs = dict_merge(
             attrs,
-            cls.get_net_provider_serializer(cluster).get_common_attrs(cluster,
-                                                                      attrs))
+            self.get_net_provider_serializer(cluster).get_common_attrs(cluster,
+                                                                       attrs))
 
         return attrs
 
-    def current_release(cls, cluster):
+    def current_release(self, cluster):
         """Actual cluster release."""
         return objects.Release.get_by_uid(cluster.pending_release_id) \
             if cluster.status == consts.CLUSTER_STATUSES.update \
             else cluster.release
 
-    def previous_release(cls, cluster):
+    def previous_release(self, cluster):
         """Returns previous release.
 
         :param cluster: a ``Cluster`` instance to retrieve release from
@@ -159,7 +159,7 @@ class DeploymentMultinodeSerializer(object):
             return cluster.release
         return None
 
-    def set_storage_parameters(cls, cluster, attrs):
+    def set_storage_parameters(self, cluster, attrs):
         """Generate pg_num as the number of OSDs across the cluster
         multiplied by 100, divided by Ceph replication factor, and
         rounded up to the nearest power of 2.
@@ -183,7 +183,7 @@ class DeploymentMultinodeSerializer(object):
             pg_num = 128
         attrs['storage']['pg_num'] = pg_num
 
-    def node_list(cls, nodes):
+    def node_list(self, nodes):
         """Generate nodes list. Represents
         as "nodes" parameter in facts.
         """
@@ -199,24 +199,24 @@ class DeploymentMultinodeSerializer(object):
 
         return node_list
 
-    def by_role(cls, nodes, role):
+    def by_role(self, nodes, role):
         return filter(lambda node: node['role'] == role, nodes)
 
-    def not_roles(cls, nodes, roles):
+    def not_roles(self, nodes, roles):
         return filter(lambda node: node['role'] not in roles, nodes)
 
     def set_deployment_priorities(self, nodes):
         """Set priorities of deployment."""
         self.priority.set_deployment_priorities(nodes)
 
-    def set_critical_nodes(cls, cluster, nodes):
+    def set_critical_nodes(self, nodes):
         """Set behavior on nodes deployment error
         during deployment process.
         """
         for n in nodes:
-            n['fail_if_error'] = n['role'] in cls.critical_roles
+            n['fail_if_error'] = n['role'] in self.critical_roles
 
-    def serialize_nodes(cls, nodes):
+    def serialize_nodes(self, nodes):
         """Serialize node for each role.
         For example if node has two roles then
         in orchestrator will be passed two serialized
@@ -225,11 +225,11 @@ class DeploymentMultinodeSerializer(object):
         serialized_nodes = []
         for node in nodes:
             for role in sorted(node.all_roles):
-                serialized_nodes.append(cls.serialize_node(node, role))
-        cls.set_primary_mongo(serialized_nodes)
+                serialized_nodes.append(self.serialize_node(node, role))
+        self.set_primary_mongo(serialized_nodes)
         return serialized_nodes
 
-    def serialize_node(cls, node, role):
+    def serialize_node(self, node, role):
         """Serialize node, then it will be
         merged with common attributes
         """
@@ -244,13 +244,13 @@ class DeploymentMultinodeSerializer(object):
             'online': node.online
         }
 
-        node_attrs.update(
-            cls.get_net_provider_serializer(node.cluster).get_node_attrs(node))
-        node_attrs.update(cls.get_image_cache_max_size(node))
-        node_attrs.update(cls.generate_test_vm_image_data(node))
+        node_attrs.update(self.get_net_provider_serializer(
+            node.cluster).get_node_attrs(node))
+        node_attrs.update(self.get_image_cache_max_size(node))
+        node_attrs.update(self.generate_test_vm_image_data(node))
         return node_attrs
 
-    def get_image_cache_max_size(cls, node):
+    def get_image_cache_max_size(self, node):
         images_ceph = (node.cluster.attributes['editable']['storage']
                        ['images_ceph']['value'])
         if images_ceph:
@@ -260,7 +260,7 @@ class DeploymentMultinodeSerializer(object):
                 node.attributes.volumes)
         return {'glance': {'image_cache_max_size': image_cache_max_size}}
 
-    def generate_test_vm_image_data(cls, node):
+    def generate_test_vm_image_data(self, node):
         # Instantiate all default values in dict.
         image_data = {
             'container_format': 'bare',
@@ -299,13 +299,13 @@ class DeploymentMultinodeSerializer(object):
 
         return {'test_vm_image': image_data}
 
-    def get_net_provider_serializer(cls, cluster):
+    def get_net_provider_serializer(self, cluster):
         if cluster.net_provider == 'nova_network':
             return NovaNetworkDeploymentSerializer
         else:
             return NeutronNetworkDeploymentSerializer
 
-    def set_primary_node(cls, nodes, role, primary_node_index):
+    def set_primary_node(self, nodes, role, primary_node_index):
         """Set primary node for role if it not set yet.
         primary_node_index defines primary node position in nodes list
         """
@@ -313,23 +313,23 @@ class DeploymentMultinodeSerializer(object):
             nodes, key=lambda node: int(node['uid']))
 
         primary_role = 'primary-{0}'.format(role)
-        primary_node = cls.filter_by_roles(
+        primary_node = self.filter_by_roles(
             sorted_nodes, [primary_role])
         if primary_node:
             return
 
-        result_nodes = cls.filter_by_roles(
+        result_nodes = self.filter_by_roles(
             sorted_nodes, [role])
         if result_nodes:
             result_nodes[primary_node_index]['role'] = primary_role
 
-    def set_primary_mongo(cls, nodes):
+    def set_primary_mongo(self, nodes):
         """Set primary mongo for the last mongo node
         node if it not set yet
         """
-        cls.set_primary_node(nodes, 'mongo', 0)
+        self.set_primary_node(nodes, 'mongo', 0)
 
-    def filter_by_roles(cls, nodes, roles):
+    def filter_by_roles(self, nodes, roles):
         return filter(
             lambda node: node['role'] in roles, nodes)
 
@@ -342,25 +342,25 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
                       'primary-swift-proxy',
                       'ceph-osd']
 
-    def serialize_nodes(cls, nodes):
+    def serialize_nodes(self, nodes):
         """Serialize nodes and set primary-controller
         """
         serialized_nodes = super(
-            DeploymentHASerializer, cls).serialize_nodes(nodes)
-        cls.set_primary_controller(serialized_nodes)
+            DeploymentHASerializer, self).serialize_nodes(nodes)
+        self.set_primary_controller(serialized_nodes)
         return serialized_nodes
 
-    def set_primary_controller(cls, nodes):
+    def set_primary_controller(self, nodes):
         """Set primary controller for the first controller
         node if it not set yet
         """
-        cls.set_primary_node(nodes, 'controller', 0)
+        self.set_primary_node(nodes, 'controller', 0)
 
-    def get_last_controller(cls, nodes):
+    def get_last_controller(self, nodes):
         sorted_nodes = sorted(
             nodes, key=lambda node: int(node['uid']))
 
-        controller_nodes = cls.filter_by_roles(
+        controller_nodes = self.filter_by_roles(
             sorted_nodes, ['controller', 'primary-controller'])
 
         last_controller = None
@@ -369,12 +369,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         return {'last_controller': last_controller}
 
-    def node_list(cls, nodes):
+    def node_list(self, nodes):
         """Node list
         """
         node_list = super(
             DeploymentHASerializer,
-            cls
+            self
         ).node_list(nodes)
 
         for node in node_list:
@@ -382,12 +382,12 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
 
         return node_list
 
-    def get_common_attrs(cls, cluster):
+    def get_common_attrs(self, cluster):
         """Common attributes for all facts
         """
         common_attrs = super(
             DeploymentHASerializer,
-            cls
+            self
         ).get_common_attrs(cluster)
 
         net_manager = objects.Cluster.get_network_manager(cluster)
@@ -401,11 +401,11 @@ class DeploymentHASerializer(DeploymentMultinodeSerializer):
             {'point': '1', 'weight': '1'},
             {'point': '2', 'weight': '2'}]
 
-        last_controller = cls.get_last_controller(common_attrs['nodes'])
+        last_controller = self.get_last_controller(common_attrs['nodes'])
         common_attrs.update(last_controller)
 
         # Assign primary controller in nodes list
-        cls.set_primary_controller(common_attrs['nodes'])
+        self.set_primary_controller(common_attrs['nodes'])
 
         return common_attrs
 

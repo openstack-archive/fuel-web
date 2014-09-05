@@ -625,7 +625,11 @@ def config(update_path):
 
         'repos': {
             'src': join(update_path, 'repos', '[0-9.-]*'),
-            'dst': join('/var', 'www', 'nailgun')}}
+            'dst': join('/var', 'www', 'nailgun')},
+
+        'release_versions': {
+            'src': join(update_path, 'release_versions', '*.yaml'),
+            'dst': '/etc/fuel/release_versions'}}
 
     # Config for host system upgarde engine
     host_system = get_host_system(update_path, new_version)

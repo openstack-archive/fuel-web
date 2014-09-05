@@ -57,11 +57,13 @@ class OpenStackUpgrader(UpgradeEngine):
         self.install_puppets()
         self.install_repos()
         self.install_releases()
+        self.install_versions()
 
     def rollback(self):
         self.remove_releases()
         self.remove_repos()
         self.remove_puppets()
+        self.remove_versions()
 
     def install_puppets(self):
         logger.info('Installing puppet manifests...')
@@ -106,6 +108,33 @@ class OpenStackUpgrader(UpgradeEngine):
     def on_success(self):
         """Do nothing for this engine
         """
+
+    def install_versions(self):
+        """Copy openstack release versions
+        """
+        logger.info('Copy openstack release versions...')
+        release_versions_cfg = self.config.openstack['release_versions']
+        versions = glob.glob(release_versions_cfg['src'])
+
+        utils.create_dir_if_not_exists(release_versions_cfg['dst'])
+        for version_file in versions:
+            dst = os.path.join(
+                release_versions_cfg['dst'],
+                os.path.basename(version_file))
+            utils.copy(version_file, dst)
+
+    def remove_versions(self):
+        """Copy openstack release versions
+        """
+        logger.info('Copy openstack release versions...')
+        release_versions_cfg = self.config.openstack['release_versions']
+        versions = glob.glob(release_versions_cfg['src'])
+
+        for version_file in versions:
+            dst = os.path.join(
+                release_versions_cfg['dst'],
+                os.path.basename(version_file))
+            utils.remove(dst)
 
     def install_releases(self):
         # check releases for existing in nailgun side

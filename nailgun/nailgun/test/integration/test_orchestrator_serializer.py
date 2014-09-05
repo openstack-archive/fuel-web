@@ -317,7 +317,7 @@ class TestNovaOrchestratorSerializer(OrchestratorSerializerTestBase):
         ]
         serializer = DeploymentMultinodeSerializer(
             PriorityMultinodeSerializer50())
-        serializer.set_critical_nodes(self.cluster, nodes)
+        serializer.set_critical_nodes(nodes)
         expected_ciritial_roles = [
             {'role': 'mongo', 'fail_if_error': False},
             {'role': 'mongo', 'fail_if_error': False},
@@ -443,7 +443,7 @@ class TestNovaOrchestratorHASerializer(OrchestratorSerializerTestBase):
             {'role': 'ceph-osd'},
             {'role': 'other'}
         ]
-        self.serializer.set_critical_nodes(self.cluster, nodes)
+        self.serializer.set_critical_nodes(nodes)
         expected_ciritial_roles = [
             {'role': 'zabbix-server', 'fail_if_error': False},
             {'role': 'primary-swift-proxy', 'fail_if_error': True},

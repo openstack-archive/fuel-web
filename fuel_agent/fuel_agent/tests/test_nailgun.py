@@ -65,6 +65,9 @@ PROVISION_SAMPLE_DATA = {
     "power_address": "10.20.0.253",
     "name_servers": "\"10.20.0.2\"",
     "ks_meta": {
+        "image_uri": "http://fake_image_url",
+        "image_format": "ext4",
+        "image_container": "gzip",
         "timezone": "America/Los_Angeles",
         "master_ip": "10.20.0.2",
         "mco_enable": 1,
@@ -461,11 +464,7 @@ class TestNailgun(test_base.BaseTestCase):
         self.assertEqual('gzip', img.container)
         self.assertEqual('ext4', img.image_format)
         self.assertEqual('/dev/mapper/os-root', img.target_device)
-        self.assertEqual(
-            'http://%s/targetimages/%s.img.gz' % (
-                self.drv.data['ks_meta']['master_ip'],
-                self.drv.data['profile'].split('_')[0]),
-            img.uri)
+        self.assertEqual('http://fake_image_url', img.uri)
         self.assertEqual(None, img.size)
 
     def test_getlabel(self):

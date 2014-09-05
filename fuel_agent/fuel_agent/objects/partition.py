@@ -82,7 +82,7 @@ class Parted(object):
 
     def next_begin(self):
         if not self.partitions:
-            return 0
+            return 1
         if self.partitions[-1] == self.extended:
             return self.partitions[-1].begin
         return self.partitions[-1].end

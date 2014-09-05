@@ -32,3 +32,10 @@ class TestFSUtils(test_base.BaseTestCase):
         fu.make_fs('swap', ' -f ', ' -L fake_label ', '/dev/fake')
         mock_exec.assert_called_once_with('mkswap', '-f', '-L', 'fake_label',
                                           '/dev/fake')
+
+    @mock.patch.object(utils, 'execute')
+    def test_make_fs_uswap(self, mock_exec):
+        #NOTE(agordeev): check that logic correctly works with unicode values
+        fu.make_fs(u'swap', ' -f ', ' -L fake_label ', '/dev/fake')
+        mock_exec.assert_called_once_with('mkswap', '-f', '-L', 'fake_label',
+                                          '/dev/fake')

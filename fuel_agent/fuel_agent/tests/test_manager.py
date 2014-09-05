@@ -68,21 +68,21 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual(mock_pu_ml_expected_calls, mock_pu_ml.call_args_list)
 
         mock_pu_mp_expected_calls = [
-            mock.call('/dev/sda', 0, 24, 'primary'),
-            mock.call('/dev/sda', 24, 224, 'primary'),
-            mock.call('/dev/sda', 224, 424, 'primary'),
-            mock.call('/dev/sda', 424, 624, 'primary'),
-            mock.call('/dev/sda', 624, 20062, 'primary'),
-            mock.call('/dev/sda', 20062, 65659, 'primary'),
-            mock.call('/dev/sda', 65659, 65679, 'primary'),
-            mock.call('/dev/sdb', 0, 24, 'primary'),
-            mock.call('/dev/sdb', 24, 224, 'primary'),
-            mock.call('/dev/sdb', 224, 424, 'primary'),
-            mock.call('/dev/sdb', 424, 65395, 'primary'),
-            mock.call('/dev/sdc', 0, 24, 'primary'),
-            mock.call('/dev/sdc', 24, 224, 'primary'),
-            mock.call('/dev/sdc', 224, 424, 'primary'),
-            mock.call('/dev/sdc', 424, 65395, 'primary')]
+            mock.call('/dev/sda', 1, 25, 'primary'),
+            mock.call('/dev/sda', 25, 225, 'primary'),
+            mock.call('/dev/sda', 225, 425, 'primary'),
+            mock.call('/dev/sda', 425, 625, 'primary'),
+            mock.call('/dev/sda', 625, 20063, 'primary'),
+            mock.call('/dev/sda', 20063, 65660, 'primary'),
+            mock.call('/dev/sda', 65660, 65680, 'primary'),
+            mock.call('/dev/sdb', 1, 25, 'primary'),
+            mock.call('/dev/sdb', 25, 225, 'primary'),
+            mock.call('/dev/sdb', 225, 425, 'primary'),
+            mock.call('/dev/sdb', 425, 65396, 'primary'),
+            mock.call('/dev/sdc', 1, 25, 'primary'),
+            mock.call('/dev/sdc', 25, 225, 'primary'),
+            mock.call('/dev/sdc', 225, 425, 'primary'),
+            mock.call('/dev/sdc', 425, 65396, 'primary')]
         self.assertEqual(mock_pu_mp_expected_calls, mock_pu_mp.call_args_list)
 
         mock_pu_spf_expected_calls = [mock.call('/dev/sda', 1, 'bios_grub'),

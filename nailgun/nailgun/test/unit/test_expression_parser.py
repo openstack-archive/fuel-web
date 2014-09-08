@@ -17,8 +17,8 @@
 import inspect
 
 from nailgun.errors import errors
+from nailgun.expression import Expression
 from nailgun.test.base import BaseTestCase
-from nailgun.utils import evaluate_expression
 
 
 class TestExpressionParser(BaseTestCase):
@@ -78,9 +78,19 @@ class TestExpressionParser(BaseTestCase):
             # test nonexistent keys
             ('cluster:nonexistentkey?', None),
             ('cluster:nonexistentkey? == null', True),
-            ('cluster:nonexistentkey', AttributeError),
+            ('cluster:nonexistentkey', TypeError),
             ('cluster:mode? == null', False),
+            # test evaluation flow
+            ('cluster:mode != "ha_compact" and cluster:nonexistentkey == 1',
+                False),
+            ('cluster:mode == "ha_compact" and cluster:nonexistentkey == 1',
+                TypeError),
+            ('cluster:mode == "ha_compact" and cluster:nonexistentkey? == 1',
+                False),
         )
+
+        def evaluate_expression(expression, models):
+            return Expression(expression, models).evaluate()
 
         for test_case in test_cases:
             expression, result = test_case

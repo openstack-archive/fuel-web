@@ -16,6 +16,9 @@ import ply.lex
 import ply.yacc
 
 from nailgun.errors import errors
+from nailgun.expression.objects import ModelPathWrapper
+from nailgun.expression.objects import ScalarWrapper
+from nailgun.expression.objects import SubexpressionWrapper
 
 tokens = (
     'NUMBER', 'STRING', 'TRUE', 'FALSE', 'NULL', 'AND', 'OR', 'NOT', 'IN',
@@ -74,9 +77,7 @@ def t_error(t):
 
 ply.lex.lex()
 
-context = {
-    'models': {}
-}
+expression = None
 
 precedence = (
     ('left', 'OR'),
@@ -93,22 +94,25 @@ def p_expression_binop(p):
                   | expression AND expression
                   | expression IN expression
     """
-    if p[2] == '==':
-        p[0] = p[1] == p[3]
-    elif p[2] == '!=':
-        p[0] = p[1] != p[3]
-    elif p[2] == 'or':
-        p[0] = p[1] or p[3]
-    elif p[2] == 'and':
-        p[0] = p[1] and p[3]
-    elif p[2] == 'in':
-        p[0] = p[1] in p[3]
+    result, arg1, op, arg2 = p
+    if op == '==':
+        result = lambda: arg1() == arg2()
+    elif op == '!=':
+        result = lambda: arg1() != arg2()
+    elif op == 'or':
+        result = lambda: arg1() or arg2()
+    elif op == 'and':
+        result = lambda: arg1() and arg2()
+    elif op == 'in':
+        result = lambda: arg1() in arg2()
+    p[0] = SubexpressionWrapper(result)
 
 
 def p_not_expression(p):
     """expression : NOT expression
     """
-    p[0] = not p[2]
+    subexpression = p[2]
+    p[0] = SubexpressionWrapper(lambda: not subexpression())
 
 
 def p_expression_group(p):
@@ -124,34 +128,18 @@ def p_expression_scalar(p):
                   | TRUE
                   | FALSE
     """
-    p[0] = p[1]
+    p[0] = ScalarWrapper(p[1])
 
 
 def p_expression_modelpath(p):
     """expression : MODELPATH
     """
-    model_name, attribute = p[1].split(':', 1)
-    try:
-        model = context['models'][model_name]
-    except KeyError:
-        raise errors.UnknownModel("Unknown model '%s'" % model_name)
-
-    strict = True
-    if attribute.endswith('?'):
+    path = p[1]
+    strict = expression.strict
+    if path.endswith('?'):
         strict = False
-        attribute = attribute[:-1]
-
-    def get_attribute_value(model, path):
-        value = model[path.pop(0)]
-        return get_attribute_value(value, path) if len(path) else value
-
-    try:
-        p[0] = get_attribute_value(model, attribute.split('.'))
-    except (KeyError, AttributeError) as e:
-        if strict:
-            raise e
-        else:
-            p[0] = None
+        path = path[:-1]
+    p[0] = ModelPathWrapper(path, expression, strict)
 
 
 def p_error(p):
@@ -161,6 +149,7 @@ def p_error(p):
 parser = ply.yacc.yacc(debug=False, write_tables=False)
 
 
-def evaluate(expression, models=None):
-    context['models'] = models if models is not None else {}
-    return parser.parse(expression)
+def parse(expr):
+    global expression
+    expression = expr
+    return parser.parse(expression.expression_text)

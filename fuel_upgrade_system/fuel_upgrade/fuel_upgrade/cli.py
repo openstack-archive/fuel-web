@@ -64,6 +64,8 @@ def handle_exception(exc):
         print(messages.docker_is_dead)
     elif isinstance(exc, errors.UpgradeVerificationError):
         print(messages.health_checker_failed)
+    elif isinstance(exc, errors.NailgunIsNotRunningError):
+        print(messages.nailgun_is_not_running)
 
     sys.exit(-1)
 

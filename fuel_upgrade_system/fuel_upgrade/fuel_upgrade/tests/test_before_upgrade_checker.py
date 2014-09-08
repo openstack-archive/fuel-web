@@ -16,6 +16,8 @@
 
 import mock
 
+import requests
+
 from fuel_upgrade.before_upgrade_checker import CheckFreeSpace
 from fuel_upgrade.before_upgrade_checker import CheckNoRunningTasks
 from fuel_upgrade.before_upgrade_checker import CheckUpgradeVersions
@@ -54,6 +56,17 @@ class TestCheckNoRunningTasks(BaseTestCase):
             self, get_tasks_mock):
         checker = CheckNoRunningTasks(self.config)
         checker.check()
+        self.called_once(get_tasks_mock)
+
+    @mock.patch('fuel_upgrade.before_upgrade_checker.NailgunClient.get_tasks',
+                side_effect=requests.ConnectionError(''))
+    def test_check_raises_error_if_nailgun_is_not_running(
+            self, get_tasks_mock):
+        checker = CheckNoRunningTasks(self.config)
+        self.assertRaisesRegexp(
+            errors.NailgunIsNotRunningError,
+            'Cannot connect to rest api service',
+            checker.check)
         self.called_once(get_tasks_mock)
 
 

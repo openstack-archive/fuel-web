@@ -17,6 +17,7 @@
 import abc
 import logging
 
+import requests
 import six
 
 from fuel_upgrade import errors
@@ -55,7 +56,13 @@ class CheckNoRunningTasks(BaseBeforeUpgradeChecker):
         running tasks
         """
         logger.info('Check nailgun tasks')
-        tasks = self.nailgun_client.get_tasks()
+
+        try:
+            tasks = self.nailgun_client.get_tasks()
+        except requests.ConnectionError:
+            raise errors.NailgunIsNotRunningError(
+                'Cannot connect to rest api service')
+
         logger.debug('Nailgun tasks {0}'.format(tasks))
 
         running_tasks = filter(

@@ -156,11 +156,15 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
     UpdateEnvironmentAction = Action.extend({
         className: 'span12 action-item-placeholder action-update',
         template: _.template(updateEnvironmentTemplate),
+        events: {
+            'click .rollback-environment-btn': 'rollbackEnvironmentAction',
+            'click .update-environment-btn': 'updateEnvironmentAction'
+        },
         releases: releases,
         stickitAction: function() {
             var releasesForUpdate = this.getReleasesForUpdate();
             var bindings = {
-                '.action-btn': {
+                '.update-environment-btn': {
                     attributes: [{
                         name: 'disabled',
                         observe: 'pending_release_id',
@@ -170,26 +174,27 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
                     }]
                 }
             };
-            if (this.action == 'update') {
-                bindings['select[name=update_release]'] = {
-                    observe: 'pending_release_id',
-                    selectOptions: {
-                        collection:function() {
-                            return releasesForUpdate.map(function(release) {
-                                return {value: release.id, label: release.get('name') + ' (' + release.get('version') + ')'};
-                            });
-                        }
-                    },
-                    visible: function() {
-                        return releasesForUpdate.length && !this.isLocked();
+            bindings['select[name=update_release]'] = {
+                observe: 'pending_release_id',
+                selectOptions: {
+                    collection:function() {
+                        return releasesForUpdate.map(function(release) {
+                            return {value: release.id, label: release.get('name') + ' (' + release.get('version') + ')'};
+                        });
                     }
-                };
-            }
+                },
+                visible: function() {
+                    return releasesForUpdate.length && !this.isLocked();
+                }
+            };
             this.stickit(this.model, bindings);
         },
-        applyAction: function() {
+        updateEnvironmentAction: function() {
             var isDowngrade = _.contains(this.model.get('release').get('can_update_from_versions'), this.releases.findWhere({id: this.model.get('pending_release_id') || this.model.get('release_id')}).get('version'));
-            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: this.action, isDowngrade: isDowngrade})).render();
+            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: 'update', isDowngrade: isDowngrade})).render();
+        },
+        rollbackEnvironmentAction: function() {
+            this.registerSubView(new dialogViews.UpdateEnvironmentDialog({model: this.model, action: 'rollback'})).render();
         },
         getReleasesForUpdate: function() {
             var releaseId = this.model.get('release_id');
@@ -217,7 +222,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
                 return 'no_releases_to_update_message';
             }
             if (this.action == 'rollback') {
-                return 'rollback_message';
+                return 'rollback_warning_message';
             }
             return this.constructor.__super__.getDescription.call(this, this.action);
         },

@@ -15,9 +15,11 @@
 **/
 define(
 [
+    'react',
     'utils',
     'models',
     'views/common',
+    'jsx!views/cluster_page_subviews',
     'jsx!views/dialogs',
     'views/cluster_page_tabs/nodes_tab',
     'views/cluster_page_tabs/network_tab',
@@ -25,17 +27,12 @@ define(
     'views/cluster_page_tabs/logs_tab',
     'views/cluster_page_tabs/actions_tab',
     'views/cluster_page_tabs/healthcheck_tab',
-    'text!templates/cluster/page.html',
-    'text!templates/cluster/customization_message.html',
-    'text!templates/cluster/deployment_result.html',
-    'text!templates/cluster/deployment_control.html',
-    'text!templates/cluster/cluster_release_info.html'
+    'text!templates/cluster/page.html'
 ],
-function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate, clusterCustomizationMessageTemplate, deploymentResultTemplate, deploymentControlTemplate, clusterInfoTemplate) {
+function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, NodesTab, NetworkTab, SettingsTab, LogsTab, ActionsTab, HealthCheckTab, clusterPageTemplate) {
     'use strict';
-    var ClusterPage, ClusterInfo, ClusterCustomizationMessage, DeploymentResult, DeploymentControl;
 
-    ClusterPage = commonViews.Page.extend({
+    var ClusterPage = commonViews.Page.extend({
         navbarActiveElement: 'clusters',
         breadcrumbsPath: function() {
             return [['home', '#'], ['environments', '#clusters'], [this.model.get('name'), null, true]];
@@ -46,12 +43,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
         tabs: ['nodes', 'network', 'settings', 'logs', 'healthcheck', 'actions'],
         updateInterval: 5000,
         template: _.template(clusterPageTemplate),
-        events: {
-            'click .task-result .close': 'dismissTaskResult'
-        },
-        getReleaseSetupTask: function(status) {
-            return this.tasks.findTask({group: 'release_setup', status: status || 'running', release: this.model.get('release').id});
-        },
         removeFinishedNetworkTasks: function(removeSilently) {
             return this.removeFinishedTasks(this.model.tasks({group: 'network'}), removeSilently);
         },
@@ -69,15 +60,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 }
             }, this);
             return $.when.apply($, requests);
-        },
-        dismissTaskResult: function() {
-            var task = this.model.task({group: 'deployment'}) || this.getReleaseSetupTask('error');
-            if (task) {
-                task.destroy();
-            }
-        },
-        displayChanges: function() {
-            this.registerSubView(new dialogViews.DisplayChangesDialog({model: this.model})).render();
         },
         discardSettingsChanges: function(options) {
             this.registerSubView(new dialogViews.DiscardSettingsChangesDialog(options)).render();
@@ -99,7 +81,7 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             }
         },
         scheduleUpdate: function() {
-            if (this.model.task({group: ['deployment', 'network'], status: 'running'}) || this.getReleaseSetupTask()) {
+            if (this.model.task({group: ['deployment', 'network'], status: 'running'})) {
                 this.registerDeferred($.timeout(this.updateInterval).done(_.bind(this.update, this)));
             }
         },
@@ -118,17 +100,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             if (verificationTask) {
                 this.registerDeferred(verificationTask.fetch().always(_.bind(this.scheduleUpdate, this)));
             }
-            var setupTask = this.getReleaseSetupTask();
-            if (setupTask) {
-                this.registerDeferred(this.tasks.fetch()
-                    .always(_.bind(this.scheduleUpdate, this))
-                    .done(_.bind(function() {
-                        if (setupTask.get('status') != 'running') {
-                            this.setupFinished(setupTask);
-                        }
-                    }, this))
-                );
-            }
         },
         deploymentTaskStarted: function() {
             $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).always(_.bind(function() {
@@ -141,13 +112,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             $.when(this.model.fetch(), this.model.fetchRelated('nodes'), this.model.fetchRelated('tasks')).always(_.bind(function() {
                 app.navbar.refresh();
             }, this));
-        },
-        setupFinished: function(task) {
-            app.navbar.refresh();
-            this.model.get('release').fetch();
-            if (task.match({status: 'ready'})) {
-                task.destroy();
-            }
         },
         beforeTearDown: function() {
             $(window).off('beforeunload.' + this.eventNamespace);
@@ -180,10 +144,10 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 activeTab: this.activeTab
             })).i18n();
             var options = {model: this.model, page: this};
-            this.clusterInfo = utils.universalMount(new ClusterInfo(options), this.$('.cluster-info'), this);
-            this.clusterCustomizationMessage = utils.universalMount(new ClusterCustomizationMessage(options), this.$('.customization-message'), this);
-            this.deploymentResult = utils.universalMount(new DeploymentResult(options), this.$('.deployment-result'), this);
-            this.deploymentControl = utils.universalMount(new DeploymentControl(options), this.$('.deployment-control'), this);
+            this.clusterInfo = utils.universalMount(new clusterPageSubviews.ClusterInfo(options), this.$('.cluster-info'), this);
+            this.clusterCustomizationMessage = utils.universalMount(new clusterPageSubviews.ClusterCustomizationMessage(options), this.$('.customization-message'), this);
+            this.deploymentResult = utils.universalMount(new clusterPageSubviews.DeploymentResult(options), this.$('.deployment-result'), this);
+            this.deploymentControl = utils.universalMount(new clusterPageSubviews.DeploymentControl(options), this.$('.deployment-control'), this);
 
             var tabs = {
                 'nodes': NodesTab,
@@ -201,133 +165,6 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
                 );
             }
 
-            return this;
-        }
-    });
-
-    ClusterInfo = Backbone.View.extend({
-        className: 'container',
-        template: _.template(clusterInfoTemplate),
-        bindings: {
-            '.name': 'name',
-            '.status span': 'status',
-            '.status': {
-                attributes:[{
-                    observe: 'status',
-                    name: 'class',
-                    onGet: function(value) {
-                        return _.contains(['error', 'update_error'], value) ? 'status error' : 'status';
-                    }
-                }]
-            },
-            '.mode span': {
-                observe: 'mode',
-                onGet: function(value) {
-                    return $.t('cluster.mode.' + value);
-                }
-            }
-        },
-        initialize: function(options) {
-            _.defaults(this, options);
-            this.model.get('nodes').on('resize', this.render, this);
-        },
-        render: function() {
-            this.$el.html(this.template({nodesLength: this.model.get('nodes').length})).i18n();
-            this.stickit();
-            this.stickit(this.model.get('release'), {'.release span': {
-                observe: ['name', 'version'],
-                onGet: function(values) {
-                    return values[0] + ' (' + values[1] + ')';
-                }
-            }});
-            return this;
-        }
-    });
-
-    ClusterCustomizationMessage = Backbone.View.extend({
-        template: _.template(clusterCustomizationMessageTemplate),
-        initialize: function(options) {
-            this.model.on('change:is_customized', this.render, this);
-        },
-        render: function() {
-            this.$el.html(this.template({cluster: this.model})).i18n();
-            return this;
-        }
-    });
-
-    DeploymentResult = Backbone.View.extend({
-        template: _.template(deploymentResultTemplate),
-        templateHelpers: _.pick(utils, 'urlify', 'linebreaks', 'serializeTabOptions'),
-        initialize: function(options) {
-            _.defaults(this, options);
-            _.invoke([this.model.get('tasks'), this.page.tasks], 'bindToView', this, [{group: 'deployment'}, {group: 'release_setup', release: this.model.get('release').id}], function(task) {
-                task.on('change:status', this.render, this);
-            });
-        },
-        render: function() {
-            this.$el.html(this.template(_.extend({
-                cluster: this.model,
-                task: this.model.task({group: 'deployment'}) || this.page.getReleaseSetupTask('error')
-            }, this.templateHelpers))).i18n();
-            return this;
-        }
-    });
-
-    DeploymentControl = Backbone.View.extend({
-        template: _.template(deploymentControlTemplate),
-        events: {
-            'click .stop-deployment-btn': 'stopDeployment',
-            'click .deploy-btn:not(.disabled)': 'onDeployRequest',
-            'click .rollback': 'discardChanges'
-        },
-        discardChanges: function() {
-            this.page.registerSubView(new dialogViews.DiscardChangesDialog({model: this.page.model})).render();
-        },
-        onDeployRequest: function() {
-            if (_.result(this.page.tab, 'hasChanges')) {
-                this.page.discardSettingsChanges({cb: _.bind(function() {
-                    this.page.tab.revertChanges();
-                    this.page.displayChanges();
-                }, this)});
-            } else {
-                this.page.displayChanges();
-            }
-        },
-        stopDeployment: function() {
-            this.registerSubView(new dialogViews.StopDeploymentDialog({model: this.model})).render();
-        },
-        initialize: function(options) {
-            _.defaults(this, options);
-            this.model.on('change:changes', this.render, this);
-            this.model.get('release').on('change:state', this.render, this);
-            _.invoke([this.model.get('tasks'), this.page.tasks], 'bindToView', this, [{group: 'deployment'}, {group: 'release_setup', release: this.model.get('release').id}], function(task) {
-                task.on('change:status', this.render, this);
-                task.on('change:progress', this.updateProgress, this);
-            });
-            this.model.get('nodes').each(this.bindNodeEvents, this);
-            this.model.get('nodes').on('resize', this.render, this);
-            this.model.get('nodes').on('add', this.onNewNode, this);
-        },
-        bindNodeEvents: function(node) {
-            return node.on('change:pending_addition change:pending_deletion', this.render, this);
-        },
-        onNewNode: function(node) {
-            return this.bindNodeEvents(node) && this.render();
-        },
-        updateProgress: function() {
-            var task = this.model.task({group: 'deployment', status: 'running'}) || this.page.getReleaseSetupTask();
-            if (task) {
-                var progress = task.get('progress') || 0;
-                this.$('.bar').css('width', (progress > 3 ? progress : 3) + '%');
-                this.$('.percentage').text(progress + '%');
-            }
-        },
-        render: function() {
-            this.$el.html(this.template({
-                cluster: this.model,
-                task: this.model.task({group: 'deployment', status: 'running'}) || this.page.getReleaseSetupTask()
-            })).i18n();
-            this.updateProgress();
             return this;
         }
     });

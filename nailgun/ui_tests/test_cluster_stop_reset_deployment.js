@@ -26,7 +26,7 @@ casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
 
 casper.then(function() {
     this.test.comment('Testing cluster page');
-    this.test.assertExists('.deployment-control .deploy-btn.disabled', 'Deploy changes button is disabled');
+    this.test.assertExists('.deployment-control .deploy-btn:disabled', 'Deploy changes button is disabled');
     this.test.assertExists('.cluster-toolbar .btn-configure-disks:disabled', 'Button Configure Disks is disabled');
     this.test.assertExists('.cluster-toolbar .btn-configure-interfaces:disabled', 'Button Configure Interfaces is disabled');
     this.test.assertExists('.cluster-toolbar .btn-add-nodes:not(:disabled)', 'Add Nodes button is enabled');
@@ -48,7 +48,7 @@ casper.then(function() {
     this.test.assertSelectorAppears('.cluster-toolbar .btn-add-nodes', 'Return to nodes tab');
     this.then(function() {
         this.test.assertEvalEquals(function() {return $('.node-box').length}, 1, 'Number of available roles is correct');
-        this.test.assertExists('.deployment-control .deploy-btn:not(.disabled)', 'Deploy changes button is enabled now');
+        this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled now');
     });
 });
 
@@ -63,7 +63,7 @@ casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
 
 casper.then(function() {
     this.test.comment('Testing stop deployment');
-    this.test.assertExists('.deployment-control .deploy-btn:not(.disabled)', 'Deploy changes button is enabled');
+    this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled');
     this.click('.deployment-control .deploy-btn'); // "Deploy changes" button click
     this.test.assertSelectorAppears('.modal', 'Deployment dialog opens');
     this.then(function() {
@@ -84,7 +84,7 @@ casper.then(function() {
     this.test.assertSelectorAppears('.deployment-control .progress-striped', 'Deployment progress-stopping bar appears');
     this.test.assertSelectorDisappears('.deployment-control .progress-striped', 'Deployment progress-stopping bar disappears', 60000);
     this.then(function() {
-        this.test.assertExists('.deployment-control .deploy-btn:not(.disabled)', 'Deploy changes button is enabled again');
+        this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
         this.test.assertExists('.alert-success', 'Success stopping deployment alert message appears');
     });
     this.loadPage('#cluster/1/actions').waitForSelector('#tab-actions > *');
@@ -113,7 +113,7 @@ casper.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
 
 casper.then(function() {
     this.test.comment('Testing deployment process');
-    this.test.assertExists('.deployment-control .deploy-btn:not(.disabled)', 'Deploy changes button is enabled');
+    this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled');
     this.click('.deployment-control .deploy-btn'); // "Deploy changes" button click
     this.test.assertSelectorAppears('.modal', 'Deployment dialog opens');
     this.then(function() {
@@ -129,7 +129,7 @@ casper.then(function() {
     this.test.assertSelectorDisappears('.deployment-control .progress-success', 'Deployment progress-stopping bar disappears', 60000);
     this.then(function() {
         this.test.assertExists('.alert-success', 'Success deployment process finish message appears');
-        this.test.assertExists('.deployment-control .deploy-btn.disabled', 'Deploy changes button is disabled');
+        this.test.assertExists('.deployment-control .deploy-btn:disabled', 'Deploy changes button is disabled');
         var countIsReadyNodes = this.evaluate(function() { // get count of Nodes with Ready status
             return $('.node-box.ready').length;
         });
@@ -166,7 +166,7 @@ casper.then(function() {
     this.test.assertSelectorDisappears('.deployment-control .progress-striped', 'Reset progress bar disappears', 60000);
     this.loadPage('#cluster/1/nodes').waitForSelector('#tab-nodes > *');
     this.then(function() {
-        this.test.assertExists('.deployment-control .deploy-btn:not(.disabled)', 'Deploy changes button is enabled again');
+        this.test.assertExists('.deployment-control .deploy-btn:not(:disabled)', 'Deploy changes button is enabled again');
         this.test.assertExists('.alert-success', 'Success reset message appears');
         this.test.assertEvalEquals(function() {return $('.node-box .node-content').length}, 1, 'Number of count nodes is correct');
         this.test.assertEvalEquals(function() {return $('.node-box.ready').length}, 0, 'Number of ready nodes is correct');

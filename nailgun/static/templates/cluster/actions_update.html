@@ -1,9 +1,15 @@
 <form class="environment-action-form" onsubmit="return false">
   <h4 data-i18n="cluster_page.actions_tab.update_environment"></h4>
   <div class="action-item-controls">
+    <div class="action-update-wrapper">
     <div class="action-body">
       <% if (action == 'rollback' || releases) { %>
-        <p class="action-item-description <%= locked ? 'unavailable' : '' %>" data-i18n="cluster_page.actions_tab.<%= descriptionKey %>"></p>
+        <div class="action-item-description <%= locked ? 'unavailable' : '' %> <%= action == 'rollback' ? 'important' : '' %>">
+          <%- $.t('cluster_page.actions_tab.' + descriptionKey, {release: pendingRelease ? pendingRelease.get('name') + ' (' + pendingRelease.get('version') + ')' : ''}) %>
+        </div>
+        <% if (action == 'rollback') { %>
+          <div class="action-item-description" data-i18n="cluster_page.actions_tab.rollback_message"></div>
+        <% } %>
       <% } else { %>
         <div class="progress-bar description">
           <div class="progress progress-striped progress-success active"><div class="bar"></div></div>
@@ -12,7 +18,12 @@
     </div>
     <% if (action == 'update') { %>
       <select name="update_release"></select>
+      <button class="btn btn-success update-environment-btn"><span data-i18n="common.update_button"></span></button>
     <% } %>
-    <button class="btn btn-<%= action == 'update' ? 'success' : 'danger' %> action-btn update-environment-btn"><span data-i18n="common.<%- action %>_button"></span></button>
+    <% if (action == 'rollback') { %>
+      <button class="btn btn-success retry-update-environment-btn"><span data-i18n="common.retry_button"></span></button>
+      <button class="btn btn-danger rollback-environment-btn"><span data-i18n="common.rollback_button"></span></button>
+    <% } %>
+  </div>
   </div>
 </form>

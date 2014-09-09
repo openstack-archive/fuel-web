@@ -334,13 +334,13 @@ class DockerUpgrader(UpgradeEngine):
                 binds=container.get('binds'),
                 privileged=container.get('privileged', False))
 
+            if container.get('after_container_creation_command'):
+                self.run_after_container_creation_command(container)
+
             if container.get('supervisor_config'):
                 self.start_service_under_supervisor(
                     self.make_service_name(container['id']))
                 self.clean_iptables_rules(container)
-
-            if container.get('after_container_creation_command'):
-                self.run_after_container_creation_command(container)
 
     def run_after_container_creation_command(self, container):
         """Runs command in container with retries in

@@ -31,184 +31,24 @@ FUEL_AGENT_NET_NAME = 'net'
 FUEL_AGENT_DHCP_NAME = 'dhcp'
 FUEL_AGENT_CI_ENVIRONMENT_FILE = 'samples/ci_environment.yaml'
 SSH_COMMAND_TIMEOUT = 150
-KS_SPACES_FOR_CEPH = [
-    {
-        "name": "sda",
-        "extra": [
-            "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-0"
-        ],
-        "free_space": 10001,
-        "volumes": [
-            {
-                "type": "boot",
-                "size": 300
-            },
-            {
-                "mount": "/boot",
-                "size": 200,
-                "type": "raid",
-                "file_system": "ext2",
-                "name": "Boot"
-            },
-            {
-                "type": "lvm_meta_pool",
-                "size": 0
-            },
-            {
-                "size": 3333,
-                "type": "pv",
-                "lvm_meta_size": 64,
-                "vg": "os"
-            },
-            {
-                "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
-                "name": "cephjournal",
-                "mount": "none",
-                "disk_label": "",
-                "type": "partition",
-                "file_system": "none",
-                "size": 0
-            },
-            {
-                "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
-                "name": "ceph",
-                "mount": "none",
-                "disk_label": "",
-                "type": "partition",
-                "file_system": "none",
-                "size": 0
-            }
-        ],
-        "type": "disk",
-        "id": "sda",
-        "size": 10240
-    },
-    {
-        "name": "sdb",
-        "extra": [
-            "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-1"
-        ],
-        "free_space": 10001,
-        "volumes": [
-            {
-                "type": "boot",
-                "size": 300
-            },
-            {
-                "mount": "/boot",
-                "size": 200,
-                "type": "raid",
-                "file_system": "ext2",
-                "name": "Boot"
-            },
-            {
-                "type": "lvm_meta_pool",
-                "size": 64
-            },
-            {
-                "size": 0,
-                "type": "pv",
-                "lvm_meta_size": 0,
-                "vg": "os"
-            },
-            {
-                "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
-                "name": "cephjournal",
-                "mount": "none",
-                "disk_label": "",
-                "type": "partition",
-                "file_system": "none",
-                "size": 0
-            },
-            {
-                "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
-                "name": "ceph",
-                "mount": "none",
-                "disk_label": "",
-                "type": "partition",
-                "file_system": "none",
-                "size": 9071
-            }
-        ],
-        "type": "disk",
-        "id": "sdb",
-        "size": 10240
-    },
-    {
-        "name": "sdc",
-        "extra": [
-            "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-2"
-        ],
-        "free_space": 10001,
-        "volumes": [
-            {
-                "type": "boot",
-                "size": 300
-            },
-            {
-                "mount": "/boot",
-                "size": 200,
-                "type": "raid",
-                "file_system": "ext2",
-                "name": "Boot"
-            },
-            {
-                "type": "lvm_meta_pool",
-                "size": 64
-            },
-            {
-                "size": 0,
-                "type": "pv",
-                "lvm_meta_size": 0,
-                "vg": "os"
-            },
-            {
-                "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
-                "name": "cephjournal",
-                "mount": "none",
-                "disk_label": "",
-                "type": "partition",
-                "file_system": "none",
-                "size": 0
-            },
-            {
-                "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
-                "name": "ceph",
-                "mount": "none",
-                "disk_label": "",
-                "type": "partition",
-                "file_system": "none",
-                "size": 4971
-            }
-        ],
-        "type": "disk",
-        "id": "disk/by-path/pci-0000:00:04.0-scsi-0:0:2:0",
-        "size": 10240
-    },
-    {
-        "_allocate_size": "min",
-        "label": "Base System",
-        "min_size": 2047,
-        "volumes": [
-            {
-                "mount": "/",
-                "size": 1900,
-                "type": "lv",
-                "name": "root",
-                "file_system": "ext4"
-            },
-            {
-                "mount": "swap",
-                "size": 140,
-                "type": "lv",
-                "name": "swap",
-                "file_system": "swap"
-            }
-        ],
-        "type": "vg",
-        "id": "os"
-    }
-]
+CEPH_JOURNAL = {
+    "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
+    "name": "cephjournal",
+    "mount": "none",
+    "disk_label": "",
+    "type": "partition",
+    "file_system": "none",
+    "size": 0
+}
+CEPH_DATA = {
+    "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
+    "name": "ceph",
+    "mount": "none",
+    "disk_label": "",
+    "type": "partition",
+    "file_system": "none",
+    "size": 3333
+}
 
 
 class BaseFuelAgentCITest(TestCase):
@@ -256,7 +96,11 @@ class BaseFuelAgentCITest(TestCase):
 def get_filled_provision_data_for_ceph(ip, mac, master_ip, port=8888,
                                        profile='ubuntu'):
     data = get_filled_provision_data(ip, mac, master_ip, port, profile)
-    data['ks_meta']['pm_data']['ks_spaces'] = KS_SPACES_FOR_CEPH
+    #FIXME(agordeev): expecting 3 disk devices at least
+    for i in range(0, 3):
+        data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(
+            CEPH_JOURNAL)
+        data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(CEPH_DATA)
     return data
 
 
@@ -354,7 +198,7 @@ def get_filled_provision_data(ip, mac, master_ip, port=8888, profile='ubuntu'):
                                 "type": "pv",
                                 "lvm_meta_size": 64,
                                 "vg": "image"
-                            }
+                            },
                         ],
                         "type": "disk",
                         "id": "sda",
@@ -390,11 +234,11 @@ def get_filled_provision_data(ip, mac, master_ip, port=8888, profile='ubuntu'):
                                 "vg": "os"
                             },
                             {
-                                "size": 9071,
+                                "size": 4444,
                                 "type": "pv",
                                 "lvm_meta_size": 64,
                                 "vg": "image"
-                            }
+                            },
                         ],
                         "type": "disk",
                         "id": "sdb",
@@ -430,11 +274,11 @@ def get_filled_provision_data(ip, mac, master_ip, port=8888, profile='ubuntu'):
                                 "vg": "os"
                             },
                             {
-                                "size": 4971,
+                                "size": 1971,
                                 "type": "pv",
                                 "lvm_meta_size": 64,
                                 "vg": "image"
-                            }
+                            },
                         ],
                         "type": "disk",
                         "id": "disk/by-path/pci-0000:00:04.0-scsi-0:0:2:0",
@@ -443,7 +287,7 @@ def get_filled_provision_data(ip, mac, master_ip, port=8888, profile='ubuntu'):
                     {
                         "_allocate_size": "min",
                         "label": "Base System",
-                        "min_size": 1937,
+                        "min_size": 2047,
                         "volumes": [
                             {
                                 "mount": "/",

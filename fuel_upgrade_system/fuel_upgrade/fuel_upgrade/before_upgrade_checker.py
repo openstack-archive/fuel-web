@@ -24,6 +24,7 @@ from fuel_upgrade import errors
 from fuel_upgrade import utils
 
 from fuel_upgrade.clients import NailgunClient
+from fuel_upgrade.clients import OSTFClient
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +79,34 @@ class CheckNoRunningTasks(BaseBeforeUpgradeChecker):
                 ' '.join(tasks_msg))
 
             raise errors.CannotRunUpgrade(error_msg)
+
+
+class CheckNoRunningOstf(BaseBeforeUpgradeChecker):
+    """Checks that there's no running OSTF tasks.
+
+    :param context: a context object with config and required space info
+    """
+
+    def __init__(self, context):
+        self.ostf = OSTFClient(**context.config.endpoints['ostf'])
+
+    def check(self):
+        logger.info('Check OSTF tasks')
+
+        try:
+            tasks = self.ostf.get('/v1/testruns').json()
+        except requests.ConnectionError:
+            raise errors.OstfIsNotRunningError(
+                'Cannot connect to OSTF service.')
+
+        logger.debug('OSTF tasks: %s', tasks)
+
+        running_tasks = filter(
+            lambda t: t['status'] == 'running', tasks)
+
+        if running_tasks:
+            raise errors.CannotRunUpgrade(
+                'Cannot run upgrade since there are OSTF running tasks.')
 
 
 class CheckFreeSpace(BaseBeforeUpgradeChecker):

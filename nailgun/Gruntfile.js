@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Mirantis, Inc.
+ * Copyright 2014 Mirantis, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may
  * not use this file except in compliance with the License. You may obtain
@@ -49,25 +49,26 @@ module.exports = function(grunt) {
                 }
             }
         },
-        jslint: {
-            client: {
-                src: [
-                    'static/js/**/*.js',
-                    '!static/js/libs/**',
-                    '!static/js/expression_parser.js'
-                ],
-                directives: {
-                    predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
-                    ass: true,
-                    browser: true,
-                    unparam: true,
-                    nomen: true,
-                    eqeq: true,
-                    vars: true,
-                    white: true,
-                    es5: false
-                }
-            }
+        jshint: {
+            options: {
+                reporter: require('jshint-stylish'),
+                eqeqeq: false,
+                browser: true,
+                bitwise: true,
+                newcap: false,
+                undef: true,
+                predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],
+                strict: true,
+                lastsemic: true,
+                scripturl: true,
+                "-W041": false
+            },
+            all: [
+                'static/js/**/*.js',
+                'static/js/**/*.jsx',
+                '!static/js/libs/**',
+                '!static/js/expression_parser.js'
+            ]
         },
         less: {
             all: {
@@ -244,5 +245,6 @@ module.exports = function(grunt) {
         'clean:finalize_build'
     ]);
     grunt.registerTask('default', ['build']);
+    grunt.registerTask('lint-ui', ['jshint']);
     grunt.task.loadTasks('grunt');
 };

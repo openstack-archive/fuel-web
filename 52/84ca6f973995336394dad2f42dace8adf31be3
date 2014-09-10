@@ -1,0 +1,9 @@
+Verified+2: Jenkins
+Code-Review+2: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Workflow+1: Vitaly Kramskikh <vkramskikh@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Wed, 10 Sep 2014 16:39:32 +0000
+Reviewed-on: https://review.openstack.org/108424
+Project: stackforge/fuel-web
+Branch: refs/heads/master

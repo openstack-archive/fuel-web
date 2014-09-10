@@ -12,9 +12,73 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import os
 import time
 
 from fuel_agent_ci.tests import base
+
+REGULAR_PARTED_INFO = {
+    'sda': """BYT;
+        /dev/sda:10240MiB:scsi:512:512:gpt:QEMU QEMU HARDDISK;
+        1:0.02MiB:1.00MiB:0.98MiB:free;
+        1:1.00MiB:25.0MiB:24.0MiB::primary:bios_grub;
+        2:25.0MiB:225MiB:200MiB::primary:;
+        3:225MiB:425MiB:200MiB::primary:;
+        4:425MiB:625MiB:200MiB:ext2:primary:;
+        5:625MiB:3958MiB:3333MiB::primary:;
+        6:3958MiB:4758MiB:800MiB::primary:;
+        7:4758MiB:4778MiB:20.0MiB::primary:;
+        1:4778MiB:10240MiB:5462MiB:free;""",
+    'sdb': """BYT;
+        /dev/sdb:10240MiB:scsi:512:512:gpt:QEMU QEMU HARDDISK;
+        1:0.02MiB:1.00MiB:0.98MiB:free;
+        1:1.00MiB:25.0MiB:24.0MiB::primary:bios_grub;
+        2:25.0MiB:225MiB:200MiB::primary:;
+        3:225MiB:425MiB:200MiB::primary:;
+        4:425MiB:4869MiB:4444MiB::primary:;
+        1:4869MiB:10240MiB:5371MiB:free;""",
+    'sdc': """BYT;
+        /dev/sdc:10240MiB:scsi:512:512:gpt:QEMU QEMU HARDDISK;
+        1:0.02MiB:1.00MiB:0.98MiB:free;
+        1:1.00MiB:25.0MiB:24.0MiB::primary:bios_grub;
+        2:25.0MiB:225MiB:200MiB::primary:;
+        3:225MiB:425MiB:200MiB::primary:;
+        4:425MiB:2396MiB:1971MiB::primary:;
+        1:2396MiB:10240MiB:7844MiB:free;"""
+}
+CEPH_PARTED_INFO = {
+    'sda': """BYT;
+        /dev/sda:10240MiB:scsi:512:512:gpt:QEMU QEMU HARDDISK;
+        1:0.02MiB:1.00MiB:0.98MiB:free;
+        1:1.00MiB:25.0MiB:24.0MiB::primary:bios_grub;
+        2:25.0MiB:225MiB:200MiB::primary:;
+        3:225MiB:425MiB:200MiB::primary:;
+        4:425MiB:625MiB:200MiB:ext2:primary:;
+        5:625MiB:3958MiB:3333MiB::primary:;
+        6:3958MiB:4758MiB:800MiB::primary:;
+        7:4758MiB:8091MiB:3333MiB::primary:;
+        8:8091MiB:8111MiB:20.0MiB::primary:;
+        1:8111MiB:10240MiB:2129MiB:free;""",
+    'sdb': """BYT;
+        /dev/sdb:10240MiB:scsi:512:512:gpt:QEMU QEMU HARDDISK;
+        1:0.02MiB:1.00MiB:0.98MiB:free;
+        1:1.00MiB:25.0MiB:24.0MiB::primary:bios_grub;
+        2:25.0MiB:225MiB:200MiB::primary:;
+        3:225MiB:425MiB:200MiB::primary:;
+        4:425MiB:4869MiB:4444MiB::primary:;
+        5:4869MiB:8202MiB:3333MiB::primary:;
+        1:8202MiB:10240MiB:2038MiB:free;""",
+    'sdc': """BYT;
+        /dev/sdc:10240MiB:scsi:512:512:gpt:QEMU QEMU HARDDISK;
+        1:0.02MiB:1.00MiB:0.98MiB:free;
+        1:1.00MiB:25.0MiB:24.0MiB::primary:bios_grub;
+        2:25.0MiB:225MiB:200MiB::primary:;
+        3:225MiB:425MiB:200MiB::primary:;
+        4:425MiB:2396MiB:1971MiB::primary:;
+        5:2396MiB:5729MiB:3333MiB::primary:;
+        1:5729MiB:10240MiB:4511MiB:free;"""
+}
 
 
 class TestPartition(base.BaseFuelAgentCITest):
@@ -25,45 +89,20 @@ class TestPartition(base.BaseFuelAgentCITest):
         return self.assertEqual(_split_strip_to_lines(expected),
                                 _split_strip_to_lines(actual))
 
-    def test_do_partitioning_gpt(self):
+    def _test_partitioning(self, canned_parted_info):
         self.env.ssh_by_name(self.name).run(
             'partition', command_timeout=base.SSH_COMMAND_TIMEOUT)
         #FIXME(agordeev): mdadm resyncing time
         time.sleep(10)
 
-        canned_parted_info = {
-            'sda': """BYT;
-                /dev/sda:10240MiB:scsi:512:512:gpt:QEMU QEMU HARDDISK;
-                1:0.02MiB:1.00MiB:0.98MiB:free;
-                1:1.00MiB:25.0MiB:24.0MiB::primary:bios_grub;
-                2:25.0MiB:225MiB:200MiB::primary:;
-                3:225MiB:425MiB:200MiB::primary:;
-                4:425MiB:625MiB:200MiB:ext2:primary:;
-                5:625MiB:3958MiB:3333MiB::primary:;
-                6:3958MiB:4758MiB:800MiB::primary:;
-                7:4758MiB:4778MiB:20.0MiB::primary:;
-                1:4778MiB:10240MiB:5462MiB:free;""",
-            'sdb': """BYT;
-                /dev/sdb:10240MiB:scsi:512:512:gpt:QEMU QEMU HARDDISK;
-                1:0.02MiB:1.00MiB:0.98MiB:free;
-                1:1.00MiB:25.0MiB:24.0MiB::primary:bios_grub;
-                2:25.0MiB:225MiB:200MiB::primary:;
-                3:225MiB:425MiB:200MiB::primary:;
-                4:425MiB:9496MiB:9071MiB::primary:;
-                1:9496MiB:10240MiB:744MiB:free;""",
-            'sdc': """BYT;
-                /dev/sdc:10240MiB:scsi:512:512:gpt:QEMU QEMU HARDDISK;
-                1:0.02MiB:1.00MiB:0.98MiB:free;
-                1:1.00MiB:25.0MiB:24.0MiB::primary:bios_grub;
-                2:25.0MiB:225MiB:200MiB::primary:;
-                3:225MiB:425MiB:200MiB::primary:;
-                4:425MiB:5396MiB:4971MiB::primary:;
-                1:5396MiB:10240MiB:4844MiB:free;"""
-        }
         for disk_name, expected_parted_info in canned_parted_info.items():
             actual_parted_info = self.env.ssh_by_name(self.name).run(
                 'parted -s /dev/%s -m unit MiB print free' % disk_name)
             self.compare_output(expected_parted_info, actual_parted_info)
+
+        actual_guid = self.env.ssh_by_name(self.name).run(
+            'sgdisk -i 4 /dev/sda').split('\n')[0].split()[3]
+        self.assertEqual("0FC63DAF-8483-4772-8E79-3D69D8477DE4", actual_guid)
 
         actual_md_output = self.env.ssh_by_name(self.name).run(
             'mdadm --detail %s' % '/dev/md0')
@@ -100,14 +139,14 @@ class TestPartition(base.BaseFuelAgentCITest):
 
         pvdisplay_expected_output = """/dev/sda5;os;3204.00m;3333.00m
                                        /dev/sda6;image;668.00m;800.00m
-                                       /dev/sdb4;image;8940.00m;9071.00m
-                                       /dev/sdc4;image;4840.00m;4971.00m"""
+                                       /dev/sdb4;image;4312.00m;4444.00m
+                                       /dev/sdc4;image;1840.00m;1971.00m"""
         pvdisplay_actual_output = self.env.ssh_by_name(self.name).run(
             'pvdisplay -C --noheading --units m --options '
             'pv_name,vg_name,pv_size,dev_size --separator ";"')
         self.compare_output(pvdisplay_expected_output, pvdisplay_actual_output)
 
-        vgdisplay_expected_output = """image;14448.00m;12688.00m
+        vgdisplay_expected_output = """image;6820.00m;5060.00m
                                        os;3204.00m;1260.00m"""
         vgdisplay_actual_output = self.env.ssh_by_name(self.name).run(
             'vgdisplay -C --noheading --units m --options '
@@ -135,3 +174,22 @@ class TestPartition(base.BaseFuelAgentCITest):
                 'blkid -o value -s LABEL %s' % device)
             self.assertEqual(label, label_output)
             #TODO(agordeev): check fs options and mount point
+
+    def test_do_partitioning_gpt(self):
+        self._test_partitioning(REGULAR_PARTED_INFO)
+
+    def test_do_ceph_partitioning(self):
+        p_data = base.get_filled_provision_data_for_ceph(
+            self.dhcp_hosts[0]['ip'], self.dhcp_hosts[0]['mac'], self.net.ip,
+            self.http_obj.port)
+        self.env.ssh_by_name(self.name).put_content(
+            json.dumps(p_data), os.path.join('/tmp', 'provision.json'))
+        self._test_partitioning(CEPH_PARTED_INFO)
+        #NOTE(agordeev): checking if GUIDs are correct for ceph partitions
+        ceph_partitions = {'sda': 7, 'sdb': 5, 'sdc': 5}
+        for disk_name, partition_num in ceph_partitions.items():
+            actual_guid = self.env.ssh_by_name(self.name).run(
+                'sgdisk -i %s /dev/%s' % (partition_num, disk_name)).\
+                split('\n')[0].split()[3]
+            self.assertEqual(base.CEPH_DATA['partition_guid'].upper(),
+                             actual_guid)

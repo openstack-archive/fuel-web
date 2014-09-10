@@ -49,3 +49,12 @@ pre-upgrade checks.
 health_checker_failed = """
 Couldn't start some of the services, try to run upgrade again.
 """
+
+
+ostf_is_not_running = """
+Health Checker (OSTF) is not running. Unable to verify that
+there are no running tasks.
+
+Use `--no-check` as a parameter for upgrade script to skip all
+pre-upgrade checks.
+"""

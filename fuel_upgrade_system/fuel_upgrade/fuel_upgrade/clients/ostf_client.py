@@ -58,3 +58,16 @@ class OSTFClient(object):
             api_url=self.api_url, path=path))
 
         return result
+
+    def get_tasks(self):
+        """Retrieve list of tasks from OSTF
+
+        :returns: list of tasks
+        """
+        r = self.request.get(
+            '{api_url}/v1/testruns'.format(api_url=self.api_url))
+
+        if r.status_code not in (200, ):
+            r.raise_for_status()
+
+        return r.json()

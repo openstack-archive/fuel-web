@@ -60,12 +60,15 @@ def handle_exception(exc):
 
     print(messages.header)
 
+    # TODO(ikalnitsky): use some kind of map instead of condition stairs
     if isinstance(exc, requests.ConnectionError):
         print(messages.docker_is_dead)
     elif isinstance(exc, errors.UpgradeVerificationError):
         print(messages.health_checker_failed)
     elif isinstance(exc, errors.NailgunIsNotRunningError):
         print(messages.nailgun_is_not_running)
+    elif isinstance(exc, errors.OstfIsNotRunningError):
+        print(messages.ostf_is_not_running)
 
     sys.exit(-1)
 

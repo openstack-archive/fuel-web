@@ -17,6 +17,7 @@
                 "cancel_button": "Cancel",
                 "update_button": "Update",
                 "rollback_button": "Rollback",
+                "retry_button": "Retry Update",
                 "apply_changes_button": "Apply Changes",
                 "not_available": "N/A",
                 "size": {
@@ -277,7 +278,8 @@
                     "repeated_update_disabled": "The current environment is already being updated.",
                     "rollback_environment": "Rollback Environment",
                     "no_releases_to_update_message": "You already have the latest release installed.",
-                    "rollback_message": "Update Environment failed. You can only rollback your environment.",
+                    "rollback_warning_message": "Update of the environment to __release__ has failed.",
+                    "rollback_message": "You can retry update, or rollback the environment",
                     "rename_error": {
                         "title": "Unable to Rename the Environment"
                     }
@@ -592,6 +594,9 @@
                 "rollback_environment": {
                     "title": "Rollback Environment",
                     "text": "Are you sure you want to rollback the environment?"
+                },
+                "retry_environment": {
+                    "text": "Are you sure you want to retry update the environment?"
                 },
                 "error_dialog": {
                     "title": "Error",

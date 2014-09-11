@@ -158,7 +158,9 @@ function(React, utils, dialogs) {
                         <div className={itemClass}>
                             <button
                                 className='deploy-btn'
-                                disabled={cluster.get('release').get('state') != 'available' || (!cluster.hasChanges() && !cluster.needsRedeployment()) || !nodes.reject({status: 'ready'}).length}
+                                disabled={cluster.get('release').get('state') != 'available'
+                                    || (!cluster.hasChanges() && !cluster.needsRedeployment())
+                                    || !nodes.reject({status: 'ready'}).length}
                                 onClick={this.onDeployRequest}
                             >
                                 <i className='icon-upload-cloud' />

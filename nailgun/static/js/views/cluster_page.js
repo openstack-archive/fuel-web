@@ -25,7 +25,7 @@ define(
     'views/cluster_page_tabs/network_tab',
     'views/cluster_page_tabs/settings_tab',
     'views/cluster_page_tabs/logs_tab',
-    'views/cluster_page_tabs/actions_tab',
+    'jsx!views/cluster_page_tabs/actions_tab',
     'views/cluster_page_tabs/healthcheck_tab',
     'text!templates/cluster/page.html'
 ],
@@ -63,10 +63,6 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
         },
         discardSettingsChanges: function(options) {
             this.registerSubView(new dialogViews.DiscardSettingsChangesDialog(options)).render();
-        },
-        onNameChange: function() {
-            this.updateBreadcrumbs();
-            this.updateTitle();
         },
         onTabLeave: function(e) {
             var href = $(e.currentTarget).attr('href');

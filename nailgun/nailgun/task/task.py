@@ -28,6 +28,7 @@ import nailgun.rpc as rpc
 
 from nailgun import objects
 
+from nailgun.consts import CLUSTER_STATUSES
 from nailgun.consts import NODE_STATUSES
 from nailgun.db import db
 from nailgun.db.sqlalchemy.models import CapacityLog
@@ -587,20 +588,32 @@ class CheckBeforeDeploymentTask(object):
 
     @classmethod
     def _check_controllers_count(cls, task):
-        controllers_count = len(filter(
+        cluster = task.cluster
+        controllers = filter(
             lambda node: 'controller' in node.all_roles,
             task.cluster.nodes)
-        )
-        cluster_mode = task.cluster.mode
 
-        if cluster_mode == 'multinode' and controllers_count < 1:
+        # we should make sure that cluster has at least one controller
+        if len(controllers) < 1:
             raise errors.NotEnoughControllers(
                 "Not enough controllers, %s mode requires at least 1 "
-                "controller" % (cluster_mode))
-        elif cluster_mode == 'ha_compact' and controllers_count < 1:
-            raise errors.NotEnoughControllers(
-                "Not enough controllers, %s mode requires at least 1 "
-                "controller" % (cluster_mode))
+                "controller" % (cluster.mode))
+
+        if cluster.status != CLUSTER_STATUSES.new:
+            # get a list of deployed controllers - which are going
+            # don't to be changed
+            deployed_controllers = filter(
+                lambda node: all([
+                    node.pending_addition is False,
+                    node.pending_deletion is False]),
+                controllers)
+
+            # we should fail in case of user remove all controllers and add
+            # new in one task, since that's affect cluster's availability
+            if not deployed_controllers:
+                raise errors.NotEnoughControllers(
+                    "Not enough deployed controllers - deployed cluster "
+                    "requires at least 1 deployed controller.")
 
     @classmethod
     def _check_disks(cls, task):

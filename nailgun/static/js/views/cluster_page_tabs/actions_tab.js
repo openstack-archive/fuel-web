@@ -38,7 +38,8 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template()).i18n();
-            var actions = [
+            var isExperimental = _.contains(app.version.get('feature_groups'), 'experimental'),
+                actions = [
                 RenameEnvironmentAction,
                 ResetEnvironmentAction,
                 DeleteEnvironmentAction,
@@ -46,8 +47,10 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
             ];
             _.each(actions, function(ActionConstructor) {
                 var actionView = new ActionConstructor({model: this.model});
-                this.registerSubView(actionView);
-                this.$('.environment-actions').append(actionView.render().el);
+                if (!(actionView.actionName == 'updateEnvironment' && !isExperimental)) {
+                    this.registerSubView(actionView);
+                    this.$('.environment-actions').append(actionView.render().el);
+                }
             }, this);
             return this;
         }
@@ -154,6 +157,7 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
 
     var releases = new models.Releases();
     UpdateEnvironmentAction = Action.extend({
+        actionName: 'updateEnvironment',
         className: 'span12 action-item-placeholder action-update',
         template: _.template(updateEnvironmentTemplate),
         events: {

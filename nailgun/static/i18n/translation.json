@@ -55,7 +55,8 @@
                     "error": "Error",
                     "remove": "Removing",
                     "stopped": "Stopped",
-                    "update": "Update"
+                    "update": "Update",
+                    "update_error": "Update Error"
                 },
                 "mode": {
                     "ha_compact": "Multi-node with HA",

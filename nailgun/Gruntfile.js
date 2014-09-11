@@ -67,7 +67,7 @@ module.exports = function(grunt) {
                 'static/js/**/*.js',
                 'static/js/**/*.jsx',
                 '!static/js/libs/**',
-                '!static/js/expression_parser.js'
+                '!static/js/expression/parser.js'
             ]
         },
         less: {
@@ -215,8 +215,8 @@ module.exports = function(grunt) {
         },
         jison: {
             target : {
-                src: 'static/config_expression.jison',
-                dest: 'static/js/expression_parser.js',
+                src: 'static/js/expression/config.jison',
+                dest: 'static/js/expression/parser.js',
                 options: {
                     moduleType: 'js'
                 }

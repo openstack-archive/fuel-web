@@ -13,7 +13,8 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(['require', 'expression_parser', 'react'], function(require, ExpressionParser, React) {
+
+define(['require', 'expression', 'expression/objects', 'react'], function(require, Expression, expressionObjects, React) {
     'use strict';
 
     var utils = {
@@ -46,40 +47,16 @@ define(['require', 'expression_parser', 'react'], function(require, ExpressionPa
             return _.isUndefined(value) ? [] : _.isArray(value) ? value : [value];
         },
         parseModelPath: function(path, models) {
-            var modelName, attribute;
-            var pathParts = path.split(':');
-            if (_.isUndefined(pathParts[1])) {
-                modelName = 'default';
-                attribute = pathParts[0];
-            } else {
-                modelName = pathParts[0];
-                attribute = pathParts[1];
-            }
-            var model = models[modelName];
-            if (!model) {
-                throw new Error('No model with name "' + modelName + '" defined');
-            }
-            return {
-                model: model,
-                attribute: attribute,
-                get: _.bind(model.get, model, attribute),
-                set: _.bind(model.set, model, attribute),
-                change: _.bind(model.on, model, 'change:' + attribute)
-            };
+            var modelPath = new expressionObjects.ModelPath(path);
+            modelPath.setModel(models);
+            return modelPath;
         },
         evaluateExpression: function(expression, models, options) {
-            options = _.extend({strict: true}, options);
-            ExpressionParser.yy = {
-                _: _,
-                utils: utils,
-                models: models || {},
-                options: options,
-                modelPaths: {}
-            };
-            var value = ExpressionParser.parse(expression);
+            var compiledExpression = new Expression(expression, models, options);
+            var value = compiledExpression.evaluate();
             return {
                 value: value,
-                modelPaths: ExpressionParser.yy.modelPaths
+                modelPaths: compiledExpression.modelPaths
             };
         },
         expandRestriction: function(restriction) {

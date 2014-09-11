@@ -535,6 +535,15 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             this.renderCustomElements();
             this.$el.i18n();
             this.handleWarnings();
+            // hack for 5.1 whitelisting 5.1 releases
+            if (!_.isUndefined(this.releases) && this.releases.length) {
+                var filteredReleases = _.compact(this.releases.map(function(release) {
+                    if (_.last(release.get('version').split('-')) == '5.1') {
+                        return release;
+                    }
+                }));
+                this.releases = new Backbone.Collection(filteredReleases);
+            }
             this.composePaneBindings();
             return this;
         }

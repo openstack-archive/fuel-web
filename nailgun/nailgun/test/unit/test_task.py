@@ -17,6 +17,7 @@ from mock import patch
 
 from nailgun.db.sqlalchemy.models import Task
 from nailgun.errors import errors
+from nailgun import consts
 from nailgun import objects
 from nailgun.task.task import CheckBeforeDeploymentTask
 from nailgun.test.base import BaseTestCase
@@ -252,3 +253,32 @@ class TestCheckBeforeDeploymentTask(BaseTestCase):
         self.env.db.commit()
 
         CheckBeforeDeploymentTask._check_nodes_are_online(self.task)
+
+    def test_check_controllers_count_operational_cluster(self):
+        self.cluster.status = consts.CLUSTER_STATUSES.operational
+
+        # remove old controller and add new one
+        self.node.pending_deletion = True
+        new_controller = self.env.create_node()
+        new_controller.pendint_addition = True
+
+        self.assertRaises(
+            errors.NotEnoughControllers,
+            CheckBeforeDeploymentTask._check_controllers_count,
+            self.task)
+
+    def test_check_controllers_count_new_cluster(self):
+        self.cluster.status = consts.CLUSTER_STATUSES.new
+
+        # check there's not exceptions with one controller
+        self.assertNotRaises(
+            errors.NotEnoughControllers,
+            CheckBeforeDeploymentTask._check_controllers_count,
+            self.task)
+
+        # check there's exception with one non-controller node
+        self.node.roles = ['compute']
+        self.assertRaises(
+            errors.NotEnoughControllers,
+            CheckBeforeDeploymentTask._check_controllers_count,
+            self.task)

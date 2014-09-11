@@ -57,6 +57,7 @@ module.exports = function(grunt) {
                 eqeqeq: false,
                 browser: true,
                 bitwise: true,
+                laxbreak: true,
                 newcap: false,
                 undef: true,
                 predef: ['requirejs', 'require', 'define', 'app', 'Backbone', '$', '_'],

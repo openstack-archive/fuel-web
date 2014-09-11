@@ -225,14 +225,14 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         },
         updateEnvironment: function() {
             this.$('.update-environment-btn').attr('disabled', true);
-            var deferred = this.model.save({
-                pending_release_id: this.action == 'update' ? this.model.get('pending_release_id') : this.model.get('release_id')
+            var deferred = this.cluster.save({
+                pending_release_id: this.pendingReleaseId || this.cluster.get('release_id')
             }, {patch: true, wait: true});
             if (deferred) {
                 deferred.done(_.bind(function() {
                     app.page.removeFinishedDeploymentTasks();
                     var task = new models.Task();
-                    task.save({}, {url: _.result(this.model, 'url') + '/update', type: 'PUT'})
+                    task.save({}, {url: _.result(this.cluster, 'url') + '/update', type: 'PUT'})
                         .done(_.bind(function() {
                             this.$el.modal('hide');
                             app.page.deploymentTaskStarted();
@@ -243,7 +243,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             }
         },
         render: function() {
-            this.constructor.__super__.render.call(this, {cluster: this.model, action: this.action, isDowngrade: this.isDowngrade});
+            this.constructor.__super__.render.call(this, {cluster: this.cluster, action: this.action, isDowngrade: this.isDowngrade});
             return this;
         }
     });

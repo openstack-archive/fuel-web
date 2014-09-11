@@ -38,12 +38,13 @@ function(utils, models, commonViews, dialogViews, actionsTabTemplate, renameEnvi
         render: function() {
             this.tearDownRegisteredSubViews();
             this.$el.html(this.template()).i18n();
-            var actions = [
+            var isExperimental = _.contains(app.version.get('feature_groups'), 'experimental'),
+                actions = [
                 RenameEnvironmentAction,
                 ResetEnvironmentAction,
-                DeleteEnvironmentAction,
-                UpdateEnvironmentAction
+                DeleteEnvironmentAction
             ];
+            if (isExperimental) {actions.push(UpdateEnvironmentAction);}
             _.each(actions, function(ActionConstructor) {
                 var actionView = new ActionConstructor({model: this.model});
                 this.registerSubView(actionView);

@@ -539,7 +539,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             var isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
             if (!_.isUndefined(this.releases) && this.releases.length && isExperimental) {
                 var filteredReleases = this.releases.filter(function(release) {
-                    return !release.get('version').match(/-5\.0[\.\d]*$/);
+                    return !release.get('version').match(/-5\.0[\.\d]*$/) && release.get('version') != '2014.1';
                 });
                 this.releases = new Backbone.Collection(filteredReleases);
             }

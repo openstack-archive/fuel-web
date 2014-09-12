@@ -40,13 +40,16 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             type = type || this.props.type;
             var radioButton = this.isRadioButton();
             return (<input
-                className={this.getError() && 'error'}
+                className={this.props.cs.inputClasses + (this.getError() ? ' error' : '')}
                 type={type}
                 name={this.props.name}
                 value={this.getValue()}
                 checked={radioButton ? radioButton.data == this.props.value : this.props.value}
                 disabled={this.props.disabled}
-                onChange={this.onChange} />);
+                onChange={this.onChange}
+                maxLength={this.props.maxLength}
+                ref={this.props.ref}
+            />);
         },
         renderLabel: function() {
             var radioButton = this.isRadioButton(),
@@ -54,7 +57,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return (
                 <div className={labelClass + ' enable-selection'}>
                     {radioButton ? radioButton.label : this.props.label}
-                    {!!this.props.warnings.length &&
+                    {this.props.tooltipWarnings && !!this.props.warnings.length &&
                         <controls.TooltipIcon warnings={this.props.warnings} />
                     }
                 </div>
@@ -209,11 +212,13 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return (
                 <div className={this.props.cs.common + ' parameter-box clearfix'}>
                     {this.renderLabel()}
-                    <div className='parameter-control input-append'>
+                    <div className={'parameter-control' + (this.props.hiddenPassword ? '' : ' input-append')}>
                         {this.renderInput(this.state.visible ? 'text' : 'password')}
-                        <span className='add-on' onClick={this.togglePassword}>
-                            <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
-                        </span>
+                        {!this.props.hiddenPassword &&
+                            <span className='add-on' onClick={this.togglePassword}>
+                                <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
+                            </span>
+                        }
                     </div>
                     {this.renderDescription()}
                 </div>

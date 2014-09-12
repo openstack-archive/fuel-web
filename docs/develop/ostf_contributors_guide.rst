@@ -173,6 +173,69 @@ Tests are included to Fuel, so they will be accessible as soon as you install Fu
 
 On the other hand, there is some information necessary for test execution itself. There are several modules that gather information and parse them into objects which will be used in the tests themselves. All information is gathered from Nailgun component.
 
+OSTF REST api interface
+-----------------------
+
+Several words must be added in behalf of fuel_plugin. Alongside with its major features of tests managing it also provides RESTful interface through which all interactions with the component are performed.
+
+All types of OSTF entities on which it operates are represented as resources in terms of REST and are managed by three HTTP verbs: GET, POST and PUT.
+
+Base URL for making requests to OSTF is: ::
+
+{ostf_host}:{ostf_port}/v1/{requested_entity}/{cluster_id}
+
+Lower in the text all URL examples will be given as a reminder that must be concatenated with this URL.
+
+To get info about testsets and tests one must make GET request on 'testsets/{cluster_id}' and 'tests/{cluster_id}' respectively.
+
+To get info for tests that was executed: GET request on 'testruns/' (for whole set of testruns), 'testruns/{testrun_id}' (for particular testrun) or 'testruns/last/{cluster_id}'
+(for list of testruns that was executed last on particular cluster).
+
+To start test execution: POST on 'testruns/'. One must supply as a body for request JSON data structure containing testsets and list of tests which belong to it and are
+supposed to be executed plus metadata with info about cluster (cluster_id especially). Example of such data structure::
+
+    [
+        {
+            "testset": "test_set_name",
+            "tests": ["module.path.to.test.1", ..., "module.path.to.test.n"],
+            "metadata": {"cluster_id": id}
+        },
+
+        ...,
+
+        {...}, # info for another testrun
+        {...},
+
+        ...,
+
+        {...}
+    ]
+
+In case of success OSTF adapter returns attributes of created testruns entities in JSON format. If user wants to launch just one test he/she can do it via putting its id into the list;
+to launch all tests - list must be left empty (default behavior).
+
+There is possibility to stop and restart testruns. To perform those actions one must make PUT request on 'testruns/' with body containing list of testruns and their tests
+that should be stopped/restarted. Example of the body::
+
+        [
+            {
+                "id": test_run_id,
+                "status": ("stopped" | "restarted"),
+                "tests": ["module.path.to.test.1", ..., "module.path.to.test.n"]
+            },
+
+            ...,
+
+            {...}, # info for another testrun
+            {...},
+
+            ...,
+
+            {...}
+        ]
+
+In case of success OSTF adapter returns attributes of processed testruns in JSON format.
+
 OSTF package architecture
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 

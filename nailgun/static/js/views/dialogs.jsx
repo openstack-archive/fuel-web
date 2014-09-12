@@ -421,56 +421,78 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         getInitialState: function() {
             return {
                 currentPassword: '',
+                confirmedPassword: '',
                 newPassword: '',
                 validationError: false,
                 locked: false
             };
         },
         renderBody: function() {
-            var ns = 'dialog.change_password.';
+            var isValid = this.isPasswordChangeAvailable(),
+                ns = 'dialog.change_password.';
             return (
-                <form className="change-password-form">
-                    <div className="parameter-box clearfix">
-                        <div className="parameter-name">{$.t(ns + 'current_password')}</div>
-                        <div className="parameter-control input-append">
-                            <input ref="currentPassword"
+                <form className='change-password-form'>
+                    <div className='parameter-box clearfix'>
+                        <div className='parameter-name'>{$.t(ns + 'current_password')}</div>
+                        <div className='parameter-control input-append'>
+                            <input ref='currentPassword'
+                                name='current_password'
                                 onChange={this.handleChange.bind(this, 'currentPassword', true)}
                                 onKeyDown={this.handleKeyDown}
                                 className={cx({'input-append': true, error: this.state.validationError})}
                                 disabled={this.state.locked}
-                                type="password"
-                                maxLength="50" />
-                            <span className="add-on"><i className="icon-eye"/></span>
+                                type='password'
+                                maxLength='50' />
+                            <span className='add-on'><i className='icon-eye'/></span>
                         </div>
-                        <div className="parameter-description validation-error">
-                            {this.state.validationError && $.t('dialog.change_password.wrong_current_password')}
+                        <div className='parameter-description validation-error'>
+                            {this.state.validationError && $.t(ns +'wrong_current_password')}
                         </div>
                     </div>
-                    <div className="parameter-box clearfix">
-                        <div className="parameter-name">{$.t(ns + 'new_password')}</div>
-                        <div className="parameter-control input-append">
-                            <input ref="newPassword"
+                    <div className='parameter-box clearfix'>
+                        <div className='parameter-name'>{$.t(ns + 'new_password')}</div>
+                        <div className='parameter-control input-append'>
+                            <input ref='newPassword'
+                                name='new_password'
                                 onChange={this.handleChange.bind(this, 'newPassword', false)}
                                 onKeyDown={this.handleKeyDown}
-                                className="input-append"
+                                className='input-append no-show'
                                 disabled={this.state.locked}
-                                type="password"
-                                maxLength="50" />
-                            <span className="add-on"><i className="icon-eye"/></span>
+                                type='password'
+                                maxLength='50' />
                         </div>
-                        <div className="parameter-description validation-error"></div>
+                    </div>
+                    <div className='parameter-box clearfix'>
+                        <div className='parameter-name'>{$.t(ns + 'confirm_new_password')}</div>
+                        <div className='parameter-control input-append'>
+                            <input ref='confirmNewPassword'
+                                name='confirm_new_password'
+                                onChange={this.handleChange.bind(this, 'confirmedPassword', false)}
+                                onKeyDown={this.handleKeyDown}
+                                className='input-append no-show'
+                                disabled={this.state.locked}
+                                type='password'
+                                maxLength='50' />
+                        </div>
+                        <div className={'parameter-description validation-error' +
+                            ((!isValid && !this.state.newPassword) ? ' hide' : '')}>
+                            { $.t(ns + 'new_password_mismatch') }
+                        </div>
                     </div>
                 </form>
             );
         },
         renderFooter: function() {
             return [
-                <button key="cancel" className="btn" onClick={this.close} disabled={this.state.locked}>{$.t('common.cancel_button')}</button>,
-                <button key="apply" className="btn btn-success" onClick={this.changePassword} disabled={this.state.locked || !this.isPasswordChangeAvailable()}>{$.t('common.apply_button')}</button>
+                <button key='cancel' className='btn' onClick={this.close} disabled={this.state.locked}>
+                    {$.t('common.cancel_button')}
+                </button>,
+                <button key='apply' className='btn btn-success' onClick={this.changePassword}
+                disabled={this.state.locked || !this.isPasswordChangeAvailable()}>{$.t('common.apply_button')}</button>
             ];
         },
         isPasswordChangeAvailable: function() {
-            return !!(this.state.currentPassword && this.state.newPassword);
+            return !!(this.state.currentPassword && (this.state.newPassword == this.state.confirmedPassword));
         },
         handleKeyDown: function(e) {
             if (e.key == 'Enter') {
@@ -478,7 +500,13 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
             }
         },
         handleChange: function(name, clearError, e) {
-            var newState = {};
+            var newPassword = $('[name=new_password]'),
+                confirmedPassword = $('[name=confirm_new_password]'),
+                newState = {};
+            confirmedPassword.removeClass('error').parent().siblings('.validation-error').hide();
+            if (newPassword.val() != confirmedPassword.val()) {
+                confirmedPassword.addClass('error').parent().siblings('.validation-error').show();
+            }
             newState[name] = e.target.value;
             if (clearError) {
                 newState.validationError = false;

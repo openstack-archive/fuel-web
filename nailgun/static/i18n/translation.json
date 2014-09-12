@@ -398,8 +398,8 @@
                 "reset_environment": "Resetting",
                 "stop_deployment": "Stopping",
                 "stop_deployment_button": "Stop deployment",
-                "deployment_mode": "Environment Deployment Mode:",
-                "openstack_release": "OpenStack Release:",
+                "deployment_mode": "Deployment Mode",
+                "openstack_release": "OpenStack Release",
                 "environment_status": "Status",
                 "cluster_was_modified_from_cli" : "Some deployment parameters for this environment have been modified from Fuel CLI. Changes from Fuel CLI take precedence over any settings made from your browser. Proceed with caution.",
                 "reconfigure_redhat_account": "You can __opt1__ reconfigure your Red Hat account __opt2__ or "

@@ -49,17 +49,28 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             onChange: React.PropTypes.func,
             onKeyDown: React.PropTypes.func,
             maxLength: React.PropTypes.renderable,
-            // other props
             label: React.PropTypes.renderable,
             description: React.PropTypes.renderable,
             commonClassName: React.PropTypes.renderable,
             labelClassName: React.PropTypes.renderable,
             descriptionClassName: React.PropTypes.renderable,
+            inputClassName: React.PropTypes.string,
             tooltipText: React.PropTypes.renderable,
-            toggleable: React.PropTypes.bool
+            toggleable: React.PropTypes.bool,
+            validate: React.PropTypes.func
         },
         getInitialState: function() {
             return {visible: false};
+        },
+        getError: function() {
+            var validationResult  = this.props.validate && this.props.validate(this.props.name);
+            if (_.isBoolean(validationResult)) {
+                return {
+                    result: validationResult,
+                    message: ''
+                };
+            }
+            return validationResult;
         },
         togglePassword: function() {
             if (this.props.disabled) return;
@@ -74,13 +85,20 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         renderInput: function() {
             var input = null,
-                className = 'parameter-input';
+                className = cx({
+                    'parameter-input': this.isCheckboxOrRadio(),
+                    error: this.getError().result
+                });
             switch (this.props.type) {
                 case 'dropdown':
                     input = (<select ref='input' key='input' className={className}>{this.props.children}</select>);
                     break;
                 case 'textarea':
                     input = <textarea ref='input' key='input' className={className} />;
+                    break;
+                case 'password':
+                    var type = (this.props.toggleable && this.state.visible) ? 'text' : 'password';
+                    input = <input ref='input' key='input' className={className} type={type} />;
                     break;
                 default:
                     input = <input ref='input' key='input' className={className} />;
@@ -90,7 +108,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     {this.transferPropsTo(input)}
                     <span>&nbsp;</span>
                 </div>
-            ) : this.transferPropsTo(input);
+            ) : this.props.toggleable ?
+                input
+                : this.transferPropsTo(input);
         },
         renderToggleablePasswordAddon: function() {
             return this.props.toggleable ? (
@@ -98,6 +118,17 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
                 </span>
             ) : null;
+        },
+        renderInputLabel: function() {
+            var classes = {
+                'parameter-name enable-selection': true
+            };
+            classes[this.props.labelClassName] = this.props.labelClassName;
+            return (
+                <div className={cx(classes)}>
+                    <span>{this.props.label}</span>
+                </div>
+            );
         },
         renderLabel: function(children) {
             var classes = {
@@ -113,32 +144,52 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             ) : children;
         },
         renderDescription: function() {
-            var error = !_.isNull(this.props.error),
-                classes = {'parameter-description enable-selection': true};
+            var error =  this.getError(),
+                hasError = !_.isNull(this.props.error) || error.result,
+                classes = {'parameter-description enable-selection': true,
+                    'validation-error': hasError};
             classes[this.props.descriptionClassName] = this.props.descriptionClassName;
-            return error || this.props.description ? (
+            return hasError || this.props.description ? (
                 <div key='description' className={cx(classes)}>
-                    {error ? this.props.error : this.props.description}
+                    {hasError ? this.props.error || error.message : this.props.description}
                 </div>
             ) : null;
         },
         renderWrapper: function(children) {
             var classes = {
                 'parameter-box': true,
-                'has-error': !_.isNull(this.props.error)
+                clearfix: !this.isCheckboxOrRadio(),
+                'has-error': !_.isNull(this.props.error) && !_.isUndefined(this.props.error)
             };
             classes[this.props.commonClassName] = this.props.commonClassName;
             return (<div className={cx(classes)}>{children}</div>);
         },
+        renderParameterControl: function(children) {
+            var classes = {
+                'parameter-control': true,
+                'input-append': this.props.toggleable
+            };
+            return (<div className={cx(classes)}>{children}</div>);
+        },
         render: function() {
-            return this.renderWrapper([
-                this.renderLabel([
-                    this.renderInput(),
-                    this.renderToggleablePasswordAddon(),
-                    this.renderTooltipIcon()
-                ]),
-                this.renderDescription()
-            ]);
+            if (this.isCheckboxOrRadio()) {
+                return this.renderWrapper([
+                    this.renderLabel([
+                        this.renderInput(),
+                        this.renderTooltipIcon()
+                    ]),
+                    this.renderDescription()
+                ]);
+            } else {
+                return this.renderWrapper([
+                    this.renderInputLabel(),
+                    this.renderParameterControl([
+                        this.renderInput(),
+                        this.renderToggleablePasswordAddon()
+                    ]),
+                    this.renderDescription()
+                ]);
+            }
         }
     });
 

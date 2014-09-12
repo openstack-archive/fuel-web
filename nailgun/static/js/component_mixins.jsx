@@ -71,7 +71,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                             <button type="button" className="close" onClick={this.close}>&times;</button>
                             <h3>{this.props.title}</h3>
                         </div>
-                        <div className="modal-body">
+                        <div className={"modal-body"}>
                             {this.renderBody()}
                         </div>
                         <div className="modal-footer">

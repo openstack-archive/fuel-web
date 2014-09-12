@@ -18,8 +18,10 @@ import operator
 from optparse import OptionParser
 import os
 from settings import Settings
+import signal
 import subprocess
 import sys
+import traceback
 import urwid
 import urwid.raw_display
 import urwid.web_display
@@ -262,6 +264,8 @@ class FuelSetup(object):
         dnsobj = self.children[int(self.choices.index("DNS & Hostname"))]
         dnsobj.setEtcResolv()
 
+        signal.signal(signal.SIGUSR1, self.handle_sigusr1)
+
         self.mainloop.run()
 
     def exit_program(self, button):
@@ -275,6 +279,27 @@ class FuelSetup(object):
         dnsobj.setEtcResolv('127.0.0.1')
 
         raise urwid.ExitMainLoop()
+
+    def handle_sigusr1(self, signum, stack):
+        from common import timeout
+        log.info("Received signal: %s" % signum)
+        try:
+            savetimeout = 60
+            success, modulename = timeout.run_with_timeout(
+                self.global_save, timeout=savetimeout,
+                default=(False, "timeout"))
+            if success:
+                log.info("Save successful!")
+            else:
+                log.error("Save failed on module %s" % modulename)
+
+        except (KeyboardInterrupt, timeout.TimeoutError):
+            log.error("Save on signal timed out. Save not complete.")
+            log.exception()
+        except Exception:
+            log.error("Save failed for unknown reason:")
+            log.exception()
+        self.exit_program(None)
 
     def global_save(self):
         #Runs save function for every module

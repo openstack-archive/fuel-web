@@ -66,7 +66,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             },
             render: function() {
                 return (
-                    <div className="modal fade" tabIndex="-1">
+                    <div className={"modal fade" + (this.props.modalClass ? (" " + this.props.modalClass) : "")}
+                        tabIndex="-1">
                         <div className="modal-header">
                             <button type="button" className="close" onClick={this.close}>&times;</button>
                             <h3>{this.props.title}</h3>

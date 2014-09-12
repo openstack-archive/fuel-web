@@ -2232,19 +2232,42 @@ input.error:focus {
   }
 }
 
-.support {
+// Support page
+// -------------------------
+
+.support-page {
   min-height: 240px;
+  hr { clear: both; }
+  div:last-child hr { display: none; }
+  .el-inner { padding-bottom: 20px; }
   &:after {
     display: table;
     line-height: 0;
     content: "";
     clear: both;
   }
-  .span12 {
-    margin-top: 10px;
+  .snapshot {
+    p > span {
+      margin-left: 10px;
+      &.error { color: @fuel-red; }
+    }
+    .btn {
+      width: 220px;
+      text-align: left;
+    }
   }
-  p:nth-child(even) {
-    padding-bottom: 10px;
+  .btn { margin-right: 10px; }
+  .img {
+    display: block;
+    margin: 10px 0 0 20px !important;
+    overflow: hidden;
+    .width-height-mixin(@support-img-size, @support-img-size);
+    background-image: url(../img/support_icons.png);
+    background-repeat: no-repeat;
+    &.img-register-fuel { background-position: 0 0; }
+    &.img-contact-support { background-position: 0 -@support-img-size; }
+    &.img-download-logs { background-position: 0 -(@support-img-size * 2); }
+    &.img-audit-logs {  background-position: 0 -(@support-img-size * 3); }
   }
 }
 
@@ -3304,38 +3327,6 @@ input.input-append {
   display: inline-block;
   .font-layout-mixin(@font-size-small-2, @fuel-deep-red, null, italic);
   margin-left: 20px;
-}
-
-.img-register-fuel {
-  display: block;
-  .width-height-mixin(@support-img-size, @support-img-size);
-  overflow: hidden;
-  background: url(../img/support_icons.png) no-repeat 0px 0px;
-  margin: 10px 0px 0px 20px;
-}
-
-.img-contact-support {
-  display: block;
-  .width-height-mixin(@support-img-size, @support-img-size);
-  overflow: hidden;
-  background: url(../img/support_icons.png) no-repeat 0px -@support-img-size;
-  margin: 10px 0px 0px 20px;
-}
-
-.img-download-logs {
-  display: block;
-  .width-height-mixin(@support-img-size, @support-img-size);
-  overflow: hidden;
-  background: url(../img/support_icons.png) no-repeat 0px -(@support-img-size * 2);
-  margin: 10px 0px 0px 20px;
-}
-
-.img-audit-logs {
-  display: block;
-  .width-height-mixin(@support-img-size, @support-img-size);
-  overflow: hidden;
-  background: url(../img/support_icons.png) no-repeat 0px -(@support-img-size * 3);
-  margin: 10px 0px 0px 20px;
 }
 
 .btn-group-congiration[data-invalid=true] i {

@@ -40,13 +40,16 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             type = type || this.props.type;
             var radioButton = this.isRadioButton();
             return (<input
-                className={this.getError() && 'error'}
+                className={this.props.cs.inputClasses + (this.getError() ? ' error' : '')}
                 type={type}
                 name={this.props.name}
                 value={this.getValue()}
                 checked={radioButton ? radioButton.data == this.props.value : this.props.value}
                 disabled={this.props.disabled}
-                onChange={this.onChange} />);
+                onChange={this.onChange}
+                maxLength={this.props.maxLength}
+                onKeyDown={this.props.onKeyDown}
+            />);
         },
         renderLabel: function() {
             var radioButton = this.isRadioButton(),
@@ -54,8 +57,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return (
                 <div className={labelClass + ' enable-selection'}>
                     {radioButton ? radioButton.label : this.props.label}
-                    {!!this.props.warnings.length &&
-                        <controls.TooltipIcon warnings={this.props.warnings} />
+                    {this.props.tooltipWarnings &&
+                        <controls.TooltipIcon tooltipWarnings={this.props.tooltipWarnings} />
                     }
                 </div>
             );
@@ -144,7 +147,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                                         key={value.data}
                                         value={this.props.value}
                                         disabled={this.props.disabled || _.contains(this.props.disabledValues, value.data)}
-                                        warnings={this.props.valueWarnings[value.data]} />
+                                        tooltipWarnings={this.props.valueWarnings[value.data]} />
                                 );
                             }
                         }, this)}
@@ -209,11 +212,13 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return (
                 <div className={this.props.cs.common + ' parameter-box clearfix'}>
                     {this.renderLabel()}
-                    <div className='parameter-control input-append'>
+                    <div className={'parameter-control' + (this.props.hiddenPassword ? '' : ' input-append')}>
                         {this.renderInput(this.state.visible ? 'text' : 'password')}
-                        <span className='add-on' onClick={this.togglePassword}>
-                            <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
-                        </span>
+                        {!this.props.hiddenPassword &&
+                            <span className='add-on' onClick={this.togglePassword}>
+                                <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
+                            </span>
+                        }
                     </div>
                     {this.renderDescription()}
                 </div>
@@ -229,7 +234,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             $(this.getDOMNode()).tooltip('destroy');
         },
         render: function() {
-            return (<i className='icon-attention text-warning' data-toggle='tooltip' title={this.props.warnings.join(' ')}></i>);
+            return (<i className='icon-attention text-warning' data-toggle='tooltip' title={this.props.tooltipWarnings.join(' ')}></i>);
         }
     });
 

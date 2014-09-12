@@ -82,6 +82,10 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                 case 'textarea':
                     input = <textarea ref='input' key='input' className={className} onChange={this.onChange} />;
                     break;
+                case 'password':
+                    var type = (this.props.toggleable && this.state.visible) ? 'text' : 'password';
+                    input = <input ref='input' key='input' className={className} type={type} onChange={this.onChange} />;
+                    break;
                 default:
                     input = <input ref='input' key='input' className={className} onChange={this.onChange} />;
             }
@@ -107,11 +111,18 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             classes[this.props.labelClassName] = this.props.labelClassName;
             return this.props.label ? (
                 <label key='label' className={cx(classes)} htmlFor={this.props.id}>
+                    {!this.isCheckboxOrRadio() &&
+                        <div className='input-label'>
+                            <span>{this.props.label}</span>
+                        </div>
+                    }
                     {children}
-                    <div className='label-wrapper'>
-                        {this.props.label}
-                        {this.renderTooltipIcon()}
-                    </div>
+                    {this.isCheckboxOrRadio() &&
+                        <div className='label-wrapper'>
+                            {this.props.label}
+                            {this.renderTooltipIcon()}
+                        </div>
+                    }
                 </label>
             ) : children;
         },
@@ -128,6 +139,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         renderWrapper: function(children) {
             var classes = {
                 'parameter-box': true,
+                clearfix: !this.isCheckboxOrRadio(),
                 'has-error': !_.isUndefined(this.props.error) && !_.isNull(this.props.error)
             };
             classes[this.props.commonClassName] = this.props.commonClassName;

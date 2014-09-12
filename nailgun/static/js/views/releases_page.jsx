@@ -50,7 +50,12 @@ function(React, controls) {
                                     return {label: $.t('release_page.' + column), className: column};
                                 })}
                                 body={this.props.releases.map(this.getReleaseData)}
-                                className='releases-table' />
+                                cs={{
+                                    'table': {
+                                        'releases-table': true
+                                    }
+                                }}
+                            />
                         :
                             <div className='alert'>{$.t('release_page.no_releases_message')}</div>
                         }

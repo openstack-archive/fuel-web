@@ -45,6 +45,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             };
         },
         dialogMixin: {
+            propTypes: {
+                modalClass: React.PropTypes.renderable
+            },
             componentDidMount: function() {
                 var $el = $(this.getDOMNode());
                 var modalOptions = _.clone(this.props.modalOptions) || {};
@@ -65,8 +68,11 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                 $(this.getDOMNode()).modal('hide');
             },
             render: function() {
+                var classes = {'modal fade': true};
+                classes[this.props.modalClass] = this.props.modalClass;
                 return (
-                    <div className="modal fade" tabIndex="-1">
+                    <div className={React.addons.classSet(classes)}
+                        tabIndex="-1">
                         <div className="modal-header">
                             <button type="button" className="close" onClick={this.close}>&times;</button>
                             <h3>{this.props.title}</h3>

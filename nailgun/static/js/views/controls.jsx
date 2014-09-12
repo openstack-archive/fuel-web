@@ -16,7 +16,8 @@
 define(['jquery', 'underscore', 'react'], function($, _, React) {
     'use strict';
 
-    var controls = {};
+    var controls = {},
+        cx = React.addons.classSet;
 
     var InputMixin = {
         getInitialState: function() {
@@ -40,13 +41,14 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             type = type || this.props.type;
             var radioButton = this.isRadioButton();
             return (<input
-                className={this.getError() && 'error'}
+                className={this.props.cx || cx({'error': this.getError()})}
                 type={type}
                 name={this.props.name}
                 value={this.getValue()}
                 checked={radioButton ? radioButton.data == this.props.value : this.props.value}
                 disabled={this.props.disabled}
-                onChange={this.onChange} />);
+                onChange={this.onChange}
+                maxLength={this.props.maxLength} />);
         },
         renderLabel: function() {
             var radioButton = this.isRadioButton(),
@@ -211,9 +213,11 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     {this.renderLabel()}
                     <div className='parameter-control input-append'>
                         {this.renderInput(this.state.visible ? 'text' : 'password')}
-                        <span className='add-on' onClick={this.togglePassword}>
-                            <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
-                        </span>
+                        {!this.props.hiddenPassword &&
+                            <span className='add-on' onClick={this.togglePassword}>
+                                <i className={this.state.visible ? 'icon-eye-off' : 'icon-eye'} />
+                            </span>
+                        }
                     </div>
                     {this.renderDescription()}
                 </div>

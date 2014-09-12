@@ -282,7 +282,8 @@ function(React, utils, models, componentMixins, dialogs) {
     });
 
     components.Breadcrumbs = React.createClass({
-        setPath: function(path) {
+        update: function(path) {
+            path = path || _.result(app.page, 'breadcrumbsPath');
             this.setProps({path: path});
         },
         render: function() {

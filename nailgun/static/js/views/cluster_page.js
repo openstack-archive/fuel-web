@@ -83,8 +83,8 @@ function(utils, models, commonViews, dialogViews, NodesTab, NetworkTab, Settings
             this.registerSubView(new dialogViews.DiscardSettingsChangesDialog(options)).render();
         },
         onNameChange: function() {
-            this.updateBreadcrumbs();
-            this.updateTitle();
+            app.breadcrumbs.update();
+            app.updateTitle();
         },
         onTabLeave: function(e) {
             var href = $(e.currentTarget).attr('href');

@@ -162,15 +162,18 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.footer = React.renderComponent(new layoutComponents.Footer({version: this.version}), $('#footer')[0]);
             this.content.find('.loading').addClass('layout-loaded');
         },
+        updateTitle: function() {
+            var newTitle = _.result(this.page, 'title');
+            document.title = $.t('common.title') + (newTitle ? ' - ' + newTitle : '');
+            this.breadcrumbs.update();
+        },
         setPage: function(NewPage, options) {
             if (this.page) {
                 utils.universalUnmount(this.page);
             }
             this.page = utils.universalMount(new NewPage(options), this.content);
             this.navbar.setActive(_.result(this.page, 'navbarActiveElement'));
-            this.breadcrumbs.setPath(_.result(this.page, 'breadcrumbsPath'));
-            var newTitle = _.result(this.page, 'title');
-            document.title = $.t('common.title') + (newTitle ? ' - ' + newTitle : '');
+            this.updateTitle();
         },
         // routes
         login: function() {

@@ -18,8 +18,14 @@ import os
 import tempfile
 
 from fuel_agent_ci import drivers
+from fuel_agent_ci.objects.artifact import Artifact
 from fuel_agent_ci.objects.dhcp import Dhcp
+from fuel_agent_ci.objects.http import Http
+from fuel_agent_ci.objects.net import Net
 from fuel_agent_ci.objects import OBJECT_TYPES
+from fuel_agent_ci.objects.repo import Repo
+from fuel_agent_ci.objects.ssh import Ssh
+from fuel_agent_ci.objects.tftp import Tftp
 from fuel_agent_ci.objects.vm import Vm
 
 LOG = logging.getLogger(__name__)

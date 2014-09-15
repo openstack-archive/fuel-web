@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
+
 from fuel_agent.drivers import ks_spaces_validator
 from fuel_agent import errors
 from fuel_agent import objects
@@ -102,10 +104,27 @@ class Nailgun(object):
         # disk label is > 12 characters.
         return ' -L {0} '.format(label[:12])
 
+    def _get_partition_count(self, name):
+        count = 0
+        for disk in self.ks_disks:
+            count += len([v for v in disk["volumes"]
+                          if v.get('name') == name and v['size'] > 0])
+        return count
+
+    def _num_ceph_journals(self):
+        return self._get_partition_count('cephjournal')
+
+    def _num_ceph_osds(self):
+        return self._get_partition_count('ceph')
+
     def partition_scheme(self):
         data = self.partition_data()
         ks_spaces_validator.validate(data)
         partition_scheme = objects.PartitionScheme()
+
+        ceph_osds = self._num_ceph_osds()
+        journals_left = ceph_osds
+        ceph_journals = self._num_ceph_journals()
 
         for disk in self.ks_disks:
             parted = partition_scheme.add_parted(
@@ -117,6 +136,35 @@ class Nailgun(object):
 
             for volume in disk['volumes']:
                 if volume['size'] <= 0:
+                    continue
+
+                if volume.get('name') == 'cephjournal':
+                    # We need to allocate a journal partition for each ceph OSD
+                    # Determine the number of journal partitions we need on
+                    # each device
+                    ratio = math.ceil(float(ceph_osds) / ceph_journals)
+
+                    # No more than 10GB will be allocated to a single journal
+                    # partition
+                    size = volume["size"] / ratio
+                    if size > 10240:
+                        size = 10240
+
+                    # This will attempt to evenly spread partitions across
+                    # multiple devices e.g. 5 osds with 2 journal devices will
+                    # create 3 partitions on the first device and 2 on the
+                    # second
+                    if ratio < journals_left:
+                        end = ratio
+                    else:
+                        end = journals_left
+
+                    for i in range(0, end):
+                        journals_left -= 1
+                        if volume['type'] == 'partition':
+                            prt = parted.add_partition(size=size)
+                            if 'partition_guid' in volume:
+                                prt.set_guid(volume['partition_guid'])
                     continue
 
                 if volume['type'] in ('partition', 'pv', 'raid'):

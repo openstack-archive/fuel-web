@@ -20,6 +20,24 @@ from fuel_agent import errors
 from fuel_agent.utils import hardware_utils as hu
 
 
+CEPH_JOURNAL = {
+    "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
+    "name": "cephjournal",
+    "mount": "none",
+    "disk_label": "",
+    "type": "partition",
+    "file_system": "none",
+    "size": 0
+}
+CEPH_DATA = {
+    "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
+    "name": "ceph",
+    "mount": "none",
+    "disk_label": "",
+    "type": "partition",
+    "file_system": "none",
+    "size": 3333
+}
 PROVISION_SAMPLE_DATA = {
     "profile": "ubuntu_1204_x86_64",
     "name_servers_search": "\"domain.tld\"",
@@ -485,3 +503,32 @@ class TestNailgun(test_base.BaseTestCase):
         }
         self.assertRaises(errors.DiskNotFoundError, self.drv._disk_dev,
                           fake_ks_disk)
+
+    def test_get_partition_count(self):
+        self.assertEqual(3, self.drv._get_partition_count('Boot'))
+        self.assertEqual(1, self.drv._get_partition_count('TMP'))
+
+    @mock.patch.object(hu, 'list_block_devices')
+    def test_partition_scheme_ceph(self, mock_lbd):
+        #TODO(agordeev): perform better testing of ceph logic
+        p_data = PROVISION_SAMPLE_DATA.copy()
+        for i in range(0, 3):
+            p_data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(
+                CEPH_JOURNAL)
+            p_data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(
+                CEPH_DATA)
+        self.drv = nailgun.Nailgun(p_data)
+        mock_lbd.return_value = LIST_BLOCK_DEVICES_SAMPLE
+        p_scheme = self.drv.partition_scheme()
+        self.assertEqual(5, len(p_scheme.fss))
+        self.assertEqual(4, len(p_scheme.pvs))
+        self.assertEqual(3, len(p_scheme.lvs))
+        self.assertEqual(2, len(p_scheme.vgs))
+        self.assertEqual(1, len(p_scheme.mds))
+        self.assertEqual(3, len(p_scheme.parteds))
+        self.assertEqual(3, self.drv._get_partition_count('ceph'))
+        #NOTE(agordeev): (-2, -1, -1) is the list of ceph data partition counts
+        #                corresponding to (sda, sdb, sdc) disks respectively.
+        for disk, part in enumerate((-2, -1, -1)):
+            self.assertEqual(CEPH_DATA['partition_guid'],
+                             p_scheme.parteds[disk].partitions[part].guid)

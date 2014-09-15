@@ -22,16 +22,20 @@ LOG = logging.getLogger(__name__)
 
 def pvdisplay():
     # unit m means MiB (power of 2)
-    result = utils.execute(
+    output = utils.execute(
         'pvdisplay',
         '-C',
         '--noheading',
         '--units', 'm',
         '--options', 'pv_name,vg_name,pv_size,dev_size,pv_uuid',
         '--separator', ';',
-        check_exit_code=[0])
+        check_exit_code=[0])[0]
+    return pvdisplay_parse(output)
+
+
+def pvdisplay_parse(output):
     pvs = []
-    for line in result[0].split('\n'):
+    for line in output.split('\n'):
         line = line.strip()
         if not line:
             continue
@@ -73,17 +77,20 @@ def pvremove(pvname):
 
 
 def vgdisplay():
-    result = utils.execute(
+    output = utils.execute(
         'vgdisplay',
         '-C',
         '--noheading',
         '--units', 'm',
         '--options', 'vg_name,vg_uuid,vg_size,vg_free',
         '--separator', ';',
-        check_exit_code=[0])
+        check_exit_code=[0])[0]
+    return vgdisplay_parse(output)
 
+
+def vgdisplay_parse(output):
     vgs = []
-    for line in result[0].split('\n'):
+    for line in output.split('\n'):
         line = line.strip()
         if not line:
             continue
@@ -156,7 +163,7 @@ def vgremove(vgname):
 
 
 def lvdisplay():
-    result = utils.execute(
+    output = utils.execute(
         'lvdisplay',
         '-C',
         '--noheading',
@@ -165,10 +172,13 @@ def lvdisplay():
         # since versions of lvdisplay prior 2.02.68 don't have it.
         '--options', 'lv_name,lv_size,vg_name,lv_uuid',
         '--separator', ';',
-        check_exit_code=[0])
+        check_exit_code=[0])[0]
+    return lvdisplay_parse(output)
 
+
+def lvdisplay_parse(output):
     lvs = []
-    for line in result[0].split('\n'):
+    for line in output.split('\n'):
         line = line.strip()
         if not line:
             continue

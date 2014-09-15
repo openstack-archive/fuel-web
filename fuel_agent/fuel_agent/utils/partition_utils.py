@@ -16,12 +16,8 @@ from fuel_agent import errors
 from fuel_agent.utils import utils
 
 
-def info(dev):
-    result = utils.execute('parted', '-s', dev, '-m',
-                           'unit', 'MiB',
-                           'print', 'free',
-                           check_exit_code=[0, 1])
-    lines = result[0].split('\n')
+def parse_partition_info(output):
+    lines = output.split('\n')
     generic_params = lines[1].rstrip(';').split(':')
     generic = {
         'dev': generic_params[0],
@@ -45,6 +41,14 @@ def info(dev):
             'fstype': part_params[4] or None
         })
     return {'generic': generic, 'parts': parts}
+
+
+def info(dev):
+    output = utils.execute('parted', '-s', dev, '-m',
+                           'unit', 'MiB',
+                           'print', 'free',
+                           check_exit_code=[0, 1])[0]
+    return parse_partition_info(output)
 
 
 def wipe(dev):

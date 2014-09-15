@@ -14,28 +14,78 @@
 
 import locale
 import math
+import os
+import re
+import shlex
+import subprocess
+import time
 
 import jinja2
 import stevedore.driver
 
 from fuel_agent import errors
-from fuel_agent.openstack.common import gettextutils as gtu
 from fuel_agent.openstack.common import log as logging
-from fuel_agent.openstack.common import processutils
 
 
 LOG = logging.getLogger(__name__)
 
 
+#NOTE(agordeev): signature compatible with execute from oslo
 def execute(*cmd, **kwargs):
-    """Convenience wrapper around oslo's execute() method."""
-    LOG.debug(gtu._('Trying to execute command: "%s"'), ' '.join(cmd))
-    result = processutils.execute(*cmd, **kwargs)
-    LOG.debug(gtu._('Execution completed: "%s"'),
-              ' '.join(cmd))
-    LOG.debug(gtu._('Command stdout: "%s"') % result[0])
-    LOG.debug(gtu._('Command stderr: "%s"') % result[1])
-    return result
+    command = ' '.join(cmd)
+    LOG.debug('Trying to execute command: %s', command)
+    commands = [c.strip() for c in re.split(ur'\|', command)]
+    env = os.environ
+    env['PATH'] = '/bin:/usr/bin:/sbin:/usr/sbin'
+    check_exit_code = kwargs.pop('check_exit_code', [0])
+    ignore_exit_code = False
+    to_filename = kwargs.get('to_filename')
+    cwd = kwargs.get('cwd')
+
+    if isinstance(check_exit_code, bool):
+        ignore_exit_code = not check_exit_code
+        check_exit_code = [0]
+    elif isinstance(check_exit_code, int):
+        check_exit_code = [check_exit_code]
+
+    to_file = None
+    if to_filename:
+        to_file = open(to_filename, 'wb')
+
+    process = []
+    for c in commands:
+        try:
+            # NOTE(eli): Python's shlex implementation doesn't like unicode.
+            # We have to convert to ascii before shlex'ing the command.
+            # http://bugs.python.org/issue6988
+            encoded_command = c.encode('ascii')
+
+            process.append(subprocess.Popen(
+                shlex.split(encoded_command),
+                env=env,
+                stdin=(process[-1].stdout if process else None),
+                stdout=(to_file
+                        if (len(process) == len(commands) - 1) and to_file
+                        else subprocess.PIPE),
+                stderr=(subprocess.PIPE),
+                cwd=cwd
+            ))
+        except OSError as e:
+            raise errors.ProcessExecutionError(exit_code=1, stdout='',
+                                               stderr=e, cmd=command)
+        if len(process) >= 2:
+            process[-2].stdout.close()
+    #FIXME(agordeev): added sleep for preventing parted failures
+    #TODO(agordeev): figure out the better way to be ensure that partition
+    #                information was updated properly
+    time.sleep(1)
+    stdout, stderr = process[-1].communicate()
+    if not ignore_exit_code and process[-1].returncode not in check_exit_code:
+        raise errors.ProcessExecutionError(exit_code=process[-1].returncode,
+                                           stdout=stdout,
+                                           stderr=stderr,
+                                           cmd=command)
+    return (stdout, stderr)
 
 
 def parse_unit(s, unit, ceil=True):

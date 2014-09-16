@@ -30,6 +30,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         componentDidMount: function() {
             if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip();
         },
+        componentDidUpdate: function() {
+            if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip();
+        },
         componentWillUnmount: function() {
             if (this.props.tooltipText) $(this.refs.tooltip.getDOMNode()).tooltip('destroy');
         },
@@ -110,6 +113,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
                     {!this.isCheckboxOrRadio() &&
                         <div className='input-label'>
                             <span>{this.props.label}</span>
+                            {this.renderTooltipIcon()}
                         </div>
                     }
                     {children}

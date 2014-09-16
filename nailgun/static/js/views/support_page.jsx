@@ -165,7 +165,7 @@ function(React, componentMixins, models) {
                     title={$.t('support_page.capacity_audit')}
                     text={$.t('support_page.capacity_audit_text')}
                 >
-                    <p><a className='btn' href='#capacity' target='_blank'>{$.t('support_page.view_capacity_audit')}</a></p>
+                    <p><a className='btn' href='#capacity'>{$.t('support_page.view_capacity_audit')}</a></p>
                 </SupportPageElement>
             );
         }

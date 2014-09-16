@@ -54,7 +54,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             return (
                 <div className={labelClass + ' enable-selection'}>
                     {radioButton ? radioButton.label : this.props.label}
-                    {!!this.props.warnings.length &&
+                    {(this.props.warnings && this.props.warnings.length) &&
                         <controls.TooltipIcon warnings={this.props.warnings} />
                     }
                 </div>
@@ -229,7 +229,8 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
             $(this.getDOMNode()).tooltip('destroy');
         },
         render: function() {
-            return (<i className='icon-attention text-warning' data-toggle='tooltip' title={this.props.warnings.join(' ')}></i>);
+            var warnings = this.props.warnings;
+            return (<i className='icon-attention text-warning' data-toggle='tooltip' title={_.isArray(warnings) ? warnings.join(' ') : warnings}></i>);
         }
     });
 

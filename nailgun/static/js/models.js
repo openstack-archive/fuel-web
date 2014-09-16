@@ -148,6 +148,9 @@ define(['utils', 'deepModel'], function(utils) {
             var roles = onlyDeployedRoles ? this.get('roles') : _.union(this.get('roles'), this.get('pending_roles'));
             return _.contains(roles, role);
         },
+        hasDeployedRole: function(role) {
+            return this.hasRole(role, true);
+        },
         getRolesSummary: function() {
             var rolesMetaData = this.collection.cluster.get('release').get('roles_metadata');
             return _.map(this.sortedRoles(), function(role) {return rolesMetaData[role].name;}).join(', ');

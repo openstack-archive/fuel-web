@@ -926,18 +926,37 @@ label {cursor: default;}
 }
 
 .roles-panel {
-  display: block;
   padding: 20px;
   background-color: @fuel-light-5;
   border: 1px solid @color-nodes-border;
   .box-sizing-mixin;
   margin-bottom: 20px;
-  > h4 {
+  h4 {
     display: block;
     .indent-mixin;
     .font-layout-mixin(@font-size-big-2,  @color-nodes-rule-list, @text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35));
     margin-bottom: 10px;
   }
+  .role-container {
+    .indent-mixin;
+    margin-bottom: 5px;
+    .role-label {
+      .indent-mixin;
+      max-width: 200px;
+      padding: 0 20px 0 0;
+      line-height: 32px;
+    }
+    .role-description {
+      .font-layout-mixin(@font-size-small-2, @fuel-dark-3, null, italic);
+      margin: -5px 0 0 35px;
+    }
+    .icon-attention { .position(relative, @top: -8px, @left: 2px); }
+  }
+}
+
+.tooltip-inner {
+  min-width: 200px;
+  max-width: 800px;
 }
 
 // Manufacturer
@@ -3284,48 +3303,6 @@ input.input-append {
     -webkit-transform: rotate(359deg);
     transform: rotate(359deg);
   }
-}
-
-.roles-panel {
-  label {
-    .float-mixin;
-    max-width: 200px;
-    padding-right: 20px;
-  }
-  input[type=checkbox] {
-    .position(relative, -3px);
-  }
-  hr {
-    margin: 20px 0;
-    border: 0;
-    border-top: 1px solid @fuel-light-1;
-    border-bottom: 1px solid @fuel-white-color;
-  }
-}
-
-.role-container {
-  display: block;
-  .indent-mixin;
-  margin-bottom: 10px;
-  label {
-    .indent-mixin;
-    padding: 0px;
-  }
-}
-
-.role-description {
-  display: block;
-  float: none;
-  clear: both;
-  .font-layout-mixin(@font-size-small-2, @fuel-dark-3, null, italic);
-  margin-left: 17px;
-  margin-top: -8px;
-}
-
-.role-conflict {
-  display: inline-block;
-  .font-layout-mixin(@font-size-small-2, @fuel-deep-red, null, italic);
-  margin-left: 20px;
 }
 
 .btn-group-congiration[data-invalid=true] i {

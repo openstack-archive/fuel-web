@@ -127,7 +127,7 @@ class NeutronManager(NetworkManager):
             res['mechanism_drivers'] = 'mlnx,openvswitch'
             seg_type = cluster.network_config.segmentation_type
             res['tenant_network_types'] = seg_type
-            res['type_drivers'] = '{0},flat'.format(seg_type)
+            res['type_drivers'] = '{0},flat,local'.format(seg_type)
 
         return res
 

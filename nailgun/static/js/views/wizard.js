@@ -537,7 +537,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             this.handleWarnings();
             // hack for 5.1: blacklisting 5.0 releases
             var isExperimental = _.contains(app.version.get('feature_groups'), 'experimental');
-            if (!_.isUndefined(this.releases) && this.releases.length && isExperimental) {
+            if (!_.isUndefined(this.releases) && this.releases.length && !isExperimental) {
                 var filteredReleases = this.releases.filter(function(release) {
                     return !release.get('version').match(/-5\.0[\.\d]*$/) && release.get('version') != '2014.1';
                 });

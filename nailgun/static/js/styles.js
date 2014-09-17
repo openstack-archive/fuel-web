@@ -22,9 +22,7 @@
 //>>excludeEnd("compressed");
     if (compressed) {
         // in production mode we use compressed CSS
-        define(['require-css/css!/static/css/styles'], function() {
-            return {};
-        });
+        require(['css!/static/css/styles']);
     } else {
         // in development mode we load original LESS
         // working around requirejs define counter

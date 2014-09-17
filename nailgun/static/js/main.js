@@ -99,6 +99,11 @@ requirejs.config({
             deps: ['jquery']
         }
     },
+    map: {
+        '*': {
+            'css': 'require-css/css'
+        }
+    },
     jsx: {
         fileExtension: '.jsx'
     }

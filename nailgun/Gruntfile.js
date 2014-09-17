@@ -36,7 +36,6 @@ module.exports = function(grunt) {
                     },
                     map: {
                         '*': {
-                            'css': 'require-css',
                             'JSXTransformer': 'empty:'
                         }
                     },
@@ -46,7 +45,7 @@ module.exports = function(grunt) {
                     modules: [
                         {
                             name: 'js/main',
-                            exclude: ['css/normalize']
+                            exclude: ['require-css/normalize']
                         }
                     ]
                 }

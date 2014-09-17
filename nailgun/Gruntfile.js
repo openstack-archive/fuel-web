@@ -40,6 +40,9 @@ module.exports = function(grunt) {
                             'JSXTransformer': 'empty:'
                         }
                     },
+                    paths: {
+                        'react': 'js/libs/bower/react/js/react-with-addons.min'
+                    },
                     modules: [
                         {
                             name: 'js/main',

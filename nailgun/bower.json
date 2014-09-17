@@ -2,7 +2,7 @@
     "name": "fuel-web",
     "dependencies": {
         "jquery": "1.9.1",
-        "react": "0.11.1",
+        "react": "0.11.2",
         "react.backbone": "0.4.0",
         "requirejs": "2.1.9",
         "requirejs-text": "2.0.10",
@@ -20,7 +20,7 @@
             "js": "jquery.js"
         },
         "react": {
-            "js": ["JSXTransformer.js", "react-with-addons.js"]
+            "js": ["JSXTransformer.js", "react-with-addons.js", "react-with-addons.min.js"]
         },
         "requirejs": {
             "js": "require.js"

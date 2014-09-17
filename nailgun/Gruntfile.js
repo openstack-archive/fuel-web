@@ -36,14 +36,13 @@ module.exports = function(grunt) {
                     },
                     map: {
                         '*': {
-                            'css': 'require-css',
                             'JSXTransformer': 'empty:'
                         }
                     },
                     modules: [
                         {
                             name: 'js/main',
-                            exclude: ['css/normalize']
+                            exclude: ['require-css/normalize']
                         }
                     ]
                 }

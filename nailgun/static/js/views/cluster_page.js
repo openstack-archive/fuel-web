@@ -64,10 +64,6 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
         discardSettingsChanges: function(options) {
             this.registerSubView(new dialogViews.DiscardSettingsChangesDialog(options)).render();
         },
-        onNameChange: function() {
-            this.updateBreadcrumbs();
-            this.updateTitle();
-        },
         onTabLeave: function(e) {
             var href = $(e.currentTarget).attr('href');
             if (Backbone.history.getHash() != href.substr(1) && _.result(this.tab, 'hasChanges')) {
@@ -124,7 +120,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
         },
         initialize: function(options) {
             _.defaults(this, options);
-            this.model.on('change:name', this.onNameChange, this);
+            this.model.on('change:name', app.updateTitle, app);
             this.model.on('change:release_id', function() {
                 var release = new models.Release({id: this.model.get('release_id')});
                 release.fetch().done(_.bind(function(){

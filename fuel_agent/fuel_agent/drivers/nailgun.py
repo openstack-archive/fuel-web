@@ -261,28 +261,21 @@ class Nailgun(object):
     def image_scheme(self, partition_scheme):
         data = self.data
         image_scheme = objects.ImageScheme()
+        # We assume for every file system user may provide a separate
+        # file system image. For example if partitioning scheme has
+        # /, /boot, /var/lib file systems then we will try to get images
+        # for all those mount points. Images data are to be defined
+        # at provision.json -> ['ks_meta']['image_data']
         for fs in partition_scheme.fss:
-            if fs.mount == 'swap':
+            if fs.mount not in data['ks_meta']['image_data']:
                 continue
-            # We assume for every file system user needs to provide
-            # file system image. For example if partitioning scheme has
-            # /, /boot, /var/lib file systems then will try to download
-            # profile.img.gz, profile-boot.img.gz and profile-var-lib.img.gz
-            # files and copy them to corresponding volumes.
-            uri = 'http://%s/targetimages/%s%s.img.gz' % (
-                data['ks_meta']['master_ip'],
-                data['profile'].split('_')[0],
-                # / => ''
-                # /boot => '-boot'
-                # /var/lib => '-var-lib'
-                '-'.join(fs.mount.split('/')).rstrip('-')
-            )
+            image_data = data['ks_meta']['image_data'][fs.mount]
             image_scheme.add_image(
-                uri=uri,
+                uri=image_data['uri'],
                 target_device=fs.device,
                 # In the future we will get image_format and container format
                 # from provision.json, but currently it is hard coded.
-                image_format='ext4',
-                container='gzip',
+                image_format=image_data['format'],
+                container=image_data['container'],
             )
         return image_scheme

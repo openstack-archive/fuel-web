@@ -84,9 +84,13 @@ PROVISION_SAMPLE_DATA = {
     "power_address": "10.20.0.253",
     "name_servers": "\"10.20.0.2\"",
     "ks_meta": {
-        "image_uri": "http://fake_image_url",
-        "image_format": "ext4",
-        "image_container": "gzip",
+        "image_data": {
+            "/": {
+                "uri": "http://fake_image_url",
+                "format": "ext4",
+                "container": "gzip"
+            }
+        },
         "timezone": "America/Los_Angeles",
         "master_ip": "10.20.0.2",
         "mco_enable": 1,
@@ -480,16 +484,14 @@ class TestNailgun(test_base.BaseTestCase):
         i_scheme = self.drv.image_scheme(p_scheme)
         expected_images = []
         for fs in p_scheme.fss:
-            if fs.mount == 'swap':
+            if fs.mount not in PROVISION_SAMPLE_DATA['ks_meta']['image_data']:
                 continue
+            i_data = PROVISION_SAMPLE_DATA['ks_meta']['image_data'][fs.mount]
             expected_images.append(image.Image(
-                uri='http://%s/targetimages/%s%s.img.gz' % (
-                    self.drv.data['ks_meta']['master_ip'],
-                    self.drv.data['profile'].split('_')[0],
-                    '-'.join(fs.mount.split('/')).rstrip('-')),
+                uri=i_data['uri'],
                 target_device=fs.device,
-                image_format='ext4',
-                container='gzip'
+                image_format=i_data['format'],
+                container=i_data['container'],
             ))
         expected_images = sorted(expected_images, key=lambda x: x.uri)
         for i, img in enumerate(sorted(i_scheme.images, key=lambda x: x.uri)):

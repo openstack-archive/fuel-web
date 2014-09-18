@@ -163,3 +163,16 @@ def upgrade_clusters_replaced_info(connection):
             deploy=jsonutils.dumps({}),
             provision=jsonutils.dumps(provisioning_info),
             id=cluster[0])
+
+
+def upgrade_release_set_deployable_false(connection, versions):
+    """Set deployable=False for a given versions list.
+
+    :param connection: a database connection
+    :param versions: a list of versions to be forbidden
+    """
+    update_query = text(
+        "UPDATE releases SET is_deployable = 'false' "
+        "   WHERE version IN :versions")
+
+    connection.execute(update_query, versions=tuple(versions))

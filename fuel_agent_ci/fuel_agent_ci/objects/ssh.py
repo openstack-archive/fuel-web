@@ -23,13 +23,15 @@ LOG = logging.getLogger(__name__)
 class Ssh(Object):
     __typename__ = 'ssh'
 
-    def __init__(self, env, name, host, key_filename, user='root', timeout=5):
+    def __init__(self, env, name, host, key_filename, user='root',
+                 connection_timeout=5, command_timeout=10):
         self.env = env
         self.name = name
         self.host = host
         self.user = user
         self.key_filename = key_filename
-        self.timeout = timeout
+        self.connection_timeout = int(connection_timeout)
+        self.command_timeout = int(command_timeout)
 
     def status(self):
         status = self.env.driver.ssh_status(self)
@@ -43,6 +45,13 @@ class Ssh(Object):
         else:
             raise Exception('Wrong ssh status: %s' % self.name)
 
+    def get_file(self, remote_filename, filename):
+        if self.status():
+            LOG.debug('Getting file %s' % self.name)
+            self.env.driver.ssh_get_file(self, remote_filename, filename)
+        else:
+            raise Exception('Wrong ssh status: %s' % self.name)
+
     def put_file(self, filename, remote_filename):
         if self.status():
             LOG.debug('Putting file %s' % self.name)
@@ -50,16 +59,18 @@ class Ssh(Object):
         else:
             raise Exception('Wrong ssh status: %s' % self.name)
 
-    def run(self, command, command_timeout=10):
+    def run(self, command, command_timeout=None):
         if self.status():
             LOG.debug('Running command %s' % self.name)
-            return self.env.driver.ssh_run(self, command, command_timeout)
+            return self.env.driver.ssh_run(
+                self, command, command_timeout or self.command_timeout)
         raise Exception('Wrong ssh status: %s' % self.name)
 
     def wait(self, timeout=200):
         begin_time = time.time()
         # this loop does not have sleep statement
-        # because it relies on self.timeout which is by default 5 seconds
+        # because it relies on self.connection_timeout
+        # which is by default 5 seconds
         while time.time() - begin_time < timeout:
             if self.status():
                 return True

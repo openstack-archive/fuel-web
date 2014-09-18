@@ -212,11 +212,12 @@ class Cluster(NailgunObject):
         :param instance: Cluster instance
         :returns: None
         """
+
+        editable = instance.release.attributes_metadata.get("editable")
+        editable['common']['debug']['value'] = settings.DIAG_MODE
         attributes = Attributes.create(
             {
-                "editable": instance.release.attributes_metadata.get(
-                    "editable"
-                ),
+                "editable": editable,
                 "generated": instance.release.attributes_metadata.get(
                     "generated"
                 ),

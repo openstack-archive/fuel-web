@@ -79,3 +79,7 @@ class UnsupportedActionTypeError(FuelUpgradeException):
 
 class NailgunIsNotRunningError(FuelUpgradeException):
     pass
+
+
+class OstfIsNotRunningError(FuelUpgradeException):
+    pass

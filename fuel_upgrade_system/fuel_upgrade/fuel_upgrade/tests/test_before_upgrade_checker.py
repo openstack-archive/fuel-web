@@ -19,6 +19,7 @@ import mock
 import requests
 
 from fuel_upgrade.before_upgrade_checker import CheckFreeSpace
+from fuel_upgrade.before_upgrade_checker import CheckNoRunningOstf
 from fuel_upgrade.before_upgrade_checker import CheckNoRunningTasks
 from fuel_upgrade.before_upgrade_checker import CheckUpgradeVersions
 from fuel_upgrade import errors
@@ -68,6 +69,40 @@ class TestCheckNoRunningTasks(BaseTestCase):
             'Cannot connect to rest api service',
             checker.check)
         self.called_once(get_tasks_mock)
+
+
+class TestCheckNoRunningOstf(BaseTestCase):
+
+    def setUp(self):
+        config = mock.MagicMock()
+        config.endpoints = {'ostf': {'host': '127.0.0.1', 'port': 1234}}
+
+        self.checker = CheckNoRunningOstf(config)
+
+    @mock.patch('fuel_upgrade.before_upgrade_checker.OSTFClient.get_tasks',
+                return_value=[{'status': 'running'}])
+    def test_check_raises_error(self, get_mock):
+        self.assertRaisesRegexp(
+            errors.CannotRunUpgrade,
+            'Cannot run upgrade since there are OSTF running tasks.',
+            self.checker.check)
+
+        self.called_once(get_mock)
+
+    @mock.patch('fuel_upgrade.before_upgrade_checker.OSTFClient.get_tasks',
+                return_value=[{'status': 'finished'}])
+    def test_check_upgrade_opportunity_does_not_raise_error(self, get_mock):
+        self.checker.check()
+        self.called_once(get_mock)
+
+    @mock.patch('fuel_upgrade.before_upgrade_checker.OSTFClient.get_tasks',
+                side_effect=requests.ConnectionError(''))
+    def test_check_raises_error_if_ostf_is_not_running(self, get_mock):
+        self.assertRaisesRegexp(
+            errors.OstfIsNotRunningError,
+            'Cannot connect to OSTF service.',
+            self.checker.check)
+        self.called_once(get_mock)
 
 
 @mock.patch('fuel_upgrade.before_upgrade_checker.utils.find_mount_point',

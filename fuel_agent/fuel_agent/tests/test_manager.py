@@ -131,7 +131,7 @@ class TestManager(test_base.BaseTestCase):
     def test_do_configdrive(self, mock_lbd, mock_u_ras, mock_u_e):
         mock_lbd.return_value = test_nailgun.LIST_BLOCK_DEVICES_SAMPLE
         self.mgr.do_parsing()
-        self.assertEqual(4, len(self.mgr.image_scheme.images))
+        self.assertEqual(1, len(self.mgr.image_scheme.images))
         self.mgr.do_configdrive()
         mock_u_ras_expected_calls = [
             mock.call(CONF.nc_template_path, 'cloud_config_ubuntu.jinja2',
@@ -155,7 +155,7 @@ class TestManager(test_base.BaseTestCase):
                       '%s/%s' % (CONF.tmp_path, 'user-data'),
                       '%s/%s' % (CONF.tmp_path, 'meta-data'))]
         self.assertEqual(mock_u_e_expected_calls, mock_u_e.call_args_list)
-        self.assertEqual(5, len(self.mgr.image_scheme.images))
+        self.assertEqual(2, len(self.mgr.image_scheme.images))
         cf_drv_img = self.mgr.image_scheme.images[-1]
         self.assertEqual('file://%s' % CONF.config_drive_path, cf_drv_img.uri)
         self.assertEqual('/dev/sda7',
@@ -200,7 +200,7 @@ class TestManager(test_base.BaseTestCase):
         self.mgr.do_configdrive()
         self.mgr.do_copyimage()
         imgs = self.mgr.image_scheme.images
-        self.assertEqual(5, len(imgs))
+        self.assertEqual(2, len(imgs))
         expected_processors_list = []
         for img in imgs[:-1]:
             expected_processors_list += [

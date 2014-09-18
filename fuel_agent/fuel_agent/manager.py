@@ -17,6 +17,7 @@ import os
 from oslo.config import cfg
 
 from fuel_agent import errors
+from fuel_agent.openstack.common import log as logging
 from fuel_agent.utils import artifact_utils as au
 from fuel_agent.utils import fs_utils as fu
 from fuel_agent.utils import grub_utils as gu
@@ -50,6 +51,8 @@ opts = [
 
 CONF = cfg.CONF
 CONF.register_opts(opts)
+
+LOG = logging.getLogger(__name__)
 
 
 class Manager(object):
@@ -151,13 +154,14 @@ class Manager(object):
             processing.append(image.target_device)
             # For every file system in partitioning scheme we call
             # make_fs utility. That means we do not care whether fs image
-            # is available for a particular file system.
+            # is available for a particular file system or not.
             # If image is not available we assume user wants to
             # leave this file system un-touched.
             try:
                 processing.process()
-            except Exception:
-                pass
+            except Exception as e:
+                LOG.warn('Exception while processing image: uri=%s exc=%s' %
+                         (image.uri, e.message))
 
     def mount_target(self, chroot):
         # Here we are going to mount all file systems in partition scheme.

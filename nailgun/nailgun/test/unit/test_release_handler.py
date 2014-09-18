@@ -62,3 +62,46 @@ class TestHandlers(BaseIntegrationTest):
             "Can't delete release with "
             "clusters assigned"
         )
+
+    def test_release_put_deployable(self):
+        # make sure that we don't have experimental mode
+        from nailgun.settings import settings
+        settings.VERSION['feature_groups'] = ['mirantis']
+
+        release = self.env.create_release(api=False)
+
+        for deployable in (False, True):
+            resp = self.app.put(
+                reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
+                params=jsonutils.dumps({
+                    'is_deployable': deployable,
+                }),
+                headers=self.default_headers)
+            self.assertEqual(200, resp.status_code)
+            response = jsonutils.loads(resp.body)
+
+            self.assertEqual(response['is_deployable'], deployable)
+
+    def test_release_deployable_in_experimental(self):
+        # make sure that we have experimental mode
+        from nailgun.settings import settings
+        settings.VERSION['feature_groups'] = ['experimental']
+
+        # set deployable to False
+        release = self.env.create_release(api=False)
+        resp = self.app.put(
+            reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
+            params=jsonutils.dumps({
+                'is_deployable': False,
+            }),
+            headers=self.default_headers)
+        self.assertEqual(200, resp.status_code)
+
+        # check that release is deployable
+        resp = self.app.get(
+            reverse('ReleaseHandler', kwargs={'obj_id': release.id}),
+            headers=self.default_headers,
+        )
+        self.assertEqual(200, resp.status_code)
+        response = jsonutils.loads(resp.body)
+        self.assertEqual(response['is_deployable'], True)

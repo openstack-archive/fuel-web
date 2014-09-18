@@ -30,6 +30,7 @@ class Driver(object):
         'ssh_status': fabric_driver,
         'ssh_put_content': fabric_driver,
         'ssh_put_file': fabric_driver,
+        'ssh_get_file': fabric_driver,
         'ssh_run': fabric_driver,
 
         # these methods are from libvirt_driver

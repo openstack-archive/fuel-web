@@ -1,0 +1,249 @@
+{
+    "profile": "{{PROFILE}}",
+    "hostname": "node-1.domain.tld",
+    "name_servers_search": "\"domain.tld\"",
+    "uid": "1",
+    "interfaces": {
+        "eth0": {
+            "dns_name": "node-1.domain.tld",
+            "netmask": "255.255.255.0",
+            "mac_address": "{{MAC}}",
+            "ip_address": "{{IP}}",
+            "static": "0"
+        }
+    },
+    "interfaces_extra": {
+        "eth0": {
+            "onboot": "yes",
+            "peerdns": "no"
+        }
+    },
+    "power_type": "ssh",
+    "power_user": "root",
+    "kernel_options": {
+        "udevrules": "{{MAC}}_eth0",
+        "netcfg/choose_interface": "{{MAC}}"
+    },
+    "name": "node-1",
+    "power_address": "{{IP}}",
+    "name_servers": "\"{{MASTER_IP}}\"",
+    "slave_name": "node-1",
+    "netboot_enabled": "1",
+    "power_pass": "/root/.ssh/bootstrap.rsa",
+    "ks_meta": {
+        "mco_user": "mcollective",
+        "mco_enable": 1,
+        "mco_vhost": "mcollective",
+        "mco_password": "marionette",
+        "auth_key": "fake_auth_key",
+        "puppet_enable": 0,
+        "image_container": "gzip",
+        "puppet_auto_setup": 1,
+        "mco_pskey": "unset",
+        "master_ip": "{{MASTER_IP}}",
+        {% block image_data %}
+        "image_data": {
+            "/": {
+                "uri": "http://{{MASTER_IP}}:{{MASTER_HTTP_PORT}}/{{PROFILE}}.img.gz",
+                "format": "ext4",
+                "container": "gzip"
+            }
+        },
+        {% endblock image_data %}
+        "mco_connector": "rabbitmq",
+        "pm_data": {
+            "kernel_params": "console=ttyS0,9600 console=tty0 rootdelay=90 nomodeset",
+            {% block ks_spaces %}
+            "ks_spaces": [
+                {
+                    "name": "sda",
+                    "extra": [
+                        "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-0"
+                    ],
+                    "free_space": 10001,
+                    "volumes": [
+                        {
+                            "type": "boot",
+                            "size": 300
+                        },
+                        {
+                            "mount": "/boot",
+                            "type": "raid",
+                            "file_system": "ext2",
+                            "name": "Boot",
+                            "size": 200
+                        },
+                        {
+                            "partition_guid": "0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                            "name": "TMP",
+                            "mount": "/tmp",
+                            "type": "partition",
+                            "file_system": "ext2",
+                            "size": 200
+                        },
+                        {
+                            "type": "lvm_meta_pool",
+                            "size": 0
+                        },
+                        {
+                            "vg": "os",
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "size": 3333
+                        },
+                        {
+                            "vg": "image",
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "size": 800
+                        }
+                    ],
+                    "type": "disk",
+                    "id": "sda",
+                    "size": 10240
+                },
+                {
+                    "name": "sdb",
+                    "extra": [
+                        "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-1"
+                    ],
+                    "free_space": 10001,
+                    "volumes": [
+                        {
+                            "type": "boot",
+                            "size": 300
+                        },
+                        {
+                            "mount": "/boot",
+                            "type": "raid",
+                            "file_system": "ext2",
+                            "name": "Boot",
+                            "size": 200
+                        },
+                        {
+                            "type": "lvm_meta_pool",
+                            "size": 64
+                        },
+                        {
+                            "vg": "os",
+                            "type": "pv",
+                            "lvm_meta_size": 0,
+                            "size": 0
+                        },
+                        {
+                            "vg": "image",
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "size": 4444
+                        }
+                    ],
+                    "type": "disk",
+                    "id": "sdb",
+                    "size": 10240
+                },
+                {
+                    "name": "sdc",
+                    "extra": [
+                        "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-2"
+                    ],
+                    "free_space": 10001,
+                    "volumes": [
+                        {
+                            "type": "boot",
+                            "size": 300
+                        },
+                        {
+                            "mount": "/boot",
+                            "type": "raid",
+                            "file_system": "ext2",
+                            "name": "Boot",
+                            "size": 200
+                        },
+                        {
+                            "type": "lvm_meta_pool",
+                            "size": 64
+                        },
+                        {
+                            "vg": "os",
+                            "type": "pv",
+                            "lvm_meta_size": 0,
+                            "size": 0
+                        },
+                        {
+                            "vg": "image",
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "size": 1971
+                        }
+                    ],
+                    "type": "disk",
+                    "id": "disk/by-path/pci-0000:00:04.0-scsi-0:0:2:0",
+                    "size": 10240
+                },
+                {
+                    "_allocate_size": "min",
+                    "label": "Base System",
+                    "min_size": 2047,
+                    "volumes": [
+                        {
+                            "mount": "/",
+                            "type": "lv",
+                            "name": "root",
+                            "file_system": "ext4",
+                            "size": 1900
+                        },
+                        {
+                            "mount": "swap",
+                            "type": "lv",
+                            "name": "swap",
+                            "file_system": "swap",
+                            "size": 43
+                        }
+                    ],
+                    "type": "vg",
+                    "id": "os"
+                },
+                {
+                    "_allocate_size": "min",
+                    "label": "Zero size volume",
+                    "min_size": 0,
+                    "volumes": [
+                        {
+                            "mount": "none",
+                            "type": "lv",
+                            "name": "zero_size",
+                            "file_system": "xfs",
+                            "size": 0
+                        }
+                    ],
+                    "type": "vg",
+                    "id": "zero_size"
+                },
+                {
+                    "_allocate_size": "all",
+                    "label": "Image Storage",
+                    "min_size": 1120,
+                    "volumes": [
+                        {
+                            "mount": "/var/lib/glance",
+                            "type": "lv",
+                            "name": "glance",
+                            "file_system": "xfs",
+                            "size": 1757
+                        }
+                    ],
+                    "type": "vg",
+                    "id": "image"
+                }
+            ]
+            {% endblock ks_spaces %}
+        },
+        "fuel_version": "5.0.1",
+        "install_log_2_syslog": 1,
+        "timezone": "America/Los_Angeles",
+        "image_format": "raw",
+        "mco_host": "{{MASTER_IP}}",
+        "puppet_master": "fuel.domain.tld",
+        "mco_auto_setup": 1
+    }
+}

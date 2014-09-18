@@ -90,21 +90,21 @@ class TestPartition(base.BaseFuelAgentCITest):
                                 _split_strip_to_lines(actual))
 
     def _test_partitioning(self, canned_parted_info):
-        self.env.ssh_by_name(self.name).run(
-            'partition', command_timeout=base.SSH_COMMAND_TIMEOUT)
+        self.ssh.run('partition')
+
         #FIXME(agordeev): mdadm resyncing time
         time.sleep(10)
 
         for disk_name, expected_parted_info in canned_parted_info.items():
-            actual_parted_info = self.env.ssh_by_name(self.name).run(
+            actual_parted_info = self.ssh.run(
                 'parted -s /dev/%s -m unit MiB print free' % disk_name)
             self.compare_output(expected_parted_info, actual_parted_info)
 
-        actual_guid = self.env.ssh_by_name(self.name).run(
+        actual_guid = self.ssh.run(
             'sgdisk -i 4 /dev/sda').split('\n')[0].split()[3]
         self.assertEqual("0FC63DAF-8483-4772-8E79-3D69D8477DE4", actual_guid)
 
-        actual_md_output = self.env.ssh_by_name(self.name).run(
+        actual_md_output = self.ssh.run(
             'mdadm --detail %s' % '/dev/md0')
 
         #NOTE(agordeev): filter out lines with time stamps and UUID
@@ -141,14 +141,14 @@ class TestPartition(base.BaseFuelAgentCITest):
                                        /dev/sda6;image;668.00m;800.00m
                                        /dev/sdb4;image;4312.00m;4444.00m
                                        /dev/sdc4;image;1840.00m;1971.00m"""
-        pvdisplay_actual_output = self.env.ssh_by_name(self.name).run(
+        pvdisplay_actual_output = self.ssh.run(
             'pvdisplay -C --noheading --units m --options '
             'pv_name,vg_name,pv_size,dev_size --separator ";"')
         self.compare_output(pvdisplay_expected_output, pvdisplay_actual_output)
 
         vgdisplay_expected_output = """image;6820.00m;5060.00m
                                        os;3204.00m;1260.00m"""
-        vgdisplay_actual_output = self.env.ssh_by_name(self.name).run(
+        vgdisplay_actual_output = self.ssh.run(
             'vgdisplay -C --noheading --units m --options '
             'vg_name,vg_size,vg_free --separator ";"')
         self.compare_output(vgdisplay_expected_output, vgdisplay_actual_output)
@@ -156,7 +156,7 @@ class TestPartition(base.BaseFuelAgentCITest):
         lvdisplay_expected_output = """glance;1760.00m;image
                                        root;1900.00m;os
                                        swap;44.00m;os"""
-        lvdisplay_actual_output = self.env.ssh_by_name(self.name).run(
+        lvdisplay_actual_output = self.ssh.run(
             'lvdisplay -C --noheading --units m --options '
             'lv_name,lv_size,vg_name --separator ";"')
         self.compare_output(lvdisplay_expected_output, lvdisplay_actual_output)
@@ -167,29 +167,47 @@ class TestPartition(base.BaseFuelAgentCITest):
                             ('/dev/mapper/os-swap', 'swap', ''),
                             ('/dev/mapper/image-glance', 'xfs', '')]
         for device, fs_type, label in expected_fs_data:
-            fs_type_output = self.env.ssh_by_name(self.name).run(
+            fs_type_output = self.ssh.run(
                 'blkid -o value -s TYPE %s' % device)
             self.assertEqual(fs_type, fs_type_output)
-            label_output = self.env.ssh_by_name(self.name).run(
+            label_output = self.ssh.run(
                 'blkid -o value -s LABEL %s' % device)
             self.assertEqual(label, label_output)
             #TODO(agordeev): check fs options and mount point
 
     def test_do_partitioning_gpt(self):
+        provision_data = self.render_template(
+            template_data={
+                'IP': self.dhcp_hosts[0]['ip'],
+                'MAC': self.dhcp_hosts[0]['mac'],
+                'MASTER_IP': self.net.ip,
+                'MASTER_HTTP_PORT': self.http.port,
+                'PROFILE': 'ubuntu_1204_x86_64'
+            },
+            template_name='provision.json'
+        )
+        self.ssh.put_content(provision_data, '/tmp/provision.json')
         self._test_partitioning(REGULAR_PARTED_INFO)
 
     def test_do_ceph_partitioning(self):
-        p_data = base.get_filled_provision_data_for_ceph(
-            self.dhcp_hosts[0]['ip'], self.dhcp_hosts[0]['mac'], self.net.ip,
-            self.http_obj.port)
-        self.env.ssh_by_name(self.name).put_content(
-            json.dumps(p_data), os.path.join('/tmp', 'provision.json'))
+        provision_data = self.render_template(
+            template_data={
+                'IP': self.dhcp_hosts[0]['ip'],
+                'MAC': self.dhcp_hosts[0]['mac'],
+                'MASTER_IP': self.net.ip,
+                'MASTER_HTTP_PORT': self.http.port,
+                'PROFILE': 'ubuntu_1204_x86_64'
+            },
+            template_name='provision_ceph.json'
+        )
+        self.ssh.put_content(provision_data, '/tmp/provision.json')
         self._test_partitioning(CEPH_PARTED_INFO)
-        #NOTE(agordeev): checking if GUIDs are correct for ceph partitions
+        # NOTE(agordeev): checking if GUIDs are correct for ceph partitions
         ceph_partitions = {'sda': 7, 'sdb': 5, 'sdc': 5}
         for disk_name, partition_num in ceph_partitions.items():
-            actual_guid = self.env.ssh_by_name(self.name).run(
+            actual_guid = self.ssh.run(
                 'sgdisk -i %s /dev/%s' % (partition_num, disk_name)).\
                 split('\n')[0].split()[3]
-            self.assertEqual(base.CEPH_DATA['partition_guid'].upper(),
+            self.assertEqual('4fbd7e29-9d25-41b8-afd0-062c0ceff05d'.upper(),
                              actual_guid)
+        # FIXME(kozhukalov): check if ceph journals are created and their GUIDs

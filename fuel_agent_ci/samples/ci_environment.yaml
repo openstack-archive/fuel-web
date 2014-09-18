@@ -23,11 +23,12 @@ ssh:
     host: "10.250.2.20"
     user: "root"
     key_filename: "ssh/id_rsa"
+    command_timeout: 150
 
 repo:
   - name: "fuel_agent"
-    url: "https://github.com/stackforge/fuel-web.git"
-    branch: "master"
+    url: "https://github.com/kozhukalov/fuel-web.git"
+    branch: "fuel_agent_bootloader_functional"
     path: "fuel_agent"
 
 artifact:

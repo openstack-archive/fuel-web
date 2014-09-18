@@ -1,0 +1,23 @@
+hacking>=0.8.0,<0.9
+mock>=1.0
+oslotest==1.0
+testtools>=0.9.34
+testrepository>=0.0.18
+Jinja2
+# those dependencies are to be able to run nosetests
+nose==1.1.2
+unittest2==0.5.1
+nose2==0.4.1
+# as far as we still need fuel-agent itself for testing it
+# (we build configdrive using fuel-agent capabilities)
+# we need fuel-agent dependencies to be installed in testing environment
+Babel>=1.3
+eventlet>=0.13.0
+iso8601>=0.1.9
+jsonschema>=2.3.0
+oslo.config>=1.2.0
+six>=1.5.2
+pbr>=0.7.0
+#Jinja2
+stevedore>=0.15
+#requests>=1.2.3

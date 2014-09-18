@@ -14,6 +14,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from sqlalchemy import Boolean
 from sqlalchemy import Column
 from sqlalchemy import Enum
 from sqlalchemy import ForeignKey
@@ -68,6 +69,8 @@ class Release(Base):
     modes_metadata = Column(JSON, default={})
     roles_metadata = Column(JSON, default={})
     wizard_metadata = Column(JSON, default={})
+    is_deployable = Column(Boolean, default=True, nullable=False)
+
     role_list = relationship(
         "Role",
         backref="release",

@@ -98,7 +98,8 @@ class Release(NailgunObject):
             "roles_metadata": {"type": "object"},
             "wizard_metadata": {"type": "object"},
             "roles": {"type": "array"},
-            "clusters": {"type": "array"}
+            "clusters": {"type": "array"},
+            "is_deployable": {"type": "boolean"}
         }
     }
 
@@ -207,6 +208,18 @@ class Release(NailgunObject):
             "puppet_manifests_source":
             instance.orchestrator_data.puppet_manifests_source
         } if instance.orchestrator_data else default_orchestrator_data
+
+    @classmethod
+    def is_deployable(cls, instance):
+        """Returns whether a given release deployable or not.
+
+        :param instance: a :cls:`Release` instance
+        :returns: True if a given release is deployable; otherwise - False
+        """
+        # in experimental mode we deploy all releases
+        if 'experimental' in settings.VERSION['feature_groups']:
+            return True
+        return instance.is_deployable
 
 
 class ReleaseCollection(NailgunCollection):

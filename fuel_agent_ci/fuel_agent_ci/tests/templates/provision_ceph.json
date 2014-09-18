@@ -1,0 +1,239 @@
+{% extends 'provision.json' %}
+{% block ks_spaces %}
+            "ks_spaces": [
+                {
+                    "name": "sda",
+                    "extra": [
+                        "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-0"
+                    ],
+                    "free_space": 10001,
+                    "volumes": [
+                        {
+                            "type": "boot",
+                            "size": 300
+                        },
+                        {
+                            "mount": "/boot",
+                            "type": "raid",
+                            "file_system": "ext2",
+                            "name": "Boot",
+                            "size": 200
+                        },
+                        {
+                            "partition_guid": "0FC63DAF-8483-4772-8E79-3D69D8477DE4",
+                            "name": "TMP",
+                            "mount": "/tmp",
+                            "type": "partition",
+                            "file_system": "ext2",
+                            "size": 200
+                        },
+                        {
+                            "type": "lvm_meta_pool",
+                            "size": 0
+                        },
+                        {
+                            "vg": "os",
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "size": 3333
+                        },
+                        {
+                            "vg": "image",
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "size": 800
+                        },
+                        {
+                            "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
+                            "name": "cephjournal",
+                            "mount": "none",
+                            "disk_label": "",
+                            "type": "partition",
+                            "file_system": "none",
+                            "size": 0
+                        },
+                        {
+                            "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
+                            "name": "ceph",
+                            "mount": "none",
+                            "disk_label": "",
+                            "type": "partition",
+                            "file_system": "none",
+                            "size": 3333
+                        }
+                    ],
+                    "type": "disk",
+                    "id": "sda",
+                    "size": 10240
+                },
+                {
+                    "name": "sdb",
+                    "extra": [
+                        "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-1"
+                    ],
+                    "free_space": 10001,
+                    "volumes": [
+                        {
+                            "type": "boot",
+                            "size": 300
+                        },
+                        {
+                            "mount": "/boot",
+                            "type": "raid",
+                            "file_system": "ext2",
+                            "name": "Boot",
+                            "size": 200
+                        },
+                        {
+                            "type": "lvm_meta_pool",
+                            "size": 64
+                        },
+                        {
+                            "vg": "os",
+                            "type": "pv",
+                            "lvm_meta_size": 0,
+                            "size": 0
+                        },
+                        {
+                            "vg": "image",
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "size": 4444
+                        },
+                        {
+                            "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
+                            "name": "cephjournal",
+                            "mount": "none",
+                            "disk_label": "",
+                            "type": "partition",
+                            "file_system": "none",
+                            "size": 0
+                        },
+                        {
+                            "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
+                            "name": "ceph",
+                            "mount": "none",
+                            "disk_label": "",
+                            "type": "partition",
+                            "file_system": "none",
+                            "size": 3333
+                        }
+                    ],
+                    "type": "disk",
+                    "id": "sdb",
+                    "size": 10240
+                },
+                {
+                    "name": "sdc",
+                    "extra": [
+                        "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-2"
+                    ],
+                    "free_space": 10001,
+                    "volumes": [
+                        {
+                            "type": "boot",
+                            "size": 300
+                        },
+                        {
+                            "mount": "/boot",
+                            "type": "raid",
+                            "file_system": "ext2",
+                            "name": "Boot",
+                            "size": 200
+                        },
+                        {
+                            "type": "lvm_meta_pool",
+                            "size": 64
+                        },
+                        {
+                            "vg": "os",
+                            "type": "pv",
+                            "lvm_meta_size": 0,
+                            "size": 0
+                        },
+                        {
+                            "vg": "image",
+                            "type": "pv",
+                            "lvm_meta_size": 64,
+                            "size": 1971
+                        },
+                        {
+                            "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
+                            "name": "cephjournal",
+                            "mount": "none",
+                            "disk_label": "",
+                            "type": "partition",
+                            "file_system": "none",
+                            "size": 0
+                        },
+                        {
+                            "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
+                            "name": "ceph",
+                            "mount": "none",
+                            "disk_label": "",
+                            "type": "partition",
+                            "file_system": "none",
+                            "size": 3333
+                        }
+                    ],
+                    "type": "disk",
+                    "id": "disk/by-path/pci-0000:00:04.0-scsi-0:0:2:0",
+                    "size": 10240
+                },
+                {
+                    "_allocate_size": "min",
+                    "label": "Base System",
+                    "min_size": 2047,
+                    "volumes": [
+                        {
+                            "mount": "/",
+                            "type": "lv",
+                            "name": "root",
+                            "file_system": "ext4",
+                            "size": 1900
+                        },
+                        {
+                            "mount": "swap",
+                            "type": "lv",
+                            "name": "swap",
+                            "file_system": "swap",
+                            "size": 43
+                        }
+                    ],
+                    "type": "vg",
+                    "id": "os"
+                },
+                {
+                    "_allocate_size": "min",
+                    "label": "Zero size volume",
+                    "min_size": 0,
+                    "volumes": [
+                        {
+                            "mount": "none",
+                            "type": "lv",
+                            "name": "zero_size",
+                            "file_system": "xfs",
+                            "size": 0
+                        }
+                    ],
+                    "type": "vg",
+                    "id": "zero_size"
+                },
+                {
+                    "_allocate_size": "all",
+                    "label": "Image Storage",
+                    "min_size": 1120,
+                    "volumes": [
+                        {
+                            "mount": "/var/lib/glance",
+                            "type": "lv",
+                            "name": "glance",
+                            "file_system": "xfs",
+                            "size": 1757
+                        }
+                    ],
+                    "type": "vg",
+                    "id": "image"
+                }
+            ]
+            {% endblock ks_spaces %}

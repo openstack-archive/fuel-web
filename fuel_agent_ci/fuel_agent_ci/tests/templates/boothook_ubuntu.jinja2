@@ -1,0 +1,74 @@
+#cloud-boothook
+#!/bin/bash
+
+function add_str_to_file_if_not_exists {
+    file=$1
+    str=$2
+    val=$3
+    if ! grep -q "^ *${str}" $file; then
+        echo $val >> $file
+    fi
+}
+
+# configure udev rules
+
+# udev persistent net
+cloud-init-per instance udev_persistent_net1 /etc/init.d/networking stop
+
+ADMIN_MAC={{ ADMIN_MAC }}
+ADMIN_IF=$(echo {{ UDEVRULES }} | sed 's/[,=]/\n/g' | grep "$ADMIN_MAC" | cut -d_ -f2 | head -1)
+INSTALL_IF=$(ifconfig | grep "$ADMIN_MAC" | head -1 | cut -d' ' -f1)
+# Check if we do not already have static config (or interface seems unconfigured)
+NETADDR=( $(ifconfig $INSTALL_IF | grep -oP "[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}") )
+if [ ! -z "$(grep $ADMIN_IF /etc/network/interfaces.d/ifcfg-$ADMIN_IF | grep dhcp)" ] ; then
+    echo -e "auto $ADMIN_IF\niface $ADMIN_IF inet static\n\taddress ${NETADDR[0]}\n\tnetmask ${NETADDR[2]}\n\tbroadcast ${NETADDR[1]}" > /etc/network/interfaces.d/ifcfg-"$ADMIN_IF"
+fi
+#Add static udev rules
+cloud-init-per instance udev_persistent_net2 echo {{ UDEVRULES }} | tr ' ' '\n' | grep udevrules | tr '[:upper:]' '[:lower:]' | sed -e 's/udevrules=//g' -e 's/,/\n/g' | sed -e "s/^/SUBSYSTEM==\"net\",\ ACTION==\"add\",\ DRIVERS==\"?*\",\ ATTR{address}==\"/g" -e "s/_/\",\ ATTR{type}==\"1\",\ KERNEL==\"eth*\",\ NAME=\"/g" -e "s/$/\"/g" | tee /etc/udev/rules.d/70-persistent-net.rules
+
+cloud-init-per instance udev_persistent_net3 udevadm control --reload-rules
+cloud-init-per instance udev_persistent_net4 udevadm trigger --attr-match=subsystem=net
+cloud-init-per instance udev_persistent_net5 /etc/init.d/networking start
+
+# end of udev
+
+# configure black module lists
+# virt-what should be installed
+if [ ! -f /etc/modprobe.d/blacklist-i2c_piix4.conf ]; then
+    ([[ $(virt-what) = "virtualbox" ]] && echo "blacklist i2c_piix4" >> /etc/modprobe.d/blacklist-i2c_piix4.conf || :) && update-initramfs -u -k all
+    modprobe -r i2c_piix4
+fi
+
+cloud-init-per instance conntrack_ipv4 echo nf_conntrack_ipv4 | tee -a /etc/modules
+cloud-init-per instance conntrack_ipv6 echo nf_conntrack_ipv6 | tee -a /etc/modules
+cloud-init-per instance conntrack_max echo "net.nf_conntrack_max=1048576" | tee -a /etc/sysctl.conf
+
+cloud-init-per instance conntrack_ipv4_load modprobe nf_conntrack_ipv4
+cloud-init-per instance conntrack_ipv6_load modprobe nf_conntrack_ipv6
+cloud-init-per instance conntrack_max_set sysctl -w "net.nf_conntrack_max=1048576"
+
+cloud-init-per instance dhclient echo 'supersede routers 0;' | tee /etc/dhcp/dhclient.conf
+
+# ntp sync
+cloud-init-per instance service ntp stop | tee /dev/null
+cloud-init-per instance sync_date ntpdate -t 4 -b {{ MASTER_IP }}
+cloud-init-per instance sync_hwclock hwclock --systohc
+
+cloud-init-per instance edit_ntp_conf1 sed -i '/^\s*tinker panic/ d' /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf2 sed -i '1 i tinker panic 0' /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf3 echo 0 > /var/lib/ntp/drift
+cloud-init-per instance edit_ntp_conf3 sed -i '/^\s*server/ d' /etc/ntp.conf
+cloud-init-per instance edit_ntp_conf4 echo "server {{ MASTER_IP }} burst iburst" | tee -a /etc/ntp.conf
+
+cloud-init-per instance removeUseDNS sed -i --follow-symlinks -e '/UseDNS/d' /etc/ssh/sshd_config
+add_str_to_file_if_not_exists /etc/ssh/sshd_config 'UseDNS' 'UseDNS no'
+
+cloud-init-per instance gssapi_disable sed -i -e "/^\s*GSSAPICleanupCredentials yes/d" -e "/^\s*GSSAPIAuthentication yes/d" /etc/ssh/sshd_config
+
+cloud-init-per instance nailgun_agent echo 'flock -w 0 -o /var/lock/agent.lock -c "/opt/nailgun/bin/agent >> /var/log/nailgun-agent.log 2>&1"' | tee /etc/rc.local
+
+# Copying default bash settings to the root directory
+cloud-init-per instance skel_bash cp -f /etc/skel/.bash* /root/
+
+cloud-init-per instance hiera_puppet mkdir -p /etc/puppet /var/lib/hiera
+cloud-init-per instance touch_puppet touch /var/lib/hiera/common.yaml /etc/puppet/hiera.yaml

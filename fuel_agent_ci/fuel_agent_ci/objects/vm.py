@@ -62,9 +62,10 @@ class Vm(Object):
 
 
 class Interface(object):
-    def __init__(self, mac, network):
+    def __init__(self, mac, network, model_type='e1000'):
         self.mac = mac
         self.network = network
+        self.model_type = model_type
 
 
 class Disk(object):

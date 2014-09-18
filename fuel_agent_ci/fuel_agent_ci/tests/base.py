@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import jinja2
 import json
 import os
+import sys
+import time
+
 try:
     from unittest.case import TestCase
 except ImportError:
@@ -21,332 +25,81 @@ except ImportError:
     from unittest2.case import TestCase
 import yaml
 
-from fuel_agent import manager as fa_manager
 from fuel_agent_ci.objects import environment
 from fuel_agent_ci import utils
 
-FUEL_AGENT_REPO_NAME = 'fuel_agent'
-FUEL_AGENT_HTTP_NAME = 'http'
-FUEL_AGENT_NET_NAME = 'net'
-FUEL_AGENT_DHCP_NAME = 'dhcp'
-FUEL_AGENT_CI_ENVIRONMENT_FILE = 'samples/ci_environment.yaml'
-SSH_COMMAND_TIMEOUT = 150
-CEPH_JOURNAL = {
-    "partition_guid": "45b0969e-9b03-4f30-b4c6-b4b80ceff106",
-    "name": "cephjournal",
-    "mount": "none",
-    "disk_label": "",
-    "type": "partition",
-    "file_system": "none",
-    "size": 0
-}
-CEPH_DATA = {
-    "partition_guid": "4fbd7e29-9d25-41b8-afd0-062c0ceff05d",
-    "name": "ceph",
-    "mount": "none",
-    "disk_label": "",
-    "type": "partition",
-    "file_system": "none",
-    "size": 3333
-}
+# FIXME(kozhukalov) it is better to set this as command line arg
+ENV_FILE = os.path.join(os.path.dirname(__file__),
+                        '../../samples/ci_environment.yaml')
 
 
 class BaseFuelAgentCITest(TestCase):
+    FUEL_AGENT_REPO_NAME = 'fuel_agent'
+    FUEL_AGENT_HTTP_NAME = 'http'
+    FUEL_AGENT_NET_NAME = 'net'
+    FUEL_AGENT_DHCP_NAME = 'dhcp'
+    FUEL_AGENT_SSH_NAME = 'vm'
+    FUEL_AGENT_TEMPLATE_PATH = '/usr/share/fuel-agent/cloud-init-templates'
+
     def setUp(self):
         super(BaseFuelAgentCITest, self).setUp()
-        with open(FUEL_AGENT_CI_ENVIRONMENT_FILE) as f:
+
+        # Starting environment
+        with open(ENV_FILE) as f:
             ENV_DATA = (yaml.load(f.read()))
         self.env = environment.Environment.new(**ENV_DATA)
         self.env.start()
-        self.name = ENV_DATA['vm'][0]['name']
-        repo_obj = self.env.repo_by_name(FUEL_AGENT_REPO_NAME)
-        tgz_name = '%s.tar.gz' % repo_obj.name
-        utils.execute('tar czf %s %s' % (tgz_name,
-                                         os.path.join(self.env.envdir,
-                                                      repo_obj.path)))
-        self.env.ssh_by_name(self.name).wait()
-        self.env.ssh_by_name(self.name).put_file(
-            tgz_name, os.path.join('/tmp', tgz_name))
 
-        self.env.ssh_by_name(self.name).run(
-            'tar xf %s' % os.path.join('/tmp', tgz_name),
-            command_timeout=SSH_COMMAND_TIMEOUT)
-        self.env.ssh_by_name(self.name).run(
-            'pip install setuptools --upgrade',
-            command_timeout=SSH_COMMAND_TIMEOUT)
-        self.env.ssh_by_name(self.name).run(
-            'cd /root/var/tmp/fuel_agent_ci/fuel_agent/fuel_agent; '
-            #FIXME(agordeev): ^ don't hardcode path
-            'python setup.py install', command_timeout=SSH_COMMAND_TIMEOUT)
-        self.http_obj = self.env.http_by_name(FUEL_AGENT_HTTP_NAME)
-        self.dhcp_hosts = self.env.dhcp_by_name(FUEL_AGENT_DHCP_NAME).hosts
-        self.net = self.env.net_by_name(FUEL_AGENT_NET_NAME)
-        p_data = get_filled_provision_data(self.dhcp_hosts[0]['ip'],
-                                           self.dhcp_hosts[0]['mac'],
-                                           self.net.ip, self.http_obj.port)
-        self.env.ssh_by_name(self.name).put_content(
-            json.dumps(p_data), os.path.join('/tmp', 'provision.json'))
-        self.mgr = fa_manager.Manager(p_data)
+        self.repo = self.env.repo_by_name(self.FUEL_AGENT_REPO_NAME)
+        self.ssh = self.env.ssh_by_name(self.FUEL_AGENT_SSH_NAME)
+        self.http = self.env.http_by_name(self.FUEL_AGENT_HTTP_NAME)
+        self.dhcp_hosts = self.env.dhcp_by_name(self.FUEL_AGENT_DHCP_NAME).hosts
+        self.net = self.env.net_by_name(self.FUEL_AGENT_NET_NAME)
+
+        self.ssh.wait()
+        self._upgrade_fuel_agent()
+
+    def _upgrade_fuel_agent(self):
+        """This method is to be deprecated when artifact
+        based build system is ready.
+        """
+        src_dir = os.path.join(self.env.envdir, self.repo.path, 'fuel_agent')
+        package_name = 'fuel-agent-0.1.0.tar.gz'
+
+        # Building fuel-agent pip package
+        utils.execute('python setup.py sdist', cwd=src_dir)
+
+        # Putting fuel-agent pip package on a node
+        self.ssh.put_file(
+            os.path.join(src_dir, 'dist', package_name),
+            os.path.join('/tmp', package_name))
+
+        # Installing fuel_agent pip package
+        self.ssh.run('pip install --upgrade %s' %
+                     os.path.join('/tmp', package_name))
+
+        # Copying fuel_agent templates
+        self.ssh.run('mkdir -p %s' % self.FUEL_AGENT_TEMPLATE_PATH)
+        for f in os.listdir(
+                os.path.join(src_dir, 'cloud-init-templates')):
+            if f.endswith('.jinja2'):
+                self.ssh.put_file(
+                    os.path.join(src_dir, 'cloud-init-templates', f),
+                    os.path.join(self.FUEL_AGENT_TEMPLATE_PATH, f))
+
+        self.ssh.put_file(
+            os.path.join(src_dir, 'etc/fuel-agent/fuel-agent.conf.sample'),
+            '/etc/fuel-agent/fuel-agent.conf')
 
     def tearDown(self):
         super(BaseFuelAgentCITest, self).tearDown()
         self.env.stop()
 
-
-def get_filled_provision_data_for_ceph(ip, mac, master_ip, port=8888,
-                                       profile='ubuntu'):
-    data = get_filled_provision_data(ip, mac, master_ip, port, profile)
-    #FIXME(agordeev): expecting 3 disk devices at least
-    for i in range(0, 3):
-        data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(
-            CEPH_JOURNAL)
-        data['ks_meta']['pm_data']['ks_spaces'][i]['volumes'].append(CEPH_DATA)
-    return data
-
-
-def get_filled_provision_data(ip, mac, master_ip, port=8888, profile='ubuntu'):
-    return {
-        "profile": "ubuntu_1204_x86_64",
-        "name_servers_search": "\"domain.tld\"",
-        "uid": "1",
-        "interfaces": {
-            "eth0": {
-                "ip_address": ip,
-                "dns_name": "node-1.domain.tld",
-                "netmask": "255.255.255.0",
-                "static": "0",
-                "mac_address": mac
-            }
-        },
-        "interfaces_extra": {
-            "eth0": {
-                "onboot": "yes",
-                "peerdns": "no"
-            }
-        },
-        "power_type": "ssh",
-        "power_user": "root",
-        "kernel_options": {
-            "udevrules": "%s_eth0" % mac,
-            "netcfg/choose_interface": mac
-        },
-        "power_address": "10.20.0.253",
-        "name_servers": "\"%s\"" % master_ip,
-        "ks_meta": {
-            "image_uri": "http://%s:%s/%s/%s.img.gz" % (master_ip, port,
-                                                        profile, profile),
-            "image_format": "raw",
-            "image_container": "gzip",
-            "timezone": "America/Los_Angeles",
-            "master_ip": master_ip,
-            "mco_enable": 1,
-            "mco_vhost": "mcollective",
-            "mco_pskey": "unset",
-            "mco_user": "mcollective",
-            "puppet_enable": 0,
-            "fuel_version": "5.0.1",
-            "install_log_2_syslog": 1,
-            "mco_password": "marionette",
-            "puppet_auto_setup": 1,
-            "puppet_master": "fuel.domain.tld",
-            "mco_auto_setup": 1,
-            "auth_key": "fake_auth_key",
-            "pm_data": {
-                "kernel_params": "console=ttyS0,9600 console=tty0 rootdelay=90"
-                                 " nomodeset",
-                "ks_spaces": [
-                    {
-                        "name": "sda",
-                        "extra": [
-                            "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-"
-                            "0-0"
-                        ],
-                        "free_space": 10001,
-                        "volumes": [
-                            {
-                                "type": "boot",
-                                "size": 300
-                            },
-                            {
-                                "mount": "/boot",
-                                "size": 200,
-                                "type": "raid",
-                                "file_system": "ext2",
-                                "name": "Boot"
-                            },
-                            {
-                                "mount": "/tmp",
-                                "size": 200,
-                                "type": "partition",
-                                "file_system": "ext2",
-                                "partition_guid": "0FC63DAF-8483-4772-8E79-"
-                                                  "3D69D8477DE4",
-                                "name": "TMP"
-                            },
-                            {
-                                "type": "lvm_meta_pool",
-                                "size": 0
-                            },
-                            {
-                                "size": 3333,
-                                "type": "pv",
-                                "lvm_meta_size": 64,
-                                "vg": "os"
-                            },
-                            {
-                                "size": 800,
-                                "type": "pv",
-                                "lvm_meta_size": 64,
-                                "vg": "image"
-                            },
-                        ],
-                        "type": "disk",
-                        "id": "sda",
-                        "size": 10240
-                    },
-                    {
-                        "name": "sdb",
-                        "extra": [
-                            "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-"
-                            "0-1"
-                        ],
-                        "free_space": 10001,
-                        "volumes": [
-                            {
-                                "type": "boot",
-                                "size": 300
-                            },
-                            {
-                                "mount": "/boot",
-                                "size": 200,
-                                "type": "raid",
-                                "file_system": "ext2",
-                                "name": "Boot"
-                            },
-                            {
-                                "type": "lvm_meta_pool",
-                                "size": 64
-                            },
-                            {
-                                "size": 0,
-                                "type": "pv",
-                                "lvm_meta_size": 0,
-                                "vg": "os"
-                            },
-                            {
-                                "size": 4444,
-                                "type": "pv",
-                                "lvm_meta_size": 64,
-                                "vg": "image"
-                            },
-                        ],
-                        "type": "disk",
-                        "id": "sdb",
-                        "size": 10240
-                    },
-                    {
-                        "name": "sdc",
-                        "extra": [
-                            "disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-"
-                            "0-2"
-                        ],
-                        "free_space": 10001,
-                        "volumes": [
-                            {
-                                "type": "boot",
-                                "size": 300
-                            },
-                            {
-                                "mount": "/boot",
-                                "size": 200,
-                                "type": "raid",
-                                "file_system": "ext2",
-                                "name": "Boot"
-                            },
-                            {
-                                "type": "lvm_meta_pool",
-                                "size": 64
-                            },
-                            {
-                                "size": 0,
-                                "type": "pv",
-                                "lvm_meta_size": 0,
-                                "vg": "os"
-                            },
-                            {
-                                "size": 1971,
-                                "type": "pv",
-                                "lvm_meta_size": 64,
-                                "vg": "image"
-                            },
-                        ],
-                        "type": "disk",
-                        "id": "disk/by-path/pci-0000:00:04.0-scsi-0:0:2:0",
-                        "size": 10240
-                    },
-                    {
-                        "_allocate_size": "min",
-                        "label": "Base System",
-                        "min_size": 2047,
-                        "volumes": [
-                            {
-                                "mount": "/",
-                                "size": 1900,
-                                "type": "lv",
-                                "name": "root",
-                                "file_system": "ext4"
-                            },
-                            {
-                                "mount": "swap",
-                                "size": 43,
-                                "type": "lv",
-                                "name": "swap",
-                                "file_system": "swap"
-                            }
-                        ],
-                        "type": "vg",
-                        "id": "os"
-                    },
-                    {
-                        "_allocate_size": "min",
-                        "label": "Zero size volume",
-                        "min_size": 0,
-                        "volumes": [
-                            {
-                                "mount": "none",
-                                "size": 0,
-                                "type": "lv",
-                                "name": "zero_size",
-                                "file_system": "xfs"
-                            }
-                        ],
-                        "type": "vg",
-                        "id": "zero_size"
-                    },
-                    {
-                        "_allocate_size": "all",
-                        "label": "Image Storage",
-                        "min_size": 1120,
-                        "volumes": [
-                            {
-                                "mount": "/var/lib/glance",
-                                "size": 1757,
-                                "type": "lv",
-                                "name": "glance",
-                                "file_system": "xfs"
-                            }
-                        ],
-                        "type": "vg",
-                        "id": "image"
-                    }
-                ]
-            },
-            "mco_connector": "rabbitmq",
-            "mco_host": master_ip
-        },
-        "name": "node-1",
-        "hostname": "node-1.domain.tld",
-        "slave_name": "node-1",
-        "power_pass": "/root/.ssh/bootstrap.rsa",
-        "netboot_enabled": "1"
-    }
+    def render_template(self,
+                        template_name,
+                        template_dir=os.path.join(os.path.dirname(__file__),
+                                                  'templates'),
+                        template_data=None):
+        env = jinja2.Environment(loader=jinja2.FileSystemLoader(template_dir))
+        template = env.get_template(template_name)
+        return template.render(**(template_data or {}))

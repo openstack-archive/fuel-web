@@ -34,11 +34,22 @@ def genmac(start=None):
     return mac
 
 
+class ExecResult(object):
+    def __init__(self, stdout, stderr='', return_code=0):
+        self.stdout = stdout
+        self.stderr = stderr
+        self.return_code = return_code
+
+    def __str__(self):
+        return self.stdout
+
+    def __repr__(self):
+        return self.stdout
+
+
 def execute(command, to_filename=None, cwd=None):
     LOG.debug('Trying to execute command: %s', command)
     commands = [c.strip() for c in re.split(ur'\|', command)]
-    env = os.environ
-    env['PATH'] = '/bin:/usr/bin:/sbin:/usr/sbin'
 
     to_file = None
     if to_filename:
@@ -54,7 +65,7 @@ def execute(command, to_filename=None, cwd=None):
 
             process.append(subprocess.Popen(
                 shlex.split(encoded_command),
-                env=env,
+                env=os.environ,
                 stdin=(process[-1].stdout if process else None),
                 stdout=(to_file
                         if (len(process) == len(commands) - 1) and to_file
@@ -68,4 +79,5 @@ def execute(command, to_filename=None, cwd=None):
         if len(process) >= 2:
             process[-2].stdout.close()
     stdout, stderr = process[-1].communicate()
-    return (process[-1].returncode, stdout, stderr)
+    out = ExecResult(stdout, stderr=stderr, return_code=process[-1].returncode)
+    return out

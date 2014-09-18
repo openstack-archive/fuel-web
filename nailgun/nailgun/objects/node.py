@@ -491,9 +491,7 @@ class Node(NailgunObject):
         #(dshulyak) change this verification to NODE_STATUSES.deploying
         # after we will reuse ips from dhcp range
         netmanager = Cluster.get_network_manager()
-        admin_ng = netmanager.get_admin_network_group()
-        if data.get('ip') and not netmanager.is_same_network(data['ip'],
-                                                             admin_ng.cidr):
+        if data.get('ip') and not netmanager.is_ip_belongs_to_admin_subnet(data['ip']):
             logger.debug(
                 'Corrupted network data %s, skipping update',
                 instance.id)

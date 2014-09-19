@@ -78,6 +78,11 @@ module.exports = function(grunt) {
                 requireSpacesInConditionalExpression: true,
                 requireSpacesInFunction: {beforeOpeningCurlyBrace: true},
                 disallowSpacesInFunction: {beforeOpeningRoundBrace: true},
+                disallowPaddingNewlinesInBlocks: true,
+                disallowEmptyBlocks: true,
+                disallowSpacesInsideObjectBrackets: 'all',
+                disallowSpacesInsideArrayBrackets: 'all',
+                disallowSpacesInsideParentheses: true,
             },
             all: [
                 staticBuildPreparationDir + '/static/js/**/*.js',

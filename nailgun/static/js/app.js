@@ -65,7 +65,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             });
 
             // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
-            $.ajaxSetup({ cache: false });
+            $.ajaxSetup({cache: false});
 
 
             var keystoneClient = this.keystoneClient = new KeystoneClient('/keystone', {

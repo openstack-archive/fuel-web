@@ -94,7 +94,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                     if (selectedTestIds.length) {
                         var addCredentials = _.bind(function(obj) {
                             obj.ostf_os_access_creds = {
-                                ostf_os_username:this.credentials.get('username'),
+                                ostf_os_username: this.credentials.get('username'),
                                 ostf_os_tenant_name: this.credentials.get('tenant'),
                                 ostf_os_password: this.credentials.get('password')
                             };

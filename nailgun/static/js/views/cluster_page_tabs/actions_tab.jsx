@@ -89,7 +89,7 @@ function(React, utils, models, dialogViews) {
                                 utils.showErrorDialog({title: $.t('cluster_page.actions_tab.rename_error.title')});
                             }
                         }, this))
-                        .done(function(){
+                        .done(function() {
                             app.breadcrumbs.setPath(_.result(app.page, 'breadcrumbsPath'));
                         })
                         .always(_.bind(function() {
@@ -162,7 +162,7 @@ function(React, utils, models, dialogViews) {
             if (this.props.cluster.get('status') == 'new') {return 'reset_disabled_for_new_cluster';}
             return 'reset_environment_description';
         },
-        applyAction:function(e) {
+        applyAction: function(e) {
             e.preventDefault();
             (new dialogViews.ResetEnvironmentDialog({model: this.props.cluster})).render();
         },
@@ -249,10 +249,10 @@ function(React, utils, models, dialogViews) {
         },
         retryUpdateEnvironmentAction: function() {
             var cluster = this.props.cluster;
-            (new dialogViews.UpdateEnvironmentDialog({cluster: cluster, pendingReleaseId: cluster.get('pending_release_id'), action:'retry'})).render();
+            (new dialogViews.UpdateEnvironmentDialog({cluster: cluster, pendingReleaseId: cluster.get('pending_release_id'), action: 'retry'})).render();
         },
         rollbackEnvironmentAction: function() {
-            (new dialogViews.UpdateEnvironmentDialog({cluster: this.props.cluster, action:'rollback'})).render();
+            (new dialogViews.UpdateEnvironmentDialog({cluster: this.props.cluster, action: 'rollback'})).render();
         },
         getPendingReleaseId: function() {
             var release = _.find(releases.models, this.isAvailableForUpdate, this);
@@ -262,9 +262,9 @@ function(React, utils, models, dialogViews) {
         isAvailableForUpdate: function(release) {
             var cluster = this.props.cluster,
                 currentRelease = cluster.get('release');
-            return (_.contains(currentRelease.get('can_update_from_versions'), release.get('version')) || _.contains(release.get('can_update_from_versions'), currentRelease.get('version')))
-                && release.get('operating_system') == currentRelease.get('operating_system')
-                && release.id != cluster.get('release_id');
+            return (_.contains(currentRelease.get('can_update_from_versions'), release.get('version')) || _.contains(release.get('can_update_from_versions'), currentRelease.get('version'))) &&
+                release.get('operating_system') == currentRelease.get('operating_system') &&
+                release.id != cluster.get('release_id');
         },
         getDescriptionKey: function() {
             var cluster = this.props.cluster,
@@ -283,7 +283,7 @@ function(React, utils, models, dialogViews) {
                 pendingRelease = this.props.releases.findWhere({id: this.state.pendingReleaseId}) || null,
                 action = this.getAction(),
                 isLocked = this.isLocked(),
-                options = releases.map(function(release, i){
+                options = releases.map(function(release, i) {
                     return <option value={release.id} key={release.id}>{release.get('name') + ' (' + release.get('version') + ')'}</option>;
                 }, this);
             return (

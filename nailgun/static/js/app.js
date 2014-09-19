@@ -67,7 +67,6 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
             $.ajaxSetup({cache: false});
 
-
             var keystoneClient = this.keystoneClient = new KeystoneClient('/keystone', {
                 cacheTokenFor: 10 * 60 * 1000,
                 tenant: 'admin'
@@ -150,8 +149,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.navbar = React.renderComponent(new layoutComponents.Navbar({
                 elements: [
                     {label: 'environments', url: '#clusters'},
-                    {label: 'releases', url:'#releases'},
-                    {label: 'support', url:'#support'}
+                    {label: 'releases', url: '#releases'},
+                    {label: 'support', url: '#support'}
                 ],
                 user: this.user,
                 version: this.version,

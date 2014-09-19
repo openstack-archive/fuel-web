@@ -283,7 +283,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             var rowIndex = this.$('.' + config.domSelector + '-ranges-rows').find('.range-row').index($(e.currentTarget).parents('.range-row'));
             var ipRanges = _.cloneDeep(config.model.get(config.attribute));
             if (this.$(e.currentTarget).hasClass('ip-ranges-add')) {
-                ipRanges.splice(rowIndex + 1, 0, ['','']);
+                ipRanges.splice(rowIndex + 1, 0, ['', '']);
             } else {
                 ipRanges.splice(rowIndex, 1);
             }
@@ -327,11 +327,11 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             var config = this.ipRangesConfig;
             var $el = this.$('.' + config.domSelector + '-ranges-rows');
             $el.html('');
-            var ip_ranges = config.model.get(config.attribute);
-            _.each(ip_ranges, function(range, rangeIndex) {
+            var ipRanges = config.model.get(config.attribute);
+            _.each(ipRanges, function(range, rangeIndex) {
                 $el.append(this.rangeTemplate({
                     index: rangeIndex,
-                    removalPossible: ip_ranges.length > 1,
+                    removalPossible: ipRanges.length > 1,
                     locked: this.tab.isLocked()
                 }));
             }, this);
@@ -389,8 +389,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
         initialize: function(options) {
             _.defaults(this, options);
             this.ipRangesConfig = {model: this.network, attribute: 'ip_ranges', domSelector: 'ip'};
-            this.network.on('change:ip_ranges', function(network, ip_ranges) {
-                if (ip_ranges.length != network.previous('ip_ranges').length) {
+            this.network.on('change:ip_ranges', function(network, ipRanges) {
+                if (ipRanges.length != network.previous('ip_ranges').length) {
                     this.renderIpRanges();
                 }
             }, this);
@@ -419,7 +419,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             },
             'input[name=fixed_networks_amount]': {
                 observe: 'fixed_networks_amount',
-                onSet:function(value) {
+                onSet: function(value) {
                     return Number(value) || '';
                 }
             },
@@ -445,8 +445,8 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
                 this.render();
             }, this);
             this.parameters.on('change:fixed_networks_amount', this.updateFixedAmount, this);
-            this.parameters.on('change:floating_ranges', function(parameters, floating_ranges) {
-                if (floating_ranges.length != parameters.previous('floating_ranges').length) {
+            this.parameters.on('change:floating_ranges', function(parameters, floatingRanges) {
+                if (floatingRanges.length != parameters.previous('floating_ranges').length) {
                     this.renderIpRanges();
                 }
             }, this);

@@ -89,7 +89,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 attributes: _.union([], disabledBindings.attributes, this.getConfigureButtonsObject('btn btn-group-congiration btn-configure-interfaces'))
             }});
             this.stickit(this.addNodesButton, {'.btn-add-nodes': _.extend({}, visibleBindings, disabledBindings)});
-            this.stickit(this.editRolesButton, {'.btn-edit-nodes': _.extend({}, visibleBindings,disabledBindings)});
+            this.stickit(this.editRolesButton, {'.btn-edit-nodes': _.extend({}, visibleBindings, disabledBindings)});
             this.stickit(this.applyChangesButton, {'.btn-apply': disabledBindings});
         },
         getConfigureButtonsObject: function(className) {
@@ -304,8 +304,8 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         assignRoles: function() {
             _.each(this.collection.where({indeterminate: false}), function(role) {
                 _.each(this.nodes.filter(function(node) {return !node.hasRole(role.get('name'), true);}), function(node) {
-                    var pending_roles = role.get('checked') ? _.uniq(_.union(node.get('pending_roles'), role.get('name'))) : _.difference(node.get('pending_roles'), role.get('name'));
-                    node.set({pending_roles: pending_roles}, {assign: true});
+                    var pendingRoles = role.get('checked') ? _.uniq(_.union(node.get('pending_roles'), role.get('name'))) : _.difference(node.get('pending_roles'), role.get('name'));
+                    node.set({pending_roles: pendingRoles}, {assign: true});
                 });
             }, this);
         },
@@ -486,7 +486,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 attributes: [{
                     name: 'disabled',
                     observe: 'disabled'
-                },{
+                }, {
                     name: 'indeterminate',
                     observe: 'indeterminate'
                 }]
@@ -774,7 +774,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                     name: 'class',
                     observe: ['pending_addition', 'pending_deletion', 'pending_roles'],
                     onGet: 'formatNodeButtonClass'
-                },{
+                }, {
                     name: 'title',
                     observe: ['pending_addition', 'pending_deletion', 'pending_roles'],
                     onGet: 'formatNodeButtonTitle'

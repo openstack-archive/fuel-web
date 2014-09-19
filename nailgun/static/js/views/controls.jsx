@@ -104,7 +104,7 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         },
         renderLabel: function(children) {
             var classes = {
-                'parameter-name enable-selection': true,
+                'enable-selection': true,
                 'input-append': this.props.toggleable
             };
             classes[this.props.labelClassName] = this.props.labelClassName;

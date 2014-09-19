@@ -94,7 +94,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                         "value": "",
                         "bind": "cluster:name"
                     },
-                    "release" : {
+                    "release": {
                         "type": "custom",
                         "bind": {"id": "cluster:release"},
                         "aliases": {

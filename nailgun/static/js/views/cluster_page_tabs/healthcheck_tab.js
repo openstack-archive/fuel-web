@@ -263,7 +263,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
             };
             this.stickit(this.selectAllCheckbox, selectAllBindings);
             var credentialsWrapperBindings = {
-                '.toggle-credentials i' : {
+                '.toggle-credentials i': {
                     attributes: [{
                         name: 'class',
                         observe: 'visible',

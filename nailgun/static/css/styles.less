@@ -1573,13 +1573,25 @@ label {cursor: default;}
   .border-radius-mixin;
   .width-height-mixin(auto, 38px);
   .box-sizing-mixin;
+  .parameter-name {
+    margin: 0;
+    &.filter-bar-label .input-label {
+      width: auto;
+      float: left;
+      margin: 0;
+      span {
+        .float-mixin;
+        .font-layout-mixin(@font-size-base, @fuel-dark-5, @text-shadow: 0 1px 0 rgba(255,255,255,.4));
+        font-weight: normal;
+        margin: 10px 2px 0 0;
+      }
+    }
+  }
 }
 .filter-bar-item {
   .float-mixin;
   margin: 0 0 0 10px;
-}
-.filter-bar-btn {
-  margin: 4px;
+  .show-logs-btn {margin: 4px;}
 }
 .filter-bar-dropdown {
   display: inline-block;
@@ -1592,11 +1604,6 @@ label {cursor: default;}
     padding-left: 12px;
   }
 }
-.filter-bar-label {
-  .float-mixin;
-  .font-layout-mixin(@font-size-base, @fuel-dark-5, @text-shadow: 0 1px 0 rgba(255,255,255,.4));
-  margin-top: 9px;
-}
 
 .filter-bar-item > .dropdown-menu {
   .position(absolute, @left: auto, @right: 5px);
@@ -1607,11 +1614,15 @@ label {cursor: default;}
 .logs-loading {
   margin-top: 20px;
 }
+.node-sources-error {
+  margin-left: 20px;
+}
 .table-logs {
   .font-layout-mixin(@font-size-small-1, #545a63);
   tr td {
     padding: 1px 5px;
     line-height: 15px;
+    &.nowrap {white-space: nowrap;}
   }
   thead th {
     background-color: #ececec;
@@ -1620,7 +1631,6 @@ label {cursor: default;}
   tbody tr td {
     .font-layout-mixin(@font-size: @font-size-small-1, @font-family: @font-family-filter-bar);
   }
-  .no-logs-msg, .entries-skipped-msg { display: none; }
   .no-logs-msg tr td {
     text-align: center;
     padding: 20px;

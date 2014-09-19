@@ -82,7 +82,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 }]
             };
             this.stickit(this.deleteNodesButton, {'.btn-delete-nodes': visibleBindings});
-            this.stickit(this.configureDisksButton, {'.btn-configure-disks' : {
+            this.stickit(this.configureDisksButton, {'.btn-configure-disks': {
                 attributes: _.union([], disabledBindings.attributes, this.getConfigureButtonsObject('btn btn-group-congiration btn-configure-disks'))
             }});
             this.stickit(this.configureInterfacesButton, {'.btn-configure-interfaces': {
@@ -192,15 +192,15 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         className: 'nodes-management-panel',
         template: _.template(nodesManagementPanelTemplate),
         events: {
-            'change select[name=grouping]' : 'groupNodes',
-            'click .btn-delete-nodes:not(:disabled)' : 'showDeleteNodesDialog',
-            'click .btn-apply:not(:disabled)' : 'applyChanges',
-            'click .btn-group-congiration:not(.conflict):not(:disabled)' : 'goToConfigurationScreen',
-            'click .btn-group-congiration.conflict' : 'showUnavailableGroupConfigurationDialog',
+            'change select[name=grouping]': 'groupNodes',
+            'click .btn-delete-nodes:not(:disabled)': 'showDeleteNodesDialog',
+            'click .btn-apply:not(:disabled)': 'applyChanges',
+            'click .btn-group-congiration:not(.conflict):not(:disabled)': 'goToConfigurationScreen',
+            'click .btn-group-congiration.conflict': 'showUnavailableGroupConfigurationDialog',
             'click .btn-add-nodes': 'goToAddNodesScreen',
             'click .btn-edit-nodes': 'goToEditNodesRolesScreen',
             'click .btn-cancel': 'goToNodesList',
-            'click .btn-clear-filter' : 'clearFilter'
+            'click .btn-clear-filter': 'clearFilter'
         },
         initialize: function(options) {
             _.defaults(this, options);

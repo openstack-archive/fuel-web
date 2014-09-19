@@ -84,6 +84,7 @@ module.exports = function(grunt) {
                 disallowSpacesInsideObjectBrackets: 'all',
                 disallowSpacesInsideArrayBrackets: 'all',
                 disallowSpacesInsideParentheses: true,
+                disallowSpaceAfterObjectKeys: true
             },
             all: [
                 staticBuildPreparationDir + '/static/js/**/*.js',

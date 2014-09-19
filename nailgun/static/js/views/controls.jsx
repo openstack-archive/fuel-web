@@ -95,6 +95,24 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
         }
     });
 
+    controls.SelectAllCheckbox = React.createClass({
+        mixins: [InputMixin],
+        getDefaultProps: function() {
+            return {type: 'checkbox'};
+        },
+        render: function() {
+            return (
+                <div className={this.props.cs.common}>
+                    <label className={this.props.cs.label}>
+                        {this.renderInput()}
+                        <span>&nbsp;</span>
+                        <span>{$.t('common.select_all_button')}</span>
+                    </label>
+                </div>
+            );
+        }
+    });
+
     controls.Dropdown = React.createClass({
         mixins: [InputMixin],
         getDefaultProps: function() {

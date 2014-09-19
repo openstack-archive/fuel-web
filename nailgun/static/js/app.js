@@ -240,7 +240,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                     return this.constructor.__super__.fetch.call(this, _.extend({data: {cluster_id: ''}}, options));
                 };
                 $.when(cluster.fetch(), cluster.get('settings').fetch(), cluster.fetchRelated('nodes'), cluster.fetchRelated('tasks'), tasks.fetch())
-                    .then(_.bind(function(){
+                    .then(_.bind(function() {
                         var networkConfiguration = new models.NetworkConfiguration();
                         networkConfiguration.url = _.result(cluster, 'url') + '/network_configuration/' + cluster.get('net_provider');
                         cluster.set({

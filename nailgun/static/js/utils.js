@@ -40,7 +40,7 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
         composeLink: function(url) {
             return '<a target="_blank" href="' + url + '">' + url + '</a>';
         },
-        urlify: function (text) {
+        urlify: function(text) {
             return utils.linebreaks(text).replace(new RegExp(utils.regexes.url.source, 'g'), utils.composeLink);
         },
         composeList: function(value) {

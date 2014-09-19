@@ -74,7 +74,10 @@ module.exports = function(grunt) {
         jscs: {
             options: {
                 requireParenthesesAroundIIFE: true,
-                requireSpaceBeforeBlockStatements: true
+                requireSpaceBeforeBlockStatements: true,
+                requireSpacesInConditionalExpression: true,
+                requireSpacesInAnonymousFunctionExpression: {beforeOpeningCurlyBrace: true},
+                disallowSpacesInAnonymousFunctionExpression: {beforeOpeningRoundBrace: true},
             },
             all: [
                 staticBuildPreparationDir + '/static/js/**/*.js',

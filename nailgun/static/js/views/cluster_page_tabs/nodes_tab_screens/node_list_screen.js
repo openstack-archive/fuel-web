@@ -270,7 +270,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         clearFilter: function() {
             this.screen.nodeFilter.set('value', '');
         },
-        showUnavailableGroupConfigurationDialog: function (e) {
+        showUnavailableGroupConfigurationDialog: function(e) {
             var action = this.$(e.currentTarget).data('action');
             utils.showErrorDialog({
                 title: $.t('cluster_page.nodes_tab.node_management_panel.node_management_error.title'),
@@ -469,7 +469,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                 }
             }, this);
         },
-        stickitRole: function (role) {
+        stickitRole: function(role) {
             var bindings = {};
             bindings['input[name=' + role.get('name') + ']'] = {
                 observe: 'checked',

@@ -497,7 +497,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         handleWarnings: function() {
             this.$('.alert').remove();
             var messages = [];
-            _.each(this.wizard.restrictions[this.constructorName], function (paneConfig) {
+            _.each(this.wizard.restrictions[this.constructorName], function(paneConfig) {
                 _.each(paneConfig, function(paneRestriction) {
                     var result = utils.evaluateExpression(paneRestriction.condition, {default: this.wizard.model}).value;
                     if (result) {

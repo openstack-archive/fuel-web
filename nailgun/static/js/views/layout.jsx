@@ -229,7 +229,7 @@ function(React, utils, models, componentMixins, dialogs) {
 
     components.Footer = React.createClass({
         mixins: [React.BackboneMixin('version')],
-        render: function () {
+        render: function() {
             return (
                 <div className="footer-box">
                     {_.contains(this.props.version.get('feature_groups'), 'mirantis') &&

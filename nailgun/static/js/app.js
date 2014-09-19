@@ -150,8 +150,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             this.navbar = React.renderComponent(new layoutComponents.Navbar({
                 elements: [
                     {label: 'environments', url: '#clusters'},
-                    {label: 'releases', url:'#releases'},
-                    {label: 'support', url:'#support'}
+                    {label: 'releases', url: '#releases'},
+                    {label: 'support', url: '#support'}
                 ],
                 user: this.user,
                 version: this.version,

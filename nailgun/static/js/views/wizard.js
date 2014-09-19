@@ -550,7 +550,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
 
     clusterWizardPanes.NameAndRelease = views.WizardPane.extend({
         constructorName: 'NameAndRelease',
-        title:'dialog.create_cluster_wizard.name_release.title',
+        title: 'dialog.create_cluster_wizard.name_release.title',
         template: _.template(clusterNameAndReleasePaneTemplate),
         events: {
             'keydown input': 'onInputKeydown'
@@ -660,7 +660,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
             this.$('.mode-description').text(description);
         },
         renderCustomElements: function() {
-            this.$('.mode-control-group .span5').append(this.renderControls({labelClasses: 'setting', descriptionClasses:'openstack-sub-title'})).i18n();
+            this.$('.mode-control-group .span5').append(this.renderControls({labelClasses: 'setting', descriptionClasses: 'openstack-sub-title'})).i18n();
             this.updateModeDescription();
         }
     });

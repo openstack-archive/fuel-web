@@ -66,10 +66,19 @@ module.exports = function(grunt) {
                 "-W041": false
             },
             all: [
-                'static/js/**/*.js',
-                'static/js/**/*.jsx',
-                '!static/js/libs/**',
-                '!static/js/expression/parser.js'
+                staticBuildPreparationDir + '/static/js/**/*.js',
+                '!' + staticBuildPreparationDir + '/static/js/libs/**',
+                '!' + staticBuildPreparationDir + '/static/js/expression/parser.js'
+            ]
+        },
+        jscs: {
+            options: {
+                requireParenthesesAroundIIFE: true
+            },
+            all: [
+                staticBuildPreparationDir + '/static/js/**/*.js',
+                '!' + staticBuildPreparationDir + '/static/js/libs/**',
+                '!' + staticBuildPreparationDir + '/static/js/expression/parser.js'
             ]
         },
         less: {
@@ -247,6 +256,13 @@ module.exports = function(grunt) {
         'clean:finalize_build'
     ]);
     grunt.registerTask('default', ['build']);
-    grunt.registerTask('lint-ui', ['jshint']);
+    grunt.registerTask('lint-ui', [
+        'clean:prepare_build',
+        'copy:preprocess_js',
+        'react',
+        'clean:jsx',
+        'jshint',
+        'jscs'
+    ]);
     grunt.task.loadTasks('grunt');
 };

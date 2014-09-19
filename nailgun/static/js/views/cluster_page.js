@@ -127,7 +127,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
             this.model.on('change:name', this.onNameChange, this);
             this.model.on('change:release_id', function() {
                 var release = new models.Release({id: this.model.get('release_id')});
-                release.fetch().done(_.bind(function(){
+                release.fetch().done(_.bind(function() {
                     this.model.set({release: release});
                 }, this));
             }, this);

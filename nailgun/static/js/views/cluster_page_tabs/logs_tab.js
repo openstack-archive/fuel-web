@@ -102,7 +102,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
             this.sources.each(function(source) {
                 if (!source.get('remote')) {
                     var option = $('<option/>', {value: source.id, text: source.get('name')});
-                    if (source.get('name') == this.lastSource){
+                    if (source.get('name') == this.lastSource) {
                         option.attr('selected', 'selected');
                     }
                     input.append(option);
@@ -125,7 +125,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                     var el = group ? $('<optgroup/>', {label: group}).appendTo(input) : input;
                     _.each(sourcesByGroup[group], function(source) {
                         var option = $('<option/>', {value: source.id, text: source.get('name')});
-                        if (source.get('name') == this.lastSource){
+                        if (source.get('name') == this.lastSource) {
                             option.attr('selected', 'selected');
                         }
                         el.append(option);
@@ -146,7 +146,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                 var source = this.sources.get(chosenSourceId);
                 _.each(source.get('levels'), function(level) {
                     var option = $('<option/>').text(level);
-                    if (level == this.lastLogLevel){
+                    if (level == this.lastLogLevel) {
                         option.attr('selected', 'selected');
                     }
                     input.append(option);

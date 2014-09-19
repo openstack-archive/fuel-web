@@ -563,7 +563,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                     return order || firstGroupRoles.length - secondGroupRoles.length;
                 });
             } else {
-                nodeGroups = _.sortBy(nodeGroups, function(group){ return group[0];});
+                nodeGroups = _.sortBy(nodeGroups, function(group) { return group[0];});
             }
             this.renderNodeGroups(nodeGroups);
             this.screen.updateBatchActionsButtons();

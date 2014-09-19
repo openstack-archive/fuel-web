@@ -607,7 +607,7 @@ define(['utils', 'deepModel'], function(utils) {
                     networkingParametersErrors.internal_gateway = $.t('cluster_page.network_tab.validation.gateway_is_out_of_internal_ip_range');
                 }
             }
-            var networkWithFloatingRange = attrs.networks.filter(function(network){ return network.get('meta').floating_range_var; })[0];
+            var networkWithFloatingRange = attrs.networks.filter(function(network) { return network.get('meta').floating_range_var; })[0];
             var floatingRangesErrors = utils.validateIpRanges(attrs.networking_parameters.get('floating_ranges'), networkWithFloatingRange ? networkWithFloatingRange.get('cidr') : null);
             if (floatingRangesErrors.length) {
                 networkingParametersErrors.floating_ranges = floatingRangesErrors;

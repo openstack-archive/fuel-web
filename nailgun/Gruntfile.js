@@ -96,7 +96,16 @@ module.exports = function(grunt) {
                 requireCamelCaseOrUpperCaseIdentifiers: 'ignoreProperties',
                 disallowKeywords: ['with'],
                 disallowMultipleLineStrings: true,
-                disallowMultipleLineBreaks: true
+                disallowMultipleLineBreaks: true,
+                disallowMixedSpacesAndTabs: true,
+                disallowTrailingComma: true,
+                disallowKeywordsOnNewLine: ['else'],
+                requireCapitalizedConstructors: true,
+                requireDotNotation: true,
+                disallowYodaConditions: true,
+                disallowNewlineBeforeBlockStatements: true,
+                validateLineBreaks: 'LF',
+                validateParameterSeparator: ', '
             },
             all: [
                 staticBuildPreparationDir + '/static/js/**/*.js',

@@ -228,8 +228,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
                 this.activePane.processPaneData().done(_.bind(function() {
                     this.goToPane(paneIndex);
                 }, this));
-            }
-            else {
+            } else {
                 this.goToPane(paneIndex);
             }
         },

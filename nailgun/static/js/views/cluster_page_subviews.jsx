@@ -103,8 +103,8 @@ function(React, utils, dialogs) {
                 renderOn: 'add remove change'
             })
         ],
-        displayDialog: function(constructor) {
-            this.props.page.registerSubView(new constructor({model: this.props.model})).render();
+        displayDialog: function(Constructor) {
+            this.props.page.registerSubView(new Constructor({model: this.props.model})).render();
         },
         onDeployRequest: function() {
             var page = this.props.page,

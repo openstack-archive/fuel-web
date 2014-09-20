@@ -32,8 +32,8 @@ function(commonViews, loginPageTemplate) {
             'keydown input': 'onKeyDown'
         },
         onKeyDown: function() {
-             this.$('.login-error-message').hide();
-             this.$('.login-btn').attr('disabled', false);
+            this.$('.login-error-message').hide();
+            this.$('.login-btn').attr('disabled', false);
         },
         login: function() {
             this.$('.login-btn').attr('disabled', true);

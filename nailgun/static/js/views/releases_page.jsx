@@ -52,7 +52,7 @@ function(React, controls) {
                                 body={this.props.releases.map(this.getReleaseData)}
                                 className='releases-table' />
                         :
-                          <div className='alert'>{$.t('release_page.no_releases_message')}</div>
+                            <div className='alert'>{$.t('release_page.no_releases_message')}</div>
                         }
                     </div>
                 </div>

@@ -51,6 +51,23 @@ module.exports = function(grunt) {
                 }
             }
         },
+        lintspaces: {
+            javascript: {
+                options: {
+                    newline: true,
+                    indentation: 'spaces',
+                    spaces: 4,
+                    trailingspaces: true,
+                    ignores: ['js-comments']
+                },
+                src: [
+                    'static/js/**/*.js',
+                    'static/js/**/*.jsx',
+                    '!static/js/libs/**',
+                    '!static/js/expression/parser.js'
+                ]
+            }
+        },
         jshint: {
             options: {
                 reporter: require('jshint-stylish'),
@@ -291,6 +308,7 @@ module.exports = function(grunt) {
     ]);
     grunt.registerTask('default', ['build']);
     grunt.registerTask('lint-ui', [
+        'lintspaces',
         'clean:prepare_build',
         'copy:preprocess_js',
         'react',

@@ -159,7 +159,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
         },
         initialize: function(options) {
             _.defaults(this, options);
-             this.runTestsButton = new Backbone.Model({
+            this.runTestsButton = new Backbone.Model({
                 visible: true,
                 disabled: true
             });
@@ -394,7 +394,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, healthcheckTabTemp
                 '.testset-select': {
                     observe: 'checked',
                     onSet: _.bind(function(value) {
-                       this.tests.invoke('set', {checked: value});
+                        this.tests.invoke('set', {checked: value});
                     }, this),
                     attributes: [{
                         name: 'disabled',

@@ -287,7 +287,7 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
         showCapacityPage: function() {
             var task = new models.Task();
             task.save({}, {url: '/api/capacity/', method: 'PUT'}).done(_.bind(function() {
-                 this.setPage(CapacityPage, {capacityLog: new models.CapacityLog()});
+                this.setPage(CapacityPage, {capacityLog: new models.CapacityLog()});
             }, this));
         }
     });

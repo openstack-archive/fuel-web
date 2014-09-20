@@ -122,7 +122,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
                 var isGroupDisabled = _.bind(function(groupName) {
                     var groupData = this.settings.get(groupName + '.metadata');
                     if (groupData.enabled && (groupData.hasDependentRole || this.checkDependentSettings(groupName, 'metadata'))) {
-                       return false;
+                        return false;
                     }
                     return groupData.enabled === false || groupData.disabled;
                 }, this);
@@ -307,7 +307,7 @@ function(utils, models, viewMixins, commonViews, dialogViews, settingsTabTemplat
         },
         updateSettings: function() {
             this.settings.expandRestrictions();
-             _.each(this.settings.attributes, function(group, groupName) {
+            _.each(this.settings.attributes, function(group, groupName) {
                 _.each(group, function(setting, settingName) {
                     this.calculateSettingState(groupName, settingName);
                 }, this);

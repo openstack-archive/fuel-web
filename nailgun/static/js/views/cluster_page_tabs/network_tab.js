@@ -463,7 +463,7 @@ function(utils, models, commonViews, dialogViews, networkTabTemplate, networkTem
             _.each(this.parameters.get('dns_nameservers'), function(nameserver, index) {
                 _.merge(this.bindings, this.composeRangeFieldBindings('dns_nameservers', index));
             }, this);
-           _.merge(this.bindings, this.composeVlanBindings('fixed_networks_vlan_start'));
+            _.merge(this.bindings, this.composeVlanBindings('fixed_networks_vlan_start'));
         },
         render: function() {
             this.$el.html(this.template({

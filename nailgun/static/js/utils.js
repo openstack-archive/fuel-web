@@ -118,7 +118,7 @@ define(['require', 'expression', 'expression/objects', 'react'], function(requir
             if (!_.isNumber(frequency) || _.isNaN(frequency)) {return $.t('common.not_available');}
             var base = 1000;
             var treshold = 1000;
-            return(frequency >= treshold ? (frequency / base).toFixed(2) + ' GHz' : frequency + ' MHz');
+            return (frequency >= treshold ? (frequency / base).toFixed(2) + ' GHz' : frequency + ' MHz');
         },
         showSize: function(bytes, treshold) {
             bytes = parseInt(bytes, 10);

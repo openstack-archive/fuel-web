@@ -24,7 +24,7 @@ function(React, models, componentMixins, controls) {
     'use strict';
 
     var CapacityPage = React.createClass({
-         mixins: [
+        mixins: [
             React.BackboneMixin('capacityLog'),
             componentMixins.pollingMixin(2)
         ],
@@ -46,7 +46,7 @@ function(React, models, componentMixins, controls) {
                     <h3 className='page-title'>{$.t('capacity_page.title')}</h3>
                     <div className='capacity page-wrapper'>
                         {!capacityLog.isNew() ?
-                             <LicenseUsage capacityLog = {capacityLog} />
+                            <LicenseUsage capacityLog = {capacityLog} />
                             :
                             <controls.ProgressBar />
                         }
@@ -80,7 +80,7 @@ function(React, models, componentMixins, controls) {
                         head = {[{label: $.t('capacity_page.total_number_alloc_nodes'), className: headClassName},
                                 {label: $.t('capacity_page.total_number_unalloc_nodes')}]}
                         body = {[[capacityReport.allocation_stats.allocated,
-                              capacityReport.allocation_stats.unallocated]] }
+                                capacityReport.allocation_stats.unallocated]] }
                         className = {tableClassName} />
 
                     <controls.Table
@@ -91,8 +91,8 @@ function(React, models, componentMixins, controls) {
                         className = {tableClassName} />
 
                     <a href='/api/capacity/csv'  target='_blank' className='btn btn-info'>
-                      <i className='icon-install'></i>
-                      <span>{$.t('capacity_page.download_report')}</span>
+                        <i className='icon-install'></i>
+                        <span>{$.t('capacity_page.download_report')}</span>
                     </a>
                 </div>
             );

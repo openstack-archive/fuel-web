@@ -837,7 +837,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         formatStatusLabel: function(value) {
             var operatingSystem;
             try {
-              operatingSystem = this.node.collection.cluster.get('release').get('operating_system');
+                operatingSystem = this.node.collection.cluster.get('release').get('operating_system');
             } catch (ignore) {}
             operatingSystem = operatingSystem || 'OS';
             var labels = {

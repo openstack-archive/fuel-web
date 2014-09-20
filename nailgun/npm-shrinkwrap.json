@@ -16,7 +16,7 @@
         },
         "colors": {
           "version": "0.6.2",
-          "from": "colors@~0.6.0-1"
+          "from": "colors@~0.6.2"
         },
         "dateformat": {
           "version": "1.0.2-1.2.3",
@@ -924,7 +924,7 @@
             },
             "lru-cache": {
               "version": "2.5.0",
-              "from": "lru-cache@2"
+              "from": "lru-cache@~2.5.0"
             },
             "mkdirp": {
               "version": "0.5.0",
@@ -1350,7 +1350,7 @@
                                 },
                                 "inherits": {
                                   "version": "2.0.1",
-                                  "from": "inherits@~2.0.1"
+                                  "from": "inherits@~2.0.0"
                                 },
                                 "ini": {
                                   "version": "1.3.0",
@@ -1770,7 +1770,7 @@
                 },
                 "mkdirp": {
                   "version": "0.3.5",
-                  "from": "mkdirp@~0.3.5"
+                  "from": "mkdirp@0.3.5"
                 },
                 "cookie": {
                   "version": "0.1.0",
@@ -2009,6 +2009,46 @@
         "vow": {
           "version": "0.4.5",
           "from": "vow@~0.4.1"
+        }
+      }
+    },
+    "grunt-lintspaces": {
+      "version": "0.6.0",
+      "from": "grunt-lintspaces@~0.6.0",
+      "dependencies": {
+        "lintspaces": {
+          "version": "0.2.1",
+          "from": "lintspaces@0.2.1",
+          "dependencies": {
+            "merge": {
+              "version": "1.2.0",
+              "from": "merge@^1.1.2"
+            },
+            "editorconfig": {
+              "version": "0.11.4",
+              "from": "editorconfig@^0.11.4",
+              "dependencies": {
+                "commander": {
+                  "version": "1.1.1",
+                  "from": "commander@~1.1.1",
+                  "dependencies": {
+                    "keypress": {
+                      "version": "0.1.0",
+                      "from": "keypress@0.1.x"
+                    }
+                  }
+                },
+                "lru-cache": {
+                  "version": "2.0.4",
+                  "from": "lru-cache@~2.0.0"
+                },
+                "sigmund": {
+                  "version": "1.0.0",
+                  "from": "sigmund@~1.0.0"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -2272,7 +2312,7 @@
       "dependencies": {
         "chalk": {
           "version": "0.5.1",
-          "from": "chalk@~0.5.0",
+          "from": "chalk@^0.5.1",
           "dependencies": {
             "ansi-styles": {
               "version": "1.1.0",
@@ -2288,7 +2328,7 @@
               "dependencies": {
                 "ansi-regex": {
                   "version": "0.2.1",
-                  "from": "ansi-regex@^0.2.0"
+                  "from": "ansi-regex@^0.2.1"
                 }
               }
             },
@@ -2298,7 +2338,7 @@
               "dependencies": {
                 "ansi-regex": {
                   "version": "0.2.1",
-                  "from": "ansi-regex@^0.2.0"
+                  "from": "ansi-regex@^0.2.1"
                 }
               }
             },

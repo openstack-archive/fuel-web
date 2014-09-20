@@ -62,10 +62,10 @@ function(React, utils, models, dialogViews) {
             return (
                 <div className={'action-item-placeholder ' + this.props.className}>
                     <form className='environment-action-form'>
-                      <h4>{this.props.title}</h4>
-                      <div className='action-item-controls'>
-                        {this.props.children}
-                      </div>
+                        <h4>{this.props.title}</h4>
+                        <div className='action-item-controls'>
+                            {this.props.children}
+                        </div>
                     </form>
                 </div>
             );

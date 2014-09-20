@@ -317,7 +317,7 @@ define(['utils', 'deepModel'], function(utils) {
                             if (!_.isUndefined(setting.toggleable)) {
                                 result[groupName][settingName].enabled = setting.enabled;
                             }
-                        } else  {
+                        } else {
                             result[groupName][settingName].value = setting.value;
                         }
                     });

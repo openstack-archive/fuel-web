@@ -377,7 +377,7 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
                                 pending_addition: false,
                                 pending_roles: []
                             });
-                        } else{
+                        } else {
                             node.set({pending_deletion: true});
                         }
                     }

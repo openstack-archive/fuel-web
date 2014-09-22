@@ -8,7 +8,7 @@ environment on masternode, deploys code or restores the production
 environment.
 
 Help information about manage.py can be found by running it
-with the 'h' parameter.
+with the '-h' parameter.
 
 Nailgun Developer Version on Live Master Node
 ---------------------------------------------

@@ -169,3 +169,8 @@ CLUSTER_CHANGES = Enum(
     'disks',
     'interfaces'
 )
+
+ACTION_TYPES = Enum(
+    'http_request',
+    'nailgun_task'
+)

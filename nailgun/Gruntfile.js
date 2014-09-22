@@ -61,8 +61,8 @@ module.exports = function(grunt) {
                     ignores: ['js-comments']
                 },
                 src: [
-                    'static/js/**/*.js',
-                    'static/js/**/*.jsx',
+                    'static/**/*.js',
+                    'static/**/*.jsx',
                     '!static/js/libs/**',
                     '!static/js/expression/parser.js'
                 ]
@@ -84,7 +84,7 @@ module.exports = function(grunt) {
                 "-W041": false
             },
             all: [
-                staticBuildPreparationDir + '/static/js/**/*.js',
+                staticBuildPreparationDir + '/static/**/*.js',
                 '!' + staticBuildPreparationDir + '/static/js/libs/**',
                 '!' + staticBuildPreparationDir + '/static/js/expression/parser.js'
             ]
@@ -127,7 +127,7 @@ module.exports = function(grunt) {
                 validateParameterSeparator: ', '
             },
             all: [
-                staticBuildPreparationDir + '/static/js/**/*.js',
+                staticBuildPreparationDir + '/static/**/*.js',
                 '!' + staticBuildPreparationDir + '/static/js/libs/**',
                 '!' + staticBuildPreparationDir + '/static/js/expression/parser.js'
             ]

@@ -19,6 +19,30 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
     var controls = {};
 
     var InputMixin = {
+        propTypes: {
+            key: React.PropTypes.string,
+            type: React.PropTypes.oneOf(['checkbox', 'radio', 'text', 'password', 'dropdown']),
+            name: React.PropTypes.string.isRequired,
+            value: React.PropTypes.oneOfType([
+                React.PropTypes.string,
+                React.PropTypes.number,
+                React.PropTypes.bool
+            ]),
+            label: React.PropTypes.string,
+            description: React.PropTypes.string,
+            values: React.PropTypes.arrayOf(React.PropTypes.object),
+            hiddenValues: React.PropTypes.arrayOf(React.PropTypes.string),
+            disabledValues: React.PropTypes.arrayOf(React.PropTypes.string),
+            valueWarnings: React.PropTypes.object,
+            onChange: React.PropTypes.func.isRequired,
+            validate: React.PropTypes.func,
+            disabled: React.PropTypes.bool,
+            warnings: React.PropTypes.oneOfType([
+                React.PropTypes.string,
+                React.PropTypes.arrayOf(React.PropTypes.string)
+            ]),
+            cs: React.PropTypes.objectOf(React.PropTypes.string)
+        },
         getInitialState: function() {
             return {value: this.getValue()};
         },

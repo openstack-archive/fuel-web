@@ -107,15 +107,15 @@ class Manager(object):
 
         tmpl_dir = CONF.nc_template_path
         utils.render_and_save(
-            tmpl_dir, self.configdrive_scheme.template_name('cloud_config'),
+            tmpl_dir, self.configdrive_scheme.template_names('cloud_config'),
             self.configdrive_scheme.template_data(), cc_output_path
         )
         utils.render_and_save(
-            tmpl_dir, self.configdrive_scheme.template_name('boothook'),
+            tmpl_dir, self.configdrive_scheme.template_names('boothook'),
             self.configdrive_scheme.template_data(), bh_output_path
         )
         utils.render_and_save(
-            tmpl_dir, self.configdrive_scheme.template_name('meta-data'),
+            tmpl_dir, self.configdrive_scheme.template_names('meta-data'),
             self.configdrive_scheme.template_data(), md_output_path
         )
 

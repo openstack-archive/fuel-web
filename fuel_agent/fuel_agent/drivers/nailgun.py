@@ -255,7 +255,7 @@ class Nailgun(object):
             connector=data['ks_meta']['mco_connector']
         )
 
-        configdrive_scheme.set_profile(profile=data['profile'].split('_')[0])
+        configdrive_scheme.set_profile(profile=data['profile'])
         return configdrive_scheme
 
     def image_scheme(self, partition_scheme):

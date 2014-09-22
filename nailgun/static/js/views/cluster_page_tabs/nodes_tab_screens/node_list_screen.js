@@ -242,7 +242,6 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
                         app.navigate('#cluster/' + this.cluster.id + '/nodes', {trigger: true});
                         app.navbar.refresh();
                         app.page.removeFinishedNetworkTasks();
-                        app.page.deploymentControl.render();
                     }, this));
                 }, this))
                 .fail(_.bind(function() {

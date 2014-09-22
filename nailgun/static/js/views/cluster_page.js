@@ -112,6 +112,7 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
         beforeTearDown: function() {
             $(window).off('beforeunload.' + this.eventNamespace);
             $('body').off('click.' + this.eventNamespace);
+            _.each(this.subviews, utils.universalUnmount);
         },
         onBeforeunloadEvent: function() {
             if (_.result(this.tab, 'hasChanges')) {
@@ -140,10 +141,12 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
                 activeTab: this.activeTab
             })).i18n();
             var options = {model: this.model, page: this};
-            this.clusterInfo = utils.universalMount(new clusterPageSubviews.ClusterInfo(options), this.$('.cluster-info'), this);
-            this.clusterCustomizationMessage = utils.universalMount(new clusterPageSubviews.ClusterCustomizationMessage(options), this.$('.customization-message'), this);
-            this.deploymentResult = utils.universalMount(new clusterPageSubviews.DeploymentResult(options), this.$('.deployment-result'), this);
-            this.deploymentControl = utils.universalMount(new clusterPageSubviews.DeploymentControl(options), this.$('.deployment-control'), this);
+            this.subviews = [
+                utils.universalMount(new clusterPageSubviews.ClusterInfo(options), this.$('.cluster-info'), this),
+                utils.universalMount(new clusterPageSubviews.ClusterCustomizationMessage(options), this.$('.customization-message'), this),
+                utils.universalMount(new clusterPageSubviews.DeploymentResult(options), this.$('.deployment-result'), this),
+                utils.universalMount(new clusterPageSubviews.DeploymentControl(options), this.$('.deployment-control'), this)
+            ];
 
             var tabs = {
                 'nodes': NodesTab,

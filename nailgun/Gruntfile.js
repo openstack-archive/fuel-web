@@ -52,6 +52,19 @@ module.exports = function(grunt) {
             }
         },
         lintspaces: {
+            styles: {
+                options: {
+                    newline: true,
+                    indentation: 'spaces',
+                    spaces: 2,
+                    newlineMaximum: 2,
+                    trailingspaces: true,
+                    ignores: ['js-comments']
+                },
+                src: [
+                    'static/**/*.less'
+                ]
+            },
             javascript: {
                 options: {
                     newline: true,

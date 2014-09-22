@@ -174,3 +174,8 @@ PROVISION_METHODS = Enum(
     'cobbler',
     'image'
 )
+
+ACTION_TYPES = Enum(
+    'http_request',
+    'nailgun_task'
+)

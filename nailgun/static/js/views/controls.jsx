@@ -19,6 +19,22 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
     var controls = {};
 
     var InputMixin = {
+        propTypes: {
+            type: React.PropTypes.oneOf(['checkbox', 'radio', 'text', 'password', 'dropdown']),
+            name: React.PropTypes.string.isRequired,
+            value: React.PropTypes.oneOfType([
+                React.PropTypes.string,
+                React.PropTypes.number,
+                React.PropTypes.bool
+            ]),
+            label: React.PropTypes.string,
+            description: React.PropTypes.string,
+            onChange: React.PropTypes.func.isRequired,
+            validate: React.PropTypes.func,
+            disabled: React.PropTypes.bool,
+            warnings: React.PropTypes.renderable,
+            cs: React.PropTypes.objectOf(React.PropTypes.string)
+        },
         getInitialState: function() {
             return {value: this.getValue()};
         },
@@ -115,6 +131,9 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
 
     controls.Dropdown = React.createClass({
         mixins: [InputMixin],
+        propTypes: {
+            values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+        },
         getDefaultProps: function() {
             return {type: 'dropdown'};
         },
@@ -150,6 +169,12 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
 
     controls.RadioGroup = React.createClass({
         mixins: [InputMixin],
+        propTypes: {
+            values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired,
+            hiddenValues: React.PropTypes.arrayOf(React.PropTypes.string),
+            disabledValues: React.PropTypes.arrayOf(React.PropTypes.string),
+            valueWarnings: React.PropTypes.object
+        },
         render: function() {
             return (
                 <div className={this.props.cs.common}>
@@ -174,6 +199,10 @@ define(['jquery', 'underscore', 'react'], function($, _, React) {
 
     controls.RadioButton = React.createClass({
         mixins: [InputMixin],
+        propTypes: {
+            key: React.PropTypes.string.isRequired,
+            values: React.PropTypes.arrayOf(React.PropTypes.object).isRequired
+        },
         getDefaultProps: function() {
             return {type: 'radio'};
         },

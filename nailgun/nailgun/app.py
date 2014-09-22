@@ -26,6 +26,7 @@ from nailgun.api.v1.handlers import load_db_driver
 from nailgun.db import engine
 from nailgun.logger import HTTPLoggerMiddleware
 from nailgun.logger import logger
+from nailgun.middleware.connection_monitor import ConnectionMonitorMiddleware
 from nailgun.middleware.http_method_override import \
     HTTPMethodOverrideMiddleware
 from nailgun.middleware.keystone import NailgunFakeKeystoneAuthMiddleware
@@ -48,6 +49,7 @@ def build_app(db_driver=None):
 def build_middleware(app):
 
     middleware_list = [
+        ConnectionMonitorMiddleware,
         HTTPLoggerMiddleware,
         HTTPMethodOverrideMiddleware,
     ]

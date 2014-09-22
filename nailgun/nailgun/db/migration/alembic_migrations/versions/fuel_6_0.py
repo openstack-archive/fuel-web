@@ -27,8 +27,14 @@ down_revision = '52924111f7d8'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun.db.sqlalchemy.models.fields import JSON
+from nailgun.utils.migration import drop_enum
 from nailgun.utils.migration import upgrade_release_fill_orchestrator_data
 from nailgun.utils.migration import upgrade_release_set_deployable_false
+
+ENUMS = (
+    'action_type',
+)
 
 
 def upgrade():
@@ -53,6 +59,55 @@ def upgrade_schema():
             server_default='true',
         )
     )
+    op.create_table('action_logs',
+                    sa.Column('id', sa.Integer, nullable=False),
+                    sa.Column(
+                        'actor_id',
+                        sa.String(length=64),
+                        nullable=True
+                    ),
+                    sa.Column(
+                        'action_group',
+                        sa.String(length=64),
+                        nullable=False
+                    ),
+                    sa.Column(
+                        'action_name',
+                        sa.String(length=64),
+                        nullable=False
+                    ),
+                    sa.Column(
+                        'action_type',
+                        sa.Enum('http_request', 'nailgun_task',
+                                name='action_type'),
+                        nullable=False
+                    ),
+                    sa.Column(
+                        'start_timestamp',
+                        sa.DateTime,
+                        nullable=False
+                    ),
+                    sa.Column(
+                        'end_timestamp',
+                        sa.DateTime,
+                        nullable=True
+                    ),
+                    sa.Column(
+                        'is_sent',
+                        sa.Boolean,
+                        default=False
+                    ),
+                    sa.Column(
+                        'additional_info',
+                        JSON(),
+                        nullable=False
+                    ),
+                    sa.Column(
+                        'cluster_id',
+                        sa.Integer,
+                        nullable=True
+                    ),
+                    sa.PrimaryKeyConstraint('id'))
 
 
 def upgrade_data():
@@ -72,6 +127,8 @@ def upgrade_data():
 
 def downgrade_schema():
     op.drop_column('releases', 'is_deployable')
+    op.drop_table('action_logs')
+    map(drop_enum, ENUMS)
 
 
 def downgrade_data():

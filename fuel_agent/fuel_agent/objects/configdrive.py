@@ -89,5 +89,9 @@ class ConfigDriveScheme(object):
     def profile(self):
         return self._profile
 
-    def template_name(self, what):
-        return '%s_%s.jinja2' % (what, self._profile)
+    def template_names(self, what):
+        return [
+            '%s_%s.jinja2' % (what, self._profile),
+            '%s_%s.jinja2' % (what, self._profile.split('_')[0]),
+            '%s.jinja2' % what
+        ]

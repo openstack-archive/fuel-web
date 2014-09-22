@@ -134,11 +134,20 @@ class TestManager(test_base.BaseTestCase):
         self.assertEqual(4, len(self.mgr.image_scheme.images))
         self.mgr.do_configdrive()
         mock_u_ras_expected_calls = [
-            mock.call(CONF.nc_template_path, 'cloud_config_ubuntu.jinja2',
+            mock.call(CONF.nc_template_path,
+                      ['cloud_config_ubuntu_1204_x86_64.jinja2',
+                       'cloud_config_ubuntu.jinja2',
+                       'cloud_config.jinja2'],
                       mock.ANY, '%s/%s' % (CONF.tmp_path, 'cloud_config.txt')),
-            mock.call(CONF.nc_template_path, 'boothook_ubuntu.jinja2',
+            mock.call(CONF.nc_template_path,
+                      ['boothook_ubuntu_1204_x86_64.jinja2',
+                       'boothook_ubuntu.jinja2',
+                       'boothook.jinja2'],
                       mock.ANY, '%s/%s' % (CONF.tmp_path, 'boothook.txt')),
-            mock.call(CONF.nc_template_path, 'meta-data_ubuntu.jinja2',
+            mock.call(CONF.nc_template_path,
+                      ['meta-data_ubuntu_1204_x86_64.jinja2',
+                       'meta-data_ubuntu.jinja2',
+                       'meta-data.jinja2'],
                       mock.ANY, '%s/%s' % (CONF.tmp_path, 'meta-data'))]
         self.assertEqual(mock_u_ras_expected_calls, mock_u_ras.call_args_list)
 

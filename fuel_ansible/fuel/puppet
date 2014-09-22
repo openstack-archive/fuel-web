@@ -1,0 +1,78 @@
+#!/usr/bin/python
+#
+#    Copyright 2014 Mirantis, Inc.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+
+import yaml
+
+
+DOCUMENTATION = """
+---
+module: puppet
+author: Dmitry Shulyak
+version_added: 1.6
+short_description: run puppet apply
+options:
+  debug:
+    default: False
+  logfile:
+    default: /var/log/puppet.log
+  manifest:
+    required: True
+  summary:
+    default: /var/lib/puppet/state/last_run_summary.yaml
+"""
+
+
+def build_command(module):
+    command = ['puppet', 'apply']
+    command.extend(['--logdest', 'syslog', '--trace', '--no-report'])
+    if module.params['debug']:
+        command.extend(['--debug', '--evaltrace'])
+    if module.params['logfile']:
+        command.extend(['--logdest', module.params['logfile']])
+    command.append(module.params['manifest'])
+    return ' '.join(command)
+
+
+def verify_puppet(module):
+    with open(module.params['summary']) as f:
+        summary = yaml.load(f.read())
+    if (summary['resources']['failed'] 
+        or summary['resources']['failed_to_restart']):
+        return False
+    return True
+
+
+def main():
+
+    puppet = AnsibleModule(argument_spec=dict(
+            debug=dict(default=False),
+            logfile=dict(default='/var/log/puppet.log'),
+            manifest=dict(required=True),
+            summary=dict(default='/var/lib/puppet/state/last_run_summary.yaml')
+        ))
+
+    command = build_command(puppet)
+    rc, out, err = puppet.run_command(command)
+
+    if verify_puppet(puppet):
+        puppet.exit_json(command=command, rc=rc, stdout=out, stderr=err)
+    else:
+        puppet.fail_json(command=command, rc=rc, stdout=out, stderr=err)
+
+from ansible.module_utils.basic import *
+
+main()

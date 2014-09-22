@@ -52,6 +52,18 @@ def upgrade_schema():
             server_default='true',
         )
     )
+    op.create_table('action_logs',
+                    sa.Column('id', sa.Integer, nullable=False),
+                    sa.Column('actor_id',
+                              sa.String(length=64),
+                              nullable=False),
+                    sa.Column('action_group',
+                              sa.String(length=64),
+                              nullable=False),
+                    sa.Column('action_name',
+                              sa.String(length=64),
+                              nullable=False),
+                    sa.PrimaryKeyConstraint('id'))
 
 
 def upgrade_data():

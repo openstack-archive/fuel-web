@@ -27,6 +27,7 @@ down_revision = '52924111f7d8'
 from alembic import op
 import sqlalchemy as sa
 
+from nailgun.db.sqlalchemy.models.fields import JSON
 from nailgun.utils.migration import upgrade_release_set_deployable_false
 
 
@@ -52,6 +53,33 @@ def upgrade_schema():
             server_default='true',
         )
     )
+    op.create_table('action_logs',
+                    sa.Column('id', sa.Integer, nullable=False),
+                    sa.Column('actor_id',
+                              sa.String(length=64),
+                              nullable=False),
+                    sa.Column('action_group',
+                              sa.String(length=64),
+                              nullable=False),
+                    sa.Column('action_name',
+                              sa.String(length=64),
+                              nullable=False),
+                    sa.Column('request_data',
+                              JSON(),
+                              nullable=False),
+                    sa.Column('response_data',
+                              JSON(),
+                              nullable=False),
+                    sa.Column('start_timestamp',
+                              sa.DateTime,
+                              nullable=False),
+                    sa.Column('end_timestamp',
+                              sa.DateTime,
+                              nullable=False),
+                    sa.Column('is_sent',
+                              sa.Boolean,
+                              default=False),
+                    sa.PrimaryKeyConstraint('id'))
 
 
 def upgrade_data():
@@ -64,6 +92,7 @@ def upgrade_data():
 
 def downgrade_schema():
     op.drop_column('releases', 'is_deployable')
+    op.drop_table('action_logs')
 
 
 def downgrade_data():

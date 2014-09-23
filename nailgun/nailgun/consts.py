@@ -179,3 +179,14 @@ ACTION_TYPES = Enum(
     'http_request',
     'nailgun_task'
 )
+
+LOG_CHUNK_SEND_STATUS = Enum(
+    'ok',
+    'error'
+)
+
+LOG_RECORD_SEND_STATUS = Enum(
+    'added',
+    'existed',
+    'failed'
+)

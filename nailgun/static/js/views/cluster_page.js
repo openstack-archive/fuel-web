@@ -112,6 +112,9 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
         beforeTearDown: function() {
             $(window).off('beforeunload.' + this.eventNamespace);
             $('body').off('click.' + this.eventNamespace);
+            _.each(['clusterInfo', 'clusterCustomizationMessage', 'deploymentResult', 'deploymentControl', 'tab'], function(subView) {
+                utils.universalUnmount(this[subView]);
+            }, this);
         },
         onBeforeunloadEvent: function() {
             if (_.result(this.tab, 'hasChanges')) {

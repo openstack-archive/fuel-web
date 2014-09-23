@@ -71,6 +71,18 @@ APP_LOG: &nailgun_log "/var/log/nailgun/app.log"
 API_LOG: &api_log "/var/log/nailgun/api.log"
 SYSLOG_DIR: &remote_syslog_dir "/var/log/remote/"
 
+COLLECTOR_STORE_URL: "http://127.0.0.1:5000/api/v1/action_logs/"
+COLLECTOR_PING_URL: "http://127.0.0.1:5000/api/v1/ping/"
+
+# statistics send interval
+STATS_SEND_INTERVAL: 3600
+
+# statistics collector ping interval
+STATS_PING_INTERVAL: 300
+
+# statistics send records per request
+STATS_SEND_COUNT: 5
+
 PATH_TO_SSH_KEY: = "/root/.ssh/id_rsa"
 PATH_TO_BOOTSTRAP_SSH_KEY: "/root/.ssh/bootstrap.rsa"
 AUTHORIZED_KEYS: []

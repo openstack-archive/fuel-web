@@ -179,3 +179,10 @@ ACTION_TYPES = Enum(
     'http_request',
     'nailgun_task'
 )
+
+#statistics send interval
+STATS_SEND_INTERVAL = 3600
+#statistics collector ping interval
+STATS_PING_INTERVAL = 300
+#statistics send records per request
+STATS_SEND_COUNT = 5

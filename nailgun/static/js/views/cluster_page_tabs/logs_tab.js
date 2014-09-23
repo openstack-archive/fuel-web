@@ -179,7 +179,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
                     level: this.chosenLevel
                 },
                 headers: {
-                    'X-Auth-Token': app.keystoneClient.token
+                    'X-Auth-Token': app.authManager.token
                 }
             };
             _.extend(options, callbacks);

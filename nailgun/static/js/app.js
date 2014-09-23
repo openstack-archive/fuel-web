@@ -21,7 +21,7 @@ define(
     'coccyx',
     'js/coccyx_mixins',
     'models',
-    'keystone_client',
+    'auth_manager',
     'views/common',
     'views/login_page',
     'views/cluster_page',
@@ -32,7 +32,7 @@ define(
     'jsx!views/support_page',
     'jsx!views/capacity_page'
 ],
-function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneClient, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
+function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, AuthManager, commonViews, LoginPage, ClusterPage, NodesTab, ClustersPage, ReleasesPage, NotificationsPage, SupportPage, CapacityPage) {
     'use strict';
 
     var AppRouter = Backbone.Router.extend({
@@ -67,9 +67,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
             // this is needed for IE, which caches requests resulting in wrong results (e.g /ostf/testruns/last/1)
             $.ajaxSetup({cache: false});
 
-            var keystoneClient = this.keystoneClient = new KeystoneClient('/keystone', {
-                cacheTokenFor: 10 * 60 * 1000,
-                tenant: 'admin'
+            var authManager = this.authManager = new AuthManager({
+                cacheTokenFor: 10 * 60 * 1000
             });
             var version = this.version = new models.FuelVersion();
 
@@ -92,15 +91,15 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                         // triggered but dfd.state() still returns 'pending'. This
                         // leads to various bugs here and there.
                         var callbacks = {};
-                        // add keystone token to headers
-                        return keystoneClient.authenticate()
+                        // add auth token to headers
+                        return authManager.login()
                             .fail(function() {
                                 app.logout();
                             })
                             .then(_.bind(function() {
                                 options = options || {};
                                 options.headers = options.headers || {};
-                                options.headers['X-Auth-Token'] = keystoneClient.token;
+                                options.headers['X-Auth-Token'] = authManager.token;
                                 _.each(['success', 'error'], function(callback) {
                                     if (options[callback]) {
                                         callbacks[callback] = options[callback];
@@ -129,8 +128,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 };
 
                 if (version.get('auth_required')) {
-                    _.extend(keystoneClient, this.user.pick('username', 'password'));
-                    return keystoneClient.authenticate()
+                    _.extend(authManager, this.user.pick('username', 'password'));
+                    return authManager.login()
                         .done(function() {
                             app.user.set({authenticated: true});
                         });
@@ -183,11 +182,8 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
                 this.user.set('authenticated', false);
                 this.user.unset('username');
                 this.user.unset('password');
-                delete app.keystoneClient.userId;
-                delete app.keystoneClient.username;
-                delete app.keystoneClient.password;
-                delete app.keystoneClient.token;
-                delete app.keystoneClient.tokenUpdateTime;
+
+                app.authManager.logout();
             }
             _.defer(function() {
                 app.navigate('#login', {trigger: true, replace: true});

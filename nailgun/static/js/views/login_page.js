@@ -38,15 +38,15 @@ function(commonViews, loginPageTemplate) {
         login: function() {
             this.$('.login-btn').attr('disabled', true);
             this.$('.login-error-message').hide();
-            var keystoneClient = app.keystoneClient;
-            keystoneClient.username = this.$('input[name=username]').val();
-            keystoneClient.password = this.$('input[name=password]').val();
-            keystoneClient.authenticate({force: true})
+            var authManager = app.authManager;
+            authManager.username = this.$('input[name=username]').val();
+            authManager.password = this.$('input[name=password]').val();
+            authManager.login({force: true})
                 .done(_.bind(function() {
                     app.user.set({
                         authenticated: true,
-                        username: keystoneClient.username,
-                        password: keystoneClient.password
+                        username: authManager.username,
+                        password: authManager.password
                     });
                     app.navigate('#', {trigger: true, replace: true});
                 }, this))

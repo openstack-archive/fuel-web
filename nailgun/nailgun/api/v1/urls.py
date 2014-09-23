@@ -19,6 +19,9 @@ import web
 from nailgun.api.v1.handlers.assignment import NodeAssignmentHandler
 from nailgun.api.v1.handlers.assignment import NodeUnassignmentHandler
 
+from nailgun.api.v1.handlers.auth import LoginHandler
+from nailgun.api.v1.handlers.auth import LogoutHandler
+
 from nailgun.api.v1.handlers.capacity import CapacityLogCsvHandler
 from nailgun.api.v1.handlers.capacity import CapacityLogHandler
 
@@ -81,6 +84,11 @@ from nailgun.api.v1.handlers.version import VersionHandler
 
 
 urls = (
+    r'/auth/login/?$',
+    LoginHandler,
+    r'/auth/logout/?$',
+    LogoutHandler,
+
     r'/releases/?$',
     ReleaseCollectionHandler,
     r'/releases/(?P<obj_id>\d+)/?$',
@@ -199,8 +207,11 @@ def app():
 
 
 def public_urls():
-    return {r'/nodes/?$': ['POST'],
-            r'/nodes/agent/?$': ['PUT'],
-            r'/version/?$': ['GET'],
-            r'/capacity/csv/?$': ['GET'],
-            }
+    return {
+        r'/auth/login/?$': ['POST'],
+        r'/auth/logout/?$': ['POST'],
+        r'/nodes/?$': ['POST'],
+        r'/nodes/agent/?$': ['PUT'],
+        r'/version/?$': ['GET'],
+        r'/capacity/csv/?$': ['GET'],
+    }

@@ -488,9 +488,9 @@ function(require, React, utils, models, viewMixins, componentMixins, baseDialogT
         changePassword: function() {
             if (this.isPasswordChangeAvailable()) {
                 this.setState({locked: true});
-                app.keystoneClient.changePassword(this.state.currentPassword, this.state.newPassword)
+                app.authManager.changePassword(this.state.currentPassword, this.state.newPassword)
                     .done(_.bind(function() {
-                        app.user.set({password: app.keystoneClient.password});
+                        app.user.set({password: app.authManager.password});
                         this.close();
                     }, this))
                     .fail(_.bind(function() {

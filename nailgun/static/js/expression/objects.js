@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
 **/
-define(function() {
+define(['underscore'], function(_) {
     'use strict';
 
     function ModelPath(path) {

@@ -210,7 +210,7 @@ function(React, utils, models, componentMixins, dialogs) {
                                 return [
                                     <li
                                         key={'notification' + notification.id}
-                                        className={cx({'enable-selection': true, 'new': unread, 'clickable': nodeId}) + ' ' + notification.get('topic')}
+                                        className={cx({'enable-selection': true, new: unread, clickable: nodeId}) + ' ' + notification.get('topic')}
                                         onClick={nodeId && _.bind(this.showNodeInfo, this, nodeId)}
                                     >
                                         <i className={{error: 'icon-attention', warning: 'icon-attention', discover: 'icon-bell'}[notification.get('topic')] || 'icon-info-circled'}></i>

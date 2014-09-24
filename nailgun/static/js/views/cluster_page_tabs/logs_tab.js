@@ -196,7 +196,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
             this.chosenLevel = this.$('select[name=level]').val();
 
             var options = this.getOptions();
-            this.model.set({'log_options': options}, {silent: true});
+            this.model.set({log_options: options}, {silent: true});
             app.navigate('#cluster/' + this.model.id + '/logs/' + utils.serializeTabOptions(options), {trigger: false, replace: true});
 
             this.$('.logs-fetch-error, .node-sources-error').hide();
@@ -241,7 +241,7 @@ function(utils, models, commonViews, logsTabTemplate, logEntryTemplate) {
             el.show();
             el.find('.show-more-entries').remove();
             _.each([100, 500, 1000, 5000], function(count) {
-                el.find('.show-all-entries').before($('<span/>', {'class': 'show-more-entries', text: count}));
+                el.find('.show-all-entries').before($('<span/>', {class: 'show-more-entries', text: count}));
             }, this);
         },
         appendLogEntries: function(data, doNotScroll) {

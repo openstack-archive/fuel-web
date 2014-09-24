@@ -68,11 +68,11 @@ function(utils, models, commonViews, ClusterNodesScreen, AddNodesScreen, EditNod
         },
         routeScreen: function(options) {
             var screens = {
-                'list': ClusterNodesScreen,
-                'add': AddNodesScreen,
-                'edit': EditNodesScreen,
-                'disks': EditNodeDisksScreen,
-                'interfaces': EditNodeInterfacesScreen
+                list: ClusterNodesScreen,
+                add: AddNodesScreen,
+                edit: EditNodesScreen,
+                disks: EditNodeDisksScreen,
+                interfaces: EditNodeInterfacesScreen
             };
             this.changeScreen(screens[options[0]] || screens.list, options.slice(1));
         },

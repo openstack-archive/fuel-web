@@ -52,7 +52,7 @@ function(utils, models, dialogViews, Screen, nodesManagementPanelTemplate, assig
         },
         updateBatchActionsButtons: function() {
             var nodes = new models.Nodes(this.nodes.where({checked: true}));
-            var deployedNodes = nodes.where({'status': 'ready'});
+            var deployedNodes = nodes.where({status: 'ready'});
             this.configureDisksButton.set('disabled', !nodes.length || deployedNodes.length > 1);
             this.configureInterfacesButton.set('disabled', !nodes.length || deployedNodes.length > 1);
             this.deleteNodesButton.set('visible', !!nodes.where({pending_deletion: false}).length && !this.isLocked());

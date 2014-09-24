@@ -42,7 +42,7 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         template: _.template(createClusterWizardTemplate),
         modalOptions: {backdrop: 'static'},
         events: {
-            'keydown': 'onInputKeydown',
+            keydown: 'onInputKeydown',
             'click .next-pane-btn': 'nextPane',
             'click .prev-pane-btn': 'prevPane',
             'click .wizard-step.available': 'onStepClick',
@@ -88,19 +88,19 @@ function(require, utils, models, viewMixins, dialogs, createClusterWizardTemplat
         initialize: function(options) {
             _.defaults(this, options);
             this.config = {
-                "NameAndRelease": {
-                    "name": {
-                        "type": "custom",
-                        "value": "",
-                        "bind": "cluster:name"
+                NameAndRelease: {
+                    name: {
+                        type: 'custom',
+                        value: '',
+                        bind: 'cluster:name'
                     },
-                    "release": {
-                        "type": "custom",
-                        "bind": {"id": "cluster:release"},
-                        "aliases": {
-                            "operating_system": "NameAndRelease.release_operating_system",
-                            "roles": "NameAndRelease.release_roles",
-                            "name": "NameAndRelease.release_name"
+                    release: {
+                        type: 'custom',
+                        bind: {id: 'cluster:release'},
+                        aliases: {
+                            operating_system: 'NameAndRelease.release_operating_system',
+                            roles: 'NameAndRelease.release_roles',
+                            name: 'NameAndRelease.release_name'
                         }
                     }
                 }

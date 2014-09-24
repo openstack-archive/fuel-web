@@ -1025,6 +1025,16 @@ def create_serializer(cluster):
                 ps.PriorityHASerializer51
             ),
         },
+        '6.0': {
+            'multinode': (
+                DeploymentMultinodeSerializer51,
+                ps.PriorityMultinodeSerializer51
+            ),
+            'ha': (
+                DeploymentHASerializer51,
+                ps.PriorityHASerializer51
+            ),
+        },
     }
 
     env_version = extract_env_version(cluster.release.version)

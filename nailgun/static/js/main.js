@@ -18,7 +18,7 @@ requirejs.config({
     urlArgs: '_=' +  (new Date()).getTime(),
     waitSeconds: 60,
     paths: {
-        'jquery': 'js/libs/bower/jquery/js/jquery',
+        jquery: 'js/libs/bower/jquery/js/jquery',
         'jquery-checkbox': 'js/libs/custom/jquery.checkbox',
         'jquery-timeout': 'js/libs/custom/jquery.timeout',
         'jquery-ui': 'js/libs/custom/jquery-ui-1.10.2.custom',
@@ -101,7 +101,7 @@ requirejs.config({
     },
     map: {
         '*': {
-            'css': 'require-css/css'
+            css: 'require-css/css'
         }
     },
     jsx: {

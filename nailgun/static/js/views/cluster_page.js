@@ -149,12 +149,12 @@ function(React, utils, models, commonViews, clusterPageSubviews, dialogViews, No
             this.deploymentControl = utils.universalMount(new clusterPageSubviews.DeploymentControl(options), this.$('.deployment-control'), this);
 
             var tabs = {
-                'nodes': NodesTab,
-                'network': NetworkTab,
-                'settings': SettingsTab,
-                'actions': ActionsTab,
-                'logs': LogsTab,
-                'healthcheck': HealthCheckTab
+                nodes: NodesTab,
+                network: NetworkTab,
+                settings: SettingsTab,
+                actions: ActionsTab,
+                logs: LogsTab,
+                healthcheck: HealthCheckTab
             };
             if (_.has(tabs, this.activeTab)) {
                 this.tab = utils.universalMount(

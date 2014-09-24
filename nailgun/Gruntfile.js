@@ -54,6 +54,7 @@ module.exports = function(grunt) {
         lintspaces: {
             styles: {
                 options: {
+                    showValid: true,
                     newline: true,
                     indentation: 'spaces',
                     spaces: 2,
@@ -67,6 +68,7 @@ module.exports = function(grunt) {
             },
             javascript: {
                 options: {
+                    showValid: true,
                     newline: true,
                     indentation: 'spaces',
                     spaces: 4,
@@ -116,6 +118,7 @@ module.exports = function(grunt) {
                 disallowSpacesInsideObjectBrackets: 'all',
                 disallowSpacesInsideArrayBrackets: 'all',
                 disallowSpacesInsideParentheses: true,
+                disallowQuotedKeysInObjects: true,
                 disallowSpaceAfterObjectKeys: true,
                 requireSpaceBeforeObjectValues: true,
                 requireCommaBeforeLineBreak: true,

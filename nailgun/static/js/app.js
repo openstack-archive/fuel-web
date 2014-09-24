@@ -37,15 +37,15 @@ function(React, utils, layoutComponents, Coccyx, coccyxMixins, models, KeystoneC
 
     var AppRouter = Backbone.Router.extend({
         routes: {
-            'login': 'login',
-            'logout': 'logout',
-            'clusters': 'listClusters',
+            login: 'login',
+            logout: 'logout',
+            clusters: 'listClusters',
             'cluster/:id': 'showCluster',
             'cluster/:id/:tab(/:opt1)(/:opt2)': 'showClusterTab',
-            'releases': 'listReleases',
-            'notifications': 'showNotifications',
-            'support': 'showSupportPage',
-            'capacity': 'showCapacityPage',
+            releases: 'listReleases',
+            notifications: 'showNotifications',
+            support: 'showSupportPage',
+            capacity: 'showCapacityPage',
             '*default': 'listClusters'
         },
         initialize: function() {

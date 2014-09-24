@@ -28,7 +28,7 @@ function(commonViews, loginPageTemplate) {
         },
         template: _.template(loginPageTemplate),
         events: {
-            'submit': 'login',
+            submit: 'login',
             'keydown input': 'onKeyDown'
         },
         onKeyDown: function() {

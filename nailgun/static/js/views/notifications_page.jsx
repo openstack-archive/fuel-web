@@ -74,7 +74,7 @@ function(React, utils, models, dialogs) {
             var notification = this.props.notification,
                 topic = notification.get('topic'),
                 notificationClass = topic + ' ' + notification.get('status') + ' ' + (notification.get('node_id') ? 'clickable' : ''),
-                iconClass = {'error': 'icon-attention', 'discover': 'icon-bell'}[topic] || 'icon-info-circled';
+                iconClass = {error: 'icon-attention', discover: 'icon-bell'}[topic] || 'icon-info-circled';
             return (
                 <li className={notificationClass} onClick={this.onNotificationClick}>
                     <div className='icon'><i className={iconClass}></i></div>
